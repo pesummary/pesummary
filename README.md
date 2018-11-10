@@ -1,3 +1,11 @@
 # PESummary
 
-Code to generate summary pages for Parameter Estimation results. 
+Description
+-------------
+
+This code is designed to generate an html page to display the results from *all* Parameter Estimation codes.
+
+Usage
+------------- 
+
+
