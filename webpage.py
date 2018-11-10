@@ -28,7 +28,6 @@ def make_html(web_dir, title="Summary Pages", pages=["mass1", "corner"]):
     """
     f = open(web_dir+"/home.html", "w")
     utils.make_dir(web_dir+"/html")
-    utils.make_dir(web_dir+"/plots")
     if "home" not in pages:
         pages.append("home")
     for i in pages:

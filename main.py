@@ -17,12 +17,17 @@ import argparse
 import subprocess
 import socket
 import os
+import shutil
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 
 import webpage
+import utils
+
+import h5py
 
 __doc__ == "Parameters to run post_processing.py from the command line"
 
@@ -36,8 +41,8 @@ def command_line():
                         help="make page and plots in DIR", metavar="DIR")
     parser.add_argument("-b", "--baseurl", dest="baseurl",
                         help="make the page at this url", metavar="DIR")
-    parser.add_argument("-i", "--inj", dest="injfile",
-                        help="SimInsipral injection file", metavar="INJ.XML",
+    parser.add_argument("-s", "--samples", dest="samples",
+                        help="Posterior samples hdf5 file", metavar="results.h5",
                         default=None)
     parser.add_argument("--email", action="store",
                         help="Send an e-mail to the given address with a link to the finished page.",
@@ -64,13 +69,78 @@ def email_notify(address, path):
     ess = subprocess.Popen(cmd, shell=True)
     ess.wait()
 
+def _make_plot(parameter, samples, opts):
+    """Actually make the plot
+
+    Parameters
+    ----------
+    parameter: str
+        name of the parameter that you want to plot
+    samples: list
+        list of samples for parameter=parameter
+    opts: argparse
+        argument parser object to hold all information from command line 
+    """
+    latex_labels={"luminosity_distance": r"$d_{L} [Mpc]$",
+                  "geocent_time": r"$t_{c} [s]$",
+                  "dec": r"$\delta$",
+                  "ra": r"$\alpha$",
+                  "a_1": r"$a_{1}$",
+                  "a_2": r"$a_{2}$",
+                  "phi_jl": r"$\phi_{JL}$",
+                  "phase": r"$\phi$",
+                  "psi": r"$\Psi$",
+                  "iota": r"$\iota$",
+                  "tilt_1": r"$\theta_{1}$",
+                  "tilt_2": r"$\theta_{2}$",
+                  "phi_12": r"$\phi_{12}$",
+                  "mass_2": r"$m_{2}$",
+                  "mass_1": r"$m_{1}$"}
+    fig = plt.figure()
+    plt.hist(samples, histtype="step", bins=50, color='b')
+    plt.xlabel(latex_labels[parameter], fontsize=16)
+    plt.ylabel("Probability Density", fontsize=16)
+    plt.axvline(x=np.percentile(samples, 90), color='b', linestyle='--')
+    plt.axvline(x=np.percentile(samples, 10), color='b', linestyle='--')
+    median = np.round(np.median(samples), 2)
+    upper = np.round(np.percentile(samples, 90), 2)
+    lower = np.round(np.percentile(samples, 10), 2)
+    plt.title(r"$%s^{+%s}_{-%s}$" %(median, upper, lower), fontsize=18)
+    plt.grid()
+    plt.savefig(opts.webdir + "/plots/1d_posterior_" + parameter + ".png")
+    plt.close()
+
+def make_plots(opts):
+    """Generate the posterior sample plots
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    """
+    if os.path.isfile(opts.samples) == False:
+        raise Exception("File does not exist")
+    # copy the hdf5 file to the webdir
+    shutil.copyfile(opts.samples, opts.webdir+"/samples/"+opts.samples.split("/")[-1])
+    f = h5py.File(opts.samples)
+    parameters = [i for i in f["posterior/block0_items"]]
+    if "log_likelihood" in parameters:
+        parameters.remove("log_likelihood")
+    for num, i in enumerate(parameters):
+        samples = [j[num] for j in f["posterior/block0_values"]]
+        _make_plot(i, samples, opts) 
 
 def write_html(opts):
     """Generate an html page to show posterior plots
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line 
     """
     # make the webpages
     webpage.make_html(web_dir=opts.webdir,
-                      pages=["corner", "IMRPhenomPv2", "SEOBNRv2", "IMRPhenommass1", "SEOBNRmass1", "home"])
+                      pages=["corner", "IMRPhenomPv2", "SEOBNRv3", "IMRPhenommass1", "SEOBNRmass1", "home"])
     # edit the home page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="home")
@@ -83,9 +153,9 @@ def write_html(opts):
     html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2", "SEOBNRv3", "Comparison"]],
                                  "corner", ["1d_histograms", ["IMRPhenommass1"]]])
     html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
-                                   contents=[["/home/c1737564/public_html/LVC/projects/bilby/GW150914/plots/GW150914_H1L1_dynesty_mass_1.png",
-                                              "/home/c1737564/public_html/LVC/projects/bilby/GW150914/plots/GW150914_H1L1_dynesty_mass_1.png",
-                                              "/home/c1737564/public_html/LVC/projects/bilby/GW150914/plots/GW150914_H1L1_dynesty_mass_1.png"]])
+                                   contents=[[opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
+                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
+                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png"]])
     html_file.make_footer(user="c1737564", rundir="./")
     # edit the home page for SEOBNRv3
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
@@ -94,9 +164,9 @@ def write_html(opts):
     html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2", "SEOBNRv3", "Comparison"]],
                                  "corner", ["1d_histograms", ["SEOBNRmass1"]]])
     html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
-                                   contents=[["/home/c1737564/public_html/LVC/projects/bilby/GW150914/plots/GW150914_H1L1_dynesty_mass_1.png",
-                                              "/home/c1737564/public_html/LVC/projects/bilby/GW150914/plots/GW150914_H1L1_dynesty_mass_1.png",
-                                              "/home/c1737564/public_html/LVC/projects/bilby/GW150914/plots/GW150914_H1L1_dynesty_mass_1.png"]])
+                                   contents=[[opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
+                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
+                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png"]])
     html_file.make_footer(user="c1737564", rundir="./")
     # edit the mass1 page for both approximants
     for i,j in zip(["IMRPhenommass1", "SEOBNRmass1"], ["#8c6278", "#228B22"]):    
@@ -111,6 +181,10 @@ if __name__ == '__main__':
     # get arguments from command line
     parser = command_line()
     opts = parser.parse_args()
+    # make relevant directories
+    utils.make_dir(opts.webdir + "/plots")
+    utils.make_dir(opts.webdir + "/samples")
+    make_plots(opts)
     write_html(opts)
     if opts.email:
         try:

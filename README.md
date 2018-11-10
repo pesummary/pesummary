@@ -13,6 +13,7 @@ An example of how to run this code is below:
 ```bash
 $ python main.py --email hoyc1@cardiff.ac.uk \
                  --webdir /home/c1737564/public_html/LVC/projects/bilby \
-                 --baseurl https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby
+                 --baseurl https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby \
+                 --samples /home/c1737564/projects/bilby/GW150914/outdir/GW150914_result.h5
 ```
 
