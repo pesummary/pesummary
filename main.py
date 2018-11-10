@@ -75,7 +75,7 @@ def email_notify(address, path):
     ess = subprocess.Popen(cmd, shell=True)
     ess.wait()
 
-def _make_plot(parameter, samples, opts):
+def _make_plot(parameter, samples, opts, latex_labels):
     """Actually make the plot
 
     Parameters
@@ -85,7 +85,60 @@ def _make_plot(parameter, samples, opts):
     samples: list
         list of samples for parameter=parameter
     opts: argparse
-        argument parser object to hold all information from command line 
+        argument parser object to hold all information from command line
+    latex_labels: dict
+        dictionary of latex labels for each parameter
+    """
+    fig = plt.figure()
+    plt.hist(samples, histtype="step", bins=50, color='b')
+    plt.xlabel(latex_labels[parameter], fontsize=16)
+    plt.ylabel("Probability Density", fontsize=16)
+    plt.axvline(x=np.percentile(samples, 90), color='b', linestyle='--')
+    plt.axvline(x=np.percentile(samples, 10), color='b', linestyle='--')
+    median = np.round(np.median(samples), 2)
+    upper = np.round(np.percentile(samples, 90), 2)
+    lower = np.round(np.percentile(samples, 10), 2)
+    plt.title(r"$%s^{+%s}_{-%s}$" %(median, upper, lower), fontsize=18)
+    plt.grid()
+    plt.savefig(opts.webdir + "/plots/1d_posterior_" + parameter + ".png")
+    plt.close()
+
+def _make_comparison(parameter, samples, samples2, opts, latex_labels):
+    """Make the comparison pages
+
+    Parameters
+    ----------
+    parameter: str
+        name of the parameter that you want to plot
+    samples: list
+        list of samples for the first waveform for parameter=parameter
+    samples2: list
+        list of samples for the second waveform for parameter=parameter
+    opts: argparse
+        argument parser object to hold all information from command line
+    latex_labels: dict
+        dictionary of latex labels for each parameter
+    """
+    fig = plt.figure()
+    plt.hist(samples, histtype="step", bins=50, color='b')
+    plt.hist(samples2, histtype="step", bins=50, color='orange')
+    plt.xlabel(latex_labels[parameter], fontsize=16)
+    plt.ylabel("Probability Density", fontsize=16)
+    plt.axvline(x=np.percentile(samples, 90), color='b', linestyle='--')
+    plt.axvline(x=np.percentile(samples, 90), color='orange', linestyle='--')
+    plt.axvline(x=np.percentile(samples, 10), color='b', linestyle='--')
+    plt.axvline(x=np.percentile(samples, 10), color='orange', linestyle='--')
+    plt.grid()
+    plt.savefig(opts.webdir + "/plots/combined_posterior_" + parameter + ".png")
+    plt.close()
+
+def make_plots(opts):
+    """Generate the posterior sample plots
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
     """
     latex_labels={"luminosity_distance": r"$d_{L} [Mpc]$",
                   "geocent_time": r"$t_{c} [s]$",
@@ -102,28 +155,6 @@ def _make_plot(parameter, samples, opts):
                   "phi_12": r"$\phi_{12}$",
                   "mass_2": r"$m_{2}$",
                   "mass_1": r"$m_{1}$"}
-    fig = plt.figure()
-    plt.hist(samples, histtype="step", bins=50, color='b')
-    plt.xlabel(latex_labels[parameter], fontsize=16)
-    plt.ylabel("Probability Density", fontsize=16)
-    plt.axvline(x=np.percentile(samples, 90), color='b', linestyle='--')
-    plt.axvline(x=np.percentile(samples, 10), color='b', linestyle='--')
-    median = np.round(np.median(samples), 2)
-    upper = np.round(np.percentile(samples, 90), 2)
-    lower = np.round(np.percentile(samples, 10), 2)
-    plt.title(r"$%s^{+%s}_{-%s}$" %(median, upper, lower), fontsize=18)
-    plt.grid()
-    plt.savefig(opts.webdir + "/plots/1d_posterior_" + parameter + ".png")
-    plt.close()
-
-def make_plots(opts):
-    """Generate the posterior sample plots
-
-    Parameters
-    ----------
-    opts: argparse
-        argument parser object to hold all information from command line
-    """
     if os.path.isfile(opts.samples1) == False:
         raise Exception("File does not exist")
     # copy the hdf5 file to the webdir
@@ -132,9 +163,18 @@ def make_plots(opts):
     parameters = [i for i in f["posterior/block0_items"]]
     if "log_likelihood" in parameters:
         parameters.remove("log_likelihood")
-    for num, i in enumerate(parameters):
-        samples = [j[num] for j in f["posterior/block0_values"]]
-        _make_plot(i, samples, opts)
+    if opts.number != "one":
+        g = h5py.File(opts.samples2)
+        for num, i in enumerate(parameters):
+            samples = [j[num] for j in f["posterior/block0_values"]]
+            samples2 = [j[num] for j in g["posterior/block0_values"]]
+            _make_plot(i, samples, opts, latex_labels)
+            _make_plot(i, samples2, opts, latex_labels)
+            _make_comparison(i, samples, samples2, opts, latex_labels)
+    else:
+        for num, i in enumerate(parameters):
+            samples = [j[num] for j in f["posterior/block0_values"]]
+            _make_plot(i, samples, opts, latex_labels)
 
 def _single_html(opts):
     """Generate html pages for only one approximant
@@ -237,7 +277,7 @@ if __name__ == '__main__':
     # make relevant directories
     utils.make_dir(opts.webdir + "/plots")
     utils.make_dir(opts.webdir + "/samples")
-    #make_plots(opts)
+    make_plots(opts)
     write_html(opts)
     if opts.email:
         try:
