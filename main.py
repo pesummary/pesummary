@@ -41,7 +41,13 @@ def command_line():
                         help="make page and plots in DIR", metavar="DIR")
     parser.add_argument("-b", "--baseurl", dest="baseurl",
                         help="make the page at this url", metavar="DIR")
-    parser.add_argument("-s", "--samples", dest="samples",
+    parser.add_argument("-n", "--number_of_waveforms", dest="number",
+                        help="the number of approximants you wish to compare",
+                        metavar="int", default="one")
+    parser.add_argument("-s1", "--samples1", dest="samples1",
+                        help="Posterior samples hdf5 file", metavar="results.h5",
+                        default=None)
+    parser.add_argument("-s2", "--samples2", dest="samples2",
                         help="Posterior samples hdf5 file", metavar="results.h5",
                         default=None)
     parser.add_argument("--email", action="store",
@@ -118,27 +124,61 @@ def make_plots(opts):
     opts: argparse
         argument parser object to hold all information from command line
     """
-    if os.path.isfile(opts.samples) == False:
+    if os.path.isfile(opts.samples1) == False:
         raise Exception("File does not exist")
     # copy the hdf5 file to the webdir
-    shutil.copyfile(opts.samples, opts.webdir+"/samples/"+opts.samples.split("/")[-1])
-    f = h5py.File(opts.samples)
+    shutil.copyfile(opts.samples1, opts.webdir+"/samples/"+opts.samples1.split("/")[-1])
+    f = h5py.File(opts.samples1)
     parameters = [i for i in f["posterior/block0_items"]]
     if "log_likelihood" in parameters:
         parameters.remove("log_likelihood")
     for num, i in enumerate(parameters):
         samples = [j[num] for j in f["posterior/block0_values"]]
-        _make_plot(i, samples, opts) 
+        _make_plot(i, samples, opts)
 
-def write_html(opts):
-    """Generate an html page to show posterior plots
+def _single_html(opts):
+    """Generate html pages for only one approximant
 
     Parameters
     ----------
     opts: argparse
-        argument parser object to hold all information from command line 
+        argument parser object to hold all information from command line
     """
-    # make the webpages
+    # make the webpage
+    webpage.make_html(web_dir=opts.webdir,
+                      pages=["corner", "IMRPhenomPv2", "IMRPhenommass1", "home"])
+    # edit the home page
+    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                  html_page="home")
+    html_file.make_header()
+    html_file.make_navbar(links=[["Approximant", ["IMRPhenomPv2"]]])
+    # edit the home page for IMRPhenomPv2
+    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                  html_page="IMRPhenomPv2")
+    html_file.make_header(title="IMRPhenomPv2 Summary Page", background_colour="#8c6278")
+    html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2"]], "corner",
+                                 ["1d_histograms", ["IMRPhenommass1"]]])
+    html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
+                                   contents=[[opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
+                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
+                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png"]])
+    html_file.make_footer(user="c1737564", rundir="./")
+    # edit the mass 1 page
+    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                  html_page="IMRPhenommass1")
+    html_file.make_header(title="Posterior PDF for mass1", background_colour="#8c6278")
+    html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2"]], "corner",
+                                 ["1d_histograms", ["IMRPhenommass1"]]])
+    html_file.make_footer(user="c1737564", rundir="./")
+
+def _double_html(opts):
+    """Generate html pages for two approximants
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    """
     webpage.make_html(web_dir=opts.webdir,
                       pages=["corner", "IMRPhenomPv2", "SEOBNRv3", "IMRPhenommass1", "SEOBNRmass1", "home"])
     # edit the home page
@@ -177,6 +217,19 @@ def write_html(opts):
                                      "corner", ["1d_histograms", [i]]])
         html_file.make_footer(user="c1737564", rundir="./")
 
+def write_html(opts):
+    """Generate an html page to show posterior plots
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line 
+    """
+    # make the webpages
+    options = {"one": _single_html,
+               "two": _double_html}
+    options[opts.number](opts)
+
 if __name__ == '__main__':
     # get arguments from command line
     parser = command_line()
@@ -184,7 +237,7 @@ if __name__ == '__main__':
     # make relevant directories
     utils.make_dir(opts.webdir + "/plots")
     utils.make_dir(opts.webdir + "/samples")
-    make_plots(opts)
+    #make_plots(opts)
     write_html(opts)
     if opts.email:
         try:
