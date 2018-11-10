@@ -32,8 +32,10 @@ def command_line():
     from the command line.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-o", "--outpath", dest="outpath",
+    parser.add_argument("-w", "--webdir", dest="webdir",
                         help="make page and plots in DIR", metavar="DIR")
+    parser.add_argument("-b", "--baseurl", dest="baseurl",
+                        help="make the page at this url", metavar="DIR")
     parser.add_argument("-i", "--inj", dest="injfile",
                         help="SimInsipral injection file", metavar="INJ.XML",
                         default=None)
@@ -57,36 +59,25 @@ def email_notify(address, path):
     host = socket.getfqdn()
     from_address = "{}@{}".format(user, host)
     subject = "BILBY output page available at {}".format(host)
-
-    # generate the url of the posplots.html page
-    if 'caltech' in host or 'cit' in host:
-        url = "https://ldas-jobs.ligo.caltech.edu/"
-    elif 'raven' in host:
-        url = "https://geo2.arcca.cf.ac.uk/"
-    else:
-        url = "https://{}/".format(host)
-    url += path
-    message = "Hi {},\n\nYour output page is ready on {}. You can view the result at {}\n".format(user, host, url)
+    message = "Hi {},\n\nYour output page is ready on {}. You can view the result at {}\n".format(user, host, path)
     cmd = 'echo -e "%s" | mail -s "%s" "%s"' %(message, subject, address)
     ess = subprocess.Popen(cmd, shell=True)
     ess.wait()
 
 
-def write_html():
+def write_html(opts):
     """Generate an html page to show posterior plots
     """
     # make the webpages
-    webpage.make_html(web_dir = "/home/c1737564/public_html/LVC/projects/bilby",
+    webpage.make_html(web_dir=opts.webdir,
                       pages=["corner", "IMRPhenomPv2", "SEOBNRv2", "IMRPhenommass1", "SEOBNRmass1", "home"])
     # edit the home page
-    html_file = webpage.open_html(web_dir = "/home/c1737564/public_html/LVC/projects/bilby",
-                                  base_url = "https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby",
+    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="home")
     html_file.make_header()
     html_file.make_navbar(links=[["Approximant", ["IMRPhenomPv2", "SEOBNRv3", "Comparison"]]])
     # edit the home page for IMRPhenomPv2
-    html_file = webpage.open_html(web_dir = "/home/c1737564/public_html/LVC/projects/bilby",
-                                  base_url = "https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby",
+    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="IMRPhenomPv2")
     html_file.make_header(title="IMRPhenomPv2 Summary Page", background_colour="#8c6278")
     html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2", "SEOBNRv3", "Comparison"]],
@@ -97,8 +88,7 @@ def write_html():
                                               "/home/c1737564/public_html/LVC/projects/bilby/GW150914/plots/GW150914_H1L1_dynesty_mass_1.png"]])
     html_file.make_footer(user="c1737564", rundir="./")
     # edit the home page for SEOBNRv3
-    html_file = webpage.open_html(web_dir = "/home/c1737564/public_html/LVC/projects/bilby",
-                                  base_url = "https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby",
+    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="SEOBNRv3")
     html_file.make_header(title="SEOBNRv3 Summary Page", background_colour="#228B22") 
     html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2", "SEOBNRv3", "Comparison"]],
@@ -110,8 +100,7 @@ def write_html():
     html_file.make_footer(user="c1737564", rundir="./")
     # edit the mass1 page for both approximants
     for i,j in zip(["IMRPhenommass1", "SEOBNRmass1"], ["#8c6278", "#228B22"]):    
-        html_file = webpage.open_html(web_dir="/home/c1737564/public_html/LVC/projects/bilby",
-                                      base_url = "https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby",
+        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page=i)
         html_file.make_header(title="Posterior PDF for mass1", background_colour=j)
         html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2", "SEOBNRv3", "Comparison"]],
@@ -122,9 +111,9 @@ if __name__ == '__main__':
     # get arguments from command line
     parser = command_line()
     opts = parser.parse_args()
-    write_html()
+    write_html(opts)
     if opts.email:
         try:
-            email_notify(opts.email, opts.outpath)
+            email_notify(opts.email, opts.baseurl+"/home.html")
         except Exception as e:
             print("Unable to send notification email because of error: {}".format(e))
