@@ -18,7 +18,7 @@ $ python main.py --email hoyc1@cardiff.ac.uk \
                  --approximant1 IMRPhenomPv2
 ```
 
-An example of this is shown here: https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby.GW150914/one_approximant/home.html
+An example of this is shown here: https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/one_approximant/home.html
 
 Double Approximant
 -------------

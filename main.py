@@ -287,6 +287,10 @@ def _double_html(opts):
                                   html_page="Comparison")
     html_file.make_header(title="Comparison Summary Page")
     # what links do you want in yur nav bar
+    links = ["home"]
+    links.append(["Approximant", ["{}".format(opts.approximant1),
+                                  "{}".format(opts.approximant2),
+                                  "Comparison"]])
     links.append(["1d_histograms", ["Comparison_{}".format(i) for i in parameters]])
     html_file.make_navbar(links=links)
     html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
