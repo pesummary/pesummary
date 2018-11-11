@@ -50,6 +50,12 @@ def command_line():
     parser.add_argument("-s2", "--samples2", dest="samples2",
                         help="Posterior samples hdf5 file", metavar="results.h5",
                         default=None)
+    parser.add_argument("-a1", "--approximant1", dest="approximant1",
+                        help="waveform approximant used to generate samples1",
+                        metavar="STR", default=None)
+    parser.add_argument("-a2", "--approximant2", dest="approximant2",
+                        help="waveform approximant used to generate samples2",
+                        metavar="STR", default=None)
     parser.add_argument("--email", action="store",
                         help="Send an e-mail to the given address with a link to the finished page.",
                         default=None, metavar="user@ligo.org")
@@ -75,13 +81,15 @@ def email_notify(address, path):
     ess = subprocess.Popen(cmd, shell=True)
     ess.wait()
 
-def _make_plot(parameter, samples, opts, latex_labels):
+def _make_plot(parameter, app, samples, opts, latex_labels):
     """Actually make the plot
 
     Parameters
     ----------
     parameter: str
         name of the parameter that you want to plot
+    app: str
+        name of the approximant used to generate samples
     samples: list
         list of samples for parameter=parameter
     opts: argparse
@@ -100,16 +108,20 @@ def _make_plot(parameter, samples, opts, latex_labels):
     lower = np.round(np.percentile(samples, 10), 2)
     plt.title(r"$%s^{+%s}_{-%s}$" %(median, upper, lower), fontsize=18)
     plt.grid()
-    plt.savefig(opts.webdir + "/plots/1d_posterior_" + parameter + ".png")
+    plt.savefig(opts.webdir + "/plots/1d_posterior_{}_{}.png".format(app, parameter))
     plt.close()
 
-def _make_comparison(parameter, samples, samples2, opts, latex_labels):
+def _make_comparison(parameter, app1, app2, samples, samples2, opts, latex_labels):
     """Make the comparison pages
 
     Parameters
     ----------
     parameter: str
         name of the parameter that you want to plot
+    app1: str
+        name of waveform approximant used to generate samples
+    app2: str
+        name of waveform approximant used to generate samples2
     samples: list
         list of samples for the first waveform for parameter=parameter
     samples2: list
@@ -120,14 +132,15 @@ def _make_comparison(parameter, samples, samples2, opts, latex_labels):
         dictionary of latex labels for each parameter
     """
     fig = plt.figure()
-    plt.hist(samples, histtype="step", bins=50, color='b')
-    plt.hist(samples2, histtype="step", bins=50, color='orange')
+    plt.hist(samples, histtype="step", bins=50, color="#8c6278", label=app1)
+    plt.hist(samples2, histtype="step", bins=50, color="#228B22", label=app2)
     plt.xlabel(latex_labels[parameter], fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
-    plt.axvline(x=np.percentile(samples, 90), color='b', linestyle='--')
-    plt.axvline(x=np.percentile(samples, 90), color='orange', linestyle='--')
-    plt.axvline(x=np.percentile(samples, 10), color='b', linestyle='--')
-    plt.axvline(x=np.percentile(samples, 10), color='orange', linestyle='--')
+    plt.axvline(x=np.percentile(samples, 90), color="#8c6278", linestyle='--')
+    plt.axvline(x=np.percentile(samples2, 90), color="#228B22", linestyle='--')
+    plt.axvline(x=np.percentile(samples, 10), color="#8c6278", linestyle='--')
+    plt.axvline(x=np.percentile(samples2, 10), color="#228B22", linestyle='--')
+    plt.legend(loc="best")
     plt.grid()
     plt.savefig(opts.webdir + "/plots/combined_posterior_" + parameter + ".png")
     plt.close()
@@ -168,13 +181,14 @@ def make_plots(opts):
         for num, i in enumerate(parameters):
             samples = [j[num] for j in f["posterior/block0_values"]]
             samples2 = [j[num] for j in g["posterior/block0_values"]]
-            _make_plot(i, samples, opts, latex_labels)
-            _make_plot(i, samples2, opts, latex_labels)
-            _make_comparison(i, samples, samples2, opts, latex_labels)
+            _make_plot(i, opts.approximant1, samples, opts, latex_labels)
+            _make_plot(i, opts.approximant2, samples2, opts, latex_labels)
+            _make_comparison(i, opts.approximant1, opts.approximant2, samples,
+                             samples2, opts, latex_labels)
     else:
         for num, i in enumerate(parameters):
             samples = [j[num] for j in f["posterior/block0_values"]]
-            _make_plot(i, samples, opts, latex_labels)
+            _make_plot(i, opts.approximant1, samples, opts, latex_labels)
 
 def _single_html(opts):
     """Generate html pages for only one approximant
@@ -186,30 +200,43 @@ def _single_html(opts):
     """
     # make the webpage
     webpage.make_html(web_dir=opts.webdir,
-                      pages=["corner", "IMRPhenomPv2", "IMRPhenommass1", "home"])
+                      pages=["corner",
+                             "{}".format(opts.approximant1),
+                             "{}_mass1".format(opts.approximant1),
+                             "home"])
     # edit the home page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="home")
     html_file.make_header()
-    html_file.make_navbar(links=[["Approximant", ["IMRPhenomPv2"]]])
-    # edit the home page for IMRPhenomPv2
-    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                  html_page="IMRPhenomPv2")
-    html_file.make_header(title="IMRPhenomPv2 Summary Page", background_colour="#8c6278")
-    html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2"]], "corner",
-                                 ["1d_histograms", ["IMRPhenommass1"]]])
+    html_file.make_navbar(links=[["Approximant", ["{}".format(opts.approximant1)]]])
+    # edit the home page for first approximant
+    html_file = webpage.open_html(web_dir=opts.webdir,base_url=opts.baseurl,
+                                  html_page="{}".format(opts.approximant1))
+    # make header for home page for first approximant
+    html_file.make_header(title="{} Summary Page".format(opts.approximant1),
+                          background_colour="#8c6278")
+    # make nav bar for home page for first approximant
+    html_file.make_navbar(links=["home",
+                                 ["Approximant", ["{}".format(opts.approximant1)]],
+                                 "corner",
+                                 ["1d_histograms", ["{}_mass1".format(opts.approximant1)]]])
+    # create a table of images for first approximant
     html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
-                                   contents=[[opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
-                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
-                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png"]])
-    html_file.make_footer(user="c1737564", rundir="./")
+                                   contents=[[opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1),
+                                              opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1),
+                                              opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1)]])
+    html_file.make_footer(user="c1737564", rundir="{}".format(opts.web_dir))
     # edit the mass 1 page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                  html_page="IMRPhenommass1")
+                                  html_page="{}_mass_1".format(opts.approximant1))
+    # make header for mass1 page
     html_file.make_header(title="Posterior PDF for mass1", background_colour="#8c6278")
-    html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2"]], "corner",
-                                 ["1d_histograms", ["IMRPhenommass1"]]])
-    html_file.make_footer(user="c1737564", rundir="./")
+    # make nav bar for mass1 page
+    html_file.make_navbar(links=["home",
+                                 ["Approximant", ["{}".format(opts.approximant1)]],
+                                 "corner",
+                                 ["1d_histograms", ["{}_mass_1".format(opts.approximant1)]]])
+    html_file.make_footer(user="c1737564", rundir="{}".format(opts.web_dir))
 
 def _double_html(opts):
     """Generate html pages for two approximants
@@ -220,42 +247,69 @@ def _double_html(opts):
         argument parser object to hold all information from command line
     """
     webpage.make_html(web_dir=opts.webdir,
-                      pages=["corner", "IMRPhenomPv2", "SEOBNRv3", "IMRPhenommass1", "SEOBNRmass1", "home"])
+                      pages=["corner", "{}".format(opts.approximant1),
+                             "{}".format(opts.approximant2),
+                             "{}_mass_1".format(opts.approximant1),
+                             "{}_mass_1".format(opts.approximant2),
+                             "home", "Comparison", "Comparison_mass_1"])
     # edit the home page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="home")
     html_file.make_header()
-    html_file.make_navbar(links=[["Approximant", ["IMRPhenomPv2", "SEOBNRv3", "Comparison"]]])
-    # edit the home page for IMRPhenomPv2
+    html_file.make_navbar(links=[["Approximant", ["{}".format(opts.approximant1),
+                                                  "{}".format(opts.approximant2),
+                                                  "Comparison"]]])
+    # edit the comparison page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                  html_page="IMRPhenomPv2")
-    html_file.make_header(title="IMRPhenomPv2 Summary Page", background_colour="#8c6278")
-    html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2", "SEOBNRv3", "Comparison"]],
-                                 "corner", ["1d_histograms", ["IMRPhenommass1"]]])
-    html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
-                                   contents=[[opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
-                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
-                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png"]])
-    html_file.make_footer(user="c1737564", rundir="./")
-    # edit the home page for SEOBNRv3
+                                  html_page="Comparison")
+    html_file.make_header(title="Comparison Summary Page")
+    html_file.make_navbar(links=["home", ["Approximant", ["{}".format(opts.approximant1),
+                                                          "{}".format(opts.approximant2),
+                                                          "Comparison"]],
+                                 ["1d_histograms", ["Comparison_mass_1"]]])
+    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
+    # edit the mass1 comparison page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                  html_page="SEOBNRv3")
-    html_file.make_header(title="SEOBNRv3 Summary Page", background_colour="#228B22") 
-    html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2", "SEOBNRv3", "Comparison"]],
-                                 "corner", ["1d_histograms", ["SEOBNRmass1"]]])
-    html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
-                                   contents=[[opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
-                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png",
-                                              opts.webdir+"/plots/"+"1d_posterior_mass_1.png"]])
-    html_file.make_footer(user="c1737564", rundir="./")
-    # edit the mass1 page for both approximants
-    for i,j in zip(["IMRPhenommass1", "SEOBNRmass1"], ["#8c6278", "#228B22"]):    
+                                  html_page="Comparison_mass_1")
+    html_file.make_header(title="Posterior PDF for mass1")
+    html_file.make_navbar(links=["home", ["Approximant", ["{}".format(opts.approximant1),
+                                                          "{}".format(opts.approximant2),
+                                                          "Comparison"]],
+                                 ["1d_histograms", ["Comparison_mass_1"]]])
+    html_file.insert_image("{}/plots/combined_posterior_mass_1.png".format(opts.baseurl))
+    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
+    # edit the home pages for both approximants
+    for app, col in zip([opts.approximant1, opts.approximant2],
+                        ["#8c6278", "#228B22"]):
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                      html_page=i)
-        html_file.make_header(title="Posterior PDF for mass1", background_colour=j)
-        html_file.make_navbar(links=["home", ["Approximant", ["IMRPhenomPv2", "SEOBNRv3", "Comparison"]],
-                                     "corner", ["1d_histograms", [i]]])
-        html_file.make_footer(user="c1737564", rundir="./")
+                                      html_page="{}".format(app))
+        # make header
+        html_file.make_header(title="{} Summary Page".format(app),
+                              background_colour=col)
+        # make nav bar
+        html_file.make_navbar(links=["home", ["Approximant", ["{}".format(opts.approximant1),
+                                                              "{}".format(opts.approximant2),
+                                                              "Comparison"]],
+                                     "corner", ["1d_histograms", ["{}_mass_1".format(app)]]])
+        # make a table of images
+        html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
+                                       contents=[["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, app),
+                                                  "{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, app),
+                                                  "{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, app)]])
+        # make footer
+        html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
+    # edit the mass1 page for both approximants
+    for app, col in zip([opts.approximant1, opts.approximant2],
+                        ["#8c6278", "#228B22"]):    
+        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                      html_page="{}_mass_1".format(app))
+        html_file.make_header(title="Posterior PDF for mass1", background_colour=col)
+        html_file.make_navbar(links=["home", ["Approximant", ["{}".format(opts.approximant1),
+                                                              "{}".format(opts.approximant2),
+                                                              "Comparison"]],
+                                     "corner", ["1d_histograms", ["{}_mass_1".format(app)]]])
+        html_file.insert_image("{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, app))
+        html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
 
 def write_html(opts):
     """Generate an html page to show posterior plots
