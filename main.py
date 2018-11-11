@@ -202,7 +202,7 @@ def _single_html(opts):
     webpage.make_html(web_dir=opts.webdir,
                       pages=["corner",
                              "{}".format(opts.approximant1),
-                             "{}_mass1".format(opts.approximant1),
+                             "{}_mass_1".format(opts.approximant1),
                              "home"])
     # edit the home page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
@@ -219,13 +219,13 @@ def _single_html(opts):
     html_file.make_navbar(links=["home",
                                  ["Approximant", ["{}".format(opts.approximant1)]],
                                  "corner",
-                                 ["1d_histograms", ["{}_mass1".format(opts.approximant1)]]])
+                                 ["1d_histograms", ["{}_mass_1".format(opts.approximant1)]]])
     # create a table of images for first approximant
     html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
                                    contents=[[opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1),
                                               opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1),
                                               opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1)]])
-    html_file.make_footer(user="c1737564", rundir="{}".format(opts.web_dir))
+    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
     # edit the mass 1 page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="{}_mass_1".format(opts.approximant1))
@@ -236,7 +236,7 @@ def _single_html(opts):
                                  ["Approximant", ["{}".format(opts.approximant1)]],
                                  "corner",
                                  ["1d_histograms", ["{}_mass_1".format(opts.approximant1)]]])
-    html_file.make_footer(user="c1737564", rundir="{}".format(opts.web_dir))
+    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
 
 def _double_html(opts):
     """Generate html pages for two approximants
