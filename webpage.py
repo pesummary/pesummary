@@ -14,7 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import utils
-import shutil
+import sys
 
 def make_html(web_dir, title="Summary Pages", pages=["mass1", "corner"]):
     """Make the initial html page. 
@@ -100,9 +100,12 @@ class page():
     def _footer(self, user, rundir):
         """
         """
+        command= ""
+        for i in sys.argv:
+            command+=" {}".format(i)
         self.add_content("<div class='jumbotron text-center' style='margin-bottom:0'>\n")
         self.add_content("<p>Simulation run by {}. Run directories found at {}</p>\n".format(user, rundir), indent=2)
-        self.add_content("<p>Command line: fjndsjvnbfdjvndf</p>\n", indent=2)
+        self.add_content("<p>Command line: {}</p>\n".format(command), indent=2)
         self.add_content("</div>\n")
 
     def _setup_navbar(self):
@@ -180,8 +183,8 @@ class page():
         if search:
             self.add_content("<input type='text' placeholder='search' id='search'>\n", indent=4)
             self.add_content("<script type='text/javascript' src='js/search.js'></script>\n", indent=4)
-            self.add_content("<button type='submit' onclick='myFunction()'>Search</button>", indent=4)
-        self.add_content("</nav>")
+            self.add_content("<button type='submit' onclick='myFunction()'>Search</button>\n", indent=4)
+        self.add_content("</nav>\n")
 
     def make_table_of_images(self, headings=None, contents=None):
         """Generate a table in bootstrap format.
@@ -199,8 +202,8 @@ class page():
         self.add_content("<div class='container' style='margin-top:30p'>\n")
         self.add_content("<div class='table-responsive'>\n", indent=2)
         self.add_content("<table class='table'>\n", indent=4)
-        self.add_content("<thead>", indent=6)
-        self.add_content("<tr>", indent=8)
+        self.add_content("<thead>\n", indent=6)
+        self.add_content("<tr>\n", indent=8)
         for i in headings:
             self.add_content("<th>{}</th>\n".format(i), indent=10)
         self.add_content("</tr>\n", indent=8)
@@ -209,14 +212,14 @@ class page():
         for i in contents:
             for j in i:
                 self.add_content("<th><img src='{}' ".format(self.base_url+"/plots/"+j.split("/")[-1]) +
-                                 "alt='No image available' style='width:350px;'></td>\n")
+                                 "alt='No image available' style='width:350px;'></td>\n", indent=8)
 
         self.add_content("</tbody>\n", indent=6)
         self.add_content("</table>\n", indent=4)
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
 
-    def insert_image(self, path, indent=0):
+    def insert_image(self, path):
         """Generate an image in bootstrap format.
 
         Parameters
@@ -224,6 +227,10 @@ class page():
         path: str, optional
             path to the image that you would like inserted
         """
-        shutil.copyfile(path, self.base_url + "/plots/" + path.split("/")[-1])
-        self.add_content("<img src='{}' ".format(self.base_url+"/plots/"+path.split("/")[-1]) +
-                         "alt='No image available' style='width:350px;'>\n", indent=indent)
+        self.add_content("<div class='container'>\n")
+        self.add_content("<img src='{}' alt='No image available' "
+                         "style='align-items:center; width:700px;'".format(path) +
+                         "class='mx-auto d-block'>\n", indent=2)
+        self.add_content("</p>\n", indent=2)
+        self.add_content("<div style='clear: both;'></div>\n", indent=2)
+        self.add_content("</div>\n")
