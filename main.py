@@ -198,12 +198,17 @@ def _single_html(opts):
     opts: argparse
         argument parser object to hold all information from command line
     """
-    # make the webpage
-    webpage.make_html(web_dir=opts.webdir,
-                      pages=["corner",
-                             "{}".format(opts.approximant1),
-                             "{}_mass_1".format(opts.approximant1),
-                             "home"])
+    # get a list of all parameters
+    f = h5py.File(opts.samples1)                                                
+    parameters = [i for i in f["posterior/block0_items"]]                       
+    if "log_likelihood" in parameters:                                          
+        parameters.remove("log_likelihood")
+    # make the webpages
+    pages = ["{}_{}".format(opts.approximant1, j) for j in parameters]
+    pages.append("corner")
+    pages.append("home")
+    pages.append("{}".format(opts.approximant1))
+    webpage.make_html(web_dir=opts.webdir, pages=pages)
     # edit the home page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="home")
@@ -215,28 +220,34 @@ def _single_html(opts):
     # make header for home page for first approximant
     html_file.make_header(title="{} Summary Page".format(opts.approximant1),
                           background_colour="#8c6278")
+    # what links do you want in your nav bar
+    links = ["home", ["Approximant", ["{}".format(opts.approximant1)]], "corner"]
+    links.append(["1d_histograms", ["{}_{}".format(opts.approximant1, j) for j in parameters]])
     # make nav bar for home page for first approximant
-    html_file.make_navbar(links=["home",
-                                 ["Approximant", ["{}".format(opts.approximant1)]],
-                                 "corner",
-                                 ["1d_histograms", ["{}_mass_1".format(opts.approximant1)]]])
+    html_file.make_navbar(links=links)
+    # create array of images that we want to be inserted in table
+    contents = [[opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1),
+                 opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1),
+                 opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1)]]
     # create a table of images for first approximant
     html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
-                                   contents=[[opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1),
-                                              opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1),
-                                              opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1)]])
+                                   contents=contents)
     html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
-    # edit the mass 1 page
-    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                  html_page="{}_mass_1".format(opts.approximant1))
-    # make header for mass1 page
-    html_file.make_header(title="Posterior PDF for mass1", background_colour="#8c6278")
-    # make nav bar for mass1 page
-    html_file.make_navbar(links=["home",
-                                 ["Approximant", ["{}".format(opts.approximant1)]],
-                                 "corner",
-                                 ["1d_histograms", ["{}_mass_1".format(opts.approximant1)]]])
-    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
+    # generate pages for all parameters
+    for i in parameters:
+        # edit the i parameter page
+        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                      html_page="{}_{}".format(opts.approximant1, i))
+        # make header
+        html_file.make_header(title="Posterior PDF for {}".format(i), background_colour="#8c6278")
+        # what links do you want in your nav bar
+        links=["home", ["Approximant", ["{}".format(opts.approximant1)]], "corner"]
+        links.append(["1d_histograms", ["{}_{}".format(opts.approximant1, j) for j in parameters]])
+        # make nav bar
+        html_file.make_navbar(links=links)
+        html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, opts.approximant1, i))
+        # make footer
+        html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
 
 def _double_html(opts):
     """Generate html pages for two approximants
@@ -246,51 +257,65 @@ def _double_html(opts):
     opts: argparse
         argument parser object to hold all information from command line
     """
-    webpage.make_html(web_dir=opts.webdir,
-                      pages=["corner", "{}".format(opts.approximant1),
-                             "{}".format(opts.approximant2),
-                             "{}_mass_1".format(opts.approximant1),
-                             "{}_mass_1".format(opts.approximant2),
-                             "home", "Comparison", "Comparison_mass_1"])
+    # get a list of all parameters
+    f = h5py.File(opts.samples1)                                                
+    parameters = [i for i in f["posterior/block0_items"]]                       
+    if "log_likelihood" in parameters:                                          
+        parameters.remove("log_likelihood")
+    # make the webpages
+    pages = ["{}_{}".format(opts.approximant1, j) for j in parameters]
+    for i in parameters:
+        pages.append("{}_{}".format(opts.approximant2, i))
+        pages.append("Comparison_{}".format(i))
+    pages.append("corner")
+    pages.append("home")
+    pages.append("{}".format(opts.approximant1))
+    pages.append("{}".format(opts.approximant2))
+    pages.append("Comparison")
+    webpage.make_html(web_dir=opts.webdir, pages=pages)
     # edit the home page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="home")
     html_file.make_header()
-    html_file.make_navbar(links=[["Approximant", ["{}".format(opts.approximant1),
-                                                  "{}".format(opts.approximant2),
-                                                  "Comparison"]]])
+    # what links do you want in your nav bar
+    links = [["Approximant", ["{}".format(opts.approximant1),
+                              "{}".format(opts.approximant2),
+                              "Comparison"]]]
+    html_file.make_navbar(links=links)
     # edit the comparison page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="Comparison")
     html_file.make_header(title="Comparison Summary Page")
-    html_file.make_navbar(links=["home", ["Approximant", ["{}".format(opts.approximant1),
-                                                          "{}".format(opts.approximant2),
-                                                          "Comparison"]],
-                                 ["1d_histograms", ["Comparison_mass_1"]]])
+    # what links do you want in yur nav bar
+    links.append(["1d_histograms", ["Comparison_{}".format(i) for i in parameters]])
+    html_file.make_navbar(links=links)
     html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
-    # edit the mass1 comparison page
-    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                  html_page="Comparison_mass_1")
-    html_file.make_header(title="Posterior PDF for mass1")
-    html_file.make_navbar(links=["home", ["Approximant", ["{}".format(opts.approximant1),
-                                                          "{}".format(opts.approximant2),
-                                                          "Comparison"]],
-                                 ["1d_histograms", ["Comparison_mass_1"]]])
-    html_file.insert_image("{}/plots/combined_posterior_mass_1.png".format(opts.baseurl))
-    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
+    # edit all comparison pages
+    for i in parameters:
+        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                      html_page="Comparison_{}".format(i))
+        # edit the header
+        html_file.make_header(title="Comparison page for {}".format(i))
+        # make the nav bar
+        html_file.make_navbar(links=links)
+        # insert the comparison plot
+        html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl, i))
+        # add the footer
+        html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
     # edit the home pages for both approximants
-    for app, col in zip([opts.approximant1, opts.approximant2],
-                        ["#8c6278", "#228B22"]):
+    for app, col in zip([opts.approximant1, opts.approximant2], ["#8c6278", "#228B22"]):
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="{}".format(app))
         # make header
         html_file.make_header(title="{} Summary Page".format(app),
                               background_colour=col)
+        # what links do you want in your nav bar
+        links = ["home", ["Approximant", ["{}".format(opts.approximant1),
+                                          "{}".format(opts.approximant2),
+                                          "Comparison"]],
+                 "corner", ["1d_histograms", ["{}_{}".format(app, i) for i in parameters]]]
         # make nav bar
-        html_file.make_navbar(links=["home", ["Approximant", ["{}".format(opts.approximant1),
-                                                              "{}".format(opts.approximant2),
-                                                              "Comparison"]],
-                                     "corner", ["1d_histograms", ["{}_mass_1".format(app)]]])
+        html_file.make_navbar(links=links)
         # make a table of images
         html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
                                        contents=[["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, app),
@@ -298,18 +323,15 @@ def _double_html(opts):
                                                   "{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, app)]])
         # make footer
         html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
-    # edit the mass1 page for both approximants
-    for app, col in zip([opts.approximant1, opts.approximant2],
-                        ["#8c6278", "#228B22"]):    
-        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                      html_page="{}_mass_1".format(app))
-        html_file.make_header(title="Posterior PDF for mass1", background_colour=col)
-        html_file.make_navbar(links=["home", ["Approximant", ["{}".format(opts.approximant1),
-                                                              "{}".format(opts.approximant2),
-                                                              "Comparison"]],
-                                     "corner", ["1d_histograms", ["{}_mass_1".format(app)]]])
-        html_file.insert_image("{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, app))
-        html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
+    # edit all parameters pages for both approximants
+    for i in parameters:
+        for app, col in zip([opts.approximant1, opts.approximant2], ["#8c6278", "#228B22"]):    
+            html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                          html_page="{}_{}".format(app, i))
+            html_file.make_header(title="Posterior PDF for {}".format(i), background_colour=col)
+            html_file.make_navbar(links=links)
+            html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, app, i))
+            html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
 
 def write_html(opts):
     """Generate an html page to show posterior plots
@@ -331,6 +353,11 @@ if __name__ == '__main__':
     # make relevant directories
     utils.make_dir(opts.webdir + "/plots")
     utils.make_dir(opts.webdir + "/samples")
+    utils.make_dir(opts.webdir + "/js")
+    # location of this file
+    path = os.path.dirname(os.path.abspath(__file__))
+    # copy over the javascript scripts
+    shutil.copyfile(path+"/js/search.js", opts.webdir+"/js/search.js")
     make_plots(opts)
     write_html(opts)
     if opts.email:
