@@ -81,6 +81,30 @@ def email_notify(address, path):
     ess = subprocess.Popen(cmd, shell=True)
     ess.wait()
 
+def _grab_key_data(results):
+    """Grab the key data for each parameter in the samples file.
+
+    Parameters
+    ----------
+    results: str
+        string to the results file
+    """
+    f = h5py.File(results)
+    parameters = [i for i in f["posterior/block0_items"]]
+    logL_index = parameters.index("log_likelihood")
+    logL = [i[logL_index] for i in f["posterior/block0_values"]]
+    if "log_likelihood" in parameters:
+        parameters.remove("log_likelihood")
+    data = {}
+    for i in parameters:
+        index = parameters.index
+        samples = [j[index(i)] for j in f["posterior/block0_values"]]
+        data[i] = {"mean": np.mean(samples),
+                   "median": np.median(samples),
+                   "maxL": samples[logL.index(np.max(logL))],
+                   "std": np.std(samples)}
+    return data
+
 def _make_plot(parameter, app, samples, opts, latex_labels):
     """Actually make the plot
 
@@ -214,6 +238,12 @@ def _single_html(opts):
                                   html_page="home")
     html_file.make_header()
     html_file.make_navbar(links=[["Approximant", ["{}".format(opts.approximant1)]]])
+    # make a summary table of information
+    data = _grab_key_data(opts.samples1)
+    contents = [[i, data[i]["maxL"], data[i]["mean"], data[i]["median"], data[i]["std"]] for i in parameters]
+    html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
+                         contents=contents)
+    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
     # edit the home page for first approximant
     html_file = webpage.open_html(web_dir=opts.webdir,base_url=opts.baseurl,
                                   html_page="{}".format(opts.approximant1))
@@ -282,6 +312,14 @@ def _double_html(opts):
                               "{}".format(opts.approximant2),
                               "Comparison"]]]
     html_file.make_navbar(links=links)
+    # make summary table of information
+    data = _grab_key_data(opts.samples1)
+    data2 = _grab_key_data(opts.samples2)
+    contents = [[i, data[i]["maxL"], data2[i]["maxL"], data[i]["mean"], data2[i]["mean"],
+                    data[i]["median"], data2[i]["median"], data[i]["std"], data2[i]["std"]] for i in parameters]
+    html_file.make_table(headings=[None, "maxL", "mean", "median", "std"],
+                         contents=contents, multi_span=True)
+    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
     # edit the comparison page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="Comparison")

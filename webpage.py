@@ -186,8 +186,47 @@ class page():
             self.add_content("<button type='submit' onclick='myFunction()'>Search</button>\n", indent=4)
         self.add_content("</nav>\n")
 
-    def make_table_of_images(self, headings=None, contents=None):
+    def make_table(self, headings=None, contents=None, multi_span=False):
         """Generate a table in bootstrap format.
+
+        Parameters
+        ----------
+        headings: list, optional
+            list of headings
+        contents: list, optional
+            nd list giving the contents of the table.
+        multi_span: bool, optional
+            if true, then headings will span two columns 
+        """
+        self.add_content("<div class='container' style='margin-top:30p'>\n")
+        self.add_content("<div class='table-responsive'>\n", indent=2)
+        self.add_content("<table class='table table-sm'>\n", indent=4)
+        self.add_content("<thead>\n", indent=6)
+        self.add_content("<tr>\n", indent=8)
+        for i in headings:
+            if i != None:
+                if multi_span:
+                    self.add_content("<th colspan='2'>{}</th>\n".format(i), indent=10)
+                else:
+                    self.add_content("<th>{}</th>\n".format(i), indent=10)
+            else:
+                self.add_content("<th> </th>\n".format(i), indent=10)
+        self.add_content("</tr>\n", indent=8)
+        self.add_content("<tbody>\n", indent=6)
+
+        for num, i in enumerate(contents):
+            self.add_content("<tr>", indent=8)
+            for j, col in zip(i, ["#ffffff"]+["#8c6278", "#228B22"]*(len(i)-1)):
+              self.add_content("<td style='background-color: {}'>{}</td>\n".format(col, j), indent=10)
+            self.add_content("</tr>", indent=8)
+
+        self.add_content("</tbody>\n", indent=6)
+        self.add_content("</table>\n", indent=4)
+        self.add_content("</div>\n", indent=2)
+        self.add_content("</div>\n")
+
+    def make_table_of_images(self, headings=None, contents=None):
+        """Generate a table of images in bootstrap format.
 
         Parameters
         ----------
