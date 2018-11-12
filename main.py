@@ -49,10 +49,12 @@ def command_line():
                         help="waveform approximant used to generate samples",
                         nargs='+', default=None)
     parser.add_argument("--email", action="store",
-                        help="Send an e-mail to the given address with a link to the finished page.",
+                        help="send an e-mail to the given address with a link to the finished page.",
                         default=None, metavar="user@ligo.org")
+    parser.add_argument("--dump", action="store_true",
+                        help="dump all information onto a single html page",
+                        default=False)
     return parser
-
 
 def email_notify(address, path):
     """Send an email to notify the user that their output page is generated.
@@ -360,6 +362,57 @@ def write_html(opts, colors):
     if len(opts.approximant) != 1:
         make_comparison_pages(opts, opts.approximant, opts.samples, colors)
 
+def write_html_data_dump(opts, colors):
+    """Generate a single html page to show posterior plots
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    colors: list
+        list of colors in hexadecimal format for the different approximants
+    """
+    # grab the parameters from the samples
+    f = h5py.File(opts.samples[0])
+    parameters = [i for i in f["posterior/block0_items"]]                       
+    if "log_likelihood" in parameters:                                          
+        parameters.remove("log_likelihood")
+    # make the relevant pages
+    pages = ["home"]
+    # links for all pages
+    if len(opts.approximant) > 1:
+        for i in opts.approximant:
+            pages.append(i)
+        links = ["home", ["Approximant", [i for i in opts.approximant]]]
+    else:
+        links = ["home"]
+    # make the relevant pages
+    webpage.make_html(web_dir=opts.webdir, pages=pages)
+    if len(opts.approximant) > 1:
+        # setup the home comparison page
+        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                      html_page="home")
+        html_file.make_header()
+        html_file.make_navbar(links=links)
+        # content for accordian
+        content = ["{}/plots/combined_posterior_{}.png".format(opts.baseurl, i) for i in parameters]
+        html_file.make_accordian(headings=[i for i in parameters], content=content)
+        html_file.make_footer(user="c1737564", rundir=opts.webdir)
+    for num, i in enumerate(opts.approximant):
+        if len(opts.approximant) == 1:
+            html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                          html_page="home")
+            html_file.make_header()
+        else:
+            html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                          html_page=i)
+            html_file.make_header("{} Summary Page".format(i), background_colour=colors[num])
+        html_file.make_navbar(links=links)
+        # content for accordian
+        content = ["{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, i, j) for j in parameters]
+        html_file.make_accordian(headings=[i for i in parameters], content=content)
+        html_file.make_footer(user="c1737564", rundir=opts.webdir)
+
 if __name__ == '__main__':
     # get arguments from command line
     parser = command_line()
@@ -368,6 +421,7 @@ if __name__ == '__main__':
     utils.make_dir(opts.webdir + "/samples")
     utils.make_dir(opts.webdir + "/plots")
     utils.make_dir(opts.webdir + "/js")
+    utils.make_dir(opts.webdir + "/html")
     # check that number of samples matches number of approximants
     if len(opts.samples) != len(opts.approximant):
         raise Exception("Ensure that the number of approximants match the "
@@ -386,7 +440,10 @@ if __name__ == '__main__':
     # copy over the javascript scripts
     shutil.copyfile(path+"/js/search.js", opts.webdir+"/js/search.js")
     make_plots(opts, colors=["#8c6278", "#228B22"])
-    write_html(opts, colors=["#8c6278", "#228B22"])
+    if opts.dump:
+        write_html_data_dump(opts, colors=["#8c6278", "#228B22"])
+    else:
+        write_html(opts, colors=["#8c6278", "#228B22"])
     if opts.email:
         try:
             email_notify(opts.email, opts.baseurl+"/home.html")
