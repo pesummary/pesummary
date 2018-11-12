@@ -16,7 +16,7 @@
 import utils
 import sys
 
-def make_html(web_dir, title="Summary Pages", pages=["mass1", "corner"]):
+def make_html(web_dir, title="Summary Pages", pages=None):
     """Make the initial html page. 
 
     Parameters
@@ -25,11 +25,9 @@ def make_html(web_dir, title="Summary Pages", pages=["mass1", "corner"]):
         path to the location where you would like the html file to be saved
     title: str, optional
         header title of html page
+    pages: list, optional
+        list of pages that you would like to be created
     """
-    f = open(web_dir+"/home.html", "w")
-    utils.make_dir(web_dir+"/html")
-    if "home" not in pages:
-        pages.append("home")
     for i in pages:
         if i != "home":
             i = "html/" + i
@@ -186,7 +184,7 @@ class page():
             self.add_content("<button type='submit' onclick='myFunction()'>Search</button>\n", indent=4)
         self.add_content("</nav>\n")
 
-    def make_table(self, headings=None, contents=None, multi_span=False):
+    def make_table(self, headings=None, contents=None, heading_span=None):
         """Generate a table in bootstrap format.
 
         Parameters
@@ -200,26 +198,28 @@ class page():
         """
         self.add_content("<div class='container' style='margin-top:30p'>\n")
         self.add_content("<div class='table-responsive'>\n", indent=2)
-        if multi_span:
+        if heading_span > 1:
             self.add_content("<table class='table table-sm'>\n", indent=4)
         else:
             self.add_content("<table class='table table-striped table-sm'>\n", indent=4)
         self.add_content("<thead>\n", indent=6)
         self.add_content("<tr>\n", indent=8)
         for i in headings:
-            if i != None:
-                if multi_span:
-                    self.add_content("<th colspan='2'>{}</th>\n".format(i), indent=10)
-                else:
-                    self.add_content("<th>{}</th>\n".format(i), indent=10)
-            else:
-                self.add_content("<th> </th>\n".format(i), indent=10)
+            self.add_content("<th colspan='{}'>{}</th>\n".format(heading_span, i), indent=10)
+        #for i in headings:
+        #    if i != None:
+        #        if multi_span:
+        #            self.add_content("<th colspan='2'>{}</th>\n".format(i), indent=10)
+        #        else:
+        #            self.add_content("<th>{}</th>\n".format(i), indent=10)
+        #    else:
+        #        self.add_content("<th> </th>\n".format(i), indent=10)
         self.add_content("</tr>\n", indent=8)
         self.add_content("<tbody>\n", indent=6)
 
         for num, i in enumerate(contents):
             self.add_content("<tr>\n", indent=8)
-            if multi_span:
+            if heading_span == 2:
                 for j, col in zip(i, ["#ffffff"]+["#8c6278", "#228B22"]*(len(i)-1)):
                     self.add_content("<td style='background-color: {}'>{}</td>\n".format(col, j), indent=10)
                 self.add_content("</tr>", indent=8)

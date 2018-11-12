@@ -191,7 +191,7 @@ def make_plots(opts):
     parameters = [i for i in f["posterior/block0_items"]]
     if "log_likelihood" in parameters:
         parameters.remove("log_likelihood")
-    if opts.number != "one":
+    if len(opts.approximant) > 1:
         g = h5py.File(opts.samples[1])
         for num, i in enumerate(parameters):
             samples = [j[num] for j in f["posterior/block0_values"]]
@@ -205,166 +205,147 @@ def make_plots(opts):
             samples = [j[num] for j in f["posterior/block0_values"]]
             _make_plot(i, opts.approximant[0], samples, opts, latex_labels)
 
-def _single_html(opts):
-    """Generate html pages for only one approximant
+def make_home_pages(opts, approximants, samples, colors):
+    """Make the home pages for all approximants
 
     Parameters
     ----------
     opts: argparse
         argument parser object to hold all information from command line
+    approximants: list
+        list of approximants you wish to include
+    samples: list
+        list of samples you wish to include
+    colors: list
+        list of colors in hexadecimal format for the different approximants
     """
-    # get a list of all parameters
-    f = h5py.File(opts.samples[0])                                                
+    f = h5py.File(samples[0])
     parameters = [i for i in f["posterior/block0_items"]]                       
     if "log_likelihood" in parameters:                                          
         parameters.remove("log_likelihood")
-    # make the webpages
-    pages = ["{}_{}".format(opts.approximant[0], j) for j in parameters]
-    pages.append("corner")
+    pages = [i for i in approximants]
     pages.append("home")
-    pages.append("{}".format(opts.approximant[0]))
     webpage.make_html(web_dir=opts.webdir, pages=pages)
-    # edit the home page
+    # design the home page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="home")
     html_file.make_header()
-    html_file.make_navbar(links=[["Approximant", ["{}".format(opts.approximant[0])]]])
-    # make a summary table of information
-    data = _grab_key_data(opts.samples[0])
-    contents = [[i, data[i]["maxL"], data[i]["mean"], data[i]["median"], data[i]["std"]] for i in parameters]
-    html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
-                         contents=contents)
-    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
-    # edit the home page for first approximant
-    html_file = webpage.open_html(web_dir=opts.webdir,base_url=opts.baseurl,
-                                  html_page="{}".format(opts.approximant[0]))
-    # make header for home page for first approximant
-    html_file.make_header(title="{} Summary Page".format(opts.approximant[0]),
-                          background_colour="#8c6278")
-    # what links do you want in your nav bar
-    links = ["home", ["Approximant", ["{}".format(opts.approximant[0])]], "corner"]
-    links.append(["1d_histograms", ["{}_{}".format(opts.approximant[0], j) for j in parameters]])
-    # make nav bar for home page for first approximant
-    html_file.make_navbar(links=links)
-    # create array of images that we want to be inserted in table
-    contents = [[opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant[0]),
-                 opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant[0]),
-                 opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant[0])]]
-    # create a table of images for first approximant
-    html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
-                                   contents=contents)
-    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
-    # generate pages for all parameters
-    for i in parameters:
-        # edit the i parameter page
-        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                      html_page="{}_{}".format(opts.approximant[0], i))
-        # make header
-        html_file.make_header(title="Posterior PDF for {}".format(i), background_colour="#8c6278")
-        # what links do you want in your nav bar
-        links=["home", ["Approximant", ["{}".format(opts.approximant[0])]], "corner"]
-        links.append(["1d_histograms", ["{}_{}".format(opts.approximant[0], j) for j in parameters]])
-        # make nav bar
-        html_file.make_navbar(links=links)
-        html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, opts.approximant[0], i))
-        # make footer
-        html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
-
-def _double_html(opts):
-    """Generate html pages for two approximants
-
-    Parameters
-    ----------
-    opts: argparse
-        argument parser object to hold all information from command line
-    """
-    # get a list of all parameters
-    f = h5py.File(opts.samples[0])                                                
-    parameters = [i for i in f["posterior/block0_items"]]                       
-    if "log_likelihood" in parameters:                                          
-        parameters.remove("log_likelihood")
-    # make the webpages
-    pages = ["{}_{}".format(opts.approximant[0], j) for j in parameters]
-    for i in parameters:
-        pages.append("{}_{}".format(opts.approximant[1], i))
-        pages.append("Comparison_{}".format(i))
-    pages.append("corner")
-    pages.append("home")
-    pages.append("{}".format(opts.approximant[0]))
-    pages.append("{}".format(opts.approximant[1]))
-    pages.append("Comparison")
-    webpage.make_html(web_dir=opts.webdir, pages=pages)
-    # edit the home page
-    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                  html_page="home")
-    html_file.make_header()
-    # what links do you want in your nav bar
-    links = [["Approximant", ["{}".format(opts.approximant[0]),
-                              "{}".format(opts.approximant[1]),
-                              "Comparison"]]]
+    if len(approximants) > 1:
+        links = ["home", ["Approximants", [i for i in approximants+["Comparison"]]]]
+    else:
+        links = ["home", ["Approximants", [i for i in approximants]]]
     html_file.make_navbar(links=links)
     # make summary table of information
-    data = _grab_key_data(opts.samples[0])
-    data2 = _grab_key_data(opts.samples[1])
-    contents = [[i, data[i]["maxL"], data2[i]["maxL"], data[i]["mean"], data2[i]["mean"],
-                    data[i]["median"], data2[i]["median"], data[i]["std"], data2[i]["std"]] for i in parameters]
-    html_file.make_table(headings=[None, "maxL", "mean", "median", "std"],
-                         contents=contents, multi_span=True)
-    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
-    # edit the comparison page
-    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                  html_page="Comparison")
-    html_file.make_header(title="Comparison Summary Page")
-    # what links do you want in yur nav bar
-    links = ["home"]
-    links.append(["Approximant", ["{}".format(opts.approximant[0]),
-                                  "{}".format(opts.approximant[1]),
-                                  "Comparison"]])
-    links.append(["1d_histograms", ["Comparison_{}".format(i) for i in parameters]])
-    html_file.make_navbar(links=links)
-    html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
-    # edit all comparison pages
+    data = [_grab_key_data(i) for i in samples]
+    contents = []
     for i in parameters:
+        row = []
+        row.append(i)
+        for j in xrange(len(samples)):
+            row.append(data[j][i]["maxL"])
+        for j in xrange(len(samples)):
+            row.append(data[j][i]["mean"])
+        for j in xrange(len(samples)):
+            row.append(data[j][i]["median"])
+        for j in xrange(len(samples)):
+            row.append(data[j][i]["std"])
+        contents.append(row)
+    html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
+                         contents=contents, heading_span=len(samples))
+    # design the home page for each approximant used
+    for num, i in enumerate(approximants):
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                      html_page="Comparison_{}".format(i))
-        # edit the header
-        html_file.make_header(title="Comparison page for {}".format(i))
-        # make the nav bar
+                                      html_page=i)
+        html_file.make_header(title="{} Summary Page".format(i),
+                              background_colour=colors[num])
+        if len(approximants) > 1:
+            links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
+                     "corner", ["1d_histograms", ["{}_{}".format(i, j) for j in parameters]]]
+        else:
+            links = ["home", ["Approximants", [k for k in approximants]],
+                     "corner", ["1d_histograms", ["{}_{}".format(i, j) for j in parameters]]]
         html_file.make_navbar(links=links)
-        # insert the comparison plot
-        html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl, i))
-        # add the footer
-        html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
-    # edit the home pages for both approximants
-    for app, col in zip([opts.approximant[0], opts.approximant[1]], ["#8c6278", "#228B22"]):
-        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                      html_page="{}".format(app))
-        # make header
-        html_file.make_header(title="{} Summary Page".format(app),
-                              background_colour=col)
-        # what links do you want in your nav bar
-        links = ["home", ["Approximant", ["{}".format(opts.approximant[0]),
-                                          "{}".format(opts.approximant[1]),
-                                          "Comparison"]],
-                 "corner", ["1d_histograms", ["{}_{}".format(app, i) for i in parameters]]]
-        # make nav bar
-        html_file.make_navbar(links=links)
-        # make a table of images
+        # make an array of images that we want inserted in table
+        contents = [["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i),
+                     "{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i),
+                     "{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i)]]
         html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
-                                       contents=[["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, app),
-                                                  "{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, app),
-                                                  "{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, app)]])
-        # make footer
-        html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
-    # edit all parameters pages for both approximants
+                                       contents=contents)
+        html_file.make_footer(user='c1737564', rundir=opts.webdir)
+        
+def make_1d_histograms_pages(opts, approximants, samples, colors):
+    """Make the 1d_histogram pages for all approximants
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    approximants: list
+        list of approximants you wish to include
+    samples: list
+        list of samples you wish to include
+    colors: list
+        list of colors in hexadecimal format for the different approximants
+    """
+    f = h5py.File(samples[0])
+    parameters = [i for i in f["posterior/block0_items"]]                       
+    if "log_likelihood" in parameters:                                          
+        parameters.remove("log_likelihood")
+    pages = ["{}_{}".format(i, j) for i in approximants for j in parameters]
+    webpage.make_html(web_dir=opts.webdir, pages=pages)
+    links = ["home", ["Approximants", [i for i in approximants]],
+                 "corner", ["1d_histograms", ["{}_{}".format(i, j) for j in parameters]]]
     for i in parameters:
-        for app, col in zip([opts.approximant[0], opts.approximant[1]], ["#8c6278", "#228B22"]):    
+        for app, col in zip(approximants, colors):
+            if len(approximants) > 1:
+                links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
+                         "corner", ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
+            else:
+                links = ["home", ["Approximants", [k for k in approximants]],
+                         "corner", ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
             html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                           html_page="{}_{}".format(app, i))
             html_file.make_header(title="Posterior PDF for {}".format(i), background_colour=col)
             html_file.make_navbar(links=links)
             html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, app, i))
             html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
+
+def make_comparison_pages(opts, approximants, samples, colors):
+    """Make the comparison pages to compare all approximants
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    approximants: list
+        list of approximants you wish to include
+    samples: list
+        list of samples you wish to include
+    colors: list
+        list of colors in hexadecimal format for the different approximants
+    """
+    f = h5py.File(samples[0])
+    parameters = [i for i in f["posterior/block0_items"]]                       
+    if "log_likelihood" in parameters:                                          
+        parameters.remove("log_likelihood")
+    webpage.make_html(web_dir=opts.webdir, pages=["Comparison"])
+    html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                   html_page="Comparison")
+    html_file.make_header(title="Comparison Summary Page")
+    links = ["home", ["Approximant", [i for i in approximants+["Comparison"]]],
+                     ["1d_histograms", ["Comparison_{}".format(i) for i in parameters]]]
+    html_file.make_navbar(links=links)
+    html_file.make_footer(user="c1737564", rundir=opts.webdir)
+    # edit all of the comparison pages
+    pages = ["Comparison_{}".format(i) for i in parameters]
+    webpage.make_html(web_dir=opts.webdir, pages=pages)
+    for i in parameters:
+        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                      html_page="Comparison_{}".format(i))
+        html_file.make_header(title="Comparison page for {}".format(i))
+        html_file.make_navbar(links=links)
+        html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl, i))
+        html_file.make_footer(user="c1737564", rundir=opts.webdir)
 
 def write_html(opts):
     """Generate an html page to show posterior plots
@@ -375,9 +356,10 @@ def write_html(opts):
         argument parser object to hold all information from command line 
     """
     # make the webpages
-    options = {1: _single_html,
-               2: _double_html}
-    options[len(opts.samples)](opts)
+    make_home_pages(opts, opts.approximant, opts.samples, ["#8c6278", "#228B22"])
+    make_1d_histograms_pages(opts, opts.approximant, opts.samples, ["#8c6278", "#228B22"])
+    if len(opts.approximant) != 1:
+        make_comparison_pages(opts, opts.approximant, opts.samples, ["#8c6278", "#228B22"])
 
 if __name__ == '__main__':
     # get arguments from command line
