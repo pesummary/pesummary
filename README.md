@@ -14,8 +14,8 @@ If only one approximant has been run, then you can generate a summary page with 
 $ python main.py --email hoyc1@cardiff.ac.uk \
                  --webdir /home/c1737564/public_html/LVC/projects/bilby/GW150914/one_approximant \
                  --baseurl https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilbyGW150914/one_approximant \
-                 --samples1 /home/c1737564/projects/bilby/GW150914/IMRPhenomPv2/outdir/GW150914_result.h5 \
-                 --approximant1 IMRPhenomPv2
+                 --samples /home/c1737564/projects/bilby/GW150914/IMRPhenomPv2/outdir/GW150914_result.h5 \
+                 --approximant IMRPhenomPv2
 ```
 
 An example of this is shown here: https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/one_approximant/home.html
@@ -29,11 +29,8 @@ If multiple approximants have been run, then you can generate a single summary p
 $ python main.py --email hoyc1@cardiff.ac.uk \
                  --webdir /home/c1737564/public_html/LVC/projects/bilby/GW150914/two_approximants \
                  --baseurl https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/two_approximants \
-                 --number_of_waveforms two \
-                 --samples1 /home/c1737564/projects/bilby/GW150914/IMRPhenomPv2/outdir/GW150914_result.h5 \
-                 --samples2 /home/c1737564/projects/bilby/GW150914/IMRPhenomP/outdir/GW150914_result.h5 \
-                 --approximant1 IMRPhenomPv2 \
-                 --approximant2 IMRPhenomP
+                 --samples /home/c1737564/projects/bilby/GW150914/IMRPhenomPv2/outdir/GW150914_result.h5 /home/c1737564/projects/bilby/GW150914/IMRPhenomP/outdir/GW150914_result.h5 \
+                 --approximant IMRPhenomPv2 IMRPhenomP
 ```
 
 An example of this is shown here: https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/two_approximants/home.html

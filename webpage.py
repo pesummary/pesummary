@@ -200,7 +200,10 @@ class page():
         """
         self.add_content("<div class='container' style='margin-top:30p'>\n")
         self.add_content("<div class='table-responsive'>\n", indent=2)
-        self.add_content("<table class='table table-sm'>\n", indent=4)
+        if multi_span:
+            self.add_content("<table class='table table-sm'>\n", indent=4)
+        else:
+            self.add_content("<table class='table table-striped table-sm'>\n", indent=4)
         self.add_content("<thead>\n", indent=6)
         self.add_content("<tr>\n", indent=8)
         for i in headings:
@@ -215,10 +218,15 @@ class page():
         self.add_content("<tbody>\n", indent=6)
 
         for num, i in enumerate(contents):
-            self.add_content("<tr>", indent=8)
-            for j, col in zip(i, ["#ffffff"]+["#8c6278", "#228B22"]*(len(i)-1)):
-              self.add_content("<td style='background-color: {}'>{}</td>\n".format(col, j), indent=10)
-            self.add_content("</tr>", indent=8)
+            self.add_content("<tr>\n", indent=8)
+            if multi_span:
+                for j, col in zip(i, ["#ffffff"]+["#8c6278", "#228B22"]*(len(i)-1)):
+                    self.add_content("<td style='background-color: {}'>{}</td>\n".format(col, j), indent=10)
+                self.add_content("</tr>", indent=8)
+            else:
+                for j in i:
+                    self.add_content("<td>{}</td>\n".format(j), indent=10)
+                self.add_content("</tr>\n", indent=8)
 
         self.add_content("</tbody>\n", indent=6)
         self.add_content("</table>\n", indent=4)

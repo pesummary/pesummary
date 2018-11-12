@@ -18,6 +18,7 @@ import subprocess
 import socket
 import os
 import shutil
+from glob import glob
 
 import matplotlib
 matplotlib.use("Agg")
@@ -44,18 +45,12 @@ def command_line():
     parser.add_argument("-n", "--number_of_waveforms", dest="number",
                         help="the number of approximants you wish to compare",
                         metavar="int", default="one")
-    parser.add_argument("-s1", "--samples1", dest="samples1",
-                        help="Posterior samples hdf5 file", metavar="results.h5",
+    parser.add_argument("-s", "--samples", dest="samples",
+                        help="Posterior samples hdf5 file", nargs='+',
                         default=None)
-    parser.add_argument("-s2", "--samples2", dest="samples2",
-                        help="Posterior samples hdf5 file", metavar="results.h5",
-                        default=None)
-    parser.add_argument("-a1", "--approximant1", dest="approximant1",
-                        help="waveform approximant used to generate samples1",
-                        metavar="STR", default=None)
-    parser.add_argument("-a2", "--approximant2", dest="approximant2",
-                        help="waveform approximant used to generate samples2",
-                        metavar="STR", default=None)
+    parser.add_argument("-a", "--approximant", dest="approximant",
+                        help="waveform approximant used to generate samples",
+                        nargs='+', default=None)
     parser.add_argument("--email", action="store",
                         help="Send an e-mail to the given address with a link to the finished page.",
                         default=None, metavar="user@ligo.org")
@@ -192,27 +187,23 @@ def make_plots(opts):
                   "phi_12": r"$\phi_{12}$",
                   "mass_2": r"$m_{2}$",
                   "mass_1": r"$m_{1}$"}
-    if os.path.isfile(opts.samples1) == False:
-        raise Exception("File does not exist")
-    # copy the hdf5 file to the webdir
-    shutil.copyfile(opts.samples1, opts.webdir+"/samples/"+opts.samples1.split("/")[-1])
-    f = h5py.File(opts.samples1)
+    f = h5py.File(opts.samples[0])
     parameters = [i for i in f["posterior/block0_items"]]
     if "log_likelihood" in parameters:
         parameters.remove("log_likelihood")
     if opts.number != "one":
-        g = h5py.File(opts.samples2)
+        g = h5py.File(opts.samples[1])
         for num, i in enumerate(parameters):
             samples = [j[num] for j in f["posterior/block0_values"]]
             samples2 = [j[num] for j in g["posterior/block0_values"]]
-            _make_plot(i, opts.approximant1, samples, opts, latex_labels)
-            _make_plot(i, opts.approximant2, samples2, opts, latex_labels)
-            _make_comparison(i, opts.approximant1, opts.approximant2, samples,
+            _make_plot(i, opts.approximant[0], samples, opts, latex_labels)
+            _make_plot(i, opts.approximant[1], samples2, opts, latex_labels)
+            _make_comparison(i, opts.approximant[0], opts.approximant[1], samples,
                              samples2, opts, latex_labels)
     else:
         for num, i in enumerate(parameters):
             samples = [j[num] for j in f["posterior/block0_values"]]
-            _make_plot(i, opts.approximant1, samples, opts, latex_labels)
+            _make_plot(i, opts.approximant[0], samples, opts, latex_labels)
 
 def _single_html(opts):
     """Generate html pages for only one approximant
@@ -223,42 +214,42 @@ def _single_html(opts):
         argument parser object to hold all information from command line
     """
     # get a list of all parameters
-    f = h5py.File(opts.samples1)                                                
+    f = h5py.File(opts.samples[0])                                                
     parameters = [i for i in f["posterior/block0_items"]]                       
     if "log_likelihood" in parameters:                                          
         parameters.remove("log_likelihood")
     # make the webpages
-    pages = ["{}_{}".format(opts.approximant1, j) for j in parameters]
+    pages = ["{}_{}".format(opts.approximant[0], j) for j in parameters]
     pages.append("corner")
     pages.append("home")
-    pages.append("{}".format(opts.approximant1))
+    pages.append("{}".format(opts.approximant[0]))
     webpage.make_html(web_dir=opts.webdir, pages=pages)
     # edit the home page
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                   html_page="home")
     html_file.make_header()
-    html_file.make_navbar(links=[["Approximant", ["{}".format(opts.approximant1)]]])
+    html_file.make_navbar(links=[["Approximant", ["{}".format(opts.approximant[0])]]])
     # make a summary table of information
-    data = _grab_key_data(opts.samples1)
+    data = _grab_key_data(opts.samples[0])
     contents = [[i, data[i]["maxL"], data[i]["mean"], data[i]["median"], data[i]["std"]] for i in parameters]
     html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
                          contents=contents)
     html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
     # edit the home page for first approximant
     html_file = webpage.open_html(web_dir=opts.webdir,base_url=opts.baseurl,
-                                  html_page="{}".format(opts.approximant1))
+                                  html_page="{}".format(opts.approximant[0]))
     # make header for home page for first approximant
-    html_file.make_header(title="{} Summary Page".format(opts.approximant1),
+    html_file.make_header(title="{} Summary Page".format(opts.approximant[0]),
                           background_colour="#8c6278")
     # what links do you want in your nav bar
-    links = ["home", ["Approximant", ["{}".format(opts.approximant1)]], "corner"]
-    links.append(["1d_histograms", ["{}_{}".format(opts.approximant1, j) for j in parameters]])
+    links = ["home", ["Approximant", ["{}".format(opts.approximant[0])]], "corner"]
+    links.append(["1d_histograms", ["{}_{}".format(opts.approximant[0], j) for j in parameters]])
     # make nav bar for home page for first approximant
     html_file.make_navbar(links=links)
     # create array of images that we want to be inserted in table
-    contents = [[opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1),
-                 opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1),
-                 opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant1)]]
+    contents = [[opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant[0]),
+                 opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant[0]),
+                 opts.webdir+"/plots/"+"1d_posterior_{}_mass_1.png".format(opts.approximant[0])]]
     # create a table of images for first approximant
     html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
                                    contents=contents)
@@ -267,15 +258,15 @@ def _single_html(opts):
     for i in parameters:
         # edit the i parameter page
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                      html_page="{}_{}".format(opts.approximant1, i))
+                                      html_page="{}_{}".format(opts.approximant[0], i))
         # make header
         html_file.make_header(title="Posterior PDF for {}".format(i), background_colour="#8c6278")
         # what links do you want in your nav bar
-        links=["home", ["Approximant", ["{}".format(opts.approximant1)]], "corner"]
-        links.append(["1d_histograms", ["{}_{}".format(opts.approximant1, j) for j in parameters]])
+        links=["home", ["Approximant", ["{}".format(opts.approximant[0])]], "corner"]
+        links.append(["1d_histograms", ["{}_{}".format(opts.approximant[0], j) for j in parameters]])
         # make nav bar
         html_file.make_navbar(links=links)
-        html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, opts.approximant1, i))
+        html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, opts.approximant[0], i))
         # make footer
         html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
 
@@ -288,19 +279,19 @@ def _double_html(opts):
         argument parser object to hold all information from command line
     """
     # get a list of all parameters
-    f = h5py.File(opts.samples1)                                                
+    f = h5py.File(opts.samples[0])                                                
     parameters = [i for i in f["posterior/block0_items"]]                       
     if "log_likelihood" in parameters:                                          
         parameters.remove("log_likelihood")
     # make the webpages
-    pages = ["{}_{}".format(opts.approximant1, j) for j in parameters]
+    pages = ["{}_{}".format(opts.approximant[0], j) for j in parameters]
     for i in parameters:
-        pages.append("{}_{}".format(opts.approximant2, i))
+        pages.append("{}_{}".format(opts.approximant[1], i))
         pages.append("Comparison_{}".format(i))
     pages.append("corner")
     pages.append("home")
-    pages.append("{}".format(opts.approximant1))
-    pages.append("{}".format(opts.approximant2))
+    pages.append("{}".format(opts.approximant[0]))
+    pages.append("{}".format(opts.approximant[1]))
     pages.append("Comparison")
     webpage.make_html(web_dir=opts.webdir, pages=pages)
     # edit the home page
@@ -308,13 +299,13 @@ def _double_html(opts):
                                   html_page="home")
     html_file.make_header()
     # what links do you want in your nav bar
-    links = [["Approximant", ["{}".format(opts.approximant1),
-                              "{}".format(opts.approximant2),
+    links = [["Approximant", ["{}".format(opts.approximant[0]),
+                              "{}".format(opts.approximant[1]),
                               "Comparison"]]]
     html_file.make_navbar(links=links)
     # make summary table of information
-    data = _grab_key_data(opts.samples1)
-    data2 = _grab_key_data(opts.samples2)
+    data = _grab_key_data(opts.samples[0])
+    data2 = _grab_key_data(opts.samples[1])
     contents = [[i, data[i]["maxL"], data2[i]["maxL"], data[i]["mean"], data2[i]["mean"],
                     data[i]["median"], data2[i]["median"], data[i]["std"], data2[i]["std"]] for i in parameters]
     html_file.make_table(headings=[None, "maxL", "mean", "median", "std"],
@@ -326,8 +317,8 @@ def _double_html(opts):
     html_file.make_header(title="Comparison Summary Page")
     # what links do you want in yur nav bar
     links = ["home"]
-    links.append(["Approximant", ["{}".format(opts.approximant1),
-                                  "{}".format(opts.approximant2),
+    links.append(["Approximant", ["{}".format(opts.approximant[0]),
+                                  "{}".format(opts.approximant[1]),
                                   "Comparison"]])
     links.append(["1d_histograms", ["Comparison_{}".format(i) for i in parameters]])
     html_file.make_navbar(links=links)
@@ -345,15 +336,15 @@ def _double_html(opts):
         # add the footer
         html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
     # edit the home pages for both approximants
-    for app, col in zip([opts.approximant1, opts.approximant2], ["#8c6278", "#228B22"]):
+    for app, col in zip([opts.approximant[0], opts.approximant[1]], ["#8c6278", "#228B22"]):
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="{}".format(app))
         # make header
         html_file.make_header(title="{} Summary Page".format(app),
                               background_colour=col)
         # what links do you want in your nav bar
-        links = ["home", ["Approximant", ["{}".format(opts.approximant1),
-                                          "{}".format(opts.approximant2),
+        links = ["home", ["Approximant", ["{}".format(opts.approximant[0]),
+                                          "{}".format(opts.approximant[1]),
                                           "Comparison"]],
                  "corner", ["1d_histograms", ["{}_{}".format(app, i) for i in parameters]]]
         # make nav bar
@@ -367,7 +358,7 @@ def _double_html(opts):
         html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
     # edit all parameters pages for both approximants
     for i in parameters:
-        for app, col in zip([opts.approximant1, opts.approximant2], ["#8c6278", "#228B22"]):    
+        for app, col in zip([opts.approximant[0], opts.approximant[1]], ["#8c6278", "#228B22"]):    
             html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                           html_page="{}_{}".format(app, i))
             html_file.make_header(title="Posterior PDF for {}".format(i), background_colour=col)
@@ -384,18 +375,31 @@ def write_html(opts):
         argument parser object to hold all information from command line 
     """
     # make the webpages
-    options = {"one": _single_html,
-               "two": _double_html}
-    options[opts.number](opts)
+    options = {1: _single_html,
+               2: _double_html}
+    options[len(opts.samples)](opts)
 
 if __name__ == '__main__':
     # get arguments from command line
     parser = command_line()
     opts = parser.parse_args()
     # make relevant directories
-    utils.make_dir(opts.webdir + "/plots")
     utils.make_dir(opts.webdir + "/samples")
+    utils.make_dir(opts.webdir + "/plots")
     utils.make_dir(opts.webdir + "/js")
+    # check that number of samples matches number of approximants
+    if len(opts.samples) != len(opts.approximant):
+        raise Exception("Ensure that the number of approximants match the "
+                        "number of samples files")
+    # copy over the samples
+    if os.path.isfile(opts.samples[0]) == False:
+        raise Exception("File does not exist")
+    shutil.copyfile(opts.samples[0], opts.webdir+"/samples/"+opts.samples[0].split("/")[-1])
+    if len(opts.samples) != 1:
+        if os.path.isfile(opts.samples[1]) == False:
+            raise Exception("File does not exist")
+        else:
+            shutil.copyfile(opts.samples[1], opts.webdir+"/samples/"+opts.samples[1].split("/")[-1])
     # location of this file
     path = os.path.dirname(os.path.abspath(__file__))
     # copy over the javascript scripts
