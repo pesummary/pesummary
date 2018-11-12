@@ -42,9 +42,6 @@ def command_line():
                         help="make page and plots in DIR", metavar="DIR")
     parser.add_argument("-b", "--baseurl", dest="baseurl",
                         help="make the page at this url", metavar="DIR")
-    parser.add_argument("-n", "--number_of_waveforms", dest="number",
-                        help="the number of approximants you wish to compare",
-                        metavar="int", default="one")
     parser.add_argument("-s", "--samples", dest="samples",
                         help="Posterior samples hdf5 file", nargs='+',
                         default=None)
