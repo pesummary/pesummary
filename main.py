@@ -130,47 +130,47 @@ def _make_plot(parameter, app, samples, opts, latex_labels):
     plt.savefig(opts.webdir + "/plots/1d_posterior_{}_{}.png".format(app, parameter))
     plt.close()
 
-def _make_comparison(parameter, app1, app2, samples, samples2, opts, latex_labels):
+def _make_comparison(opts, parameter, approximants, samples, colors, latex_labels):
     """Make the comparison pages
 
     Parameters
     ----------
+    opts: argparse
+        argument parser object to hold all information from command line
     parameter: str
         name of the parameter that you want to plot
-    app1: str
-        name of waveform approximant used to generate samples
-    app2: str
-        name of waveform approximant used to generate samples2
-    samples: list
-        list of samples for the first waveform for parameter=parameter
-    samples2: list
-        list of samples for the second waveform for parameter=parameter
+    approximants: list
+        list of approximants that you would like to compare
+    samples: 2d list
+        list of samples for each waveform for parameter=parameter
     opts: argparse
         argument parser object to hold all information from command line
     latex_labels: dict
         dictionary of latex labels for each parameter
+    colors: list
+        list of colors in hexadecimal format for the different approximants
     """
     fig = plt.figure()
-    plt.hist(samples, histtype="step", bins=50, color="#8c6278", label=app1)
-    plt.hist(samples2, histtype="step", bins=50, color="#228B22", label=app2)
+    for num, i in enumerate(samples):
+        plt.hist(i, histtype="step", bins=50, color=colors[num], label=approximants[num])
+        plt.axvline(x=np.percentile(i, 90), color=colors[num], linestyle='--')
+        plt.axvline(x=np.percentile(i, 10), color=colors[num], linestyle='--')
     plt.xlabel(latex_labels[parameter], fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
-    plt.axvline(x=np.percentile(samples, 90), color="#8c6278", linestyle='--')
-    plt.axvline(x=np.percentile(samples2, 90), color="#228B22", linestyle='--')
-    plt.axvline(x=np.percentile(samples, 10), color="#8c6278", linestyle='--')
-    plt.axvline(x=np.percentile(samples2, 10), color="#228B22", linestyle='--')
     plt.legend(loc="best")
     plt.grid()
     plt.savefig(opts.webdir + "/plots/combined_posterior_" + parameter + ".png")
     plt.close()
 
-def make_plots(opts):
+def make_plots(opts, colors=None):
     """Generate the posterior sample plots
 
     Parameters
     ----------
     opts: argparse
         argument parser object to hold all information from command line
+    colors: list
+        list of colors in hexadecimal format for the different approximants
     """
     latex_labels={"luminosity_distance": r"$d_{L} [Mpc]$",
                   "geocent_time": r"$t_{c} [s]$",
@@ -194,12 +194,12 @@ def make_plots(opts):
     if len(opts.approximant) > 1:
         g = h5py.File(opts.samples[1])
         for num, i in enumerate(parameters):
-            samples = [j[num] for j in f["posterior/block0_values"]]
-            samples2 = [j[num] for j in g["posterior/block0_values"]]
-            _make_plot(i, opts.approximant[0], samples, opts, latex_labels)
-            _make_plot(i, opts.approximant[1], samples2, opts, latex_labels)
-            _make_comparison(i, opts.approximant[0], opts.approximant[1], samples,
-                             samples2, opts, latex_labels)
+            samples = [[j[num] for j in f["posterior/block0_values"]],
+                       [k[num] for k in g["posterior/block0_values"]]]
+            for app, sam in zip(opts.approximant, samples):
+                _make_plot(i, app, sam, opts, latex_labels)
+            _make_comparison(opts, i, opts.approximant, samples,
+                             colors, latex_labels)
     else:
         for num, i in enumerate(parameters):
             samples = [j[num] for j in f["posterior/block0_values"]]
@@ -347,19 +347,21 @@ def make_comparison_pages(opts, approximants, samples, colors):
         html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl, i))
         html_file.make_footer(user="c1737564", rundir=opts.webdir)
 
-def write_html(opts):
+def write_html(opts, colors):
     """Generate an html page to show posterior plots
 
     Parameters
     ----------
     opts: argparse
-        argument parser object to hold all information from command line 
+        argument parser object to hold all information from command line
+    colors: list
+        list of colors in hexadecimal format for the different approximants 
     """
     # make the webpages
-    make_home_pages(opts, opts.approximant, opts.samples, ["#8c6278", "#228B22"])
-    make_1d_histograms_pages(opts, opts.approximant, opts.samples, ["#8c6278", "#228B22"])
+    make_home_pages(opts, opts.approximant, opts.samples, colors)
+    make_1d_histograms_pages(opts, opts.approximant, opts.samples, colors)
     if len(opts.approximant) != 1:
-        make_comparison_pages(opts, opts.approximant, opts.samples, ["#8c6278", "#228B22"])
+        make_comparison_pages(opts, opts.approximant, opts.samples, colors)
 
 if __name__ == '__main__':
     # get arguments from command line
@@ -386,8 +388,8 @@ if __name__ == '__main__':
     path = os.path.dirname(os.path.abspath(__file__))
     # copy over the javascript scripts
     shutil.copyfile(path+"/js/search.js", opts.webdir+"/js/search.js")
-    make_plots(opts)
-    write_html(opts)
+    make_plots(opts, colors=["#8c6278", "#228B22"])
+    write_html(opts, colors=["#8c6278", "#228B22"])
     if opts.email:
         try:
             email_notify(opts.email, opts.baseurl+"/home.html")
