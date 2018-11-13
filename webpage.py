@@ -293,25 +293,27 @@ class page():
             n dimensional list where n is the number of rows. The content
             of each list should be the path to the location of the image
         """
-        self.add_content("<div class='accordian' id='accordian'>\n")
+        self.add_content("<div class='row justify-content-center'>\n")
+        self.add_content("<div class='accordian' id='accordian' style='width:70%'>\n", indent=2)
         for num, i in enumerate(headings):
-            self.add_content("<div class='card'>\n", indent=2)
-            self.add_content("<div class='card-header' id='{}'>\n".format(i), indent=4)
-            self.add_content("<h5 class='mb-0'>\n", indent=6)
+            self.add_content("<div class='card' style='border: 0px solid black'>\n", indent=4)
+            self.add_content("<div class='card-header' id='{}'>\n".format(i), indent=6)
+            self.add_content("<h5 class='mb-0'>\n", indent=8)
             self.add_content("<button class='btn btn-link collapsed' type='button' data-toggle='collapse' "
                              "data-target='#collapse{}' aria-expanded='false' ".format(i) +
-                             "aria-controls='collapse{}'>\n".format(i), indent=8)
-            self.add_content("{}\n".format(i), indent=10)
-            self.add_content("</button>\n", indent=8)
-            self.add_content("</h5>\n", indent=6)
-            self.add_content("</div>\n", indent=4)
+                             "aria-controls='collapse{}'>\n".format(i), indent=10)
+            self.add_content("{}\n".format(i), indent=12)
+            self.add_content("</button>\n", indent=10)
+            self.add_content("</h5>\n", indent=8)
+            self.add_content("</div>\n", indent=6)
             self.add_content("<div id='collapse{}' class='collapse' ".format(i) +
-                             "aria-labelledby='{}' data-parent='#accordian'>\n".format(i), indent=4)
-            self.add_content("<div class='card-body'>\n", indent=6)
-            self.add_content("<img src='{}'".format(content[num])+
+                             "aria-labelledby='{}' data-parent='#accordian'>\n".format(i), indent=6)
+            self.add_content("<div class='card-body'>\n", indent=8)
+            self.add_content("<img src='{}' ".format(content[num]) +
                              "alt='No image available' style='width:700px;' " +
-                             "class='mx-auto d-block'>\n", indent=8)
+                             "class='mx-auto d-block'>\n", indent=10)
+            self.add_content("</div>\n", indent=8)
             self.add_content("</div>\n", indent=6)
             self.add_content("</div>\n", indent=4)
-            self.add_content("</div>\n", indent=2)
+        self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
