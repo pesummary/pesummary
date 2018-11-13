@@ -414,6 +414,8 @@ def write_html_data_dump(opts, colors):
         html_file.make_footer(user="c1737564", rundir=opts.webdir)
 
 if __name__ == '__main__':
+    # default colors
+    colors = ["#8c6278", "#228B22", "#FF6347", "#FFA500", "#003366"]
     # get arguments from command line
     parser = command_line()
     opts = parser.parse_args()
@@ -439,11 +441,11 @@ if __name__ == '__main__':
     path = os.path.dirname(os.path.abspath(__file__))
     # copy over the javascript scripts
     shutil.copyfile(path+"/js/search.js", opts.webdir+"/js/search.js")
-    make_plots(opts, colors=["#8c6278", "#228B22"])
+    make_plots(opts, colors=colors)
     if opts.dump:
-        write_html_data_dump(opts, colors=["#8c6278", "#228B22"])
+        write_html_data_dump(opts, colors=colors)
     else:
-        write_html(opts, colors=["#8c6278", "#228B22"])
+        write_html(opts, colors=colors)
     if opts.email:
         try:
             email_notify(opts.email, opts.baseurl+"/home.html")
