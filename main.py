@@ -41,7 +41,8 @@ def command_line():
     parser.add_argument("-w", "--webdir", dest="webdir",
                         help="make page and plots in DIR", metavar="DIR")
     parser.add_argument("-b", "--baseurl", dest="baseurl",
-                        help="make the page at this url", metavar="DIR")
+                        help="make the page at this url", metavar="DIR",
+                        default=None)
     parser.add_argument("-s", "--samples", dest="samples",
                         help="Posterior samples hdf5 file", nargs='+',
                         default=None)
@@ -419,6 +420,9 @@ if __name__ == '__main__':
     # get arguments from command line
     parser = command_line()
     opts = parser.parse_args()
+    # check to see if base_url is given
+    if opts.baseurl == None:
+        opts.baseurl = utils.guess_url(opts.webdir)
     # make relevant directories
     utils.make_dir(opts.webdir + "/samples")
     utils.make_dir(opts.webdir + "/plots")

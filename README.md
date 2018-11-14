@@ -15,7 +15,6 @@ If only one approximant has been run, then you can generate a summary page with 
 ```bash
 $ python main.py --email hoyc1@cardiff.ac.uk \
                  --webdir /home/c1737564/public_html/LVC/projects/bilby/GW150914/one_approximant \
-                 --baseurl https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilbyGW150914/one_approximant \
                  --samples /home/c1737564/projects/bilby/GW150914/IMRPhenomPv2/outdir/GW150914_result.h5 \
                  --approximant IMRPhenomPv2
 ```
@@ -30,7 +29,6 @@ If multiple approximants have been run, then you can generate a single summary p
 ```bash
 $ python main.py --email hoyc1@cardiff.ac.uk \
                  --webdir /home/c1737564/public_html/LVC/projects/bilby/GW150914/two_approximants \
-                 --baseurl https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/two_approximants \
                  --samples /home/c1737564/projects/bilby/GW150914/IMRPhenomPv2/outdir/GW150914_result.h5 /home/c1737564/projects/bilby/GW150914/IMRPhenomP/outdir/GW150914_result.h5 \
                  --approximant IMRPhenomPv2 IMRPhenomP
 ```
@@ -45,7 +43,6 @@ If the `--dump` flag is specified, all plots are dumped to a single tab if only 
 ```bash
 $ python main.py --email hoyc1@cardiff.ac.uk \                                  
                  --webdir /home/c1737564/public_html/LVC/projects/bilby/GW150914/one_approximant \
-                 --baseurl https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilbyGW150914/one_approximant \
                  --samples /home/c1737564/projects/bilby/GW150914/IMRPhenomPv2/outdir/GW150914_result.h5 \
                  --approximant IMRPhenomPv2 \
                  --dump
