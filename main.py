@@ -23,6 +23,8 @@ from glob import glob
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import corner
+
 import numpy as np
 
 import webpage
@@ -162,6 +164,67 @@ def _make_comparison(opts, parameter, approximants, samples, colors, latex_label
     plt.savefig(opts.webdir + "/plots/combined_posterior_" + parameter + ".png")
     plt.close()
 
+def _make_corner_plots(opts, approximants, samples):
+    """Make the corner plots
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    approximant: list
+        list of approximants that you would like to analyse
+    samples: 2d list
+        list of samples for each approximant for parameter=parameter
+    """
+    # make the directory to store corner plots
+    utils.make_dir(opts.webdir + "/plots/corner")
+    # set the defaukt corner kwargs
+    default_kwargs = dict(
+            bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
+            title_kwargs=dict(fontsize=16), color='#0072C1',
+            truth_color='tab:orange', quantiles=[0.16, 0.84],
+            levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
+            plot_density=False, plot_datapoints=True, fill_contours=True,
+            max_n_ticks=3)
+    # get a list of parameters
+    f = h5py.File(samples[0])
+    parameters = [i for i in f["posterior/block0_items"]]
+    if "log_likelihood" in parameters:
+        parameters.remove("log_likelihood")
+    # loop over each approximant and samples
+    for app, sam in zip(approximants, samples):
+        f = h5py.File(sam)
+        # make the corner plot
+        xs = np.zeros([len(parameters), len(f["posterior/block0_values"])])
+        for num, i in enumerate(parameters):
+            index = parameters.index
+            xs[num] = [j[index(i)] for j in f["posterior/block0_values"]]
+        figure = corner.corner(xs.T, **default_kwargs)
+        # grab the axes of the subplots
+        axes = figure.get_axes()
+
+        #for i in xrange(1, len(parameters)):
+        #    for j in xrange(1, i+1):
+        #        ax = axes[i*len(parameters) + j - 1]
+        #        extent = ax.get_window_extent().transformed(figure.dpi_scale_trans.inverted())
+        #        # only save each density plot
+        #        plt.savefig('{}/plots/corner/{}_{}_{}_density_plot.png'.format(opts.webdir,
+        #                                                                       app,
+        #                                                                       parameters[i],
+        #                                                                       parameters[j-1]),
+        #                    bbox_inches=extent.expanded(1.05, 1.05))
+        for i in xrange(len(parameters)-1):
+            ax = axes[i*len(parameters)+i]
+            extent = ax.get_window_extent().transformed(figure.dpi_scale_trans.inverted())
+            plt.savefig('{}/plots/corner/{}_{}_histogram_plot.png'.format(opts.webdir,
+                                                                           app,
+                                                                           parameters[i]),
+                        bbox_inches=extent.expanded(1.05, 1.05))
+        # save the total corner plot
+        plt.savefig("{}/plots/corner/{}_all_density_plot.png".format(opts.webdir,
+                                                                     app))
+        plt.close()
+
 def make_plots(opts, colors=None):
     """Generate the posterior sample plots
 
@@ -191,6 +254,7 @@ def make_plots(opts, colors=None):
     parameters = [i for i in f["posterior/block0_items"]]
     if "log_likelihood" in parameters:
         parameters.remove("log_likelihood")
+    _make_corner_plots(opts, opts.approximant, opts.samples)
     if len(opts.approximant) > 1:
         g = h5py.File(opts.samples[1])
         for num, i in enumerate(parameters):
@@ -260,10 +324,10 @@ def make_home_pages(opts, approximants, samples, colors):
                               background_colour=colors[num])
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", ["1d_histograms", ["{}_{}".format(i, j) for j in parameters]]]
+                     "{}_corner".format(i), ["1d_histograms", ["{}_{}".format(i, j) for j in parameters]]]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", ["1d_histograms", ["{}_{}".format(i, j) for j in parameters]]]
+                     "{}_corner".format(i), ["1d_histograms", ["{}_{}".format(i, j) for j in parameters]]]
         html_file.make_navbar(links=links)
         # make an array of images that we want inserted in table
         contents = [["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i),
@@ -293,16 +357,14 @@ def make_1d_histograms_pages(opts, approximants, samples, colors):
         parameters.remove("log_likelihood")
     pages = ["{}_{}".format(i, j) for i in approximants for j in parameters]
     webpage.make_html(web_dir=opts.webdir, pages=pages)
-    links = ["home", ["Approximants", [i for i in approximants]],
-                 "corner", ["1d_histograms", ["{}_{}".format(i, j) for j in parameters]]]
     for i in parameters:
         for app, col in zip(approximants, colors):
             if len(approximants) > 1:
                 links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                         "corner", ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
+                         "{}_corner".format(i), ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
             else:
                 links = ["home", ["Approximants", [k for k in approximants]],
-                         "corner", ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
+                         "{}_corner".format(i), ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
             html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                           html_page="{}_{}".format(app, i))
             html_file.make_header(title="Posterior PDF for {}".format(i), background_colour=col)
@@ -347,6 +409,40 @@ def make_comparison_pages(opts, approximants, samples, colors):
         html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl, i))
         html_file.make_footer(user="c1737564", rundir=opts.webdir)
 
+def make_corner_pages(opts, approximants, samples, colors):
+    """Make the corner pages for all approximants
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    approximants: list
+        list of approximants you wish to include
+    samples: list
+        list of samples you wish to include
+    colors: list
+        list of colors in hexadecimal format for the different approximants
+    """
+    f = h5py.File(samples[0])
+    parameters = [i for i in f["posterior/block0_items"]]                       
+    if "log_likelihood" in parameters:                                          
+        parameters.remove("log_likelihood")
+    pages = ["{}_corner".format(i) for i in approximants]
+    webpage.make_html(web_dir=opts.webdir, pages=pages)
+    for app, col in zip(approximants, colors):
+        if len(approximants) > 1:
+            links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
+                     "{}_corner".format(app), ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
+        else:
+            links = ["home", ["Approximants", [k for k in approximants]],
+                     "{}_corner".format(app), ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
+        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                      html_page="{}_corner".format(app))
+        html_file.make_header(title="Corner plots", background_colour=col)
+        html_file.make_navbar(links=links)
+        html_file.make_search_bar()
+        html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
+ 
 def write_html(opts, colors):
     """Generate an html page to show posterior plots
 
@@ -360,6 +456,7 @@ def write_html(opts, colors):
     # make the webpages
     make_home_pages(opts, opts.approximant, opts.samples, colors)
     make_1d_histograms_pages(opts, opts.approximant, opts.samples, colors)
+    make_corner_pages(opts, opts.approximant, opts.samples, colors)
     if len(opts.approximant) != 1:
         make_comparison_pages(opts, opts.approximant, opts.samples, colors)
 
@@ -445,6 +542,7 @@ if __name__ == '__main__':
     path = os.path.dirname(os.path.abspath(__file__))
     # copy over the javascript scripts
     shutil.copyfile(path+"/js/search.js", opts.webdir+"/js/search.js")
+    shutil.copyfile(path+"/js/combine_corner.js", opts.webdir+"/js/combine_corner.js")
     make_plots(opts, colors=colors)
     if opts.dump:
         write_html_data_dump(opts, colors=colors)

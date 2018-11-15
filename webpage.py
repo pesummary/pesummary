@@ -317,3 +317,16 @@ class page():
             self.add_content("</div>\n", indent=4)
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
+
+    def make_search_bar(self):
+        """Generate a search bar to combine the corner plots
+        javascript.
+        """
+        self.add_content("<script type='text/javascript' src='../js/combine_corner.js'></script>\n")
+        self.add_content("<div class='row justify-content-center'>\n")
+        self.add_content("<input type='text' placeholder='search' id='search'>\n", indent=2)
+        self.add_content("<button type='submit' onclick='combine()'>Search</button>\n", indent=2)
+        self.add_content("</div>\n")
+        self.add_content("<div class='row justify-content-center'>\n")
+        self.add_content("<canvas id='canvas' width='600' height='600'></canvas>\n", indent=2)
+        self.add_content("</div>\n")
