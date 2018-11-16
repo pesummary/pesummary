@@ -164,7 +164,7 @@ def _make_comparison(opts, parameter, approximants, samples, colors, latex_label
     plt.savefig(opts.webdir + "/plots/combined_posterior_" + parameter + ".png")
     plt.close()
 
-def _make_corner_plots(opts, approximants, samples):
+def _make_corner_plots(opts, approximants, samples, latex_labels):
     """Make the corner plots
 
     Parameters
@@ -199,20 +199,24 @@ def _make_corner_plots(opts, approximants, samples):
         for num, i in enumerate(parameters):
             index = parameters.index
             xs[num] = [j[index(i)] for j in f["posterior/block0_values"]]
+        # set the axis labels
+        default_kwargs["labels"] = [latex_labels[i] for i in parameters]
         figure = corner.corner(xs.T, **default_kwargs)
         # grab the axes of the subplots
         axes = figure.get_axes()
 
-        #for i in xrange(1, len(parameters)):
-        #    for j in xrange(1, i+1):
-        #        ax = axes[i*len(parameters) + j - 1]
-        #        extent = ax.get_window_extent().transformed(figure.dpi_scale_trans.inverted())
-        #        # only save each density plot
-        #        plt.savefig('{}/plots/corner/{}_{}_{}_density_plot.png'.format(opts.webdir,
-        #                                                                       app,
-        #                                                                       parameters[i],
-        #                                                                       parameters[j-1]),
-        #                    bbox_inches=extent.expanded(1.05, 1.05))
+        for i in xrange(1, len(parameters)):
+            for j in xrange(1, i+1):
+                ax = axes[i*len(parameters) + j - 1]
+                extent = ax.get_window_extent().transformed(figure.dpi_scale_trans.inverted())
+                # sort the parameters into alphabetical order
+                ordered = sorted([parameters[i], parameters[j-1]])
+                # only save each density plot
+                plt.savefig('{}/plots/corner/{}_{}_{}_density_plot.png'.format(opts.webdir,
+                                                                               app,
+                                                                               ordered[0],
+                                                                               ordered[1]),
+                            bbox_inches=extent.expanded(1.05, 1.05))
         for i in xrange(len(parameters)-1):
             ax = axes[i*len(parameters)+i]
             extent = ax.get_window_extent().transformed(figure.dpi_scale_trans.inverted())
@@ -254,7 +258,7 @@ def make_plots(opts, colors=None):
     parameters = [i for i in f["posterior/block0_items"]]
     if "log_likelihood" in parameters:
         parameters.remove("log_likelihood")
-    _make_corner_plots(opts, opts.approximant, opts.samples)
+    _make_corner_plots(opts, opts.approximant, opts.samples, latex_labels)
     if len(opts.approximant) > 1:
         g = h5py.File(opts.samples[1])
         for num, i in enumerate(parameters):

@@ -16,32 +16,15 @@
 
 
 function url(marker, param1, param2) {
-    marker.src = '../plots/corner/IMRPhenomP_'+param1+'_'+param2+'_density_plot.png';
+    var ordered = [param1, param2];
+    ordered.sort();
+    marker.src = '../plots/corner/IMRPhenomP_'+ordered[0]+'_'+ordered[1]+'_density_plot.png';
 }
 
-function draw(marker, index1, index2, ctx) {
+function draw(marker, index1, index2, ctx, length) {
     marker.onload = function() {
-        ctx.drawImage(marker, 200*index1, 200*index2, 195, 195)
+        ctx.drawImage(marker, (600/length)*index1, (600/length)*index2, (600/length)-5, (600/length)-5)
     }
-}
-
-function check_url(marker, param1, param2, ind1, ind2, ctx) {
-    fetch('../plots/corner/IMRPhenomP_'+param1+'_'+param2+'_density_plot.png', {
-        credentials: 'same-origin'})                                
-        .then(function(response) {                                  
-            if (!response.ok) {                                     
-                throw Error(response.statusText);                    
-            }                                                       
-            return response;                                            
-         })                                                          
-         .then(res => {
-               url(marker, param1, param2);
-               draw(marker, ind1, ind2, ctx);
-               })
-         .catch(res => {
-                url(marker, param2, param1);
-                draw(marker,ind1, ind2, ctx);
-                })
 }
 
 function combine() {                                                
@@ -52,10 +35,11 @@ function combine() {
             var el = document.getElementById("corner_search").value.split(" ");
         }
     }
-                                                   
+                                                  
     var c=document.getElementById("canvas");                                    
     var ctx = c.getContext("2d");
     var markers = []
+    ctx.clearRect(0, 0, c.width, c.height);
 
     for (var i=0; i<el.length; i++) {
         markers[i] = new Array(el.length)
@@ -68,10 +52,11 @@ function combine() {
         for (var j=i; j<el.length; j++) {
             if ( i == j) {
                 markers[i][j].src = '../plots/corner/IMRPhenomP_'+el[i]+'_histogram_plot.png'
-                draw(markers[i][j], i, j, ctx)
+                draw(markers[i][j], i, j, ctx, el.length)
             }
             else {
-                check_url(markers[i][j], el[i], el[j], i, j, ctx)
+                url(markers[i][j], el[i], el[j])
+                draw(markers[i][j], i, j, ctx, el.length)
             }
         }
     }                                                                   
