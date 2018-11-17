@@ -72,7 +72,7 @@ def email_notify(address, path):
     user = os.environ["USER"]
     host = socket.getfqdn()
     from_address = "{}@{}".format(user, host)
-    subject = "BILBY output page available at {}".format(host)
+    subject = "Output page available at {}".format(host)
     message = "Hi {},\n\nYour output page is ready on {}. You can view the result at {}\n".format(user, host, path)
     cmd = 'echo -e "%s" | mail -s "%s" "%s"' %(message, subject, address)
     ess = subprocess.Popen(cmd, shell=True)
@@ -554,7 +554,7 @@ if __name__ == '__main__':
     shutil.copyfile(path+"/js/combine_corner.js", opts.webdir+"/js/combine_corner.js")
     shutil.copyfile(path+"/js/grab.js", opts.webdir+"/js/grab.js")
     shutil.copyfile(path+"/js/variables.js", opts.webdir+"/js/variables.js")
-    #make_plots(opts, colors=colors)
+    make_plots(opts, colors=colors)
     if opts.dump:
         write_html_data_dump(opts, colors=colors)
     else:

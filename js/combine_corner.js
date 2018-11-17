@@ -28,6 +28,7 @@ function url(marker, param1, param2) {
         the name of the second parameter in the density plot
     */
     var ordered = [param1, param2];
+    // sort the parameter names into alphabetical order
     ordered.sort();
     marker.src = '../plots/corner/IMRPhenomP_'+ordered[0]+'_'+ordered[1]+'_density_plot.png';
 }
@@ -53,7 +54,8 @@ function draw(marker, index1, index2, ctx, length) {
 
 function combine() {
     /* Grab the parameters and populate a corner subplot
-    */                                             
+    */    
+    // get the contents of the search bar                                         
     var el= document.getElementById("corner_search").value.split(", ");
     if ( el.length == 1 ) {
         var el = document.getElementById("corner_search").value.split(",");
@@ -65,6 +67,7 @@ function combine() {
     var c=document.getElementById("canvas");                                    
     var ctx = c.getContext("2d");
     var markers = []
+    // remove the previous canvas
     ctx.clearRect(0, 0, c.width, c.height);
 
     for (var i=0; i<el.length; i++) {
@@ -73,13 +76,15 @@ function combine() {
             markers[i][j] = new Image();
         }
     }
-
+    // set the source directory of the image 
     for (var i=0; i<el.length; i++) {
         for (var j=i; j<el.length; j++) {
+            // if i == j then we want the histogram
             if ( i == j) {
                 markers[i][j].src = '../plots/corner/IMRPhenomP_'+el[i]+'_histogram_plot.png'
                 draw(markers[i][j], i, j, ctx, el.length)
             }
+            // else we want the density plot
             else {
                 url(markers[i][j], el[i], el[j])
                 draw(markers[i][j], i, j, ctx, el.length)

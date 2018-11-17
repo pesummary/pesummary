@@ -324,9 +324,12 @@ class page():
         javascript.
         """
         self.add_content("<script type='text/javascript' src='../js/combine_corner.js'></script>\n")
+        self.add_content("<div class='row justify-content-center'>")
+        self.add_content("<p style='margin-top:2.5em'> Input the parameter names that you would like to compare</p>", indet=2)
+        self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>\n")
         self.add_content("<input type='text' placeholder='search' id='corner_search'>\n", indent=2)
-        self.add_content("<button type='submit' onclick='combine()'>Search</button>\n", indent=2)
+        self.add_content("<button type='submit' onclick='combine()'>Submit</button>\n", indent=2)
         self.add_content("</div>\n")
         self.add_content("<div class='row justify-content-center'>\n")
         self.add_content("<canvas id='canvas' width='600' height='600'></canvas>\n", indent=2)
