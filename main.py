@@ -154,9 +154,9 @@ def _make_comparison(opts, parameter, approximants, samples, colors, latex_label
     """
     fig = plt.figure()
     for num, i in enumerate(samples):
-        plt.hist(i, histtype="step", bins=50, color=colors[num], label=approximants[num])
-        plt.axvline(x=np.percentile(i, 90), color=colors[num], linestyle='--')
-        plt.axvline(x=np.percentile(i, 10), color=colors[num], linestyle='--')
+        plt.hist(i, histtype="step", bins=50, color=colors[num], label=approximants[num], linewidth=2.0)
+        plt.axvline(x=np.percentile(i, 90), color=colors[num], linestyle='--', linewidth=2.0)
+        plt.axvline(x=np.percentile(i, 10), color=colors[num], linestyle='--', linewidth=2.0)
     plt.xlabel(latex_labels[parameter], fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
     plt.legend(loc="best")
@@ -310,28 +310,30 @@ def make_home_pages(opts, approximants, samples, colors):
         row = []
         row.append(i)
         for j in xrange(len(samples)):
-            row.append(data[j][i]["maxL"])
+            row.append(np.round(data[j][i]["maxL"], 3))
         for j in xrange(len(samples)):
-            row.append(data[j][i]["mean"])
+            row.append(np.round(data[j][i]["mean"], 3))
         for j in xrange(len(samples)):
-            row.append(data[j][i]["median"])
+            row.append(np.round(data[j][i]["median"], 3))
         for j in xrange(len(samples)):
-            row.append(data[j][i]["std"])
+            row.append(np.round(data[j][i]["std"], 3))
         contents.append(row)
     html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
-                         contents=contents, heading_span=len(samples))
+                         contents=contents, heading_span=len(samples),
+                         colors=colors[:len(samples)])
     # design the home page for each approximant used
     for num, i in enumerate(approximants):
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page=i)
         html_file.make_header(title="{} Summary Page".format(i),
+                              approximant="{}".format(i),
                               background_colour=colors[num])
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "{}_corner".format(i), ["1d_histograms", ["{}_{}".format(i, j) for j in parameters]]]
+                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "{}_corner".format(i), ["1d_histograms", ["{}_{}".format(i, j) for j in parameters]]]
+                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         html_file.make_navbar(links=links)
         # make an array of images that we want inserted in table
         contents = [["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i),
@@ -365,13 +367,14 @@ def make_1d_histograms_pages(opts, approximants, samples, colors):
         for app, col in zip(approximants, colors):
             if len(approximants) > 1:
                 links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                         "{}_corner".format(i), ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
+                         "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
             else:
                 links = ["home", ["Approximants", [k for k in approximants]],
-                         "{}_corner".format(i), ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
+                         "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
             html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                           html_page="{}_{}".format(app, i))
-            html_file.make_header(title="Posterior PDF for {}".format(i), background_colour=col)
+            html_file.make_header(title="{} Posterior PDF for {}".format(app, i), background_colour=col,
+                                  approximant=app)
             html_file.make_navbar(links=links)
             html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, app, i))
             html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
@@ -399,7 +402,7 @@ def make_comparison_pages(opts, approximants, samples, colors):
                                    html_page="Comparison")
     html_file.make_header(title="Comparison Summary Page")
     links = ["home", ["Approximant", [i for i in approximants+["Comparison"]]],
-                     ["1d_histograms", ["Comparison_{}".format(i) for i in parameters]]]
+                     ["1d_histograms", ["{}".format(i) for i in parameters]]]
     html_file.make_navbar(links=links)
     html_file.make_footer(user="c1737564", rundir=opts.webdir)
     # edit all of the comparison pages
@@ -408,7 +411,8 @@ def make_comparison_pages(opts, approximants, samples, colors):
     for i in parameters:
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="Comparison_{}".format(i))
-        html_file.make_header(title="Comparison page for {}".format(i))
+        html_file.make_header(title="Comparison page for {}".format(i),
+                              approximant="Comparison")
         html_file.make_navbar(links=links)
         html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl, i))
         html_file.make_footer(user="c1737564", rundir=opts.webdir)
@@ -436,13 +440,14 @@ def make_corner_pages(opts, approximants, samples, colors):
     for app, col in zip(approximants, colors):
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "{}_corner".format(app), ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
+                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "{}_corner".format(app), ["1d_histograms", ["{}_{}".format(app, j) for j in parameters]]]
+                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="{}_corner".format(app))
-        html_file.make_header(title="Corner plots", background_colour=col)
+        html_file.make_header(title="{} Corner plots".format(app), background_colour=col,
+                              approximant=app)
         html_file.make_navbar(links=links)
         html_file.make_search_bar()
         html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
@@ -517,7 +522,7 @@ def write_html_data_dump(opts, colors):
 
 if __name__ == '__main__':
     # default colors
-    colors = ["#8c6278", "#228B22", "#FF6347", "#FFA500", "#003366"]
+    colors = ["#a6b3d0", "#baa997", "#FF6347", "#FFA500", "#003366"]
     # get arguments from command line
     parser = command_line()
     opts = parser.parse_args()
@@ -547,7 +552,9 @@ if __name__ == '__main__':
     # copy over the javascript scripts
     shutil.copyfile(path+"/js/search.js", opts.webdir+"/js/search.js")
     shutil.copyfile(path+"/js/combine_corner.js", opts.webdir+"/js/combine_corner.js")
-    make_plots(opts, colors=colors)
+    shutil.copyfile(path+"/js/grab.js", opts.webdir+"/js/grab.js")
+    shutil.copyfile(path+"/js/variables.js", opts.webdir+"/js/variables.js")
+    #make_plots(opts, colors=colors)
     if opts.dump:
         write_html_data_dump(opts, colors=colors)
     else:

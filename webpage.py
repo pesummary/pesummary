@@ -88,11 +88,11 @@ class page():
         """
         self.html_file.write(" "*indent + content)
 
-    def _header(self, title, colour):
+    def _header(self, title, colour, approximant):
         """
         """
         self.add_content("<div class='jumbotron text-center' style='background-color: {}; margin-bottom:0'>\n".format(colour))
-        self.add_content("  <h1>{}</h1>\n".format(title))
+        self.add_content("  <h1 id={}>{}</h1>\n".format(approximant, title))
         self.add_content("</div>\n")
 
     def _footer(self, user, rundir):
@@ -107,6 +107,8 @@ class page():
         self.add_content("</div>\n")
 
     def _setup_navbar(self):
+        self.add_content("<script src='{}/js/variables.js'></script>\n".format(self.base_url))
+        self.add_content("<script src='{}/js/grab.js'></script>\n".format(self.base_url))
         self.add_content("<nav class='navbar navbar-expand-sm navbar-dark bg-dark'>\n")
         self.add_content("<a class='navbar-brand' href='#'>Navbar</a>\n", indent=2)
         self.add_content("<button class='navbar-toggler' type='button' "
@@ -114,15 +116,18 @@ class page():
         self.add_content("<span class='navbar-toggler-icon'></span>\n", indent=4)
         self.add_content("</button>\n", indent=2)
 
-    def make_header(self, title="Parameter Estimation Summary Pages", background_colour="#eee"):
+    def make_header(self, title="Parameter Estimation Summary Pages", background_colour="#eee",
+                    approximant="IMRPhenomPv2"):
         """Make header for document in bootstrap format.
 
         Parameters
         ----------
         title: str, optional
             header title of html page
+        approximant: str, optional
+            the approximant that you are analysing
         """
-        self._header(title, background_colour)
+        self._header(title, background_colour, approximant)
 
     def make_footer(self, user=None, rundir=None):
         """Make footer for document in bootstrap format.
@@ -163,7 +168,8 @@ class page():
                 self.add_content("<div class='dropdown-menu' aria-labelledby='navbarDropdown'>\n", indent=12)
                 for j in i[1]:
                         self.add_content("<a class='dropdown-item' "
-                                         "href='{}/html/{}.html'>{}</a>\n".format(self.base_url, j, j), indent=14)
+                                         "href='#' onclick='grab_html({})'"
+                                         ">{}</a>\n".format(j, j), indent=14)
                 self.add_content("</div>\n", indent=12)
                 self.add_content("</li>\n", indent=10)  
             else:
@@ -173,7 +179,8 @@ class page():
                                      "href='{}/{}.html'>{}</a>\n".format(self.base_url, i, i), indent=10)
                 else:
                     self.add_content("<a class='nav-link' "
-                                     "href='{}/html/{}.html'>{}</a>\n".format(self.base_url, i, i), indent=10)
+                                     "href='#' onclick='grab_html({})'"
+                                     ">{}</a>\n".format(i, i), indent=10)
                 self.add_content("</li>\n", indent=8)
         self.add_content("</ul>\n", indent=6)
         self.add_content("</div>\n", indent=4)
@@ -184,7 +191,7 @@ class page():
             self.add_content("<button type='submit' onclick='myFunction()'>Search</button>\n", indent=4)
         self.add_content("</nav>\n")
 
-    def make_table(self, headings=None, contents=None, heading_span=None):
+    def make_table(self, headings=None, contents=None, heading_span=1, colors=None):
         """Generate a table in bootstrap format.
 
         Parameters
@@ -193,8 +200,10 @@ class page():
             list of headings
         contents: list, optional
             nd list giving the contents of the table.
-        multi_span: bool, optional
-            if true, then headings will span two columns 
+        heading_span: int, optional
+            width of the header cell. By default it will span a single column
+        colors: list, optional
+            list of colors for the table columns
         """
         self.add_content("<div class='container' style='margin-top:30p'>\n")
         self.add_content("<div class='table-responsive'>\n", indent=2)
@@ -206,21 +215,13 @@ class page():
         self.add_content("<tr>\n", indent=8)
         for i in headings:
             self.add_content("<th colspan='{}'>{}</th>\n".format(heading_span, i), indent=10)
-        #for i in headings:
-        #    if i != None:
-        #        if multi_span:
-        #            self.add_content("<th colspan='2'>{}</th>\n".format(i), indent=10)
-        #        else:
-        #            self.add_content("<th>{}</th>\n".format(i), indent=10)
-        #    else:
-        #        self.add_content("<th> </th>\n".format(i), indent=10)
         self.add_content("</tr>\n", indent=8)
         self.add_content("<tbody>\n", indent=6)
 
         for num, i in enumerate(contents):
             self.add_content("<tr>\n", indent=8)
             if heading_span == 2:
-                for j, col in zip(i, ["#ffffff"]+["#8c6278", "#228B22"]*(len(i)-1)):
+                for j, col in zip(i, ["#ffffff"]+colors*(len(i)-1)):
                     self.add_content("<td style='background-color: {}'>{}</td>\n".format(col, j), indent=10)
                 self.add_content("</tr>", indent=8)
             else:
@@ -324,7 +325,7 @@ class page():
         """
         self.add_content("<script type='text/javascript' src='../js/combine_corner.js'></script>\n")
         self.add_content("<div class='row justify-content-center'>\n")
-        self.add_content("<input type='text' placeholder='search' id='search'>\n", indent=2)
+        self.add_content("<input type='text' placeholder='search' id='corner_search'>\n", indent=2)
         self.add_content("<button type='submit' onclick='combine()'>Search</button>\n", indent=2)
         self.add_content("</div>\n")
         self.add_content("<div class='row justify-content-center'>\n")
