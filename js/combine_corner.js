@@ -15,7 +15,7 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-function url(marker, param1, param2) {
+function url(marker, param1, param2, approximant) {
     /* Set the url of the image object
 
     Parameters
@@ -26,11 +26,13 @@ function url(marker, param1, param2) {
         the name of one of the parameters in the density plot
     param2: str
         the name of the second parameter in the density plot
+    approximant: str
+        the name of the approximant that you are analysing
     */
     var ordered = [param1, param2];
     // sort the parameter names into alphabetical order
     ordered.sort();
-    marker.src = '../plots/corner/IMRPhenomP_'+ordered[0]+'_'+ordered[1]+'_density_plot.png';
+    marker.src = '../plots/corner/'+approx+'_'+ordered[0]+'_'+ordered[1]+'_density_plot.png';
 }
 
 function draw(marker, index1, index2, ctx, length) {
@@ -63,7 +65,8 @@ function combine() {
             var el = document.getElementById("corner_search").value.split(" ");
         }
     }
-                                                  
+    var el=document.getElementsByTagName("h1")[0]                               
+    var approx = el.innerHTML.split(" ")[0]                               
     var c=document.getElementById("canvas");                                    
     var ctx = c.getContext("2d");
     var markers = []
@@ -81,12 +84,12 @@ function combine() {
         for (var j=i; j<el.length; j++) {
             // if i == j then we want the histogram
             if ( i == j) {
-                markers[i][j].src = '../plots/corner/IMRPhenomP_'+el[i]+'_histogram_plot.png'
+                markers[i][j].src = '../plots/corner/'+approx+'_'+el[i]+'_histogram_plot.png'
                 draw(markers[i][j], i, j, ctx, el.length)
             }
             // else we want the density plot
             else {
-                url(markers[i][j], el[i], el[j])
+                url(markers[i][j], el[i], el[j], approx)
                 draw(markers[i][j], i, j, ctx, el.length)
             }
         }
