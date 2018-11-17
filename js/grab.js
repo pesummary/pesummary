@@ -14,12 +14,20 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-function _option1(approx, param) {
-    window.location = "https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/html/"+approx+'_'+param+'.html'
+function _option1(approx, param, home) {
+    if ( home == "True" ) {
+        window.location = "./html/"+approx+'_'+param+'.html'
+    } else {
+        window.location = "../html/"+approx+'_'+param+'.html'
+    }
 }
 
-function _option2(param) {
-    window.location = "https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/html/"+param+'.html'
+function _option2(param, home) {
+    if ( home == "True" ) {
+        window.location = "./html/"+param+'.html'
+    } else {
+        window.location = "../html/"+param+'.html'
+    }
 }
 
 function grab_html(param) {
@@ -32,12 +40,18 @@ function grab_html(param) {
     */
     var el=document.getElementsByTagName("h1")[0]
     var approx = el.innerHTML.split(" ")[0]
-    fetch("https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/html/"+approx+"_"+param+".html", {
-          credentials: 'same-origin'})
+    if ( el.innerHTML.split(" ")[0] == "Parameter" ) {
+        var link = "./"+approx+"_"+param+".html"
+        var home = "True"
+    } else {
+        var link = "../html/"+approx+"_"+param+".html"
+        var home = "False"
+    }
+    fetch(link, {credentials: 'same-origin'})
     .then(res => {
                   if ( res.status == 200 ) {
-                      _option1(approx, param)
+                      _option1(approx, param, home)
                   } else {
-                      _option2(param)
+                      _option2(param, home)
                   }})
 }
