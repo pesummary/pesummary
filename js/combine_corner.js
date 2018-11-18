@@ -32,7 +32,7 @@ function url(marker, param1, param2, approximant) {
     var ordered = [param1, param2];
     // sort the parameter names into alphabetical order
     ordered.sort();
-    marker.src = '../plots/corner/'+approx+'_'+ordered[0]+'_'+ordered[1]+'_density_plot.png';
+    marker.src = '../plots/corner/'+approximant+'_'+ordered[0]+'_'+ordered[1]+'_density_plot.png';
 }
 
 function draw(marker, index1, index2, ctx, length) {
@@ -65,8 +65,8 @@ function combine() {
             var el = document.getElementById("corner_search").value.split(" ");
         }
     }
-    var el=document.getElementsByTagName("h1")[0]                               
-    var approx = el.innerHTML.split(" ")[0]                               
+    var heading=document.getElementsByTagName("h1")[0]                               
+    var approx = heading.innerHTML.split(" ")[0]                               
     var c=document.getElementById("canvas");                                    
     var ctx = c.getContext("2d");
     var markers = []

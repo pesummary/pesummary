@@ -28,7 +28,7 @@ var mass_1 = "mass_1"
 var phi_12 = "phi_12"                                                           
 var tilt_2 = "tilt_2"                                                           
 var iota = "iota"                                                               
-var tilt_2 = "tilt_2"
+var tilt_1 = "tilt_1"
 
 var IMRPhenomPv2 = "IMRPhenomPv2"
 var IMRPhenomP = "IMRPhenomP"
