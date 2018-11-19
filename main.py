@@ -365,9 +365,10 @@ def _make_sky_maps(opts, approximant, samples, colors):
         ax = plt.subplot(111, projection="hammer")
         ax.cla()
         ax.grid()
-        for i in approximant:
-            CS = plt.contour(contours[i][0], contours[i][1], contours[i][2], contours[i][3], colors=col, linewidths=2)
-            CS.collections[0].set_label(app)
+        for num, i in enumerate(approximant):
+            CS = plt.contour(contours[i][0], contours[i][1], contours[i][2],
+                             contours[i][3], colors=colors[num], linewidths=2)
+            CS.collections[0].set_label(i)
         plt.legend(loc="best")
         plt.savefig("{}/plots/combined_skymap.png".format(opts.webdir))
 
