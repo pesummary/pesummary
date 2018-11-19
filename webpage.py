@@ -19,8 +19,8 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 
-def make_html(web_dir, title="Summary Pages", pages=None):
-    """Make the initial html page. 
+def make_html(web_dir, title="Summary Pages", pages=None, stylesheets=[]):
+    """Make the initial html page.
 
     Parameters
     ----------
@@ -30,12 +30,20 @@ def make_html(web_dir, title="Summary Pages", pages=None):
         header title of html page
     pages: list, optional
         list of pages that you would like to be created
+    stylesheets: list, optional
+        list of stylesheets to including in the html page. It is assumed all
+        stylesheets are located in the `css` in the root of the summary pages.
+        This should be provided as basenames without extension that is assumed
+        to be `.css`.
     """
     for i in pages:
         if i != "home":
             i = "html/" + i
         f = open("{}/{}.html".format(web_dir, i), "w")
         doc_type = "<!DOCTYPE html>\n"
+        stylesheet_elements = ''.join([
+            "  <link rel='stylesheet' href='../css/{0:s}.css'>\n".format(s)
+            for s in stylesheets])
         bootstrap = "<html lang='en'>\n" + \
                     "  <title>{}</title>\n".format(title) + \
                     "  <meta charset='utf-8'>\n" + \
@@ -44,6 +52,7 @@ def make_html(web_dir, title="Summary Pages", pages=None):
                     "  <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>\n" + \
                     "  <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js'></script>\n" + \
                     "  <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js'></script>\n" + \
+                    stylesheet_elements + \
                     "</head>\n"
         f.writelines([doc_type, bootstrap])
 
