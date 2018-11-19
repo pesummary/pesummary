@@ -333,10 +333,10 @@ def make_home_pages(opts, approximants, samples, colors):
                               background_colour=colors[num])
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         html_file.make_navbar(links=links)
         # make an array of images that we want inserted in table
         contents = [["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i),
@@ -370,10 +370,10 @@ def make_1d_histograms_pages(opts, approximants, samples, colors):
         for app, col in zip(approximants, colors):
             if len(approximants) > 1:
                 links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                         "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                         "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
             else:
                 links = ["home", ["Approximants", [k for k in approximants]],
-                         "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                         "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
             html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                           html_page="{}_{}".format(app, i))
             html_file.make_header(title="{} Posterior PDF for {}".format(app, i), background_colour=col,
@@ -443,10 +443,10 @@ def make_corner_pages(opts, approximants, samples, colors):
     for app, col in zip(approximants, colors):
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="{}_corner".format(app))
         html_file.make_header(title="{} Corner plots".format(app), background_colour=col,

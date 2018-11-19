@@ -35,3 +35,4 @@ var IMRPhenomP = "IMRPhenomP"
 
 var corner = "corner"
 var Comparison = "Comparison"
+var config = "config"
