@@ -260,7 +260,7 @@ class page():
         for i in contents:
             for j in i:
                 self.add_content("<th><img src='{}' ".format(self.base_url+"/plots/"+j.split("/")[-1]) +
-                                 "alt='No image available' style='width:350px;'></td>\n", indent=8)
+                                 "alt='No image available' style='width:{}px;'></td>\n".format(1050./len(i)), indent=8)
 
         self.add_content("</tbody>\n", indent=6)
         self.add_content("</table>\n", indent=4)

@@ -26,11 +26,15 @@ import matplotlib.pyplot as plt
 import corner
 
 import numpy as np
+from scipy.ndimage import gaussian_filter
 
 import webpage
 import utils
 
 import h5py
+
+import lal
+import lalsimulation as lalsim
 
 __doc__ == "Parameters to run post_processing.py from the command line"
 
@@ -229,6 +233,144 @@ def _make_corner_plots(opts, approximants, samples, latex_labels):
                                                                      app))
         plt.close()
 
+def _make_waveform_plots(opts, approximant, samples, colors, reference_frequency=10.0):
+    """Plot the maximum likelihood frequency for each approximant
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    approximant: list
+        list of approximants that you would like to analyse
+    samples: list
+        list of samples for each approximant
+    reference_frequency: float, optional
+        
+    """
+    delta_frequency = 1./256
+    minimum_frequency = 10.
+    maximum_frequency = 1000
+    frequency_array = np.arange(minimum_frequency, maximum_frequency, delta_frequency)
+    
+    data = [_grab_key_data(i) for i in samples]
+    waveform = {}
+    for num, i in enumerate(approximant):
+        approx = lalsim.GetApproximantFromString(i)
+        iota, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z = \
+            lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+                data[num]["iota"]["maxL"], data[num]["phi_jl"]["maxL"],
+                data[num]["tilt_1"]["maxL"], data[num]["tilt_1"]["maxL"],
+                data[num]["phi_12"]["maxL"], data[num]["a_1"]["maxL"],
+                data[num]["a_2"]["maxL"], data[num]["mass_1"]["maxL"]*lal.MSUN_SI,
+                data[num]["mass_2"]["maxL"]*lal.MSUN_SI, reference_frequency,
+                data[num]["phase"]["maxL"])
+        h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(data[num]["mass_1"]["maxL"]*lal.MSUN_SI,
+                                                             data[num]["mass_2"]["maxL"]*lal.MSUN_SI,
+                                                             spin_1x, spin_1y,
+                                                             spin_1z, spin_2x,
+                                                             spin_2y, spin_2z,
+                                                             data[num]["luminosity_distance"]["maxL"],
+                                                             iota, data[num]["phase"]["maxL"],
+                                                             0.0, 0.0, 0.0, delta_frequency,
+                                                             minimum_frequency, maximum_frequency,
+                                                             reference_frequency, None, approx)
+        h_plus = h_plus.data.data
+        h_cross = h_cross.data.data
+        h_plus = h_plus[:len(frequency_array)]
+        h_cross = h_cross[:len(frequency_array)]
+        waveform[i] = h_plus
+        fig = plt.figure()
+        plt.plot(frequency_array, h_plus, color='b', linewidth=2.0) 
+        plt.xscale("log")
+        plt.grid()
+        plt.savefig("{}/plots/{}_waveform.png".format(opts.webdir, i))
+        plt.close()
+    if len(approximant) > 1:
+        fig = plt.figure()
+        for num, i in enumerate(approximant):
+            plt.plot(frequency_array, waveform[i], color=colors[num], label=i, linewidth=2.0)
+        plt.xscale("log")
+        plt.grid()
+        plt.legend(loc="best")
+        plt.xlabel("Frequency $[Hz]$", fontsize=16)
+        plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
+        plt.savefig("{}/plots/compare_waveforms.png".format(opts.webdir))
+        plt.close()
+
+def _make_sky_maps(opts, approximant, samples, colors):
+    """
+    """
+    levels = [1.0 - np.exp(-0.5), 1 - np.exp(-2), 1-np.exp(-9./2.)]
+    contours = {}
+    for i, col, app in zip(samples, colors, approximant):
+        data = h5py.File(i)
+        index_ra = [i for i in data["posterior/block0_items"]].index("ra")
+        index_dec = [i for i in data["posterior/block0_items"]].index("dec")
+        ra = [i[index_ra] for i in data["posterior/block0_values"]]
+        dec = [i[index_dec] for i in data["posterior/block0_values"]]
+        # generate 2d histogram
+        H, X, Y = np.histogram2d(ra, dec, bins=50)
+        H = gaussian_filter(H, 0.9)
+        Hflat = H.flatten()
+        inds = np.argsort(Hflat)[::-1]
+        Hflat = Hflat[inds]
+        # normalise the pdf to 1
+        sm = np.cumsum(Hflat)
+        sm /= sm[-1]
+        V = np.empty(len(levels))
+        for i, v0 in enumerate(levels):
+            try:
+                V[i] = Hflat[sm <= v0][-1]
+            except:
+                V[i] = Hflat[0]
+        V.sort()
+        m = np.diff(V) == 0
+        while np.any(m):
+            V[np.where(m)[0][0]] *= 1.0 - 1e-4
+            m = np.diff(V) == 0
+        V.sort()
+        # Compute the bin centers.
+        X1, Y1 = 0.5 * (X[1:] + X[:-1]), 0.5 * (Y[1:] + Y[:-1])
+
+        H2 = H.min() + np.zeros((H.shape[0] + 4, H.shape[1] + 4))
+        H2[2:-2, 2:-2] = H
+        H2[2:-2, 1] = H[:, 0]
+        H2[2:-2, -2] = H[:, -1]
+        H2[1, 2:-2] = H[0]
+        H2[-2, 2:-2] = H[-1]
+        H2[1, 1] = H[0, 0]
+        H2[1, -2] = H[0, -1]
+        H2[-2, 1] = H[-1, 0]
+        H2[-2, -2] = H[-1, -1]
+        X2 = np.concatenate([
+            X1[0] + np.array([-2, -1]) * np.diff(X1[:2]),
+            X1,
+            X1[-1] + np.array([1, 2]) * np.diff(X1[-2:]),
+        ])
+        Y2 = np.concatenate([
+            Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]),
+            Y1,
+            Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]),
+        ])
+        contours[app] = [X2, Y2, H2.T, V]
+    for i in approximant:
+        fig = plt.figure()
+        ax = plt.subplot(111, projection="hammer")
+        ax.cla()
+        ax.grid()
+        CS = plt.contour(contours[i][0],contours[i][1], contours[i][2], contours[i][3], colors='b', linewidths=2)
+        plt.savefig("{}/plots/{}_skymap.png".format(opts.webdir, i))
+    if len(approximant) > 1:
+        fig = plt.figure()
+        ax = plt.subplot(111, projection="hammer")
+        ax.cla()
+        ax.grid()
+        for i in approximant:
+            CS = plt.contour(contours[i][0], contours[i][1], contours[i][2], contours[i][3], colors=col, linewidths=2)
+            CS.collections[0].set_label(app)
+        plt.legend(loc="best")
+        plt.savefig("{}/plots/combined_skymap.png".format(opts.webdir))
+
 def make_plots(opts, colors=None):
     """Generate the posterior sample plots
 
@@ -258,7 +400,9 @@ def make_plots(opts, colors=None):
     parameters = [i for i in f["posterior/block0_items"]]
     if "log_likelihood" in parameters:
         parameters.remove("log_likelihood")
-    _make_corner_plots(opts, opts.approximant, opts.samples, latex_labels)
+    #_make_corner_plots(opts, opts.approximant, opts.samples, latex_labels)
+    _make_waveform_plots(opts, opts.approximant, opts.samples, colors)
+    _make_sky_maps(opts, opts.approximant, opts.samples, colors)
     if len(opts.approximant) > 1:
         g = h5py.File(opts.samples[1])
         for num, i in enumerate(parameters):
@@ -336,8 +480,8 @@ def make_home_pages(opts, approximants, samples, colors):
                      "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         html_file.make_navbar(links=links)
         # make an array of images that we want inserted in table
-        contents = [["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i),
-                     "{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i),
+        contents = [["{}/plots/{}_skymap.png".format(opts.baseurl, i),
+                     "{}/plots/{}_waveform.png".format(opts.baseurl, i),
                      "{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i)]]
         html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
                                        contents=contents)
@@ -404,6 +548,10 @@ def make_comparison_pages(opts, approximants, samples, colors):
     links = ["home", ["Approximant", [i for i in approximants+["Comparison"]]],
                      ["1d_histograms", ["{}".format(i) for i in parameters]]]
     html_file.make_navbar(links=links)
+    contents = [["{}/plots/combined_skymap.png".format(opts.baseurl),
+                 "{}/plots/compare_waveforms.png".format(opts.baseurl)]]
+    html_file.make_table_of_images(headings=["sky_map", "waveform"],
+                                   contents=contents)
     html_file.make_footer(user="c1737564", rundir=opts.webdir)
     # edit all of the comparison pages
     pages = ["Comparison_{}".format(i) for i in parameters]
