@@ -15,6 +15,9 @@
 
 import utils
 import sys
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import HtmlFormatter
 
 def make_html(web_dir, title="Summary Pages", pages=None):
     """Make the initial html page. 
@@ -233,6 +236,30 @@ class page():
         self.add_content("</table>\n", indent=4)
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
+
+    def make_code_block(self, language=None, contents=None):
+        """Generate a code block hightlighted using pigments.
+
+        Parameters
+        ----------
+        language: str, optional
+            The lanaguge of the configuration file to use for syntax
+            highlighting.
+        contents: str, optional
+            String containing the contents of the config file.
+
+        Returns
+        -------
+        style: str
+            The styles used to highlight the rendered contents.
+        """
+        lexer = get_lexer_by_name(language)
+        formatter = HtmlFormatter(style='manni')
+        render = highlight(contents, lexer, formatter)
+        self.add_content(render)
+        styles = formatter.get_style_defs('.highlight')
+        styles += ".highlight {margin: 20px; padding: 20px;}"
+        return styles
 
     def make_table_of_images(self, headings=None, contents=None):
         """Generate a table of images in bootstrap format.
