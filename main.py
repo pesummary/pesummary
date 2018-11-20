@@ -61,6 +61,9 @@ def command_line():
     parser.add_argument("--dump", action="store_true",
                         help="dump all information onto a single html page",
                         default=False)
+    parser.add_argument("-c", "--config", dest="config",
+                        help="configuration file associcated with each samples file.", nargs='+',
+                        default=None)
     return parser
 
 def email_notify(address, path):
@@ -475,10 +478,10 @@ def make_home_pages(opts, approximants, samples, colors):
                               background_colour=colors[num])
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         html_file.make_navbar(links=links)
         # make an array of images that we want inserted in table
         contents = [["{}/plots/{}_skymap.png".format(opts.baseurl, i),
@@ -512,10 +515,10 @@ def make_1d_histograms_pages(opts, approximants, samples, colors):
         for app, col in zip(approximants, colors):
             if len(approximants) > 1:
                 links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                         "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                         "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
             else:
                 links = ["home", ["Approximants", [k for k in approximants]],
-                         "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                         "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
             html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                           html_page="{}_{}".format(app, i))
             html_file.make_header(title="{} Posterior PDF for {}".format(app, i), background_colour=col,
@@ -589,10 +592,10 @@ def make_corner_pages(opts, approximants, samples, colors):
     for app, col in zip(approximants, colors):
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="{}_corner".format(app))
         html_file.make_header(title="{} Corner plots".format(app), background_colour=col,
@@ -600,7 +603,46 @@ def make_corner_pages(opts, approximants, samples, colors):
         html_file.make_navbar(links=links)
         html_file.make_search_bar()
         html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
- 
+
+def make_config_pages(opts, approximants, samples, colors, configs):
+    """Make the config pages for all approximants
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    approximants: list
+        list of approximants you wish to include
+    samples: list
+        list of samples you wish to include
+    colors: list
+        list of colors in hexadecimal format for the different approximants
+    configs: list
+        list of paths to config files you wish to include
+    """
+    with h5py.File(samples[0]) as f:
+        parameters = [i for i in f["posterior/block0_items"]]
+    pages = ["{}_config".format(i) for i in approximants]
+    webpage.make_html(web_dir=opts.webdir, pages=pages, stylesheets=pages)
+    for app, con, col in zip(approximants, configs, colors):
+        if len(approximants) > 1:
+            links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
+                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+        else:
+            links = ["home", ["Approximants", [k for k in approximants]],
+                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+        html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
+                                      html_page="{}_config".format(app))
+        html_file.make_header(title="{} configuration".format(app), background_colour=col,
+                              approximant=app)
+        html_file.make_navbar(links=links)
+        with open(con, 'r') as f:
+            contents = f.read()
+        styles = html_file.make_code_block(language='ini', contents=contents)
+        with open('{0:s}/css/{1:s}_config.css'.format(opts.webdir, app), 'w') as f:
+            f.write(styles)
+        html_file.make_footer(user="c1737564", rundir="{}".format(opts.webdir))
+
 def write_html(opts, colors):
     """Generate an html page to show posterior plots
 
@@ -615,6 +657,7 @@ def write_html(opts, colors):
     make_home_pages(opts, opts.approximant, opts.samples, colors)
     make_1d_histograms_pages(opts, opts.approximant, opts.samples, colors)
     make_corner_pages(opts, opts.approximant, opts.samples, colors)
+    make_config_pages(opts, opts.approximant, opts.samples, colors, opts.config)
     if len(opts.approximant) != 1:
         make_comparison_pages(opts, opts.approximant, opts.samples, colors)
 
@@ -683,10 +726,15 @@ if __name__ == '__main__':
     utils.make_dir(opts.webdir + "/plots")
     utils.make_dir(opts.webdir + "/js")
     utils.make_dir(opts.webdir + "/html")
+    utils.make_dir(opts.webdir + "/css")
     # check that number of samples matches number of approximants
     if len(opts.samples) != len(opts.approximant):
         raise Exception("Ensure that the number of approximants match the "
                         "number of samples files")
+    # check that numer of samples matches number of config files
+    if len(opts.samples) != len(opts.config):
+        raise Exception("Ensure that the number of samples files match the "
+                        "number of config files")
     # copy over the samples
     if os.path.isfile(opts.samples[0]) == False:
         raise Exception("File does not exist")
