@@ -180,7 +180,7 @@ class page():
                 self.add_content("<div class='dropdown-menu' aria-labelledby='navbarDropdown'>\n", indent=12)
                 for j in i[1]:
                         self.add_content("<a class='dropdown-item' "
-                                         "href='#' onclick='grab_html({})'"
+                                         "href='#' onclick='grab_html(\"{}\")'"
                                          ">{}</a>\n".format(j, j), indent=14)
                 self.add_content("</div>\n", indent=12)
                 self.add_content("</li>\n", indent=10)  
@@ -191,7 +191,7 @@ class page():
                                      "href='{}/{}.html'>{}</a>\n".format(self.base_url, i, i), indent=10)
                 else:
                     self.add_content("<a class='nav-link' "
-                                     "href='#' onclick='grab_html({})'"
+                                     "href='#' onclick='grab_html(\"{}\")'"
                                      ">{}</a>\n".format(i, i), indent=10)
                 self.add_content("</li>\n", indent=8)
         self.add_content("</ul>\n", indent=6)
@@ -367,6 +367,6 @@ class page():
         self.add_content("<input type='text' placeholder='search' id='corner_search'>\n", indent=2)
         self.add_content("<button type='submit' onclick='combine()'>Submit</button>\n", indent=2)
         self.add_content("</div>\n")
-        self.add_content("<div class='row justify-content-center'>\n")
+        self.add_content("<div class='row justify-content-center' id='corner_plot'>\n")
         self.add_content("<canvas id='canvas' width='600' height='600'></canvas>\n", indent=2)
         self.add_content("</div>\n")
