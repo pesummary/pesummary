@@ -13,7 +13,7 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,      
 // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
 
-function combine() {
+function combine(list) {
     var loadTimer;
     var imgObject = new Image();
     var heading=document.getElementsByTagName("h1")[0]                          
@@ -21,13 +21,20 @@ function combine() {
     var c=document.getElementById("canvas")
     var ctx=c.getContext("2d")
     ctx.clearRect(0, 0, c.width, c.height);
-    var el= document.getElementById("corner_search").value.split(", ");         
-    if ( el.length == 1 ) {                                                     
-        var el = document.getElementById("corner_search").value.split(",");     
-        if ( el.length == 1 ) {                                                 
-            var el = document.getElementById("corner_search").value.split(" "); 
-        }                                                                       
-    }  
+    var el= document.getElementById("corner_search").value.split(", ");
+    if ( typeof list === 'undefined' ) {
+        list = 'None';
+    }
+    if ( list == 'None' ) {
+      if ( el.length == 1 ) {                                                     
+          var el = document.getElementById("corner_search").value.split(",");     
+          if ( el.length == 1 ) {                                                 
+              var el = document.getElementById("corner_search").value.split(" "); 
+          }                                                                       
+      }
+    } else {
+      var el = list.split(", ");
+    }
     imgObject.src = '../plots/corner/'+approx+'_all_density_plots.png';
     imgObject.onLoad = onImgLoaded();
     function onImgLoaded() {

@@ -390,7 +390,9 @@ def make_corner_pages(opts, approximants, samples, colors, parameters):
         html_file.make_header(title="{} Corner plots".format(app), background_colour=col,
                               approximant=app)
         html_file.make_navbar(links=links)
-        html_file.make_search_bar()
+        html_file.make_search_bar(popular_options=["mass_1, mass_2",
+                                                   "luminosity_distance, iota, ra, dec",
+                                                   "iota, phi_12, phi_jl, tilt_1, tilt_2"])
         html_file.make_footer(user=os.environ["USER"], rundir="{}".format(opts.webdir))
 
 def make_config_pages(opts, approximants, samples, colors, configs, parameters):
@@ -536,7 +538,7 @@ if __name__ == '__main__':
     # location of this file
     path = os.path.dirname(os.path.abspath(__file__))
     # copy over the javascript scripts
-    scripts = ["search.js", "combine_corner.js", "grab.js", "variables.js"]
+    scripts = ["search.js", "combine_corner.js", "grab.js"]
     for i in scripts:
         logging.info("Copying over %s to %s" %(i, opts.webdir+"/js"))
         shutil.copyfile(path+"/js/%s" %(i), opts.webdir+"/js/%s" %(i))
