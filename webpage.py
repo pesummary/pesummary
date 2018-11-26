@@ -355,9 +355,14 @@ class page():
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
 
-    def make_search_bar(self):
+    def make_search_bar(self, popular_options=None):
         """Generate a search bar to combine the corner plots
         javascript.
+
+        Parameters
+        ----------
+        popular_options: list, optional
+            a list of popular options for your search bar
         """
         self.add_content("<script type='text/javascript' src='../js/combine_corner.js'></script>\n")
         self.add_content("<div class='row justify-content-center'>")
@@ -367,6 +372,14 @@ class page():
         self.add_content("<input type='text' placeholder='search' id='corner_search'>\n", indent=2)
         self.add_content("<button type='submit' onclick='combine()'>Submit</button>\n", indent=2)
         self.add_content("</div>\n")
+        self.add_content("<div class='row justify-content-center'>\n")
+        if popular_options:
+            for i in popular_options:
+                self.add_content("<button type='button' class='btn btn-light' "
+                                 "onclick='combine(\"{}\")' "
+                                 "style='margin-left:0.25em; margin-right:0.25em; "
+                                 "margin-top: 1.0em'>{}</button>\n".format(i, i), indent=2)
+        self.add_content("</div>")
         self.add_content("<div class='row justify-content-center' id='corner_plot'>\n")
         self.add_content("<canvas id='canvas' width='600' height='600'></canvas>\n", indent=2)
         self.add_content("</div>\n")
