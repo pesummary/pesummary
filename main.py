@@ -67,6 +67,35 @@ def command_line():
                         default=None)
     return parser
 
+def run_checks(opts):
+    """Check the command line inputs
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    """
+    # check to see if webdir exists
+    if not os.path.isdir(opts.webdir):
+        logging.info("Given web directory does not exist. Creating it now")
+        utils.make_dir(opts.webdir)
+    # check to see if baseurl is provided. If not guess what it could be
+    if opts.baseurl == None:
+        opts.baseurl = utils.guess_url(opts.webdir)
+        logging.info("No url is provided. The url %s will be used" %(opts.baseurl))
+    # check that number of samples matches number of approximants
+    if len(opts.samples) != len(opts.approximant):
+        raise Exception("Ensure that the number of approximants match the "
+                        "number of samples files")
+    # check that numer of samples matches number of config files
+    if len(opts.samples) != len(opts.config):
+        raise Exception("Ensure that the number of samples files match the "
+                        "number of config files")
+    for i in opts.samples:
+        if os.path.isfile(i) == False:
+             raise Exception("File %s does not exist" %(i))
+        shutil.copyfile(i, opts.webdir+"/samples/"+i.split("/")[-1])
+
 def email_notify(address, path):
     """Send an email to notify the user that their output page is generated.
 
@@ -514,30 +543,16 @@ if __name__ == '__main__':
     # get arguments from command line
     parser = command_line()
     opts = parser.parse_args()
-    # check to see if base_url is given
-    if opts.baseurl == None:
-        opts.baseurl = utils.guess_url(opts.webdir)
     # make relevant directories
     logging.info("Making directories in %s to store the data" %(opts.webdir))
     dirs = ["samples", "plots", "js", "html", "css", "plots/corner"]
     for i in dirs:
         utils.make_dir(opts.webdir + "/{}".format(i))
-    # check that number of samples matches number of approximants
+    # check the inputs
     logging.info("Checking the inputs")
-    if len(opts.samples) != len(opts.approximant):
-        raise Exception("Ensure that the number of approximants match the "
-                        "number of samples files")
-    # check that numer of samples matches number of config files
-    if len(opts.samples) != len(opts.config):
-        raise Exception("Ensure that the number of samples files match the "
-                        "number of config files")
-    for i in opts.samples:
-        if os.path.isfile(i) == False:
-             raise Exception("File %s does not exist" %(i))
-        shutil.copyfile(i, opts.webdir+"/samples/"+i.split("/")[-1])
-    # location of this file
-    path = os.path.dirname(os.path.abspath(__file__))
+    run_checks(opts)
     # copy over the javascript scripts
+    path = os.path.dirname(os.path.abspath(__file__))
     scripts = ["search.js", "combine_corner.js", "grab.js"]
     for i in scripts:
         logging.info("Copying over %s to %s" %(i, opts.webdir+"/js"))
