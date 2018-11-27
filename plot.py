@@ -23,8 +23,9 @@ import corner
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
+from astropy.time import Time
 
-from lal import MSUN_SI
+from lal import MSUN_SI, PC_SI
 try:
     import lalsimulation as lalsim
     LALSIMULATION=True
@@ -95,6 +96,51 @@ def _1d_comparison_histogram_plot(param, approximants, samples, colors,
     plt.grid()
     return fig
 
+def __antenna_response(name, ra, dec, psi, time_gps):
+    """Calculate the antenna response function
+
+    Parameters
+    ----------
+    name: str
+        name of the detector you wish to calculate the antenna response
+        function for
+    ra: float
+        right ascension of the source
+    dec: float
+        declination of the source
+    psi: float
+        polarisation of the source
+    time_gps: float
+        gps time of merger
+    """
+    gmst = Time(time_gps, format='gps', location=(0, 0))
+    corrected_ra = gmst.sidereal_time('mean').rad - ra
+    if not LALSIMULATION:
+        raise exception("lalsimulation could not be imported. please install "
+                        "lalsuite to be able to use all features")
+    detector = lalsim.DetectorPrefixToLALDetector(name)
+
+    x0 = -np.cos(psi) * np.sin(corrected_ra) - \
+          np.sin(psi) * np.cos(corrected_ra) * np.sin(dec)
+    x1 = -np.cos(psi) * np.cos(corrected_ra) + \
+          np.sin(psi) * np.sin(corrected_ra) * np.sin(dec)
+    x2 =  np.sin(psi) * np.cos(dec)
+    x = np.array([x0, x1, x2])
+    dx = detector.response.dot(x)
+
+    y0 =  np.sin(psi) * np.sin(corrected_ra) - \
+          np.cos(psi) * np.cos(corrected_ra) * np.sin(dec)
+    y1 =  np.sin(psi) * np.cos(corrected_ra) + \
+          np.cos(psi) * np.sin(corrected_ra) * np.sin(dec)
+    y2 =  np.cos(psi) * np.cos(dec)
+    y = np.array([y0, y1, y2])
+    dy = detector.response.dot(y)
+
+    fplus = (x * dx - y * dy).sum()
+    fcross = (x * dy + y * dx).sum()
+
+    return fplus, fcross
+
 def _waveform_plot(maxL_params, **kwargs):
     """Plot the maximum likelihood waveform for a given approximant.
 
@@ -105,7 +151,7 @@ def _waveform_plot(maxL_params, **kwargs):
     kwargs: dict
         dictionary of optional keyword arguments
     """
-    logging.info("Generating the maximum likelihood waveform plot") 
+    logging.info("Generating the maximum likelihood waveform plot for H1") 
     if not LALSIMULATION:
         raise Exception("LALSimulation could not be imported. Please install "
                         "LALSuite to be able to use all features")
@@ -118,6 +164,7 @@ def _waveform_plot(maxL_params, **kwargs):
     approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
     mass_1 = maxL_params["mass_1"]*MSUN_SI
     mass_2 = maxL_params["mass_2"]*MSUN_SI
+    luminosity_distance = maxL_params["luminosity_distance"]*PC_SI*10**6
     iota, S1x, S1y, S1z, S2x, S2y, S2z = \
         lalsim.SimInspiralTransformPrecessingNewInitialConditions(
             maxL_params["iota"], maxL_params["phi_jl"], maxL_params["tilt_1"],
@@ -126,7 +173,7 @@ def _waveform_plot(maxL_params, **kwargs):
             maxL_params["phase"])
     h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2, S1x,
                           S1y, S1z, S2x, S2y, S2z,
-                          maxL_params["luminosity_distance"], iota,
+                          luminosity_distance, iota,
                           maxL_params["phase"], 0.0, 0.0, 0.0, delta_frequency,
                           minimum_frequency, maximum_frequency,
                           kwargs.get("f_ref", 10.), None, approx)
@@ -134,8 +181,11 @@ def _waveform_plot(maxL_params, **kwargs):
     h_cross = h_cross.data.data
     h_plus = h_plus[:len(frequency_array)]
     h_cross = h_cross[:len(frequency_array)]
+    ar = __antenna_response("H1", maxL_params["ra"], maxL_params["dec"],
+                            maxL_params["psi"], maxL_params["geocent_time"])
     fig = plt.figure()
-    plt.plot(frequency_array, h_plus, color='b', linewidth=2.0)
+    plt.plot(frequency_array, np.real(h_plus*ar[0]+h_cross*ar[1]), color='b',
+             linewidth=2.0)
     plt.xscale("log")
     plt.grid()
     return fig
@@ -154,7 +204,8 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
     kwargs: dict
         dictionary of optional keyword arguments
     """
-    logging.info("Generating the maximum likelihood waveform comparison plot") 
+    logging.info("Generating the maximum likelihood waveform comparison plot "
+                 "for H1") 
     if not LALSIMULATION:
         raise Exception("LALSimulation could not be imported. Please install "
                         "LALSuite to be able to use all features")
@@ -169,6 +220,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
         approx = lalsim.GetApproximantFromString(i["approximant"])
         mass_1 = i["mass_1"]*MSUN_SI
         mass_2 = i["mass_2"]*MSUN_SI
+        luminosity_distance = i["luminosity_distance"]*PC_SI*10**6
         iota, S1x, S1y, S1z, S2x, S2y, S2z = \
             lalsim.SimInspiralTransformPrecessingNewInitialConditions(
                 i["iota"], i["phi_jl"], i["tilt_1"], i["tilt_2"], i["phi_12"],
@@ -176,7 +228,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
                 i["phase"])
         h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2,
                               S1x, S1y, S1z, S2x, S2y, S2z,
-                              i["luminosity_distance"], iota, i["phase"], 0.0,
+                              luminosity_distance, iota, i["phase"], 0.0,
                               0.0, 0.0, delta_frequency, minimum_frequency,
                               maximum_frequency, kwargs.get("f_ref", 10.),
                               None, approx)
@@ -184,8 +236,10 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
         h_cross = h_cross.data.data
         h_plus = h_plus[:len(frequency_array)]
         h_cross = h_cross[:len(frequency_array)]
-        plt.plot(frequency_array, h_plus, color=colors[num],
-                 label=i["approximant"], linewidth=2.0)
+        ar = __antenna_response("H1", i["ra"], i["dec"], i["psi"],
+                                i["geocent_time"])
+        plt.plot(frequency_array, np.real(h_plus*ar[0]+h_cross*ar[1]),
+                 color=colors[num], label=i["approximant"], linewidth=2.0)
     plt.xscale("log")
     plt.grid()
     plt.legend(loc="best")
