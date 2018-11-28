@@ -283,7 +283,7 @@ class page():
         contents: list, optional
             nd list giving the contents of the table.
         """
-        self.add_content("<link rel='stylesheet' href='../css/hello.css'>\n")
+        self.add_content("<link rel='stylesheet' href='../css/image_styles.css'>\n")
         self.add_content("<div class='container' style='margin-top:5em; margin-bottom:5em;"
                          "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")
         for i in contents:
