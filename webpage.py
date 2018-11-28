@@ -54,7 +54,7 @@ def make_html(web_dir, title="Summary Pages", pages=None, stylesheets=[]):
                     "  <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js'></script>\n" + \
                     "  <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js'></script>\n" + \
                     stylesheet_elements + \
-                    "</head>\n"
+                    "</head>\n" + "<body style='background-color:#F8F8F8'>\n"
         f.writelines([doc_type, bootstrap])
 
 def open_html(web_dir, base_url, html_page):
@@ -220,7 +220,7 @@ class page():
         colors: list, optional
             list of colors for the table columns
         """
-        self.add_content("<div class='container' style='margin-top:30p'>\n")
+        self.add_content("<div class='container' style='margin-top:5em'>\n")
         self.add_content("<div class='table-responsive'>\n", indent=2)
         if heading_span > 1:
             self.add_content("<table class='table table-sm'>\n", indent=4)
@@ -273,7 +273,7 @@ class page():
         styles += ".highlight {margin: 20px; padding: 20px;}"
         return styles
 
-    def make_table_of_images(self, headings=None, contents=None):
+    def make_table_of_images(self, contents=None):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -283,30 +283,19 @@ class page():
         contents: list, optional
             nd list giving the contents of the table.
         """
+        self.add_content("<link rel='stylesheet' href='../css/hello.css'>\n")
+        self.add_content("<div class='container' style='margin-top:5em; margin-bottom:5em;"
+                         "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")
         for i in contents:
-            if len(headings) != len(i):
-                raise Exception("Ensure that your contents match the headings")
-        self.add_content("<div class='container' style='margin-top:30p'>\n")
-        self.add_content("<div class='table-responsive'>\n", indent=2)
-        self.add_content("<table class='table'>\n", indent=4)
-        self.add_content("<thead>\n", indent=6)
-        self.add_content("<tr>\n", indent=8)
-        for i in headings:
-            self.add_content("<th>{}</th>\n".format(i), indent=10)
-        self.add_content("</tr>\n", indent=8)
-        self.add_content("<tbody>\n", indent=6)
-
-        for i in contents:
-            self.add_content("<tr>\n", indent=8)
+            self.add_content("<div class='row justify-content-center'>\n", indent=2)
             for j in i:
-                self.add_content("<td><img src='{}' ".format(self.base_url+"/plots/"+j.split("/")[-1]) +
+                self.add_content("<div class='column'>\n", indent=4)
+                self.add_content("<img src='{}'".format(self.base_url+"/plots/"+j.split("/")[-1]) +
                                  "alt='No image available' style='width:{}px;' "
-                                 "id='{}'></td>\n".format(1050./len(i),j.split("/")[-1][:-4]), indent=10)
-            self.add_content("</tr>\n", indent=8)
-
-        self.add_content("</tbody>\n", indent=6)
-        self.add_content("</table>\n", indent=4)
-        self.add_content("</div>\n", indent=2)
+                                 "id='{}' onclick='window.location=\"{}\"'"
+                                 ">\n".format(1050./len(i),j.split("/")[-1][:-4], self.base_url+"/plots/"+j.split("/")[-1]), indent=6)
+                self.add_content("</div>\n", indent=4)
+            self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
 
     def insert_image(self, path):
@@ -317,7 +306,8 @@ class page():
         path: str, optional
             path to the image that you would like inserted
         """
-        self.add_content("<div class='container'>\n")
+        self.add_content("<div class='container' style='margin-top:5em; margin-bottom:5em;"
+                         "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n") 
         self.add_content("<img src='{}' alt='No image available' "
                          "style='align-items:center; width:700px;'".format(path) +
                          "class='mx-auto d-block'>\n", indent=2)
@@ -381,11 +371,14 @@ class page():
         self.add_content("<div class='row justify-content-center'>\n")
         if popular_options:
             for i in popular_options:
-                self.add_content("<button type='button' class='btn btn-light' "
+                self.add_content("<button type='button' class='btn btn-info' "
                                  "onclick='combine(\"{}\")' "
                                  "style='margin-left:0.25em; margin-right:0.25em; "
                                  "margin-top: 1.0em'>{}</button>\n".format(i, i), indent=2)
         self.add_content("</div>")
-        self.add_content("<div class='row justify-content-center' id='corner_plot'>\n")
-        self.add_content("<canvas id='canvas' width='600' height='600'></canvas>\n", indent=2)
+        self.add_content("<div class='container' style='margin-top:5em; margin-bottom:5em;"
+                         "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")  
+        self.add_content("<div class='row justify-content-center' id='corner_plot'>\n", indent=2)
+        self.add_content("<canvas id='canvas' width='600' height='600'></canvas>\n", indent=4)
+        self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")

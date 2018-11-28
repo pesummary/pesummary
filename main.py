@@ -321,11 +321,27 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
                      "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
         html_file.make_navbar(links=links)
         # make an array of images that we want inserted in table
-        contents = [["{}/plots/{}_skymap.png".format(opts.baseurl, i),
-                     "{}/plots/{}_waveform.png".format(opts.baseurl, i),
-                     "{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i)]]
-        html_file.make_table_of_images(headings=["sky_map", "waveform", "psd"],
-                                       contents=contents)
+        contents = [["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i),
+                     "{}/plots/1d_posterior_{}_mass_2.png".format(opts.baseurl, i),
+                     "{}/plots/1d_posterior_{}_luminosity_distance.png".format(opts.baseurl, i)],
+                    ["{}/plots/{}_skymap.png".format(opts.baseurl, i),
+                     "{}/plots/{}_waveform.png".format(opts.baseurl, i)],
+                    ["{}/plots/1d_posterior_{}_iota.png".format(opts.baseurl, i),
+                     "{}/plots/1d_posterior_{}_a_1.png".format(opts.baseurl, i),
+                     "{}/plots/1d_posterior_{}_a_2.png".format(opts.baseurl, i)]]
+        html_file.make_table_of_images(contents=contents)
+        # make table of summary information
+        contents = []
+        for j in parameters:
+            row = []
+            row.append(j)
+            row.append(np.round(data[num][j]["maxL"], 3))
+            row.append(np.round(data[num][j]["mean"], 3))
+            row.append(np.round(data[num][j]["median"], 3))
+            row.append(np.round(data[num][j]["std"], 3))
+            contents.append(row)
+        html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
+                             contents=contents, heading_span=1)
         html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
         
 def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
@@ -387,8 +403,7 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
     html_file.make_navbar(links=links)
     contents = [["{}/plots/combined_skymap.png".format(opts.baseurl),
                  "{}/plots/compare_waveforms.png".format(opts.baseurl)]]
-    html_file.make_table_of_images(headings=["sky_map", "waveform"],
-                                   contents=contents)
+    html_file.make_table_of_images(contents=contents)
     if opts.sensitivity:
         html_file.add_content("<div class='row justify-content-center' "
                               "style='margin=top: 2.0em;'>"
@@ -396,13 +411,18 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
                               "networks, click the button</p></div>")
         html_file.add_content("<div class='row justify-content-center' "
                               "style='margin-top: 0.2em;'>"
-                              "<button type='button' class='btn btn-light' "
+                              "<button type='button' class='btn btn-info' "
                               "onclick='%s.src=\"%s/plots/combined_skymap.png\"'"
                               "style='margin-left:0.25em; margin-right:0.25em'>Sky Map</button>"
-                              "<button type='button' class='btn btn-light' "
+                              "<button type='button' class='btn btn-info' "
                               "onclick='%s.src=\"%s/plots/IMRPhenomPv2_sky_sensitivity_HL.png\"'"
                               "style='margin-left:0.25em; margin-right:0.25em'>HL</button>"
                                %("combined_skymap", opts.baseurl, "combined_skymap", opts.baseurl))
+        html_file.add_content("<button type='button' class='btn btn-info' "
+                              "onclick='%s.src=\"%s/plots/IMRPhenomPv2_sky_sensitivity_HLV.png\"'"
+                              "style='margin-left:0.25em; margin-right:0.25em'>HLV</button></div>\n"
+                               %("combined_skymap", opts.baseurl))
+
     html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
     # edit all of the comparison pages
     pages = ["Comparison_{}".format(i) for i in parameters]
@@ -584,6 +604,11 @@ if __name__ == '__main__':
     for i in scripts:
         logging.info("Copying over %s to %s" %(i, opts.webdir+"/js"))
         shutil.copyfile(path+"/js/%s" %(i), opts.webdir+"/js/%s" %(i))
+    # copy over the css scripts
+    scripts = ["image_styles.css"]
+    for i in scripts:
+        logging.info("Copying over %s to %s" %(i, opts.webdir+"/css"))
+        shutil.copyfile(path+"/css/%s" %(i), opts.webdir+"/css/%s" %(i))
     # make the plots for the webpage
     logging.info("Generating the plots")
     make_plots(opts, colors=colors)
