@@ -153,8 +153,8 @@ def _waveform_plot(maxL_params, **kwargs):
     """
     logging.info("Generating the maximum likelihood waveform plot for H1") 
     if not LALSIMULATION:
-        raise Exception("LALSimulation could not be imported. Please install "
-                        "LALSuite to be able to use all features")
+        raise exception("lalsimulation could not be imported. please install "
+                        "lalsuite to be able to use all features")
     delta_frequency = kwargs.get("delta_f", 1./256)
     minimum_frequency = kwargs.get("f_min", 10.)
     maximum_frequency = kwargs.get("f_max", 1000.)
@@ -264,6 +264,9 @@ def _sky_map_plot(ra, dec, **kwargs):
     ax = plt.subplot(111, projection="hammer")
     ax.cla()
     ax.grid()
+    ax.set_xticklabels([r"$22^{h}$", r"$20^{h}$", r"$18^{h}$", r"$16^{h}$",
+                        r"$14^{h}$", r"$12^{h}$", r"$10^{h}$", r"$8^{h}$",
+                        r"$6^{h}$", r"$4^{h}$", r"$2^{h}$"]) 
     levels = [1.0 - np.exp(-0.5), 1 - np.exp(-2), 1-np.exp(-9./2.)]
 
     H,X,Y = np.histogram2d(ra, dec, bins=50)
@@ -328,6 +331,9 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
     ax = plt.subplot(111, projection="hammer")
     ax.cla()
     ax.grid()
+    ax.set_xticklabels([r"$22^{h}$", r"$20^{h}$", r"$18^{h}$", r"$16^{h}$",
+                        r"$14^{h}$", r"$12^{h}$", r"$10^{h}$", r"$8^{h}$",
+                        r"$6^{h}$", r"$4^{h}$", r"$2^{h}$"])
     levels = [1.0 - np.exp(-0.5), 1 - np.exp(-2), 1-np.exp(-9./2.)]
 
     for num, i in enumerate(ra_list):
@@ -415,3 +421,117 @@ def _make_corner_plot(opts, samples, params, approximant, latex_labels,
     height *= figure.dpi
     np.savetxt("{}/plots/corner/{}_axes.txt".format(opts.webdir, approximant), extent)
     return figure
+
+def __get_cutoff_indices(flow, fhigh, df, N):
+    """
+    Gets the indices of a frequency series at which to stop an overlap
+    calculation.
+
+    Parameters
+    ----------
+    flow: float
+        The frequency (in Hz) of the lower index.
+    fhigh: float
+        The frequency (in Hz) of the upper index.
+    df: float
+        The frequency step (in Hz) of the frequency series.
+    N: int
+        The number of points in the **time** series. Can be odd
+        or even.
+
+    Returns
+    -------
+    kmin: int
+    kmax: int
+    """
+    if flow:
+        kmin = int(flow / df)
+    else:
+        kmin = 1
+    if fhigh:
+        kmax = int(fhigh / df )
+    else:
+        kmax = int((N + 1)/2.)
+    return kmin,kmax
+
+def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
+    """Generate the sky sensitivity for a given network
+
+    Parameters
+    ----------
+    network: list
+        list of detectors you want included in your sky sensitivity plot
+    resolution: float
+        resolution of the skymap
+    maxL_params: dict
+        dictionary of waveform parameters for the maximum likelihood waveform
+    """
+    logging.info("Generating the sky sensitivity for %s" %(network)) 
+    if not LALSIMULATION:
+        raise Exception("LALSimulation could not be imported. Please install "
+                        "LALSuite to be able to use all features")
+    delta_frequency = kwargs.get("delta_f", 1./256)
+    minimum_frequency = kwargs.get("f_min", 20.)
+    maximum_frequency = kwargs.get("f_max", 1000.)
+    frequency_array = np.arange(minimum_frequency, maximum_frequency,
+                                delta_frequency)
+
+    approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
+    mass_1 = maxL_params["mass_1"]*MSUN_SI
+    mass_2 = maxL_params["mass_2"]*MSUN_SI
+    luminosity_distance = maxL_params["luminosity_distance"]*PC_SI*10**6
+    iota, S1x, S1y, S1z, S2x, S2y, S2z = \
+        lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+            maxL_params["iota"], maxL_params["phi_jl"], maxL_params["tilt_1"],
+            maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
+            maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+            maxL_params["phase"])
+    h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2, S1x,
+                          S1y, S1z, S2x, S2y, S2z,
+                          luminosity_distance, iota,
+                          maxL_params["phase"], 0.0, 0.0, 0.0, delta_frequency,
+                          minimum_frequency, maximum_frequency,
+                          kwargs.get("f_ref", 10.), None, approx)
+    h_plus = h_plus.data.data
+    h_cross = h_cross.data.data
+    h_plus = h_plus[:len(frequency_array)]
+    h_cross = h_cross[:len(frequency_array)]
+    psd = {}
+    psd["H1"] = psd["L1"] = np.array([lalsim.SimNoisePSDaLIGOZeroDetHighPower(i) for i in frequency_array])
+    psd["V1"] = np.array([lalsim.SimNoisePSDVirgo(i) for i in frequency_array])
+    kmin, kmax = __get_cutoff_indices(minimum_frequency, maximum_frequency,
+                                      delta_frequency, (len(h_plus)-1)*2)
+    ra = np.arange(-np.pi, np.pi, resolution)
+    dec = np.arange(-np.pi, np.pi, resolution)
+    X,Y = np.meshgrid(ra, dec)
+    N = np.zeros([len(dec), len(ra)])
+    
+    indices = np.ndindex(len(ra), len(dec))
+    for ind in indices:
+        ar = {}
+        SNR = {}
+        for i in network:
+            ard = __antenna_response(i, ra[ind[0]], dec[ind[1]],
+                                     maxL_params["psi"], maxL_params["geocent_time"])
+            ar[i] = [ard[0], ard[1]]
+            strain = np.array(h_plus*ar[i][0]+h_cross*ar[i][1])
+            integrand = np.conj(strain[kmin:kmax])*strain[kmin:kmax]/psd[i][kmin:kmax]
+            integrand = integrand[:-1]
+            SNR[i] = np.sqrt(4*delta_frequency*np.sum(integrand).real)
+            ar[i][0] *= SNR[i]
+            ar[i][1] *= SNR[i]
+        numerator = 0.0
+        denominator = 0.0
+        for i in network:
+            numerator += sum(i**2 for i in ar[i])
+            denominator += SNR[i]**2
+        N[ind[1]][ind[0]] = (((numerator/denominator)**0.5))
+    fig = plt.figure()
+    ax = plt.subplot(111, projection="hammer")
+    ax.cla()
+    ax.grid()
+    plt.pcolormesh(X,Y,N)
+    ax.set_xticklabels([r"$22^{h}$", r"$20^{h}$", r"$18^{h}$", r"$16^{h}$",
+                        r"$14^{h}$", r"$12^{h}$", r"$10^{h}$", r"$8^{h}$",
+                        r"$6^{h}$", r"$4^{h}$", r"$2^{h}$"])
+    return fig
