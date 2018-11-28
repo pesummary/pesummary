@@ -14,6 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import utils
+from _version import __version__
 import sys
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
@@ -105,6 +106,8 @@ class page():
         """
         self.add_content("<div class='jumbotron text-center' style='background-color: {}; margin-bottom:0'>\n".format(colour))
         self.add_content("  <h1 id={}>{}</h1>\n".format(approximant, title))
+        self.add_content("<h4><span class='badge badge-info'>Code Version: %s"
+                         "</span></h4>\n" %(__version__), indent=2)
         self.add_content("</div>\n")
 
     def _footer(self, user, rundir):
@@ -294,9 +297,12 @@ class page():
         self.add_content("<tbody>\n", indent=6)
 
         for i in contents:
+            self.add_content("<tr>\n", indent=8)
             for j in i:
-                self.add_content("<th><img src='{}' ".format(self.base_url+"/plots/"+j.split("/")[-1]) +
-                                 "alt='No image available' style='width:{}px;'></td>\n".format(1050./len(i)), indent=8)
+                self.add_content("<td><img src='{}' ".format(self.base_url+"/plots/"+j.split("/")[-1]) +
+                                 "alt='No image available' style='width:{}px;' "
+                                 "id='{}'></td>\n".format(1050./len(i),j.split("/")[-1][:-4]), indent=10)
+            self.add_content("</tr>\n", indent=8)
 
         self.add_content("</tbody>\n", indent=6)
         self.add_content("</table>\n", indent=4)

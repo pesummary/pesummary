@@ -65,6 +65,9 @@ def command_line():
     parser.add_argument("-c", "--config", dest="config",
                         help="configuration file associcated with each samples file.", nargs='+',
                         default=None)
+    parser.add_argument("--sensitivity", action="store_true",
+                        help="generate sky sensitivities for HL, HLV",
+                        default=False)
     return parser
 
 def run_checks(opts):
@@ -218,6 +221,16 @@ def make_plots(opts, colors=None):
             fig = plot._1d_histogram_plot(j, param_samples, latex_labels[j])
             plt.savefig("%s/plots/1d_posterior_%s_%s.png" %(opts.webdir, i, j))
             plt.close()
+        if opts.sensitivity:
+            fig = plot._sky_sensitivity(["H1", "L1"], 0.2,
+                                        combined_maxL[num])
+            plt.savefig("%s/plots/%s_sky_sensitivity_HL" %(opts.webdir, i))
+            plt.close()
+            fig = plot._sky_sensitivity(["H1", "L1", "V1"], 0.2,
+                                        combined_maxL[num])
+            plt.savefig("%s/plots/%s_sky_sensitivity_HLV" %(opts.webdir, i))
+            plt.close()
+         
     # if len(approximants) > 1, then we need to do comparison plots
     if len(opts.approximant) > 1:
         for ind, j in enumerate(parameters):
@@ -376,6 +389,20 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
                  "{}/plots/compare_waveforms.png".format(opts.baseurl)]]
     html_file.make_table_of_images(headings=["sky_map", "waveform"],
                                    contents=contents)
+    if opts.sensitivity:
+        html_file.add_content("<div class='row justify-content-center' "
+                              "style='margin=top: 2.0em;'>"
+                              "<p>To see the sky sensitivity for the following "
+                              "networks, click the button</p></div>")
+        html_file.add_content("<div class='row justify-content-center' "
+                              "style='margin-top: 0.2em;'>"
+                              "<button type='button' class='btn btn-light' "
+                              "onclick='%s.src=\"%s/plots/combined_skymap.png\"'"
+                              "style='margin-left:0.25em; margin-right:0.25em'>Sky Map</button>"
+                              "<button type='button' class='btn btn-light' "
+                              "onclick='%s.src=\"%s/plots/IMRPhenomPv2_sky_sensitivity_HL.png\"'"
+                              "style='margin-left:0.25em; margin-right:0.25em'>HL</button>"
+                               %("combined_skymap", opts.baseurl, "combined_skymap", opts.baseurl))
     html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
     # edit all of the comparison pages
     pages = ["Comparison_{}".format(i) for i in parameters]
