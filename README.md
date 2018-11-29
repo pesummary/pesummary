@@ -35,6 +35,30 @@ $ python main.py --email hoyc1@cardiff.ac.uk \
 
 An example of this is shown here: https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/two_approximants/home.html
 
+Existing html
+-------------
+
+If you have already generated a summary page using this code, then you are able to add another n approximants to the existing html pages. This is done using the following code,
+
+```bash
+$ python main.py --email hoyc1@cardiff.ac.uk \
+                 --add_to_existing \
+                 --existing_webdir /home/c1737564/public_html/LVC/projects/bilby/GW150914/add_to_existing \
+                 --samples /home/c1737564/projects/bilby/GW150914/IMRPhenomP/outdir/GW150914_result.h5 \
+                 --approximant IMRPhenomP \
+                 --config /home/c1737564/projects/bilby/GW150914/IMRPhenomP/config.ini
+```
+
+An example of this is shown here: https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/add_to_existing/home.html. To generate the existing summary pages, I ran the following,
+
+```bash
+$ python main.py --email hoyc1@cardiff.ac.uk \
+                 --webdir /home/c1737564/public_html/LVC/projects/bilby/GW150914/add_to_existing \
+                 --samples /home/c1737564/projects/bilby/GW150914/IMRPhenomPv2/outdir/GW150914_result.h5 \
+                 --approximant IMRPhenomPv2 \
+                 --config /home/c1737564/projects/bilby/GW150914/IMRPhenomPv2/config.ini
+```
+
 dump
 -------------
 
