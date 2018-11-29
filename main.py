@@ -68,6 +68,12 @@ def command_line():
     parser.add_argument("--sensitivity", action="store_true",
                         help="generate sky sensitivities for HL, HLV",
                         default=False)
+    parser.add_argument("--add_to_existing", action="store_true",
+                        help="add new results to an existing html page",
+                        default=False)
+    parser.add_argument("-e", "--existing_webdir", dest="existing",
+                        help="web directory of existing output",
+                        default=None)
     return parser
 
 def run_checks(opts):
@@ -78,14 +84,25 @@ def run_checks(opts):
     opts: argparse
         argument parser object to hold all information from command line
     """
+    # make relevant directories
+    dirs = ["samples", "plots", "js", "html", "css", "plots/corner", "config"]
+    if opts.webdir:
+        for i in dirs:
+            utils.make_dir(opts.webdir + "/{}".format(i))
+    if opts.existing:
+        # check to see if the existing directory actually exists
+        if not os.path.isdir(opts.existing):
+            raise Exception("The directory %s does not exist" %(opts.existing))
+        # check to see if the given existing directory is the base directory
+        entries = glob(opts.existing+"/*")
+        if "%s/home.html" %(opts.existing) not in entries:
+            raise Exception("Please give the base directory of an existing "
+                            "output")
+        opts.webdir = opts.existing
     # check to see if webdir exists
     if not os.path.isdir(opts.webdir):
         logging.info("Given web directory does not exist. Creating it now")
         utils.make_dir(opts.webdir)
-    # check to see if baseurl is provided. If not guess what it could be
-    if opts.baseurl == None:
-        opts.baseurl = utils.guess_url(opts.webdir)
-        logging.info("No url is provided. The url %s will be used" %(opts.baseurl))
     # check that number of samples matches number of approximants
     if len(opts.samples) != len(opts.approximant):
         raise Exception("Ensure that the number of approximants match the "
@@ -94,10 +111,59 @@ def run_checks(opts):
     if len(opts.samples) != len(opts.config):
         raise Exception("Ensure that the number of samples files match the "
                         "number of config files")
-    for i in opts.samples:
+    for num, i in enumerate(opts.samples):
         if os.path.isfile(i) == False:
-             raise Exception("File %s does not exist" %(i))
-        shutil.copyfile(i, opts.webdir+"/samples/"+i.split("/")[-1])
+            raise Exception("File %s does not exist" %(i))
+        proposed_file = opts.webdir+"/samples/"+opts.approximant[num]+"_"+i.split("/")[-1]
+        if os.path.isfile(proposed_file):
+            raise Exception("File %s already exists under the name %s. Have "
+                            "you already generated a summary page with this "
+                            "file?" %(i, proposed_file))
+    # check that if add_to_existing is specified then existing html page
+    # is also given
+    if opts.add_to_existing and opts.existing == None:
+        raise Exception("Please provide a current html page that you wish "
+                        "to add content to")
+    if not opts.add_to_existing and opts.existing:
+        opts.add_to_existing = True
+        logging.info("Existing html page has been given without specifying "
+                     "--add_to_existing flag. This is probably and error and so "
+                     "manually adding --add_to_existing flag")
+    if opts.add_to_existing and opts.existing:
+        for i in glob(opts.existing+"/config/*"):
+            opts.config.append(i)
+        for i in glob(opts.existing+"/html/*_corner.html"):
+            example_file = i.split("/")[-1]
+            opts.approximant.append(example_file.split("_corner.html")[0])
+    # check to see if baseurl is provided. If not guess what it could be
+    if opts.baseurl == None:
+        opts.baseurl = utils.guess_url(opts.webdir)
+        logging.info("No url is provided. The url %s will be used" %(opts.baseurl))
+
+def copy_files(opts):
+    """Copy over files to the web directory
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from command line
+    """
+    # copy over the javascript scripts
+    path = os.path.dirname(os.path.abspath(__file__))
+    scripts = ["search.js", "combine_corner.js", "grab.js"]
+    for i in scripts:
+        shutil.copyfile(path+"/js/%s" %(i), opts.webdir+"/js/%s" %(i))
+    # copy over the css scripts
+    scripts = ["image_styles.css"]
+    for i in scripts:
+        shutil.copyfile(path+"/css/%s" %(i), opts.webdir+"/css/%s" %(i))
+    # copy over the config file
+    for num, i in enumerate(opts.config):
+        if opts.webdir not in i:
+            shutil.copyfile(i, opts.webdir+"/config/"+opts.approximant[num]+"_"+i.split("/")[-1])
+    for num, i in enumerate(opts.samples):
+        if opts.webdir not in i:
+            shutil.copyfile(i, opts.webdir+"/samples/"+opts.approximant[num]+"_"+i.split("/")[-1])
 
 def email_notify(address, path):
     """Send an email to notify the user that their output page is generated.
@@ -190,47 +256,66 @@ def make_plots(opts, colors=None):
     ind_ra = parameters.index("ra")
     ind_dec = parameters.index("dec")
     # generate the individual plots
-    for num, i in enumerate(opts.approximant):
-        logging.info("Starting to generate plots for %s" %(i))
-        with h5py.File(opts.samples[num]) as f:
+    for num, i in enumerate(opts.samples):
+        approx = opts.approximant[num]
+        logging.info("Starting to generate plots for %s" %(approx))
+        with h5py.File(i) as f:
             params = [j for j in f["posterior/block0_items"]]
             index = params.index("log_likelihood")
             samples = [j for j in f["posterior/block0_values"]]
             likelihood = [j[index] for j in samples]
             f.close()
-        combined_samples.append(samples)
         data = _grab_key_data(samples, likelihood, parameters)
         ra = [j[ind_ra] for j in samples]
         dec = [j[ind_dec] for j in samples]
         maxL_params = {j: data[j]["maxL"] for j in parameters}
-        maxL_params["approximant"] = i
-        combined_maxL.append(maxL_params)
+        maxL_params["approximant"] = approx
 
-        fig = plot._make_corner_plot(opts, samples, parameters, i, latex_labels)
-        plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, i))
+        fig = plot._make_corner_plot(opts, samples, parameters, approx, latex_labels)
+        plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
         plt.close()
         fig = plot._sky_map_plot(ra, dec)
-        plt.savefig("%s/plots/%s_skymap.png" %(opts.webdir, i))
+        plt.savefig("%s/plots/%s_skymap.png" %(opts.webdir, approx))
         plt.close()
         fig = plot._waveform_plot(maxL_params)
-        plt.savefig("%s/plots/%s_waveform.png" %(opts.webdir, i))
+        plt.savefig("%s/plots/%s_waveform.png" %(opts.webdir, approx))
         plt.close()
         for ind, j in enumerate(parameters):
             index = parameters.index(j)
             param_samples = [k[index] for k in samples]
             fig = plot._1d_histogram_plot(j, param_samples, latex_labels[j])
-            plt.savefig("%s/plots/1d_posterior_%s_%s.png" %(opts.webdir, i, j))
+            plt.savefig("%s/plots/1d_posterior_%s_%s.png" %(opts.webdir, approx, j))
             plt.close()
         if opts.sensitivity:
             fig = plot._sky_sensitivity(["H1", "L1"], 0.2,
                                         combined_maxL[num])
-            plt.savefig("%s/plots/%s_sky_sensitivity_HL" %(opts.webdir, i))
+            plt.savefig("%s/plots/%s_sky_sensitivity_HL" %(opts.webdir, approx))
             plt.close()
             fig = plot._sky_sensitivity(["H1", "L1", "V1"], 0.2,
                                         combined_maxL[num])
-            plt.savefig("%s/plots/%s_sky_sensitivity_HLV" %(opts.webdir, i))
+            plt.savefig("%s/plots/%s_sky_sensitivity_HLV" %(opts.webdir, approx))
             plt.close()
-         
+    # open the new results file and store the data
+    if opts.add_to_existing and opts.existing:
+        for i in glob(opts.existing+"/samples/*"):
+            opts.samples.append(i)
+        for num, i in enumerate(opts.samples):
+            with h5py.File(i) as f:
+                params = [j for j in f["posterior/block0_items"]]
+                index = params.index("log_likelihood")
+                samples = [j for j in f["posterior/block0_values"]]
+                likelihood = [j[index] for j in samples]
+                f.close()
+            combined_samples.append(samples)
+            data = _grab_key_data(samples, likelihood, parameters)
+            maxL_params = {j: data[j]["maxL"] for j in parameters}
+            if opts.existing in i:
+                approx = i.split("/")[-1].split("_")[0]
+            else:
+                approx = opts.approximant[num]
+            maxL_params["approximant"] = approx
+            combined_maxL.append(maxL_params)
+        
     # if len(approximants) > 1, then we need to do comparison plots
     if len(opts.approximant) > 1:
         for ind, j in enumerate(parameters):
@@ -590,32 +675,22 @@ if __name__ == '__main__':
     # get arguments from command line
     parser = command_line()
     opts = parser.parse_args()
-    # make relevant directories
-    logging.info("Making directories in %s to store the data" %(opts.webdir))
-    dirs = ["samples", "plots", "js", "html", "css", "plots/corner"]
-    for i in dirs:
-        utils.make_dir(opts.webdir + "/{}".format(i))
     # check the inputs
     logging.info("Checking the inputs")
     run_checks(opts)
-    # copy over the javascript scripts
-    path = os.path.dirname(os.path.abspath(__file__))
-    scripts = ["search.js", "combine_corner.js", "grab.js"]
-    for i in scripts:
-        logging.info("Copying over %s to %s" %(i, opts.webdir+"/js"))
-        shutil.copyfile(path+"/js/%s" %(i), opts.webdir+"/js/%s" %(i))
-    # copy over the css scripts
-    scripts = ["image_styles.css"]
-    for i in scripts:
-        logging.info("Copying over %s to %s" %(i, opts.webdir+"/css"))
-        shutil.copyfile(path+"/css/%s" %(i), opts.webdir+"/css/%s" %(i))
     # make the plots for the webpage
     logging.info("Generating the plots")
     make_plots(opts, colors=colors)
+    # copy over the relevant files to the web directory
+    logging.info("Copying the files to %s" %(opts.webdir))
+    copy_files(opts)
+    # check to see if dump option is parsed
+    logging.info("Writing HTML pages")
     if opts.dump:
         write_html_data_dump(opts, colors=colors)
     else:
         write_html(opts, colors=colors)
+    # send email
     if opts.email:
         try:
             email_notify(opts.email, opts.baseurl+"/home.html")
