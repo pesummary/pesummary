@@ -85,6 +85,23 @@ def run_checks(opts):
     opts: argparse
         argument parser object to hold all information from command line
     """
+    # check the command line arguments
+    if opts.webdir:
+        if opts.samples and opts.approximant and opts.config:
+            pass
+        else:
+            raise Exception("Please run python main.py --samples [results.hdf] "
+                            "--approximant [approx] --config [config.ini]")
+    # check that if add_to_existing is specified then existing html page
+    # is also given
+    if opts.add_to_existing and opts.existing == None:
+        raise Exception("Please provide a current html page that you wish "
+                        "to add content to")
+    if not opts.add_to_existing and opts.existing:
+        opts.add_to_existing = True
+        logging.info("Existing html page has been given without specifying "
+                     "--add_to_existing flag. This is probably and error and so "
+                     "manually adding --add_to_existing flag")
     # make relevant directories
     dirs = ["samples", "plots", "js", "html", "css", "plots/corner", "config"]
     if opts.webdir:
@@ -120,16 +137,6 @@ def run_checks(opts):
             raise Exception("File %s already exists under the name %s. Have "
                             "you already generated a summary page with this "
                             "file?" %(i, proposed_file))
-    # check that if add_to_existing is specified then existing html page
-    # is also given
-    if opts.add_to_existing and opts.existing == None:
-        raise Exception("Please provide a current html page that you wish "
-                        "to add content to")
-    if not opts.add_to_existing and opts.existing:
-        opts.add_to_existing = True
-        logging.info("Existing html page has been given without specifying "
-                     "--add_to_existing flag. This is probably and error and so "
-                     "manually adding --add_to_existing flag")
     if opts.add_to_existing and opts.existing:
         for i in glob(opts.existing+"/config/*"):
             opts.config.append(i)
