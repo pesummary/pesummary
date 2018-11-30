@@ -14,3 +14,5 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 __version__ = "beta"
+
+__bilby_version__ == "0.3.1"

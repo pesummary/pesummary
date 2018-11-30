@@ -31,6 +31,7 @@ import matplotlib.pyplot as plt
 import webpage
 import utils
 import plot
+from _version import __bilby_version__
 
 import h5py
 
@@ -139,6 +140,12 @@ def run_checks(opts):
     if opts.baseurl == None:
         opts.baseurl = utils.guess_url(opts.webdir)
         logging.info("No url is provided. The url %s will be used" %(opts.baseurl))
+    # check the file format
+    try:
+        parameters = _grab_parameters(opts.samples[0])
+    except:
+        raise Exception("Incorrect format for samples. This code is currently "
+                        "configured for BILBY version %s" %(__bilby_version__))
 
 def copy_files(opts):
     """Copy over files to the web directory
@@ -620,7 +627,7 @@ def write_html(opts, colors):
 
 def write_html_data_dump(opts, colors):
     """Generate a single html page to show posterior plots
-
+a
     Parameters
     ----------
     opts: argparse
