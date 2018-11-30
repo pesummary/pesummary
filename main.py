@@ -150,6 +150,12 @@ def run_checks(opts):
     # check the file format
     try:
         parameters = _grab_parameters(opts.samples[0])
+        with h5py.File(i) as f:
+            params = [j for j in f["posterior/block0_items"]]
+            index = params.index("log_likelihood")
+            samples = [j for j in f["posterior/block0_values"]]
+            likelihood = [j[index] for j in samples]
+            f.close()
     except:
         raise Exception("Incorrect format for samples. This code is currently "
                         "configured for BILBY version %s" %(__bilby_version__))
