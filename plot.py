@@ -56,8 +56,8 @@ def _1d_histogram_plot(param, samples, latex_label):
     plt.plot([upper_percentile]*2, y_range, color='b', linestyle='--')
     plt.plot([lower_percentile]*2, y_range, color='b', linestyle='--')
     median = np.round(np.median(samples), 2)
-    upper = np.round(upper_percentile, 2)
-    lower = np.round(lower_percentile, 2)
+    upper = np.round(upper_percentile, 2) - median
+    lower = median - np.round(lower_percentile, 2)
     plt.title(r"$%s^{+%s}_{-%s}$" %(median, upper, lower), fontsize=18)
     plt.grid()
     plt.ylim(y_range)

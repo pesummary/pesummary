@@ -151,9 +151,9 @@ def run_checks(opts):
     try:
         parameters = _grab_parameters(opts.samples[0])
         with h5py.File(i) as f:
-            params = [j for j in f["posterior/block0_items"]]
+            params = [j for j in f["data/posterior/block0_items"]]
             index = params.index("log_likelihood")
-            samples = [j for j in f["posterior/block0_values"]]
+            samples = [j for j in f["data/posterior/block0_values"]]
             likelihood = [j[index] for j in samples]
             f.close()
     except:
@@ -215,7 +215,7 @@ def _grab_parameters(results):
     """
     # grab the parameters from the samples
     f = h5py.File(opts.samples[0])
-    parameters = [i for i in f["posterior/block0_items"]]
+    parameters = [i for i in f["data/posterior/block0_items"]]
     f.close()                   
     if "log_likelihood" in parameters:                                          
         parameters.remove("log_likelihood")
@@ -280,9 +280,9 @@ def make_plots(opts, colors=None):
         approx = opts.approximant[num]
         logging.info("Starting to generate plots for %s" %(approx))
         with h5py.File(i) as f:
-            params = [j for j in f["posterior/block0_items"]]
+            params = [j for j in f["data/posterior/block0_items"]]
             index = params.index("log_likelihood")
-            samples = [j for j in f["posterior/block0_values"]]
+            samples = [j for j in f["data/posterior/block0_values"]]
             likelihood = [j[index] for j in samples]
             f.close()
         data = _grab_key_data(samples, likelihood, parameters)
@@ -321,9 +321,9 @@ def make_plots(opts, colors=None):
             opts.samples.append(i)
         for num, i in enumerate(opts.samples):
             with h5py.File(i) as f:
-                params = [j for j in f["posterior/block0_items"]]
+                params = [j for j in f["data/posterior/block0_items"]]
                 index = params.index("log_likelihood")
-                samples = [j for j in f["posterior/block0_values"]]
+                samples = [j for j in f["data/posterior/block0_values"]]
                 likelihood = [j[index] for j in samples]
                 f.close()
             combined_samples.append(samples)
@@ -389,10 +389,10 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
     subset = []
     for i in samples:
         with h5py.File(i) as f:
-            params = [j for j in f["posterior/block0_items"]]
+            params = [j for j in f["data/posterior/block0_items"]]
             index = params.index("log_likelihood")
-            subset.append([j for j in f["posterior/block0_values"]])
-            likelihood.append([j[index] for j in f["posterior/block0_values"]])
+            subset.append([j for j in f["data/posterior/block0_values"]])
+            likelihood.append([j[index] for j in f["data/posterior/block0_values"]])
             f.close()
     data = [_grab_key_data(i, j, parameters) for i,j in zip(subset, likelihood)]
     contents = []
@@ -650,7 +650,7 @@ a
     """
     # grab the parameters from the samples
     f = h5py.File(opts.samples[0])
-    parameters = [i for i in f["posterior/block0_items"]]                       
+    parameters = [i for i in f["data/posterior/block0_items"]]                       
     if "log_likelihood" in parameters:                                          
         parameters.remove("log_likelihood")
     # make the relevant pages

@@ -15,4 +15,4 @@
 
 __version__ = "beta"
 
-__bilby_version__ = "0.3.1"
+__bilby_version__ = "0.3.3"
