@@ -415,8 +415,6 @@ def _make_corner_plot(opts, samples, params, approximant, latex_labels,
         xs[num] = [j[params.index(i)] for j in samples]
     default_kwargs["labels"] = [latex_labels[i] for i in corner_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
-
-    #logging.info("Saving the individual density plots")
     # grab the axes of the subplots
     axes = figure.get_axes()
     extent = axes[0].get_window_extent().transformed(figure.dpi_scale_trans.inverted())

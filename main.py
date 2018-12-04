@@ -98,6 +98,8 @@ def run_checks(opts):
     opts: argparse
         argument parser object to hold all information from command line
     """
+    # make the web directory
+    utils.make_dir(opts.webdir)
     # check the command line arguments
     if opts.webdir:
         if opts.samples and opts.approximant and opts.config:
@@ -218,8 +220,11 @@ def _grab_parameters(results):
     f = h5py.File(opts.samples[0])
     parameters = [i for i in f["parameter_names"]]
     f.close()                   
+<<<<<<< HEAD
     #if "log_likelihood" in parameters:                                          
     #    parameters.remove("log_likelihood")
+=======
+>>>>>>> common_data_formats
     return parameters
 
 def _grab_key_data(samples, logL, parameters):
@@ -667,10 +672,10 @@ def make_config_pages(opts, approximants, samples, colors, configs, parameters):
     for app, con, col in zip(approximants, configs, colors):
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", "config", ["1d_histograms", make_navbar_links(parameters)]]
+                     "corner", "config", make_navbar_links(parameters)]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", "config", ["1d_histograms", make_navbar_links(parameters)]]
+                     "corner", "config", make_navbar_links(parameters)]
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="{}_config".format(app))
         html_file.make_header(title="{} configuration".format(app), background_colour=col,
