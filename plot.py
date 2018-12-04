@@ -406,10 +406,14 @@ def _make_corner_plot(opts, samples, params, approximant, latex_labels,
             levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
             plot_density=False, plot_datapoints=True, fill_contours=True,
             max_n_ticks=3)
-    xs = np.zeros([len(params), len(samples)])
-    for num, i in enumerate(params): 
+    corner_parameters = ["luminosity_distance", "dec", "a_2",
+                         "a_1", "geocent_time", "phi_jl", "psi", "ra", "phase",
+                         "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
+                         "tilt_1"]
+    xs = np.zeros([len(corner_parameters), len(samples)])
+    for num, i in enumerate(corner_parameters):
         xs[num] = [j[params.index(i)] for j in samples]
-    default_kwargs["labels"] = [latex_labels[i] for i in params]
+    default_kwargs["labels"] = [latex_labels[i] for i in corner_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
 
     #logging.info("Saving the individual density plots")
