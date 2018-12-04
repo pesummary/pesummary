@@ -124,6 +124,7 @@ class page():
     def _setup_navbar(self):
         self.add_content("<script src='{}/js/variables.js'></script>\n".format(self.base_url))
         self.add_content("<script src='{}/js/grab.js'></script>\n".format(self.base_url))
+        self.add_content("<script src='{}/js/multi_dropbar.js'></script>\n".format(self.base_url))
         self.add_content("<nav class='navbar navbar-expand-sm navbar-dark bg-dark'>\n")
         self.add_content("<a class='navbar-brand' href='#'>Navbar</a>\n", indent=2)
         self.add_content("<button class='navbar-toggler' type='button' "
@@ -180,12 +181,28 @@ class page():
                                  "aria-expanded='false'>\n", indent=12)
                 self.add_content("{}\n".format(i[0]), indent=12)
                 self.add_content("</a>\n", indent=12)
-                self.add_content("<div class='dropdown-menu' aria-labelledby='navbarDropdown'>\n", indent=12)
-                for j in i[1]:
-                        self.add_content("<a class='dropdown-item' "
-                                         "href='#' onclick='grab_html(\"{}\")'"
-                                         ">{}</a>\n".format(j, j), indent=14)
-                self.add_content("</div>\n", indent=12)
+                self.add_content("<ul class='dropdown-menu' aria-labelledby='dropdown1'>\n", indent=12)
+                for j in i:
+                    if type(j) == list:
+                        if len(j) > 1:
+                            self.add_content("<li class='dropdown-item dropdown'>\n", indent=14)
+                            self.add_content("<a class='dropdown-toggle' id='{}' "
+                                             "data-toggle='dropdown' "
+                                             "aria-haspopup='true' "
+                                             "aria-expanded='false'>{}</a>\n".format(j[0], j[0]), indent=16)
+                            self.add_content("<ul class='dropdown-menu' "
+                                             "aria-labelledby='{}'>\n".format(j[0]), indent=16)
+                            for k in j[1]:
+                                self.add_content("<li class='dropdown-item' href='#' "
+                                                 "onclick='grab_html(\"{}\")'>"
+                                                 "<a>{}</a></li>\n".format(k, k), indent=18)
+                            self.add_content("</ul>", indent=16)
+                            self.add_content("</li>", indent=14)
+                        else:
+                            self.add_content("<li class='dropdown-item' href='#' "
+                                             "onclick='grab_html(\"{}\")'>"
+                                             "<a>{}</a></li>\n".format(j[0], j[0]), indent=14)
+                self.add_content("</ul>\n", indent=12)
                 self.add_content("</li>\n", indent=10)  
             else:
                 self.add_content("<li class='nav-item'>\n", indent=8)
