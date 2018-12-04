@@ -32,6 +32,7 @@ import webpage
 import utils
 import plot
 from _version import __bilby_version__
+from data_format import one_format
 
 import h5py
 
@@ -76,6 +77,18 @@ def command_line():
                         help="web directory of existing output",
                         default=None)
     return parser
+
+def convert_to_standard_format(samples):
+    """Convert the input files to the standard format
+
+    Parameters
+    ----------
+    samples: str/list
+        either a string or a list of strings giving the path to the input
+        samples file
+    """
+    for num, i in enumerate(samples):
+        opts.samples[num] = one_format(i)
 
 def run_checks(opts):
     """Check the command line inputs
@@ -147,18 +160,6 @@ def run_checks(opts):
     if opts.baseurl == None:
         opts.baseurl = utils.guess_url(opts.webdir)
         logging.info("No url is provided. The url %s will be used" %(opts.baseurl))
-    # check the file format
-    try:
-        parameters = _grab_parameters(opts.samples[0])
-        with h5py.File(i) as f:
-            params = [j for j in f["data/posterior/block0_items"]]
-            index = params.index("log_likelihood")
-            samples = [j for j in f["data/posterior/block0_values"]]
-            likelihood = [j[index] for j in samples]
-            f.close()
-    except:
-        raise Exception("Incorrect format for samples. This code is currently "
-                        "configured for BILBY version %s" %(__bilby_version__))
 
 def copy_files(opts):
     """Copy over files to the web directory
@@ -170,7 +171,7 @@ def copy_files(opts):
     """
     # copy over the javascript scripts
     path = os.path.dirname(os.path.abspath(__file__))
-    scripts = ["search.js", "combine_corner.js", "grab.js"]
+    scripts = ["search.js", "combine_corner.js", "grab.js", "multi_dropbar.js"]
     for i in scripts:
         shutil.copyfile(path+"/js/%s" %(i), opts.webdir+"/js/%s" %(i))
     # copy over the css scripts
@@ -215,10 +216,10 @@ def _grab_parameters(results):
     """
     # grab the parameters from the samples
     f = h5py.File(opts.samples[0])
-    parameters = [i for i in f["data/posterior/block0_items"]]
+    parameters = [i for i in f["parameter_names"]]
     f.close()                   
-    if "log_likelihood" in parameters:                                          
-        parameters.remove("log_likelihood")
+    #if "log_likelihood" in parameters:                                          
+    #    parameters.remove("log_likelihood")
     return parameters
 
 def _grab_key_data(samples, logL, parameters):
@@ -267,7 +268,34 @@ def make_plots(opts, colors=None):
                   "tilt_2": r"$\theta_{2}$",
                   "phi_12": r"$\phi_{12}$",
                   "mass_2": r"$m_{2}$",
-                  "mass_1": r"$m_{1}$"}
+                  "mass_1": r"$m_{1}$",
+                  "total_mass": r"$M$",
+                  "chirp_mass": r"$\mathcal{M}$",
+                  "log_likelihood": r"$\log{\mathcal{L}}$",
+                  "H1_matched_filter_snr": r"$\rho^{H}_{mf}$",
+                  "L1_matched_filter_snr": r"$\rho^{L}_{mf}$",
+                  "H1_optimal_snr": r"$\rho^{H}_{opt}$",
+                  "L1_optimal_snr": r"$\rho^{L}_{opt}$",
+                  "spin_1x": r"$S_{1}x$",
+                  "spin_1y": r"$S_{1}y$",
+                  "spin_1z": r"$S_{1}z$",
+                  "spin_2x": r"$S_{2}x$",
+                  "spin_2y": r"$S_{2}y$",
+                  "spin_2z": r"$S_{2}z$",
+                  "chi_p": r"$\chi_{p}$",
+                  "chi_eff": r"$\chi_{eff}$",
+                  "mass_ratio": r"$q$",
+                  "symmetric_mass_ratio": r"$\eta$",
+                  "phi_1": r"$\phi_{1}$",
+                  "phi_2": r"$\phi_{2}$",
+                  "cos_tilt_1": r"$\cos{\theta_{1}}$",
+                  "cos_tilt_2": r"$\cos{\theta_{2}}$",
+                  "redshift": r"$z$",
+                  "comoving_distance": r"$d_{com}$",
+                  "mass_1_source": r"$m_{1}^{source}$",
+                  "mass_2_source": r"$m_{2}^{source}$",
+                  "chirp_mass_source": r"$\mathcal{M}^{source}$",
+                  "total_mass_source": r"$M^{source}$"}
     # generate array of both samples
     combined_samples = []
     combined_maxL = []
@@ -280,9 +308,9 @@ def make_plots(opts, colors=None):
         approx = opts.approximant[num]
         logging.info("Starting to generate plots for %s" %(approx))
         with h5py.File(i) as f:
-            params = [j for j in f["data/posterior/block0_items"]]
+            params = [j for j in f["parameter_names"]]
             index = params.index("log_likelihood")
-            samples = [j for j in f["data/posterior/block0_values"]]
+            samples = [j for j in f["samples"]]
             likelihood = [j[index] for j in samples]
             f.close()
         data = _grab_key_data(samples, likelihood, parameters)
@@ -321,9 +349,9 @@ def make_plots(opts, colors=None):
             opts.samples.append(i)
         for num, i in enumerate(opts.samples):
             with h5py.File(i) as f:
-                params = [j for j in f["data/posterior/block0_items"]]
+                params = [j for j in f["parameter_names"]]
                 index = params.index("log_likelihood")
-                samples = [j for j in f["data/posterior/block0_values"]]
+                samples = [j for j in f["samples"]]
                 likelihood = [j[index] for j in samples]
                 f.close()
             combined_samples.append(samples)
@@ -355,6 +383,46 @@ def make_plots(opts, colors=None):
                                             colors)
         plt.savefig("%s/plots/combined_skymap.png" %(opts.webdir))
         plt.close()
+
+def make_navbar_links(parameters):
+    """Generate the links for the navbar
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters that were used in your study
+    """
+    links = ["1d_histograms"]
+    if any("mass" in s for s in parameters):
+        condition = lambda i: True if "mass" in i and "source" not in i or "q" in i \
+                              or "symmetric_mass_ratio" in i else False
+        links.append(["masses", [i for i in parameters if condition(i)]])
+    if any("spin" in s for s in parameters):
+        condition = lambda i: True if "spin" in i or "chi_p" in i \
+                              or "chi_eff" in i or "a_1" in i or "a_2" in i \
+                              else False
+        links.append(["spins", [i for i in parameters if condition(i)]])
+    if any("source" in s for s in parameters):
+        condition = lambda i: True if "source" in i else False
+        links.append(["source_frame", [i for i in parameters if condition(i)]])
+    if any("phi" in s for s in parameters):
+        condition = lambda i: True if "phi" in i or "tilt" in i else False
+        links.append(["spin_angles", [i for i in parameters if condition(i)]])
+    if any("ra" in s for s in parameters):
+        condition = lambda i: True if "ra" in i or "dec" in i or "psi" in i \
+                              else False
+        links.append(["sky_location", [i for i in parameters if condition(i)]])
+    if any("snr" in s for s in parameters):
+        links.append(["SNR", [i for i in parameters if "snr" in i]])
+    if any("distance" in s for s in parameters):
+        condition = lambda i: True if "distance" in i or "time" in i or \
+                              "redshift" in i else False
+        links.append(["Distance and Time", [i for i in parameters if condition(i)]])
+    if any("phase" in s for s in parameters):
+        condition = lambda i: True if "phase" in i or "likelihood" in i \
+                              else False
+        links.append(["Others", [i for i in parameters if condition(i)]])
+    return links
 
 def make_home_pages(opts, approximants, samples, colors, parameters):
     """Make the home pages for all approximants
@@ -389,10 +457,10 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
     subset = []
     for i in samples:
         with h5py.File(i) as f:
-            params = [j for j in f["data/posterior/block0_items"]]
+            params = [j for j in f["parameter_names"]]
             index = params.index("log_likelihood")
-            subset.append([j for j in f["data/posterior/block0_values"]])
-            likelihood.append([j[index] for j in f["data/posterior/block0_values"]])
+            subset.append([j for j in f["samples"]])
+            likelihood.append([j[index] for j in f["samples"]])
             f.close()
     data = [_grab_key_data(i, j, parameters) for i,j in zip(subset, likelihood)]
     contents = []
@@ -420,10 +488,10 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
                               background_colour=colors[num])
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", make_navbar_links(parameters)]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", make_navbar_links(parameters)]
         html_file.make_navbar(links=links)
         # make an array of images that we want inserted in table
         contents = [["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i),
@@ -471,10 +539,10 @@ def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
         for app, col in zip(approximants, colors):
             if len(approximants) > 1:
                 links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                         "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                         "corner", "config", make_navbar_links(parameters)]
             else:
                 links = ["home", ["Approximants", [k for k in approximants]],
-                         "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                         "corner", "config", make_navbar_links(parameters)]
             html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                           html_page="{}_{}".format(app, i))
             html_file.make_header(title="{} Posterior PDF for {}".format(app, i), background_colour=col,
@@ -504,7 +572,7 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
                                    html_page="Comparison")
     html_file.make_header(title="Comparison Summary Page")
     links = ["home", ["Approximant", [i for i in approximants+["Comparison"]]],
-                     ["1d_histograms", ["{}".format(i) for i in parameters]]]
+                     make_navbar_links(parameters)]
     html_file.make_navbar(links=links)
     contents = [["{}/plots/combined_skymap.png".format(opts.baseurl),
                  "{}/plots/compare_waveforms.png".format(opts.baseurl)]]
@@ -562,10 +630,10 @@ def make_corner_pages(opts, approximants, samples, colors, parameters):
     for app, col in zip(approximants, colors):
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", make_navbar_links(parameters)]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", make_navbar_links(parameters)]
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="{}_corner".format(app))
         html_file.make_header(title="{} Corner plots".format(app), background_colour=col,
@@ -599,10 +667,10 @@ def make_config_pages(opts, approximants, samples, colors, configs, parameters):
     for app, con, col in zip(approximants, configs, colors):
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", ["1d_histograms", make_navbar_links(parameters)]]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", "config", ["1d_histograms", ["{}".format(j) for j in parameters]]]
+                     "corner", "config", ["1d_histograms", make_navbar_links(parameters)]]
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="{}_config".format(app))
         html_file.make_header(title="{} configuration".format(app), background_colour=col,
@@ -650,7 +718,7 @@ a
     """
     # grab the parameters from the samples
     f = h5py.File(opts.samples[0])
-    parameters = [i for i in f["data/posterior/block0_items"]]                       
+    parameters = [i for i in f["parameters"]]                       
     if "log_likelihood" in parameters:                                          
         parameters.remove("log_likelihood")
     # make the relevant pages
@@ -695,6 +763,9 @@ if __name__ == '__main__':
     # get arguments from command line
     parser = command_line()
     opts = parser.parse_args()
+    # convert to the standard results file format
+    logging.info("Converting files to standard format")
+    convert_to_standard_format(opts.samples)
     # check the inputs
     logging.info("Checking the inputs")
     run_checks(opts)
@@ -716,3 +787,6 @@ if __name__ == '__main__':
             email_notify(opts.email, opts.baseurl+"/home.html")
         except Exception as e:
             print("Unable to send notification email because of error: {}".format(e))
+    logging.info("Removing the temporary file that is in standard format")
+    for i in opts.samples:
+        os.remove(i)
