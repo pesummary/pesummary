@@ -39,8 +39,19 @@ def _mchirp_from_m1_m2(mass1, mass2):
 def _m_total_from_m1_m2(mass1, mass2):
     """Return the total mass given the samples for mass1 and mass2
     """
-    
     return mass1 + mass2
+
+def _m2_from_mchirp_q(mchirp, q):
+    """Return the mass of the larger black hole given the chirp mass and
+    mass ratio
+    """
+    return (q**(2./5.))*((1.0 + q)**(1./5.))*mchirp 
+
+def _m1_from_mchirp_q(mchirp, q):
+    """Return the mass of the smaller black hole given the chirp mass and
+    mass ratio
+    """
+    return (q**(-3./5.))*((1.0 + q)**(1./5.))*mchirp
 
 def _eta_from_m1_m2(mass1, mass2):
     """Return the symmetric mass ratio given the samples for mass1 and mass2
@@ -75,10 +86,69 @@ def one_format(fil):
     else:
         raise Exception("Data format not understood")
     if LALINFERENCE:
+        standard_names = {"logL": "log_likelihood",
+                          "tilt1": "tilt_1",
+                          "tilt2": "tilt_2",
+                          "costilt1": "cos_tilt_1",
+                          "costilt2": "cos_tilt_2",
+                          "redshift": "redshift",
+                          "phi_jl": "phi_jl",
+                          "l1_optimal_snr": "L1_optimal_snr",
+                          "h1_optimal_snr": "H1_optimal_snr",
+                          "mc_source": "chirp_mass_source",
+                          "eta": "symmetric_mass_ratio",
+                          "m1": "mass_1",
+                          "m2": "mass_2",
+                          "ra": "ra",
+                          "dec": "dec",
+                          "iota": "iota",
+                          "m2_source": "mass_2_source",
+                          "m1_source": "mass_1_source",
+                          "phi1": "phi_1",
+                          "phi2": "phi_2",
+                          "psi": "psi",
+                          "phi12": "phi_12",
+                          "a1": "a_1",
+                          "a2": "a_2",
+                          "chi_p": "chi_p",
+                          "phase": "phase",
+                          "distance": "luminosity_distance",
+                          "mc": "chirp_mass",
+                          "chi_eff": "chi_eff",
+                          "mtotal_source": "total_mass_source",
+                          "mtotal": "total_mass",
+                          "q": "mass_ratio",
+                          "time": "geocent_time"}
         sampler = [i for i in f["lalinference"].keys()]
         data_path = "lalinference/%s/posterior_samples" %(sampler[0])
-        parameters = np.array([i for i in f[data_path].dtype.names])
-        data = np.array([i for i in f[data_path]])
+        lalinference_names = f[data_path].dtype.names
+        parameters, data = [], []
+        for i in lalinference_names:
+            if i in standard_names.keys():
+                parameters.append(i)
+        for i in f[data_path]:
+            data.append([i[lalinference_names.index(j)] for j in parameters])
+        parameters = [standard_names[i] for i in parameters]
+        index = lalinference_names.index
+        if "luminosity_distance" not in parameters and "logdistance" in lalinference_names:
+            parameters.append("luminosity_distance")
+            for num, i in enumerate(f[data_path]):
+                data[num].append(np.exp(i[index("logdistance")]))
+        if "mass_1" not in parameters and "mc" in lalinference_names:
+            parameters.append("mass_1")
+            for num, i in enumerate(f[data_path]):
+                data[num].append(_m1_from_mchirp_q(i[index("mc")], i[index("q")]))
+        if "mass_2" not in parameters and "mc" in lalinference_names:
+            parameters.append("mass_2")
+            for num, i in enumerate(f[data_path]):
+                data[num].append(_m2_from_mchirp_q(i[index("mc")], i[index("q")]))
+        if "iota" not in parameters and "costheta_jn" in lalinference_names:
+            parameters.append("iota")
+            for num, i in enumerate(f[data_path]):
+                data[num].append(np.arccos(i[index("costheta_jn")]))
+
+        data = np.array(data)
+        parameters = np.array(parameters)
     if BILBY:
         parameters, data = [], []
         for i in sorted(f["%s" %(path)].keys()):
