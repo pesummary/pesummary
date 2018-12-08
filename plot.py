@@ -151,7 +151,7 @@ def _waveform_plot(maxL_params, **kwargs):
     kwargs: dict
         dictionary of optional keyword arguments
     """
-    logging.info("Generating the maximum likelihood waveform plot for H1") 
+    logging.info("Generating the maximum likelihood waveform plot") 
     if not LALSIMULATION:
         raise exception("lalsimulation could not be imported. please install "
                         "lalsuite to be able to use all features")
@@ -181,13 +181,21 @@ def _waveform_plot(maxL_params, **kwargs):
     h_cross = h_cross.data.data
     h_plus = h_plus[:len(frequency_array)]
     h_cross = h_cross[:len(frequency_array)]
-    ar = __antenna_response("H1", maxL_params["ra"], maxL_params["dec"],
-                            maxL_params["psi"], maxL_params["geocent_time"])
     fig = plt.figure()
-    plt.plot(frequency_array, np.real(h_plus*ar[0]+h_cross*ar[1]), color='b',
-             linewidth=2.0)
+    colors=['b', 'r']
+    linestyle=['-', '--']
+    for num, i in enumerate(["H1", "L1"]):
+        ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
+                                maxL_params["psi"], maxL_params["geocent_time"])
+        plt.plot(frequency_array, abs(h_plus*ar[0]+h_cross*ar[1]),
+                 color=colors[num], linestyle=linestyle[num],
+                 linewidth=2.0, label=i)
     plt.xscale("log")
+    plt.yscale("log")
+    plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
+    plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
     plt.grid()
+    plt.legend(loc="best")
     return fig
 
 def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
@@ -238,9 +246,10 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
         h_cross = h_cross[:len(frequency_array)]
         ar = __antenna_response("H1", i["ra"], i["dec"], i["psi"],
                                 i["geocent_time"])
-        plt.plot(frequency_array, np.real(h_plus*ar[0]+h_cross*ar[1]),
+        plt.plot(frequency_array, abs(h_plus*ar[0]+h_cross*ar[1]),
                  color=colors[num], label=i["approximant"], linewidth=2.0)
     plt.xscale("log")
+    plt.yscale("log")
     plt.grid()
     plt.legend(loc="best")
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)

@@ -35,6 +35,20 @@ function combine(list) {
     } else {
       var el = list.split(", ");
     }
+    if ( el == "" ) {
+        var el = [];
+        var total = document.getElementsByName("type");
+        var parameters = []
+        for ( var i=0; i<total.length; i++ ) {
+            parameters.push(total[i].id);
+        }
+        var ticked = [];
+        for ( var i=0; i<parameters.length; i++ ) {
+            if ( document.getElementById(parameters[i]).checked == true) {
+                el.push(parameters[i]);
+            }
+        }
+    }
     imgObject.src = '../plots/corner/'+approx+'_all_density_plots.png';
     imgObject.onLoad = onImgLoaded();
     function onImgLoaded() {

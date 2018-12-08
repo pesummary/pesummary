@@ -368,7 +368,7 @@ class page():
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
 
-    def make_search_bar(self, popular_options=None):
+    def make_search_bar(self, popular_options=None, code="combine"):
         """Generate a search bar to combine the corner plots
         javascript.
 
@@ -377,25 +377,43 @@ class page():
         popular_options: list, optional
             a list of popular options for your search bar
         """
+        ids = "canvas" if code == "combine" else code
+        self.add_content("<link rel='stylesheet' href='../css/side_bar.css'>\n")
         self.add_content("<script type='text/javascript' src='../js/combine_corner.js'></script>\n")
+        self.add_content("<script type='text/javascript' src='../js/side_bar.js'></script>\n")
+        self.add_content("<script type='text/javascript' src='../js/multiple_posteriors.js'></script>\n")
+        self.add_content("<div class='w3-sidebar w3-bar-block w3-border-right sidenav' "
+                         "style='display:none' id='mySidebar'>\n")
+        self.add_content("<button onclick='side_bar_close()' class='close'>&times;</button>\n", indent=2)
+        corner_parameters = ["luminosity_distance", "dec", "a_2",
+                             "a_1", "geocent_time", "phi_jl", "psi", "ra", "phase",
+                             "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
+                             "tilt_1"]
+        for i in corner_parameters:
+            self.add_content("<input type='checkbox' name='type' "
+                             "value='{}' id='{}' style='text-align: center; margin: 0 5px 0;'"
+                             ">{}<br>\n".format(i, i,i,i), indent=2)
+        self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>")
         self.add_content("<p style='margin-top:2.5em'> Input the parameter names that you would like to compare</p>", indent=2)
         self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>\n")
         self.add_content("<input type='text' placeholder='search' id='corner_search'>\n", indent=2)
-        self.add_content("<button type='submit' onclick='combine()'>Submit</button>\n", indent=2)
+        self.add_content("<button type='submit' onclick='{}()'>Submit</button>\n".format(code), indent=2)
+        self.add_content("<button class='w3-button w3-teal w3-xlarge' "
+                         "onclick='side_bar_open()'>&times </button>\n", indent=2) 
         self.add_content("</div>\n")
         self.add_content("<div class='row justify-content-center'>\n")
         if popular_options:
             for i in popular_options:
                 self.add_content("<button type='button' class='btn btn-info' "
-                                 "onclick='combine(\"{}\")' "
+                                 "onclick='{}(\"{}\")' "
                                  "style='margin-left:0.25em; margin-right:0.25em; "
-                                 "margin-top: 1.0em'>{}</button>\n".format(i, i), indent=2)
+                                 "margin-top: 1.0em'>{}</button>\n".format(code, i, i), indent=2)
         self.add_content("</div>")
         self.add_content("<div class='container' style='margin-top:5em; margin-bottom:5em;"
                          "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")  
         self.add_content("<div class='row justify-content-center' id='corner_plot'>\n", indent=2)
-        self.add_content("<canvas id='canvas' width='600' height='600'></canvas>\n", indent=4)
+        self.add_content("<canvas id='{}' width='600' height='600'></canvas>\n".format(ids), indent=4)
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")

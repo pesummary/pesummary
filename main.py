@@ -173,11 +173,12 @@ def copy_files(opts):
     """
     # copy over the javascript scripts
     path = os.path.dirname(os.path.abspath(__file__))
-    scripts = ["search.js", "combine_corner.js", "grab.js", "multi_dropbar.js"]
+    scripts = ["search.js", "combine_corner.js", "grab.js", "multi_dropbar.js",
+               "multiple_posteriors.js", "side_bar.js"]
     for i in scripts:
         shutil.copyfile(path+"/js/%s" %(i), opts.webdir+"/js/%s" %(i))
     # copy over the css scripts
-    scripts = ["image_styles.css"]
+    scripts = ["image_styles.css", "side_bar.css"]
     for i in scripts:
         shutil.copyfile(path+"/css/%s" %(i), opts.webdir+"/css/%s" %(i))
     # copy over the config file
@@ -220,11 +221,6 @@ def _grab_parameters(results):
     f = h5py.File(opts.samples[0])
     parameters = [i for i in f["parameter_names"]]
     f.close()                   
-<<<<<<< HEAD
-    #if "log_likelihood" in parameters:                                          
-    #    parameters.remove("log_likelihood")
-=======
->>>>>>> common_data_formats
     return parameters
 
 def _grab_key_data(samples, logL, parameters):
@@ -397,7 +393,7 @@ def make_navbar_links(parameters):
     parameters: list
         list of parameters that were used in your study
     """
-    links = ["1d_histograms"]
+    links = ["1d_histograms", ["multiple"]]
     if any("mass" in s for s in parameters):
         condition = lambda i: True if "mass" in i and "source" not in i or "q" in i \
                               or "symmetric_mass_ratio" in i else False
@@ -538,6 +534,7 @@ def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
     parameters: list
         list of parameters that the sampler varies over
     """
+    parameters.append("multiple")
     pages = ["{}_{}".format(i, j) for i in approximants for j in parameters]
     webpage.make_html(web_dir=opts.webdir, pages=pages)
     for i in parameters:
@@ -553,8 +550,16 @@ def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
             html_file.make_header(title="{} Posterior PDF for {}".format(app, i), background_colour=col,
                                   approximant=app)
             html_file.make_navbar(links=links)
-            html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, app, i))
+           
+            if i != "multiple":
+                html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, app, i))
+            else:
+                html_file.make_search_bar(popular_options=["mass_1, mass_2",
+                                                           "luminosity_distance, iota, ra, dec",
+                                                           "iota, phi_12, phi_jl, tilt_1, tilt_2"],
+                                          code="combines")
             html_file.make_footer(user=os.environ["USER"], rundir="{}".format(opts.webdir))
+                
 
 def make_comparison_pages(opts, approximants, samples, colors, parameters):
     """Make the comparison pages to compare all approximants
