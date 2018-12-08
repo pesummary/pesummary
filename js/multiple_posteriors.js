@@ -50,13 +50,21 @@ function combines(list) {
         }
         c.height = 520*ticked.length+50;
         for ( var i=0; i<ticked.length; i++ ) {
-            imgObject.src = '../plots/1d_posterior_'+approx+'_'+ticked[i]+'.png';
+            if ( approx == "Comparison" ) {
+                imgObject.src = '../plots/combined_posterior_'+ticked[i]+'.png'
+            } else {
+                imgObject.src = '../plots/1d_posterior_'+approx+'_'+ticked[i]+'.png';
+            }
             ctx.drawImage(imgObject, 0, (500*i)+(i*20), 700, 500);
         }
     } else {                                                            
         c.height = 520*el.length+50;                                                                                                             
-        for ( var i=0; i<el.length; i++ ) {                                         
-            imgObject.src = '../plots/1d_posterior_'+approx+'_'+el[i]+'.png';       
+        for ( var i=0; i<el.length; i++ ) {
+            if ( approx == "Comparison" ) {
+                imgObject.src = '../plots/combined_posterior_'+el[i]+'.png'
+            } else {                                    
+                imgObject.src = '../plots/1d_posterior_'+approx+'_'+el[i]+'.png';
+            }       
             ctx.drawImage(imgObject, 0, (500*i)+(i*20), 700, 500);  
         }                
     }                                                                           

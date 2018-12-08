@@ -314,11 +314,13 @@ def make_plots(opts, colors=None):
             samples = [j for j in f["samples"]]
             likelihood = [j[index] for j in samples]
             f.close()
+        combined_samples.append(samples)
         data = _grab_key_data(samples, likelihood, parameters)
         ra = [j[ind_ra] for j in samples]
         dec = [j[ind_dec] for j in samples]
         maxL_params = {j: data[j]["maxL"] for j in parameters}
         maxL_params["approximant"] = approx
+        combined_maxL.append(maxL_params)
 
         fig = plot._make_corner_plot(opts, samples, parameters, approx, latex_labels)
         plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
@@ -449,7 +451,7 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
                                   html_page="home")
     html_file.make_header()
     if len(approximants) > 1:
-        links = ["home", ["Approximants", [i for i in approximants+["Comparison"]]]]
+        links = ["home", ["Approximants", [i for i in approximants]+["Comparison"]]]
     else:
         links = ["home", ["Approximants", [i for i in approximants]]]
     html_file.make_navbar(links=links)
@@ -581,7 +583,7 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                    html_page="Comparison")
     html_file.make_header(title="Comparison Summary Page")
-    links = ["home", ["Approximant", [i for i in approximants+["Comparison"]]],
+    links = ["home", ["Approximant", [i for i in approximants]+["Comparison"]],
                      make_navbar_links(parameters)]
     html_file.make_navbar(links=links)
     contents = [["{}/plots/combined_skymap.png".format(opts.baseurl),
@@ -608,6 +610,7 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
 
     html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
     # edit all of the comparison pages
+    parameters.append("multiple")
     pages = ["Comparison_{}".format(i) for i in parameters]
     webpage.make_html(web_dir=opts.webdir, pages=pages)
     for i in parameters:
@@ -616,7 +619,13 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
         html_file.make_header(title="Comparison page for {}".format(i),
                               approximant="Comparison")
         html_file.make_navbar(links=links)
-        html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl, i))
+        if i != "multiple":
+            html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl, i))
+        else:
+            html_file.make_search_bar(popular_options=["mass_1, mass_2",
+                                                       "luminosity_distance, iota, ra, dec",
+                                                       "iota, phi_12, phi_jl, tilt_1, tilt_2"],
+                                      code="combines")
         html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
 
 def make_corner_pages(opts, approximants, samples, colors, parameters):

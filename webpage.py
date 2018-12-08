@@ -185,19 +185,25 @@ class page():
                 for j in i:
                     if type(j) == list:
                         if len(j) > 1:
-                            self.add_content("<li class='dropdown-item dropdown'>\n", indent=14)
-                            self.add_content("<a class='dropdown-toggle' id='{}' "
-                                             "data-toggle='dropdown' "
-                                             "aria-haspopup='true' "
-                                             "aria-expanded='false'>{}</a>\n".format(j[0], j[0]), indent=16)
-                            self.add_content("<ul class='dropdown-menu' "
-                                             "aria-labelledby='{}'>\n".format(j[0]), indent=16)
-                            for k in j[1]:
-                                self.add_content("<li class='dropdown-item' href='#' "
-                                                 "onclick='grab_html(\"{}\")'>"
-                                                 "<a>{}</a></li>\n".format(k, k), indent=18)
-                            self.add_content("</ul>", indent=16)
-                            self.add_content("</li>", indent=14)
+                            if type(j[1]) == list:
+                                self.add_content("<li class='dropdown-item dropdown'>\n", indent=14)
+                                self.add_content("<a class='dropdown-toggle' id='{}' "
+                                                 "data-toggle='dropdown' "
+                                                 "aria-haspopup='true' "
+                                                 "aria-expanded='false'>{}</a>\n".format(j[0], j[0]), indent=16)
+                                self.add_content("<ul class='dropdown-menu' "
+                                                 "aria-labelledby='{}'>\n".format(j[0]), indent=16)
+                                for k in j[1]:
+                                    self.add_content("<li class='dropdown-item' href='#' "
+                                                     "onclick='grab_html(\"{}\")'>"
+                                                     "<a>{}</a></li>\n".format(k, k), indent=18)
+                                self.add_content("</ul>", indent=16)
+                                self.add_content("</li>", indent=14)
+                            else:
+                                for k in j:
+                                    self.add_content("<li class='dropdown-item' href='#' "
+                                                     "onclick='grab_html(\"{}\")'>"
+                                                     "<a>{}</a></li>\n".format(k, k), indent=14)
                         else:
                             self.add_content("<li class='dropdown-item' href='#' "
                                              "onclick='grab_html(\"{}\")'>"

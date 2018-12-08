@@ -67,6 +67,11 @@ def one_format(fil):
     elif "data" in keys:
         BILBY = True
         logging.info("BILBY >= v0.3.3 was used to generate %s" %(fil))
+        path = "data/posterior"
+    elif "posterior" in keys:
+        BILBY = True
+        logging.info("BILBY >= v0.3.1 <= v0.3.3 was used to generate %s" %(fil))
+        path = "posterior"
     else:
         raise Exception("Data format not understood")
     if LALINFERENCE:
@@ -76,19 +81,19 @@ def one_format(fil):
         data = np.array([i for i in f[data_path]])
     if BILBY:
         parameters, data = [], []
-        for i in sorted(f["data/posterior"].keys()):
+        for i in sorted(f["%s" %(path)].keys()):
             if "block2" in i:
                 pass
             else:
                 if "items" in i:
-                    for par in f["data/posterior/%s" %(i)]:
+                    for par in f["%s/%s" %(path,i)]:
                         parameters.append(par)
                 if "values" in i:
                     if len(data) == 0:
-                        for dat in f["data/posterior/%s" %(i)]:
+                        for dat in f["%s/%s" %(path, i)]:
                             data.append(list(np.real(dat)))
                     else:
-                        for num, dat in enumerate(f["data/posterior/%s" %(i)]):
+                        for num, dat in enumerate(f["%s/%s" %(path, i)]):
                             data[num] += list(np.real(dat))
         if "reference_frequency" in parameters:
             index = parameters.index("reference_frequency")
