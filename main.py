@@ -98,10 +98,10 @@ def run_checks(opts):
     opts: argparse
         argument parser object to hold all information from command line
     """
-    # make the web directory
-    utils.make_dir(opts.webdir)
     # check the command line arguments
     if opts.webdir:
+        # make the web directory
+        utils.make_dir(opts.webdir)
         if opts.samples and opts.approximant and opts.config:
             pass
         else:
@@ -314,13 +314,14 @@ def make_plots(opts, colors=None):
             samples = [j for j in f["samples"]]
             likelihood = [j[index] for j in samples]
             f.close()
-        combined_samples.append(samples)
         data = _grab_key_data(samples, likelihood, parameters)
         ra = [j[ind_ra] for j in samples]
         dec = [j[ind_dec] for j in samples]
         maxL_params = {j: data[j]["maxL"] for j in parameters}
         maxL_params["approximant"] = approx
-        combined_maxL.append(maxL_params)
+        if not opts.existing:
+            combined_samples.append(samples)
+            combined_maxL.append(maxL_params)
 
         fig = plot._make_corner_plot(opts, samples, parameters, approx, latex_labels)
         plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
