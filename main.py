@@ -218,12 +218,12 @@ def _grab_parameters(results):
         string to the results file
     """
     # grab the parameters from the samples
-    f = h5py.File(opts.samples[0])
+    f = h5py.File(results)
     parameters = [i for i in f["parameter_names"]]
     f.close()                   
     return parameters
 
-def _grab_key_data(samples, logL, parameters):
+def _grab_key_data(samples, logL, same_parameters, parameters):
     """Grab the key data for each parameter in the samples file.
 
     Parameters
@@ -236,9 +236,9 @@ def _grab_key_data(samples, logL, parameters):
         list of parameters that the sampler varies over
     """
     data = {}
-    for i in parameters:
-        index = parameters.index
-        subset = [j[index(i)] for j in samples]
+    for i in same_parameters:
+        indices = parameters.index(i)
+        subset = [j[indices] for j in samples]
         data[i] = {"mean": np.mean(subset),
                    "median": np.median(subset),
                    "maxL": subset[logL.index(np.max(logL))],
@@ -301,9 +301,9 @@ def make_plots(opts, colors=None):
     combined_samples = []
     combined_maxL = []
     # get the parameter names
-    parameters = _grab_parameters(opts.samples[0])
-    ind_ra = parameters.index("ra")
-    ind_dec = parameters.index("dec")
+    parameters = [_grab_parameters(i) for i in opts.samples]
+    ind_ra = [i.index("ra") for i in parameters]
+    ind_dec = [i.index("dec") for i in parameters]
     # generate the individual plots
     for num, i in enumerate(opts.samples):
         approx = opts.approximant[num]
@@ -314,16 +314,16 @@ def make_plots(opts, colors=None):
             samples = [j for j in f["samples"]]
             likelihood = [j[index] for j in samples]
             f.close()
-        data = _grab_key_data(samples, likelihood, parameters)
-        ra = [j[ind_ra] for j in samples]
-        dec = [j[ind_dec] for j in samples]
-        maxL_params = {j: data[j]["maxL"] for j in parameters}
+        data = _grab_key_data(samples, likelihood, parameters[num], parameters[num])
+        ra = [j[ind_ra[num]] for j in samples]
+        dec = [j[ind_dec[num]] for j in samples]
+        maxL_params = {j: data[j]["maxL"] for j in parameters[num]}
         maxL_params["approximant"] = approx
         if not opts.existing:
             combined_samples.append(samples)
             combined_maxL.append(maxL_params)
 
-        fig = plot._make_corner_plot(opts, samples, parameters, approx, latex_labels)
+        fig = plot._make_corner_plot(opts, samples, parameters[num], approx, latex_labels)
         plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
         plt.close()
         fig = plot._sky_map_plot(ra, dec)
@@ -332,8 +332,8 @@ def make_plots(opts, colors=None):
         fig = plot._waveform_plot(maxL_params)
         plt.savefig("%s/plots/%s_waveform.png" %(opts.webdir, approx))
         plt.close()
-        for ind, j in enumerate(parameters):
-            index = parameters.index(j)
+        for ind, j in enumerate(parameters[num]):
+            index = parameters[num].index(j)
             param_samples = [k[index] for k in samples]
             fig = plot._1d_histogram_plot(j, param_samples, latex_labels[j])
             plt.savefig("%s/plots/1d_posterior_%s_%s.png" %(opts.webdir, approx, j))
@@ -359,8 +359,8 @@ def make_plots(opts, colors=None):
                 likelihood = [j[index] for j in samples]
                 f.close()
             combined_samples.append(samples)
-            data = _grab_key_data(samples, likelihood, parameters)
-            maxL_params = {j: data[j]["maxL"] for j in parameters}
+            data = _grab_key_data(samples, likelihood, parameters[num], parameters[num])
+            maxL_params = {j: data[j]["maxL"] for j in parameters[num]}
             if opts.existing in i:
                 approx = i.split("/")[-1].split("_")[0]
             else:
@@ -370,16 +370,17 @@ def make_plots(opts, colors=None):
         
     # if len(approximants) > 1, then we need to do comparison plots
     if len(opts.approximant) > 1:
-        for ind, j in enumerate(parameters):
-            index = parameters.index(j)
-            param_samples = [[k[index] for k in l] for l in combined_samples]
+        same_parameters = list(set.intersection(*[set(l) for l in parameters]))
+        for ind, j in enumerate(same_parameters):
+            indices = [k.index(j) for k in parameters]
+            param_samples = [[k[indices[num]] for k in l] for num,l in enumerate(combined_samples)]
             fig = plot._1d_comparison_histogram_plot(j, opts.approximant,
                                                      param_samples, colors,
                                                      latex_labels[j])
             plt.savefig("%s/plots/combined_posterior_%s" %(opts.webdir, j))
             plt.close()
-        ra_list = [[k[ind_ra] for k in l] for l in combined_samples]
-        dec_list = [[k[ind_dec] for k in l] for l in combined_samples]
+        ra_list = [[k[ind_ra][num] for k in l] for num, l in enumerate(combined_samples)]
+        dec_list = [[k[ind_dec][num] for k in l] for num, l in enumerate(combined_samples)]
         fig = plot._waveform_comparison_plot(combined_maxL, colors)
         plt.savefig("%s/plots/compare_waveforms.png" %(opts.webdir))
         plt.close()
@@ -401,7 +402,7 @@ def make_navbar_links(parameters):
         condition = lambda i: True if "mass" in i and "source" not in i or "q" in i \
                               or "symmetric_mass_ratio" in i else False
         links.append(["masses", [i for i in parameters if condition(i)]])
-    if any("spin" in s for s in parameters):
+    if any("a_1" in s for s in parameters):
         condition = lambda i: True if "spin" in i or "chi_p" in i \
                               or "chi_eff" in i or "a_1" in i or "a_2" in i \
                               else False
@@ -459,16 +460,20 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
     # make summary table of information
     likelihood = []
     subset = []
-    for i in samples:
+    for num, i in enumerate(samples):
         with h5py.File(i) as f:
             params = [j for j in f["parameter_names"]]
             index = params.index("log_likelihood")
             subset.append([j for j in f["samples"]])
             likelihood.append([j[index] for j in f["samples"]])
             f.close()
-    data = [_grab_key_data(i, j, parameters) for i,j in zip(subset, likelihood)]
+    same_parameters = list(set.intersection(*[set(l) for l in parameters]))
+    data = []
+    for i,j,k in zip(subset, likelihood, parameters):
+        data.append(_grab_key_data(i,j,same_parameters,k))
+        #data = [_grab_key_data(i, j, same_parameters, parameters) for i,j in zip(subset, likelihood)]
     contents = []
-    for i in parameters:
+    for i in same_parameters:
         row = []
         row.append(i)
         for j in xrange(len(samples)):
@@ -492,10 +497,10 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
                               background_colour=colors[num])
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", "config", make_navbar_links(parameters)]
+                     "corner", "config", make_navbar_links(parameters[num])]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", "config", make_navbar_links(parameters)]
+                     "corner", "config", make_navbar_links(parameters[num])]
         html_file.make_navbar(links=links)
         # make an array of images that we want inserted in table
         contents = [["{}/plots/1d_posterior_{}_mass_1.png".format(opts.baseurl, i),
@@ -509,7 +514,7 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
         html_file.make_table_of_images(contents=contents)
         # make table of summary information
         contents = []
-        for j in parameters:
+        for j in same_parameters:
             row = []
             row.append(j)
             row.append(np.round(data[num][j]["maxL"], 3))
@@ -537,31 +542,32 @@ def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
     parameters: list
         list of parameters that the sampler varies over
     """
-    parameters.append("multiple")
-    pages = ["{}_{}".format(i, j) for i in approximants for j in parameters]
-    webpage.make_html(web_dir=opts.webdir, pages=pages)
     for i in parameters:
-        for app, col in zip(approximants, colors):
-            if len(approximants) > 1:
-                links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                         "corner", "config", make_navbar_links(parameters)]
-            else:
-                links = ["home", ["Approximants", [k for k in approximants]],
-                         "corner", "config", make_navbar_links(parameters)]
+        i.append("multiple")
+    pages = ["{}_{}".format(i, j) for num, i in enumerate(approximants) for j in parameters[num]]
+    webpage.make_html(web_dir=opts.webdir, pages=pages)
+    for app, col, par in zip(approximants, colors, parameters):
+        if len(approximants) > 1:
+            links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
+                     "corner", "config", make_navbar_links(par)]
+        else:
+            links = ["home", ["Approximants", [k for k in approximants]],
+                     "corner", "config", make_navbar_links(par)]
+        for j in par:
             html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                          html_page="{}_{}".format(app, i))
-            html_file.make_header(title="{} Posterior PDF for {}".format(app, i), background_colour=col,
+                                          html_page="{}_{}".format(app, j))
+            html_file.make_header(title="{} Posterior PDF for {}".format(app, j), background_colour=col,
                                   approximant=app)
             html_file.make_navbar(links=links)
-           
-            if i != "multiple":
-                html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, app, i))
+
+            if j != "multiple":
+                html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, app, j))
             else:
                 html_file.make_search_bar(popular_options=["mass_1, mass_2",
                                                            "luminosity_distance, iota, ra, dec",
                                                            "iota, phi_12, phi_jl, tilt_1, tilt_2"],
                                           code="combines")
-            html_file.make_footer(user=os.environ["USER"], rundir="{}".format(opts.webdir))
+        html_file.make_footer(user=os.environ["USER"], rundir="{}".format(opts.webdir))
                 
 
 def make_comparison_pages(opts, approximants, samples, colors, parameters):
@@ -584,8 +590,10 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
     html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                    html_page="Comparison")
     html_file.make_header(title="Comparison Summary Page")
+    same_parameters = list(set.intersection(*[set(l) for l in parameters]))
+    same_parameters.append("multiple")
     links = ["home", ["Approximant", [i for i in approximants]+["Comparison"]],
-                     make_navbar_links(parameters)]
+                     make_navbar_links(same_parameters)]
     html_file.make_navbar(links=links)
     contents = [["{}/plots/combined_skymap.png".format(opts.baseurl),
                  "{}/plots/compare_waveforms.png".format(opts.baseurl)]]
@@ -611,10 +619,9 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
 
     html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
     # edit all of the comparison pages
-    parameters.append("multiple")
-    pages = ["Comparison_{}".format(i) for i in parameters]
+    pages = ["Comparison_{}".format(i) for i in same_parameters]
     webpage.make_html(web_dir=opts.webdir, pages=pages)
-    for i in parameters:
+    for i in same_parameters:
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="Comparison_{}".format(i))
         html_file.make_header(title="Comparison page for {}".format(i),
@@ -647,21 +654,21 @@ def make_corner_pages(opts, approximants, samples, colors, parameters):
     """
     pages = ["{}_corner".format(i) for i in approximants]
     webpage.make_html(web_dir=opts.webdir, pages=pages)
-    for app, col in zip(approximants, colors):
+    for app, col, par in zip(approximants, colors, parameters):
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", "config", make_navbar_links(parameters)]
+                     "corner", "config", make_navbar_links(par)]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", "config", make_navbar_links(parameters)]
+                     "corner", "config", make_navbar_links(par)]
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="{}_corner".format(app))
         html_file.make_header(title="{} Corner plots".format(app), background_colour=col,
                               approximant=app)
         html_file.make_navbar(links=links)
         html_file.make_search_bar(popular_options=["mass_1, mass_2",
-                                                   "luminosity_distance, iota, ra, dec",
-                                                   "iota, phi_12, phi_jl, tilt_1, tilt_2"])
+                                                       "luminosity_distance, iota, ra, dec",
+                                                       "iota, phi_12, phi_jl, tilt_1, tilt_2"])
         html_file.make_footer(user=os.environ["USER"], rundir="{}".format(opts.webdir))
 
 def make_config_pages(opts, approximants, samples, colors, configs, parameters):
@@ -684,13 +691,13 @@ def make_config_pages(opts, approximants, samples, colors, configs, parameters):
     """
     pages = ["{}_config".format(i) for i in approximants]
     webpage.make_html(web_dir=opts.webdir, pages=pages, stylesheets=pages)
-    for app, con, col in zip(approximants, configs, colors):
+    for app, con, col, par in zip(approximants, configs, colors, parameters):
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
-                     "corner", "config", make_navbar_links(parameters)]
+                     "corner", "config", make_navbar_links(par)]
         else:
             links = ["home", ["Approximants", [k for k in approximants]],
-                     "corner", "config", make_navbar_links(parameters)]
+                     "corner", "config", make_navbar_links(par)]
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
                                       html_page="{}_config".format(app))
         html_file.make_header(title="{} configuration".format(app), background_colour=col,
@@ -714,7 +721,7 @@ def write_html(opts, colors):
         list of colors in hexadecimal format for the different approximants 
     """
     # grab the parameters
-    parameters = _grab_parameters(opts.samples[0])
+    parameters = [_grab_parameters(i) for i in opts.samples]
     # make the webpages
     make_home_pages(opts, opts.approximant, opts.samples, colors, parameters)
     make_1d_histograms_pages(opts, opts.approximant, opts.samples, colors,
