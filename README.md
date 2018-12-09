@@ -1,5 +1,9 @@
 # PESummary
 
+Code Version
+------------
+The code is currently at version v0.0.1
+
 Description
 -------------
 

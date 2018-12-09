@@ -21,8 +21,8 @@ import h5py
 import numpy as np
 
 try:
-    from lalsimlation import SimInspiralTransformPrecessingNewInitialConditions
-    import lal.MSUN_SI as MSUN_SI
+    from lalsimulation import SimInspiralTransformPrecessingNewInitialConditions
+    from lal import MSUN_SI
     LALINFERENCE_INSTALL=True
 except:
     LALINFERENCE_INSTALL=False
@@ -87,12 +87,15 @@ def _chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Return chi_p given samples for mass1, mass2, spin1x, spin1y, spin2x,
     spin2y
     """
-    return
+    mass_ratio = mass1/mass2
+    return np.maximum((spin1x**2 + spin1y**2)**0.5,
+                      (4*mass_ratio + 3) / (3*mass_ratio + 4) * mass_ratio \
+                          * (spin2x**2 + spin2y**2)**0.5)
 
 def _chi_eff(mass1, mass2, spin1z, spin2z):
     """Return chi_eff given samples for mass1, mass2, spin1z, spin2z
     """
-    return
+    return (spin1z * mass1 + spin2z * mass2) / (mass1 + mass2)
 
 def _component_spins(theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1,
                      mass_2, f_ref, phase):
@@ -106,7 +109,7 @@ def _component_spins(theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1,
                 SimInspiralTransformPrecessingNewInitialConditions(
                     theta_jn[i], phi_jl[i], tilt_1[i], tilt_2[i], phi_12[i],
                     a_1[i], a_2[i], mass_1[i]*MSUN_SI, mass_2[i]*MSUN_SI,
-                    reference_frequency[i], phase[i])
+                    f_ref[i], phase[i])
             data.append([iota, S1x, S1y, S1z, S2x, S2y, S2z])
         return data
     else:
@@ -173,6 +176,16 @@ def all_parameters(data, parameters):
         mass_2 = _m2_from_mchirp_q(chirp_mass, mass_ratio)
         for num, i in enumerate(data):
             data[num].append(mass_2[num])
+
+    ##################################################
+    # True reference frequency needs to be extracted #
+    #              NEEDS TO BE FIXED                 #
+    ##################################################
+
+    parameters.append("reference_frequency")
+    for num, i in enumerate(data):
+        data[num].append(20)
+
     if "mass_1" in parameters and "mass_2" in parameters:
         mass1_ind = parameters.index("mass_1")
         mass1 = np.array([i[mass1_ind] for i in data])
@@ -206,7 +219,7 @@ def all_parameters(data, parameters):
                 parameters.append("spin_2x")
                 parameters.append("spin_2y")
                 parameters.append("spin_2z")
-                indicies = [parameters.index(i) for i in spin_angles]
+                indices = [parameters.index(i) for i in spin_angles]
                 iota = np.array([i[indices[0]] for i in data])
                 phijl = np.array([i[indices[1]] for i in data])
                 tilt1 = np.array([i[indices[2]] for i in data])
