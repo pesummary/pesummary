@@ -85,7 +85,7 @@ function getImagePortion(imgObj, array){
     bufferCanvas.height = imgObj.height;
     bufferContext.drawImage(imgObj, 0, 0);
 
-    var list = ["luminosity_distance", "dec", "a_2", "a_1", "geocent_time", "phi_jl", "phase", "ra", "phi", "mass_2", "mass_1", "phi_12", "tilt_2", "iota", "tilt_1"];
+    var list = ["luminosity_distance", "dec", "a_2", "a_1", "geocent_time", "phi_jl", "psi", "ra", "phase", "mass_2", "mass_1", "phi_12", "tilt_2", "iota", "tilt_1"];
     var indices = []
     
     var ratio = (157.5*3) / (array.length*210)
