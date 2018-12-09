@@ -88,9 +88,12 @@ def _chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     spin2y
     """
     mass_ratio = mass1/mass2
-    return np.maximum((spin1x**2 + spin1y**2)**0.5,
-                      (4*mass_ratio + 3) / (3*mass_ratio + 4) * mass_ratio \
-                          * (spin2x**2 + spin2y**2)**0.5)
+    B1 = 2.0 + 1.5*mass_ratio
+    B2 = 2.0 + 3.0 / (2*mass_ratio)
+    S1_perp = (spin1x**2 + spin1y**2)**0.5
+    S2_perp = (spin2x**2 + spin2y**2)**0.5
+    chi_p = 1.0/B1 * np.maximum(B1*S1_perp, B2*S2_perp)
+    return chi_p
 
 def _chi_eff(mass1, mass2, spin1z, spin2z):
     """Return chi_eff given samples for mass1, mass2, spin1z, spin2z
