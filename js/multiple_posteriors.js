@@ -43,6 +43,9 @@ function combines(list) {
             parameters.push(total[i].id);
         }
         var ticked = [];
+        parameters = parameters.filter(function(item, pos) {
+                         return parameters.indexOf(item) == pos;
+                      });
         for ( var i=0; i<parameters.length; i++ ) {
             if ( document.getElementById(parameters[i]).checked == true) {
                 ticked.push(parameters[i]);
@@ -64,8 +67,8 @@ function combines(list) {
                 imgObject.src = '../plots/combined_posterior_'+el[i]+'.png'
             } else {                                    
                 imgObject.src = '../plots/1d_posterior_'+approx+'_'+el[i]+'.png';
-            }       
-            ctx.drawImage(imgObject, 0, (500*i)+(i*20), 700, 500);  
+            }
+            ctx.drawImage(imgObject, 0, (500*i)+(i*20), 700, 500);        
         }                
     }                                                                           
 }

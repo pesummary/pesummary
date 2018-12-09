@@ -20,6 +20,7 @@ function combine(list) {
     var approx = heading.innerHTML.split(" ")[0]
     var c=document.getElementById("canvas")
     var ctx=c.getContext("2d")
+    c.width=700
     ctx.clearRect(0, 0, c.width, c.height);
     var el= document.getElementById("corner_search").value.split(", ");
     if ( typeof list === 'undefined' ) {
@@ -96,13 +97,12 @@ function getImagePortion(imgObj, array){
     indices.sort((a,b) => a-b)
 
     for ( var i=0; i<array.length; i++) {
+
+        tnCanvasContext.drawImage(bufferCanvas, 100+208*indices[i]+2*(indices[i]-1), 34+208*list.length+2*(list.length-1), 208, 80, 210*i*ratio+120, 210*array.length*ratio, 208*ratio, 80*ratio)
+        tnCanvasContext.drawImage(bufferCanvas, 10, 36+208*indices[i]+2*(indices[i]-1), 80, 208, 100-74*ratio, 210*i*ratio, 74*ratio, 208*ratio)
         for ( var j=i; j<array.length; j++) {
             tnCanvasContext.drawImage(bufferCanvas, 100+208*indices[i]+2*(indices[i]-1), 36+208*indices[j]+2*(indices[j]-1), 208, 208, 210*i*ratio+120, 210*j*ratio, 208*ratio, 208*ratio)
         }
-    }
-    for ( var i=0; i<array.length; i++) {
-        tnCanvasContext.drawImage(bufferCanvas, 100+208*indices[i]+2*(indices[i]-1), 34+208*list.length+2*(list.length-1), 208, 80, 210*i*ratio+120, 210*array.length*ratio, 208*ratio, 80*ratio)
-         tnCanvasContext.drawImage(bufferCanvas, 10, 36+208*indices[i]+2*(indices[i]-1), 80, 208, 37.5/ratio, 210*i*ratio, 74*ratio, 208*ratio)  
     }  
     return bufferContext.toDataURL()
 }
