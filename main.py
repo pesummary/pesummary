@@ -414,7 +414,7 @@ def make_navbar_links(parameters):
         condition = lambda i: True if "phi" in i or "tilt" in i else False
         links.append(["spin_angles", [i for i in parameters if condition(i)]])
     if any("ra" in s for s in parameters):
-        condition = lambda i: True if "ra" in i or "dec" in i or "psi" in i \
+        condition = lambda i: True if "ra" == i or "dec" == i or "psi" == i \
                               else False
         links.append(["sky_location", [i for i in parameters if condition(i)]])
     if any("snr" in s for s in parameters):
