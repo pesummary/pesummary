@@ -185,9 +185,10 @@ def all_parameters(data, parameters):
     #              NEEDS TO BE FIXED                 #
     ##################################################
 
-    parameters.append("reference_frequency")
-    for num, i in enumerate(data):
-        data[num].append(20)
+    if "reference_frequency" not in parameters:
+        parameters.append("reference_frequency")
+        for num, i in enumerate(data):
+            data[num].append(20)
 
     if "mass_1" in parameters and "mass_2" in parameters:
         mass1_ind = parameters.index("mass_1")
