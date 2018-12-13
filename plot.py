@@ -45,7 +45,7 @@ def _1d_histogram_plot(param, samples, latex_label):
     latex_label: str
         latex label for param
     """
-    logging.info("Generating the 1d histogram plot for %s" %(param))
+    logging.info("Generating the 1d histogram plot for %s" %(param.decode("utf-8")))
     fig = plt.figure()
     n, bins, patches = plt.hist(samples, histtype="step", bins=50, color='b')
     plt.xlabel(latex_label, fontsize=16)
@@ -55,9 +55,10 @@ def _1d_histogram_plot(param, samples, latex_label):
     y_range = [0,np.max(n)+0.1*np.max(n)]
     plt.plot([upper_percentile]*2, y_range, color='b', linestyle='--')
     plt.plot([lower_percentile]*2, y_range, color='b', linestyle='--')
-    median = np.round(np.median(samples), 2)
-    upper = np.round(upper_percentile, 2) - median
-    lower = median - np.round(lower_percentile, 2)
+    median = np.median(samples)
+    upper = np.round(upper_percentile - median, 2)
+    lower = np.round(median - lower_percentile, 2)
+    median = np.round(median, 2)
     plt.title(r"$%s^{+%s}_{-%s}$" %(median, upper, lower), fontsize=18)
     plt.grid()
     plt.ylim(y_range)
@@ -81,7 +82,7 @@ def _1d_comparison_histogram_plot(param, approximants, samples, colors,
     latex_label: str
         latex label for param
     """
-    logging.info("Generating the 1d comparison histogram plot for %s" %(param)) 
+    logging.info("Generating the 1d comparison histogram plot for %s" %(param.decode("utf-8"))) 
     fig = plt.figure()
     for num, i in enumerate(samples):
         plt.hist(i, histtype="step", bins=50, color=colors[num],
@@ -162,19 +163,19 @@ def _waveform_plot(maxL_params, **kwargs):
                                 delta_frequency)
 
     approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
-    mass_1 = maxL_params["mass_1"]*MSUN_SI
-    mass_2 = maxL_params["mass_2"]*MSUN_SI
-    luminosity_distance = maxL_params["luminosity_distance"]*PC_SI*10**6
+    mass_1 = maxL_params[b"mass_1"]*MSUN_SI
+    mass_2 = maxL_params[b"mass_2"]*MSUN_SI
+    luminosity_distance = maxL_params[b"luminosity_distance"]*PC_SI*10**6
     iota, S1x, S1y, S1z, S2x, S2y, S2z = \
         lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-            maxL_params["iota"], maxL_params["phi_jl"], maxL_params["tilt_1"],
-            maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
-            maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-            maxL_params["phase"])
+            maxL_params[b"iota"], maxL_params[b"phi_jl"], maxL_params[b"tilt_1"],
+            maxL_params[b"tilt_2"], maxL_params[b"phi_12"], maxL_params[b"a_1"],
+            maxL_params[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+            maxL_params[b"phase"])
     h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2, S1x,
                           S1y, S1z, S2x, S2y, S2z,
                           luminosity_distance, iota,
-                          maxL_params["phase"], 0.0, 0.0, 0.0, delta_frequency,
+                          maxL_params[b"phase"], 0.0, 0.0, 0.0, delta_frequency,
                           minimum_frequency, maximum_frequency,
                           kwargs.get("f_ref", 10.), None, approx)
     h_plus = h_plus.data.data
@@ -185,8 +186,8 @@ def _waveform_plot(maxL_params, **kwargs):
     colors=['b', 'r']
     linestyle=['-', '--']
     for num, i in enumerate(["H1", "L1"]):
-        ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
-                                maxL_params["psi"], maxL_params["geocent_time"])
+        ar = __antenna_response(i, maxL_params[b"ra"], maxL_params[b"dec"],
+                                maxL_params[b"psi"], maxL_params[b"geocent_time"])
         plt.plot(frequency_array, abs(h_plus*ar[0]+h_cross*ar[1]),
                  color=colors[num], linestyle=linestyle[num],
                  linewidth=2.0, label=i)
@@ -226,17 +227,17 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
     fig = plt.figure()
     for num, i in enumerate(maxL_params_list):
         approx = lalsim.GetApproximantFromString(i["approximant"])
-        mass_1 = i["mass_1"]*MSUN_SI
-        mass_2 = i["mass_2"]*MSUN_SI
-        luminosity_distance = i["luminosity_distance"]*PC_SI*10**6
+        mass_1 = i[b"mass_1"]*MSUN_SI
+        mass_2 = i[b"mass_2"]*MSUN_SI
+        luminosity_distance = i[b"luminosity_distance"]*PC_SI*10**6
         iota, S1x, S1y, S1z, S2x, S2y, S2z = \
             lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                i["iota"], i["phi_jl"], i["tilt_1"], i["tilt_2"], i["phi_12"],
-                i["a_1"], i["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-                i["phase"])
+                i[b"iota"], i[b"phi_jl"], i[b"tilt_1"], i[b"tilt_2"], i[b"phi_12"],
+                i[b"a_1"], i[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+                i[b"phase"])
         h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2,
                               S1x, S1y, S1z, S2x, S2y, S2z,
-                              luminosity_distance, iota, i["phase"], 0.0,
+                              luminosity_distance, iota, i[b"phase"], 0.0,
                               0.0, 0.0, delta_frequency, minimum_frequency,
                               maximum_frequency, kwargs.get("f_ref", 10.),
                               None, approx)
@@ -244,8 +245,8 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
         h_cross = h_cross.data.data
         h_plus = h_plus[:len(frequency_array)]
         h_cross = h_cross[:len(frequency_array)]
-        ar = __antenna_response("H1", i["ra"], i["dec"], i["psi"],
-                                i["geocent_time"])
+        ar = __antenna_response("H1", i[b"ra"], i[b"dec"], i[b"psi"],
+                                i[b"geocent_time"])
         plt.plot(frequency_array, abs(h_plus*ar[0]+h_cross*ar[1]),
                  color=colors[num], label=i["approximant"], linewidth=2.0)
     plt.xscale("log")
@@ -415,13 +416,13 @@ def _make_corner_plot(opts, samples, params, approximant, latex_labels,
             levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
             plot_density=False, plot_datapoints=True, fill_contours=True,
             max_n_ticks=3)
-    corner_parameters = ["luminosity_distance", "dec", "a_2",
-                         "a_1", "geocent_time", "phi_jl", "psi", "ra", "phase",
-                         "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
-                         "tilt_1"]
+    corner_parameters = [b"luminosity_distance", b"dec", b"a_2",
+                         b"a_1", b"geocent_time", b"phi_jl", b"psi", b"ra", b"phase",
+                         b"mass_2", b"mass_1", b"phi_12", b"tilt_2", b"iota",
+                         b"tilt_1"]
     xs = np.zeros([len(corner_parameters), len(samples)])
     for num, i in enumerate(corner_parameters):
-        xs[num] = [j[params.index(i)] for j in samples]
+        xs[num] = [j[params.index(b"%s" %(i))] for j in samples]
     default_kwargs["labels"] = [latex_labels[i] for i in corner_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
     # grab the axes of the subplots
