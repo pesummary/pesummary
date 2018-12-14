@@ -1,2 +1,12 @@
 ## ignore .pyc files
 *.pyc
+
+## ignore .egg files
+*.egg-info
+
+## ignore build and dist directories
+build/
+dist/
+
+## ignore __pycache__ directories
+__pycache__

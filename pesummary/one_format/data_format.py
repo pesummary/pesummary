@@ -17,7 +17,7 @@ import logging
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 import h5py
-#import deepdish
+import deepdish
 
 import numpy as np
 
@@ -28,12 +28,13 @@ try:
 except:
     LALINFERENCE_INSTALL=False
 
-def _make_hdf5_file(name, data, parameters):
+def _make_hdf5_file(name, data, parameters, approximant=None):
     """
     """
     f = h5py.File("%s_temp" %(name), "w")
     f.create_dataset("parameter_names", data=parameters)
     f.create_dataset("samples", data=data)
+    f.create_dataset("approximant", data=approximant)
     f.close()
 
 def _mchirp_from_m1_m2(mass1, mass2):
@@ -358,11 +359,12 @@ def one_format(fil):
             for num, i in enumerate(f[data_path]):
                 data[num].append(np.arccos(i[index(b"costheta_jn")]))
     if BILBY:
+        approx = "None"
         parameters, data = [], []
         try:
             logging.info("Trying to load with file with deepdish")
             f = deepdish.io.load(fil)
-            parameters, data = load_with_deepdish(f)
+            parameters, data, approx = load_with_deepdish(f)
         except:
             logging.info("Failed to load file with deepdish. Using h5py to "
                          "load in data")
@@ -378,8 +380,14 @@ def one_format(fil):
         index = parameters.index(b"minimum_frequency")
         parameters.remove(parameters[index])
         for i in data:
-            i.remove(i[index]) 
-    _make_hdf5_file(fil, np.array(data), np.array(parameters))
+            i.remove(i[index])
+    if b"logPrior" in parameters:
+        index = parameters.index(b"logPrior")
+        parameters.remove(parameters[index])
+        for i in data:
+            i.remove(i[index])
+    _make_hdf5_file(fil, np.array(data), np.array(parameters, dtype="S"),
+                    approximant=np.array([approx], dtype="S"))
     return "%s_temp" %(fil)
 
 def load_with_deepdish(f):
@@ -391,9 +399,16 @@ def load_with_deepdish(f):
     f: dict
         results file loaded with deepdish 
     """
+    approx = None
     parameters = [i for i in f["posterior"].keys()]
-    data = [[i for i in f["posterior"][par]] for par in parameters]
-    return parameters, data
+    if "waveform_approximant" in parameters:
+        approx = f["posterior"]["waveform_approximant"][0]
+        parameters.remove("waveform_approximant")
+    data = [[float(np.real(i)) for i in f["posterior"][par]] for par in parameters]
+    for num, par in enumerate(parameters):
+        if par == "logL":
+            parameters[num] = "log_likelihood"
+    return parameters, data, approx
 
 def load_with_h5py(f, path):
     """Return the data and parameters that appear in a given h5 file assuming
@@ -405,18 +420,26 @@ def load_with_h5py(f, path):
         results file loaded with h5py 
     """
     parameters, data = [], []
-    for i in sorted(f["%s" %(path)].keys()):
-        if "block2" in i:
-            pass
-        else:
-            if "items" in i:
-                for par in f["%s/%s" %(path, i)]:
-                    parameters.append(par)
-            if "values" in i:
-                if len(data) == 0:
-                    for dat in f["%s/%s" %(path, i)]:
-                        data.append(list(np.real(dat)))
+    blocks = [i for i in f["%s" %(path)] if "block" in i]
+    for i in blocks:
+        block_name = i.split("_")[0]
+        if "items" in i:
+            for par in f["%s/%s" %(path,i)]:
+                if par == b"waveform_approximant":
+                    blocks.remove(block_name+"_items")
+                    blocks.remove(block_name+"_values")
+    for i in sorted(blocks):
+        if "items" in i:
+            for par in f["%s/%s" %(path,i)]:
+                if par == b"logL":
+                    parameters.append(b"log_likelihood")
                 else:
-                    for num, dat in enumerate(f["%s/%s" %(path, i)]):
-                        data[num] += list(np.real(dat))
+                    parameters.append(par)
+        if "values" in i:
+            if len(data) == 0:
+                for dat in f["%s/%s" %(path, i)]:
+                    data.append(list(np.real(dat)))
+            else:
+                for num, dat in enumerate(f["%s/%s" %(path, i)]):
+                    data[num] += list(np.real(dat))
     return parameters, data

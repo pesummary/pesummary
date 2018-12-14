@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 # Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,11 +30,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-import webpage
-import utils
-import plot
-from _version import __bilby_version__
-from data_format import one_format
+import pesummary
+from pesummary.webpage import webpage
+from pesummary.utils import utils
+from pesummary.plot import plot
+from pesummary.one_format.data_format import one_format
+from pesummary._version import __bilby_version__
 
 import h5py
 
@@ -102,11 +105,26 @@ def run_checks(opts):
     if opts.webdir:
         # make the web directory
         utils.make_dir(opts.webdir)
-        if opts.samples and opts.approximant and opts.config:
+        if opts.samples and opts.config:
             pass
         else:
             raise Exception("Please run python main.py --samples [results.hdf] "
-                            "--approximant [approx] --config [config.ini]")
+                            "--config [config.ini]")
+    if opts.approximant == None:
+        logging.info("No approximant is given. Trying to extract from "
+                     "results file")
+        opts.approximant = []
+        for i in opts.samples:
+            f = h5py.File(i, "r")
+            approx = f["approximant"][0]
+            if approx == b"None":
+                raise Exception("Failed to extract approximant from your results "
+                                "file: %s. Please pass the approximant with the flag "
+                                "--approximant" %(i.split("_temp")[0]))
+            opts.approximant.append(approx.decode("utf-8"))
+    if len(opts.samples) != len(opts.approximant):
+        raise Exception("The number of results files does not match the number of "
+                        "approximants")
     # check that if add_to_existing is specified then existing html page
     # is also given
     if opts.add_to_existing and opts.existing == None:
@@ -172,7 +190,7 @@ def copy_files(opts):
         argument parser object to hold all information from command line
     """
     # copy over the javascript scripts
-    path = os.path.dirname(os.path.abspath(__file__))
+    path = pesummary.__file__[:-12]
     scripts = ["search.js", "combine_corner.js", "grab.js", "multi_dropbar.js",
                "multiple_posteriors.js", "side_bar.js"]
     for i in scripts:
@@ -296,7 +314,8 @@ def make_plots(opts, colors=None):
                   b"mass_1_source": r"$m_{1}^{source}$",
                   b"mass_2_source": r"$m_{2}^{source}$",
                   b"chirp_mass_source": r"$\mathcal{M}^{source}$",
-                  b"total_mass_source": r"$M^{source}$"}
+                  b"total_mass_source": r"$M^{source}$",
+                  b"cos_iota": r"$\cos{\iota}$"}
     # generate array of both samples
     combined_samples = []
     combined_maxL = []
@@ -322,10 +341,12 @@ def make_plots(opts, colors=None):
         if not opts.existing:
             combined_samples.append(samples)
             combined_maxL.append(maxL_params)
-
-        fig = plot._make_corner_plot(opts, samples, parameters[num], approx, latex_labels)
-        plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
-        plt.close()
+        try:
+            fig = plot._make_corner_plot(opts, samples, parameters[num], approx, latex_labels)
+            plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
+            plt.close()
+        except Exception as e:
+            logging.info("failed to generate corner plot because %s" %(e))
         fig = plot._sky_map_plot(ra, dec)
         plt.savefig("%s/plots/%s_skymap.png" %(opts.webdir, approx))
         plt.close()
