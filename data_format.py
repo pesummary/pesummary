@@ -17,6 +17,7 @@ import logging
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 import h5py
+#import deepdish
 
 import numpy as np
 
@@ -107,7 +108,7 @@ def _component_spins(theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1,
     """
     if LALINFERENCE_INSTALL:
         data = []
-        for i in xrange(len(theta_jn)):
+        for i in range(len(theta_jn)):
             iota, S1x, S1y, S1z, S2x, S2y, S2z = \
                 SimInspiralTransformPrecessingNewInitialConditions(
                     theta_jn[i], phi_jl[i], tilt_1[i], tilt_2[i], phi_12[i],
@@ -128,52 +129,52 @@ def all_parameters(data, parameters):
     parameters: list
         list of parameters that have been sampled over
     """
-    if "mass_ratio" not in parameters and "symmetric_mass_ratio" in parameters:
+    if b"mass_ratio" not in parameters and b"symmetric_mass_ratio" in parameters:
         parameters.append("mass_ratio")
-        symmetric_mass_ratio_ind = parameters.index("symmetric_mass_ratio")
+        symmetric_mass_ratio_ind = parameters.index(b"symmetric_mass_ratio")
         symmetric_mass_ratio = np.array([i[symmetric_mass_ratio_ind] for i in data])
         mass_ratio = _q_from_eta(symmetric_mass_ratio)
         for num, i in enumerate(data):
             data[num].append(mass_ratio[num])
-    if "mass_ratio" not in parameters and "mass_1" in parameters and "mass_2" in parameters:
-        parameters.append("mass_ratio")
-        mass1_ind = parameters.index("mass_1")
+    if b"mass_ratio" not in parameters and b"mass_1" in parameters and b"mass_2" in parameters:
+        parameters.append(b"mass_ratio")
+        mass1_ind = parameters.index(b"mass_1")
         mass1 = np.array([i[mass1_ind] for i in data])
-        mass2_ind = parameters.index("mass_2")
+        mass2_ind = parameters.index(b"mass_2")
         mass2 = np.array([i[mass2_ind] for i in data])
         q = _q_from_m1_m2(mass1, mass2)
         for num, i in enumerate(data):
             data[num].append(q[num])
-    if "mass_ratio" in parameters:
-        mass_ratio_ind = parameters.index("mass_ratio")
+    if b"mass_ratio" in parameters:
+        mass_ratio_ind = parameters.index(b"mass_ratio")
         mass_ratio = np.array([i[mass_ratio_ind] for i in data])
         median = np.median(mass_ratio)
         if median < 1:
             # define mass_ratio so that q>1
              for i in data:
                  i[mass_ratio_ind] = 1/i[mass_ratio_ind]
-    if "chirp_mass" not in parameters and "total_mass" in parameters:
-        parameters.append("chirp_mass")
-        total_mass_ind = parameters.index("total_mass")
-        mass_ratio_ind = parameters.index("mass_ratio")
+    if b"chirp_mass" not in parameters and b"total_mass" in parameters:
+        parameters.append(b"chirp_mass")
+        total_mass_ind = parameters.index(b"total_mass")
+        mass_ratio_ind = parameters.index(b"mass_ratio")
         total_mass = np.array([i[total_mass_ind] for i in data])
         mass_ratio = np.array([i[mass_ratio_ind] for i in data])
         chirp_mass = _mchirp_from_mtotal_q(total_mass, mass_ratio)
         for num, i in enumerate(data):
             data[num].append(chirp_mass[num])
-    if "mass_1" not in parameters and "chirp_mass" in parameters:
-        parameters.append("mass_1")
-        chirp_mass_ind = parameters.index("chirp_mass")
-        mass_ratio_ind = parameters.index("mass_ratio")
+    if b"mass_1" not in parameters and b"chirp_mass" in parameters:
+        parameters.append(b"mass_1")
+        chirp_mass_ind = parameters.index(b"chirp_mass")
+        mass_ratio_ind = parameters.index(b"mass_ratio")
         chirp_mass = np.array([i[chirp_mass_ind] for i in data])
         mass_ratio = np.array([i[mass_ratio_ind] for i in data])
         mass_1 = _m1_from_mchirp_q(chirp_mass, mass_ratio)
         for num, i in enumerate(data):
             data[num].append(mass_1[num])
-    if "mass_2" not in parameters and "chirp_mass" in parameters:
-        parameters.append("mass_2")
-        chirp_mass_ind = parameters.index("chirp_mass")
-        mass_ratio_ind = parameters.index("mass_ratio")
+    if b"mass_2" not in parameters and b"chirp_mass" in parameters:
+        parameters.append(b"mass_2")
+        chirp_mass_ind = parameters.index(b"chirp_mass")
+        mass_ratio_ind = parameters.index(b"mass_ratio")
         chirp_mass = np.array([i[chirp_mass_ind] for i in data])
         mass_ratio = np.array([i[mass_ratio_ind] for i in data])
         mass_2 = _m2_from_mchirp_q(chirp_mass, mass_ratio)
@@ -185,45 +186,45 @@ def all_parameters(data, parameters):
     #              NEEDS TO BE FIXED                 #
     ##################################################
 
-    if "reference_frequency" not in parameters:
-        parameters.append("reference_frequency")
+    if b"reference_frequency" not in parameters:
+        parameters.append(b"reference_frequency")
         for num, i in enumerate(data):
-            data[num].append(20)
+            data[num].append(20.)
 
-    if "mass_1" in parameters and "mass_2" in parameters:
-        mass1_ind = parameters.index("mass_1")
+    if b"mass_1" in parameters and b"mass_2" in parameters:
+        mass1_ind = parameters.index(b"mass_1")
         mass1 = np.array([i[mass1_ind] for i in data])
-        mass2_ind = parameters.index("mass_2")
+        mass2_ind = parameters.index(b"mass_2")
         mass2 = np.array([i[mass2_ind] for i in data])
-        if "total_mass" not in parameters:
-            parameters.append("total_mass")
+        if b"total_mass" not in parameters:
+            parameters.append(b"total_mass")
             m_total = _m_total_from_m1_m2(mass1, mass2)
             for num, i in enumerate(data):
                 data[num].append(m_total[num])
-        if "chirp_mass" not in parameters:
-            parameters.append("chirp_mass")
+        if b"chirp_mass" not in parameters:
+            parameters.append(b"chirp_mass")
             mchirp = _mchirp_from_m1_m2(mass1, mass2)
             for num, i in enumerate(data):
                 data[num].append(mchirp[num])
-        if "symmetric_mass_ratio" not in parameters:
-            parameters.append("symmetric_mass_ratio")
+        if b"symmetric_mass_ratio" not in parameters:
+            parameters.append(b"symmetric_mass_ratio")
             eta = _eta_from_m1_m2(mass1, mass2)
             for num, i in enumerate(data):
                 data[num].append(eta[num])
 
-        spin_components = ["spin_1x", "spin_1y", "spin_1z", "spin_2x",
-                           "spin_2y", "spin_2z"]
-        spin_angles = ["iota", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
-                       "mass_1", "mass_2", "reference_frequency", "phase"]
+        spin_components = [b"spin_1x", b"spin_1y", b"spin_1z", b"spin_2x",
+                           b"spin_2y", b"spin_2z"]
+        spin_angles = [b"iota", b"phi_jl", b"tilt_1", b"tilt_2", b"phi_12", b"a_1", b"a_2",
+                       b"mass_1", b"mass_2", b"reference_frequency", b"phase"]
         if all(i not in parameters for i in spin_components):
             if all(i in parameters for i in spin_angles):
-                parameters.append("spin_1x")
-                parameters.append("spin_1y")
-                parameters.append("spin_1z")
-                parameters.append("spin_2x")
-                parameters.append("spin_2y")
-                parameters.append("spin_2z")
-                indices = [parameters.index(i) for i in spin_angles]
+                parameters.append(b"spin_1x")
+                parameters.append(b"spin_1y")
+                parameters.append(b"spin_1z")
+                parameters.append(b"spin_2x")
+                parameters.append(b"spin_2y")
+                parameters.append(b"spin_2z")
+                indices = [parameters.index(b"%s" %(i)) for i in spin_angles]
                 iota = np.array([i[indices[0]] for i in data])
                 phijl = np.array([i[indices[1]] for i in data])
                 tilt1 = np.array([i[indices[2]] for i in data])
@@ -244,11 +245,11 @@ def all_parameters(data, parameters):
                     data[num].append(spin_parameters[num][4])
                     data[num].append(spin_parameters[num][5])
                     data[num].append(spin_parameters[num][6])
-        if "chi_p" not in parameters and "chi_eff" not in parameters:
+        if b"chi_p" not in parameters and b"chi_eff" not in parameters:
             if all(i in parameters for i in spin_angles):
-                parameters.append("chi_p")
-                parameters.append("chi_eff")
-                indices = [parameters.index(i) for i in spin_components]
+                parameters.append(b"chi_p")
+                parameters.append(b"chi_eff")
+                indices = [parameters.index(b"%s" %(i)) for i in spin_components]
                 spin1x = np.array([i[indices[0]] for i in data])
                 spin1y = np.array([i[indices[1]] for i in data])
                 spin1z = np.array([i[indices[2]] for i in data])
@@ -260,16 +261,16 @@ def all_parameters(data, parameters):
                 for num, i in enumerate(data):
                     data[num].append(chi_p[num])
                     data[num].append(chi_eff[num])
-    if "cos_tilt_1" not in parameters and "tilt_1" in parameters:
-        parameters.append("cos_tilt_1")
-        tilt_1_ind = parameters.index("tilt_1")
+    if b"cos_tilt_1" not in parameters and b"tilt_1" in parameters:
+        parameters.append(b"cos_tilt_1")
+        tilt_1_ind = parameters.index(b"tilt_1")
         tilt_1 = np.array([i[tilt_1_ind] for i in data])
         cos_tilt_1 = np.cos(tilt_1)
         for num, i in enumerate(data):
             data[num].append(cos_tilt_1[num])
-    if "cos_tilt_2" not in parameters and "tilt_2" in parameters:
-        parameters.append("cos_tilt_2")
-        tilt_2_ind = parameters.index("tilt_2")
+    if b"cos_tilt_2" not in parameters and b"tilt_2" in parameters:
+        parameters.append(b"cos_tilt_2")
+        tilt_2_ind = parameters.index(b"tilt_2")
         tilt_2 = np.array([i[tilt_2_ind] for i in data])
         cos_tilt_2 = np.cos(tilt_2)
         for num, i in enumerate(data):
@@ -348,27 +349,68 @@ def one_format(fil):
             data.append([i[lalinference_names.index(j)] for j in parameters])
         parameters = [standard_names[i] for i in parameters]
         index = lalinference_names.index
-        if "luminosity_distance" not in parameters and "logdistance" in lalinference_names:
-            parameters.append("luminosity_distance")
+        if b"luminosity_distance" not in parameters and b"logdistance" in lalinference_names:
+            parameters.append(b"luminosity_distance")
             for num, i in enumerate(f[data_path]):
-                data[num].append(np.exp(i[index("logdistance")]))
-        if "iota" not in parameters and "costheta_jn" in lalinference_names:
-            parameters.append("iota")
+                data[num].append(np.exp(i[index(b"logdistance")]))
+        if b"iota" not in parameters and b"costheta_jn" in lalinference_names:
+            parameters.append(b"iota")
             for num, i in enumerate(f[data_path]):
-                data[num].append(np.arccos(i[index("costheta_jn")]))
+                data[num].append(np.arccos(i[index(b"costheta_jn")]))
     if BILBY:
         parameters, data = [], []
-        blocks = [i for i in f["%s" %(path)] if "block" in i]
-        for i in blocks:
-            block_name = i.split("_")[0]
+        try:
+            logging.info("Trying to load with file with deepdish")
+            f = deepdish.io.load(fil)
+            parameters, data = load_with_deepdish(f)
+        except:
+            logging.info("Failed to load file with deepdish. Using h5py to "
+                         "load in data")
+            f = h5py.File(fil)
+            parameters, data = load_with_h5py(f, path)
+    data, parameters = all_parameters(data, parameters)
+    if b"reference_frequency" in parameters:
+        index = parameters.index(b"reference_frequency")
+        parameters.remove(parameters[index])
+        for i in data:
+            i.remove(i[index])
+    if b"minimum_frequency" in parameters:
+        index = parameters.index(b"minimum_frequency")
+        parameters.remove(parameters[index])
+        for i in data:
+            i.remove(i[index]) 
+    _make_hdf5_file(fil, np.array(data), np.array(parameters))
+    return "%s_temp" %(fil)
+
+def load_with_deepdish(f):
+    """Return the data and parameters that appear in a given h5 file assuming
+    that the file has been loaded with deepdish
+
+    Parameters
+    ----------
+    f: dict
+        results file loaded with deepdish 
+    """
+    parameters = [i for i in f["posterior"].keys()]
+    data = [[i for i in f["posterior"][par]] for par in parameters]
+    return parameters, data
+
+def load_with_h5py(f, path):
+    """Return the data and parameters that appear in a given h5 file assuming
+    that the file has been loaded with h5py
+
+    Parameters
+    ----------
+    f: h5py._hl.files.File
+        results file loaded with h5py 
+    """
+    parameters, data = [], []
+    for i in sorted(f["%s" %(path)].keys()):
+        if "block2" in i:
+            pass
+        else:
             if "items" in i:
-                for par in f["%s/%s" %(path,i)]:
-                    if par == "waveform_approximant":
-                        blocks.remove(block_name+"_items")
-                        blocks.remove(block_name+"_values")
-        for i in sorted(blocks):
-            if "items" in i:
-                for par in f["%s/%s" %(path,i)]:
+                for par in f["%s/%s" %(path, i)]:
                     parameters.append(par)
             if "values" in i:
                 if len(data) == 0:
@@ -377,20 +419,4 @@ def one_format(fil):
                 else:
                     for num, dat in enumerate(f["%s/%s" %(path, i)]):
                         data[num] += list(np.real(dat))
-    data, parameters = all_parameters(data, parameters)
-    if "waveform_approximant" in parameters:
-        index = parameters.index("waveform_approximant")
-        parameters.remove(parameters[index])
-        
-    if "reference_frequency" in parameters:
-        index = parameters.index("reference_frequency")
-        parameters.remove(parameters[index])
-        for i in data:
-            i.remove(i[index])
-    if "minimum_frequency" in parameters:
-        index = parameters.index("minimum_frequency")
-        parameters.remove(parameters[index])
-        for i in data:
-            i.remove(i[index]) 
-    _make_hdf5_file(fil, np.array(data), np.array(parameters))
-    return "%s_temp" %(fil)
+    return parameters, data

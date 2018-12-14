@@ -218,7 +218,7 @@ def _grab_parameters(results):
         string to the results file
     """
     # grab the parameters from the samples
-    f = h5py.File(results)
+    f = h5py.File(results, "r")
     parameters = [i for i in f["parameter_names"]]
     f.close()                   
     return parameters
@@ -237,7 +237,7 @@ def _grab_key_data(samples, logL, same_parameters, parameters):
     """
     data = {}
     for i in same_parameters:
-        indices = parameters.index(i)
+        indices = parameters.index(b"%s" %(i))
         subset = [j[indices] for j in samples]
         data[i] = {"mean": np.mean(subset),
                    "median": np.median(subset),
@@ -255,62 +255,62 @@ def make_plots(opts, colors=None):
     colors: list
         list of colors in hexadecimal format for the different approximants
     """
-    latex_labels={"luminosity_distance": r"$d_{L} [Mpc]$",
-                  "geocent_time": r"$t_{c} [s]$",
-                  "dec": r"$\delta$",
-                  "ra": r"$\alpha$",
-                  "a_1": r"$a_{1}$",
-                  "a_2": r"$a_{2}$",
-                  "phi_jl": r"$\phi_{JL}$",
-                  "phase": r"$\phi$",
-                  "psi": r"$\Psi$",
-                  "iota": r"$\iota$",
-                  "tilt_1": r"$\theta_{1}$",
-                  "tilt_2": r"$\theta_{2}$",
-                  "phi_12": r"$\phi_{12}$",
-                  "mass_2": r"$m_{2}$",
-                  "mass_1": r"$m_{1}$",
-                  "total_mass": r"$M$",
-                  "chirp_mass": r"$\mathcal{M}$",
-                  "log_likelihood": r"$\log{\mathcal{L}}$",
-                  "H1_matched_filter_snr": r"$\rho^{H}_{mf}$",
-                  "L1_matched_filter_snr": r"$\rho^{L}_{mf}$",
-                  "H1_optimal_snr": r"$\rho^{H}_{opt}$",
-                  "L1_optimal_snr": r"$\rho^{L}_{opt}$",
-                  "spin_1x": r"$S_{1}x$",
-                  "spin_1y": r"$S_{1}y$",
-                  "spin_1z": r"$S_{1}z$",
-                  "spin_2x": r"$S_{2}x$",
-                  "spin_2y": r"$S_{2}y$",
-                  "spin_2z": r"$S_{2}z$",
-                  "chi_p": r"$\chi_{p}$",
-                  "chi_eff": r"$\chi_{eff}$",
-                  "mass_ratio": r"$q$",
-                  "symmetric_mass_ratio": r"$\eta$",
-                  "phi_1": r"$\phi_{1}$",
-                  "phi_2": r"$\phi_{2}$",
-                  "cos_tilt_1": r"$\cos{\theta_{1}}$",
-                  "cos_tilt_2": r"$\cos{\theta_{2}}$",
-                  "redshift": r"$z$",
-                  "comoving_distance": r"$d_{com}$",
-                  "mass_1_source": r"$m_{1}^{source}$",
-                  "mass_2_source": r"$m_{2}^{source}$",
-                  "chirp_mass_source": r"$\mathcal{M}^{source}$",
-                  "total_mass_source": r"$M^{source}$"}
+    latex_labels={b"luminosity_distance": r"$d_{L} [Mpc]$",
+                  b"geocent_time": r"$t_{c} [s]$",
+                  b"dec": r"$\delta$",
+                  b"ra": r"$\alpha$",
+                  b"a_1": r"$a_{1}$",
+                  b"a_2": r"$a_{2}$",
+                  b"phi_jl": r"$\phi_{JL}$",
+                  b"phase": r"$\phi$",
+                  b"psi": r"$\Psi$",
+                  b"iota": r"$\iota$",
+                  b"tilt_1": r"$\theta_{1}$",
+                  b"tilt_2": r"$\theta_{2}$",
+                  b"phi_12": r"$\phi_{12}$",
+                  b"mass_2": r"$m_{2}$",
+                  b"mass_1": r"$m_{1}$",
+                  b"total_mass": r"$M$",
+                  b"chirp_mass": r"$\mathcal{M}$",
+                  b"log_likelihood": r"$\log{\mathcal{L}}$",
+                  b"H1_matched_filter_snr": r"$\rho^{H}_{mf}$",
+                  b"L1_matched_filter_snr": r"$\rho^{L}_{mf}$",
+                  b"H1_optimal_snr": r"$\rho^{H}_{opt}$",
+                  b"L1_optimal_snr": r"$\rho^{L}_{opt}$",
+                  b"spin_1x": r"$S_{1}x$",
+                  b"spin_1y": r"$S_{1}y$",
+                  b"spin_1z": r"$S_{1}z$",
+                  b"spin_2x": r"$S_{2}x$",
+                  b"spin_2y": r"$S_{2}y$",
+                  b"spin_2z": r"$S_{2}z$",
+                  b"chi_p": r"$\chi_{p}$",
+                  b"chi_eff": r"$\chi_{eff}$",
+                  b"mass_ratio": r"$q$",
+                  b"symmetric_mass_ratio": r"$\eta$",
+                  b"phi_1": r"$\phi_{1}$",
+                  b"phi_2": r"$\phi_{2}$",
+                  b"cos_tilt_1": r"$\cos{\theta_{1}}$",
+                  b"cos_tilt_2": r"$\cos{\theta_{2}}$",
+                  b"redshift": r"$z$",
+                  b"comoving_distance": r"$d_{com}$",
+                  b"mass_1_source": r"$m_{1}^{source}$",
+                  b"mass_2_source": r"$m_{2}^{source}$",
+                  b"chirp_mass_source": r"$\mathcal{M}^{source}$",
+                  b"total_mass_source": r"$M^{source}$"}
     # generate array of both samples
     combined_samples = []
     combined_maxL = []
     # get the parameter names
     parameters = [_grab_parameters(i) for i in opts.samples]
-    ind_ra = [i.index("ra") for i in parameters]
-    ind_dec = [i.index("dec") for i in parameters]
+    ind_ra = [i.index(b"ra") for i in parameters]
+    ind_dec = [i.index(b"dec") for i in parameters]
     # generate the individual plots
     for num, i in enumerate(opts.samples):
         approx = opts.approximant[num]
         logging.info("Starting to generate plots for %s" %(approx))
         with h5py.File(i) as f:
             params = [j for j in f["parameter_names"]]
-            index = params.index("log_likelihood")
+            index = params.index(b"log_likelihood")
             samples = [j for j in f["samples"]]
             likelihood = [j[index] for j in samples]
             f.close()
@@ -333,10 +333,10 @@ def make_plots(opts, colors=None):
         plt.savefig("%s/plots/%s_waveform.png" %(opts.webdir, approx))
         plt.close()
         for ind, j in enumerate(parameters[num]):
-            index = parameters[num].index(j)
+            index = parameters[num].index(b"%s" %(j))
             param_samples = [k[index] for k in samples]
             fig = plot._1d_histogram_plot(j, param_samples, latex_labels[j])
-            plt.savefig("%s/plots/1d_posterior_%s_%s.png" %(opts.webdir, approx, j))
+            plt.savefig("%s/plots/1d_posterior_%s_%s.png" %(opts.webdir, approx, j.decode("utf-8")))
             plt.close()
         if opts.sensitivity:
             fig = plot._sky_sensitivity(["H1", "L1"], 0.2,
@@ -351,10 +351,13 @@ def make_plots(opts, colors=None):
     if opts.add_to_existing and opts.existing:
         for i in glob(opts.existing+"/samples/*"):
             opts.samples.append(i)
+        parameters = [_grab_parameters(i) for i in opts.samples]
+        ind_ra = [i.index(b"ra") for i in parameters]
+        ind_dec = [i.index(b"dec") for i in parameters]
         for num, i in enumerate(opts.samples):
             with h5py.File(i) as f:
                 params = [j for j in f["parameter_names"]]
-                index = params.index("log_likelihood")
+                index = params.index(b"log_likelihood")
                 samples = [j for j in f["samples"]]
                 likelihood = [j[index] for j in samples]
                 f.close()
@@ -367,17 +370,16 @@ def make_plots(opts, colors=None):
                 approx = opts.approximant[num]
             maxL_params["approximant"] = approx
             combined_maxL.append(maxL_params)
-        
     # if len(approximants) > 1, then we need to do comparison plots
     if len(opts.approximant) > 1:
         same_parameters = list(set.intersection(*[set(l) for l in parameters]))
         for ind, j in enumerate(same_parameters):
-            indices = [k.index(j) for k in parameters]
+            indices = [k.index(b"%s" %(j)) for k in parameters]
             param_samples = [[k[indices[num]] for k in l] for num,l in enumerate(combined_samples)]
             fig = plot._1d_comparison_histogram_plot(j, opts.approximant,
                                                      param_samples, colors,
                                                      latex_labels[j])
-            plt.savefig("%s/plots/combined_posterior_%s" %(opts.webdir, j))
+            plt.savefig("%s/plots/combined_posterior_%s" %(opts.webdir, j.decode("utf-8")))
             plt.close()
         ra_list = [[k[ind_ra][num] for k in l] for num, l in enumerate(combined_samples)]
         dec_list = [[k[ind_dec][num] for k in l] for num, l in enumerate(combined_samples)]
@@ -398,35 +400,35 @@ def make_navbar_links(parameters):
         list of parameters that were used in your study
     """
     links = ["1d_histograms", ["multiple"]]
-    if any("mass" in s for s in parameters):
-        condition = lambda i: True if "mass" in i and "source" not in i or "q" in i \
-                              or "symmetric_mass_ratio" in i else False
-        links.append(["masses", [i for i in parameters if condition(i)]])
-    if any("a_1" in s for s in parameters):
-        condition = lambda i: True if "spin" in i or "chi_p" in i \
-                              or "chi_eff" in i or "a_1" in i or "a_2" in i \
+    if any(b"mass" in s for s in parameters):
+        condition = lambda i: True if b"mass" in i and b"source" not in i or b"q" in i \
+                              or b"symmetric_mass_ratio" in i else False
+        links.append(["masses", [i.decode("utf-8") for i in parameters if condition(i)]])
+    if any(b"a_1" in s for s in parameters):
+        condition = lambda i: True if b"spin" in i or b"chi_p" in i \
+                              or b"chi_eff" in i or b"a_1" in i or b"a_2" in i \
                               else False
-        links.append(["spins", [i for i in parameters if condition(i)]])
-    if any("source" in s for s in parameters):
-        condition = lambda i: True if "source" in i else False
-        links.append(["source_frame", [i for i in parameters if condition(i)]])
-    if any("phi" in s for s in parameters):
-        condition = lambda i: True if "phi" in i or "tilt" in i else False
-        links.append(["spin_angles", [i for i in parameters if condition(i)]])
-    if any("ra" in s for s in parameters):
-        condition = lambda i: True if "ra" == i or "dec" == i or "psi" == i \
+        links.append(["spins", [i.decode("utf-8") for i in parameters if condition(i)]])
+    if any(b"source" in s for s in parameters):
+        condition = lambda i: True if b"source" in i else False
+        links.append(["source_frame", [i.decode("utf-8") for i in parameters if condition(i)]])
+    if any(b"phi" in s for s in parameters):
+        condition = lambda i: True if b"phi" in i or b"tilt" in i else False
+        links.append(["spin_angles", [i.decode("utf-8") for i in parameters if condition(i)]])
+    if any(b"ra" in s for s in parameters):
+        condition = lambda i: True if b"ra" == i or b"dec" == i or b"psi" == i \
                               else False
-        links.append(["sky_location", [i for i in parameters if condition(i)]])
-    if any("snr" in s for s in parameters):
-        links.append(["SNR", [i for i in parameters if "snr" in i]])
-    if any("distance" in s for s in parameters):
-        condition = lambda i: True if "distance" in i or "time" in i or \
-                              "redshift" in i else False
-        links.append(["Distance and Time", [i for i in parameters if condition(i)]])
-    if any("phase" in s for s in parameters):
-        condition = lambda i: True if "phase" in i or "likelihood" in i \
+        links.append(["sky_location", [i.decode("utf-8") for i in parameters if condition(i)]])
+    if any(b"snr" in s for s in parameters):
+        links.append(["SNR", [i.decode("utf-8") for i in parameters if "snr" in i]])
+    if any(b"distance" in s for s in parameters):
+        condition = lambda i: True if b"distance" in i or b"time" in i or \
+                              b"redshift" in i else False
+        links.append(["Distance and Time", [i.decode("utf-8") for i in parameters if condition(i)]])
+    if any(b"phase" in s for s in parameters):
+        condition = lambda i: True if b"phase" in i or b"likelihood" in i \
                               else False
-        links.append(["Others", [i for i in parameters if condition(i)]])
+        links.append(["Others", [i.decode("utf-8") for i in parameters if condition(i)]])
     return links
 
 def make_home_pages(opts, approximants, samples, colors, parameters):
@@ -463,7 +465,7 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
     for num, i in enumerate(samples):
         with h5py.File(i) as f:
             params = [j for j in f["parameter_names"]]
-            index = params.index("log_likelihood")
+            index = params.index(b"log_likelihood")
             subset.append([j for j in f["samples"]])
             likelihood.append([j[index] for j in f["samples"]])
             f.close()
@@ -475,14 +477,14 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
     contents = []
     for i in same_parameters:
         row = []
-        row.append(i)
-        for j in xrange(len(samples)):
+        row.append(i.decode("utf-8"))
+        for j in range(len(samples)):
             row.append(np.round(data[j][i]["maxL"], 3))
-        for j in xrange(len(samples)):
+        for j in range(len(samples)):
             row.append(np.round(data[j][i]["mean"], 3))
-        for j in xrange(len(samples)):
+        for j in range(len(samples)):
             row.append(np.round(data[j][i]["median"], 3))
-        for j in xrange(len(samples)):
+        for j in range(len(samples)):
             row.append(np.round(data[j][i]["std"], 3))
         contents.append(row)
     html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
@@ -516,7 +518,7 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
         contents = []
         for j in same_parameters:
             row = []
-            row.append(j)
+            row.append(j.decode("utf-8"))
             row.append(np.round(data[num][j]["maxL"], 3))
             row.append(np.round(data[num][j]["mean"], 3))
             row.append(np.round(data[num][j]["median"], 3))
@@ -543,8 +545,8 @@ def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
         list of parameters that the sampler varies over
     """
     for i in parameters:
-        i.append("multiple")
-    pages = ["{}_{}".format(i, j) for num, i in enumerate(approximants) for j in parameters[num]]
+        i.append(b"multiple")
+    pages = ["{}_{}".format(i, j.decode("utf-8")) for num, i in enumerate(approximants) for j in parameters[num]]
     webpage.make_html(web_dir=opts.webdir, pages=pages)
     for app, col, par in zip(approximants, colors, parameters):
         if len(approximants) > 1:
@@ -555,13 +557,15 @@ def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
                      "corner", "config", make_navbar_links(par)]
         for j in par:
             html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                          html_page="{}_{}".format(app, j))
-            html_file.make_header(title="{} Posterior PDF for {}".format(app, j), background_colour=col,
-                                  approximant=app)
+                                          html_page="{}_{}".format(app, j.decode("utf-8")))
+            html_file.make_header(title="{} Posterior PDF for {}".format(app, j.decode("utf-8")),
+                                  background_colour=col, approximant=app)
             html_file.make_navbar(links=links)
 
-            if j != "multiple":
-                html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, app, j))
+            if j != b"multiple":
+                html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl,
+                                                                                app,
+                                                                                j.decode("utf-8")))
             else:
                 html_file.make_search_bar(popular_options=["mass_1, mass_2",
                                                            "luminosity_distance, iota, ra, dec",
@@ -591,7 +595,7 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
                                    html_page="Comparison")
     html_file.make_header(title="Comparison Summary Page")
     same_parameters = list(set.intersection(*[set(l) for l in parameters]))
-    same_parameters.append("multiple")
+    same_parameters.append(b"multiple")
     links = ["home", ["Approximant", [i for i in approximants]+["Comparison"]],
                      make_navbar_links(same_parameters)]
     html_file.make_navbar(links=links)
@@ -619,16 +623,17 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
 
     html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
     # edit all of the comparison pages
-    pages = ["Comparison_{}".format(i) for i in same_parameters]
+    pages = ["Comparison_{}".format(i.decode("utf-8")) for i in same_parameters]
     webpage.make_html(web_dir=opts.webdir, pages=pages)
     for i in same_parameters:
         html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
-                                      html_page="Comparison_{}".format(i))
-        html_file.make_header(title="Comparison page for {}".format(i),
+                                      html_page="Comparison_{}".format(i.decode("utf-8")))
+        html_file.make_header(title="Comparison page for {}".format(i.decode("utf-8")),
                               approximant="Comparison")
         html_file.make_navbar(links=links)
-        if i != "multiple":
-            html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl, i))
+        if i != b"multiple":
+            html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl,
+                                                                               i.decode("utf-8")))
         else:
             html_file.make_search_bar(popular_options=["mass_1, mass_2",
                                                        "luminosity_distance, iota, ra, dec",
@@ -746,8 +751,8 @@ a
     # grab the parameters from the samples
     f = h5py.File(opts.samples[0])
     parameters = [i for i in f["parameters"]]                       
-    if "log_likelihood" in parameters:                                          
-        parameters.remove("log_likelihood")
+    if b"log_likelihood" in parameters:                                          
+        parameters.remove(b"log_likelihood")
     # make the relevant pages
     pages = ["home"]
     # links for all pages
