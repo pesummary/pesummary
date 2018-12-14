@@ -358,21 +358,30 @@ def one_format(fil):
                 data[num].append(np.arccos(i[index("costheta_jn")]))
     if BILBY:
         parameters, data = [], []
-        for i in sorted(f["%s" %(path)].keys()):
-            if "block2" in i:
-                pass
-            else:
-                if "items" in i:
-                    for par in f["%s/%s" %(path,i)]:
-                        parameters.append(par)
-                if "values" in i:
-                    if len(data) == 0:
-                        for dat in f["%s/%s" %(path, i)]:
-                            data.append(list(np.real(dat)))
-                    else:
-                        for num, dat in enumerate(f["%s/%s" %(path, i)]):
-                            data[num] += list(np.real(dat))
+        blocks = [i for i in f["%s" %(path)] if "block" in i]
+        for i in blocks:
+            block_name = i.split("_")[0]
+            if "items" in i:
+                for par in f["%s/%s" %(path,i)]:
+                    if par == "waveform_approximant":
+                        blocks.remove(block_name+"_items")
+                        blocks.remove(block_name+"_values")
+        for i in sorted(blocks):
+            if "items" in i:
+                for par in f["%s/%s" %(path,i)]:
+                    parameters.append(par)
+            if "values" in i:
+                if len(data) == 0:
+                    for dat in f["%s/%s" %(path, i)]:
+                        data.append(list(np.real(dat)))
+                else:
+                    for num, dat in enumerate(f["%s/%s" %(path, i)]):
+                        data[num] += list(np.real(dat))
     data, parameters = all_parameters(data, parameters)
+    if "waveform_approximant" in parameters:
+        index = parameters.index("waveform_approximant")
+        parameters.remove(parameters[index])
+        
     if "reference_frequency" in parameters:
         index = parameters.index("reference_frequency")
         parameters.remove(parameters[index])
