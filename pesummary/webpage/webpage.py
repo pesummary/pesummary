@@ -13,8 +13,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import utils
-from _version import __version__
+from pesummary.utils import utils
+from pesummary._version import __version__
 import sys
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
