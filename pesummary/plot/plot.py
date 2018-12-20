@@ -32,7 +32,7 @@ try:
 except:
     LALSIMULATION=None
 
-def _1d_histogram_plot(param, samples, latex_label):
+def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
 
@@ -44,6 +44,8 @@ def _1d_histogram_plot(param, samples, latex_label):
         list of samples for param
     latex_label: str
         latex label for param
+    inj_value: float
+        value that was injected
     """
     logging.info("Generating the 1d histogram plot for %s" %(param.decode("utf-8")))
     fig = plt.figure()
@@ -53,6 +55,8 @@ def _1d_histogram_plot(param, samples, latex_label):
     upper_percentile = np.percentile(samples, 90)
     lower_percentile = np.percentile(samples, 10)
     y_range = [0,np.max(n)+0.1*np.max(n)]
+    if inj_value:
+        plt.plot([inj_value]*2, y_range, color='r', linestyle='--')
     plt.plot([upper_percentile]*2, y_range, color='b', linestyle='--')
     plt.plot([lower_percentile]*2, y_range, color='b', linestyle='--')
     median = np.median(samples)
@@ -419,7 +423,8 @@ def _make_corner_plot(opts, samples, params, approximant, latex_labels,
     corner_parameters = [b"luminosity_distance", b"dec", b"a_2",
                          b"a_1", b"geocent_time", b"phi_jl", b"psi", b"ra", b"phase",
                          b"mass_2", b"mass_1", b"phi_12", b"tilt_2", b"iota",
-                         b"tilt_1"]
+                         b"tilt_1", b"chi_p", b"chirp_mass", b"mass_ratio",
+                         b"symmetric_mass_ratio", b"total_mass", b"chi_eff"]
     xs = np.zeros([len(corner_parameters), len(samples)])
     for num, i in enumerate(corner_parameters):
         xs[num] = [j[params.index(b"%s" %(i))] for j in samples]

@@ -6,24 +6,84 @@ Installation
 To install PESummary into a virtual environment please run the following commands,
 
 ```bash
-$ mkdir -p ~/src
-$ cd ~/src
-$ git clone git@git.ligo.org:charlie.hoy/pesummary.git
 $ mkdir -p ~/virtualenvs
 $ cd ~/virtualenvs
 $ virtualenv pesummary
 $ source pesummary/bin/activate
-$ cd ~/src/pesummary
-$ pip install -r requirements.txt
-$ python setup.py install
+$ pip install pesummary
 ```
 
 Description
+-----------
+
+This code is designed to generate an html page to display the results from **all** Parameter Estimation codes. If only a single approximant wants to be studied, then a summary page similar to the LALInference posterior pages will be generated. If you wish to study multiple approximants, then a single summary page for both approximants are generated. This includes both individual 1d histograms as well as the combined 1d histograms.
+
+PESummary offers the following modules,
+
+```python
+pesummary.webpage
+pesummary.plot
+pesummary.utils
+pesummary.one_format
+```
+
+The `pesummary.webpage` module offers functions and classes to generate and manipulate html pages. The function within the `page` class  allow the user to fully customise their webpage to their exact specifications. 
+
+The `pesummary.plot` module offers functions to generate all posterior distributions and other helpful plots given the mcmc samples.
+
+The `pesummary.utils` module offers helpful functions.
+
+The `pesummary.one_format` module offers functions which will read in the outputs from either LALInference or BILBY and put them into a standard format. This is such that both codes can be used and compared with this package.
+
+PESummary also offers the following executable,
+
+```bash
+$ summarypages.py
+```
+
+This executable uses functions from the above modules to produce a standard output page given the output from either the LALInference or BILBY codes. You are able to pass PESummary `n` output files and a single html page is produced which compares the posterior distributions from all output files.
+
+Flags
 -------------
 
-This code is designed to generate an html page to display the results from **all** Parameter Estimation codes. If only a single approximant wants to be studied, then a summary page similar to the LALInference posterior pages will be generated. If you wish to study multiple approximants, then a single summary page for both approximants are generated. This includes individual 1d histograms as well as the combined 1d histograms. 
+The `summarypage.py` executable takes the following command line arguments:
 
-By default, the html page uses a multi tab approach as I feel it is more user friendly. However, this can be changed by adding the `--dump` flag. This will then dump all results onto a single tab.
+```bash
+$ summarypages.py --help
+
+usage: summarypages.py [-h] [-w DIR] [-b DIR] [-s SAMPLES [SAMPLES ...]]
+                       [-a APPROXIMANT [APPROXIMANT ...]]
+                       [--email user@ligo.org] [--dump]
+                       [-c CONFIG [CONFIG ...]] [--sensitivity]
+                       [--add_to_existing] [-e EXISTING]
+                       [-i INJ_FILE [INJ_FILE ...]]
+
+Built-in functions, exceptions, and other objects. Noteworthy: None is the
+`nil' object; Ellipsis represents `...' in slices.
+
+optional arguments:
+  -h, --help                show this help message and exit
+  -w DIR, --webdir DIR      make page and plots in DIR
+  -b DIR, --baseurl DIR     make the page at this url
+  -s SAMPLES [SAMPLES ...], --samples SAMPLES [SAMPLES ...]
+                            Posterior samples hdf5 file
+  -a APPROXIMANT [APPROXIMANT ...], --approximant APPROXIMANT [APPROXIMANT ...]
+                            waveform approximant used to generate samples
+  --email user@ligo.org     send an e-mail to the given address with a link to the
+                            finished page.
+  --dump                    dump all information onto a single html page
+  -c CONFIG [CONFIG ...], --config CONFIG [CONFIG ...]
+                            configuration file associcated with each samples file.
+  --sensitivity             generate sky sensitivities for HL, HLV
+  --add_to_existing         add new results to an existing html page
+  -e EXISTING, --existing_webdir EXISTING
+                            web directory of existing output
+  -i INJ_FILE [INJ_FILE ...], --inj_file INJ_FILE [INJ_FILE ...]
+                            path to injetcion file
+```
+
+Examples
+-------------
 
 Single Approximant
 -------------

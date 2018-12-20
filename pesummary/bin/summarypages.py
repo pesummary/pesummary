@@ -26,6 +26,7 @@ import shutil
 from glob import glob
 
 import numpy as np
+import math
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -35,9 +36,10 @@ from pesummary.webpage import webpage
 from pesummary.utils import utils
 from pesummary.plot import plot
 from pesummary.one_format.data_format import one_format
-from pesummary._version import __bilby_version__
 
 import h5py
+
+import copy
 
 import lal
 import lalsimulation as lalsim
@@ -79,9 +81,12 @@ def command_line():
     parser.add_argument("-e", "--existing_webdir", dest="existing",
                         help="web directory of existing output",
                         default=None)
+    parser.add_argument("-i", "--inj_file", dest="inj_file",
+                        help="path to injetcion file", nargs='+',
+                        default=None)
     return parser
 
-def convert_to_standard_format(samples):
+def convert_to_standard_format(samples, injections):
     """Convert the input files to the standard format
 
     Parameters
@@ -90,8 +95,10 @@ def convert_to_standard_format(samples):
         either a string or a list of strings giving the path to the input
         samples file
     """
+    if not injections:
+        injections = [None]*len(samples)
     for num, i in enumerate(samples):
-        opts.samples[num] = one_format(i)
+        opts.samples[num] = one_format(i, injections[num])
 
 def run_checks(opts):
     """Check the command line inputs
@@ -105,7 +112,7 @@ def run_checks(opts):
     if opts.webdir:
         # make the web directory
         utils.make_dir(opts.webdir)
-        if opts.samples and opts.config:
+        if opts.samples:
             pass
         else:
             raise Exception("Please run python main.py --samples [results.hdf] "
@@ -117,7 +124,7 @@ def run_checks(opts):
         for i in opts.samples:
             f = h5py.File(i, "r")
             approx = f["approximant"][0]
-            if approx == b"None":
+            if approx == b"none":
                 raise Exception("Failed to extract approximant from your results "
                                 "file: %s. Please pass the approximant with the flag "
                                 "--approximant" %(i.split("_temp")[0]))
@@ -159,9 +166,12 @@ def run_checks(opts):
         raise Exception("Ensure that the number of approximants match the "
                         "number of samples files")
     # check that numer of samples matches number of config files
-    if len(opts.samples) != len(opts.config):
+    if opts.config and len(opts.samples) != len(opts.config):
         raise Exception("Ensure that the number of samples files match the "
                         "number of config files")
+    if opts.inj_file and len(opts.inj_file) != len(opts.samples):
+        raise Exception("Ensure that the number of samples matct the number of "
+                        "injection files")
     for num, i in enumerate(opts.samples):
         if os.path.isfile(i) == False:
             raise Exception("File %s does not exist" %(i))
@@ -171,8 +181,9 @@ def run_checks(opts):
                             "you already generated a summary page with this "
                             "file?" %(i, proposed_file))
     if opts.add_to_existing and opts.existing:
-        for i in glob(opts.existing+"/config/*"):
-            opts.config.append(i)
+        if opts.config:
+            for i in glob(opts.existing+"/config/*"):
+                opts.config.append(i)
         for i in glob(opts.existing+"/html/*_corner.html"):
             example_file = i.split("/")[-1]
             opts.approximant.append(example_file.split("_corner.html")[0])
@@ -200,9 +211,10 @@ def copy_files(opts):
     for i in scripts:
         shutil.copyfile(path+"/css/%s" %(i), opts.webdir+"/css/%s" %(i))
     # copy over the config file
-    for num, i in enumerate(opts.config):
-        if opts.webdir not in i:
-            shutil.copyfile(i, opts.webdir+"/config/"+opts.approximant[num]+"_"+i.split("/")[-1])
+    if opts.config:
+        for num, i in enumerate(opts.config):
+            if opts.webdir not in i:
+                shutil.copyfile(i, opts.webdir+"/config/"+opts.approximant[num]+"_"+i.split("/")[-1])
     for num, i in enumerate(opts.samples):
         if opts.webdir not in i:
             shutil.copyfile(i, opts.webdir+"/samples/"+opts.approximant[num]+"_"+i.split("/")[-1])
@@ -240,6 +252,21 @@ def _grab_parameters(results):
     parameters = [i for i in f["parameter_names"]]
     f.close()                   
     return parameters
+
+def _grab_injection_parameters(results):
+    """Grab the injection parameters and injection values
+
+    Parameters
+    ----------
+    results: str
+        string to the results file
+    """
+    # grab the injection parameters
+    f = h5py.File(results, "r")
+    inj_par = [i for i in f["injection_parameters"]]
+    inj_data = [i for i in f["injection_data"]]
+    my_dict = {i:j for i,j in zip(inj_par, inj_data)}
+    return my_dict
 
 def _grab_key_data(samples, logL, same_parameters, parameters):
     """Grab the key data for each parameter in the samples file.
@@ -321,6 +348,8 @@ def make_plots(opts, colors=None):
     combined_maxL = []
     # get the parameter names
     parameters = [_grab_parameters(i) for i in opts.samples]
+    # grab injection parameters
+    injection_parameters = [_grab_injection_parameters(i) for i in opts.samples]
     ind_ra = [i.index(b"ra") for i in parameters]
     ind_dec = [i.index(b"dec") for i in parameters]
     # generate the individual plots
@@ -346,7 +375,20 @@ def make_plots(opts, colors=None):
             plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
             plt.close()
         except Exception as e:
-            logging.info("failed to generate corner plot because %s" %(e))
+            samples_copy = copy.deepcopy(samples)
+            logging.info("Failed to generate corner plot. Probably because one "
+                         "or two parameters have no dynamical range. Checking "
+                         "this now.")
+            par_samples = [[j[par] for j in samples_copy] for par in range(len(parameters[num]))]
+            for key, j in enumerate(par_samples):
+                if len(set(j)) == 1:
+                    logging.info("%s has no dynamical range. Adding small "
+                                 "fluctuations." %(parameters[num][key].decode("utf-8")))
+                    for k in samples_copy:
+                        k[key] += 10**-8 * np.random.random(1)
+            fig = plot._make_corner_plot(opts, samples_copy, parameters[num], approx, latex_labels)
+            plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
+            plt.close()
         fig = plot._sky_map_plot(ra, dec)
         plt.savefig("%s/plots/%s_skymap.png" %(opts.webdir, approx))
         plt.close()
@@ -355,8 +397,11 @@ def make_plots(opts, colors=None):
         plt.close()
         for ind, j in enumerate(parameters[num]):
             index = parameters[num].index(b"%s" %(j))
+            inj_value = injection_parameters[num][b"%s" %(j)]
+            if math.isnan(inj_value):
+               inj_value = None 
             param_samples = [k[index] for k in samples]
-            fig = plot._1d_histogram_plot(j, param_samples, latex_labels[j])
+            fig = plot._1d_histogram_plot(j, param_samples, latex_labels[j], inj_value)
             plt.savefig("%s/plots/1d_posterior_%s_%s.png" %(opts.webdir, approx, j.decode("utf-8")))
             plt.close()
         if opts.sensitivity:
@@ -441,7 +486,7 @@ def make_navbar_links(parameters):
                               else False
         links.append(["sky_location", [i.decode("utf-8") for i in parameters if condition(i)]])
     if any(b"snr" in s for s in parameters):
-        links.append(["SNR", [i.decode("utf-8") for i in parameters if "snr" in i]])
+        links.append(["SNR", [i.decode("utf-8") for i in parameters if b"snr" in i]])
     if any(b"distance" in s for s in parameters):
         condition = lambda i: True if b"distance" in i or b"time" in i or \
                               b"redshift" in i else False
@@ -717,6 +762,8 @@ def make_config_pages(opts, approximants, samples, colors, configs, parameters):
     """
     pages = ["{}_config".format(i) for i in approximants]
     webpage.make_html(web_dir=opts.webdir, pages=pages, stylesheets=pages)
+    if configs == None:
+        configs = [None]*len(approximants)
     for app, con, col, par in zip(approximants, configs, colors, parameters):
         if len(approximants) > 1:
             links = ["home", ["Approximants", [k for k in approximants+["Comparison"]]],
@@ -729,11 +776,16 @@ def make_config_pages(opts, approximants, samples, colors, configs, parameters):
         html_file.make_header(title="{} configuration".format(app), background_colour=col,
                               approximant=app)
         html_file.make_navbar(links=links)
-        with open(con, 'r') as f:
-            contents = f.read()
-        styles = html_file.make_code_block(language='ini', contents=contents)
-        with open('{0:s}/css/{1:s}_config.css'.format(opts.webdir, app), 'w') as f:
-            f.write(styles)
+        if con:
+            with open(con, 'r') as f:
+                contents = f.read()
+            styles = html_file.make_code_block(language='ini', contents=contents)
+            with open('{0:s}/css/{1:s}_config.css'.format(opts.webdir, app), 'w') as f:
+                f.write(styles)
+        else:
+            html_file.add_content("<div class='row justify-content-center'>"
+                                  "<p style='margin-top:2.5em'> No config file "
+                                  "was provided </p></div>")
         html_file.make_footer(user=os.environ["USER"], rundir="{}".format(opts.webdir))
 
 def write_html(opts, colors):
@@ -818,7 +870,7 @@ if __name__ == '__main__':
     opts = parser.parse_args()
     # convert to the standard results file format
     logging.info("Converting files to standard format")
-    convert_to_standard_format(opts.samples)
+    convert_to_standard_format(opts.samples, opts.inj_file)
     # check the inputs
     logging.info("Checking the inputs")
     run_checks(opts)

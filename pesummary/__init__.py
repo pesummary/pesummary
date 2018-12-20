@@ -12,3 +12,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+__name__ = "PESummary"
+
+__version__ = "0.1.0"
+
+__bilby_compatibility__ = "0.3.3"

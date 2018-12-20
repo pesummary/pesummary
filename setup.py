@@ -16,8 +16,11 @@
 from distutils.core import setup
 from setuptools import find_packages
 
+with open("README.md", "r") as f:
+    readme = f.read()
+
 setup(name='pesummary',
-      version='0.0.1',
+      version='0.1.0',
       description='Python package to produce summary pages for Parameter '
                   'estimation codes',
       author='Charlie Hoy',
@@ -33,9 +36,12 @@ setup(name='pesummary',
         'pandas',
         'pygments',
         'astropy',
-        'lalsuite'],        
-      packages=find_packages(),                       
+        'lalsuite'],
+      include_package_data=True,
+      packages=find_packages(),
       package_dir={'pesummary': 'pesummary'},
-      package_data={'pesummary': ['js/*.js', 'css/*.css']},                                                                                                    
+      package_data={'pesummary': ['js/*.js', 'css/*.css']},
       scripts=['pesummary/bin/summarypages.py'],
-      license='MIT')
+      license='MIT',
+      long_description=readme,
+      long_description_content_type='text/markdown')
