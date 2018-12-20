@@ -13,8 +13,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import pesummary
 from pesummary.utils import utils
-from pesummary._version import __version__
 import sys
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
@@ -107,7 +107,7 @@ class page():
         self.add_content("<div class='jumbotron text-center' style='background-color: {}; margin-bottom:0'>\n".format(colour))
         self.add_content("  <h1 id={}>{}</h1>\n".format(approximant, title))
         self.add_content("<h4><span class='badge badge-info'>Code Version: %s"
-                         "</span></h4>\n" %(__version__), indent=2)
+                         "</span></h4>\n" %(pesummary.__version__), indent=2)
         self.add_content("</div>\n")
 
     def _footer(self, user, rundir):
@@ -394,7 +394,8 @@ class page():
         corner_parameters = ["luminosity_distance", "dec", "a_2",
                              "a_1", "geocent_time", "phi_jl", "psi", "ra", "phase",
                              "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
-                             "tilt_1"]
+                             "tilt_1", "chi_p", "chirp_mass", "mass_ratio",
+                             "symmetric_mass_ratio", "total_mass", "chi_eff"]
         for i in corner_parameters:
             self.add_content("<input type='checkbox' name='type' "
                              "value='{}' id='{}' style='text-align: center; margin: 0 5px 0;'"
