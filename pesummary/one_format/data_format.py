@@ -44,8 +44,9 @@ def _make_hdf5_file(name, data, parameters, approximant, inj_par=None,
     f.create_dataset("parameter_names", data=parameters)
     f.create_dataset("samples", data=data)
     f.create_dataset("approximant", data=approximant)
-    f.create_dataset("injection_parameters", data=inj_par)
-    f.create_dataset("injection_data", data=inj_data)
+    if inj_par and inj_data:
+        f.create_dataset("injection_parameters", data=inj_par)
+        f.create_dataset("injection_data", data=inj_data)
     f.close()
 
 def _mchirp_from_m1_m2(mass1, mass2):
@@ -320,6 +321,7 @@ def one_format(fil, inj):
         raise Exception("Data format not understood")
     if LALINFERENCE:
         standard_names = {"logL": "log_likelihood",
+                          "logl": "log_likelihood",
                           "tilt1": "tilt_1",
                           "tilt2": "tilt_2",
                           "costilt1": "cos_tilt_1",
