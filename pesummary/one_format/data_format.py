@@ -422,7 +422,7 @@ def load_with_deepdish(f):
     f: dict
         results file loaded with deepdish 
     """
-    approx = None
+    approx = "none"
     parameters = [i for i in f["posterior"].keys()]
     if "waveform_approximant" in parameters:
         approx = f["posterior"]["waveform_approximant"][0]
