@@ -89,6 +89,11 @@ class page():
         self.base_url = base_url
         self.content = []
 
+    def close(self):
+        """Close the opened html file.
+        """
+        self.html_file.close()
+
     def add_content(self, content, indent=0):
         """Add content to the html page
 

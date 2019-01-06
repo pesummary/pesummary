@@ -6,3 +6,4 @@ pandas
 pygments
 astropy
 lalsuite
+pytest
