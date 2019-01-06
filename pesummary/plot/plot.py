@@ -427,6 +427,7 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
     xs = np.zeros([len(corner_parameters), len(samples)])
     for num, i in enumerate(corner_parameters):
         xs[num] = [j[params.index(b"%s" %(i))] for j in samples]
+    default_kwargs['range'] = [1.0]*len(corner_parameters)
     default_kwargs["labels"] = [latex_labels[i] for i in corner_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
     # grab the axes of the subplots

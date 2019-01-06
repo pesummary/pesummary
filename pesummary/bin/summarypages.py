@@ -16,6 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging
+import warnings
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 import argparse
@@ -378,27 +379,13 @@ def make_plots(opts, colors=None):
             combined_samples.append(samples)
             combined_maxL.append(maxL_params)
         try:
-            fig = plot._make_corner_plot(samples, parameters[num], latex_labels)
-            plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
-            plt.close()
-        except Exception as e:
-            samples_copy = copy.deepcopy(samples)
-            logging.info("Failed to generate corner plot. Probably because one "
-                         "or two parameters have no dynamical range. Checking "
-                         "this now.")
-            par_samples = [[j[par] for j in samples_copy] for par in range(len(parameters[num]))]
-            for key, j in enumerate(par_samples):
-                if len(set(j)) == 1:
-                    logging.info("%s has no dynamical range. Adding small "
-                                 "fluctuations." %(parameters[num][key].decode("utf-8")))
-                    for k in samples_copy:
-                        k[key] += 10**-8 * np.random.random(1)
-            try:
-                fig = plot._make_corner_plot(samples_copy, parameters[num], latex_labels)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                fig = plot._make_corner_plot(samples, parameters[num], latex_labels)
                 plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
                 plt.close()
-            except Exception as e:
-                logging.info("Failed to generate corner plot because %s" %(e))
+        except Exception as e:
+            logging.info("Failed to generate corner plot because %s" %(e))
         try:
             ind_ra = parameters[num].index(b"ra")
             ind_dec = parameters[num].index(b"dec")
