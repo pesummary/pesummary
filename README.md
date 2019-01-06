@@ -1,5 +1,7 @@
 # PESummary
 
+[![Coverage report](https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/pesummary/coverage_badge.svg)](https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/pesummary/htmlcov/index.html)
+
 Installation
 ------------
 
