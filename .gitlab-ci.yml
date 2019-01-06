@@ -1,0 +1,35 @@
+stages:
+  - test
+  - deploy
+
+python-3:
+  stage: test
+  image: python:3.6
+  script:
+    - pip install coverage
+    - pip install coverage-badge
+    - python setup.py install
+    - coverage run -m pytest tests
+    - coverage report
+    - coverage html
+    - coverage-badge -o coverage_badge.svg -f
+
+  artifacts:
+    paths:
+      - htmlcov/
+      - coverage_badge.svg
+
+pages:
+  stage: deploy
+  dependencies:
+    - python-3
+  script:
+    - mkdir public/
+    - mv htmlcov/ public/
+    - mv /builds/charlie.hoy/pesummary/coverage_badge.svg public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    - master

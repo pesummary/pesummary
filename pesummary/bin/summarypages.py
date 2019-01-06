@@ -84,6 +84,8 @@ def command_line():
     parser.add_argument("-i", "--inj_file", dest="inj_file",
                         help="path to injetcion file", nargs='+',
                         default=None)
+    parser.add_argument("--user", dest="user", help=argparse.SUPPRESS,
+                        default="albert.einstein")
     return parser
 
 def convert_to_standard_format(samples, injections):
@@ -189,7 +191,15 @@ def run_checks(opts):
             opts.approximant.append(example_file.split("_corner.html")[0])
     # check to see if baseurl is provided. If not guess what it could be
     if opts.baseurl == None:
-        opts.baseurl = utils.guess_url(opts.webdir)
+        try:
+            user = os.environ["USER"]
+            opts.user = user
+        except Exception as e:
+            logging.info("Failed to grab user information because %s. " 
+                         "Default will be used" %(e))
+            user = opts.user
+        host = socket.getfqdn()
+        opts.baseurl = utils.guess_url(opts.webdir, host, user)
         logging.info("No url is provided. The url %s will be used" %(opts.baseurl))
 
 def copy_files(opts):
@@ -230,7 +240,7 @@ def email_notify(address, path):
         path to the directory where the html page will be generated
     """
     logging.info("Sending email to %s" %(address))
-    user = os.environ["USER"]
+    user = opts.user
     host = socket.getfqdn()
     from_address = "{}@{}".format(user, host)
     subject = "Output page available at {}".format(host)
@@ -350,8 +360,7 @@ def make_plots(opts, colors=None):
     parameters = [_grab_parameters(i) for i in opts.samples]
     # grab injection parameters
     injection_parameters = [_grab_injection_parameters(i) for i in opts.samples]
-    ind_ra = [i.index(b"ra") for i in parameters]
-    ind_dec = [i.index(b"dec") for i in parameters]
+    ind_ra_list, ind_dec_list = [], []
     # generate the individual plots
     for num, i in enumerate(opts.samples):
         approx = opts.approximant[num]
@@ -363,15 +372,13 @@ def make_plots(opts, colors=None):
             likelihood = [j[index] for j in samples]
             f.close()
         data = _grab_key_data(samples, likelihood, parameters[num], parameters[num])
-        ra = [j[ind_ra[num]] for j in samples]
-        dec = [j[ind_dec[num]] for j in samples]
         maxL_params = {j: data[j]["maxL"] for j in parameters[num]}
         maxL_params["approximant"] = approx
         if not opts.existing:
             combined_samples.append(samples)
             combined_maxL.append(maxL_params)
         try:
-            fig = plot._make_corner_plot(opts, samples, parameters[num], approx, latex_labels)
+            fig = plot._make_corner_plot(samples, parameters[num], latex_labels)
             plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
             plt.close()
         except Exception as e:
@@ -386,15 +393,30 @@ def make_plots(opts, colors=None):
                                  "fluctuations." %(parameters[num][key].decode("utf-8")))
                     for k in samples_copy:
                         k[key] += 10**-8 * np.random.random(1)
-            fig = plot._make_corner_plot(opts, samples_copy, parameters[num], approx, latex_labels)
-            plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
+            try:
+                fig = plot._make_corner_plot(samples_copy, parameters[num], latex_labels)
+                plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
+                plt.close()
+            except Exception as e:
+                logging.info("Failed to generate corner plot because %s" %(e))
+        try:
+            ind_ra = parameters[num].index(b"ra")
+            ind_dec = parameters[num].index(b"dec")
+            ind_ra_list.append(ind_ra)
+            ind_dec_list.append(ind_dec)
+            ra = [j[ind_ra] for j in samples]
+            dec = [j[ind_dec] for j in samples]
+            fig = plot._sky_map_plot(ra, dec)
+            plt.savefig("%s/plots/%s_skymap.png" %(opts.webdir, approx))
             plt.close()
-        fig = plot._sky_map_plot(ra, dec)
-        plt.savefig("%s/plots/%s_skymap.png" %(opts.webdir, approx))
-        plt.close()
-        fig = plot._waveform_plot(maxL_params)
-        plt.savefig("%s/plots/%s_waveform.png" %(opts.webdir, approx))
-        plt.close()
+        except Exception as e:
+            logging.info("Failed to generate skymap because %s" %(e))
+        try:
+            fig = plot._waveform_plot(maxL_params)
+            plt.savefig("%s/plots/%s_waveform.png" %(opts.webdir, approx))
+            plt.close()
+        except Exception as e:
+            logging.info("Failed to generate waveform plot because %s" %(e))
         for ind, j in enumerate(parameters[num]):
             index = parameters[num].index(b"%s" %(j))
             inj_value = injection_parameters[num][b"%s" %(j)]
@@ -418,8 +440,12 @@ def make_plots(opts, colors=None):
         for i in glob(opts.existing+"/samples/*"):
             opts.samples.append(i)
         parameters = [_grab_parameters(i) for i in opts.samples]
-        ind_ra = [i.index(b"ra") for i in parameters]
-        ind_dec = [i.index(b"dec") for i in parameters]
+        try:
+            for i in parameters:
+                ind_ra_list.append(i.index(b"ra"))
+                ind_dec_list.append(i.index(b"dec"))
+        except:
+            pass
         for num, i in enumerate(opts.samples):
             with h5py.File(i) as f:
                 params = [j for j in f["parameter_names"]]
@@ -447,15 +473,22 @@ def make_plots(opts, colors=None):
                                                      latex_labels[j])
             plt.savefig("%s/plots/combined_posterior_%s" %(opts.webdir, j.decode("utf-8")))
             plt.close()
-        ra_list = [[k[ind_ra][num] for k in l] for num, l in enumerate(combined_samples)]
-        dec_list = [[k[ind_dec][num] for k in l] for num, l in enumerate(combined_samples)]
-        fig = plot._waveform_comparison_plot(combined_maxL, colors)
-        plt.savefig("%s/plots/compare_waveforms.png" %(opts.webdir))
-        plt.close()
-        fig = plot._sky_map_comparison_plot(ra_list, dec_list, opts.approximant,
-                                            colors)
-        plt.savefig("%s/plots/combined_skymap.png" %(opts.webdir))
-        plt.close()
+        try:
+            ra_list = [[k[ind_ra_list[num]] for k in l] for num, l in enumerate(combined_samples)]
+            dec_list = [[k[ind_dec_list[num]] for k in l] for num, l in enumerate(combined_samples)]
+            fig = plot._sky_map_comparison_plot(ra_list, dec_list, opts.approximant,
+                                                colors)
+            plt.savefig("%s/plots/combined_skymap.png" %(opts.webdir))
+            plt.close()
+        except Exception as e:
+            logging.info("Failed to generate comparison skymap because %s" %(e))
+        try:
+            fig = plot._waveform_comparison_plot(combined_maxL, colors)
+            plt.savefig("%s/plots/compare_waveforms.png" %(opts.webdir))
+            plt.close()
+        except Exception as e:
+            logging.info("Failed to generate waveform comparison plot because "
+                         "%s" %(e))
 
 def make_navbar_links(parameters):
     """Generate the links for the navbar
@@ -592,7 +625,7 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
             contents.append(row)
         html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
                              contents=contents, heading_span=1)
-        html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
+        html_file.make_footer(user=opts.user, rundir=opts.webdir)
         
 def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
     """Make the 1d_histogram pages for all approximants
@@ -637,7 +670,7 @@ def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
                                                            "luminosity_distance, iota, ra, dec",
                                                            "iota, phi_12, phi_jl, tilt_1, tilt_2"],
                                           code="combines")
-        html_file.make_footer(user=os.environ["USER"], rundir="{}".format(opts.webdir))
+        html_file.make_footer(user=opts.user, rundir="{}".format(opts.webdir))
                 
 
 def make_comparison_pages(opts, approximants, samples, colors, parameters):
@@ -687,7 +720,7 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
                               "style='margin-left:0.25em; margin-right:0.25em'>HLV</button></div>\n"
                                %("combined_skymap", opts.baseurl))
 
-    html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
+    html_file.make_footer(user=opts.user, rundir=opts.webdir)
     # edit all of the comparison pages
     pages = ["Comparison_{}".format(i.decode("utf-8")) for i in same_parameters]
     webpage.make_html(web_dir=opts.webdir, pages=pages)
@@ -705,7 +738,7 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
                                                        "luminosity_distance, iota, ra, dec",
                                                        "iota, phi_12, phi_jl, tilt_1, tilt_2"],
                                       code="combines")
-        html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
+        html_file.make_footer(user=opts.user, rundir=opts.webdir)
 
 def make_corner_pages(opts, approximants, samples, colors, parameters):
     """Make the corner pages for all approximants
@@ -740,7 +773,7 @@ def make_corner_pages(opts, approximants, samples, colors, parameters):
         html_file.make_search_bar(popular_options=["mass_1, mass_2",
                                                        "luminosity_distance, iota, ra, dec",
                                                        "iota, phi_12, phi_jl, tilt_1, tilt_2"])
-        html_file.make_footer(user=os.environ["USER"], rundir="{}".format(opts.webdir))
+        html_file.make_footer(user=opts.user, rundir="{}".format(opts.webdir))
 
 def make_config_pages(opts, approximants, samples, colors, configs, parameters):
     """Make the config pages for all approximants
@@ -786,7 +819,7 @@ def make_config_pages(opts, approximants, samples, colors, configs, parameters):
             html_file.add_content("<div class='row justify-content-center'>"
                                   "<p style='margin-top:2.5em'> No config file "
                                   "was provided </p></div>")
-        html_file.make_footer(user=os.environ["USER"], rundir="{}".format(opts.webdir))
+        html_file.make_footer(user=opts.user, rundir="{}".format(opts.webdir))
 
 def write_html(opts, colors):
     """Generate an html page to show posterior plots
@@ -846,7 +879,7 @@ a
         # content for accordian
         content = ["{}/plots/combined_posterior_{}.png".format(opts.baseurl, i) for i in parameters]
         html_file.make_accordian(headings=[i for i in parameters], content=content)
-        html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
+        html_file.make_footer(user=opts.user, rundir=opts.webdir)
     for num, i in enumerate(opts.approximant):
         if len(opts.approximant) == 1:
             html_file = webpage.open_html(web_dir=opts.webdir, base_url=opts.baseurl,
@@ -860,7 +893,7 @@ a
         # content for accordian
         content = ["{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl, i, j) for j in parameters]
         html_file.make_accordian(headings=[i for i in parameters], content=content)
-        html_file.make_footer(user=os.environ["USER"], rundir=opts.webdir)
+        html_file.make_footer(user=opts.user, rundir=opts.webdir)
 
 if __name__ == '__main__':
     # default colors

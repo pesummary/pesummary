@@ -394,8 +394,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
     plt.legend(loc="best")
     return fig
 
-def _make_corner_plot(opts, samples, params, approximant, latex_labels,
-                      **kwargs):
+def _make_corner_plot(samples, params, latex_labels, **kwargs):
     """Generate the corner plots for a given approximant
 
     Parameters
@@ -435,8 +434,8 @@ def _make_corner_plot(opts, samples, params, approximant, latex_labels,
     extent = axes[0].get_window_extent().transformed(figure.dpi_scale_trans.inverted())
     width, height = extent.width, extent.height
     width *= figure.dpi
-    height *= figure.dpi
-    np.savetxt("{}/plots/corner/{}_axes.txt".format(opts.webdir, approximant), extent)
+    height *= figure.dpi 
+    #np.savetxt("{}/plots/corner/{}_axes.txt".format(opts.webdir, approximant), extent)
     return figure
 
 def __get_cutoff_indices(flow, fhigh, df, N):
@@ -494,19 +493,19 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
                                 delta_frequency)
 
     approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
-    mass_1 = maxL_params["mass_1"]*MSUN_SI
-    mass_2 = maxL_params["mass_2"]*MSUN_SI
-    luminosity_distance = maxL_params["luminosity_distance"]*PC_SI*10**6
+    mass_1 = maxL_params[b"mass_1"]*MSUN_SI
+    mass_2 = maxL_params[b"mass_2"]*MSUN_SI
+    luminosity_distance = maxL_params[b"luminosity_distance"]*PC_SI*10**6
     iota, S1x, S1y, S1z, S2x, S2y, S2z = \
         lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-            maxL_params["iota"], maxL_params["phi_jl"], maxL_params["tilt_1"],
-            maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
-            maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-            maxL_params["phase"])
+            maxL_params[b"iota"], maxL_params[b"phi_jl"], maxL_params[b"tilt_1"],
+            maxL_params[b"tilt_2"], maxL_params[b"phi_12"], maxL_params[b"a_1"],
+            maxL_params[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+            maxL_params[b"phase"])
     h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2, S1x,
                           S1y, S1z, S2x, S2y, S2z,
                           luminosity_distance, iota,
-                          maxL_params["phase"], 0.0, 0.0, 0.0, delta_frequency,
+                          maxL_params[b"phase"], 0.0, 0.0, 0.0, delta_frequency,
                           minimum_frequency, maximum_frequency,
                           kwargs.get("f_ref", 10.), None, approx)
     h_plus = h_plus.data.data
@@ -529,7 +528,7 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
         SNR = {}
         for i in network:
             ard = __antenna_response(i, ra[ind[0]], dec[ind[1]],
-                                     maxL_params["psi"], maxL_params["geocent_time"])
+                                     maxL_params[b"psi"], maxL_params[b"geocent_time"])
             ar[i] = [ard[0], ard[1]]
             strain = np.array(h_plus*ar[i][0]+h_cross*ar[i][1])
             integrand = np.conj(strain[kmin:kmax])*strain[kmin:kmax]/psd[i][kmin:kmax]

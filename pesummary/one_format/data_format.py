@@ -44,9 +44,8 @@ def _make_hdf5_file(name, data, parameters, approximant, inj_par=None,
     f.create_dataset("parameter_names", data=parameters)
     f.create_dataset("samples", data=data)
     f.create_dataset("approximant", data=approximant)
-    if inj_par and inj_data:
-        f.create_dataset("injection_parameters", data=inj_par)
-        f.create_dataset("injection_data", data=inj_data)
+    f.create_dataset("injection_parameters", data=inj_par)
+    f.create_dataset("injection_data", data=inj_data)
     f.close()
 
 def _mchirp_from_m1_m2(mass1, mass2):
@@ -84,7 +83,7 @@ def _q_from_m1_m2(mass1, mass2):
     """
     return mass1 / mass2
 
-def _q_from_eta(chirp_mass, symmetric_mass_ratio):
+def _q_from_eta(symmetric_mass_ratio):
     """Return the mass ratio given samples for symmetric mass ratio
     """
     temp = (1 / symmetric_mass_ratio / 2 - 1)
@@ -95,7 +94,7 @@ def _mchirp_from_mtotal_q(total_mass, mass_ratio):
     """
     mass1 = mass_ratio*total_mass / (1.+mass_ratio)
     mass2 = total_mass / (1.+mass_ratio)
-    return eta_from_m1_m2(mass1, mass2)**(3./5) * (mass1+mass2)
+    return _eta_from_m1_m2(mass1, mass2)**(3./5) * (mass1+mass2)
 
 def _chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Return chi_p given samples for mass1, mass2, spin1x, spin1y, spin2x,
@@ -410,7 +409,8 @@ def one_format(fil, inj):
         inj_par, inj_data = get_injection_parameters(parameters, fil, BILBY=True)
     _make_hdf5_file(fil, np.array(data), np.array(parameters, dtype="S"),
                     np.array([approx], dtype="S"),
-                    np.array(inj_par, dtype="S"), np.array(inj_data))
+                    inj_par = np.array(inj_par, dtype="S"),
+                    inj_data = np.array(inj_data))
     return "%s_temp" %(fil)
 
 def load_with_deepdish(f):
@@ -469,6 +469,7 @@ def load_with_h5py(f, path):
             else:
                 for num, dat in enumerate(f["%s/%s" %(path, i)]):
                     data[num] += list(np.real(dat))
+    parameters = [i.decode("utf-8") for i in parameters]
     return parameters, data
 
 def get_injection_parameters(parameters, inj_file, LALINFERENCE=False,
