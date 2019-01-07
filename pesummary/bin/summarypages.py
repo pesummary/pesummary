@@ -333,6 +333,8 @@ def make_plots(opts, colors=None):
                   b"L1_matched_filter_snr": r"$\rho^{L}_{mf}$",
                   b"H1_optimal_snr": r"$\rho^{H}_{opt}$",
                   b"L1_optimal_snr": r"$\rho^{L}_{opt}$",
+                  b"V1_optimal_snr": r"$\rho^{V}_{opt}$",
+                  b"E1_optimal_snr": r"$\rho^{E}_{opts}$",
                   b"spin_1x": r"$S_{1}x$",
                   b"spin_1y": r"$S_{1}y$",
                   b"spin_1z": r"$S_{1}z$",
