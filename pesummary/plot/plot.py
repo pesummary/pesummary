@@ -321,7 +321,8 @@ def _sky_map_plot(ra, dec, **kwargs):
     Y2 = np.concatenate([Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]), Y1,
                          Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]),])
 
-    plt.contour(X2, Y2, H2.T, V, colors="b", linewidths=2.0)
+    plt.contour(X2, Y2, H2.T, V, colors=["#AED6F1","#3498DB","#21618C"],
+                linewidths=2.0)
     return fig
 
 def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
