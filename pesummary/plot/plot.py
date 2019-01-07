@@ -273,6 +273,7 @@ def _sky_map_plot(ra, dec, **kwargs):
     kwargs: dict
         optional keyword arguments
     """
+    ra = [i-np.pi for i in ra]
     logging.info("Generating the sky map plot")
     fig = plt.figure()
     ax = plt.subplot(111, projection="hammer")
@@ -323,6 +324,11 @@ def _sky_map_plot(ra, dec, **kwargs):
 
     plt.contour(X2, Y2, H2.T, V, colors=["#AED6F1","#3498DB","#21618C"],
                 linewidths=2.0)
+
+    xticks = np.arange(-np.pi, np.pi, np.pi/6)
+    ax.set_xticks(xticks)
+    labels = [r"$%s^{h}$" %(np.round((i+np.pi)*3.82, 1)) for i in xticks]
+    ax.set_xticklabels(labels) 
     return fig
 
 def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
