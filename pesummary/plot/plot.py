@@ -161,7 +161,7 @@ def _waveform_plot(maxL_params, **kwargs):
         raise exception("lalsimulation could not be imported. please install "
                         "lalsuite to be able to use all features")
     delta_frequency = kwargs.get("delta_f", 1./256)
-    minimum_frequency = kwargs.get("f_min", 10.)
+    minimum_frequency = kwargs.get("f_min", 5.)
     maximum_frequency = kwargs.get("f_max", 1000.)
     frequency_array = np.arange(minimum_frequency, maximum_frequency,
                                 delta_frequency)
@@ -170,16 +170,21 @@ def _waveform_plot(maxL_params, **kwargs):
     mass_1 = maxL_params[b"mass_1"]*MSUN_SI
     mass_2 = maxL_params[b"mass_2"]*MSUN_SI
     luminosity_distance = maxL_params[b"luminosity_distance"]*PC_SI*10**6
-    iota, S1x, S1y, S1z, S2x, S2y, S2z = \
-        lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-            maxL_params[b"iota"], maxL_params[b"phi_jl"], maxL_params[b"tilt_1"],
-            maxL_params[b"tilt_2"], maxL_params[b"phi_12"], maxL_params[b"a_1"],
-            maxL_params[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-            maxL_params[b"phase"])
+    if b"phi_jl" in maxL_params.keys():
+        iota, S1x, S1y, S1z, S2x, S2y, S2z = \
+            lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+                maxL_params[b"iota"], maxL_params[b"phi_jl"], maxL_params[b"tilt_1"],
+                maxL_params[b"tilt_2"], maxL_params[b"phi_12"], maxL_params[b"a_1"],
+                maxL_params[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+                maxL_params[b"phase"])
+    else:
+        iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params[b"iota"], 0., 0., 0., \
+                                             0., 0., 0.
+    phase = maxL_params[b"phase"] if b"phase" in maxL_params.keys() else 0.0
     h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2, S1x,
                           S1y, S1z, S2x, S2y, S2z,
                           luminosity_distance, iota,
-                          maxL_params[b"phase"], 0.0, 0.0, 0.0, delta_frequency,
+                          phase, 0.0, 0.0, 0.0, delta_frequency,
                           minimum_frequency, maximum_frequency,
                           kwargs.get("f_ref", 10.), None, approx)
     h_plus = h_plus.data.data
