@@ -1,7 +1,7 @@
 // Get the image and insert it inside the modal - use its "alt" text as a caption
 
-function _onclick() {
-    $('#myModel').modal('show');
+function _onclick(img) {
+    $(document).on('click', '#'+img, function(){$('#myModel').modal('show')});
 }
 
 function modal(id) {
@@ -13,5 +13,6 @@ function modal(id) {
         str giving the id of the clicked image
     */
     var img = document.getElementById(id);
-    img.onclick = _onclick();
+    /*img.onclick = _onclick(id);*/
+    _onclick(id)
 }
