@@ -44,7 +44,7 @@ setup(name='pesummary',
       package_data={'pesummary': ['js/*.js', 'css/*.css']},
       scripts=['pesummary/bin/summarypages.py'],
       classifiers=[
-          "Programming Language :: Python :: 3.7"]
+          "Programming Language :: Python :: 3.6"]
       license='MIT',
       long_description=readme,
       long_description_content_type='text/markdown')
