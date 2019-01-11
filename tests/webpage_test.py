@@ -171,7 +171,8 @@ class TestPage(object):
         f = self.open_and_read("./.outdir/home.html")
         string1="<div class='modal-dialog modal-lg' style='width:90%'>"
         string2="<div id='demo' class='carousel slide' data-ride='carousel'>"
-        string3="<div class='carousel-item'>"
+        string3="<div class='carousel-item active'>"
         string4="<img src=./path/to/image.png style='align-items:center;' "
+        print(f)
         for i in [string1, string2, string3, string4]:
             assert any(i in elem for elem in f) == True
