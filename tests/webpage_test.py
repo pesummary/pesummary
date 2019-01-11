@@ -126,10 +126,9 @@ class TestPage(object):
         self.html.close()
         f = self.open_and_read("./.outdir/home.html")
         string1="<img src=\'https://example/plots/image1.png\'alt=\'No image available\'"
-        string2="window.location=\"https://example/plots/image1.png\""
-        string3="<img src=\'https://example/plots/image2.png\'alt=\'No image available\'"
-        string4="<div class='column'>\n"
-        for i in [string1, string2, string3, string4]:
+        string2="<img src=\'https://example/plots/image2.png\'alt=\'No image available\'"
+        string3="<div class='column'>\n"
+        for i in [string1, string2, string3]:
             assert any(i in elem for elem in f) == True
 
     def test_insert_image(self):
@@ -164,3 +163,16 @@ class TestPage(object):
             assert any(string in elem for elem in f) == True
         string1="<button type='submit' onclick='combine()'>Submit</button>\n"
         assert any(string1 in elem for elem in f)
+
+    def test_modal_carousel(self):
+        images = ["./path/to/image.png"]
+        self.html.make_modal_carousel(images=images)
+        self.html.close()
+        f = self.open_and_read("./.outdir/home.html")
+        string1="<div class='modal-dialog modal-lg' style='width:90%'>"
+        string2="<div id='demo' class='carousel slide' data-ride='carousel'>"
+        string3="<div class='carousel-item active'>"
+        string4="<img src=./path/to/image.png style='align-items:center;' "
+        print(f)
+        for i in [string1, string2, string3, string4]:
+            assert any(i in elem for elem in f) == True

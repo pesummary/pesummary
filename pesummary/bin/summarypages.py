@@ -214,7 +214,7 @@ def copy_files(opts):
     # copy over the javascript scripts
     path = pesummary.__file__[:-12]
     scripts = ["search.js", "combine_corner.js", "grab.js", "multi_dropbar.js",
-               "multiple_posteriors.js", "side_bar.js"]
+               "multiple_posteriors.js", "side_bar.js", "modal.js"]
     for i in scripts:
         shutil.copyfile(path+"/js/%s" %(i), opts.webdir+"/js/%s" %(i))
     # copy over the css scripts
@@ -602,6 +602,8 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
                      "{}/plots/1d_posterior_{}_a_1.png".format(opts.baseurl, i),
                      "{}/plots/1d_posterior_{}_a_2.png".format(opts.baseurl, i)]]
         html_file.make_table_of_images(contents=contents)
+        images = [y for x in contents for y in x]
+        html_file.make_modal_carousel(images=images)
         # make table of summary information
         contents = []
         for j in same_parameters:
