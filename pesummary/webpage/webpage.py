@@ -315,15 +315,19 @@ class page():
         self.add_content("<link rel='stylesheet' href='../css/image_styles.css'>\n")
         self.add_content("<div class='container' style='margin-top:5em; margin-bottom:5em;"
                          "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")
+        ind = 0
         for i in contents:
             self.add_content("<div class='row justify-content-center'>\n", indent=2)
-            for j in i:
+            for num, j in enumerate(i):
                 self.add_content("<div class='column'>\n", indent=4)
+                self.add_content("<a href='#demo' data-slide-to='%s'>" %(ind), indent=6)
                 self.add_content("<img src='{}'".format(self.base_url+"/plots/"+j.split("/")[-1]) +
                                  "alt='No image available' style='width:{}px;' "
                                  "id='{}' onclick='modal(\"{}\")'>\n".format(1050./len(i), j.split("/")[-1][:-4],
-                                 j.split("/")[-1][:-4], indent=6))
+                                 j.split("/")[-1][:-4], indent=8))
+                self.add_content("</a>", indent=6)
                 self.add_content("</div>\n", indent=4)
+                ind += 1
             self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
 
@@ -448,6 +452,12 @@ class page():
         self.add_content("<div class='modal-content'>\n", indent=4)
         self.add_content("<div id='demo' class='carousel slide' data-ride='carousel'>\n", indent=6)
         self.add_content("<ul class='carousel-indicators'>\n", indent=8)
+        for num, i in enumerate(images):
+            if num == 0:
+                self.add_content("<li data-target='#demo' data-slide-to-'%s' "
+                                 "class='active'></li>\n" %(num), indent=10)
+            self.add_content("<li data-target='#demo' data-slide-to-'%s'>"
+                             "</li>\n" %(num), indent=10)
         self.add_content("<li data-target='#demo' data-slide-to='0' "
                          "class='active'></li>\n", indent=10)
         self.add_content("<li data-target='#demo' data-slide-to='1'></li>\n", indent=10)
@@ -455,7 +465,7 @@ class page():
         self.add_content("</ul>\n", indent=8)
         self.add_content("<div class='carousel-inner'>\n", indent=8)
         for num, i in enumerate(images):
-            if num == 1:
+            if num == 0:
                 self.add_content("<div class='carousel-item active'>\n", indent=10)
             else:
                 self.add_content("<div class='carousel-item'>\n", indent=10)
