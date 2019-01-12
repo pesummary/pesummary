@@ -20,6 +20,8 @@ from glob import glob
 
 from pesummary.webpage import webpage
 
+from bs4 import BeautifulSoup
+
 import pytest
 
 
@@ -70,39 +72,45 @@ class TestPage(object):
     def test_header(self):
         self.html.make_header(title="My title", approximant="approx")
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html") 
-        assert any("<div class='jumbotron text-center'" in elem for elem in f) == True
-        assert any(elem == "  <h1 id=approx>My title</h1>\n" for elem in f) == True
+        with open("./.outdir/home.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
+        assert str(soup.h1.string) == 'My title'
+        assert soup.div["class"] == ['jumbotron', 'text-center']
 
     def test_footer(self):
         self.html.make_footer()
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html") 
-        assert any("<div class='jumbotron text-center'" in elem for elem in f) == True
-        assert any("<p>Simulation run by" in elem for elem in f) == True
+        with open("./.outdir/home.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
+        assert "Simulation run by" in str(soup.p)
+        assert soup.div["class"] == ['jumbotron', 'text-center']
 
     @pytest.mark.parametrize('links', [("other", "example")])
     def test_navbar(self, links):
         self.html.make_navbar(links)
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html")
-        string1="<a class='nav-link' href='#' onclick='grab_html(\"other\")'>other</a>"
-        string2="<a class='nav-link' href='#' onclick='grab_html(\"example\")'>example</a>"
-        assert any(string1 in elem for elem in f) == True
-        assert any(string2 in elem for elem in f) == True
+        with open("./.outdir/home.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
+        all_links = soup.find_all("a", class_="nav-link")
+        assert len(all_links) == 2
+        assert all_links[0].text == "other"
+        assert all_links[1].text == "example"
 
     @pytest.mark.parametrize('headings, contents', [(["column1", "column2"],
         [["entry1", "entry2"], ["entry3", "entry4"]]),])
     def test_table(self, headings, contents):
         self.html.make_table(headings=headings, contents=contents)
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html")
-        string1="          <th colspan='1'>column1</th>"
-        string2="          <th colspan='1'>column2</th>"
-        string3="          <td>entry2</td>"
-        string4="          <td>entry4</td>"
-        for i in [string1, string2, string3, string4]:
-            assert any(i in elem for elem in f) == True
+        with open("./.outdir/home.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
+        columns = soup.find_all("th")
+        assert len(columns) == 2
+        assert columns[0].text == "column1"
+        assert columns[1].text == "column2"
+        entries = soup.find_all("td")
+        assert len(entries) == 4
+        for num, i in enumerate(entries):
+            assert i.text == "entry{}".format(num+1)
 
     @pytest.mark.parametrize('language', [('ini'),]) 
     def test_code_block(self, language):
@@ -113,66 +121,66 @@ class TestPage(object):
             f.write(styles)
             f.close()
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html")
-        string1="<div class=\"highlight\"><pre><span></span><span class=\"k\">[engine]</span>"
-        string2="<span class=\"na\">example</span><span class=\"o\">=</span>"
-        assert any(string1 in elem for elem in f) == True
-        assert any(string2 in elem for elem in f) == True
-        assert any("example_config.css" in elem for elem in glob("./.outdir/*")) == True
+        with open("./.outdir/home.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
+        assert soup.div["class"] == ["highlight"]
+        all_entries = soup.find_all("span")
+        assert all_entries[1].text == "[engine]"
+        assert all_entries[2].text == "example"
 
     def test_table_of_images(self):
         contents = [["image1.png"], ["image2.png"]]
         self.html.make_table_of_images(contents=contents)
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html")
-        string1="<img src=\'https://example/plots/image1.png\'alt=\'No image available\'"
-        string2="<img src=\'https://example/plots/image2.png\'alt=\'No image available\'"
-        string3="<div class='column'>\n"
-        for i in [string1, string2, string3]:
-            assert any(i in elem for elem in f) == True
+        with open("./.outdir/home.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
+        all_images = soup.find_all("img")
+        assert len(all_images) == 2
+        assert all_images[0]["src"] == "https://example/plots/image1.png"
+        assert all_images[1]["src"] == "https://example/plots/image2.png"
 
     def test_insert_image(self):
         path = "./path/to/image.png"
         self.html.insert_image(path)
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html") 
-        string1="<img src='./path/to/image.png' alt='No image available'"
-        assert any(string1 in elem for elem in f) == True
+        with open("./.outdir/home.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
+        all_images = soup.find_all("img")
+        assert len(all_images) == 1
+        assert all_images[0]["src"] == "./path/to/image.png"
 
     def test_accordian(self):
         headings = ["example"]
         content = ["./path/to/image.png"]
         self.html.make_accordian(headings=headings, content=content)
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html")
-        string1="<img src='./path/to/image.png' alt='No image available'"
-        string2="<button class='btn btn-link collapsed' type='button' data-toggle='collapse'"
-        string3="<div id='collapseexample' class='collapse' aria-labelledby='example'"
-        string4="<div class='accordian' id='accordian'"
-        for i in [string1, string2, string3, string4]:
-            assert any(i in elem for elem in f) == True
+        with open("./.outdir/home.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
+        assert soup.img["src"] == "./path/to/image.png"
+        assert soup.button["class"] == ["btn", "btn-link", "collapsed"]
+        assert len(soup.find_all("div", class_="accordian")) == 1
+        assert "example" in soup.button.text
 
     def test_search_bar(self):
         self.html.make_search_bar()
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html")
-        # check that the scripts are there
+        with open("./.outdir/home.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
         scripts = ["combine_corner.js", "side_bar.js", "multiple_posteriors.js"]
+        html_scripts = soup.find_all("script")
         for i in scripts:
-            string = "<script type='text/javascript' src='../js/{}'></script>\n".format(i)
-            assert any(string in elem for elem in f) == True
-        string1="<button type='submit' onclick='combine()'>Submit</button>\n"
-        assert any(string1 in elem for elem in f)
+            assert any("../js/%s" %(i) in elem["src"] for elem in html_scripts)
+        assert soup.find_all("button", class_="")[0].text == "Submit"
 
     def test_modal_carousel(self):
         images = ["./path/to/image.png"]
         self.html.make_modal_carousel(images=images)
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html")
-        string1="<div class='modal-dialog modal-lg' style='width:90%'>"
-        string2="<div id='demo' class='carousel slide' data-ride='carousel'>"
-        string3="<div class='carousel-item active'>"
-        string4="<img src=./path/to/image.png style='align-items:center;' "
-        print(f)
-        for i in [string1, string2, string3, string4]:
-            assert any(i in elem for elem in f) == True
+        with open("./.outdir/home.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
+        images = soup.find_all("img")
+        assert len(images) == 1
+        assert images[0]["src"] == "./path/to/image.png"
+        assert len(soup.find_all("div", class_="carousel-item")) == 1
+        assert len(soup.find_all("div", class_="modal-lg")) == 1
+        assert len(soup.find_all("div", class_="carousel")) == 1

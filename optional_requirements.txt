@@ -1,0 +1,4 @@
+pytest
+coverage
+coverage-badge
+beautifulsoup4
