@@ -14,7 +14,9 @@ Contents:
    :maxdepth: 2
 
    installation
+   structure
    executable
+   examples
 
 Indices and tables
 ==================

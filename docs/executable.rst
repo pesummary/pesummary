@@ -48,3 +48,14 @@ This will then produce a web directory structure as follows:
      ->
    samples/
      -> results_file_posterior_samples.h5
+
+You can then view the webpage by opening the :code:`home.html` webpage on your local browser.
+
+Email
+-----
+
+If you would like to recieve an email with the link to the :code:`home.html` webpage when the code has finished, then you pass the :code:`--email` flag,
+
+.. code-block:: console
+
+   $ summarypages.py --email albert.einstein@ligo.org --webdir /home/albert.einstein/public_html/LVC/projects --samples ./results_file.h5
