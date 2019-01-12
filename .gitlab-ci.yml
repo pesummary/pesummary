@@ -18,6 +18,19 @@ python-3:
       - htmlcov/
       - coverage_badge.svg
 
+documentation:
+  stage: test
+  image: python:3.6
+  script:
+    - pip install -r optional_requirements.txt
+    - python setup.py install
+    - cd docs
+    - make clean
+    - make html
+  artifacts:
+    paths:
+      - docs/_build/html/
+
 pages:
   stage: deploy
   dependencies:
@@ -26,6 +39,7 @@ pages:
     - mkdir public/
     - mv htmlcov/ public/
     - mv /builds/charlie.hoy/pesummary/coverage_badge.svg public/
+    - mv docs/_build/html/* public/
   artifacts:
     paths:
       - public

@@ -7,6 +7,7 @@
 ## ignore build and dist directories
 build/
 dist/
+docs/_*
 
 ## ignore __pycache__ directories
 __pycache__
