@@ -230,6 +230,12 @@ class TestMainScript(object):
                          './.outdir_full_cbc/html/IMRPhenomPv2_a_1.html',
                          './.outdir_full_cbc/html/IMRPhenomPv2_spin_2y.html',
                          './.outdir_full_cbc/html/IMRPhenomPv2_cos_tilt_1.html',
-                         './.outdir_full_cbc/html/IMRPhenomPv2_config.html']
+                         './.outdir_full_cbc/html/IMRPhenomPv2_config.html',
+                         './.outdir_full_cbc/html/IMRPhenomPv2_redshift.html',
+                         './.outdir_full_cbc/html/IMRPhenomPv2_comoving_distance.html',
+                         './.outdir_full_cbc/html/IMRPhenomPv2_mass_1_source.html',
+                         './.outdir_full_cbc/html/IMRPhenomPv2_mass_2_source.html',
+                         './.outdir_full_cbc/html/IMRPhenomPv2_total_mass_source.html',
+                         './.outdir_full_cbc/html/IMRPhenomPv2_chirp_mass_source.html']
         assert all(i == j for i,j in zip(sorted(expected_dirs), dirs)) 
         assert all(i == j for i,j in zip(sorted(expected_html), html))
