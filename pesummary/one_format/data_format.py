@@ -36,6 +36,16 @@ try:
 except:
     LALINFERENCE_INSTALL=False
 
+try:
+    from astropy.cosmology import z_at_value, Planck15
+    import astropy.units as u
+    ASTROPY=True
+except ImportError:
+    ASTROPY=False
+    logger.warning("You do not have astropy installed currently. You will"
+                   " not be able to use some of the prebuilt functions.")
+
+
 def _make_hdf5_file(name, data, parameters, approximant, inj_par=None,
                     inj_data=None):
     """
@@ -47,6 +57,46 @@ def _make_hdf5_file(name, data, parameters, approximant, inj_par=None,
     f.create_dataset("injection_parameters", data=inj_par)
     f.create_dataset("injection_data", data=inj_data)
     f.close()
+
+@np.vectorize
+def _z_from_dL(luminosity_distance):
+    """Return the redshift given samples for the luminosity distance
+    """
+    return z_at_value(Planck15.luminosity_distance, luminosity_distance*u.Mpc)
+
+def _dL_from_z(redshift):
+    """Return the luminosity distance given samples for the redshift
+    """
+    return Planck15.luminosity_distance(redshift).value
+
+def _comoving_distance_from_z(redshift):
+    """Return the comoving distance given samples for the redshift
+    """
+    return Planck15.comoving_distance(redshift).value 
+
+def _m1_source_from_m1_z(mass1, z):
+    """Return the source mass of the bigger black hole given samples for the
+    detector mass of the bigger black hole and the redshift
+    """
+    return mass1 / (1. + z)
+
+def _m2_source_from_m2_z(mass2, z):
+    """Return the source mass of the smaller black hole given samples for the
+    detector mass of the smaller black hole and the redshift
+    """
+    return mass2 / (1. + z)
+
+def _m_total_source_from_mtotal_z(total_mass, z):
+    """Return the source total mass of the binary given samples for detector
+    total mass and redshift
+    """
+    return total_mass / (1. + z)
+
+def _mchirp_source_from_mchirp_z(mchirp, z):
+    """Return the source chirp mass of the binary given samples for detector
+    chirp mass and redshift
+    """
+    return mchirp / (1. + z)
 
 def _mchirp_from_m1_m2(mass1, mass2):
     """Return the chirp mass given the samples for mass1 and mass2
@@ -287,6 +337,58 @@ def all_parameters(data, parameters):
         cos_tilt_2 = np.cos(tilt_2)
         for num, i in enumerate(data):
             data[num].append(cos_tilt_2[num])
+    if "luminosity_distance" not in parameters and "redshift" in parameters:
+        parameters.append("luminosity_distance")
+        redshift_ind = parameters.index("redshift")
+        redshift = np.array([i[redshift_ind] for i in data])
+        luminosity_distance = _dL_from_z(redshift)
+        for num, i in enumerate(data):
+            data[num].append(luminosity_distance[num])
+    if "redshift" not in parameters and "luminosity_distance" in parameters:
+        parameters.append("redshift")
+        luminosity_distance_ind = parameters.index("luminosity_distance")
+        luminosity_distance = np.array([i[luminosity_distance_ind] for i in data])
+        redshift = _z_from_dL(luminosity_distance)
+        for num, i in enumerate(data):
+            data[num].append(redshift[num])
+    if "comoving_distance" not in parameters and "redshift" in parameters:
+        parameters.append("comoving_distance")
+        redshift_ind = parameters.index("redshift")
+        redshift = np.array([i[redshift_ind] for i in data])
+        comoving_distance = _comoving_distance_from_z(redshift)
+        for num, i in enumerate(data):
+            data[num].append(comoving_distance[num])
+    if "redshift" in parameters:
+        redshift_ind = parameters.index("redshift")
+        redshift = np.array([i[redshift_ind] for i in data])
+        if "mass_1_source" not in parameters and "mass_1" in parameters:
+            parameters.append("mass_1_source")
+            mass_1_ind = parameters.index("mass_1")
+            mass_1 = np.array([i[mass_1_ind] for i in data])
+            mass_1_source = _m1_source_from_m1_z(mass_1, redshift)
+            for num, i in enumerate(data):
+                data[num].append(mass_1_source[num])
+        if "mass_2_source" not in parameters and "mass_2" in parameters:
+            parameters.append("mass_2_source")
+            mass_2_ind = parameters.index("mass_2")
+            mass_2 = np.array([i[mass_2_ind] for i in data])
+            mass_2_source = _m2_source_from_m2_z(mass_2, redshift)
+            for num, i in enumerate(data):
+                data[num].append(mass_2_source[num])
+        if "total_mass_source" not in parameters and "total_mass" in parameters:
+            parameters.append("total_mass_source")
+            total_mass_ind = parameters.index("total_mass")
+            total_mass = np.array([i[total_mass_ind] for i in data])
+            total_mass_source = _m_total_source_from_mtotal_z(total_mass, redshift)
+            for num, i in enumerate(data):
+                data[num].append(total_mass_source[num])
+        if "chirp_mass_source" not in parameters and "chirp_mass" in parameters:
+            parameters.append("chirp_mass_source")
+            chirp_mass_ind = parameters.index("chirp_mass")
+            chirp_mass = np.array([i[chirp_mass_ind] for i in data])
+            chirp_mass_source = _mchirp_source_from_mchirp_z(chirp_mass, redshift)
+            for num, i in enumerate(data):
+                data[num].append(chirp_mass_source[num])
     return data, parameters
 
 def one_format(fil, inj):
