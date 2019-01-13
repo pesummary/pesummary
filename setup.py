@@ -20,7 +20,7 @@ with open("README.md", "r") as f:
     readme = f.read()
 
 setup(name='pesummary',
-      version='0.1.1',
+      version='0.1.2',
       description='Python package to produce summary pages for Parameter '
                   'estimation codes',
       author='Charlie Hoy',
