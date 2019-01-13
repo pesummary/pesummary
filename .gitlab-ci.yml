@@ -50,7 +50,7 @@ documentation:
 pages:
   stage: deploy
   dependencies:
-    - python-3
+    - python-3.6
     - documentation
   script:
     - mkdir public/
