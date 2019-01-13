@@ -198,7 +198,7 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     linestyle=['-', '--']
     for num, i in enumerate(detectors):
         i = i.decode("utf-8")
-        ar = __antenna_response(i, maxL_params[b"ra"], maxL_params[b"dec"],
+        ar = __antenna_response(str(i), maxL_params[b"ra"], maxL_params[b"dec"],
                                 maxL_params[b"psi"], maxL_params[b"geocent_time"])
         plt.plot(frequency_array, abs(h_plus*ar[0]+h_cross*ar[1]),
                  color=colors[num], linestyle=linestyle[num],
