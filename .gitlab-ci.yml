@@ -2,15 +2,6 @@ stages:
   - test
   - deploy
 
-python-2.7:
-  stage: test
-  image: python:2.7
-  script:
-    - pip install astropy==2.0.11
-    - pip install -r optional_requirements.txt
-    - python setup.py install
-    - pytest tests
-
 python-3.5:
   stage: test
   image: python:3.5
