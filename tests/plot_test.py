@@ -48,7 +48,7 @@ class TestPlot(object):
                        b"phi_12": 0., b"a_1": 0.5, b"a_2": 0., b"phase": 0.,
                        b"ra": 1., b"dec": 1., b"psi": 0., b"geocent_time": 0.,
                        b"luminosity_distance": 100}
-        fig = plot._waveform_plot(maxL_params)
+        fig = plot._waveform_plot([b"H1"], maxL_params)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_waveform_comparison_plot(self):

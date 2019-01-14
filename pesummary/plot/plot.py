@@ -146,11 +146,13 @@ def __antenna_response(name, ra, dec, psi, time_gps):
 
     return fplus, fcross
 
-def _waveform_plot(maxL_params, **kwargs):
+def _waveform_plot(detectors, maxL_params, **kwargs):
     """Plot the maximum likelihood waveform for a given approximant.
 
     Parameters
     ----------
+    detectors: list
+        list of detectors that you want to generate waveforms for
     maxL_params: dict
         dictionary of maximum likelihood parameter values
     kwargs: dict
@@ -194,8 +196,9 @@ def _waveform_plot(maxL_params, **kwargs):
     fig = plt.figure()
     colors=['b', 'r']
     linestyle=['-', '--']
-    for num, i in enumerate(["H1", "L1"]):
-        ar = __antenna_response(i, maxL_params[b"ra"], maxL_params[b"dec"],
+    for num, i in enumerate(detectors):
+        i = i.decode("utf-8")
+        ar = __antenna_response(str(i), maxL_params[b"ra"], maxL_params[b"dec"],
                                 maxL_params[b"psi"], maxL_params[b"geocent_time"])
         plt.plot(frequency_array, abs(h_plus*ar[0]+h_cross*ar[1]),
                  color=colors[num], linestyle=linestyle[num],
