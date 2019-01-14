@@ -53,7 +53,7 @@ function combines(list) {
             }
         }
         c.height = 520*ticked.length+50;
-        var images = [];
+        var images2 = [];
         for ( var i=0; i<ticked.length; i++ ) {
             var newimage = new Image();
             if ( approx == "Comparison" ) {
@@ -61,11 +61,11 @@ function combines(list) {
             } else {
                 newimage.src = '../plots/1d_posterior_'+approx+'_'+ticked[i]+'.png';
             }
-            images.push(newimage);
+            images2.push(newimage);
             
             setTimeout(function() { 
-                for ( var i=0; i<images.length; i++ ) { 
-                    ctx.drawImage(images[i], 0, (500*i)+(i*20), 700, 500);
+                for ( var i=0; i<images2.length; i++ ) { 
+                    ctx.drawImage(images2[i], 0, (500*i)+(i*20), 700, 500);
                 }
              }, 1000);
         }
