@@ -243,6 +243,8 @@ class TestConversions(object):
         approximant = output[2]
         expected = [[1.0, 10.0], [2.0, 10.0], [3.0, 20.0]] 
         assert all(i == j for i,j in zip(params, ["log_likelihood", "mass_1"]))
+        print(samples)
+        print(expected)
         assert all(all(i==j for i,j in zip(k,l)) for k,l in zip(samples, expected))
         assert approximant == "approx"
 
