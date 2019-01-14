@@ -241,7 +241,9 @@ class TestConversions(object):
         params = sorted(output[0])
         samples = output[1]
         approximant = output[2]
-        expected = [[1.0, 10.0], [2.0, 10.0], [3.0, 20.0]] 
+        expected = [[1.0, 10.0], [2.0, 10.0], [3.0, 20.0]]
+        if output[0].index("log_likelihood") != params.index("log_likelihood"):
+            expected = [[10.0, 1.0], [10.0, 2.0], [20.0, 3.0]] 
         assert all(i == j for i,j in zip(params, ["log_likelihood", "mass_1"]))
         assert all(all(i==j for i,j in zip(k,l)) for k,l in zip(samples, expected))
         assert approximant == "approx"

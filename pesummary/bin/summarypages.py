@@ -264,6 +264,20 @@ def _grab_parameters(results):
     f.close()                   
     return parameters
 
+def _grab_detectors(params):
+    """Grab the detectors from the list of parameters
+
+    Parameters
+    ----------
+    params: list
+        list of parameters that have posterior samples
+    """
+    detectors = []
+    for i in params:
+        if b"optimal_snr" in  i:
+            detectors.append(i.split(b"_optimal_snr")[0])
+    return detectors
+
 def _grab_injection_parameters(results):
     """Grab the injection parameters and injection values
 
@@ -401,7 +415,8 @@ def make_plots(opts, colors=None):
         except Exception as e:
             logging.info("Failed to generate skymap because %s" %(e))
         try:
-            fig = plot._waveform_plot(maxL_params)
+            detectors = _grab_detectors(parameters[num])
+            fig = plot._waveform_plot(detectors, maxL_params)
             plt.savefig("%s/plots/%s_waveform.png" %(opts.webdir, approx))
             plt.close()
         except Exception as e:

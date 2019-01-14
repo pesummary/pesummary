@@ -74,8 +74,12 @@ function grab_html(param) {
     fetch(link, {credentials: 'same-origin'})
     .then(res => {
                   if ( res.status == 200 ) {
-                      _option1(approx, param, home)
+                      $(document).ready(function() {
+                          _option1(approx, param, home)
+                      })
                   } else {
-                      _option2(param, home)
+                      $(document).ready(function() {
+                          _option2(param, home)
+                      })
                   }})
 }
