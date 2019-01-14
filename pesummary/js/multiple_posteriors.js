@@ -13,14 +13,15 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,      
 // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
 
-function combines(list) {                                                        
+function combines(list) {                                            
     var loadTimer;                                                              
-    var imgObject = new Image();                                                
+    var imgObject = new Image();                                   
     var heading=document.getElementsByTagName("h1")[0]                          
     var approx = heading.innerHTML.split(" ")[0]                                
     var c=document.getElementById("combines")                                     
-    var ctx=c.getContext("2d")                                                  
-    ctx.clearRect(0, 0, c.width, c.height);                                     
+    var ctx=c.getContext("2d")                                                
+    ctx.clearRect(0, 0, c.width, c.height); 
+    /*c.style.display = "none";  */                        
     var el= document.getElementById("corner_search").value.split(", "); 
     if ( typeof list === 'undefined' ) {                                        
         list = 'None';                                                          
@@ -52,23 +53,48 @@ function combines(list) {
             }
         }
         c.height = 520*ticked.length+50;
+        var images = [];
         for ( var i=0; i<ticked.length; i++ ) {
+            var newimage = new Image();
             if ( approx == "Comparison" ) {
-                imgObject.src = '../plots/combined_posterior_'+ticked[i]+'.png'
+                newimage.src = '../plots/combined_posterior_'+ticked[i]+'.png'
             } else {
-                imgObject.src = '../plots/1d_posterior_'+approx+'_'+ticked[i]+'.png';
+                newimage.src = '../plots/1d_posterior_'+approx+'_'+ticked[i]+'.png';
             }
-            ctx.drawImage(imgObject, 0, (500*i)+(i*20), 700, 500);
+            images.push(newimage);
+            
+            setTimeout(function() { 
+                for ( var i=0; i<images.length; i++ ) { 
+                    ctx.drawImage(images[i], 0, (500*i)+(i*20), 700, 500);
+                }
+             }, 1000);
         }
-    } else {                                                            
-        c.height = 520*el.length+50;                                                                                                             
-        for ( var i=0; i<el.length; i++ ) {
+    } else {                                                       
+        c.height = 520*el.length+50;
+        var images = [];                                                                                 
+        for ( var i=0; i<el.length; i++ ) { 
+            var newimage = new Image();
             if ( approx == "Comparison" ) {
-                imgObject.src = '../plots/combined_posterior_'+el[i]+'.png'
+                newimage.src = '../plots/combined_posterior_'+el[i]+'.png'
             } else {                                    
-                imgObject.src = '../plots/1d_posterior_'+approx+'_'+el[i]+'.png';
+                newimage.src = '../plots/1d_posterior_'+approx+'_'+el[i]+'.png';
             }
-            ctx.drawImage(imgObject, 0, (500*i)+(i*20), 700, 500);        
-        }                
-    }                                                                           
+            images.push(newimage);
+            
+            setTimeout(function() { 
+                for ( var i=0; i<images.length; i++ ) { 
+                    ctx.drawImage(images[i], 0, (500*i)+(i*20), 700, 500);
+                }
+             }, 1000);
+        }
+    }
 }
+/*
+function plot(images, ctx, c) {
+    for ( var i=0; i<images.length; i++ ) {
+        ctx.drawImage(images[i], 0, (500*i)+(i*20), 700, 500);
+    
+    }
+    c.style.display = "contents";
+}
+*/
