@@ -13,8 +13,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import pesummary
 from pesummary.utils import utils
-from pesummary._version import __version__
 import sys
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
@@ -89,6 +89,11 @@ class page():
         self.base_url = base_url
         self.content = []
 
+    def close(self):
+        """Close the opened html file.
+        """
+        self.html_file.close()
+
     def add_content(self, content, indent=0):
         """Add content to the html page
 
@@ -107,7 +112,7 @@ class page():
         self.add_content("<div class='jumbotron text-center' style='background-color: {}; margin-bottom:0'>\n".format(colour))
         self.add_content("  <h1 id={}>{}</h1>\n".format(approximant, title))
         self.add_content("<h4><span class='badge badge-info'>Code Version: %s"
-                         "</span></h4>\n" %(__version__), indent=2)
+                         "</span></h4>\n" %(pesummary.__version__), indent=2)
         self.add_content("</div>\n")
 
     def _footer(self, user, rundir):
@@ -306,18 +311,23 @@ class page():
         contents: list, optional
             nd list giving the contents of the table.
         """
+        self.add_content("<script type='text/javascript' src='../js/modal.js'></script>\n")
         self.add_content("<link rel='stylesheet' href='../css/image_styles.css'>\n")
         self.add_content("<div class='container' style='margin-top:5em; margin-bottom:5em;"
                          "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")
+        ind = 0
         for i in contents:
             self.add_content("<div class='row justify-content-center'>\n", indent=2)
-            for j in i:
+            for num, j in enumerate(i):
                 self.add_content("<div class='column'>\n", indent=4)
+                self.add_content("<a href='#demo' data-slide-to='%s'>" %(ind), indent=6)
                 self.add_content("<img src='{}'".format(self.base_url+"/plots/"+j.split("/")[-1]) +
                                  "alt='No image available' style='width:{}px;' "
-                                 "id='{}' onclick='window.location=\"{}\"'"
-                                 ">\n".format(1050./len(i),j.split("/")[-1][:-4], self.base_url+"/plots/"+j.split("/")[-1]), indent=6)
+                                 "id='{}' onclick='modal(\"{}\")'>\n".format(1050./len(i), j.split("/")[-1][:-4],
+                                 j.split("/")[-1][:-4], indent=8))
+                self.add_content("</a>", indent=6)
                 self.add_content("</div>\n", indent=4)
+                ind += 1
             self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
 
@@ -394,7 +404,8 @@ class page():
         corner_parameters = ["luminosity_distance", "dec", "a_2",
                              "a_1", "geocent_time", "phi_jl", "psi", "ra", "phase",
                              "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
-                             "tilt_1"]
+                             "tilt_1", "chi_p", "chirp_mass", "mass_ratio",
+                             "symmetric_mass_ratio", "total_mass", "chi_eff"]
         for i in corner_parameters:
             self.add_content("<input type='checkbox' name='type' "
                              "value='{}' id='{}' style='text-align: center; margin: 0 5px 0;'"
@@ -421,5 +432,57 @@ class page():
                          "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")  
         self.add_content("<div class='row justify-content-center' id='corner_plot'>\n", indent=2)
         self.add_content("<canvas id='{}' width='600' height='600'></canvas>\n".format(ids), indent=4)
+        self.add_content("</div>\n", indent=2)
+        self.add_content("</div>\n")
+
+    def make_modal_carousel(self, images=None):
+        """Make a pop up window that appears on top of the home page showing
+        images in a carousel.
+
+        Parameters
+        ----------
+        images: list
+            list of image locations that you would like included in the
+            carousel
+        """
+        self.add_content("<div class='modal fade bs-example-modal-lg' tabindex='-1' "
+                         "role='dialog' aria-labelledby='myLargeModalLabel' "
+                         "aria-hidden='true' id='myModel' style='margin-top: 200px;'>\n")
+        self.add_content("<div class='modal-dialog modal-lg' style='width:90%'>\n", indent=2)
+        self.add_content("<div class='modal-content'>\n", indent=4)
+        self.add_content("<div id='demo' class='carousel slide' data-ride='carousel'>\n", indent=6)
+        self.add_content("<ul class='carousel-indicators'>\n", indent=8)
+        for num, i in enumerate(images):
+            if num == 0:
+                self.add_content("<li data-target='#demo' data-slide-to-'%s' "
+                                 "class='active'></li>\n" %(num), indent=10)
+            self.add_content("<li data-target='#demo' data-slide-to-'%s'>"
+                             "</li>\n" %(num), indent=10)
+        self.add_content("<li data-target='#demo' data-slide-to='0' "
+                         "class='active'></li>\n", indent=10)
+        self.add_content("<li data-target='#demo' data-slide-to='1'></li>\n", indent=10)
+        self.add_content("<li data-target='#demo' data-slide-to='2'></li>\n", indent=10)
+        self.add_content("</ul>\n", indent=8)
+        self.add_content("<div class='carousel-inner'>\n", indent=8)
+        for num, i in enumerate(images):
+            if num == 0:
+                self.add_content("<div class='carousel-item active'>\n", indent=10)
+            else:
+                self.add_content("<div class='carousel-item'>\n", indent=10)
+            self.add_content("<img src={} style='align-items:center;' "
+                             "class='mx-auto d-block'>\n".format(i), indent=12)
+            self.add_content("</div>\n", indent=10)
+
+        self.add_content("</div>\n", indent=8)
+        self.add_content("<a class='carousel-control-prev' href='#demo' "
+                         "data-slide='prev'>\n", indent=8)
+        self.add_content("<span class='carousel-control-prev-icon'></span>\n", indent=10)
+        self.add_content("</a>\n", indent=8)
+        self.add_content("<a class='carousel-control-next' href='#demo' "
+                         "data-slide='next'>\n", indent=8)
+        self.add_content("<span class='carousel-control-next-icon'></span>\n", indent=10)
+        self.add_content("</a>\n", indent=8)
+        self.add_content("</div>\n", indent=6)
+        self.add_content("</div>\n", indent=4)
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")

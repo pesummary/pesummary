@@ -32,7 +32,7 @@ try:
 except:
     LALSIMULATION=None
 
-def _1d_histogram_plot(param, samples, latex_label):
+def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
 
@@ -44,6 +44,8 @@ def _1d_histogram_plot(param, samples, latex_label):
         list of samples for param
     latex_label: str
         latex label for param
+    inj_value: float
+        value that was injected
     """
     logging.info("Generating the 1d histogram plot for %s" %(param.decode("utf-8")))
     fig = plt.figure()
@@ -53,6 +55,8 @@ def _1d_histogram_plot(param, samples, latex_label):
     upper_percentile = np.percentile(samples, 90)
     lower_percentile = np.percentile(samples, 10)
     y_range = [0,np.max(n)+0.1*np.max(n)]
+    if inj_value:
+        plt.plot([inj_value]*2, y_range, color='r', linestyle='--')
     plt.plot([upper_percentile]*2, y_range, color='b', linestyle='--')
     plt.plot([lower_percentile]*2, y_range, color='b', linestyle='--')
     median = np.median(samples)
@@ -157,7 +161,7 @@ def _waveform_plot(maxL_params, **kwargs):
         raise exception("lalsimulation could not be imported. please install "
                         "lalsuite to be able to use all features")
     delta_frequency = kwargs.get("delta_f", 1./256)
-    minimum_frequency = kwargs.get("f_min", 10.)
+    minimum_frequency = kwargs.get("f_min", 5.)
     maximum_frequency = kwargs.get("f_max", 1000.)
     frequency_array = np.arange(minimum_frequency, maximum_frequency,
                                 delta_frequency)
@@ -166,16 +170,21 @@ def _waveform_plot(maxL_params, **kwargs):
     mass_1 = maxL_params[b"mass_1"]*MSUN_SI
     mass_2 = maxL_params[b"mass_2"]*MSUN_SI
     luminosity_distance = maxL_params[b"luminosity_distance"]*PC_SI*10**6
-    iota, S1x, S1y, S1z, S2x, S2y, S2z = \
-        lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-            maxL_params[b"iota"], maxL_params[b"phi_jl"], maxL_params[b"tilt_1"],
-            maxL_params[b"tilt_2"], maxL_params[b"phi_12"], maxL_params[b"a_1"],
-            maxL_params[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-            maxL_params[b"phase"])
+    if b"phi_jl" in maxL_params.keys():
+        iota, S1x, S1y, S1z, S2x, S2y, S2z = \
+            lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+                maxL_params[b"iota"], maxL_params[b"phi_jl"], maxL_params[b"tilt_1"],
+                maxL_params[b"tilt_2"], maxL_params[b"phi_12"], maxL_params[b"a_1"],
+                maxL_params[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+                maxL_params[b"phase"])
+    else:
+        iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params[b"iota"], 0., 0., 0., \
+                                             0., 0., 0.
+    phase = maxL_params[b"phase"] if b"phase" in maxL_params.keys() else 0.0
     h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2, S1x,
                           S1y, S1z, S2x, S2y, S2z,
                           luminosity_distance, iota,
-                          maxL_params[b"phase"], 0.0, 0.0, 0.0, delta_frequency,
+                          phase, 0.0, 0.0, 0.0, delta_frequency,
                           minimum_frequency, maximum_frequency,
                           kwargs.get("f_ref", 10.), None, approx)
     h_plus = h_plus.data.data
@@ -269,6 +278,7 @@ def _sky_map_plot(ra, dec, **kwargs):
     kwargs: dict
         optional keyword arguments
     """
+    ra = [i-np.pi for i in ra]
     logging.info("Generating the sky map plot")
     fig = plt.figure()
     ax = plt.subplot(111, projection="hammer")
@@ -317,7 +327,13 @@ def _sky_map_plot(ra, dec, **kwargs):
     Y2 = np.concatenate([Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]), Y1,
                          Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]),])
 
-    plt.contour(X2, Y2, H2.T, V, colors="b", linewidths=2.0)
+    plt.contour(X2, Y2, H2.T, V, colors=["#AED6F1","#3498DB","#21618C"],
+                linewidths=2.0)
+
+    xticks = np.arange(-np.pi, np.pi, np.pi/6)
+    ax.set_xticks(xticks)
+    labels = [r"$%s^{h}$" %(np.round((i+np.pi)*3.82, 1)) for i in xticks]
+    ax.set_xticklabels(labels) 
     return fig
 
 def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
@@ -390,8 +406,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
     plt.legend(loc="best")
     return fig
 
-def _make_corner_plot(opts, samples, params, approximant, latex_labels,
-                      **kwargs):
+def _make_corner_plot(samples, params, latex_labels, **kwargs):
     """Generate the corner plots for a given approximant
 
     Parameters
@@ -419,10 +434,12 @@ def _make_corner_plot(opts, samples, params, approximant, latex_labels,
     corner_parameters = [b"luminosity_distance", b"dec", b"a_2",
                          b"a_1", b"geocent_time", b"phi_jl", b"psi", b"ra", b"phase",
                          b"mass_2", b"mass_1", b"phi_12", b"tilt_2", b"iota",
-                         b"tilt_1"]
+                         b"tilt_1", b"chi_p", b"chirp_mass", b"mass_ratio",
+                         b"symmetric_mass_ratio", b"total_mass", b"chi_eff"]
     xs = np.zeros([len(corner_parameters), len(samples)])
     for num, i in enumerate(corner_parameters):
         xs[num] = [j[params.index(b"%s" %(i))] for j in samples]
+    default_kwargs['range'] = [1.0]*len(corner_parameters)
     default_kwargs["labels"] = [latex_labels[i] for i in corner_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
     # grab the axes of the subplots
@@ -430,8 +447,8 @@ def _make_corner_plot(opts, samples, params, approximant, latex_labels,
     extent = axes[0].get_window_extent().transformed(figure.dpi_scale_trans.inverted())
     width, height = extent.width, extent.height
     width *= figure.dpi
-    height *= figure.dpi
-    np.savetxt("{}/plots/corner/{}_axes.txt".format(opts.webdir, approximant), extent)
+    height *= figure.dpi 
+    #np.savetxt("{}/plots/corner/{}_axes.txt".format(opts.webdir, approximant), extent)
     return figure
 
 def __get_cutoff_indices(flow, fhigh, df, N):
@@ -489,19 +506,19 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
                                 delta_frequency)
 
     approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
-    mass_1 = maxL_params["mass_1"]*MSUN_SI
-    mass_2 = maxL_params["mass_2"]*MSUN_SI
-    luminosity_distance = maxL_params["luminosity_distance"]*PC_SI*10**6
+    mass_1 = maxL_params[b"mass_1"]*MSUN_SI
+    mass_2 = maxL_params[b"mass_2"]*MSUN_SI
+    luminosity_distance = maxL_params[b"luminosity_distance"]*PC_SI*10**6
     iota, S1x, S1y, S1z, S2x, S2y, S2z = \
         lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-            maxL_params["iota"], maxL_params["phi_jl"], maxL_params["tilt_1"],
-            maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
-            maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-            maxL_params["phase"])
+            maxL_params[b"iota"], maxL_params[b"phi_jl"], maxL_params[b"tilt_1"],
+            maxL_params[b"tilt_2"], maxL_params[b"phi_12"], maxL_params[b"a_1"],
+            maxL_params[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+            maxL_params[b"phase"])
     h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2, S1x,
                           S1y, S1z, S2x, S2y, S2z,
                           luminosity_distance, iota,
-                          maxL_params["phase"], 0.0, 0.0, 0.0, delta_frequency,
+                          maxL_params[b"phase"], 0.0, 0.0, 0.0, delta_frequency,
                           minimum_frequency, maximum_frequency,
                           kwargs.get("f_ref", 10.), None, approx)
     h_plus = h_plus.data.data
@@ -524,7 +541,7 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
         SNR = {}
         for i in network:
             ard = __antenna_response(i, ra[ind[0]], dec[ind[1]],
-                                     maxL_params["psi"], maxL_params["geocent_time"])
+                                     maxL_params[b"psi"], maxL_params[b"geocent_time"])
             ar[i] = [ard[0], ard[1]]
             strain = np.array(h_plus*ar[i][0]+h_cross*ar[i][1])
             integrand = np.conj(strain[kmin:kmax])*strain[kmin:kmax]/psd[i][kmin:kmax]

@@ -1,0 +1,6 @@
+pytest
+coverage
+coverage-badge
+beautifulsoup4
+Sphinx >= 1.2.2
+sphinx_rtd_theme

@@ -14,7 +14,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
-import socket
 
 def make_dir(path):
     if os.path.isdir(path):
@@ -22,17 +21,20 @@ def make_dir(path):
     else:
         os.mkdir(path)
 
-def guess_url(web_dir):
+def guess_url(web_dir, host, user):
     """Guess the base url from the host name
 
     Parameters
     ----------
     web_dir: str
         path to the web directory where you want the data to be saved
+    host: str
+        the host name of the machine where the python interpreter is currently
+        executing
+    user: str
+        the user that is current executing the python interpreter
     """
     ligo_data_grid=False
-    user = os.environ["USER"]
-    host = socket.getfqdn()
     if 'public_html' in web_dir:
         ligo_data_grid=True
     if ligo_data_grid:
