@@ -33,6 +33,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import pesummary
+from pesummary.utils import run_checks
 from pesummary.webpage import webpage
 from pesummary.utils import utils
 from pesummary.plot import plot
@@ -102,106 +103,6 @@ def convert_to_standard_format(samples, injections):
         injections = [None]*len(samples)
     for num, i in enumerate(samples):
         opts.samples[num] = one_format(i, injections[num])
-
-def run_checks(opts):
-    """Check the command line inputs
-
-    Parameters
-    ----------
-    opts: argparse
-        argument parser object to hold all information from command line
-    """
-    # check the command line arguments
-    if opts.webdir:
-        # make the web directory
-        utils.make_dir(opts.webdir)
-        if opts.samples:
-            pass
-        else:
-            raise Exception("Please run python main.py --samples [results.hdf] "
-                            "--config [config.ini]")
-    if opts.approximant == None:
-        logging.info("No approximant is given. Trying to extract from "
-                     "results file")
-        opts.approximant = []
-        for i in opts.samples:
-            f = h5py.File(i, "r")
-            approx = f["approximant"][0]
-            if approx == b"none":
-                raise Exception("Failed to extract approximant from your results "
-                                "file: %s. Please pass the approximant with the flag "
-                                "--approximant" %(i.split("_temp")[0]))
-            opts.approximant.append(approx.decode("utf-8"))
-    if len(opts.samples) != len(opts.approximant):
-        raise Exception("The number of results files does not match the number of "
-                        "approximants")
-    # check that if add_to_existing is specified then existing html page
-    # is also given
-    if opts.add_to_existing and opts.existing == None:
-        raise Exception("Please provide a current html page that you wish "
-                        "to add content to")
-    if not opts.add_to_existing and opts.existing:
-        opts.add_to_existing = True
-        logging.info("Existing html page has been given without specifying "
-                     "--add_to_existing flag. This is probably and error and so "
-                     "manually adding --add_to_existing flag")
-    # make relevant directories
-    dirs = ["samples", "plots", "js", "html", "css", "plots/corner", "config"]
-    if opts.webdir:
-        for i in dirs:
-            utils.make_dir(opts.webdir + "/{}".format(i))
-    if opts.existing:
-        # check to see if the existing directory actually exists
-        if not os.path.isdir(opts.existing):
-            raise Exception("The directory %s does not exist" %(opts.existing))
-        # check to see if the given existing directory is the base directory
-        entries = glob(opts.existing+"/*")
-        if "%s/home.html" %(opts.existing) not in entries:
-            raise Exception("Please give the base directory of an existing "
-                            "output")
-        opts.webdir = opts.existing
-    # check to see if webdir exists
-    if not os.path.isdir(opts.webdir):
-        logging.info("Given web directory does not exist. Creating it now")
-        utils.make_dir(opts.webdir)
-    # check that number of samples matches number of approximants
-    if len(opts.samples) != len(opts.approximant):
-        raise Exception("Ensure that the number of approximants match the "
-                        "number of samples files")
-    # check that numer of samples matches number of config files
-    if opts.config and len(opts.samples) != len(opts.config):
-        raise Exception("Ensure that the number of samples files match the "
-                        "number of config files")
-    if opts.inj_file and len(opts.inj_file) != len(opts.samples):
-        raise Exception("Ensure that the number of samples matct the number of "
-                        "injection files")
-    for num, i in enumerate(opts.samples):
-        if os.path.isfile(i) == False:
-            raise Exception("File %s does not exist" %(i))
-        proposed_file = opts.webdir+"/samples/"+opts.approximant[num]+"_"+i.split("/")[-1]
-        if os.path.isfile(proposed_file):
-            raise Exception("File %s already exists under the name %s. Have "
-                            "you already generated a summary page with this "
-                            "file?" %(i, proposed_file))
-    if opts.add_to_existing and opts.existing:
-        if opts.config:
-            for i in glob(opts.existing+"/config/*"):
-                opts.config.append(i)
-        for i in glob(opts.existing+"/html/*_corner.html"):
-            example_file = i.split("/")[-1]
-            opts.approximant.append(example_file.split("_corner.html")[0])
-    # check to see if baseurl is provided. If not guess what it could be
-    if opts.baseurl == None:
-        try:
-            user = os.environ["USER"]
-            opts.user = user
-        except Exception as e:
-            logging.info("Failed to grab user information because %s. " 
-                         "Default will be used" %(e))
-            user = opts.user
-        host = socket.getfqdn()
-        opts.baseurl = utils.guess_url(opts.webdir, host, user)
-        logging.info("No url is provided. The url %s will be used" %(opts.baseurl))
 
 def copy_files(opts):
     """Copy over files to the web directory
@@ -429,6 +330,14 @@ def make_plots(opts, colors=None):
             param_samples = [k[index] for k in samples]
             fig = plot._1d_histogram_plot(j, param_samples, latex_labels[j], inj_value)
             plt.savefig("%s/plots/1d_posterior_%s_%s.png" %(opts.webdir, approx, j.decode("utf-8")))
+            plt.close()
+            fig = plot._sample_evolution_plot(j, param_samples, latex_labels[j], inj_value)
+            plt.savefig("%s/plots/sample_evolution_%s_%s.png" %(opts.webdir, approx,
+                                                                j.decode("utf-8")))
+            plt.close()
+            fig = plot._autocorrelation_plot(j, param_samples)
+            plt.savefig("%s/plots/autocorrelation_%s_%s.png" %(opts.webdir, approx,
+                                                               j.decode("utf-8")))
             plt.close()
         if opts.sensitivity:
             fig = plot._sky_sensitivity(["H1", "L1"], 0.2,
@@ -668,9 +577,11 @@ def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
             html_file.make_navbar(links=links)
 
             if j != b"multiple":
-                html_file.insert_image("{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl,
-                                                                                app,
-                                                                                j.decode("utf-8")))
+                contents = [["{}/plots/1d_posterior_{}_{}.png".format(opts.baseurl,
+                                app, j.decode("utf-8"))],
+                            ["{}/plots/sample_evolution_{}_{}.png".format(opts.baseurl, app, j.decode("utf-8")),
+                             "{}/plots/autocorrelation_{}_{}.png".format(opts.baseurl, app, j.decode("utf-8"))]] 
+                html_file.make_table_of_images(contents=contents, rows=1, columns=2)
             else:
                 html_file.make_search_bar(popular_options=["mass_1, mass_2",
                                                            "luminosity_distance, iota, ra, dec",
@@ -912,7 +823,7 @@ if __name__ == '__main__':
     convert_to_standard_format(opts.samples, opts.inj_file)
     # check the inputs
     logging.info("Checking the inputs")
-    run_checks(opts)
+    opts = run_checks.run_checks(opts)
     # make the plots for the webpage
     logging.info("Generating the plots")
     make_plots(opts, colors=colors)

@@ -32,6 +32,55 @@ try:
 except:
     LALSIMULATION=None
 
+def _autocorrelation_plot(param, samples):
+    """Generate the autocorrelation function for a set of samples for a given
+    parameter for a given approximant.
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: list
+        list of samples for param
+    """
+    logging.info("Generating the autocorrelation function for %s" %(param.decode("utf-8")))
+    n_samples = len(samples)
+    samples = np.array(samples)
+    y = samples - np.mean(samples)
+    norm = np.sum(y**2)
+    correlated = np.correlate(y, y, mode="full")/norm
+    correlated = correlated[-n_samples:]
+    fig = plt.figure()
+    plt.plot(range(n_samples), correlated, linestyle=' ', marker='o',
+             markersize=0.5)
+    plt.xlabel("samples", fontsize=16)
+    plt.ylabel("ACF", fontsize=16)
+    return fig
+
+def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
+    """Generate a scatter plot showing the evolution of the samples for a
+    given parameter for a given approximant.
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: list
+        list of samples for param
+    latex_label: str
+        latex label for param
+    inj_value: float
+        value that was injected 
+    """
+    logging.info("Generating the sample scatter plot for %s" %(param.decode("utf-8")))
+    fig = plt.figure()
+    n_samples = len(samples)
+    plt.plot(range(n_samples), samples, linestyle=' ', marker='o',
+             markersize=0.5)
+    plt.xlabel("samples", fontsize=16)
+    plt.ylabel(latex_label, fontsize=16)
+    return fig
+
 def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
