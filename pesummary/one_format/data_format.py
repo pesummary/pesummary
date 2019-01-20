@@ -92,11 +92,23 @@ def _m_total_source_from_mtotal_z(total_mass, z):
     """
     return total_mass / (1. + z)
 
+def _mtotal_from_mtotal_source_z(total_mass_source, z):
+    """Return the total mass of the binary given samples for the source total
+    mass and redshift
+    """
+    return total_mass_source * (1. + z)
+
 def _mchirp_source_from_mchirp_z(mchirp, z):
     """Return the source chirp mass of the binary given samples for detector
     chirp mass and redshift
     """
     return mchirp / (1. + z)
+
+def _mchirp_from_mchirp_source_z(mchirp_source, z):
+    """Return the chirp mass of the binary given samples for the source chirp
+    mass and redshift
+    """
+    return mchirp_source * (1. + z)
 
 def _mchirp_from_m1_m2(mass1, mass2):
     """Return the chirp mass given the samples for mass1 and mass2
@@ -191,6 +203,16 @@ def all_parameters(data, parameters):
     parameters: list
         list of parameters that have been sampled over
     """
+    if "chirp_mass" not in parameters and "chirp_mass_source" in parameters and \
+        "redshift" in parameters:
+        parameters.append("chirp_mass")
+        chirp_mass_source_ind = parameters.index("chirp_mass_source")
+        redshift_ind = parameters.index("redshift")
+        chirp_mass_source = np.array([i[chirp_mass_source_ind] for i in data])
+        redshift = np.array([i[redshift_ind] for i in data])
+        chirp_mass = _mchirp_from_mchirp_source_z(chirp_mass_source, redshift)
+        for num, i in enumerate(data):
+            data[num].append(chirp_mass[num])
     if "mass_ratio" not in parameters and "symmetric_mass_ratio" in parameters:
         parameters.append("mass_ratio")
         symmetric_mass_ratio_ind = parameters.index("symmetric_mass_ratio")
@@ -213,8 +235,8 @@ def all_parameters(data, parameters):
         median = np.median(mass_ratio)
         if median < 1:
             # define mass_ratio so that q>1
-             for i in data:
-                 i[mass_ratio_ind] = 1/i[mass_ratio_ind]
+             for num, i in enumerate(data):
+                 data[num][mass_ratio_ind] = 1./data[num][mass_ratio_ind]
     if "chirp_mass" not in parameters and "total_mass" in parameters:
         parameters.append("chirp_mass")
         total_mass_ind = parameters.index("total_mass")
@@ -439,6 +461,7 @@ def one_format(fil, inj):
                           "V1_optimal_snr": "V1_optimal_snr",
                           "E1_optimal_snr": "E1_optimal_snr",
                           "mc_source": "chirp_mass_source",
+                          "chirpmass_source": "chirp_mass_source",
                           "eta": "symmetric_mass_ratio",
                           "m1": "mass_1",
                           "m2": "mass_2",

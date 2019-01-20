@@ -128,11 +128,22 @@ class TestConversions(object):
                                                                    redshift)
         assert m_total_source == 20.
 
+    def test_m_total_from_mtotal_source_z(self):
+        total_mass_source, redshift = 20., self.opts.redshift
+        m_total = data_format._mtotal_from_mtotal_source_z(total_mass_source,
+                                                           redshift)
+        assert np.round(m_total, 4) == self.opts.mtotal
+
     def test_mchirp_source_from_mchirp_z(self):
         mchirp, redshift = self.opts.mchirp, self.opts.redshift
         mchirp_source = data_format._mchirp_source_from_mchirp_z(mchirp,
                                                                  redshift)
-        assert np.round(mchirp_source, 4) == 6.6667 
+        assert np.round(mchirp_source, 4) == 6.6667
+
+    def test_mchirp_from_mchirp_source_z(self):
+        mchirp_source, redshift = 20./3., self.opts.redshift
+        mchirp = data_format._mchirp_from_mchirp_source_z(mchirp_source, redshift)
+        assert np.round(mchirp, 4) == self.opts.mchirp
 
     def test_mchirp_from_m1_m2(self):
         mass1, mass2 = self.opts.mass1, self.opts.mass2
