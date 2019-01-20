@@ -24,7 +24,7 @@ python-3.6:
   artifacts:
     paths:
       - htmlcov/
-      - coverage_badge.svg
+      - coverage_badge.svg 
 
 documentation:
   stage: test

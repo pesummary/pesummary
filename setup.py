@@ -20,7 +20,7 @@ with open("README.md", "r") as f:
     readme = f.read()
 
 setup(name='pesummary',
-      version='0.1.2',
+      version='0.1.3',
       description='Python package to produce summary pages for Parameter '
                   'estimation codes',
       author='Charlie Hoy',
@@ -44,7 +44,9 @@ setup(name='pesummary',
       package_data={'pesummary': ['js/*.js', 'css/*.css']},
       scripts=['pesummary/bin/summarypages.py'],
       classifiers=[
-          "Programming Language :: Python :: 3.6"],
+          "Programming Language :: Python :: 3.5",
+          "Programming Language :: Python :: 3.6",
+          "Programming Language :: Python :: 3.7"],
       license='MIT',
       long_description=readme,
       long_description_content_type='text/markdown')

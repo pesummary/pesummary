@@ -22,6 +22,33 @@ from glob import glob
 
 import pytest
 
+class TestExceptions(object):
+
+    def setup(self):
+        dirs = ['./.outdir_bilby', './.outdir_lalinference',
+                './.outdir_full_cbc', './.outdir_comparison',
+                './.outdir_addition']
+        for i in dirs:
+            try:
+                os.mkdir(i)
+            except:
+                shutil.rmtree(i)
+                os.mkdir(i)
+
+    def test_no_samples(self):
+        arguments = "--webdir ./.outdir_bilby"
+        arguments += "--baseurl https://./.outdir"
+        ess = Popen("summarypages.py %s" %(arguments), shell=True)
+        ess.wait()
+        assert ess.returncode != 0
+
+    def test_no_webdir(self):
+        arguments = "--baseurl https://./.outdir"
+        arguments += "--samples ./tests/files/bilby_example.h5"
+        ess = Popen("summarypages.py %s" %(arguments), shell=True)
+        assert ess.returncode != 0
+    
+
 class TestMainScript(object):
 
     def setup(self):
