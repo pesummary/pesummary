@@ -2,6 +2,16 @@
 
 function _onclick(img) {
     $(document).on('click', '#'+img, function(){$('#myModel').modal('show')});
+    $(document).keydown(function(e) {
+      if (e.keyCode === 37) {
+        $(".carousel-control-prev").click();
+        return false;
+      }
+      if (e.keyCode === 39) {
+        $(".carousel-control-next").click();
+        return false;
+      }
+    });
 }
 
 function modal(id) {
