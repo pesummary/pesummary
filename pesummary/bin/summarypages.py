@@ -102,7 +102,9 @@ def convert_to_standard_format(samples, injections):
     if not injections:
         injections = [None]*len(samples)
     for num, i in enumerate(samples):
-        opts.samples[num] = one_format(i, injections[num])
+        f = one_format(i, injections[num])
+        f.generate_all_posterior_samples()
+        opts.samples[num] = f.save()
 
 def copy_files(opts):
     """Copy over files to the web directory

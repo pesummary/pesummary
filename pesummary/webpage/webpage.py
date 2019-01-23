@@ -442,7 +442,8 @@ class page(Base):
                          "aria-hidden='true' id='myModel' style='margin-top: 200px;'>\n")
         self.add_content("<div class='modal-dialog modal-lg' style='width:90%'>\n", indent=2)
         self.add_content("<div class='modal-content'>\n", indent=4)
-        self.add_content("<div id='demo' class='carousel slide' data-ride='carousel'>\n", indent=6)
+        self.add_content("<div id='demo' class='carousel slide' data-ride='carousel'"
+                         " data-interval='false'>\n", indent=6)
         self.add_content("<ul class='carousel-indicators'>\n", indent=8)
         for num, i in enumerate(images):
             if num == 0:
