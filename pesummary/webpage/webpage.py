@@ -376,12 +376,14 @@ class page(Base):
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
 
-    def make_search_bar(self, popular_options=None, code="combine"):
+    def make_search_bar(self, sidebar=None, popular_options=None, code="combine"):
         """Generate a search bar to combine the corner plots
         javascript.
 
         Parameters
         ----------
+        sidebar: list, optional
+            a list of parameters that you would like included in the side bar
         popular_options: list, optional
             a list of popular options for your search bar
         """
@@ -393,15 +395,11 @@ class page(Base):
         self.add_content("<div class='w3-sidebar w3-bar-block w3-border-right sidenav' "
                          "style='display:none' id='mySidebar'>\n")
         self.add_content("<button onclick='side_bar_close()' class='close'>&times;</button>\n", indent=2)
-        corner_parameters = ["luminosity_distance", "dec", "a_2",
-                             "a_1", "geocent_time", "phi_jl", "psi", "ra", "phase",
-                             "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
-                             "tilt_1", "chi_p", "chirp_mass", "mass_ratio",
-                             "symmetric_mass_ratio", "total_mass", "chi_eff"]
-        for i in corner_parameters:
-            self.add_content("<input type='checkbox' name='type' "
-                             "value='{}' id='{}' style='text-align: center; margin: 0 5px 0;'"
-                             ">{}<br>\n".format(i, i,i,i), indent=2)
+        if sidebar:
+            for i in sidebar:
+                self.add_content("<input type='checkbox' name='type' "
+                                 "value='{}' id='{}' style='text-align: center; margin: 0 5px 0;'"
+                                 ">{}<br>\n".format(i, i,i,i), indent=2)
         self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>")
         self.add_content("<p style='margin-top:2.5em'> Input the parameter names that you would like to compare</p>", indent=2)

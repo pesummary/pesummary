@@ -15,6 +15,99 @@
 
 import os
 
+import h5py
+import numpy as np
+
+def check_condition(condition, error_message):
+    """Raise an exception if the condition is not satisfied
+    """
+    if condition:
+        raise Exception(error_message)
+
+def rename_group_or_dataset_in_hf5_file(base_file, group=None, dataset=None):
+    """Rename a group or dataset in an hdf5 file
+
+    Parameters
+    ----------
+    group: list, optional
+        a list containing the path to the group that you would like to change
+        as the first argument and the new name of the group as the second
+        argument
+    dataset: list, optional
+        a list containing the name of the dataset that you would like to change
+        as the first argument and the new name of the dataset as the second
+        argument
+    """
+    condition = not os.path.isfile(base_file)
+    check_condition(condition, "The file %s does not exist" %(base_file))
+    f = h5py.File(base_file, "a")
+    if group:
+        f[group[1]] = f[group[0]]
+        del f[group[0]]
+    elif dataset:
+        f[dataset[1]] = f[dataset[0]]
+        del f[dataset[0]]
+    f.close()
+
+def add_content_to_hdf_file(base_file, dataset_name, content, group=None):
+    """Add new content to an hdf5 file
+
+    Parameters
+    ----------
+    base_file: str
+        path to the file that you want to add content to
+    dataset_name: str
+        name of the dataset
+    content: array
+        array of content that you want to add to your hdf5 file
+    group: str, optional
+        group that you want to add content to. Default if the base of the file
+    """
+    condition = not os.path.isfile(base_file)
+    check_condition(condition, "The file %s does not exist" %(base_file))
+    f = h5py.File(base_file, "a")
+    if group:
+        group = f[group]
+        if dataset_name in list(group.keys()):
+            del group[dataset_name]
+        group.create_dataset(dataset_name, data=content)
+    else:
+        if dataset_name in list(f.keys()):
+            del f[dataset_name]
+        f.create_dataset(dataset_name, data=content)
+    f.close()
+
+def combine_hdf_files(base_file, new_file):
+    """Combine two hdf5 files
+
+    Parameters
+    ----------
+    base_file: str
+        path to the file that you want to add content to
+    new_file: str
+        path to the file that you want to combine with the base file
+    """
+    condition = not os.path.isfile(base_file)
+    check_condition(condition, "The base file %s does not exist" %(base_file))
+    condition = not os.path.isfile(new_file)
+    check_condition(condition, "The new file %s does not exist" %(new_file))
+    g = h5py.File(new_file)
+    approximant = list(g.keys())[0]
+    print(approximant)
+    parameters = np.array([i for i in g["%s/parameter_names" %(approximant)]])
+    samples = np.array([i for i in g["%s/samples" %(approximant)]])
+    injection_parameters = np.array([i for i in g["%s/injection_parameters" %(approximant)]])
+    injection_data = np.array([i for i in g["%s/injection_data" %(approximant)]])
+    g.close()
+
+    f = h5py.File(base_file, "a")
+    new_group = f.create_group("%s" %(approximant))
+    new_group.create_dataset("parameter_names", data=parameters)
+    new_group.create_dataset("samples", data=samples)
+    new_group.create_dataset("injection_parameters", data=injection_parameters)
+    new_group.create_dataset("injection_data", data=injection_data)
+    f.close()
+
 def make_dir(path):
     if os.path.isdir(path):
         pass

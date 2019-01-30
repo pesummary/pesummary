@@ -19,16 +19,12 @@ import logging
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 from pesummary.utils import utils
+from pesummary.utils.utils import check_condition
+from pesummary.utils.utils import rename_group_or_dataset_in_hf5_file
 
 import h5py
 
 from glob import glob
-
-def check_condition(condition, error_message):
-    """Raise an exception if the condition is not satisfied
-    """
-    if condition:
-        raise Exception(error_message)
 
 def run_checks(opts):
     """Check the command line inputs
@@ -71,13 +67,13 @@ def run_checks(opts):
         opts.approximant = []
         for i in opts.samples:
             f = h5py.File(i, "r")
-            approx = f["approximant"][0]
-            condition = approx == b"none"
+            approx = list(f.keys())[0]
+            condition = approx == "none"
             check_condition(condition, ("Failed to extract the approximant "
                                         "from the file: %s. Please pass the "
                                         "approximant with the flag "
                                         "--approximant" %(i.split("_temp")[0])))
-            opts.approximant.append(approx.decode("utf-8"))
+            opts.approximant.append(approx)
     # check that there are the same number of approximants and result files
     condition = len(opts.samples) != len(opts.approximant)
     check_condition(condition, ("The number of results files does not match "
@@ -116,9 +112,23 @@ def run_checks(opts):
         if opts.config:
             for i in glob(opts.existing+"/config/*"):
                 opts.config.append(i)
-        for i in glob(opts.existing+"/html/*_corner.html"):
-            example_file = i.split("/")[-1]
-            opts.approximant.append(example_file.split("_corner.html")[0])
+        posterior_file = h5py.File(opts.existing+"/samples/posterior_samples.h5")
+        approximants = list(posterior_file.keys())
+        posterior_file.close()
+        for i in approximants:
+            if i not in opts.approximant:
+                opts.approximant.append(i)
+            else:
+                logging.info("Data for the approximant %s already exists. This "
+                             "approximant is being ignored" %(i))
+    # check that the approximant in the data file is correct
+    for num, i in enumerate(opts.samples):
+        f = h5py.File(i, "r")
+        condition = "none" in list(f.keys())
+        f.close()
+        if condition:
+            rename_group_or_dataset_in_hf5_file(i,
+                group=["none", opts.approximant[num]])
     # check to see if baseurl is provided. If not guess what it could be
     if opts.baseurl == None:
         try:

@@ -88,7 +88,7 @@ class TestPlot(object):
         samples = [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]]*21
         samples = [np.random.random(21).tolist() for i in range(21)]
         params = list(latex_labels.keys())
-        fig = plot._make_corner_plot(samples, params, latex_labels) 
+        fig, included_params = plot._make_corner_plot(samples, params, latex_labels) 
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_sensitivity_plot(self):
