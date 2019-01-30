@@ -78,12 +78,12 @@ class TestMainScript(object):
                          './.outdir_bilby/css', './.outdir_bilby/html',
                          './.outdir_bilby/js', './.outdir_bilby/samples',
                          './.outdir_bilby/plots']
-        expected_html = ['./.outdir_bilby/html/approx_config.html',
-                         './.outdir_bilby/html/approx_multiple.html',
-                         './.outdir_bilby/html/approx.html',
-                         './.outdir_bilby/html/approx_mass_1.html',
-                         './.outdir_bilby/html/approx_log_likelihood.html',
-                         './.outdir_bilby/html/approx_corner.html']
+        expected_html = ['./.outdir_bilby/html/IMRPhenomPv2_config.html',
+                         './.outdir_bilby/html/IMRPhenomPv2_multiple.html',
+                         './.outdir_bilby/html/IMRPhenomPv2.html',
+                         './.outdir_bilby/html/IMRPhenomPv2_mass_1.html',
+                         './.outdir_bilby/html/IMRPhenomPv2_log_likelihood.html',
+                         './.outdir_bilby/html/IMRPhenomPv2_corner.html']
         assert all(i == j for i,j in zip(sorted(expected_dirs), dirs))
         assert all(i == j for i,j in zip(sorted(expected_html), html))
 

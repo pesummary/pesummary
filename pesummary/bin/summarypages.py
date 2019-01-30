@@ -34,6 +34,7 @@ import matplotlib.pyplot as plt
 
 import pesummary
 from pesummary.utils import run_checks
+from pesummary.utils.utils import combine_hdf_files
 from pesummary.webpage import webpage
 from pesummary.utils import utils
 from pesummary.plot import plot
@@ -129,9 +130,6 @@ def copy_files(opts):
         for num, i in enumerate(opts.config):
             if opts.webdir not in i:
                 shutil.copyfile(i, opts.webdir+"/config/"+opts.approximant[num]+"_"+i.split("/")[-1])
-    for num, i in enumerate(opts.samples):
-        if opts.webdir not in i:
-            shutil.copyfile(i, opts.webdir+"/samples/"+opts.approximant[num]+"_"+i.split("/")[-1])
 
 def email_notify(address, path):
     """Send an email to notify the user that their output page is generated.
@@ -153,18 +151,20 @@ def email_notify(address, path):
     ess = subprocess.Popen(cmd, shell=True)
     ess.wait()
 
-def _grab_parameters(results):
+def _grab_parameters(results, approximant):
     """Grab the list of parameters that the sampler varies over
 
     Parameters
     ----------
     results: str
         string to the results file
+    approximant: str
+        which approximant you would like to analyse
     """
     # grab the parameters from the samples
     f = h5py.File(results, "r")
-    parameters = [i for i in f["parameter_names"]]
-    f.close()                   
+    parameters = [i for i in f["%s/parameter_names" %(approximant)]]
+    f.close()
     return parameters
 
 def _grab_detectors(params):
@@ -181,18 +181,20 @@ def _grab_detectors(params):
             detectors.append(i.split(b"_optimal_snr")[0])
     return detectors
 
-def _grab_injection_parameters(results):
+def _grab_injection_parameters(results, approximant):
     """Grab the injection parameters and injection values
 
     Parameters
     ----------
     results: str
         string to the results file
+    approximant: str
+        which approximant you would like to analyse
     """
     # grab the injection parameters
     f = h5py.File(results, "r")
-    inj_par = [i for i in f["injection_parameters"]]
-    inj_data = [i for i in f["injection_data"]]
+    inj_par = [i for i in f["%s/injection_parameters" %(approximant)]]
+    inj_data = [i for i in f["%s/injection_data" %(approximant)]]
     my_dict = {i:j for i,j in zip(inj_par, inj_data)}
     return my_dict
 
@@ -276,19 +278,19 @@ def make_plots(opts, colors=None):
     # generate array of both samples
     combined_samples = []
     combined_maxL = []
+    ind_ra_list, ind_dec_list = [], [] 
     # get the parameter names
-    parameters = [_grab_parameters(i) for i in opts.samples]
+    parameters = [_grab_parameters(i,j) for i,j in zip(opts.samples, opts.approximant)]
     # grab injection parameters
-    injection_parameters = [_grab_injection_parameters(i) for i in opts.samples]
-    ind_ra_list, ind_dec_list = [], []
+    injection_parameters = [_grab_injection_parameters(i,j) for i,j in zip(opts.samples, opts.approximant)]
     # generate the individual plots
     for num, i in enumerate(opts.samples):
         approx = opts.approximant[num]
         logging.info("Starting to generate plots for %s" %(approx))
         with h5py.File(i) as f:
-            params = [j for j in f["parameter_names"]]
+            params = [j for j in f["%s/parameter_names" %(approx)]]
             index = params.index(b"log_likelihood")
-            samples = [j for j in f["samples"]]
+            samples = [j for j in f["%s/samples" %(approx)]]
             likelihood = [j[index] for j in samples]
             f.close()
         data = _grab_key_data(samples, likelihood, parameters[num], parameters[num])
@@ -300,18 +302,28 @@ def make_plots(opts, colors=None):
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                fig = plot._make_corner_plot(samples, parameters[num], latex_labels)
+                fig,corner_params = plot._make_corner_plot(samples, parameters[num], latex_labels)
                 plt.savefig("%s/plots/corner/%s_all_density_plots.png" %(opts.webdir, approx))
                 plt.close()
+                # edit the javascript to account for corner parameters
+                combine_corner = open("%s/js/combine_corner.js" %(opts.webdir))
+                combine_corner = combine_corner.readlines()
+                corner_params = [i.decode("utf-8") for i in corner_params]
+                for linenumber, line in enumerate(combine_corner):
+                    if "var list = [" in line:
+                        combine_corner[linenumber] = "    var list = %s;\n" %(corner_params)
+                new_file = open("%s/js/combine_corner.js" %(opts.webdir), "w")
+                new_file.writelines(combine_corner)
+                new_file.close()
         except Exception as e:
             logging.info("Failed to generate corner plot because %s" %(e))
         try:
             ind_ra = parameters[num].index(b"ra")
             ind_dec = parameters[num].index(b"dec")
-            ind_ra_list.append(ind_ra)
-            ind_dec_list.append(ind_dec)
             ra = [j[ind_ra] for j in samples]
             dec = [j[ind_dec] for j in samples]
+            ind_ra_list.append(ind_ra)
+            ind_dec_list.append(ind_dec)
             fig = plot._sky_map_plot(ra, dec)
             plt.savefig("%s/plots/%s_skymap.png" %(opts.webdir, approx))
             plt.close()
@@ -352,9 +364,9 @@ def make_plots(opts, colors=None):
             plt.close()
     # open the new results file and store the data
     if opts.add_to_existing and opts.existing:
-        for i in glob(opts.existing+"/samples/*"):
-            opts.samples.append(i)
-        parameters = [_grab_parameters(i) for i in opts.samples]
+        ind_ra_list, ind_dec_list = [], []
+        opts.samples.append(opts.webdir+"/samples/posterior_samples.h5")
+        parameters = [_grab_parameters(i, j) for i,j in zip(opts.samples, opts.approximant)]
         try:
             for i in parameters:
                 ind_ra_list.append(i.index(b"ra"))
@@ -363,18 +375,15 @@ def make_plots(opts, colors=None):
             pass
         for num, i in enumerate(opts.samples):
             with h5py.File(i) as f:
-                params = [j for j in f["parameter_names"]]
+                params = [j for j in f["%s/parameter_names" %(opts.approximant[num])]]
                 index = params.index(b"log_likelihood")
-                samples = [j for j in f["samples"]]
+                samples = [j for j in f["%s/samples" %(opts.approximant[num])]]
                 likelihood = [j[index] for j in samples]
                 f.close()
             combined_samples.append(samples)
             data = _grab_key_data(samples, likelihood, parameters[num], parameters[num])
             maxL_params = {j: data[j]["maxL"] for j in parameters[num]}
-            if opts.existing in i:
-                approx = i.split("/")[-1].split("_")[0]
-            else:
-                approx = opts.approximant[num]
+            approx = opts.approximant[num]
             maxL_params["approximant"] = approx
             combined_maxL.append(maxL_params)
     # if len(approximants) > 1, then we need to do comparison plots
@@ -478,10 +487,10 @@ def make_home_pages(opts, approximants, samples, colors, parameters):
     subset = []
     for num, i in enumerate(samples):
         with h5py.File(i) as f:
-            params = [j for j in f["parameter_names"]]
+            params = [j for j in f["%s/parameter_names" %(opts.approximant[num])]]
             index = params.index(b"log_likelihood")
-            subset.append([j for j in f["samples"]])
-            likelihood.append([j[index] for j in f["samples"]])
+            subset.append([j for j in f["%s/samples" %(opts.approximant[num])]])
+            likelihood.append([j[index] for j in f["%s/samples" %(opts.approximant[num])]])
             f.close()
     same_parameters = list(set.intersection(*[set(l) for l in parameters]))
     data = []
@@ -585,7 +594,8 @@ def make_1d_histograms_pages(opts, approximants, samples, colors, parameters):
                              "{}/plots/autocorrelation_{}_{}.png".format(opts.baseurl, app, j.decode("utf-8"))]] 
                 html_file.make_table_of_images(contents=contents, rows=1, columns=2)
             else:
-                html_file.make_search_bar(popular_options=["mass_1, mass_2",
+                html_file.make_search_bar(sidebar=[i.decode("utf-8") for i in par if i != b"multiple"],
+                                          popular_options=["mass_1, mass_2",
                                                            "luminosity_distance, iota, ra, dec",
                                                            "iota, phi_12, phi_jl, tilt_1, tilt_2"],
                                           code="combines")
@@ -653,7 +663,8 @@ def make_comparison_pages(opts, approximants, samples, colors, parameters):
             html_file.insert_image("{}/plots/combined_posterior_{}.png".format(opts.baseurl,
                                                                                i.decode("utf-8")))
         else:
-            html_file.make_search_bar(popular_options=["mass_1, mass_2",
+            html_file.make_search_bar(sidebar=[i.decode("utf-8") for i in same_parameters if i != b"multiple"],
+                                      popular_options=["mass_1, mass_2",
                                                        "luminosity_distance, iota, ra, dec",
                                                        "iota, phi_12, phi_jl, tilt_1, tilt_2"],
                                       code="combines")
@@ -689,9 +700,18 @@ def make_corner_pages(opts, approximants, samples, colors, parameters):
         html_file.make_header(title="{} Corner plots".format(app), background_colour=col,
                               approximant=app)
         html_file.make_navbar(links=links)
-        html_file.make_search_bar(popular_options=["mass_1, mass_2",
-                                                       "luminosity_distance, iota, ra, dec",
-                                                       "iota, phi_12, phi_jl, tilt_1, tilt_2"])
+        corner_parameters = [b"luminosity_distance", b"dec", b"a_2",
+                             b"a_1", b"geocent_time", b"phi_jl", b"psi", b"ra", b"phase",
+                             b"mass_2", b"mass_1", b"phi_12", b"tilt_2", b"iota",
+                             b"tilt_1", b"chi_p", b"chirp_mass", b"mass_ratio",
+                             b"symmetric_mass_ratio", b"total_mass", b"chi_eff",
+                             b"redshift", b"mass_1_source", b"mass_2_source",
+                             b"total_mass_source", b"chirp_mass_source"]
+        included_parameters = [i for i in par if i in corner_parameters]
+        html_file.make_search_bar(sidebar=[i.decode("utf-8") for i in included_parameters],
+                                  popular_options=["mass_1, mass_2",
+                                                   "luminosity_distance, iota, ra, dec",
+                                                   "iota, phi_12, phi_jl, tilt_1, tilt_2"])
         html_file.make_footer(user=opts.user, rundir="{}".format(opts.webdir))
 
 def make_config_pages(opts, approximants, samples, colors, configs, parameters):
@@ -751,7 +771,7 @@ def write_html(opts, colors):
         list of colors in hexadecimal format for the different approximants 
     """
     # grab the parameters
-    parameters = [_grab_parameters(i) for i in opts.samples]
+    parameters = [_grab_parameters(i,j) for i,j in zip(opts.samples, opts.approximant)]
     # make the webpages
     make_home_pages(opts, opts.approximant, opts.samples, colors, parameters)
     make_1d_histograms_pages(opts, opts.approximant, opts.samples, colors,
@@ -826,12 +846,23 @@ if __name__ == '__main__':
     # check the inputs
     logging.info("Checking the inputs")
     opts = run_checks.run_checks(opts)
-    # make the plots for the webpage
-    logging.info("Generating the plots")
-    make_plots(opts, colors=colors)
     # copy over the relevant files to the web directory
     logging.info("Copying the files to %s" %(opts.webdir))
     copy_files(opts)
+    # make the plots for the webpage
+    logging.info("Generating the plots")
+    make_plots(opts, colors=colors)
+    # copy over posterior samples to samples directory
+    if opts.webdir+"/samples/posterior_samples.h5" not in opts.samples:
+        for num, i in enumerate(opts.samples):
+            if num == 0:
+                shutil.copyfile(i, opts.webdir+"/samples/posterior_samples.h5")
+            else:
+                combine_hdf_files(opts.webdir+"/samples/posterior_samples.h5", i)
+    else:
+        for num, i in enumerate(opts.samples):
+            if "posterior_samples" not in i:
+                combine_hdf_files(opts.webdir+"/samples/posterior_samples.h5", i)
     # check to see if dump option is parsed
     logging.info("Writing HTML pages")
     if opts.dump:
@@ -846,4 +877,5 @@ if __name__ == '__main__':
             print("Unable to send notification email because of error: {}".format(e))
     logging.info("Removing the temporary file that is in standard format")
     for i in opts.samples:
-        os.remove(i)
+        if "posterior_samples" not in i:
+            os.remove(i)

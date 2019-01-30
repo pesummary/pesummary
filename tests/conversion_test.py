@@ -197,7 +197,7 @@ class TestConversions(object):
             expected = [[10.0, 1.0], [10.0, 2.0], [20.0, 3.0]] 
         assert all(i == j for i,j in zip(params, ["log_likelihood", "mass_1"]))
         assert all(all(i==j for i,j in zip(k,l)) for k,l in zip(samples, expected))
-        assert approximant == "approx"
+        assert approximant == b"IMRPhenomPv2"
 
     def test_load_with_h5py(self):
         path = "./tests/files/GW150914_result.h5"

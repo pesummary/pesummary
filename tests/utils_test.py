@@ -23,6 +23,7 @@ from pesummary.bin.summarypages import command_line
 
 import h5py
 import numpy as np
+import math
 
 import pytest
 
@@ -31,10 +32,124 @@ class TestUtils(object):
     def setup(self):
         directory = './.outdir'
         try:
-            os.mkdir(directory)
+            os.mkdir(directory) 
         except:
             shutil.rmtree(directory)
             os.mkdir(directory)
+        f = h5py.File("./.outdir/add_content.h5", "w")
+        group = f.create_group("test")
+        group.create_dataset("example", np.array([5]))
+        f.close()
+ 
+    def test_check_condition(self):
+        with pytest.raises(Exception) as info:
+            condition = True
+            utils.check_condition(condition, "error")
+        assert str(info.value) == "error"
+
+    def test_rename_group_in_hf5_file(self):
+        f = h5py.File("./.outdir/rename_group.h5")
+        group = f.create_group("group")
+        group.create_dataset("example", data=np.array([10]))
+        f.close()
+        utils.rename_group_or_dataset_in_hf5_file("./.outdir/rename_group.h5",
+            group=["group", "replaced"])
+        f = h5py.File("./.outdir/rename_group.h5")
+        assert list(f.keys()) == ["replaced"]
+        assert list(f["replaced"].keys()) == ["example"]
+        assert len(f["replaced/example"]) == 1
+        assert f["replaced/example"][0] == 10
+        f.close()
+
+    def test_rename_dataset_in_hf5_file(self):
+        f = h5py.File("./.outdir/rename_dataset.h5")
+        group = f.create_group("group")
+        group.create_dataset("example", data=np.array([10]))
+        f.close()
+        utils.rename_group_or_dataset_in_hf5_file("./.outdir/rename_dataset.h5",
+            dataset=["group/example", "group/replaced"])
+        f = h5py.File("./.outdir/rename_dataset.h5")
+        assert list(f.keys()) == ["group"]
+        assert list(f["group"].keys()) == ["replaced"]
+        assert len(f["group/replaced"]) == 1
+        assert f["group/replaced"][0] == 10
+        f.close()
+
+    def test_rename_unknown_hf5_file(self):
+        with pytest.raises(Exception) as info:
+            utils.rename_group_or_dataset_in_hf5_file("./.outdir/unknown.h5",
+                group=["None", "replaced"])
+        assert "does not exist" in str(info.value) 
+
+    def test_add_new_dataset_to_hdf_file(self):
+        content = np.array([10])
+        utils.add_content_to_hdf_file("./.outdir/add_content.h5",
+                                      "new_dataset", content)
+        f = h5py.File("./.outdir/add_content.h5")
+        assert sorted(list(f.keys())) == ["new_dataset", "test"]
+        assert list(f["test"].keys()) == ["example"]
+        assert len(f["new_dataset"]) == 1
+        assert f["new_dataset"][0] == 10
+
+    def test_add_new_group_to_hdf_file(self):
+        content = np.array([10])
+        utils.add_content_to_hdf_file("./.outdir/add_content.h5",
+                                      "new_dataset", content, group="test")
+        f = h5py.File("./.outdir/add_content.h5")
+        assert sorted(list(f.keys())) == ["test"]
+        assert sorted(list(f["test"].keys())) == ["example", "new_dataset"]
+        assert len(f["test/new_dataset"]) == 1
+        assert f["test/new_dataset"][0] == 10
+
+    def test_replace_dataset_to_hdf_file(self):
+        content = np.array([0])
+        utils.add_content_to_hdf_file("./.outdir/add_content.h5",
+                                      "new_dataset", content, group="test")
+        f = h5py.File("./.outdir/add_content.h5")
+        assert sorted(list(f.keys())) == ["test"]
+        assert sorted(list(f["test"].keys())) == ["example", "new_dataset"]
+        assert len(f["test/new_dataset"]) == 1
+        assert f["test/new_dataset"][0] == 0
+
+    def test_combine_hdf_files(self):
+        f = h5py.File("./.outdir/combine_hdf_files.h5", "w")
+        group = f.create_group("approx1")
+        parameters = np.array(["m1"], dtype="S")
+        samples = np.array([[1], [2]])
+        approximant = np.array(["approx1"], dtype="S")
+        injection_data = np.array([float("nan")])
+        group.create_dataset("parameter_names", data=parameters)
+        group.create_dataset("samples", data=samples)
+        group.create_dataset("injection_parameters", data=parameters)
+        group.create_dataset("injection_data", data=injection_data)
+
+        g = h5py.File("./.outdir/combine_hdf_files_new.h5", "w")
+        parameters = np.array(["m1"], dtype="S")
+        samples = np.array([[1], [2]])
+        approximant = np.array(["approx2"], dtype="S")
+        injection_data = np.array([float("nan")])
+        group = g.create_group("approx2")
+        group.create_dataset("parameter_names", data=parameters)
+        group.create_dataset("samples", data=samples)
+        group.create_dataset("injection_parameters", data=parameters)
+        group.create_dataset("injection_data", data=injection_data)
+
+        utils.combine_hdf_files("./.outdir/combine_hdf_files.h5",
+                                "./.outdir/combine_hdf_files_new.h5")
+        f = h5py.File("./.outdir/combine_hdf_files.h5")
+        assert sorted(list(f.keys())) == ["approx1", "approx2"]
+        assert sorted(list(f["approx1"].keys())) == ["injection_data", 
+            "injection_parameters", "parameter_names", "samples"]
+        assert [i for i in f["approx1"]["samples"]] == [[1], [2]]
+        assert [i for i in f["approx1"]["parameter_names"]] == [b"m1"]
+        assert [i for i in f["approx1"]["injection_parameters"]] == [b"m1"]
+        assert math.isnan(f["approx1"]["injection_data"][0])
+        assert sorted(list(f["approx2"].keys())) == ["injection_data",
+            "injection_parameters", "parameter_names", "samples"]
+        assert [i for i in f["approx2"]["samples"]] == [[1], [2]]
+        assert [i for i in f["approx2"]["parameter_names"]] == [b"m1"]
+        assert [i for i in f["approx2"]["injection_parameters"]] == [b"m1"]
+        assert math.isnan(f["approx2"]["injection_data"][0])
 
     def test_directory_creation(self):
         directory = './.outdir/test_dir'
@@ -65,12 +180,6 @@ class TestChecks(object):
     def setup(self):
         self.parser = command_line()
         directory = './.outdir'
-
-    def test_check_condition(self):
-        with pytest.raises(Exception) as info:
-            condition = True
-            run_checks.check_condition(condition, "error")
-        assert str(info.value) == "error"
 
     def test_no_webdir(self):
         opts = self.parser.parse_args(['--webdir', None])
@@ -116,7 +225,7 @@ class TestChecks(object):
     def test_no_approximant(self):
         f = h5py.File("./.outdir/test.h5", "w")
         approx = np.array([b"none"], dtype="S")
-        f.create_dataset("approximant", data=approx)
+        f.create_group("none")
         f.close()
         opts = self.parser.parse_args(['--webdir', './.outdir',
                                        '--samples', './.outdir/test.h5'])

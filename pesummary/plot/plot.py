@@ -280,7 +280,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
         raise Exception("LALSimulation could not be imported. Please install "
                         "LALSuite to be able to use all features")
     delta_frequency = kwargs.get("delta_f", 1./256)
-    minimum_frequency = kwargs.get("f_min", 10.)
+    minimum_frequency = kwargs.get("f_min", 5.)
     maximum_frequency = kwargs.get("f_max", 1000.)
     frequency_array = np.arange(minimum_frequency, maximum_frequency,
                                 delta_frequency)
@@ -291,14 +291,20 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
         mass_1 = i[b"mass_1"]*MSUN_SI
         mass_2 = i[b"mass_2"]*MSUN_SI
         luminosity_distance = i[b"luminosity_distance"]*PC_SI*10**6
-        iota, S1x, S1y, S1z, S2x, S2y, S2z = \
-            lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                i[b"iota"], i[b"phi_jl"], i[b"tilt_1"], i[b"tilt_2"], i[b"phi_12"],
-                i[b"a_1"], i[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-                i[b"phase"])
+        if b"phi_jl" in i.keys():
+            iota, S1x, S1y, S1z, S2x, S2y, S2z = \
+                lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+                    i[b"iota"], i[b"phi_jl"], i[b"tilt_1"],
+                    i[b"tilt_2"], i[b"phi_12"], i[b"a_1"],
+                    i[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+                    i[b"phase"])
+        else:
+            iota, S1x, S1y, S1z, S2x, S2y, S2z = i[b"iota"], 0., 0., 0., \
+                                                 0., 0., 0.
+        phase = i[b"phase"] if b"phase" in i.keys() else 0.0
         h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2,
                               S1x, S1y, S1z, S2x, S2y, S2z,
-                              luminosity_distance, iota, i[b"phase"], 0.0,
+                              luminosity_distance, iota, phase, 0.0,
                               0.0, 0.0, delta_frequency, minimum_frequency,
                               maximum_frequency, kwargs.get("f_ref", 10.),
                               None, approx)
@@ -404,6 +410,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
     kwargs: dict
         optional keyword arguments
     """
+    ra_list = [[i-np.pi for i in j] for j in ra_list]
     logging.info("Generating the sky map comparison plot")
     fig = plt.figure()
     ax = plt.subplot(111, projection="hammer")
@@ -413,7 +420,6 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
                         r"$14^{h}$", r"$12^{h}$", r"$10^{h}$", r"$8^{h}$",
                         r"$6^{h}$", r"$4^{h}$", r"$2^{h}$"])
     levels = [1.0 - np.exp(-0.5), 1 - np.exp(-2), 1-np.exp(-9./2.)]
-
     for num, i in enumerate(ra_list):
         H,X,Y = np.histogram2d(i, dec_list[num], bins=50)
         H = gaussian_filter(H, kwargs.get("smooth", 0.9))
@@ -425,11 +431,11 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
         CF /= CF[-1]
 
         V = np.empty(len(levels))
-        for ind, i in enumerate(levels):
+        for num2, j in enumerate(levels):
             try:
-                V[ind] = Hflat[CF <= i][-1]
+                V[num2] = Hflat[CF <= j][-1]
             except:
-                V[ind] = Hflat[0]
+                V[num2] = Hflat[0]
         V.sort()
         m = np.diff(V) == 0
         while np.any(m):
@@ -452,10 +458,13 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
                              X1[-1] + np.array([1, 2]) * np.diff(X1[-2:]),])
         Y2 = np.concatenate([Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]), Y1,
                              Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]),])
-
         CS = plt.contour(X2, Y2, H2.T, V, colors=colors[num], linewidths=2.0)
         CS.collections[0].set_label(approximants[num])
     plt.legend(loc="best")
+    xticks = np.arange(-np.pi, np.pi, np.pi/6)
+    ax.set_xticks(xticks)
+    labels = [r"$%s^{h}$" %(np.round((i+np.pi)*3.82, 1)) for i in xticks]
+    ax.set_xticklabels(labels)  
     return fig
 
 def _make_corner_plot(samples, params, latex_labels, **kwargs):
@@ -487,12 +496,15 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
                          b"a_1", b"geocent_time", b"phi_jl", b"psi", b"ra", b"phase",
                          b"mass_2", b"mass_1", b"phi_12", b"tilt_2", b"iota",
                          b"tilt_1", b"chi_p", b"chirp_mass", b"mass_ratio",
-                         b"symmetric_mass_ratio", b"total_mass", b"chi_eff"]
-    xs = np.zeros([len(corner_parameters), len(samples)])
-    for num, i in enumerate(corner_parameters):
+                         b"symmetric_mass_ratio", b"total_mass", b"chi_eff",
+                         b"redshift", b"mass_1_source", b"mass_2_source",
+                         b"total_mass_source", b"chirp_mass_source"]
+    included_parameters = [i for i in params if i in corner_parameters]
+    xs = np.zeros([len(included_parameters), len(samples)])
+    for num, i in enumerate(included_parameters):
         xs[num] = [j[params.index(b"%s" %(i))] for j in samples]
-    default_kwargs['range'] = [1.0]*len(corner_parameters)
-    default_kwargs["labels"] = [latex_labels[i] for i in corner_parameters]
+    default_kwargs['range'] = [1.0]*len(included_parameters)
+    default_kwargs["labels"] = [latex_labels[i] for i in included_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
     # grab the axes of the subplots
     axes = figure.get_axes()
@@ -500,8 +512,7 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
     width, height = extent.width, extent.height
     width *= figure.dpi
     height *= figure.dpi 
-    #np.savetxt("{}/plots/corner/{}_axes.txt".format(opts.webdir, approximant), extent)
-    return figure
+    return figure, included_parameters
 
 def __get_cutoff_indices(flow, fhigh, df, N):
     """
