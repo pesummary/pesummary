@@ -14,11 +14,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import sys
 import socket
 import shutil
 
 from pesummary.utils import utils
-from pesummary.utils import run_checks
 from pesummary.bin.summarypages import command_line
 
 import h5py
@@ -26,6 +26,7 @@ import numpy as np
 import math
 
 import pytest
+from testfixtures import LogCapture
 
 class TestUtils(object):
 
@@ -113,7 +114,8 @@ class TestUtils(object):
 
     def test_combine_hdf_files(self):
         f = h5py.File("./.outdir/combine_hdf_files.h5", "w")
-        group = f.create_group("approx1")
+        label = f.create_group("label")
+        group = label.create_group("approx1")
         parameters = np.array(["m1"], dtype="S")
         samples = np.array([[1], [2]])
         approximant = np.array(["approx1"], dtype="S")
@@ -128,7 +130,8 @@ class TestUtils(object):
         samples = np.array([[1], [2]])
         approximant = np.array(["approx2"], dtype="S")
         injection_data = np.array([float("nan")])
-        group = g.create_group("approx2")
+        label = g.create_group("label")
+        group = label.create_group("approx2")
         group.create_dataset("parameter_names", data=parameters)
         group.create_dataset("samples", data=samples)
         group.create_dataset("injection_parameters", data=parameters)
@@ -137,19 +140,19 @@ class TestUtils(object):
         utils.combine_hdf_files("./.outdir/combine_hdf_files.h5",
                                 "./.outdir/combine_hdf_files_new.h5")
         f = h5py.File("./.outdir/combine_hdf_files.h5")
-        assert sorted(list(f.keys())) == ["approx1", "approx2"]
-        assert sorted(list(f["approx1"].keys())) == ["injection_data", 
+        assert sorted(list(f["label"].keys())) == ["approx1", "approx2"]
+        assert sorted(list(f["label/approx1"].keys())) == ["injection_data", 
             "injection_parameters", "parameter_names", "samples"]
-        assert [i for i in f["approx1"]["samples"]] == [[1], [2]]
-        assert [i for i in f["approx1"]["parameter_names"]] == [b"m1"]
-        assert [i for i in f["approx1"]["injection_parameters"]] == [b"m1"]
-        assert math.isnan(f["approx1"]["injection_data"][0])
-        assert sorted(list(f["approx2"].keys())) == ["injection_data",
+        assert [i for i in f["label/approx1"]["samples"]] == [[1], [2]]
+        assert [i for i in f["label/approx1"]["parameter_names"]] == [b"m1"]
+        assert [i for i in f["label/approx1"]["injection_parameters"]] == [b"m1"]
+        assert math.isnan(f["label/approx1"]["injection_data"][0])
+        assert sorted(list(f["label/approx2"].keys())) == ["injection_data",
             "injection_parameters", "parameter_names", "samples"]
-        assert [i for i in f["approx2"]["samples"]] == [[1], [2]]
-        assert [i for i in f["approx2"]["parameter_names"]] == [b"m1"]
-        assert [i for i in f["approx2"]["injection_parameters"]] == [b"m1"]
-        assert math.isnan(f["approx2"]["injection_data"][0])
+        assert [i for i in f["label/approx2"]["samples"]] == [[1], [2]]
+        assert [i for i in f["label/approx2"]["parameter_names"]] == [b"m1"]
+        assert [i for i in f["label/approx2"]["injection_parameters"]] == [b"m1"]
+        assert math.isnan(f["label/approx2"]["injection_data"][0])
 
     def test_directory_creation(self):
         directory = './.outdir/test_dir'
@@ -174,109 +177,9 @@ class TestUtils(object):
             url = utils.guess_url(webdir, i, user)
             assert url == j
 
-
-class TestChecks(object):
-
-    def setup(self):
-        self.parser = command_line()
-        directory = './.outdir'
-
-    def test_no_webdir(self):
-        opts = self.parser.parse_args(['--webdir', None])
-        with pytest.raises(Exception) as info:
-            run_checks.run_checks(opts)
-        assert "Please provide a web directory" in str(info.value)
-
-    def test_make_webdir_if_it_does_not_exist(self):
-        assert os.path.isdir("./.outdir/path") == False
-        opts = self.parser.parse_args(['--webdir', './.outdir/path',
-                                       '--approximant', 'approx',
-                                       '--samples', './tests/files/bilby_example.h5'])
-        run_checks.run_checks(opts)
-        assert os.path.isdir("./.outdir/path") == True
-
-    def test_invalid_existing_directory(self):
-        if os.path.isdir("./.existing"):
-            shutil.rmtree("./.existing")
-        opts = self.parser.parse_args(['--existing_webdir', './.existing'])
-        with pytest.raises(Exception) as info:
-            run_checks.run_checks(opts)
-        assert "The directory ./.existing does not exist" in str(info.value)
-
-    def test_not_base_of_existing_directory(self):
-        if os.path.isdir("./.existing2"):
-            shutil.rmtree("./.existing2")
-        if os.path.isdir("./.existing2/samples"):
-            shutil.rmtree("./.existing2/samples")
-        os.mkdir("./.existing2")
-        os.mkdir("./.existing2/samples")
-        opts = self.parser.parse_args(['--existing_webdir', './.existing2/samples'])
-        with pytest.raises(Exception) as info:
-            run_checks.run_checks(opts)
-        assert "Please give the base directory" in str(info.value)
-
-    def test_no_samples(self):
-        opts = self.parser.parse_args(['--webdir', './.outdir',
-                                       '--samples', None])
-        with pytest.raises(Exception) as info:
-            run_checks.run_checks(opts)
-        assert "Please provide a results file" in str(info.value)
-
-    def test_no_approximant(self):
-        f = h5py.File("./.outdir/test.h5", "w")
-        approx = np.array([b"none"], dtype="S")
-        f.create_group("none")
-        f.close()
-        opts = self.parser.parse_args(['--webdir', './.outdir',
-                                       '--samples', './.outdir/test.h5'])
-        with pytest.raises(Exception) as info:
-            run_checks.run_checks(opts)
-        assert "Failed to extract the approximant" in str(info.value)
-
-    def test_nsamples_not_equal_to_napproximants(self):
-        opts = self.parser.parse_args(['--webdir', './.outdir',
-                                       '--samples', './.outdir/test.h5',
-                                       '--approximant', 'approx1', 'approx2'])
-        with pytest.raises(Exception) as info:
-            run_checks.run_checks(opts)
-        assert "results files does not match the number of" in str(info.value)
-
-    def test_no_existing_directory(self):
-        opts = self.parser.parse_args(['--webdir', './.outdir',
-                                       '--samples', './.outdir/test.h5',
-                                       '--approximant', 'approx',
-                                       '--add_to_existing'])
-        with pytest.raises(Exception) as info:
-            run_checks.run_checks(opts)
-        assert "Please provide a current html page" in str(info.value)
-
-    def test_result_file_does_not_exist(self):
-        opts = self.parser.parse_args(['--webdir', './.outdir',
-                                       '--baseurl', './.outdir',
-                                       '--samples', 'test.h5',
-                                       '--approximant', 'approx'])
-        with pytest.raises(Exception) as info:
-            run_checks.run_checks(opts)
-        assert "File test.h5 does not exist" in str(info.value)
-
-    def test_already_used_results_file(self):
-        if os.path.isdir("./.outdir/samples"):
-            shutil.rmtree("./.outdir/samples")
-        os.mkdir("./.outdir/samples")
-        shutil.copyfile("./.outdir/test.h5", "./.outdir/samples/approx_test.h5")
-        opts = self.parser.parse_args(['--webdir', './.outdir',
-                                       '--baseurl', './.outdir',
-                                       '--samples', './.outdir/test.h5',
-                                       '--approximant', 'approx'])
-        with pytest.raises(Exception) as info:
-            run_checks.run_checks(opts)
-        assert "Have you already generated a summary page" in str(info.value)
-
-    def test_nconfig_not_equal_to_nsamples(self):
-        opts = self.parser.parse_args(['--webdir', './.outdir',
-                                       '--samples', './.outdir/test.h5',
-                                       '--approximant', 'approx1',
-                                       '--config', 'one.ini', 'two.ini'])
-        with pytest.raises(Exception) as info:
-            run_checks.run_checks(opts)
-        assert "files match the number of configuration" in str(info.value) 
+def test_logger():
+    with LogCapture() as l:
+        utils.logger.info("info")
+        utils.logger.warning("warning")
+    l.check(("PESummary", "INFO", "info"),
+            ("PESummary", "WARNING", "warning"),)

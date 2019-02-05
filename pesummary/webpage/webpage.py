@@ -16,6 +16,7 @@
 import pesummary
 from pesummary.webpage import tables
 from pesummary.utils import utils
+from pesummary.bin.inputs import PostProcessing
 from pesummary.webpage.base import Base
 
 import sys
@@ -35,10 +36,10 @@ BOOTSTRAP = """<!DOCTYPE html>
     stylesheet elements
 </head>
 <body style='background-color:#F8F8F8'>
-"""
+"""     
 
-
-def make_html(web_dir, title="Summary Pages", pages=None, stylesheets=[]):
+def make_html(web_dir, title="Summary Pages", pages=None, stylesheets=[],
+    label=None):
     """Make the initial html page.
 
     Parameters
@@ -57,8 +58,9 @@ def make_html(web_dir, title="Summary Pages", pages=None, stylesheets=[]):
     """
     for i in pages:
         if i != "home":
-            i = "html/" + i
-        f = open("{}/{}.html".format(web_dir, i), "w")
+            f = open("{}/html/{}.html".format(web_dir, i), "w")
+        else:
+            f = open("{}/{}.html".format(web_dir, i), "w")
         stylesheet_elements = ''.join([
             "  <link rel='stylesheet' href='../css/{0:s}.css'>\n".format(s)
             for s in stylesheets])
@@ -68,7 +70,7 @@ def make_html(web_dir, title="Summary Pages", pages=None, stylesheets=[]):
         bootstrap = [i+"\n" for i in bootstrap]
         f.writelines(bootstrap)
 
-def open_html(web_dir, base_url, html_page):
+def open_html(web_dir, base_url, html_page, label=None):
     """Open html page ready so you can manipulate the contents
 
     Parameters
@@ -79,6 +81,8 @@ def open_html(web_dir, base_url, html_page):
         url to the location where you would like the html file to be saved
     page: str
         name of the html page that you would like to edit
+    label: str
+        the label that prepends your page name
     """
     try:
         if html_page[-5:] == ".html":
@@ -88,21 +92,28 @@ def open_html(web_dir, base_url, html_page):
     if html_page == "home.html" or html_page == "home":
         f = open(web_dir+"/home.html", "a")
     else:
-        f = open(web_dir+"/html/"+html_page+".html", "a")
-    return page(f, web_dir, base_url)
+        if label != None:
+            f = open(web_dir+"/html/{}_".format(label)+html_page+".html", "a")
+        else:
+            f = open(web_dir+"/html/"+html_page+".html", "a")
+    return page(f, web_dir, base_url, label)
+
 
 class page(Base):
     """Class to generate and manipulate an html page.
     """
-    def __init__(self, html_file, web_dir, base_url):
+    def __init__(self, html_file, web_dir, base_url, label):
         self.html_file = html_file
         self.web_dir = web_dir
         self.base_url = base_url
+        self.label = label
         self.content = []
 
     def _header(self, title, colour, approximant):
         """
         """
+        self.add_content("<h7 hidden>{}</h7>".format(self.label))
+        self.add_content("<h7 hidden>{}</h7>".format(approximant))
         self.make_div(_class='jumbotron text-center',
                       _style='background-color: %s; margin-bottom:0' %(colour))
         self.add_content("  <h1 id={}>{}</h1>\n".format(approximant, title))
@@ -163,6 +174,7 @@ class page(Base):
             options mass1, mass2, mchirp, then we would give,
 
                 links=[corner, [1d_histograms, [mass1, mass2, mchirp]]]
+
         search: bool, optional
             if True, search bar will be given in navbar
         """
@@ -194,20 +206,43 @@ class page(Base):
                                 self.add_content("<ul class='dropdown-menu' "
                                                  "aria-labelledby='{}'>\n".format(j[0]), indent=16)
                                 for k in j[1]:
-                                    self.add_content("<li class='dropdown-item' href='#' "
+                                    if type(k) == dict:
+                                        key = list(k.keys())[0]
+                                        self.add_content("<li class='dropdown-item' href='#' "
+                                                     "onclick='grab_html(\"{}\", label=\"{}\")'>"
+                                                     "<a>{}</a></li>\n".format(key, k[key], key), indent=18)
+                                    else:
+                                        self.add_content("<li class='dropdown-item' href='#' "
                                                      "onclick='grab_html(\"{}\")'>"
                                                      "<a>{}</a></li>\n".format(k, k), indent=18)
+
                                 self.add_content("</ul>", indent=16)
                                 self.add_content("</li>", indent=14)
                             else:
                                 for k in j:
-                                    self.add_content("<li class='dropdown-item' href='#' "
+                                    if type(k) == dict:
+                                        key = list(k.keys())[0]
+                                        self.add_content("<li class='dropdown-item' href='#' "
+                                                     "onclick='grab_html(\"{}\", label=\"{}\")'>"
+                                                     "<a>{}</a></li>\n".format(key, k[key], key), indent=14)
+
+                                    else:
+                                        self.add_content("<li class='dropdown-item' href='#' "
                                                      "onclick='grab_html(\"{}\")'>"
                                                      "<a>{}</a></li>\n".format(k, k), indent=14)
+
                         else:
-                            self.add_content("<li class='dropdown-item' href='#' "
+                            if type(j[0]) == dict:
+                                key = list(j[0].keys())[0]
+                                self.add_content("<li class='dropdown-item' href='#' "
+                                             "onclick='grab_html(\"{}\", label=\"{}\")'>"
+                                             "<a>{}</a></li>\n".format(key, j[0][key], key), indent=14)
+
+                            else:
+                                self.add_content("<li class='dropdown-item' href='#' "
                                              "onclick='grab_html(\"{}\")'>"
                                              "<a>{}</a></li>\n".format(j[0], j[0]), indent=14)
+                                
                 self.add_content("</ul>\n", indent=12)
                 self.add_content("</li>\n", indent=10)  
             else:
@@ -216,9 +251,17 @@ class page(Base):
                     self.add_content("<a class='nav-link' "
                                      "href='{}/{}.html'>{}</a>\n".format(self.base_url, i, i), indent=10)
                 else:
-                    self.add_content("<a class='nav-link' "
+                    if type(i) == dict:
+                        key = list(i.keys())[0]
+                        self.add_content("<a class='nav-link' "
+                                     "href='#' onclick='grab_html(\"{}\", label=\"{}\")'"
+                                     ">{}</a>\n".format(key, i[key], key), indent=10)
+
+                    else:
+                        self.add_content("<a class='nav-link' "
                                      "href='#' onclick='grab_html(\"{}\")'"
                                      ">{}</a>\n".format(i, i), indent=10)
+                        
                 self.add_content("</li>\n", indent=8)
         self.add_content("</ul>\n", indent=6)
         self.add_content("</div>\n", indent=4)

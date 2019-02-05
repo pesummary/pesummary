@@ -14,6 +14,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import sys
+import logging
 
 import h5py
 import numpy as np
@@ -92,20 +94,26 @@ def combine_hdf_files(base_file, new_file):
     condition = not os.path.isfile(new_file)
     check_condition(condition, "The new file %s does not exist" %(new_file))
     g = h5py.File(new_file)
-    approximant = list(g.keys())[0]
-    print(approximant)
-    parameters = np.array([i for i in g["%s/parameter_names" %(approximant)]])
-    samples = np.array([i for i in g["%s/samples" %(approximant)]])
-    injection_parameters = np.array([i for i in g["%s/injection_parameters" %(approximant)]])
-    injection_data = np.array([i for i in g["%s/injection_data" %(approximant)]])
+    label = list(g.keys())[0]
+    approximant = list(g[label].keys())[0]
+    path = "%s/%s" %(label, approximant)
+    parameters = np.array([i for i in g["%s/parameter_names" %(path)]])
+    samples = np.array([i for i in g["%s/samples" %(path)]])
+    injection_parameters = np.array([i for i in g["%s/injection_parameters" %(path)]])
+    injection_data = np.array([i for i in g["%s/injection_data" %(path)]])
     g.close()
 
     f = h5py.File(base_file, "a")
-    new_group = f.create_group("%s" %(approximant))
-    new_group.create_dataset("parameter_names", data=parameters)
-    new_group.create_dataset("samples", data=samples)
-    new_group.create_dataset("injection_parameters", data=injection_parameters)
-    new_group.create_dataset("injection_data", data=injection_data)
+    current_labels = list(f.keys())
+    if label not in current_labels:
+        label_group = f.create_group(label)
+        approx_group = label_group.create_group(approximant)
+    else:
+        approx_group = f[label].create_group(approximant)
+    approx_group.create_dataset("parameter_names", data=parameters)
+    approx_group.create_dataset("samples", data=samples)
+    approx_group.create_dataset("injection_parameters", data=injection_parameters)
+    approx_group.create_dataset("injection_data", data=injection_data)
     f.close()
 
 def make_dir(path):
@@ -154,3 +162,18 @@ def guess_url(web_dir, host, user):
     else:
         url = "https://{}".format(web_dir)
     return url
+
+def setup_logger():
+    """Set up the logger output.
+    """
+    level = 'INFO'
+    if "-v" or "--verbose" in sys.argv:
+        level = 'DEBUG'
+
+    logger = logging.getLogger('PESummary')
+    logger.setLevel(level)
+    FORMAT = '%(asctime)s %(name)s %(levelname)-8s: %(message)s'
+    logging.basicConfig(format=FORMAT, datefmt='%Y-%m-%d  %H:%M:%S')
+
+setup_logger()                                                                  
+logger = logging.getLogger('PESummary')
