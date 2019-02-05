@@ -27,14 +27,14 @@ import pytest
 
 class TestPlot(object):
 
-    @pytest.mark.parametrize("param, samples, latex_label", [(b"mass1",
+    @pytest.mark.parametrize("param, samples, latex_label", [("mass1",
         [10,20,30,40], r"$m_{1}$"),])
     def test_1d_histogram_plot(self, param, samples, latex_label):
         fig = plot._1d_histogram_plot(param, samples, latex_label)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     @pytest.mark.parametrize("param, approximants, samples, colors, latex_label",
-        [(b"mass1", ["approx1", "approx2"], [[10,20,30,40], [1,2,3,4]],
+        [("mass1", ["approx1", "approx2"], [[10,20,30,40], [1,2,3,4]],
         ["b", "r"], r"$m_{1}$"), ])
     def test_1d_comparison_plot(self, param, approximants, samples, colors,
                                 latex_label):
@@ -43,20 +43,20 @@ class TestPlot(object):
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_waveform_plot(self):
-        maxL_params = {"approximant": "IMRPhenomPv2", b"mass_1": 10., b"mass_2": 5.,
-                       b"iota": 1., b"phi_jl": 0., b"tilt_1": 0., b"tilt_2": 0.,
-                       b"phi_12": 0., b"a_1": 0.5, b"a_2": 0., b"phase": 0.,
-                       b"ra": 1., b"dec": 1., b"psi": 0., b"geocent_time": 0.,
-                       b"luminosity_distance": 100}
-        fig = plot._waveform_plot([b"H1"], maxL_params)
+        maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
+                       "iota": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
+                       "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
+                       "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
+                       "luminosity_distance": 100}
+        fig = plot._waveform_plot(["H1"], maxL_params)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_waveform_comparison_plot(self):
-        maxL_params = {"approximant": "IMRPhenomPv2", b"mass_1": 10., b"mass_2": 5.,
-                       b"iota": 1., b"phi_jl": 0., b"tilt_1": 0., b"tilt_2": 0.,
-                       b"phi_12": 0., b"a_1": 0.5, b"a_2": 0., b"phase": 0.,
-                       b"ra": 1., b"dec": 1., b"psi": 0., b"geocent_time": 0.,
-                       b"luminosity_distance": 100}
+        maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
+                       "iota": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
+                       "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
+                       "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
+                       "luminosity_distance": 100}
         maxL_params = [maxL_params, maxL_params]
         maxL_params[1]["mass_1"] = 7.
         fig = plot._waveform_comparison_plot(maxL_params, ["b", "r"])
@@ -74,17 +74,17 @@ class TestPlot(object):
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_corner_plot(self):
-        latex_labels = {b"luminosity_distance": r"$d_{L}$",
-                        b"dec": r"$\delta$",
-                        b"a_2": r"$a_{2}$", b"a_1": r"$a_{1}$",
-                        b"geocent_time": r"$t$", b"phi_jl": r"$\phi_{JL}$",
-                        b"psi": r"$\Psi$", b"ra": r"$\alpha$", b"phase": r"$\psi$",
-                        b"mass_2": r"$m_{2}$", b"mass_1": r"$m_{1}$",
-                        b"phi_12": r"$\phi_{12}$", b"tilt_2": r"$t_{1}$",
-                        b"iota": r"$\iota$", b"tilt_1": r"$t_{1}$",
-                        b"chi_p": r"$\chi_{p}$", b"chirp_mass": r"$\mathcal{M}$",
-                        b"mass_ratio": r"$q$", b"symmetric_mass_ratio": r"$\eta$",
-                        b"total_mass": r"$M$", b"chi_eff": r"$\chi_{eff}$"}
+        latex_labels = {"luminosity_distance": r"$d_{L}$",
+                        "dec": r"$\delta$",
+                        "a_2": r"$a_{2}$", "a_1": r"$a_{1}$",
+                        "geocent_time": r"$t$", "phi_jl": r"$\phi_{JL}$",
+                        "psi": r"$\Psi$", "ra": r"$\alpha$", "phase": r"$\psi$",
+                        "mass_2": r"$m_{2}$", "mass_1": r"$m_{1}$",
+                        "phi_12": r"$\phi_{12}$", "tilt_2": r"$t_{1}$",
+                        "iota": r"$\iota$", "tilt_1": r"$t_{1}$",
+                        "chi_p": r"$\chi_{p}$", "chirp_mass": r"$\mathcal{M}$",
+                        "mass_ratio": r"$q$", "symmetric_mass_ratio": r"$\eta$",
+                        "total_mass": r"$M$", "chi_eff": r"$\chi_{eff}$"}
         samples = [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]]*21
         samples = [np.random.random(21).tolist() for i in range(21)]
         params = list(latex_labels.keys())
@@ -92,10 +92,10 @@ class TestPlot(object):
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_sensitivity_plot(self):
-        maxL_params = {"approximant": "IMRPhenomPv2", b"mass_1": 10., b"mass_2": 5.,
-                       b"iota": 1., b"phi_jl": 0., b"tilt_1": 0., b"tilt_2": 0.,
-                       b"phi_12": 0., b"a_1": 0.5, b"a_2": 0., b"phase": 0.,
-                       b"ra": 1., b"dec": 1., b"psi": 0., b"geocent_time": 0.,
-                       b"luminosity_distance": 100}
+        maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
+                       "iota": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
+                       "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
+                       "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
+                       "luminosity_distance": 100}
         fig = plot._sky_sensitivity(["H1", "L1"], 1.0, maxL_params)
         assert isinstance(fig, matplotlib.figure.Figure) == True 

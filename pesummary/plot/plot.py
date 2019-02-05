@@ -13,8 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+from pesummary.utils.utils import logger
 
 import matplotlib
 matplotlib.use("Agg")
@@ -43,7 +42,7 @@ def _autocorrelation_plot(param, samples):
     samples: list
         list of samples for param
     """
-    logging.info("Generating the autocorrelation function for %s" %(param.decode("utf-8")))
+    logger.debug("Generating the autocorrelation function for %s" %(param))
     n_samples = len(samples)
     samples = np.array(samples)
     y = samples - np.mean(samples)
@@ -72,7 +71,7 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
     inj_value: float
         value that was injected 
     """
-    logging.info("Generating the sample scatter plot for %s" %(param.decode("utf-8")))
+    logger.debug("Generating the sample scatter plot for %s" %(param))
     fig = plt.figure()
     n_samples = len(samples)
     plt.plot(range(n_samples), samples, linestyle=' ', marker='o',
@@ -96,7 +95,7 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
     inj_value: float
         value that was injected
     """
-    logging.info("Generating the 1d histogram plot for %s" %(param.decode("utf-8")))
+    logger.debug("Generating the 1d histogram plot for %s" %(param))
     fig = plt.figure()
     n, bins, patches = plt.hist(samples, histtype="step", bins=50, color='b')
     plt.xlabel(latex_label, fontsize=16)
@@ -135,7 +134,7 @@ def _1d_comparison_histogram_plot(param, approximants, samples, colors,
     latex_label: str
         latex label for param
     """
-    logging.info("Generating the 1d comparison histogram plot for %s" %(param.decode("utf-8"))) 
+    logger.debug("Generating the 1d comparison histogram plot for %s" %(param)) 
     fig = plt.figure()
     for num, i in enumerate(samples):
         plt.hist(i, histtype="step", bins=50, color=colors[num],
@@ -207,7 +206,7 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     kwargs: dict
         dictionary of optional keyword arguments
     """
-    logging.info("Generating the maximum likelihood waveform plot") 
+    logger.debug("Generating the maximum likelihood waveform plot") 
     if not LALSIMULATION:
         raise exception("lalsimulation could not be imported. please install "
                         "lalsuite to be able to use all features")
@@ -218,20 +217,20 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
                                 delta_frequency)
 
     approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
-    mass_1 = maxL_params[b"mass_1"]*MSUN_SI
-    mass_2 = maxL_params[b"mass_2"]*MSUN_SI
-    luminosity_distance = maxL_params[b"luminosity_distance"]*PC_SI*10**6
-    if b"phi_jl" in maxL_params.keys():
+    mass_1 = maxL_params["mass_1"]*MSUN_SI
+    mass_2 = maxL_params["mass_2"]*MSUN_SI
+    luminosity_distance = maxL_params["luminosity_distance"]*PC_SI*10**6
+    if "phi_jl" in maxL_params.keys():
         iota, S1x, S1y, S1z, S2x, S2y, S2z = \
             lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                maxL_params[b"iota"], maxL_params[b"phi_jl"], maxL_params[b"tilt_1"],
-                maxL_params[b"tilt_2"], maxL_params[b"phi_12"], maxL_params[b"a_1"],
-                maxL_params[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-                maxL_params[b"phase"])
+                maxL_params["iota"], maxL_params["phi_jl"], maxL_params["tilt_1"],
+                maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
+                maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+                maxL_params["phase"])
     else:
-        iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params[b"iota"], 0., 0., 0., \
+        iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params["iota"], 0., 0., 0., \
                                              0., 0., 0.
-    phase = maxL_params[b"phase"] if b"phase" in maxL_params.keys() else 0.0
+    phase = maxL_params["phase"] if "phase" in maxL_params.keys() else 0.0
     h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2, S1x,
                           S1y, S1z, S2x, S2y, S2z,
                           luminosity_distance, iota,
@@ -246,9 +245,8 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     colors=['b', 'r']
     linestyle=['-', '--']
     for num, i in enumerate(detectors):
-        i = i.decode("utf-8")
-        ar = __antenna_response(str(i), maxL_params[b"ra"], maxL_params[b"dec"],
-                                maxL_params[b"psi"], maxL_params[b"geocent_time"])
+        ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
+                                maxL_params["psi"], maxL_params["geocent_time"])
         plt.plot(frequency_array, abs(h_plus*ar[0]+h_cross*ar[1]),
                  color=colors[num], linestyle=linestyle[num],
                  linewidth=2.0, label=i)
@@ -274,7 +272,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
     kwargs: dict
         dictionary of optional keyword arguments
     """
-    logging.info("Generating the maximum likelihood waveform comparison plot "
+    logger.debug("Generating the maximum likelihood waveform comparison plot "
                  "for H1") 
     if not LALSIMULATION:
         raise Exception("LALSimulation could not be imported. Please install "
@@ -288,20 +286,20 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
     fig = plt.figure()
     for num, i in enumerate(maxL_params_list):
         approx = lalsim.GetApproximantFromString(i["approximant"])
-        mass_1 = i[b"mass_1"]*MSUN_SI
-        mass_2 = i[b"mass_2"]*MSUN_SI
-        luminosity_distance = i[b"luminosity_distance"]*PC_SI*10**6
-        if b"phi_jl" in i.keys():
+        mass_1 = i["mass_1"]*MSUN_SI
+        mass_2 = i["mass_2"]*MSUN_SI
+        luminosity_distance = i["luminosity_distance"]*PC_SI*10**6
+        if "phi_jl" in i.keys():
             iota, S1x, S1y, S1z, S2x, S2y, S2z = \
                 lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                    i[b"iota"], i[b"phi_jl"], i[b"tilt_1"],
-                    i[b"tilt_2"], i[b"phi_12"], i[b"a_1"],
-                    i[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-                    i[b"phase"])
+                    i["iota"], i["phi_jl"], i["tilt_1"],
+                    i["tilt_2"], i["phi_12"], i["a_1"],
+                    i["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+                    i["phase"])
         else:
-            iota, S1x, S1y, S1z, S2x, S2y, S2z = i[b"iota"], 0., 0., 0., \
+            iota, S1x, S1y, S1z, S2x, S2y, S2z = i["iota"], 0., 0., 0., \
                                                  0., 0., 0.
-        phase = i[b"phase"] if b"phase" in i.keys() else 0.0
+        phase = i["phase"] if "phase" in i.keys() else 0.0
         h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2,
                               S1x, S1y, S1z, S2x, S2y, S2z,
                               luminosity_distance, iota, phase, 0.0,
@@ -312,8 +310,8 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
         h_cross = h_cross.data.data
         h_plus = h_plus[:len(frequency_array)]
         h_cross = h_cross[:len(frequency_array)]
-        ar = __antenna_response("H1", i[b"ra"], i[b"dec"], i[b"psi"],
-                                i[b"geocent_time"])
+        ar = __antenna_response("H1", i["ra"], i["dec"], i["psi"],
+                                i["geocent_time"])
         plt.plot(frequency_array, abs(h_plus*ar[0]+h_cross*ar[1]),
                  color=colors[num], label=i["approximant"], linewidth=2.0)
     plt.xscale("log")
@@ -337,7 +335,7 @@ def _sky_map_plot(ra, dec, **kwargs):
         optional keyword arguments
     """
     ra = [i-np.pi for i in ra]
-    logging.info("Generating the sky map plot")
+    logger.debug("Generating the sky map plot")
     fig = plt.figure()
     ax = plt.subplot(111, projection="hammer")
     ax.cla()
@@ -411,7 +409,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
         optional keyword arguments
     """
     ra_list = [[i-np.pi for i in j] for j in ra_list]
-    logging.info("Generating the sky map comparison plot")
+    logger.debug("Generating the sky map comparison plot")
     fig = plt.figure()
     ax = plt.subplot(111, projection="hammer")
     ax.cla()
@@ -483,7 +481,7 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
     latex_labels: dict
         dictionary of latex labels for each parameter
     """
-    logging.info("Generating the corner plot")
+    logger.debug("Generating the corner plot")
     # set the default kwargs
     default_kwargs = dict(
             bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
@@ -492,17 +490,17 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
             levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
             plot_density=False, plot_datapoints=True, fill_contours=True,
             max_n_ticks=3)
-    corner_parameters = [b"luminosity_distance", b"dec", b"a_2",
-                         b"a_1", b"geocent_time", b"phi_jl", b"psi", b"ra", b"phase",
-                         b"mass_2", b"mass_1", b"phi_12", b"tilt_2", b"iota",
-                         b"tilt_1", b"chi_p", b"chirp_mass", b"mass_ratio",
-                         b"symmetric_mass_ratio", b"total_mass", b"chi_eff",
-                         b"redshift", b"mass_1_source", b"mass_2_source",
-                         b"total_mass_source", b"chirp_mass_source"]
+    corner_parameters = ["luminosity_distance", "dec", "a_2",
+                         "a_1", "geocent_time", "phi_jl", "psi", "ra", "phase",
+                         "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
+                         "tilt_1", "chi_p", "chirp_mass", "mass_ratio",
+                         "symmetric_mass_ratio", "total_mass", "chi_eff",
+                         "redshift", "mass_1_source", "mass_2_source",
+                         "total_mass_source", "chirp_mass_source"]
     included_parameters = [i for i in params if i in corner_parameters]
     xs = np.zeros([len(included_parameters), len(samples)])
     for num, i in enumerate(included_parameters):
-        xs[num] = [j[params.index(b"%s" %(i))] for j in samples]
+        xs[num] = [j[params.index("%s" %(i))] for j in samples]
     default_kwargs['range'] = [1.0]*len(included_parameters)
     default_kwargs["labels"] = [latex_labels[i] for i in included_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
@@ -558,7 +556,7 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
     maxL_params: dict
         dictionary of waveform parameters for the maximum likelihood waveform
     """
-    logging.info("Generating the sky sensitivity for %s" %(network)) 
+    logger.debug("Generating the sky sensitivity for %s" %(network)) 
     if not LALSIMULATION:
         raise Exception("LALSimulation could not be imported. Please install "
                         "LALSuite to be able to use all features")
@@ -569,19 +567,19 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
                                 delta_frequency)
 
     approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
-    mass_1 = maxL_params[b"mass_1"]*MSUN_SI
-    mass_2 = maxL_params[b"mass_2"]*MSUN_SI
-    luminosity_distance = maxL_params[b"luminosity_distance"]*PC_SI*10**6
+    mass_1 = maxL_params["mass_1"]*MSUN_SI
+    mass_2 = maxL_params["mass_2"]*MSUN_SI
+    luminosity_distance = maxL_params["luminosity_distance"]*PC_SI*10**6
     iota, S1x, S1y, S1z, S2x, S2y, S2z = \
         lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-            maxL_params[b"iota"], maxL_params[b"phi_jl"], maxL_params[b"tilt_1"],
-            maxL_params[b"tilt_2"], maxL_params[b"phi_12"], maxL_params[b"a_1"],
-            maxL_params[b"a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-            maxL_params[b"phase"])
+            maxL_params["iota"], maxL_params["phi_jl"], maxL_params["tilt_1"],
+            maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
+            maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+            maxL_params["phase"])
     h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(mass_1, mass_2, S1x,
                           S1y, S1z, S2x, S2y, S2z,
                           luminosity_distance, iota,
-                          maxL_params[b"phase"], 0.0, 0.0, 0.0, delta_frequency,
+                          maxL_params["phase"], 0.0, 0.0, 0.0, delta_frequency,
                           minimum_frequency, maximum_frequency,
                           kwargs.get("f_ref", 10.), None, approx)
     h_plus = h_plus.data.data
@@ -604,7 +602,7 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
         SNR = {}
         for i in network:
             ard = __antenna_response(i, ra[ind[0]], dec[ind[1]],
-                                     maxL_params[b"psi"], maxL_params[b"geocent_time"])
+                                     maxL_params["psi"], maxL_params["geocent_time"])
             ar[i] = [ard[0], ard[1]]
             strain = np.array(h_plus*ar[i][0]+h_cross*ar[i][1])
             integrand = np.conj(strain[kmin:kmax])*strain[kmin:kmax]/psd[i][kmin:kmax]

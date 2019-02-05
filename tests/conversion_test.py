@@ -192,11 +192,10 @@ class TestConversions(object):
         params = sorted(output[0])
         samples = output[1]
         approximant = output[2]
-        expected = [[1.0, 10.0], [2.0, 10.0], [3.0, 20.0]]
-        if output[0].index("log_likelihood") != params.index("log_likelihood"):
-            expected = [[10.0, 1.0], [10.0, 2.0], [20.0, 3.0]] 
-        assert all(i == j for i,j in zip(params, ["log_likelihood", "mass_1"]))
-        assert all(all(i==j for i,j in zip(k,l)) for k,l in zip(samples, expected))
+        expected = [[1.0, 10.0, 10.], [2.0, 10.0, 20.], [3.0, 20.0, 30.], 
+            [0., 0., 0.,]]
+        assert all(i in ["H1_optimal_snr", "log_likelihood", "mass_1"] for i in params)
+        assert all(all(i in expected[num] for i in k) for num, k in enumerate(samples))
         assert approximant == b"IMRPhenomPv2"
 
     def test_load_with_h5py(self):

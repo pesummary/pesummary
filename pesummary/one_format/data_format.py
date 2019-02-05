@@ -13,15 +13,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-
 import h5py
 import deepdish
 
 import numpy as np
 
 from pesummary.one_format.conversions import *
+from pesummary.utils.utils import logger
 
 try:
     from glue.ligolw import ligolw
@@ -97,6 +95,7 @@ class one_format():
     def keys(fil):
         f = h5py.File(fil)
         keys = [i for i in f.keys()]
+        f.close()
         return keys
 
     def grab_approximant(self):
@@ -120,7 +119,7 @@ class one_format():
         f = h5py.File(self.fil)
         keys = self.keys(self.fil)
         if "lalinference" in keys:
-            logging.info("LALInference was used to generate %s" %(self.fil))
+            logger.info("LALInference was used to generate %s" %(self.fil))
             self._lalinference = True
             sampler = [i for i in f["lalinference"].keys()]
             self._data_path = "lalinference/%s/posterior_samples" %(sampler[0])
@@ -136,11 +135,11 @@ class one_format():
         self._bilby = False
         keys = self.keys(self.fil)
         if "data" in keys:
-            logging.info("BILBY >= v0.3.3 was used to generate %s" %(self.fil))
+            logger.info("BILBY >= v0.3.3 was used to generate %s" %(self.fil))
             self._bilby = True
             self._data_path = "data/posterior"
         elif "posterior" in keys:
-            logging.info("BILBY >= v0.3.1 was used to generate %s" %(self.fil))
+            logger.info("BILBY >= v0.3.1 was used to generate %s" %(self.fil))
             self._bilby = True
             self._data_path = "posterior"
 
@@ -179,7 +178,8 @@ class one_format():
         injection_parameters = np.array(injection_properties[0], dtype="S")
         injection_data = np.array(injection_properties[1])
         f = h5py.File("%s_temp" %(self.fil), "w")
-        group = f.create_group(self.approximant)
+        label_group = f.create_group("label")
+        group = label_group.create_group(self.approximant)
         group.create_dataset("parameter_names", data=parameters)
         group.create_dataset("samples", data=self.samples)
         group.create_dataset("injection_parameters", data=injection_parameters)
@@ -207,11 +207,11 @@ class one_format():
         if self.bilby:
             approx = "none"
             try:
-                logging.info("Trying to load with file with deepdish")
+                logger.debug("Trying to load with file with deepdish")
                 f = deepdish.io.load(self.fil)
                 parameters, data, approx = load_with_deepdish(f)
             except:
-                logging.info("Failed to load file with deepdish. Using h5py to "
+                logger.debug("Failed to load file with deepdish. Using h5py to "
                              "load in data")
                 f = h5py.File(self.fil)
                 parameters, data = load_with_h5py(f, self._data_path)
