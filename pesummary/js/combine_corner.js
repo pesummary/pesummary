@@ -13,7 +13,7 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,      
 // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
 
-function combine(list) {
+function combine(list, label="None") {
     var loadTimer;
     var imgObject = new Image();
     var heading=document.getElementsByTagName("h1")[0]                          
@@ -50,7 +50,7 @@ function combine(list) {
             }
         }
     }
-    imgObject.src = '../plots/corner/'+approx+'_all_density_plots.png';
+    imgObject.src = '../plots/corner/'+label+'_'+approx+'_all_density_plots.png';
     imgObject.onLoad = onImgLoaded();
     function onImgLoaded() {
         if (loadTimer != null) clearTimeout(loadTimer);
