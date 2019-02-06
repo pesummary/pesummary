@@ -23,6 +23,7 @@ import sys
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
+import time
 
 BOOTSTRAP = """<!DOCTYPE html>
 <html lang='en'>
@@ -125,11 +126,31 @@ class page(Base):
         """
         """
         command= ""
+        length = len(sys.argv[0])
         for i in sys.argv:
-            command+=" {}".format(i)
-        self.make_div(_class='jumbotron text-center', _style='margin-bottom:0')
-        self.add_content("<p>Simulation run by {}. Run directories found at {}</p>\n".format(user, rundir), indent=2)
-        self.add_content("<p>Command line: {}</p>\n".format(command), indent=2)
+            command += " "
+            if i[0] == "-":
+                command += "\n"
+            command += "{}".format(i)
+        self.make_div(_class='jumbotron', _style='margin-bottom:0; line-height: 0.5')
+        self.add_content("<p>This page was produced by {} at {} on {} on behalf "
+            "of the Parameter Estimation group\n".format(
+            user, time.strftime("%H:%M"), time.strftime("%B %m %Y")), indent=2)
+        self.add_content("<p>Run directories found at {}</p>\n".format(rundir), indent=2)
+        self.add_content("<p>This code was generated with the following command line call:</p>", indent=2)
+        self.add_content("<p> </p>", indent=2)
+        self.make_div(_class='container', _style='background-color:#FFFFFF; '
+            'box-shadow: 0 0 5px grey; line-height: 1.5')
+        styles = self.make_code_block(language='shell', contents=command)
+        with open('{0:s}/css/command_line.css'.format(self.web_dir), 'w') as g:
+            g.write(styles)
+        self.end_div()
+        self.make_div(_style="text-align:center")
+        self.add_content("<a href='https://git.ligo.org/charlie.hoy/pesummary'>"
+            "View PESummary v%s on git.ligo.org</a> | "
+            "<a href='https://git.ligo.org/charlie.hoy/pesummary/issues'>"
+            "Report an issue</a>" %(pesummary.__version__), indent=2)
+        self.end_div()
         self.end_div()
 
     def _setup_navbar(self):
