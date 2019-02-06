@@ -65,6 +65,9 @@ class TestPage(object):
         except:
             shutil.rmtree(webdir)
             os.mkdir(directory)
+        os.mkdir("./.outdir/css")
+        f = open("./.outdir/css/command_line.css", "w")
+        f.close()
         baseurl = "https://example"
         webpage.make_html(webdir, pages=["home"])
         self.html = webpage.open_html(webdir, baseurl, "home")
@@ -101,8 +104,8 @@ class TestPage(object):
         self.html.close()
         with open("./.outdir/home.html") as fp:
             soup = BeautifulSoup(fp, features="html.parser")
-        assert "Simulation run by" in str(soup.p)
-        assert soup.div["class"] == ['jumbotron', 'text-center']
+        assert "This page was produced by" in str(soup.p)
+        assert soup.div["class"] == ['jumbotron']
 
     @pytest.mark.parametrize('links', [("other", "example")])
     def test_navbar(self, links):
