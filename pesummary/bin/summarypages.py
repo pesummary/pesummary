@@ -122,6 +122,8 @@ class WebpageGeneration(PostProcessing):
             cond = self._condition(["mass", "q", "symmetric_mass_ratio"],
                 ["source"])
             params.append(["masses", self._partition(cond, parameters)])
+            cond = self._condition(["source"], [])
+            params.append(["source", self._partition(cond, parameters)])
         if any("spin" in j for j in parameters):
             cond = self._condition(["spin", "chi_p" "chi_eff", "a_1", "a_2"],
                 [])
@@ -297,10 +299,14 @@ class WebpageGeneration(PostProcessing):
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Posteriors for multiple" %(app),
                 approximant=app, background_colour=self.colors[num])
+            ordered_parameters = self._categorize_parameters(self.parameters[num])
+            ordered_parameters = [i for j in ordered_parameters for i in j[1]]
             html_file.make_search_bar(sidebar=[i for i in self.parameters[num]],
                                       popular_options=["mass_1, mass_2",
                                           "luminosity_distance, iota, ra, dec",
-                                          "iota, phi_12, phi_jl, tilt_1, tilt_2"],
+                                          "iota, phi_12, phi_jl, tilt_1, tilt_2",
+                                          {"all": ", ".join(ordered_parameters)}],
+                                      label=self.labels[num],
                                       code="combines")
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
@@ -327,7 +333,8 @@ class WebpageGeneration(PostProcessing):
             html_file.make_search_bar(sidebar=included_parameters,
                                       popular_options=["mass_1, mass_2",
                                           "luminosity_distance, iota, ra, dec",
-                                          "iota, phi_12, phi_jl, tilt_1, tilt_2"])
+                                          "iota, phi_12, phi_jl, tilt_1, tilt_2"],
+                                      label=self.labels[num])
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
@@ -401,7 +408,9 @@ class WebpageGeneration(PostProcessing):
         html_file.make_search_bar(sidebar=self.same_parameters,
                                   popular_options=["mass_1, mass_2",
                                       "luminosity_distance, iota, ra, dec",
-                                      "iota, phi_12, phi_jl, tilt_1, tilt_2"])
+                                      "iota, phi_12, phi_jl, tilt_1, tilt_2",
+                                      {"all": ", ".join(self.same_parameters)}],
+                                  label="None")
         html_file.make_footer(user=self.user, rundir=self.webdir)
 
 

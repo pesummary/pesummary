@@ -13,7 +13,7 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,      
 // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
 
-function combines(list) {                                            
+function combines(list, label) {                                            
     var loadTimer;                                                              
     var imgObject = new Image();                                   
     var heading=document.getElementsByTagName("h1")[0]                          
@@ -59,7 +59,7 @@ function combines(list) {
             if ( approx == "Comparison" ) {
                 newimage.src = '../plots/combined_posterior_'+ticked[i]+'.png'
             } else {
-                newimage.src = '../plots/1d_posterior_'+approx+'_'+ticked[i]+'.png';
+                newimage.src = '../plots/'+label+'_1d_posterior_'+approx+'_'+ticked[i]+'.png';
             }
             images2.push(newimage);
             
@@ -77,7 +77,7 @@ function combines(list) {
             if ( approx == "Comparison" ) {
                 newimage.src = '../plots/combined_posterior_'+el[i]+'.png'
             } else {                                    
-                newimage.src = '../plots/1d_posterior_'+approx+'_'+el[i]+'.png';
+                newimage.src = '../plots/'+label+'_1d_posterior_'+approx+'_'+el[i]+'.png';
             }
             images.push(newimage);
             

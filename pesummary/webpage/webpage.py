@@ -133,10 +133,11 @@ class page(Base):
             if i[0] == "-":
                 command += "\n"
             command += "{}".format(i)
-        self.make_div(_class='jumbotron', _style='margin-bottom:0; line-height: 0.5')
+        self.make_div(_class='jumbotron', _style='margin-bottom:0; line-height: 0.5;'+\
+            'background-color:#E0E0E0')
         self.add_content("<p>This page was produced by {} at {} on {} on behalf "
             "of the Parameter Estimation group\n".format(
-            user, time.strftime("%H:%M"), time.strftime("%B %m %Y")), indent=2)
+            user, time.strftime("%H:%M"), time.strftime("%B %d %Y")), indent=2)
         self.add_content("<p>Run directories found at {}</p>\n".format(rundir), indent=2)
         self.add_content("<p>This code was generated with the following command line call:</p>", indent=2)
         self.add_content("<p> </p>", indent=2)
@@ -441,7 +442,8 @@ class page(Base):
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
 
-    def make_search_bar(self, sidebar=None, popular_options=None, code="combine"):
+    def make_search_bar(self, sidebar=None, popular_options=None, label=None, 
+        code="combine"):
         """Generate a search bar to combine the corner plots
         javascript.
 
@@ -464,24 +466,33 @@ class page(Base):
             for i in sidebar:
                 self.add_content("<input type='checkbox' name='type' "
                                  "value='{}' id='{}' style='text-align: center; margin: 0 5px 0;'"
-                                 ">{}<br>\n".format(i, i,i,i), indent=2)
+                                 ">{}<br>\n".format(i,i,i,i), indent=2)
         self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>")
         self.add_content("<p style='margin-top:2.5em'> Input the parameter names that you would like to compare</p>", indent=2)
         self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>\n")
         self.add_content("<input type='text' placeholder='search' id='corner_search'>\n", indent=2)
-        self.add_content("<button type='submit' onclick='{}()'>Submit</button>\n".format(code), indent=2)
+        self.add_content("<button type='submit' onclick='{}(undefined, label=\"{}\")' "
+            "style='cursor: pointer'>Submit</button>\n".format(code, label), indent=2)
         self.add_content("<button class='w3-button w3-teal w3-xlarge' "
-                         "onclick='side_bar_open()'>&times </button>\n", indent=2) 
+                         "onclick='side_bar_open()' style='cursor: pointer'>&#8801</button>\n", indent=2) 
         self.add_content("</div>\n")
         self.add_content("<div class='row justify-content-center'>\n")
         if popular_options:
             for i in popular_options:
-                self.add_content("<button type='button' class='btn btn-info' "
-                                 "onclick='{}(\"{}\")' "
-                                 "style='margin-left:0.25em; margin-right:0.25em; "
-                                 "margin-top: 1.0em'>{}</button>\n".format(code, i, i), indent=2)
+                if type(i) == dict and list(i.keys()) == ["all"]:
+                    self.add_content("<button type='button' class='btn btn-info' "
+                                     "onclick='{}(\"{}\", label=\"{}\")' "
+                                     "style='margin-left:0.25em; margin-right:0.25em; "
+                                     "margin-top: 1.0em; cursor: pointer'>all</button>\n".format(
+                        code, i["all"], label), indent=2)
+                else:
+                    self.add_content("<button type='button' class='btn btn-info' "
+                                     "onclick='{}(\"{}\", label=\"{}\")' "
+                                     "style='margin-left:0.25em; margin-right:0.25em; "
+                                     "margin-top: 1.0em; cursor: pointer'>{}</button>\n".format(
+                        code, i, label, i), indent=2)
         self.add_content("</div>")
         self.add_content("<div class='container' style='margin-top:5em; margin-bottom:5em;"
                          "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")  
