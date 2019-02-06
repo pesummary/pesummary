@@ -498,6 +498,8 @@ class page(Base):
                          "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")  
         self.add_content("<div class='row justify-content-center' id='corner_plot'>\n", indent=2)
         self.add_content("<canvas id='{}' width='600' height='600'></canvas>\n".format(ids), indent=4)
+        if code == "combine":
+            self.add_content("<img src='' id='mirror'/>", indent=4)
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
 
