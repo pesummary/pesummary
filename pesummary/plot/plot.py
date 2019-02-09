@@ -143,7 +143,8 @@ def _1d_comparison_histogram_plot(param, approximants, samples, colors,
     fig = plt.figure(figsize=(11,6))
     labels = approximants
     if approximant_labels:
-        labels = ["_".join([i,j]) for i,j in zip(approximant_labels, labels)]
+        labels = ["_".join([i,j]) if i != None else j for i,j in \
+            zip(approximant_labels, labels)]
     for num, i in enumerate(samples):
         plt.hist(i, histtype="step", bins=50, color=colors[num],
                  label=labels[num], linewidth=2.0)
@@ -292,7 +293,8 @@ def _waveform_comparison_plot(maxL_params_list, colors, approximant_labels=None,
                         "LALSuite to be able to use all features")
     labels = [i["approximant"] for i in maxL_params_list]
     if approximant_labels:
-        labels = ["_".join([i,j]) for i,j in zip(approximant_labels, labels)]
+        labels = ["_".join([i,j]) if i != None else j for i,j in \
+            zip(approximant_labels, labels)]
     delta_frequency = kwargs.get("delta_f", 1./256)
     minimum_frequency = kwargs.get("f_min", 5.)
     maximum_frequency = kwargs.get("f_max", 1000.)
@@ -432,7 +434,8 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors,
     logger.debug("Generating the sky map comparison plot")
     labels = approximants
     if approximant_labels:
-        labels = ["_".join([i,j]) for i,j in zip(approximant_labels, labels)]
+        labels = ["_".join([i,j]) if i != None else j for i,j in \
+            zip(approximant_labels, labels)]
     fig = plt.figure()
     ax = plt.subplot(111, projection="hammer")
     ax.cla()

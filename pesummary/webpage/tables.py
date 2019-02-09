@@ -68,18 +68,20 @@ class table_of_images(Base):
             self.end_div(2)
         else:
             ind = 0
+            width = "280"
+            _class = "row justify-content-center"
+            self.make_div(4, _class=_class, _style=None)
+            self.make_div(6, _class="row", _style=None)
             for i in self.content:
-                width = 1050./len(i)
-                _class = "row justify-content-center"
-                self.make_div(2, _class=_class, _style=None)
+                self.make_div(8, _class="column", _style=None)
                 for num, j in enumerate(i):
                     _id = j.split("/")[-1][:-4]
-                    self.make_div(4, _class="column")
                     self.add_content("<a href='#demo' data-slide-to='%s'>\n" %(ind), indent=6)
                     self._insert_image(j, width, 8, _id, justify=None)
                     self.add_content("</a>\n", indent=6)
-                    self.end_div(4)
                     ind += 1
-                self.end_div(2)
+                self.end_div(8)
+            self.end_div(6)
+            self.end_div(4)
         self.end_div(2)
         self.end_container()
