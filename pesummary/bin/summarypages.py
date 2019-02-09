@@ -271,12 +271,12 @@ class WebpageGeneration(PostProcessing):
             label = self.labels[num]
             image_contents = [[path+"%s_1d_posterior_%s_mass_1.png" %(label, i),
                                path+"%s_1d_posterior_%s_mass_2.png" %(label, i),
-                               path+"%s_1d_posterior_%s_luminosity_distance.png" %(label, i)],
-                              [path+"%s_%s_skymap.png" %(label, i),
-                               path+"%s_%s_waveform.png" %(label, i)],
-                              [path+"%s_1d_posterior_%s_iota.png" %(label, i),
                                path+"%s_1d_posterior_%s_a_1.png" %(label, i),
-                               path+"%s_1d_posterior_%s_a_2.png" %(label, i)]]
+                               path+"%s_1d_posterior_%s_a_2.png" %(label, i)],
+                              [path+"%s_%s_skymap.png" %(label, i),
+                               path+"%s_%s_waveform.png" %(label, i),
+                               path+"%s_1d_posterior_%s_iota.png" %(label, i),
+                               path+"%s_1d_posterior_%s_luminosity_distance.png" %(label, i)]]
             html_file.make_table_of_images(contents=image_contents)
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images)
@@ -392,6 +392,8 @@ class WebpageGeneration(PostProcessing):
         path = self.image_path
         contents = [[path+"combined_skymap.png", path+"compare_waveforms.png"]]
         html_file.make_table_of_images(contents=contents)
+        images = [y for x in contents for y in x]
+        html_file.make_modal_carousel(images=images)
         if self.sensitivity:
             html_file.add_content("<div class='row justify-content-center' "
                 "style='margin=top: 2.0em;'><p>To see the sky sensitivity for "

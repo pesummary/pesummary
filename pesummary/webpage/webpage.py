@@ -310,32 +310,62 @@ class page(Base):
         colors: list, optional
             list of colors for the table columns
         """
-        self.make_div(_class='container', _style='margin-top:5em')
-        self.make_div(indent=2, _class='table-responsive')
+        self.make_container()
+        self.make_div(indent=2, _class='row justify-content-center')
+        self.make_div(indent=4, _class='accordian', _style='width: 100%',
+            _id='accordian')
+        self.make_div(indent=6, _class='card')
+        self.make_div(indent=8, _class='card-header', _style='background-color: #E0E0E0',
+            _id = 'table')
+        self.add_content("<h5 class='mb-0'>", indent=10)
+        self.make_div(indent=12, _class='row justify-content-center')
+        self.add_content("<button class='btn btn-link collapsed' type='button' "
+            "data-toggle='collapse' data-target='#collapsetable' "
+            "aria-expanded='false' aria-controls='collapsetable'>", indent=14)
+        self.add_content("Summary Table")
+        self.add_content("</button>")
+        self.end_div(indent=12)
+        self.end_div(indent=10)
+        self.add_content("<div id='collapsetable' class='collapse' "
+            "aria-labelledby='table' data-parent='#accordian'>", indent=12)
+        self.make_div(_class='card-body', indent=14)
+        self.make_div(_class='row justify-content-center', indent=16)
+        self.make_div(_class='container', indent=18)
+        self.make_div(indent=20, _class='table-responsive')
         if heading_span > 1:
-            self.add_content("<table class='table table-sm'>\n", indent=4)
+            self.add_content("<table class='table table-sm'>\n", indent=22)
         else:
-            self.add_content("<table class='table table-striped table-sm'>\n", indent=4)
-        self.add_content("<thead>\n", indent=6)
-        self.add_content("<tr>\n", indent=8)
+            self.add_content("<table class='table table-striped table-sm'>\n", indent=24)
+        self.add_content("<thead>\n", indent=26)
+        self.add_content("<tr>\n", indent=28)
         for i in headings:
-            self.add_content("<th colspan='{}'>{}</th>\n".format(heading_span, i), indent=10)
-        self.add_content("</tr>\n", indent=8)
-        self.add_content("<tbody>\n", indent=6)
+            self.add_content("<th colspan='{}'>{}</th>\n".format(heading_span, i), indent=30)
+        self.add_content("</tr>\n", indent=28)
+        self.add_content("<tbody>\n", indent=26)
 
         for num, i in enumerate(contents):
-            self.add_content("<tr>\n", indent=8)
+            self.add_content("<tr>\n", indent=28)
             if heading_span == 2:
                 for j, col in zip(i, ["#ffffff"]+colors*(len(i)-1)):
-                    self.add_content("<td style='background-color: {}'>{}</td>\n".format(col, j), indent=10)
-                self.add_content("</tr>", indent=8)
+                    self.add_content("<td style='background-color: {}'>{}</td>\n".format(col, j), indent=30)
+                self.add_content("</tr>", indent=28)
             else:
                 for j in i:
-                    self.add_content("<td>{}</td>\n".format(j), indent=10)
-                self.add_content("</tr>\n", indent=8)
+                    self.add_content("<td>{}</td>\n".format(j), indent=30)
+                self.add_content("</tr>\n", indent=28)
 
-        self.add_content("</tbody>\n", indent=6)
-        self.add_content("</table>\n", indent=4)
+        self.add_content("</tbody>\n", indent=26)
+        self.add_content("</table>\n", indent=24)
+        self.end_div(indent=22)
+        self.end_div(indent=20)
+        self.end_div(indent=18)
+        self.end_div(indent=16)
+        self.end_div(indent=14)
+        self.end_div(indent=12)
+        self.end_div(indent=10)
+        self.end_div(indent=8)
+        self.end_div(indent=6)
+        self.end_div(indent=4)
         self.end_div(indent=2)
         self.end_div()
 

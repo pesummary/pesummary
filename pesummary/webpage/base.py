@@ -53,7 +53,7 @@ class Base():
              content = self._check_content(content)
              self.html_file.write(" "*indent + content)
 
-    def make_div(self, indent=0, _class=None, _style=None):
+    def make_div(self, indent=0, _class=None, _style=None, _id=None):
         """Make a div of your choice
 
         indent: int, optional
@@ -62,12 +62,16 @@ class Base():
             the class name of your div
         _style: str, optional
             the style of your div
+        _id: str, optional
+            the id of your div
         """
         string = "<div"
         if _class:
             string += " class='%s'" %(_class)
         if _style:
             string += " style='%s'" %(_style)
+        if _id:
+            string += " id='%s'" %(_id)
         string += ">\n"
         self.add_content(string, indent=indent)
 

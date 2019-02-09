@@ -47,8 +47,7 @@ setup(name='pesummary',
                'pesummary/bin/inputs.py'],
       classifiers=[
           "Programming Language :: Python :: 3.5",
-          "Programming Language :: Python :: 3.6",
-          "Programming Language :: Python :: 3.7"],
+          "Programming Language :: Python :: 3.6"],
       license='MIT',
       long_description=readme,
       long_description_content_type='text/markdown')
