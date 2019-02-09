@@ -360,7 +360,7 @@ class Input():
                         individual_detectors.append(j.split(b"_optimal_snr")[0])
                 individual_detectors = [i.decode("utf-8") for i in individual_detectors]
                 if individual_detectors:
-                    detector_list.append("_".join(individual_detectors))
+                    detector_list.append("".join(individual_detectors))
         else:
             detector_list = detectors
         logger.debug("The detector network is %s" %(detector_list))
@@ -383,7 +383,7 @@ class Input():
                 label_list.append(self.gracedb)
             elif self.detectors and type(self.detectors[num]) == list:
                 for i in self.detectors[num]:
-                    label_list.append("_".join(self.detectors[num]))
+                    label_list.append("".join(self.detectors[num]))
             elif self.detectors and type(self.detectors[num]) == str:
                 label_list.append(self.detectors[num])
             else:
@@ -524,6 +524,14 @@ class PostProcessing():
         self.samples = []
         self.maxL_samples = []
         self.same_parameters = []
+
+    @property
+    def coherence_test(self):
+        duplicates=dict(set((x,self.approximant.count(x)) for x in \
+            filter(lambda rec : self.approximant.count(rec)>1,self.approximant)))
+        if len(duplicates.keys()) > 0:
+            return True
+        return False
 
     @property
     def colors(self):

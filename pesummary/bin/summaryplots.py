@@ -99,6 +99,19 @@ class PlotGeneration(PostProcessing):
         logger.info("Finished generating the plots")
 
     @property
+    def label_to_prepend_approximant(self):
+        labels = [i[len(self.gracedb)+1:] if self.gracedb else i for i in \
+            self.labels]
+        prepend = [None]*len(self.approximant)
+        duplicates=dict(set((x,self.approximant.count(x)) for x in \
+            filter(lambda rec : self.approximant.count(rec)>1,self.approximant)))
+        if len(duplicates.keys()) > 0:
+            for num, i in enumerate(self.approximant):
+                if i in duplicates.keys():
+                    prepend[num]  = labels[num]
+        return prepend
+
+    @property
     def savedir(self):
         return self.webdir+"/plots/"
 
@@ -299,7 +312,8 @@ class PlotGeneration(PostProcessing):
             param_samples = [[k[indices[num]] for k in l] for num, l in \
                 enumerate(self.samples)]
             fig = plot._1d_comparison_histogram_plot(j, self.approximant,
-                param_samples, self.colors, latex_labels[j])
+                param_samples, self.colors, latex_labels[j],
+                approximant_labels = self.label_to_prepend_approximant)
             plt.savefig(self.savedir+"combined_posterior_%s" %(j))
             plt.close()
 
@@ -319,7 +333,7 @@ class PlotGeneration(PostProcessing):
         dec_list = [[k[ind_dec[num]] for k in l] for num,l in \
             enumerate(self.samples)]
         fig = plot._sky_map_comparison_plot(ra_list, dec_list, self.approximant,
-            self.colors)
+            self.colors, approximant_labels = self.label_to_prepend_approximant)
         plt.savefig(self.savedir+"combined_skymap.png")
         plt.close()
 
@@ -333,7 +347,8 @@ class PlotGeneration(PostProcessing):
             The indicies of the results files that you wish to be included
             in the comparsion plots.
         """
-        fig = plot._waveform_comparison_plot(self.maxL_samples, self.colors)
+        fig = plot._waveform_comparison_plot(self.maxL_samples, self.colors,
+            approximant_labels = self.label_to_prepend_approximant)
         plt.savefig(self.savedir+"compare_waveforms.png")
         plt.close()
 

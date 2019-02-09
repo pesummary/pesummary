@@ -61,7 +61,7 @@ All files are written to seperate directories. The basic structure is as follows
    samples/
      -> posterior_samples.h5
 
-The `plots/`, `html/` and `samples/` directories are all empty initially, and are populated as the job progresses. The home page of the generate webpage can be opened by viewing the `home.html` file in your browser. :code:`PESummary` also stored all information about the run in the `posterior_samples.h5` file. For details about this file, please refer to `understanding the results file <results_file.html>`_.
+The `plots/`, `html/` and `samples/` directories are all empty initially, and are populated as the job progresses. The home page of the generate webpage can be opened by viewing the `home.html` file in your browser. For details about the output pages please refer to `understanding the webpages <summarypage.html>`_. :code:`PESummary` also stored all information about the run in the `posterior_samples.h5` file. For details about this file, please refer to `understanding the results file <results_file.html>`_.
 
 If you wish to get an email alert notifying you when the summary page has finished, then please use the :code:`--email` flag followed by the email address you wish to get the information sent to.
 

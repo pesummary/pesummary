@@ -16,6 +16,7 @@ Contents:
    installation
    executable
    results_file
+   summarypage
    structure
    examples
 
