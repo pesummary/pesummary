@@ -151,7 +151,8 @@ class page(Base):
         self.add_content("<a href='https://git.ligo.org/charlie.hoy/pesummary'>"
             "View PESummary v%s on git.ligo.org</a> | "
             "<a href='https://git.ligo.org/charlie.hoy/pesummary/issues'>"
-            "Report an issue</a>" %(pesummary.__version__), indent=2)
+            "Report an issue</a> | <a href='https://docs.ligo.org/charlie.hoy/"
+            "pesummary/summarypage.html'> Help on using this webpage</a>" %(pesummary.__version__), indent=2)
         self.end_div()
         self.end_div()
 
@@ -395,7 +396,7 @@ class page(Base):
         """
         self.make_container()
         string = "<img src='{}' alt='No image available' ".format(path) + \
-                 "style='align-items:center; width:750px;'"
+                 "style='align-items:center; width:850px;'"
         if justify == "center":
             string += " class='mx-auto d-block'"
         elif justify == "left":

@@ -54,6 +54,7 @@ def _autocorrelation_plot(param, samples):
              markersize=0.5)
     plt.xlabel("samples", fontsize=16)
     plt.ylabel("ACF", fontsize=16)
+    plt.tight_layout()
     return fig
 
 def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
@@ -78,6 +79,7 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
              markersize=0.5)
     plt.xlabel("samples", fontsize=16)
     plt.ylabel(latex_label, fontsize=16)
+    plt.tight_layout()
     return fig
 
 def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
@@ -114,10 +116,11 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
     plt.title(r"$%s^{+%s}_{-%s}$" %(median, upper, lower), fontsize=18)
     plt.grid()
     plt.ylim(y_range)
+    plt.tight_layout()
     return fig
 
 def _1d_comparison_histogram_plot(param, approximants, samples, colors,
-                                  latex_label):
+                                  latex_label, approximant_labels=None):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
 
@@ -133,20 +136,26 @@ def _1d_comparison_histogram_plot(param, approximants, samples, colors,
         list of colors to be used to differentiate the different approximants
     latex_label: str
         latex label for param
+    approximant_labels: list, optional
+        label to prepend the approximant in the legend
     """
     logger.debug("Generating the 1d comparison histogram plot for %s" %(param)) 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(11,6))
+    labels = approximants
+    if approximant_labels:
+        labels = ["_".join([i,j]) for i,j in zip(approximant_labels, labels)]
     for num, i in enumerate(samples):
         plt.hist(i, histtype="step", bins=50, color=colors[num],
-                 label=approximants[num], linewidth=2.0)
+                 label=labels[num], linewidth=2.0)
         plt.axvline(x=np.percentile(i, 90), color=colors[num], linestyle='--',
                     linewidth=2.0)
         plt.axvline(x=np.percentile(i, 10), color=colors[num], linestyle='--',
                     linewidth=2.0)
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
-    plt.legend(loc="best")
+    plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., prop={'size': 12})
     plt.grid()
+    plt.tight_layout()
     return fig
 
 def __antenna_response(name, ra, dec, psi, time_gps):
@@ -256,9 +265,11 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
     plt.grid()
     plt.legend(loc="best")
+    plt.tight_layout()
     return fig
 
-def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
+def _waveform_comparison_plot(maxL_params_list, colors, approximant_labels=None,
+    **kwargs):
     """Generate a plot which compares the maximum likelihood waveforms for
     each approximant.
 
@@ -269,6 +280,8 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
         values for each approximant
     colors: list
         list of colors to be used to differentiate the different approximants
+    approximant_labels: list, optional
+        label to prepend the approximant in the legend 
     kwargs: dict
         dictionary of optional keyword arguments
     """
@@ -277,6 +290,9 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
     if not LALSIMULATION:
         raise Exception("LALSimulation could not be imported. Please install "
                         "LALSuite to be able to use all features")
+    labels = [i["approximant"] for i in maxL_params_list]
+    if approximant_labels:
+        labels = ["_".join([i,j]) for i,j in zip(approximant_labels, labels)]
     delta_frequency = kwargs.get("delta_f", 1./256)
     minimum_frequency = kwargs.get("f_min", 5.)
     maximum_frequency = kwargs.get("f_max", 1000.)
@@ -313,13 +329,14 @@ def _waveform_comparison_plot(maxL_params_list, colors, **kwargs):
         ar = __antenna_response("H1", i["ra"], i["dec"], i["psi"],
                                 i["geocent_time"])
         plt.plot(frequency_array, abs(h_plus*ar[0]+h_cross*ar[1]),
-                 color=colors[num], label=i["approximant"], linewidth=2.0)
+                 color=colors[num], label=labels[num], linewidth=2.0)
     plt.xscale("log")
     plt.yscale("log")
     plt.grid()
     plt.legend(loc="best")
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
     plt.ylabel(r"Strin $[1/\sqrt{Hz}]$", fontsize=16)
+    plt.tight_layout()
     return fig
 
 def _sky_map_plot(ra, dec, **kwargs):
@@ -389,10 +406,11 @@ def _sky_map_plot(ra, dec, **kwargs):
     xticks = np.arange(-np.pi, np.pi, np.pi/6)
     ax.set_xticks(xticks)
     labels = [r"$%s^{h}$" %(np.round((i+np.pi)*3.82, 1)) for i in xticks]
-    ax.set_xticklabels(labels) 
+    ax.set_xticklabels(labels)
     return fig
 
-def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
+def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors,
+    approximant_labels=None, **kwargs):
     """Generate a plot that compares the sky location for multiple approximants
 
     Parameters
@@ -405,11 +423,16 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
         list of approximants used to generate the samples
     colors: list
         list of colors to be used to differentiate the different approximants
+    approximant_labels: list, optional
+        label to prepend the approximant in the legend 
     kwargs: dict
         optional keyword arguments
     """
     ra_list = [[i-np.pi for i in j] for j in ra_list]
     logger.debug("Generating the sky map comparison plot")
+    labels = approximants
+    if approximant_labels:
+        labels = ["_".join([i,j]) for i,j in zip(approximant_labels, labels)]
     fig = plt.figure()
     ax = plt.subplot(111, projection="hammer")
     ax.cla()
@@ -457,8 +480,9 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors, **kwargs):
         Y2 = np.concatenate([Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]), Y1,
                              Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]),])
         CS = plt.contour(X2, Y2, H2.T, V, colors=colors[num], linewidths=2.0)
-        CS.collections[0].set_label(approximants[num])
-    plt.legend(loc="best")
+        CS.collections[0].set_label(labels[num])
+    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
+        mode="expand", ncol=2)
     xticks = np.arange(-np.pi, np.pi, np.pi/6)
     ax.set_xticks(xticks)
     labels = [r"$%s^{h}$" %(np.round((i+np.pi)*3.82, 1)) for i in xticks]

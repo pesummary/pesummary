@@ -69,7 +69,7 @@ class WebpageGeneration(PostProcessing):
 
     @navbar_for_homepage.setter
     def navbar_for_homepage(self, navbar_for_homepage):
-        approximant_links = [{i:j} for i, j in zip(self.approximant, self.labels)]
+        approximant_links = self._approximant_navbar_links()
         links = ["home", ["Approximants", approximant_links]]
         if len(self.approximant) > 1:
             links[1][1] = links[1][1]+["Comparison"]
@@ -86,8 +86,7 @@ class WebpageGeneration(PostProcessing):
             for j in self._categorize_parameters(i):
                 j = [j[0], [{k: self.labels[num]} for k in j[1]]]
                 links[num].append(j)
-        final_links = [["home", ["Approximants", [{i: j} for i, j in \
-            zip(self.approximant, self.labels)]],
+        final_links = [["home", ["Approximants", self._approximant_navbar_links()],
             {"corner": self.labels[num]}, {"config": self.labels[num]}, j] \
             for num, j in enumerate(links)]
         if len(self.approximant) > 1:
@@ -104,10 +103,28 @@ class WebpageGeneration(PostProcessing):
         links = ["1d_histograms", ["multiple"]]
         for i in self._categorize_parameters(self.same_parameters):
             links.append(i)
-        final_links = ["home", ["Approximants", [{i:j} for i, j in \
-            zip(self.approximant, self.labels)]], links]
+        final_links = ["home", ["Approximants", self._approximant_navbar_links()], links]
         final_links[1][1] = final_links[1][1]+["Comparison"]
         self._navbar_for_comparison_homepage = final_links
+
+    def _approximant_navbar_links(self):
+        """Return the navbar structure for the approximant tab. If we have
+        passed a coherence test, then we need to prepend the approximant by
+        a label so we can determine which tab corresponds to which network.
+        """
+        if self.coherence_test:
+            labels = [i[len(self.gracedb)+1:] if self.gracedb else i for i in \
+                self.labels]
+            links = [None]*len(self.approximant)
+            duplicates=dict(set((x,self.approximant.count(x)) for x in \
+                filter(lambda rec : self.approximant.count(rec)>1,self.approximant)))
+            if len(duplicates.keys()) > 0:
+                for num, i in enumerate(self.approximant):
+                    if i in duplicates.keys():
+                        links[num]  = "_".join([labels[num], i])
+            return [{i:j} if k == None else {k: "None"} for i,j,k in \
+                zip(self.approximant, self.labels, links)]
+        return [{i:j} for i, j in zip(self.approximant, self.labels)]
 
     def _categorize_parameters(self, parameters):
         """Categorize the parameters into common headings.
@@ -402,15 +419,17 @@ class WebpageGeneration(PostProcessing):
                 title="Comparison PDF for %s" %(i),
                 approximant="Comparison")
             html_file.insert_image(path+"combined_posterior_%s.png" %(i))
+            html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
         html_file = self._setup_page("Comparison_multiple",
-            self.navbar_for_comparison_homepage, approximant="Comparison")
+            self.navbar_for_comparison_homepage, approximant="Comparison",
+            title="Comparison Posteriors for multiple")
         html_file.make_search_bar(sidebar=self.same_parameters,
                                   popular_options=["mass_1, mass_2",
                                       "luminosity_distance, iota, ra, dec",
                                       "iota, phi_12, phi_jl, tilt_1, tilt_2",
                                       {"all": ", ".join(self.same_parameters)}],
-                                  label="None")
+                                  label="None", code="combines")
         html_file.make_footer(user=self.user, rundir=self.webdir)
 
 
