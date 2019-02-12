@@ -82,7 +82,7 @@ def command_line():
     return parser
 
 
-class Input():
+class Input(object):
     """Super class to handle command line arguments
 
     Parameters
@@ -387,8 +387,7 @@ class Input():
             elif self.detectors and type(self.detectors[num]) == str:
                 label_list.append(self.detectors[num])
             else:
-                for i in range(len(self.approximant)):
-                    label_list.append("%s" %(i))
+                label_list.append("%s" %(num))
         proposed_names = ["%s_%s" %(i,j) for i,j in zip(label_list, self.approximant)]
         duplicates=dict(set((x,proposed_names.count(x)) for x in \
             filter(lambda rec : proposed_names.count(rec)>1,proposed_names)))
@@ -449,7 +448,7 @@ class Input():
         for i in scripts:
             shutil.copyfile(i, self.webdir+"/css/%s" %(i.split("/")[-1]))
         if self.config:
-            for num, i in enumerate(opts.config):
+            for num, i in enumerate(self.config):
                 if self.webdir not in i:
                     shutil.copyfile(i, self.webdir+"/config/"+\
                                     self.approximant[num]+"_"+i.split("/")[-1])
@@ -472,7 +471,7 @@ class Input():
         return f.save()
 
 
-class PostProcessing():
+class PostProcessing(object):
     """Class to extract parameters from the results files
 
     Parameters

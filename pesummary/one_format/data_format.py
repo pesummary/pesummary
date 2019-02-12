@@ -80,7 +80,7 @@ standard_names = {"logL": "log_likelihood",
                   "time": "geocent_time",
                   "theta_jn": "iota"}
 
-class one_format():
+class one_format(object):
 
     def __init__(self, fil, inj):
         self.fil = fil
@@ -210,9 +210,9 @@ class one_format():
                 logger.debug("Trying to load with file with deepdish")
                 f = deepdish.io.load(self.fil)
                 parameters, data, approx = load_with_deepdish(f)
-            except:
-                logger.debug("Failed to load file with deepdish. Using h5py to "
-                             "load in data")
+            except Exception as e:
+                logger.debug("Failed to load file with deepdish because %s. "
+                             "Using h5py instead" %(e))
                 f = h5py.File(self.fil)
                 parameters, data = load_with_h5py(f, self._data_path)
         return parameters, data
@@ -462,6 +462,12 @@ class one_format():
             self.parameters.remove(self.parameters[ind])
             for i in self.samples:
                 i.remove(i[ind])
+        if "log_prior" in self.parameters:
+            ind = self.parameters.index("log_prior")
+            self.parameters.remove(self.parameters[ind])
+            for i in self.samples:
+                i.remove(i[ind])
+
 
 def load_with_deepdish(f):
     """Return the data and parameters that appear in a given h5 file assuming

@@ -27,8 +27,8 @@ import h5py
 import pesummary
 from pesummary.utils.utils import combine_hdf_files, logger
 from pesummary.webpage import webpage
-from pesummary.bin.inputs import command_line, Input, PostProcessing
-from pesummary.bin.summaryplots import PlotGeneration
+from pesummary.inputs import command_line, Input, PostProcessing
+from pesummary.summaryplots import PlotGeneration
 
 __doc__ == "Classes to generate webpages"
 
@@ -142,7 +142,7 @@ class WebpageGeneration(PostProcessing):
             cond = self._condition(["source"], [])
             params.append(["source", self._partition(cond, parameters)])
         if any("spin" in j for j in parameters):
-            cond = self._condition(["spin", "chi_p" "chi_eff", "a_1", "a_2"],
+            cond = self._condition(["spin", "chi_p", "chi_eff", "a_1", "a_2"],
                 [])
             params.append(["spins", self._partition(cond, parameters)])
         if any("phi" in j for j in parameters):
@@ -507,7 +507,7 @@ class FinishingTouches(PostProcessing):
         """Remove all unnecessary files.
         """
         for i in self.result_files:
-            if "posterior_samples" not in i:
+            if i != "posterior_samples.h5":
                 os.remove(i) 
 
 

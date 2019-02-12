@@ -19,7 +19,7 @@ import socket
 import shutil
 
 from pesummary.utils import utils
-from pesummary.bin.summarypages import command_line
+from pesummary.summarypages import command_line
 
 import h5py
 import numpy as np
