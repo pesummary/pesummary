@@ -28,7 +28,7 @@ import pesummary
 from pesummary.plot import plot
 from pesummary.utils.utils import logger
 
-from pesummary.bin.inputs import command_line, Input, PostProcessing
+from pesummary.inputs import command_line, Input, PostProcessing
 
 __doc__ == "Class to generate plots"
 
@@ -98,6 +98,12 @@ class PlotGeneration(PostProcessing):
         self.generate_plots()
         logger.info("Finished generating the plots")
 
+    @staticmethod
+    def _check_latex_labels(parameters):
+        for i in parameters:
+            if i not in list(latex_labels.keys()):
+                latex_labels[i] = i
+
     @property
     def label_to_prepend_approximant(self):
         labels = [i[len(self.gracedb)+1:] if self.gracedb else i for i in \
@@ -120,6 +126,7 @@ class PlotGeneration(PostProcessing):
         """
         for num, i in enumerate(self.approximant):
             logger.debug("Starting to generate plots for %s\n" %(i))
+            self._check_latex_labels(self.parameters[num])
             self.try_to_make_a_plot("corner", num)
             self.try_to_make_a_plot("skymap", num)
             self.try_to_make_a_plot("waveform", num)

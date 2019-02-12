@@ -17,7 +17,7 @@
 import pesummary
 from pesummary.webpage import tables
 from pesummary.utils import utils
-from pesummary.bin.inputs import PostProcessing
+from pesummary.inputs import PostProcessing
 from pesummary.webpage.base import Base
 
 import sys

@@ -18,7 +18,7 @@ import shutil
 
 import argparse
 
-from pesummary.bin.inputs import command_line, Input, PostProcessing
+from pesummary.inputs import command_line, Input, PostProcessing
 
 import numpy as np
 import h5py

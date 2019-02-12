@@ -181,7 +181,7 @@ def __antenna_response(name, ra, dec, psi, time_gps):
     if not LALSIMULATION:
         raise exception("lalsimulation could not be imported. please install "
                         "lalsuite to be able to use all features")
-    detector = lalsim.DetectorPrefixToLALDetector(name)
+    detector = lalsim.DetectorPrefixToLALDetector(str(name))
 
     x0 = -np.cos(psi) * np.sin(corrected_ra) - \
           np.sin(psi) * np.cos(corrected_ra) * np.sin(dec)
