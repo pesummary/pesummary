@@ -28,7 +28,7 @@ import pesummary
 from pesummary.utils.utils import guess_url, combine_hdf_files, logger
 from pesummary.utils.utils import rename_group_or_dataset_in_hf5_file
 from pesummary.utils import utils
-from pesummary.one_format.data_format import one_format
+from pesummary.one_format.data_format import one_format, standard_names 
 
 import lal
 import lalsimulation as lalsim
@@ -132,8 +132,8 @@ class Input(object):
         self.webdir = opts.webdir
         self.baseurl = opts.baseurl
         self.inj_file = opts.inj_file
-        self.result_files = opts.samples
         self.config = opts.config
+        self.result_files = opts.samples
         self.approximant = opts.approximant
         self.email = opts.email
         self.add_to_existing = opts.add_to_existing
@@ -228,7 +228,6 @@ class Input(object):
             self._inj_file = None
         self._inj_file = inj_file
 
-
     @property
     def result_files(self):
         return self._samples
@@ -246,10 +245,17 @@ class Input(object):
         for num, i in enumerate(samples):
             if not os.path.isfile(i):
                 raise Exception("File %s does not exist" %(i))
-            std_form = self.convert_to_standard_format(i, self.inj_file[num])
+            config = None
+            if self.config and len(samples) != len(self.config):
+                raise Exception("Ensure that the number of results files match "
+                                "the number of configuration files")
+            if self.config:
+                config = self.config[num]
+            std_form = self.convert_to_standard_format(i, self.inj_file[num],
+                config_file=config)
             sample_list.append(std_form)
         self._samples = sample_list
-
+    """
     @property
     def config(self):
         return self._config
@@ -260,6 +266,7 @@ class Input(object):
             raise Exception("Ensure that the number of results files match "
                             "the number of configuration files")
         self._config = config
+    """
 
     @property
     def approximant(self):
@@ -453,7 +460,8 @@ class Input(object):
                     shutil.copyfile(i, self.webdir+"/config/"+\
                                     self.approximant[num]+"_"+i.split("/")[-1])
 
-    def convert_to_standard_format(self, results_file, injection_file=None):
+    def convert_to_standard_format(self, results_file, injection_file=None,
+        config_file=None):
         """Convert a results file to standard form.
 
         Parameters
@@ -464,9 +472,11 @@ class Input(object):
         injection_file: str, optional
             Path to the injection file that was used in the analysis to
             produce the results_file
+        config_file: str, optional
+            Path to the configuration file that was used
         """
         logger.debug("Converting %s to standard format" %(results_file))
-        f = one_format(results_file, injection_file)
+        f = one_format(results_file, injection_file, config=config_file)
         f.generate_all_posterior_samples()
         return f.save()
 
