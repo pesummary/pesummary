@@ -14,8 +14,10 @@ Contents:
    :maxdepth: 2
 
    installation
-   structure
    executable
+   results_file
+   summarypage
+   structure
    examples
 
 Indices and tables

@@ -35,6 +35,13 @@ class TestWebpage(object):
             shutil.rmtree(directory)
             os.mkdir(directory)
 
+    def teardown(self):
+        directory = './.outdir'
+        try:
+            shutil.rmtree(directory)
+        except:
+            pass
+
     def test_make_html(self):
         webdir = "./.outdir"
         assert os.path.isfile("./.outdir/home.html") == False
@@ -53,9 +60,24 @@ class TestPage(object):
 
     def setup(self):
         webdir = "./.outdir" 
+        try:
+            os.mkdir(webdir)
+        except:
+            shutil.rmtree(webdir)
+            os.mkdir(directory)
+        os.mkdir("./.outdir/css")
+        f = open("./.outdir/css/command_line.css", "w")
+        f.close()
         baseurl = "https://example"
         webpage.make_html(webdir, pages=["home"])
         self.html = webpage.open_html(webdir, baseurl, "home")
+
+    def teardown(self):
+        directory = './.outdir'
+        try:
+            shutil.rmtree(directory)
+        except:
+            pass
 
     def open_and_read(self, path):
         f = open(path)
@@ -82,8 +104,8 @@ class TestPage(object):
         self.html.close()
         with open("./.outdir/home.html") as fp:
             soup = BeautifulSoup(fp, features="html.parser")
-        assert "Simulation run by" in str(soup.p)
-        assert soup.div["class"] == ['jumbotron', 'text-center']
+        assert "This page was produced by" in str(soup.p)
+        assert soup.div["class"] == ['jumbotron']
 
     @pytest.mark.parametrize('links', [("other", "example")])
     def test_navbar(self, links):
@@ -136,8 +158,8 @@ class TestPage(object):
             soup = BeautifulSoup(fp, features="html.parser")
         all_images = soup.find_all("img")
         assert len(all_images) == 2
-        assert all_images[0]["src"] == "https://example/plots/image1.png"
-        assert all_images[1]["src"] == "https://example/plots/image2.png"
+        assert all_images[0]["src"] == "image1.png"
+        assert all_images[1]["src"] == "image2.png"
 
     def test_insert_image(self):
         path = "./path/to/image.png"

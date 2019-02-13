@@ -16,11 +16,41 @@
 from distutils.core import setup
 from setuptools import find_packages
 
-with open("README.md", "r") as f:
-    readme = f.read()
+import subprocess
+
+version = "0.1.4"
+
+def full_description():
+    """Get the full readme
+    """
+    with open("README.md", "r") as f:
+        readme = f.read()
+    return readme
+
+def check_init(version):
+    """Add the version number and the git hash to the file
+    'pesummary.__init__.py'
+
+    Parameters
+    ----------
+    version: str
+        the release version of the code that you are running
+    """
+    git_log = subprocess.check_output(
+        ["git", "log", "-1", "--pretty=format:%h"]).decode("utf-8")
+    with open("pesummary/__init__.py") as f:
+       g = f.readlines()
+       ind = [num for num,i in enumerate(g) if "__version__" in i][0]
+       g[ind] = '__version__ = "%s %s"\n' %(version, git_log)
+       f.close()
+    with open("pesummary/__init__.py", "w") as f:
+       f.writelines(g)
+
+readme = full_description()
+check_init(version)
 
 setup(name='pesummary',
-      version='0.1.2',
+      version=version,
       description='Python package to produce summary pages for Parameter '
                   'estimation codes',
       author='Charlie Hoy',
@@ -42,8 +72,11 @@ setup(name='pesummary',
       packages=find_packages(),
       package_dir={'pesummary': 'pesummary'},
       package_data={'pesummary': ['js/*.js', 'css/*.css']},
-      scripts=['pesummary/bin/summarypages.py'],
+      scripts=['pesummary/summarypages.py',
+               'pesummary/summaryplots.py',
+               'pesummary/inputs.py'],
       classifiers=[
+          "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6"],
       license='MIT',
       long_description=readme,

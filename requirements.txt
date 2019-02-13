@@ -1,8 +1,10 @@
+numpy==1.15.4
 h5py
 matplotlib 
 corner
 deepdish
 pandas
 pygments
-astropy
+pluggy==0.8.0
+astropy==2.0.9
 lalsuite
