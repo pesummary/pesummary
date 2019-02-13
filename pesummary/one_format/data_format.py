@@ -13,6 +13,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import configparser
+
 import h5py
 import deepdish
 
@@ -38,7 +40,6 @@ standard_names = {"logL": "log_likelihood",
                   "costilt1": "cos_tilt_1",
                   "costilt2": "cos_tilt_2",
                   "redshift": "redshift",
-                  "phi_jl": "phi_jl",
                   "l1_optimal_snr": "L1_optimal_snr",
                   "h1_optimal_snr": "H1_optimal_snr",
                   "v1_optimal_snr": "V1_optimal_snr",
@@ -63,6 +64,9 @@ standard_names = {"logL": "log_likelihood",
                   "psi": "psi",
                   "polarisation": "psi",
                   "phi12": "phi_12",
+                  "phi_12": "phi_12",
+                  "phi_jl": "phi_jl",
+                  "phijl": "phijl",
                   "a1": "a_1",
                   "a_spin1": "a_1",
                   "a2": "a_2",
@@ -80,16 +84,67 @@ standard_names = {"logL": "log_likelihood",
                   "time": "geocent_time",
                   "theta_jn": "iota"}
 
-class one_format(object):
 
-    def __init__(self, fil, inj):
+class one_format(object):
+    """Class to convert a given results file into a standard format with all
+    derived posterior distributions included
+
+    Parameters
+    ----------
+    fil: str
+       path to the results file
+    inj: str
+       path to the file containing injection information
+    config: str, optional
+       path to the configuration file 
+
+    Attributes
+    ----------
+    lalinference: Bool
+        Boolean to determine if LALInference was used to generate the results
+        file
+    bilby: Bool
+        Boolean to determine if bilby was used to generate the results file
+    approximant: str
+        The approximant that was used to generate the results file. If the
+        approximant cannot be extracted, this is "none".
+    parameters: list
+        List of parameters that have corresponding posterior distributions
+    samples: list
+        List of posterior samples for each parameter 
+    """
+    def __init__(self, fil, inj, config=None):
         self.fil = fil
         self.inj = inj
+        self.config = config
         self.lalinference = False
         self.bilby = False
         self.approximant = None
         self.parameters = None
         self.samples = None
+        fixed_parameters = None
+        if self.config:
+            fixed_parameters = self.fixed_parameters(self.config)
+        if fixed_parameters:
+            self._append_fixed_parameters(fixed_parameters)
+
+    @staticmethod
+    def fixed_parameters(cp):
+        """Extract the fixed parameters from the configuration file. This is
+        useful for LALInference data files.
+
+        Parameters
+        ----------
+        cp: str
+            path to the location of the configuration file
+        """
+        config = configparser.ConfigParser()
+        config.read(cp)
+        fixed_params = None
+        if "engine" in config.sections():
+            fixed_params = [list(i) for i in config.items("engine") if "fix" \
+                in i[0]]
+        return fixed_params
 
     @staticmethod
     def keys(fil):
@@ -166,6 +221,33 @@ class one_format(object):
     @samples.setter
     def samples(self, samples):
         self._samples = self.grab_data()[1]
+
+    def _append_fixed_parameters(self, fixed_parameters):
+        """Generate samples for the fixed parameters and append them to them
+        to the samples array.
+
+        Parameters
+        ----------
+        fixed_parameters: ndlist
+            list of fixed parameters and their fixed values
+        """
+        if not fixed_parameters:
+            pass
+        for i in fixed_parameters:
+            try:
+                param = standard_names[i[0].split("fix-")[1]]
+                if param in self.parameters:
+                    pass
+                self.parameters.append(param)
+                self.append_data([float(i[1])]*len(self.samples))
+            except:
+                param = i[0].split("fix-")[1]
+                if param == "logdistance":
+                    self.parameters.append(standard_names["distance"])
+                    self.append_data([np.exp(float(i[1]))]*len(self.samples))
+                if param == "costheta_jn":
+                    self.parameters.append(standard_names["theta_jn"])
+                    self.append_data([np.arccos(float(i[1]))]*len(self.samples))
 
     def injection_parameters(self):
         return get_injection_parameters(self.parameters, self.inj,
