@@ -280,12 +280,12 @@ class one_format(object):
             parameters = [standard_names[i] for i in parameters]
             if "luminosity_distance" not in parameters and "logdistance" in lalinference_names:
                 parameters.append("luminosity_distance")
-                for num, i in enumerate(f[data_path]):
-                    data[num].append(np.exp(i[index("logdistance")]))
+                for num, i in enumerate(f[self._data_path]):
+                    data[num].append(np.exp(i[lalinference_names.index("logdistance")]))
             if "iota" not in parameters and "costheta_jn" in lalinference_names:
                 parameters.append("iota")
-                for num, i in enumerate(f[data_path]):
-                    data[num].append(np.arccos(i[index("costheta_jn")]))
+                for num, i in enumerate(f[self._data_path]):
+                    data[num].append(np.arccos(i[lalinference_names.index("costheta_jn")]))
         if self.bilby:
             approx = "none"
             try:
