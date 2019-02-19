@@ -66,6 +66,7 @@ class TestMainScript(object):
         arguments = "--webdir ./.outdir_bilby"
         arguments += " --samples ./tests/files/bilby_example.h5"
         arguments += " --baseurl https://./.outdir"
+        arguments += " --config ./tests/files/config_bilby.ini"
         ess = Popen("summarypages.py %s" %(arguments), shell=True)
         ess.wait()
         if ess.returncode == 0:
@@ -93,6 +94,7 @@ class TestMainScript(object):
         arguments += " --samples ./tests/files/lalinference_example.h5"
         arguments += " --baseurl https://./.outdir"
         arguments += " --approximant IMRPhenomPv2"
+        arguments += " --config ./tests/files/config_lalinference.ini"
         ess = Popen("summarypages.py %s" %(arguments), shell=True)
         ess.wait()
         if ess.returncode == 0:

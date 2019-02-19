@@ -47,7 +47,7 @@ pages:
   script:
     - mkdir public/
     - mv htmlcov/ public/
-    - mv /builds/charlie.hoy/pesummary/coverage_badge.svg public/
+    - mv /builds/lscsoft/pesummary/coverage_badge.svg public/
     - mv docs/_build/html/* public/
   artifacts:
     paths:
