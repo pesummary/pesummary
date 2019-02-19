@@ -123,13 +123,12 @@ class one_format(object):
         self.parameters = None
         self.samples = None
         fixed_parameters = None
-        if self.config:
-            fixed_parameters = self.fixed_parameters(self.config)
+        if self.config and self.lalinference:
+            fixed_parameters = self.fixed_parameters()
         if fixed_parameters:
             self._append_fixed_parameters(fixed_parameters)
 
-    @staticmethod
-    def fixed_parameters(cp):
+    def fixed_parameters(self):
         """Extract the fixed parameters from the configuration file. This is
         useful for LALInference data files.
 
@@ -139,7 +138,7 @@ class one_format(object):
             path to the location of the configuration file
         """
         config = configparser.ConfigParser()
-        config.read(cp)
+        config.read(self.config)
         fixed_params = None
         if "engine" in config.sections():
             fixed_params = [list(i) for i in config.items("engine") if "fix" \
