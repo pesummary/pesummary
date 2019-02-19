@@ -85,7 +85,7 @@ class Base():
         """
         self.add_content("</div>", indent)
 
-    def make_container(self, indent=0):
+    def make_container(self, style=None, indent=0):
         """Make a container for your webpage
 
         Parameters
@@ -93,8 +93,9 @@ class Base():
         indent: int, optional
             the indent of the new line
         """
-        style = "margin-top:5em; margin-bottom:5em; background-color:#FFFFFF; " + \
-                "box-shadow: 0 0 5px grey;"
+        if not style:
+            style = "margin-top:5em; margin-bottom:5em; background-color:#FFFFFF; " + \
+                    "box-shadow: 0 0 5px grey;"
         self.make_div(indent, _class="container", _style=style)
 
     def end_container(self, indent=0):

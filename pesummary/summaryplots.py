@@ -105,19 +105,6 @@ class PlotGeneration(PostProcessing):
                 latex_labels[i] = i
 
     @property
-    def label_to_prepend_approximant(self):
-        labels = [i[len(self.gracedb)+1:] if self.gracedb else i for i in \
-            self.labels]
-        prepend = [None]*len(self.approximant)
-        duplicates=dict(set((x,self.approximant.count(x)) for x in \
-            filter(lambda rec : self.approximant.count(rec)>1,self.approximant)))
-        if len(duplicates.keys()) > 0:
-            for num, i in enumerate(self.approximant):
-                if i in duplicates.keys():
-                    prepend[num]  = labels[num]
-        return prepend
-
-    @property
     def savedir(self):
         return self.webdir+"/plots/"
 

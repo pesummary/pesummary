@@ -22,6 +22,7 @@ import os
 import shutil
 
 import numpy as np
+from scipy import stats
 import h5py
 
 import pesummary
@@ -106,6 +107,69 @@ class WebpageGeneration(PostProcessing):
         final_links = ["home", ["Approximants", self._approximant_navbar_links()], links]
         final_links[1][1] = final_links[1][1]+["Comparison"]
         self._navbar_for_comparison_homepage = final_links
+
+    @property
+    def comparison_statistics(self):
+        data = []
+        for ind, j in enumerate(self.same_parameters):
+            indices = [k.index("%s" %(j)) for k in self.parameters]
+            param_samples = [[k[indices[num]] for k in l] for num, l in \
+                enumerate(self.samples)]
+            data.append(self.compute_comparison_statistics(param_samples))
+        return data
+
+    @staticmethod
+    def compute_comparison_statistics(samples):
+        """Return the comparison statistics for a list of PDFs
+
+        Parameters
+        ----------
+        samples: list
+            list of samples for different PDFs
+        """
+        rows = range(len(samples))
+        columns = range(len(samples))
+        kernel = [stats.gaussian_kde(i) for i in samples]
+        x = np.linspace(np.min([np.min(i) for i in samples]),
+            np.max([np.max(i) for i in samples]), 100)
+        ks = [[WebpageGeneration._kolmogorov_smirnov_test(samples[i],
+            samples[j]) for i in rows] for j in columns]
+        js = [[WebpageGeneration._jenson_shannon_divergence(kernel[i](x),
+            kernel[j](x)) for i in rows] for j in columns]
+        return [ks, js]
+
+    @staticmethod
+    def _kolmogorov_smirnov_test(a, b):
+        """Return the KS p value between two PDFs
+
+        Parameters
+        ----------
+        a: list
+            List containing the first PDF that you would like to compare
+        b: list
+            List containing the second PDF that you would like to compare
+        """
+        return stats.ks_2samp(a, b)[1]
+
+    @staticmethod
+    def _jenson_shannon_divergence(a, b):
+        """Return the JS divergence test between two PDFs
+
+        Parameters
+        ----------
+        a: list
+            List containing the first PDF that you would like to compare
+        b: list
+            List containing the second PDF that you would like to compare
+        """
+        a = np.asarray(a)
+        b = np.asarray(b)
+        a /= a.sum()
+        b /= b.sum()
+        m = 1./2*(a + b)
+        kl_forward = stats.entropy(a, qk=m)
+        kl_backward = stats.entropy(b, qk=m)
+        return kl_forward/2. + kl_backward/2.
 
     def _approximant_navbar_links(self):
         """Return the navbar structure for the approximant tab. If we have
@@ -411,16 +475,50 @@ class WebpageGeneration(PostProcessing):
                 "onclick='%s.src=\"%s/plots/%s_sky_sensitivity_HLV.png\"'"
                 "style='margin-left:0.25em; margin-right:0.25em'>HLV</button></div>\n"
                 %("combined_skymap", self.baseurl, self.approximant[0]))
+        try:
+            statistics = self.comparison_statistics
+        except Exception as e:
+            statistics = None
+            logger.info("Failed to generate comparison statistics because %s" %(e))
+        if statistics:
+            rows = range(len(self.approximant))
+            columns = range(len(self.approximant))
+            labels = ["_".join([i,j]) if i != None else j for i,j in \
+                zip(self.label_to_prepend_approximant, self.approximant)]
+            style_ks = "margin-top:5em; margin-bottom:1em; background-color:#FFFFFF; " + \
+                        "box-shadow: 0 0 5px grey;"
+            style_js = "margin-top:0em; margin-bottom:5em; background-color:#FFFFFF; " + \
+                       "box-shadow: 0 0 5px grey;"
+            table_contents = {self.same_parameters[num]: [[labels[i]]+statistics[num][0][i] for i in rows]
+                for num in range(len(self.same_parameters))}
+            html_file.make_table(headings=[" "] + labels,
+                                 contents=table_contents, heading_span=1,
+                                 accordian_header="KS test total", style=style_ks)
+            table_contents = {self.same_parameters[num]: [[labels[i]]+statistics[num][1][i] for i in rows]
+                for num in range(len(self.same_parameters))}
+            html_file.make_table(headings=[" "] + labels,
+                                 contents=table_contents, heading_span=1,
+                                 accordian_header="JS divergence test total", style=style_js)
         html_file.make_footer(user=self.user, rundir=self.webdir)
         pages = ["Comparison_%s" %(i) for i in self.same_parameters]
         pages += ["Comparison_multiple"]
         webpage.make_html(web_dir=self.webdir, pages=pages)
-        for i in self.same_parameters:
+        for num, i in enumerate(self.same_parameters):
             html_file=self._setup_page("Comparison_%s" %(i),
                 self.navbar_for_comparison_homepage,
                 title="Comparison PDF for %s" %(i),
                 approximant="Comparison")
             html_file.insert_image(path+"combined_posterior_%s.png" %(i))
+            if statistics:
+                table_contents = [[labels[i]]+statistics[num][0][i] for i in rows]
+                html_file.make_table(headings=[" "] + labels,
+                                     contents=table_contents, heading_span=1,
+                                     accordian_header="KS test", style=style_ks)
+                table_contents = [[labels[i]]+statistics[num][1][i] for i in rows]
+                html_file.make_table(headings=[" "] + labels,
+                                     contents=table_contents, heading_span=1,
+                                     accordian_header="JS divergence test",
+                                     style=style_js)
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
         html_file = self._setup_page("Comparison_multiple",

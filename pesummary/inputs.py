@@ -507,7 +507,6 @@ class PostProcessing(object):
         maximum likelihood value for each results file
     same_parameters: list
         List of parameters that all results files have sampled over
-
     """
     def __init__(self, inputs, colors="default"):
         self.inputs = inputs
@@ -625,6 +624,19 @@ class PostProcessing(object):
     def same_parameters(self, same_parameters):
         params = list(set.intersection(*[set(l) for l in self.parameters]))
         self._same_parameters = params
+
+    @property
+    def label_to_prepend_approximant(self):
+        labels = [i[len(self.gracedb)+1:] if self.gracedb else i for i in \
+            self.labels]
+        prepend = [None]*len(self.approximant)
+        duplicates=dict(set((x,self.approximant.count(x)) for x in \
+            filter(lambda rec : self.approximant.count(rec)>1,self.approximant)))
+        if len(duplicates.keys()) > 0:
+            for num, i in enumerate(self.approximant):
+                if i in duplicates.keys():
+                    prepend[num]  = labels[num]
+        return prepend
             
     def _key_data(self):
         """Grab the mean, median, maximum likelihood value and the standard

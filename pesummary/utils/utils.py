@@ -167,7 +167,7 @@ def setup_logger():
     """Set up the logger output.
     """
     level = 'INFO'
-    if "-v" or "--verbose" in sys.argv:
+    if "-v" in sys.argv or "--verbose" in sys.argv:
         level = 'DEBUG'
 
     logger = logging.getLogger('PESummary')
