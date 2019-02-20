@@ -70,7 +70,7 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
     latex_label: str
         latex label for param
     inj_value: float
-        value that was injected 
+        value that was injected
     """
     logger.debug("Generating the sample scatter plot for %s" %(param))
     fig = plt.figure()
@@ -139,7 +139,7 @@ def _1d_comparison_histogram_plot(param, approximants, samples, colors,
     approximant_labels: list, optional
         label to prepend the approximant in the legend
     """
-    logger.debug("Generating the 1d comparison histogram plot for %s" %(param)) 
+    logger.debug("Generating the 1d comparison histogram plot for %s" %(param))
     fig = plt.figure(figsize=(11,6))
     labels = approximants
     if approximant_labels:
@@ -216,7 +216,7 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     kwargs: dict
         dictionary of optional keyword arguments
     """
-    logger.debug("Generating the maximum likelihood waveform plot") 
+    logger.debug("Generating the maximum likelihood waveform plot")
     if not LALSIMULATION:
         raise exception("lalsimulation could not be imported. please install "
                         "lalsuite to be able to use all features")
@@ -282,12 +282,12 @@ def _waveform_comparison_plot(maxL_params_list, colors, approximant_labels=None,
     colors: list
         list of colors to be used to differentiate the different approximants
     approximant_labels: list, optional
-        label to prepend the approximant in the legend 
+        label to prepend the approximant in the legend
     kwargs: dict
         dictionary of optional keyword arguments
     """
     logger.debug("Generating the maximum likelihood waveform comparison plot "
-                 "for H1") 
+                 "for H1")
     if not LALSIMULATION:
         raise Exception("LALSimulation could not be imported. Please install "
                         "LALSuite to be able to use all features")
@@ -361,7 +361,7 @@ def _sky_map_plot(ra, dec, **kwargs):
     ax.grid()
     ax.set_xticklabels([r"$22^{h}$", r"$20^{h}$", r"$18^{h}$", r"$16^{h}$",
                         r"$14^{h}$", r"$12^{h}$", r"$10^{h}$", r"$8^{h}$",
-                        r"$6^{h}$", r"$4^{h}$", r"$2^{h}$"]) 
+                        r"$6^{h}$", r"$4^{h}$", r"$2^{h}$"])
     levels = [1.0 - np.exp(-0.5), 1 - np.exp(-2), 1-np.exp(-9./2.)]
 
     H,X,Y = np.histogram2d(ra, dec, bins=50)
@@ -397,7 +397,7 @@ def _sky_map_plot(ra, dec, **kwargs):
     H2[1, -2] = H[0, -1]
     H2[-2, 1] = H[-1, 0]
     H2[-2, -2] = H[-1, -1]
-    X2 = np.concatenate([X1[0] + np.array([-2, -1]) * np.diff(X1[:2]), X1, 
+    X2 = np.concatenate([X1[0] + np.array([-2, -1]) * np.diff(X1[:2]), X1,
                          X1[-1] + np.array([1, 2]) * np.diff(X1[-2:]),])
     Y2 = np.concatenate([Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]), Y1,
                          Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]),])
@@ -426,7 +426,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors,
     colors: list
         list of colors to be used to differentiate the different approximants
     approximant_labels: list, optional
-        label to prepend the approximant in the legend 
+        label to prepend the approximant in the legend
     kwargs: dict
         optional keyword arguments
     """
@@ -478,7 +478,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors,
         H2[1, -2] = H[0, -1]
         H2[-2, 1] = H[-1, 0]
         H2[-2, -2] = H[-1, -1]
-        X2 = np.concatenate([X1[0] + np.array([-2, -1]) * np.diff(X1[:2]), X1, 
+        X2 = np.concatenate([X1[0] + np.array([-2, -1]) * np.diff(X1[:2]), X1,
                              X1[-1] + np.array([1, 2]) * np.diff(X1[-2:]),])
         Y2 = np.concatenate([Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]), Y1,
                              Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]),])
@@ -489,7 +489,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, approximants, colors,
     xticks = np.arange(-np.pi, np.pi, np.pi/6)
     ax.set_xticks(xticks)
     labels = [r"$%s^{h}$" %(np.round((i+np.pi)*3.82, 1)) for i in xticks]
-    ax.set_xticklabels(labels)  
+    ax.set_xticklabels(labels)
     return fig
 
 def _make_corner_plot(samples, params, latex_labels, **kwargs):
@@ -536,7 +536,7 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
     extent = axes[0].get_window_extent().transformed(figure.dpi_scale_trans.inverted())
     width, height = extent.width, extent.height
     width *= figure.dpi
-    height *= figure.dpi 
+    height *= figure.dpi
     return figure, included_parameters
 
 def __get_cutoff_indices(flow, fhigh, df, N):
@@ -583,7 +583,7 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
     maxL_params: dict
         dictionary of waveform parameters for the maximum likelihood waveform
     """
-    logger.debug("Generating the sky sensitivity for %s" %(network)) 
+    logger.debug("Generating the sky sensitivity for %s" %(network))
     if not LALSIMULATION:
         raise Exception("LALSimulation could not be imported. Please install "
                         "LALSuite to be able to use all features")
@@ -622,7 +622,7 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
     dec = np.arange(-np.pi, np.pi, resolution)
     X,Y = np.meshgrid(ra, dec)
     N = np.zeros([len(dec), len(ra)])
-    
+
     indices = np.ndindex(len(ra), len(dec))
     for ind in indices:
         ar = {}
@@ -651,4 +651,71 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
     ax.set_xticklabels([r"$22^{h}$", r"$20^{h}$", r"$18^{h}$", r"$16^{h}$",
                         r"$14^{h}$", r"$12^{h}$", r"$10^{h}$", r"$8^{h}$",
                         r"$6^{h}$", r"$4^{h}$", r"$2^{h}$"])
+    return fig
+
+
+def _time_domain_waveform(detectors, maxL_params,**kwargs):
+    """
+    Plot the maximum likelihood waveform for a given approximant
+    in the time domain.
+
+    Parameters
+    ----------
+    detectors: list
+        list of detectors that you want to generate waveforms for
+    maxL_params: dict
+        dictionary of maximum likelihood parameter values
+    kwargs: dict
+        dictionary of optional keyword arguments
+    """
+    logger.debug("Generating the maximum likelihood waveform time domain plot")
+    if not LALSIMULATION:
+        raise exception("lalsimulation could not be imported. please install "
+                        "lalsuite to be able to use all features")
+    delta_t = 1./4096.
+    minimum_frequency = kwargs.get("f_min", 5.)
+    t_start = maxL_params['geocent_time']
+    t_finish = maxL_params['geocent_time'] + 4.
+    time_array = np.arange(t_start, t_finish, delta_t)
+
+    approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
+    mass_1 = maxL_params["mass_1"]*MSUN_SI
+    mass_2 = maxL_params["mass_2"]*MSUN_SI
+    luminosity_distance = maxL_params["luminosity_distance"]*PC_SI*10**6
+    if "phi_jl" in maxL_params.keys():
+        iota, S1x, S1y, S1z, S2x, S2y, S2z = \
+            lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+                maxL_params["iota"], maxL_params["phi_jl"], maxL_params["tilt_1"],
+                maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
+                maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+                maxL_params["phase"])
+    else:
+        iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params["iota"], 0., 0., 0., \
+                                             0., 0., 0.
+    phase = maxL_params["phase"] if "phase" in maxL_params.keys() else 0.0
+    h_plus, h_cross = lalsim.SimInspiralChooseTDWaveform(mass_1, mass_2, S1x,
+                          S1y, S1z, S2x, S2y, S2z,
+                          luminosity_distance, iota,
+                          phase, 0.0, 0.0, 0.0, delta_t,
+                          minimum_frequency,
+                          kwargs.get("f_ref", 10.), None, approx)
+
+    h_plus = h_plus.data.data
+    h_cross = h_cross.data.data
+    h_plus = h_plus[:len(time_array)]
+    h_cross = h_cross[:len(time_array)]
+    fig = plt.figure()
+    colors=['b', 'r']
+    linestyle=['-', '--']
+    for num, i in enumerate(detectors):
+        ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
+                                maxL_params["psi"], maxL_params["geocent_time"])
+        plt.plot(time_array, (h_plus*ar[0]+h_cross*ar[1]),
+                 color=colors[num], linestyle=linestyle[num],
+                 linewidth=2.0, label=i)
+    plt.xlabel(r"Time $[s]$", fontsize=16)
+    plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
+    plt.grid()
+    plt.legend(loc="best")
+    plt.tight_layout()
     return fig
