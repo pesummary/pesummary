@@ -15,7 +15,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import argparse
 import socket
 import os
 import shutil
@@ -25,6 +24,7 @@ import numpy as np
 import h5py
 
 import pesummary
+from pesummary.command_line import command_line
 from pesummary.utils.utils import guess_url, combine_hdf_files, logger
 from pesummary.utils.utils import rename_group_or_dataset_in_hf5_file
 from pesummary.utils import utils
@@ -34,52 +34,6 @@ import lal
 import lalsimulation as lalsim
 
 __doc__ == "Classes to handle the command line inputs"
-
-def command_line():
-    """Creates an ArgumentParser object which holds all of the information
-    from the command line.
-    """
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-w", "--webdir", dest="webdir",
-                        help="make page and plots in DIR", metavar="DIR",
-                        default=None)
-    parser.add_argument("-b", "--baseurl", dest="baseurl",
-                        help="make the page at this url", metavar="DIR",
-                        default=None)
-    parser.add_argument("-s", "--samples", dest="samples",
-                        help="Posterior samples hdf5 file", nargs='+',
-                        default=None)
-    parser.add_argument("-a", "--approximant", dest="approximant",
-                        help="waveform approximant used to generate samples",
-                        nargs='+', default=None)
-    parser.add_argument("--email", action="store",
-                        help="send an e-mail to the given address with a link to the finished page.",
-                        default=None, metavar="user@ligo.org")
-    parser.add_argument("--dump", action="store_true",
-                        help="dump all information onto a single html page",
-                        default=False)
-    parser.add_argument("-c", "--config", dest="config",
-                        help="configuration file associcated with each samples file.", nargs='+',
-                        default=None)
-    parser.add_argument("--sensitivity", action="store_true",
-                        help="generate sky sensitivities for HL, HLV",
-                        default=False)
-    parser.add_argument("--add_to_existing", action="store_true",
-                        help="add new results to an existing html page",
-                        default=False)
-    parser.add_argument("-e", "--existing_webdir", dest="existing",
-                        help="web directory of existing output",
-                        default=None)
-    parser.add_argument("-i", "--inj_file", dest="inj_file",
-                        help="path to injetcion file", nargs='+',
-                        default=None)
-    parser.add_argument("--user", dest="user", help=argparse.SUPPRESS,
-                        default="albert.einstein")
-    parser.add_argument("--gracedb", dest="gracedb",
-                        help="gracedb of the event", default=None)
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="print useful information for debugging purposes")
-    return parser
 
 
 class Input(object):

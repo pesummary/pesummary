@@ -14,12 +14,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import configparser
+import shutil
 
 import h5py
 import deepdish
 
 import numpy as np
 
+from pesummary.command_line import command_line 
 from pesummary.one_format.conversions import *
 from pesummary.utils.utils import logger
 
@@ -117,6 +119,9 @@ class one_format(object):
         self.fil = fil
         self.inj = inj
         self.config = config
+        self.extension = False
+        if self.extension == "dat":
+            self.fil = convert_dat_to_h5(self.fil)
         self.lalinference = False
         self.bilby = False
         self.approximant = None
@@ -179,6 +184,18 @@ class one_format(object):
             self._data_path = "lalinference/%s/posterior_samples" %(sampler[0])
         else:
             self._lalinference = False
+
+    @property
+    def extension(self):
+        return self._extension
+
+    @extension.setter
+    def extension(self, extension):
+        try:
+            f = h5py.File(self.fil)
+            self._extension = "h5"
+        except:
+            self._extension = "dat"
 
     @property
     def bilby(self):
@@ -664,3 +681,60 @@ def get_injection_parameters(parameters, inj_file, LALINFERENCE=False,
         except:
             inj_data = [float("nan")]*len(parameters)
     return [inj_par, inj_data]
+
+def convert_dat_to_h5(f):
+    """Convert a dat file to the lalinference framework
+
+    Parameters
+    ----------
+    f: str
+        path to the dat file that you would like to convert to h5
+    """
+    dat_file = np.genfromtxt(f, names=True)
+    file_name = f.split(".dat")[0]
+    h5_file = h5py.File("%s.hdf5" %(file_name), 'w')
+    lalinference_group = h5_file.create_group('lalinference')
+    sampler_group = lalinference_group.create_group('lalinference_mcmc')
+    sampler_group.create_dataset('posterior_samples', data=dat_file)
+    h5_file.close()
+    return "%s.hdf5" %(file_name)
+
+def add_specific_arguments(parser):
+    """Add command line arguments that are specific to pesummary_convert
+
+    Parameters
+    ----------
+    parser: argparser
+        The parser containing the command line arguments 
+    """
+    parser.add_argument("-o", "--outpath", dest="out",
+                        help="location of output file", default=None)
+    return parser
+
+def main():
+    """Top-level interface for pesummary_convert.py
+    """
+    parser = command_line()
+    parser = add_specific_arguments(parser)
+    opts = parser.parse_args()
+    if opts.inj_file and len(opts.samples) != len(opts.inj_file):
+        raise Exception("Please ensure that the number of results files "
+            "matches the number of injection files")
+    if opts.config and len(opts.samples) != len(opts.config):
+        raise Exception("Please ensure that the number of results files "
+            "matches the number of configuration files")
+    if not opts.inj_file:
+        opts.inj_file = []
+        for i in range(len(opts.samples)):
+            opts.inj_file.append(None)
+    if not opts.config:
+        opts.config = []
+        for i in range(len(opts.samples)):
+            opts.config.append(None)
+    paths = []
+    for num, i in enumerate(opts.samples):
+        f = one_format(i, opts.inj_file[num], config=opts.config[num])
+        f.generate_all_posterior_samples()
+        g = f.save()
+        if opts.out:
+            shutil.move(g, opts.out)

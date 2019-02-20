@@ -26,9 +26,10 @@ from scipy import stats
 import h5py
 
 import pesummary
+from pesummary.command_line import command_line
 from pesummary.utils.utils import combine_hdf_files, logger
 from pesummary.webpage import webpage
-from pesummary.inputs import command_line, Input, PostProcessing
+from pesummary.inputs import Input, PostProcessing
 from pesummary.summaryplots import PlotGeneration
 
 __doc__ == "Classes to generate webpages"
