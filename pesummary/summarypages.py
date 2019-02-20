@@ -373,7 +373,8 @@ class WebpageGeneration(PostProcessing):
                 contents = [[path+"%s_1d_posterior_%s_%s.png" %(label, app, j)],
                             [path+"%s_sample_evolution_%s_%s.png" %(label, app, j),
                              path+"%s_autocorrelation_%s_%s.png" %(label, app, j)]] 
-                html_file.make_table_of_images(contents=contents, rows=1, columns=2)
+                html_file.make_table_of_images(contents=contents, rows=1, columns=2,
+                    code="changeimage")
                 html_file.make_footer(user=self.user, rundir=self.webdir)
                 html_file.close()
             html_file = self._setup_page("%s_multiple" %(app),
@@ -508,7 +509,8 @@ class WebpageGeneration(PostProcessing):
                 self.navbar_for_comparison_homepage,
                 title="Comparison PDF for %s" %(i),
                 approximant="Comparison")
-            html_file.insert_image(path+"combined_posterior_%s.png" %(i))
+            html_file.insert_image(path+"combined_1d_posterior_%s.png" %(i),
+                code="changeimage")
             if statistics:
                 table_contents = [[labels[i]]+statistics[num][0][i] for i in rows]
                 html_file.make_table(headings=[" "] + labels,

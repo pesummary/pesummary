@@ -26,3 +26,15 @@ function modal(id) {
     /*img.onclick = _onclick(id);*/
     _onclick(id)
 }
+
+function changeimage(id) {
+    /* */
+    var img = document.getElementById(id);
+    var current_src = img.src;
+    if ( current_src.indexOf("posterior") >= 0 ) {
+        img.src = current_src.replace("1d_posterior", "cdf");
+    }
+    else if ( current_src.indexOf("cdf") >= 0 ) {
+        img.src = current_src.replace("cdf", "1d_posterior");
+    }
+}
