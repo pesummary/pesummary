@@ -165,7 +165,7 @@ class PlotGeneration(PostProcessing):
                 maxL_list.append(dictionary)
             self.maxL_samples = maxL_list
             self.same_parameters = list(set.intersection(*[set(l) for l in \
-                self.parameters])) 
+                self.parameters]))
         if len(self.samples) > 1:
             logger.debug("Starting to generate comparison plots\n")
             self.try_to_make_a_plot("1d_histogram_comparison", "all")
@@ -272,6 +272,11 @@ class PlotGeneration(PostProcessing):
         plt.savefig(self.savedir+"%s_%s_waveform.png" %(self.labels[idx],
             self.approximant[idx]))
         plt.close()
+        fig = plot._time_domain_waveform(detectors, self.maxL_samples[idx])
+        plt.savefig(self.savedir+"%s_%s_waveform_timedomain.png" %(self.labels[idx],
+            self.approximant[idx]))
+        plt.close()
+
 
     def _1d_histogram_plots(self, idx):
         """Generate 1d_histogram plots, sample evolution plots and plots
@@ -287,7 +292,7 @@ class PlotGeneration(PostProcessing):
             index = self.parameters[idx].index("%s" %(j))
             inj_value = self.injection_data[idx]["%s" %(j)]
             if math.isnan(inj_value):
-                inj_value = None 
+                inj_value = None
             param_samples = [k[index] for k in self.samples[idx]]
             fig = plot._1d_histogram_plot(j, param_samples, latex_labels[j],
                 inj_value)
