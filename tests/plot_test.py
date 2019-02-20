@@ -50,6 +50,15 @@ class TestPlot(object):
                        "luminosity_distance": 100}
         fig = plot._waveform_plot(["H1"], maxL_params)
         assert isinstance(fig, matplotlib.figure.Figure) == True
+    
+    def test_timedomain_waveform_plot(self):
+        maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
+                       "iota": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
+                       "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
+                       "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
+                       "luminosity_distance": 100}
+        fig = plot._time_domain_waveform(["H1"], maxL_params)
+        assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_waveform_comparison_plot(self):
         maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
