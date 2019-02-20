@@ -17,7 +17,7 @@ from pesummary.webpage.base import Base
 
 class table_of_images(Base):
 
-    def __init__(self, content, rows, columns, html_file):
+    def __init__(self, content, rows, columns, html_file, code):
         """
 
         Parameters
@@ -30,6 +30,7 @@ class table_of_images(Base):
         self.rows = rows
         self.columns = columns
         self.html_file = html_file
+        self.code = code
         self._add_scripts()
 
     def _add_scripts(self):
@@ -39,14 +40,14 @@ class table_of_images(Base):
     def _insert_image(self, path, width, indent, _id, justify="center"):
         string = "<img src='{}' alt='No image available' ".format(path) + \
                  "style='align-items:center; width:{}px;'".format(width) + \
-                 "id={} onclick='modal(\"{}\")'".format(_id, _id)
-        if justify == "center":
-            string += " class='mx-auto d-block'"
-        elif justify == "left":
-            string = string[:-1] + " float:left;'"
-        elif justify == "right":
-            string = string[:-1] + " float:right;'"
-        string += ">\n"
+                 "id={} onclick='{}(\"{}\")'>\n".format(_id, self.code, _id)
+        #if justify == "center":
+        #    string += " class='mx-auto d-block'"
+        #elif justify == "left":
+        #    string = string[:-1] + " float:left;'"
+        #elif justify == "right":
+        #    string = string[:-1] + " float:right;'"
+        #string += ">\n"
         self.add_content(string, indent=indent)
 
     def make(self):

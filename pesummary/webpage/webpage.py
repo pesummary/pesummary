@@ -422,7 +422,8 @@ class page(Base):
         styles += ".highlight {margin: 20px; padding: 20px;}"
         return styles
 
-    def make_table_of_images(self, contents=None, rows=None, columns=None):
+    def make_table_of_images(self, contents=None, rows=None, columns=None,
+        code="modal"):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -439,11 +440,11 @@ class page(Base):
         container: bool, optional
             if True, the table of images is placed inside a container
         """
-        table = tables.table_of_images(contents, rows, columns, self.html_file)
+        table = tables.table_of_images(contents, rows, columns, self.html_file,
+            code=code)
         table.make()
 
-
-    def insert_image(self, path, justify="center"):
+    def insert_image(self, path, justify="center", code=None):
         """Generate an image in bootstrap format.
 
         Parameters
@@ -454,14 +455,19 @@ class page(Base):
             justifies the image to either the left, right or center
         """
         self.make_container()
-        string = "<img src='{}' alt='No image available' ".format(path) + \
-                 "style='align-items:center; width:850px;'"
+        _id = path.split("/")[-1][:-4]
+        string = "<img src='{}' id='{}' alt='No image available' ".format(path, _id) + \
+                 "style='align-items:center; width:850px; cursor: pointer'"
         if justify == "center":
             string += " class='mx-auto d-block'"
         elif justify == "left":
             string = string[:-1] + " float:left;'"
         elif justify == "right":
             string = string[:-1] + " float:right;'"
+        if code:
+            string += " onclick='{}(\"{}\")'".format(code, _id)
+            self.add_content("<script type='text/javascript' src='../js/modal.js'"
+                "></script>\n", indent=2)
         string += ">\n"
         self.add_content(string, indent=2)
         self.end_container()

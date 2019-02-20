@@ -261,9 +261,9 @@ class PlotGeneration(PostProcessing):
         plt.close()
 
     def _1d_histogram_plots(self, idx):
-        """Generate 1d_histogram plots, sample evolution plots and plots
-        showing the autocorrelation function for all parameters in the
-        results file.
+        """Generate 1d_histogram plots, sample evolution plots, plots
+        showing the autocorrelation function and the CDF plots for all
+        parameters in the results file.
 
         Parameters
         ----------
@@ -290,6 +290,10 @@ class PlotGeneration(PostProcessing):
             plt.savefig(self.savedir+"%s_autocorrelation_%s_%s.png" %(
                 self.labels[idx], self.approximant[idx], j))
             plt.close()
+            fig = plot._1d_cdf_plot(j, param_samples, latex_labels[j])
+            plt.savefig(self.savedir+"%s_cdf_%s_%s.png" %(self.labels[idx],
+                self.approximant[idx], j))
+            plt.close()
 
     def _1d_histogram_comparison_plots(self, idx="all"):
         """Generate comparison plots for all parameters that are consistent
@@ -308,7 +312,12 @@ class PlotGeneration(PostProcessing):
             fig = plot._1d_comparison_histogram_plot(j, self.approximant,
                 param_samples, self.colors, latex_labels[j],
                 approximant_labels = self.label_to_prepend_approximant)
-            plt.savefig(self.savedir+"combined_posterior_%s" %(j))
+            plt.savefig(self.savedir+"combined_1d_posterior_%s" %(j))
+            plt.close()
+            fig = plot._1d_cdf_comparison_plot(j, self.approximant,
+                param_samples, self.colors, latex_labels[j],
+                approximant_labels = self.label_to_prepend_approximant)
+            plt.savefig(self.savedir+"combined_cdf_%s" %(j))
             plt.close()
 
     def _skymap_comparison_plot(self, idx="all"):

@@ -82,6 +82,81 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
     plt.tight_layout()
     return fig
 
+def _1d_cdf_plot(param, samples, latex_label):
+    """Generate the cumulative distribution function for a given parameter for
+    a given approximant.
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: list
+        list of samples for param
+    latex_label: str
+        latex label for param
+    """
+    logger.debug("Generating the 1d CDF for %s" %(param))
+    fig = plt.figure()
+    n, bins, patches = plt.hist(samples, bins=50, alpha=0)
+    cdf = np.cumsum(n)
+    cdf = np.array([float(i) for i in cdf])
+    cdf /= cdf[-1]
+    plt.xlabel(latex_label, fontsize=16)
+    plt.ylabel("Cumulative Density Function", fontsize=16)
+    upper_percentile = np.percentile(samples, 90)
+    lower_percentile = np.percentile(samples, 10)
+    median = np.median(samples)
+    upper = np.round(upper_percentile - median, 2)
+    lower = np.round(median - lower_percentile, 2)
+    median = np.round(median, 2)
+    plt.title(r"$%s^{+%s}_{-%s}$" %(median, upper, lower), fontsize=18)
+    plt.plot(bins[1:], cdf, color='b')
+    plt.grid()
+    plt.ylim([0, 1.05])
+    plt.tight_layout()
+    return fig
+
+def _1d_cdf_comparison_plot(param, approximants, samples, colors,
+    latex_label, approximant_labels=None):
+    """Generate a plot to compare the cdfs for a given parameter for different
+    approximants.
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    approximants: list
+        list of approximant names that you would like to compare
+    samples: 2d list
+        list of samples for param for each approximant
+    colors: list
+        list of colors to be used to differentiate the different approximants
+    latex_label: str
+        latex label for param
+    approximant_labels: list, optional
+        label to prepend the approximant in the legend
+    """
+    logger.debug("Generating the 1d comparison CDF for %s" %(param))
+    fig = plt.figure(figsize=(11,6))
+    labels = approximants
+    if approximant_labels:
+        labels = ["_".join([i,j]) if i != None else j for i,j in \
+            zip(approximant_labels, labels)]
+    for num, i in enumerate(samples):
+        n, bins, patches = plt.hist(i, bins=50, alpha=0)
+        cdf = np.cumsum(n)
+        cdf = np.array([float(i) for i in cdf])
+        cdf /= cdf[-1]
+        plt.plot(bins[1:], cdf, color=colors[num], linewidth=2.0,
+            label=labels[num])
+    plt.xlabel(latex_label, fontsize=16)
+    plt.ylabel("Cumulative Density Function", fontsize=16)
+    plt.grid()
+    plt.ylim([0, 1.05])
+    plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., prop={'size': 12})
+    plt.tight_layout()
+    return fig
+
 def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.

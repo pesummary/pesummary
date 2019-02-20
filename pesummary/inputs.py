@@ -368,6 +368,8 @@ class Input(object):
                 individual_detectors = [i.decode("utf-8") for i in individual_detectors]
                 if individual_detectors:
                     detector_list.append("_".join(individual_detectors))
+                else:
+                    detector_list.append(None)
         else:
             detector_list = detectors
         logger.debug("The detector network is %s" %(detector_list))
