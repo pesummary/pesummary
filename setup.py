@@ -72,6 +72,9 @@ setup(name='pesummary',
       packages=find_packages(),
       package_dir={'pesummary': 'pesummary'},
       package_data={'pesummary': ['js/*.js', 'css/*.css']},
+      entry_points={
+          'console_scripts': [
+              'pesummary_convert.py=pesummary.one_format.data_format:main']},
       scripts=['pesummary/summarypages.py',
                'pesummary/summaryplots.py',
                'pesummary/inputs.py'],
