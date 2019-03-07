@@ -17,6 +17,8 @@
 
 import warnings
 
+from glob import glob
+
 import numpy as np
 import h5py
 import math
@@ -123,16 +125,17 @@ class PlotGeneration(PostProcessing):
         if self.add_to_existing:
             existing_file = h5py.File(self.existing+"/samples/posterior_samples.h5")
             labels = list(existing_file.keys())
-            for i in labels:
+            existing_config = glob(self.existing+"/config/*")
+            for idx, i in enumerate(labels):
                 approximants = list(existing_file[i].keys())
-                parameters = [[i.decode("utf-8") for i in \
+                parameters = [[k.decode("utf-8") for k in \
                     existing_file["%s/%s/parameter_names" %(i, j)]] for j in \
                     approximants]
-                samples = [[i for i in existing_file["%s/%s/samples" %(i, j)]] \
+                samples = [[k for k in existing_file["%s/%s/samples" %(i, j)]] \
                     for j in approximants]
                 existing_file.close()
                 proposed_tags = ["%s_%s" %(i, j) for j in approximants]
-                existing_tags = ["%s_%s" %(i, j) for i,j in \
+                existing_tags = ["%s_%s" %(k, j) for k,j in \
                     zip(self.labels, self.approximant)]
                 for num, j in enumerate(proposed_tags):
                     if j not in existing_tags:
@@ -141,6 +144,8 @@ class PlotGeneration(PostProcessing):
                         self.samples.append(samples[num])
                         self.parameters.append(parameters[num])
                         self.labels.append(i)
+                        if self.config and len(existing_config) > 1:
+                            self.config.append(existing_config[idx])
                     else:
                         logger.warning("Data for the approximant %s already "
                             "exists. This approximant is being ignored" %(approximants[num]))
@@ -201,6 +206,7 @@ class PlotGeneration(PostProcessing):
             plt.close()
             combine_corner = open("%s/js/combine_corner.js" %(self.webdir))
             combine_corner = combine_corner.readlines()
+            params = [str(i) for i in params]
             for linenumber, line in enumerate(combine_corner):
                 if "var list = [" in line:
                     combine_corner[linenumber] = "    var list = %s;\n" %(params)
@@ -276,29 +282,34 @@ class PlotGeneration(PostProcessing):
             The index of the results file that you wish to analyse
         """
         for ind, j in enumerate(self.parameters[idx]):
-            index = self.parameters[idx].index("%s" %(j))
-            inj_value = self.injection_data[idx]["%s" %(j)]
-            if math.isnan(inj_value):
-                inj_value = None
-            param_samples = [k[index] for k in self.samples[idx]]
-            fig = plot._1d_histogram_plot(j, param_samples, latex_labels[j],
-                inj_value)
-            plt.savefig(self.savedir+"%s_1d_posterior_%s_%s.png" %(
-                self.labels[idx], self.approximant[idx], j))
-            plt.close()
-            fig = plot._sample_evolution_plot(j, param_samples,
-                latex_labels[j], inj_value)
-            plt.savefig(self.savedir+"%s_sample_evolution_%s_%s.png" %(
-                self.labels[idx], self.approximant[idx], j))
-            plt.close()
-            fig = plot._autocorrelation_plot(j, param_samples)
-            plt.savefig(self.savedir+"%s_autocorrelation_%s_%s.png" %(
-                self.labels[idx], self.approximant[idx], j))
-            plt.close()
-            fig = plot._1d_cdf_plot(j, param_samples, latex_labels[j])
-            plt.savefig(self.savedir+"%s_cdf_%s_%s.png" %(self.labels[idx],
-                self.approximant[idx], j))
-            plt.close()
+            try:
+                index = self.parameters[idx].index("%s" %(j))
+                inj_value = self.injection_data[idx]["%s" %(j)]
+                if math.isnan(inj_value):
+                    inj_value = None
+                param_samples = [k[index] for k in self.samples[idx]]
+                fig = plot._1d_histogram_plot(j, param_samples, latex_labels[j],
+                    inj_value)
+                plt.savefig(self.savedir+"%s_1d_posterior_%s_%s.png" %(
+                    self.labels[idx], self.approximant[idx], j))
+                plt.close()
+                fig = plot._sample_evolution_plot(j, param_samples,
+                    latex_labels[j], inj_value)
+                plt.savefig(self.savedir+"%s_sample_evolution_%s_%s.png" %(
+                    self.labels[idx], self.approximant[idx], j))
+                plt.close()
+                fig = plot._autocorrelation_plot(j, param_samples)
+                plt.savefig(self.savedir+"%s_autocorrelation_%s_%s.png" %(
+                    self.labels[idx], self.approximant[idx], j))
+                plt.close()
+                fig = plot._1d_cdf_plot(j, param_samples, latex_labels[j])
+                plt.savefig(self.savedir+"%s_cdf_%s_%s.png" %(self.labels[idx],
+                    self.approximant[idx], j))
+                plt.close()
+            except Exception as e:
+                logger.info("Failed to generate 1d_histogram plots for %s "
+                    "because %s" %(j, e))
+                continue
 
     def _1d_histogram_comparison_plots(self, idx="all"):
         """Generate comparison plots for all parameters that are consistent
@@ -311,19 +322,24 @@ class PlotGeneration(PostProcessing):
             in the comparsion plots.
         """
         for ind, j in enumerate(self.same_parameters):
-            indices = [k.index("%s" %(j)) for k in self.parameters]
-            param_samples = [[k[indices[num]] for k in l] for num, l in \
-                enumerate(self.samples)]
-            fig = plot._1d_comparison_histogram_plot(j, self.approximant,
-                param_samples, self.colors, latex_labels[j],
-                approximant_labels = self.label_to_prepend_approximant)
-            plt.savefig(self.savedir+"combined_1d_posterior_%s" %(j))
-            plt.close()
-            fig = plot._1d_cdf_comparison_plot(j, self.approximant,
-                param_samples, self.colors, latex_labels[j],
-                approximant_labels = self.label_to_prepend_approximant)
-            plt.savefig(self.savedir+"combined_cdf_%s" %(j))
-            plt.close()
+            try:
+                indices = [k.index("%s" %(j)) for k in self.parameters]
+                param_samples = [[k[indices[num]] for k in l] for num, l in \
+                    enumerate(self.samples)]
+                fig = plot._1d_comparison_histogram_plot(j, self.approximant,
+                    param_samples, self.colors, latex_labels[j],
+                    approximant_labels = self.label_to_prepend_approximant)
+                plt.savefig(self.savedir+"combined_1d_posterior_%s" %(j))
+                plt.close()
+                fig = plot._1d_cdf_comparison_plot(j, self.approximant,
+                    param_samples, self.colors, latex_labels[j],
+                    approximant_labels = self.label_to_prepend_approximant)
+                plt.savefig(self.savedir+"combined_cdf_%s" %(j))
+                plt.close()
+            except Exception as e:
+                logger.info("Failed to generate comparison plots for %s "
+                    "because %s" %(j, e))
+                continue
 
     def _skymap_comparison_plot(self, idx="all"):
         """Generate a comparison skymap plot.

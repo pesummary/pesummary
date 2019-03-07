@@ -120,7 +120,7 @@ def make_dir(path):
     if os.path.isdir(path):
         pass
     else:
-        os.mkdir(path)
+        os.makedirs(path)
 
 def guess_url(web_dir, host, user):
     """Guess the base url from the host name

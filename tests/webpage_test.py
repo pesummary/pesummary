@@ -188,10 +188,6 @@ class TestPage(object):
         self.html.close()
         with open("./.outdir/home.html") as fp:
             soup = BeautifulSoup(fp, features="html.parser")
-        scripts = ["combine_corner.js", "side_bar.js", "multiple_posteriors.js"]
-        html_scripts = soup.find_all("script")
-        for i in scripts:
-            assert any("../js/%s" %(i) in elem["src"] for elem in html_scripts)
         assert soup.find_all("button", class_="")[0].text == "Submit"
 
     def test_modal_carousel(self):

@@ -13,7 +13,7 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-function _option1(label, approx, param, home) {
+function _option1(label, approx, param) {
     /* Open a webpage that is of the form "./html/approx_param.html"
 
     Parameters
@@ -25,18 +25,26 @@ function _option1(label, approx, param, home) {
     home: bool
         if True, we are on the home page
     */
-    if ( home == "True" ) {
-        window.location = "./html/"+approx+'_'+param+'.html'
-    } else {
-        if ( label == "None" ) {
-            window.location = "../html/"+approx+'_'+param+".html"
+    if ( label == "None" ) {
+        if ( approx == "None" ) {
+            window.location = "./html/" + param+".html"
         } else {
-            window.location = "../html/"+label+"_"+approx+'_'+param+".html"
+            window.location = "./html/"+approx+"_"+param+".html"
+        }
+    } else {
+        if ( approx == "None" ) {
+            window.location = "./html/" + label + "_" + param+".html"
+        } else {
+            if ( approx == param ) {
+                window.location = "./html/"+label+"_"+param+".html"
+            } else {
+                window.location = "./html/"+label+"_"+approx+"_"+param+".html"
+            }
         }
     }
 }
 
-function _option2(label, param, home) {
+function _option2(label, approx, param) {
     /* Open a webpage that is of the form "./html/param.html"
 
     Parameters
@@ -46,19 +54,24 @@ function _option2(label, param, home) {
     home: bool
         if True, we are on the home page
     */
-    if ( home == "True" ) {
-        if ( label == "None" ) {
-            window.location = "./html/"+param+'.html'
+    if ( label == "None" ) {
+        if ( approx == "None" ) {
+            window.location = "../html/" + param+".html"
         } else {
-            window.location = "./html/"+label+'_'+param+'.html'
+            window.location = "../html/"+approx+"_"+param+".html"
         }
     } else {
-        if ( label == "None" ) {
-            window.location = "../html/"+param+".html"
+        if ( approx == "None" ) {
+            window.location = "../html/" + label + "_" + param+".html"
         } else {
-            window.location = "../html/"+label+'_'+param+".html"
+            if ( approx == param ) {
+                window.location = "../html/"+label+"_"+param+".html"
+            } else {
+                window.location = "../html/"+label+"_"+approx+"_"+param+".html"
+            }
         }
     }
+
 }
 
 function grab_html(param, label="None") {
@@ -72,35 +85,32 @@ function grab_html(param, label="None") {
     var header=document.getElementsByTagName("h1")[0]
     var el=document.getElementsByTagName("h7")[1]
     var approx = el.innerHTML
-    // See if we are on the home page or not.
-    if ( header.innerHTML.split(" ")[0] == "Parameter" ) {
-        if ( label == "None" ) {
-            var link = "./html/"+approx+"_"+param+".html"
-        } else {
-            var link = "./html/"+label+'_'+approx+"_"+param+".html"
-        }
-        var home = "True"
-    } else {
-        if ( label == "None" ) {
-            var link = "../html/"+approx+"_"+param+".html"
-        } else {
-            var link = "../html/"+label+'_'+approx+"_"+param+".html"
-        }
-        var home = "False"
+   
+    if ( param == approximant ) {
+ 
+    if ( approx == "Comparison" && param == "Comparison" ) {
+        approx = "None"
     }
-    // There are two formats for html names and two options for where they
-    // are located depending on your tab. Here we check to see if a webpage of 
-    // one format exists, and if it does (res.status = 200) then we open that
-    // webpage. Otherwise we know that it is the other form and open that
-    fetch(link, {credentials: 'same-origin'})
-    .then(res => {
-                  if ( res.status == 200 ) {
-                      $(document).ready(function() {
-                          _option1(label, approx, param, home)
-                      })
-                  } else {
-                      $(document).ready(function() {
-                          _option2(label, param, home)
-                      })
-                  }})
+    
+    var url = window.location.pathname
+    var filename = url.substring(url.lastIndexOf('/')+1)
+    if ( param == "home" ){
+        if ( filename == "home.html" ) {
+            window.location = "./home.html"
+        } else {
+            window.location = "../home.html"
+        }
+    }
+    else if ( param == "Comparison" ) {
+        if ( filename == "home.html" ) {
+            window.location = "./html/Comparison.html"
+        } else {
+            window.location = "../html/Comparison.html"
+        }
+    }
+    else if ( filename == "home.html" ) {
+        _option1(label, approx, param)
+    } else {
+        _option2(label, approx, param)
+   }
 }
