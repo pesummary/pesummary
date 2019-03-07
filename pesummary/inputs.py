@@ -319,7 +319,7 @@ class Input(object):
                 for j in params:
                     if b"optimal_snr" in j:
                         individual_detectors.append(j.split(b"_optimal_snr")[0])
-                individual_detectors = [i.decode("utf-8") for i in individual_detectors]
+                individual_detectors = [str(i.decode("utf-8")) for i in individual_detectors]
                 if individual_detectors:
                     detector_list.append("_".join(individual_detectors))
                 else:
@@ -367,6 +367,7 @@ class Input(object):
             logger.info("%s" %(current_labels))
             for num, i in enumerate(proposed_names):
                 if i in current_labels:
+                    ind = proposed_names.index(i)
                     label_list[ind] += "_%s" %(num)
         logger.debug("The label is %s" %(label_list))
         self._labels = label_list

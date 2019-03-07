@@ -34,7 +34,6 @@ class table_of_images(Base):
         self._add_scripts()
 
     def _add_scripts(self):
-        self.add_content("<script type='text/javascript' src='../js/modal.js'></script>\n")
         self.add_content("<link rel='stylesheet' href='../css/image_styles.css'>\n")
 
     def _insert_image(self, path, width, indent, _id, justify="center"):

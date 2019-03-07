@@ -32,13 +32,34 @@ BOOTSTRAP = """<!DOCTYPE html>
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css'>
-    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js'></script>
-    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js'></script>
     stylesheet elements
 </head>
 <body style='background-color:#F8F8F8'>
 """     
+
+HOME_SCRIPTS="""    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js'></script>
+    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js'></script>
+    <script src='./js/combine_corner.js'></script>
+    <script src='./js/grab.js'></script> 
+    <script src='./js/modal.js'></script> 
+    <script src='./js/multi_dropbar.js'></script> 
+    <script src='./js/multiple_posteriors.js'></script> 
+    <script src='./js/search.js'></script> 
+    <script src='./js/side_bar.js'></script> 
+"""
+
+OTHER_SCRIPTS="""    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js'></script>
+    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js'></script>
+    <script src='../js/combine_corner.js'></script>
+    <script src='../js/grab.js'></script> 
+    <script src='../js/modal.js'></script> 
+    <script src='../js/multi_dropbar.js'></script> 
+    <script src='../js/multiple_posteriors.js'></script> 
+    <script src='../js/search.js'></script> 
+    <script src='../js/side_bar.js'></script> 
+"""
 
 def make_html(web_dir, title="Summary Pages", pages=None, stylesheets=[],
     label=None):
@@ -69,8 +90,14 @@ def make_html(web_dir, title="Summary Pages", pages=None, stylesheets=[],
         bootstrap = BOOTSTRAP.split("\n")
         bootstrap[1] = "  <title>{}</title>".format(title)
         bootstrap[-4] = stylesheet_elements
-        bootstrap = [i+"\n" for i in bootstrap]
+        bootstrap = [j+"\n" for j in bootstrap]
         f.writelines(bootstrap)
+        if i != "home":
+            scripts = OTHER_SCRIPTS.split("\n")
+        else:
+            scripts = HOME_SCRIPTS.split("\n")
+        scripts = [j+"\n" for j in scripts]
+        f.writelines(scripts)
 
 def open_html(web_dir, base_url, html_page, label=None):
     """Open html page ready so you can manipulate the contents
@@ -157,9 +184,6 @@ class page(Base):
         self.end_div()
 
     def _setup_navbar(self):
-        self.add_content("<script src='{}/js/variables.js'></script>\n".format(self.base_url))
-        self.add_content("<script src='{}/js/grab.js'></script>\n".format(self.base_url))
-        self.add_content("<script src='{}/js/multi_dropbar.js'></script>\n".format(self.base_url))
         self.add_content("<nav class='navbar navbar-expand-sm navbar-dark bg-dark'>\n")
         self.add_content("<a class='navbar-brand' href='#'>Navbar</a>\n", indent=2)
         self.add_content("<button class='navbar-toggler' type='button' "
@@ -273,7 +297,8 @@ class page(Base):
                 self.add_content("<li class='nav-item'>\n", indent=8)
                 if i == "home":
                     self.add_content("<a class='nav-link' "
-                                     "href='{}/{}.html'>{}</a>\n".format(self.base_url, i, i), indent=10)
+                                     "href='#' onclick='grab_html(\"{}\")'"
+                                     ">{}</a>\n".format(i, i), indent=10)
                 else:
                     if type(i) == dict:
                         key = list(i.keys())[0]
@@ -292,7 +317,6 @@ class page(Base):
 
         if search:
             self.add_content("<input type='text' placeholder='search' id='search'>\n", indent=4)
-            self.add_content("<script type='text/javascript' src='js/search.js'></script>\n", indent=4)
             self.add_content("<button type='submit' onclick='myFunction()'>Search</button>\n", indent=4)
         self.add_content("</nav>\n")
 
@@ -466,8 +490,6 @@ class page(Base):
             string = string[:-1] + " float:right;'"
         if code:
             string += " onclick='{}(\"{}\")'".format(code, _id)
-            self.add_content("<script type='text/javascript' src='../js/modal.js'"
-                "></script>\n", indent=2)
         string += ">\n"
         self.add_content(string, indent=2)
         self.end_container()
@@ -522,9 +544,6 @@ class page(Base):
         """
         ids = "canvas" if code == "combine" else code
         self.add_content("<link rel='stylesheet' href='../css/side_bar.css'>\n")
-        self.add_content("<script type='text/javascript' src='../js/combine_corner.js'></script>\n")
-        self.add_content("<script type='text/javascript' src='../js/side_bar.js'></script>\n")
-        self.add_content("<script type='text/javascript' src='../js/multiple_posteriors.js'></script>\n")
         self.add_content("<div class='w3-sidebar w3-bar-block w3-border-right sidenav' "
                          "style='display:none' id='mySidebar'>\n")
         self.add_content("<button onclick='side_bar_close()' class='close'>&times;</button>\n", indent=2)

@@ -222,7 +222,7 @@ def _1d_comparison_histogram_plot(param, approximants, samples, colors,
             zip(approximant_labels, labels)]
     for num, i in enumerate(samples):
         plt.hist(i, histtype="step", bins=50, color=colors[num],
-                 label=labels[num], linewidth=2.0)
+                 label=labels[num], linewidth=2.0, density=True)
         plt.axvline(x=np.percentile(i, 90), color=colors[num], linestyle='--',
                     linewidth=2.0)
         plt.axvline(x=np.percentile(i, 10), color=colors[num], linestyle='--',

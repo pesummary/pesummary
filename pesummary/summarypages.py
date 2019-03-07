@@ -61,9 +61,12 @@ class WebpageGeneration(PostProcessing):
         self.navbar_for_homepage = []
         self.navbar_for_approximant_homepage = []
         self.navbar_for_comparison_homepage = []
-        self.image_path = "%s/plots/" %(self.baseurl)
+        self.image_path = {"home": "./plots/", "other": "../plots/"}
         self.generate_webpages()
         logger.info("Finished generating webpages")
+        logger.debug("Tailoring the javascript")
+        self.generate_specific_javascript()
+        logger.debug("Finished Tailoring the javascript")
 
     @property
     def navbar_for_homepage(self):
@@ -214,8 +217,9 @@ class WebpageGeneration(PostProcessing):
             cond = self._condition(["phi", "tilt"], [])
             params.append(["spin_angles", self._partition(cond, parameters)])
         if any("ra" in j for j in parameters):
-            cond = self._condition(["ra", "dec", "psi"], ["mass_ratio"])
-            params.append(["sky_location", self._partition(cond, parameters)])
+            cond = self._condition(["ra", "dec", "psi", "luminosity_distance",
+                "redshift", "comoving_distance"], ["mass_ratio"])
+            params.append(["location", self._partition(cond, parameters)])
         if any("snr" in j for j in parameters):
             cond = self._condition(["snr"], [])
             params.append(["SNR", self._partition(cond, parameters)])
@@ -332,7 +336,7 @@ class WebpageGeneration(PostProcessing):
             html_file = self._setup_page(i, self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Summary page" %(i),
                 background_colour=self.colors[num], approximant=i)
-            path = self.image_path
+            path = self.image_path["other"]
             label = self.labels[num]
             image_contents = [[path+"%s_1d_posterior_%s_mass_1.png" %(label, i),
                                path+"%s_1d_posterior_%s_mass_2.png" %(label, i),
@@ -369,7 +373,7 @@ class WebpageGeneration(PostProcessing):
                     self.navbar_for_approximant_homepage[num],
                     self.labels[num], title="%s Posterior PDF for %s" %(app, j),
                     approximant=app, background_colour=self.colors[num])
-                path = self.image_path
+                path = self.image_path["other"]
                 label = self.labels[num]
                 contents = [[path+"%s_1d_posterior_%s_%s.png" %(label, app, j)],
                             [path+"%s_sample_evolution_%s_%s.png" %(label, app, j),
@@ -438,7 +442,8 @@ class WebpageGeneration(PostProcessing):
                 with open(self.config[num], 'r') as f:
                     contents = f.read()
                 styles = html_file.make_code_block(language='ini', contents=contents)
-                with open('{0:s}/css/{1:s}_config.css'.format(self.webdir, app), 'w') as f:
+                with open('{0:s}/css/{1:s}_{2:s}_config.css'.format(self.webdir,
+                    self.labels[num], app), 'w') as f:
                     f.write(styles)
             else:
                 html_file.add_content("<div class='row justify-content-center'>"
@@ -455,7 +460,7 @@ class WebpageGeneration(PostProcessing):
             self.navbar_for_comparison_homepage,
             title="Comparison Summary Page",
             approximant="Comparison")
-        path = self.image_path
+        path = self.image_path["other"]
         contents = [[path+"combined_skymap.png", path+"compare_waveforms.png"]]
         html_file.make_table_of_images(contents=contents)
         images = [y for x in contents for y in x]
@@ -534,6 +539,24 @@ class WebpageGeneration(PostProcessing):
                                       {"all": ", ".join(self.same_parameters)}],
                                   label="None", code="combines")
         html_file.make_footer(user=self.user, rundir=self.webdir)
+    
+    def generate_specific_javascript(self):
+        """Tailor the javascript to the specific situation.
+        """
+        path = self.webdir+"/js/grab.js"
+        existing = open(path)
+        existing = existing.readlines()
+        ind = existing.index("    if ( param == approximant ) {\n")
+        content = existing[:ind]
+        for i in [list(j.keys())[0] for j in self._approximant_navbar_links()]:
+            content.append("    if ( param == \"%s\" ) {\n" %(i))
+            content.append("        approx = \"None\" \n")
+            content.append("    }\n")
+        for i in existing[ind+1:]:
+            content.append(i)
+        new_file = open(path, "w")
+        new_file.writelines(content)
+        new_file.close()
 
 
 class FinishingTouches(PostProcessing):
