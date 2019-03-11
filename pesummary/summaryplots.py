@@ -187,7 +187,7 @@ class PlotGeneration(PostProcessing):
         fig = plot._psd_plot(frequencies, strains, colors=self.colors,
                              labels=self.psd_labels)
         fig.savefig("%s/psd_plot.png" % (self.savedir))
-        fig.close()
+        plt.close()
 
     def _corner_plot(self, idx):
         """Generate a corner plot for a given results file.
@@ -232,7 +232,7 @@ class PlotGeneration(PostProcessing):
         fig = plot._sky_map_plot(ra, dec)
         fig.savefig(self.savedir + "/%s_%s_skymap.png" % (
             self.labels[idx], self.approximant[idx]))
-        fig.close()
+        plt.close()
 
     def _sensitivity_plot(self, idx):
         """Generate a plot showing the network sensitivity for the maximum
@@ -251,7 +251,7 @@ class PlotGeneration(PostProcessing):
             ["H1", "L1", "V1"], 0.2, self.maxL_samples[idx])
         fig.savefig(self.savedir + "%s_sky_sensitivity_HLV" % (
             self.approximant[idx]))
-        fig.close()
+        plt.close()
 
     def _waveform_plot(self, idx):
         """Generate a plot showing the maximum likelihood waveform in each
@@ -270,7 +270,7 @@ class PlotGeneration(PostProcessing):
         fig = plot._time_domain_waveform(detectors, self.maxL_samples[idx])
         fig.savefig(self.savedir + "%s_%s_waveform_timedomain.png" % (
             self.labels[idx], self.approximant[idx]))
-        fig.close()
+        plt.close()
 
     def _1d_histogram_plots(self, idx):
         """Generate 1d_histogram plots, sample evolution plots, plots
@@ -306,7 +306,7 @@ class PlotGeneration(PostProcessing):
                 fig = plot._1d_cdf_plot(j, param_samples, latex_labels[j])
                 fig.savefig(self.savedir + "%s_cdf_%s_%s.png" % (
                     self.labels[idx], self.approximant[idx], j))
-                fig.close()
+                plt.close()
             except Exception as e:
                 logger.info("Failed to generate 1d_histogram plots for %s "
                             "because %s" % (j, e))
@@ -338,7 +338,7 @@ class PlotGeneration(PostProcessing):
                     latex_labels[j],
                     approximant_labels=self.label_to_prepend_approximant)
                 fig.savefig(self.savedir + "combined_cdf_%s" % (j))
-                fig.close()
+                plt.close()
             except Exception as e:
                 logger.info("Failed to generate comparison plots for %s "
                             "because %s" % (j, e))
@@ -363,7 +363,7 @@ class PlotGeneration(PostProcessing):
             ra_list, dec_list, self.approximant, self.colors,
             approximant_labels=self.label_to_prepend_approximant)
         fig.savefig(self.savedir + "combined_skymap.png")
-        fig.close()
+        plt.close()
 
     def _waveform_comparison_plot(self, idx="all"):
         """Generate a plot to compare waveforms as seen in the Hanford
@@ -379,7 +379,7 @@ class PlotGeneration(PostProcessing):
             self.maxL_samples, self.colors,
             approximant_labels=self.label_to_prepend_approximant)
         fig.savefig(self.savedir + "compare_waveforms.png")
-        fig.close()
+        plt.close()
 
 
 if __name__ == '__main__':
