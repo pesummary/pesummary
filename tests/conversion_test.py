@@ -22,8 +22,8 @@ import h5py
 
 import deepdish
 
-from pesummary.one_format import data_format
-from pesummary.one_format.conversions import *
+from pesummary.file import one_format
+from pesummary.file.conversions import *
 
 import pytest
 
@@ -177,18 +177,18 @@ class TestConversions(object):
 
     def test_one_format(self):
         path = "./tests/files/GW150914_result.h5"
-        output = data_format.one_format(path, None)
+        output = one_format.one_format(path, None)
         output.save()
         assert os.path.isfile("./tests/files/GW150914_result.h5_temp")
         path = "./tests/files/lalinference_example.h5"
-        output = data_format.one_format(path, None)
+        output = one_format.one_format(path, None)
         output.save()
         assert os.path.isfile("./tests/files/lalinference_example.h5_temp")
 
     def test_load_with_deepdish(self):
         path = "./tests/files/bilby_example.h5"
         f = deepdish.io.load(path)
-        output = data_format.load_with_deepdish(f)
+        output = one_format.load_with_deepdish(f)
         params = sorted(output[0])
         samples = output[1]
         approximant = output[2]
@@ -201,7 +201,7 @@ class TestConversions(object):
     def test_load_with_h5py(self):
         path = "./tests/files/GW150914_result.h5"
         f = h5py.File(path)
-        output = data_format.load_with_h5py(f, "posterior")
+        output = one_format.load_with_h5py(f, "posterior")
         params = sorted(output[0])
         expected_params = ['a_1', 'a_2', 'dec', 'geocent_time', 'iota',
                            'log_likelihood', 'luminosity_distance', 'mass_1',

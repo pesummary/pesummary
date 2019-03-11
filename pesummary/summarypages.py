@@ -15,22 +15,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging
-
-import subprocess
-import os
-import shutil
-
 import numpy as np
 from scipy import stats
 import h5py
 
 import pesummary
 from pesummary.command_line import command_line
-from pesummary.utils.utils import combine_hdf_files, logger
+from pesummary.utils.utils import logger
 from pesummary.webpage import webpage
 from pesummary.inputs import Input, PostProcessing
 from pesummary.summaryplots import PlotGeneration
+from pesummary.finish import FinishingTouches
+from pesummary.file.meta_file import MetaFile 
 
 __doc__ == "Classes to generate webpages"
 
@@ -313,6 +309,11 @@ class WebpageGeneration(PostProcessing):
                 title="Parameter Estimation Summary Pages for %s" %(self.gracedb))
         else:
             html_file = self._setup_page("home", self.navbar_for_homepage)
+        path = self.image_path["home"]
+        image_contents = [[path+"psd_plot.png"]]
+        html_file.make_table_of_images(contents=image_contents)
+        images = [y for x in image_contents for y in x]
+        html_file.make_modal_carousel(images=images)
         key_data = self._key_data()
         table_data = [{j:i[j] for j in self.same_parameters} for i in key_data]
         contents = []
@@ -559,86 +560,11 @@ class WebpageGeneration(PostProcessing):
         new_file.close()
 
 
-class FinishingTouches(PostProcessing):
-    """Class to handle the finishing touches
-
-    Parameters
-    ----------
-    parser: argparser
-        The parser containing the command line arguments
-
-    Attributes
-    ----------
-    meta_file: str
-        String containing the path to the meta file containing all information
-    """
-    def __init__(self, inputs):
-        super(FinishingTouches, self).__init__(inputs)
-        self.meta_file = self.webdir+"/samples/posterior_samples.h5"
-        logger.info("Combining results files into a single meta file")
-        self.generate_posterior_samples_meta_file()
-        logger.info("Combined results files can be found at %s" %(
-            self.webdir+"/samples/posterior_samples.h5"))
-        self.send_email()
-        self.tidy_up()
-        logger.info("Complete. Webpages can be viewed at the following url "
-            "%s" %(self.baseurl+"/home.html"))
-
-    def generate_posterior_samples_meta_file(self):
-        """Combine the given results files into a single meta file.
-        """
-        if self.meta_file not in self.result_files:
-            for num, i in enumerate(self.result_files):
-                if num == 0:
-                    shutil.copyfile(i, self.meta_file)
-                else:
-                    combine_hdf_files(self.meta_file, i)
-        else:
-            for num, i in enumerate(self.result_files):
-                if "posterior_samples" not in i:
-                    combine_hdf_files(self.meta_file, i)
-
-    def send_email(self, message=None):
-        """Send notification email.
-        """
-        if self.email:
-            logger.info("Sending email to %s" %(self.email))
-            try:
-                self._email_notify(message)
-            except Exception as e:
-                logger.info("Unable to send notification email because %s" %(e))
-
-    def _email_message(self, message=None):
-        """Message that will be send in the email.
-        """
-        if not message:
-            message=("Hi %s,\n\nYour output page is ready on %s. You can "
-                     "view the result at %s"
-                     "\n" %(self.user, self.host, self.baseurl+"/home.html"))
-        return message
-
-    def _email_notify(self, message):
-        """Subprocess to send the notification email.
-        """
-        from_address = "%s@%s" %(self.user, self.host)
-        subject = "Output page available at %s" %(self.host)
-        message = self._email_message(message)
-        cmd = 'echo -e "%s" | mail -s "%s" "%s"' %(message, subject, address)
-        ess = subprocess.Popen(cmd, shell=True)
-        ess.wait()
-
-    def tidy_up(self):
-        """Remove all unnecessary files.
-        """
-        for i in self.result_files:
-            if i != "posterior_samples.h5":
-                os.remove(i) 
-
-
 if __name__ == '__main__':
     parser = command_line()
     opts = parser.parse_args()
     inputs = Input(opts)
     PlotGeneration(inputs)
     WebpageGeneration(inputs)
-    FinishingTouches(inputs)
+    MetaFile(inputs)
+    FinishingTouches(inputs)   

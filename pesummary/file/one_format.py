@@ -22,7 +22,7 @@ import deepdish
 import numpy as np
 
 from pesummary.command_line import command_line 
-from pesummary.one_format.conversions import *
+from pesummary.file.conversions import *
 from pesummary.utils.utils import logger
 
 try:
@@ -191,10 +191,10 @@ class one_format(object):
 
     @extension.setter
     def extension(self, extension):
-        try:
-            f = h5py.File(self.fil)
+        ext = self.fil.split(".")[-1]
+        if ext == "h5" or ext == "hdf5":
             self._extension = "h5"
-        except:
+        elif ext == "dat":
             self._extension = "dat"
 
     @property
@@ -276,7 +276,8 @@ class one_format(object):
         injection_parameters = np.array(injection_properties[0], dtype="S")
         injection_data = np.array(injection_properties[1])
         f = h5py.File("%s_temp" %(self.fil), "w")
-        label_group = f.create_group("label")
+        posterior_samples_group = f.create_group("posterior_samples")
+        label_group = posterior_samples_group.create_group("label")
         group = label_group.create_group(self.approximant)
         group.create_dataset("parameter_names", data=parameters)
         group.create_dataset("samples", data=self.samples)
