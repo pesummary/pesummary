@@ -62,6 +62,9 @@ def command_line():
     parser.add_argument("--psd", dest="psd",
                         help="psd files used", nargs='+',
                         default=None)
+    parser.add_argument("--labels", dest="labels",
+                        help="labels used to distinguish runs", nargs='+',
+                        default=None)
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="print useful information for debugging purposes")
     return parser

@@ -104,7 +104,7 @@ class Input(object):
         self.make_directories()
         self.copy_files()
         self.detectors = None
-        self.labels = None
+        self.labels = opts.labels
         self.check_label_in_results_file()
 
     @property
@@ -403,45 +403,36 @@ class Input(object):
 
     @labels.setter
     def labels(self, labels):
-        label_list = []
-        for num, i in enumerate(self.result_files):
-            condition_list = type(self.detectors[num]) == list
-            condition_str = type(self.detectors[num]) == str
-            if self.gracedb and self.detectors and condition_list:
-                for i in self.detectors[num]:
-                    label_list.append("_".join([self.gracedb, i]))
-            elif self.gracedb and self.detectors and condition_str:
-                label_list.append("_".join(
-                    [self.gracedb, self.detectors[num]]))
-            elif self.gracedb:
-                label_list.append(self.gracedb)
-            elif self.detectors and type(self.detectors[num]) == list:
-                for i in self.detectors[num]:
-                    label_list.append("_".join(self.detectors[num]))
-            elif self.detectors and type(self.detectors[num]) == str:
-                label_list.append(self.detectors[num])
-            else:
-                label_list.append("%s" % (num))
-        proposed_names = ["%s_%s" % (i, j) for i, j in zip(
-            label_list, self.approximant)]
-        duplicates = dict(set(
-            (x, proposed_names.count(x)) for x in
-            filter(lambda rec: proposed_names.count(rec) > 1, proposed_names)))
-        for i in duplicates.keys():
-            for j in range(duplicates[i]):
-                ind = proposed_names.index(i)
-                proposed_names[ind] += "_%s" % (j)
-                label_list[ind] += "_%s" % (j)
-        if self.add_to_existing:
-            existing_names = [
-                "%s_%s" % (i, j) for i, j in zip(
-                    self.existing_labels, self.existing_approximant)]
-            for num, i in enumerate(proposed_names):
-                if i in existing_names:
-                    ind = proposed_names.index(i)
-                    label_list[ind] += "_%s" % (num)
-        logger.debug("The label is %s" % (label_list))
-        self._labels = label_list
+        if labels is not None:
+            if len(labels) != len(self.result_files):
+                raise Exception(
+                    "The number of labels does not match the number of results "
+                    "files.")
+            proposed_names = ["%s_%s" % (i, j) for i, j in zip(
+                labels, self.approximant)]
+            duplicates = dict(set(
+                (x, proposed_names.count(x)) for x in
+                filter(lambda rec: proposed_names.count(rec) > 1, proposed_names)))
+            if len(duplicates.keys()) >= 1:
+                raise Exception(
+                    "The labels and approximant combination that you have "
+                    "given do not give unique combinations. Please give other "
+                    "labels")
+            if self.add_to_existing:
+                existing_names = [
+                    "%s_%s" % (i, j) for i, j in zip(
+                        self.existing_labels, self.existing_approximant)]
+                for i in proposed_names:
+                    if i in existing_names:
+                        raise Exception(
+                            "The labels and approximant combination that you "
+                            "have given match those already in the existing "
+                            "file. Please choose other labels")
+            self._labels = labels
+        else:
+            label_list = self._default_labels()
+            self._labels = label_list
+        logger.debug("The label is %s" % (self._labels))
 
     @property
     def psds(self):
@@ -532,6 +523,48 @@ class Input(object):
         f = OneFormat(results_file, injection_file, config=config_file)
         f.generate_all_posterior_samples()
         return f.save()
+
+    def _default_labels(self):
+        """Return the defaut labels given your detector network.
+        """
+        label_list = []
+        for num, i in enumerate(self.result_files):
+            condition_list = type(self.detectors[num]) == list
+            condition_str = type(self.detectors[num]) == str
+            if self.gracedb and self.detectors and condition_list:
+                for i in self.detectors[num]:
+                    label_list.append("_".join([self.gracedb, i]))
+            elif self.gracedb and self.detectors and condition_str:
+                label_list.append("_".join(
+                    [self.gracedb, self.detectors[num]]))
+            elif self.gracedb:
+                label_list.append(self.gracedb)
+            elif self.detectors and type(self.detectors[num]) == list:
+                for i in self.detectors[num]:
+                    label_list.append("_".join(self.detectors[num]))
+            elif self.detectors and type(self.detectors[num]) == str:
+                label_list.append(self.detectors[num])
+            else:
+                label_list.append("%s" % (num))
+        proposed_names = ["%s_%s" % (i, j) for i, j in zip(
+            label_list, self.approximant)]
+        duplicates = dict(set(
+            (x, proposed_names.count(x)) for x in
+            filter(lambda rec: proposed_names.count(rec) > 1, proposed_names)))
+        for i in duplicates.keys():
+            for j in range(duplicates[i]):
+                ind = proposed_names.index(i)
+                proposed_names[ind] += "_%s" % (j)
+                label_list[ind] += "_%s" % (j)
+        if self.add_to_existing:
+            existing_names = [
+                "%s_%s" % (i, j) for i, j in zip(
+                    self.existing_labels, self.existing_approximant)]
+            for num, i in enumerate(proposed_names):
+                if i in existing_names:
+                    ind = proposed_names.index(i)
+                    label_list[ind] += "_%s" % (num)
+        return label_list
 
 
 class PostProcessing(object):
