@@ -16,8 +16,6 @@
 
 import pesummary
 from pesummary.webpage import tables
-from pesummary.utils import utils
-from pesummary.inputs import PostProcessing
 from pesummary.webpage.base import Base
 
 import sys
@@ -35,34 +33,35 @@ BOOTSTRAP = """<!DOCTYPE html>
     stylesheet elements
 </head>
 <body style='background-color:#F8F8F8'>
-"""     
+"""
 
-HOME_SCRIPTS="""    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js'></script>
     <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js'></script>
     <script src='./js/combine_corner.js'></script>
-    <script src='./js/grab.js'></script> 
-    <script src='./js/modal.js'></script> 
-    <script src='./js/multi_dropbar.js'></script> 
-    <script src='./js/multiple_posteriors.js'></script> 
-    <script src='./js/search.js'></script> 
-    <script src='./js/side_bar.js'></script> 
+    <script src='./js/grab.js'></script>
+    <script src='./js/modal.js'></script>
+    <script src='./js/multi_dropbar.js'></script>
+    <script src='./js/multiple_posteriors.js'></script>
+    <script src='./js/search.js'></script>
+    <script src='./js/side_bar.js'></script>
 """
 
-OTHER_SCRIPTS="""    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js'></script>
     <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js'></script>
     <script src='../js/combine_corner.js'></script>
-    <script src='../js/grab.js'></script> 
-    <script src='../js/modal.js'></script> 
-    <script src='../js/multi_dropbar.js'></script> 
-    <script src='../js/multiple_posteriors.js'></script> 
-    <script src='../js/search.js'></script> 
-    <script src='../js/side_bar.js'></script> 
+    <script src='../js/grab.js'></script>
+    <script src='../js/modal.js'></script>
+    <script src='../js/multi_dropbar.js'></script>
+    <script src='../js/multiple_posteriors.js'></script>
+    <script src='../js/search.js'></script>
+    <script src='../js/side_bar.js'></script>
 """
 
+
 def make_html(web_dir, title="Summary Pages", pages=None, stylesheets=[],
-    label=None):
+              label=None):
     """Make the initial html page.
 
     Parameters
@@ -90,14 +89,15 @@ def make_html(web_dir, title="Summary Pages", pages=None, stylesheets=[],
         bootstrap = BOOTSTRAP.split("\n")
         bootstrap[1] = "  <title>{}</title>".format(title)
         bootstrap[-4] = stylesheet_elements
-        bootstrap = [j+"\n" for j in bootstrap]
+        bootstrap = [j + "\n" for j in bootstrap]
         f.writelines(bootstrap)
         if i != "home":
             scripts = OTHER_SCRIPTS.split("\n")
         else:
             scripts = HOME_SCRIPTS.split("\n")
-        scripts = [j+"\n" for j in scripts]
+        scripts = [j + "\n" for j in scripts]
         f.writelines(scripts)
+
 
 def open_html(web_dir, base_url, html_page, label=None):
     """Open html page ready so you can manipulate the contents
@@ -116,15 +116,16 @@ def open_html(web_dir, base_url, html_page, label=None):
     try:
         if html_page[-5:] == ".html":
             html_page = html_page[:-5]
-    except:
+    except Exception:
         pass
     if html_page == "home.html" or html_page == "home":
-        f = open(web_dir+"/home.html", "a")
+        f = open(web_dir + "/home.html", "a")
     else:
-        if label != None:
-            f = open(web_dir+"/html/{}_".format(label)+html_page+".html", "a")
+        if label is not None:
+            f = open(web_dir + "/html/{}_".format(label) + html_page
+                     + ".html", "a")
         else:
-            f = open(web_dir+"/html/"+html_page+".html", "a")
+            f = open(web_dir + "/html/" + html_page + ".html", "a")
     return page(f, web_dir, base_url, label)
 
 
@@ -144,42 +145,46 @@ class page(Base):
         self.add_content("<h7 hidden>{}</h7>".format(self.label))
         self.add_content("<h7 hidden>{}</h7>".format(approximant))
         self.make_div(_class='jumbotron text-center',
-                      _style='background-color: %s; margin-bottom:0' %(colour))
+                      _style='background-color: %s; margin-bottom:0' % (colour))
         self.add_content("  <h1 id={}>{}</h1>\n".format(approximant, title))
         self.add_content("<h4><span class='badge badge-info'>Code Version: %s"
-                         "</span></h4>\n" %(pesummary.__version__), indent=2)
+                         "</span></h4>\n" % (pesummary.__version__), indent=2)
         self.end_div()
 
     def _footer(self, user, rundir):
         """
         """
-        command= ""
-        length = len(sys.argv[0])
+        command = ""
         for i in sys.argv:
             command += " "
             if i[0] == "-":
                 command += "\n"
             command += "{}".format(i)
-        self.make_div(_class='jumbotron', _style='margin-bottom:0; line-height: 0.5;'+\
-            'background-color:#E0E0E0')
-        self.add_content("<p>This page was produced by {} at {} on {} on behalf "
+        self.make_div(
+            _class='jumbotron', _style='margin-bottom:0; line-height: 0.5;'
+            + 'background-color:#E0E0E0')
+        self.add_content(
+            "<p>This page was produced by {} at {} on {} on behalf "
             "of the Parameter Estimation group\n".format(
-            user, time.strftime("%H:%M"), time.strftime("%B %d %Y")), indent=2)
+                user, time.strftime("%H:%M"), time.strftime("%B %d %Y")), indent=2)
         self.add_content("<p>Run directories found at {}</p>\n".format(rundir), indent=2)
         self.add_content("<p>This code was generated with the following command line call:</p>", indent=2)
         self.add_content("<p> </p>", indent=2)
-        self.make_div(_class='container', _style='background-color:#FFFFFF; '
+        self.make_div(
+            _class='container', _style='background-color:#FFFFFF; '
             'box-shadow: 0 0 5px grey; line-height: 1.5')
         styles = self.make_code_block(language='shell', contents=command)
         with open('{0:s}/css/command_line.css'.format(self.web_dir), 'w') as g:
             g.write(styles)
         self.end_div()
         self.make_div(_style="text-align:center")
-        self.add_content("<a href='https://git.ligo.org/charlie.hoy/pesummary'>"
+        self.add_content(
+            "<a href='https://git.ligo.org/charlie.hoy/pesummary'>"
             "View PESummary v%s on git.ligo.org</a> | "
             "<a href='https://git.ligo.org/charlie.hoy/pesummary/issues'>"
             "Report an issue</a> | <a href='https://docs.ligo.org/charlie.hoy/"
-            "pesummary/summarypage.html'> Help on using this webpage</a>" %(pesummary.__version__), indent=2)
+            "pesummary/summarypage.html'> Help on using this webpage</a>" % (pesummary.__version__),
+            indent=2)
         self.end_div()
         self.end_div()
 
@@ -227,8 +232,8 @@ class page(Base):
             if True, search bar will be given in navbar
         """
         self._setup_navbar()
-        if links == None:
-            raise Exception ("Please specify links for use with navbar\n")
+        if links is None:
+            raise Exception("Please specify links for use with navbar\n")
         self.add_content("<div class='collapse navbar-collapse' id='collapsibleNavbar'>\n", indent=4)
         self.add_content("<ul class='navbar-nav'>\n", indent=6)
         for i in links:
@@ -256,13 +261,15 @@ class page(Base):
                                 for k in j[1]:
                                     if type(k) == dict:
                                         key = list(k.keys())[0]
-                                        self.add_content("<li class='dropdown-item' href='#' "
-                                                     "onclick='grab_html(\"{}\", label=\"{}\")'>"
-                                                     "<a>{}</a></li>\n".format(key, k[key], key), indent=18)
+                                        self.add_content(
+                                            "<li class='dropdown-item' href='#' "
+                                            "onclick='grab_html(\"{}\", label=\"{}\")'>"
+                                            "<a>{}</a></li>\n".format(key, k[key], key), indent=18)
                                     else:
-                                        self.add_content("<li class='dropdown-item' href='#' "
-                                                     "onclick='grab_html(\"{}\")'>"
-                                                     "<a>{}</a></li>\n".format(k, k), indent=18)
+                                        self.add_content(
+                                            "<li class='dropdown-item' href='#' "
+                                            "onclick='grab_html(\"{}\")'>"
+                                            "<a>{}</a></li>\n".format(k, k), indent=18)
 
                                 self.add_content("</ul>", indent=16)
                                 self.add_content("</li>", indent=14)
@@ -270,29 +277,33 @@ class page(Base):
                                 for k in j:
                                     if type(k) == dict:
                                         key = list(k.keys())[0]
-                                        self.add_content("<li class='dropdown-item' href='#' "
-                                                     "onclick='grab_html(\"{}\", label=\"{}\")'>"
-                                                     "<a>{}</a></li>\n".format(key, k[key], key), indent=14)
+                                        self.add_content(
+                                            "<li class='dropdown-item' href='#' "
+                                            "onclick='grab_html(\"{}\", label=\"{}\")'>"
+                                            "<a>{}</a></li>\n".format(key, k[key], key), indent=14)
 
                                     else:
-                                        self.add_content("<li class='dropdown-item' href='#' "
-                                                     "onclick='grab_html(\"{}\")'>"
-                                                     "<a>{}</a></li>\n".format(k, k), indent=14)
+                                        self.add_content(
+                                            "<li class='dropdown-item' href='#' "
+                                            "onclick='grab_html(\"{}\")'>"
+                                            "<a>{}</a></li>\n".format(k, k), indent=14)
 
                         else:
                             if type(j[0]) == dict:
                                 key = list(j[0].keys())[0]
-                                self.add_content("<li class='dropdown-item' href='#' "
-                                             "onclick='grab_html(\"{}\", label=\"{}\")'>"
-                                             "<a>{}</a></li>\n".format(key, j[0][key], key), indent=14)
+                                self.add_content(
+                                    "<li class='dropdown-item' href='#' "
+                                    "onclick='grab_html(\"{}\", label=\"{}\")'>"
+                                    "<a>{}</a></li>\n".format(key, j[0][key], key), indent=14)
 
                             else:
-                                self.add_content("<li class='dropdown-item' href='#' "
-                                             "onclick='grab_html(\"{}\")'>"
-                                             "<a>{}</a></li>\n".format(j[0], j[0]), indent=14)
-                                
+                                self.add_content(
+                                    "<li class='dropdown-item' href='#' "
+                                    "onclick='grab_html(\"{}\")'>"
+                                    "<a>{}</a></li>\n".format(j[0], j[0]), indent=14)
+
                 self.add_content("</ul>\n", indent=12)
-                self.add_content("</li>\n", indent=10)  
+                self.add_content("</li>\n", indent=10)
             else:
                 self.add_content("<li class='nav-item'>\n", indent=8)
                 if i == "home":
@@ -302,15 +313,17 @@ class page(Base):
                 else:
                     if type(i) == dict:
                         key = list(i.keys())[0]
-                        self.add_content("<a class='nav-link' "
-                                     "href='#' onclick='grab_html(\"{}\", label=\"{}\")'"
-                                     ">{}</a>\n".format(key, i[key], key), indent=10)
+                        self.add_content(
+                            "<a class='nav-link' "
+                            "href='#' onclick='grab_html(\"{}\", label=\"{}\")'"
+                            ">{}</a>\n".format(key, i[key], key), indent=10)
 
                     else:
-                        self.add_content("<a class='nav-link' "
-                                     "href='#' onclick='grab_html(\"{}\")'"
-                                     ">{}</a>\n".format(i, i), indent=10)
-                        
+                        self.add_content(
+                            "<a class='nav-link' "
+                            "href='#' onclick='grab_html(\"{}\")'"
+                            ">{}</a>\n".format(i, i), indent=10)
+
                 self.add_content("</li>\n", indent=8)
         self.add_content("</ul>\n", indent=6)
         self.add_content("</div>\n", indent=4)
@@ -321,7 +334,7 @@ class page(Base):
         self.add_content("</nav>\n")
 
     def make_table(self, headings=None, contents=None, heading_span=1,
-        colors=None, accordian_header="Summary Table", **kwargs):
+                   colors=None, accordian_header="Summary Table", **kwargs):
         """Generate a table in bootstrap format.
 
         Parameters
@@ -338,23 +351,27 @@ class page(Base):
         label = accordian_header.replace(" ", "_")
         self.make_container(style=kwargs.get("style", None))
         self.make_div(indent=2, _class='row justify-content-center')
-        self.make_div(indent=4, _class='accordian', _style='width: 100%',
-            _id='accordian%s' %(label))
+        self.make_div(
+            indent=4, _class='accordian', _style='width: 100%',
+            _id='accordian%s' % (label))
         self.make_div(indent=6, _class='card')
-        self.make_div(indent=8, _class='card-header', _style='background-color: #E0E0E0',
-            _id = 'table')
+        self.make_div(
+            indent=8, _class='card-header', _style='background-color: #E0E0E0',
+            _id='table')
         self.add_content("<h5 class='mb-0'>", indent=10)
         self.make_div(indent=12, _class='row justify-content-center')
-        self.add_content("<button class='btn btn-link collapsed' type='button' "
+        self.add_content(
+            "<button class='btn btn-link collapsed' type='button' "
             "data-toggle='collapse' data-target='#collapsetable%s' "
-            "aria-expanded='false' aria-controls='collapsetable'>" %(label), indent=14)
+            "aria-expanded='false' aria-controls='collapsetable'>" % (label), indent=14)
         self.add_content(accordian_header)
         self.add_content("</button>")
         self.end_div(indent=12)
         self.end_div(indent=10)
-        self.add_content("<div id='collapsetable%s' class='collapse' "
-            "aria-labelledby='table' data-parent='#accordian%s'>" %(label, label)
-            , indent=12)
+        self.add_content(
+            "<div id='collapsetable%s' class='collapse' "
+            "aria-labelledby='table' data-parent='#accordian%s'>" % (label, label),
+            indent=12)
         self.make_div(_class='card-body', indent=14)
         self.make_div(_class='row justify-content-center', indent=16)
         self.make_div(_class='container', indent=18)
@@ -374,8 +391,9 @@ class page(Base):
             for num, i in enumerate(contents):
                 self.add_content("<tr>\n", indent=28)
                 if heading_span == 2:
-                    for j, col in zip(i, ["#ffffff"]+colors*(len(i)-1)):
-                        self.add_content("<td style='background-color: {}'>{}</td>\n".format(col, j), indent=30)
+                    for j, col in zip(i, ["#ffffff"] + colors * (len(i) - 1)):
+                        self.add_content(
+                            "<td style='background-color: {}'>{}</td>\n".format(col, j), indent=30)
                     self.add_content("</tr>", indent=28)
                 else:
                     for j in i:
@@ -393,12 +411,14 @@ class page(Base):
             self.add_content("<thead>\n", indent=26)
             for j in contents.keys():
                 self.add_content("<tr bgcolor='#F0F0F0'>\n", indent=28)
-                self.add_content("<th colspan='{}' class='text-center'>"
+                self.add_content(
+                    "<th colspan='{}' class='text-center'>"
                     "{}</th>\n".format(len(contents[j][0]), j), indent=30)
                 self.add_content("</tr>\n", indent=28)
                 self.add_content("<tr>\n", indent=28)
                 for i in headings:
-                    self.add_content("<th colspan='{}' class='text-center'>"
+                    self.add_content(
+                        "<th colspan='{}' class='text-center'>"
                         "{}</th>\n".format(heading_span, i), indent=30)
                 self.add_content("</tr>\n", indent=28)
 
@@ -410,7 +430,7 @@ class page(Base):
                 self.add_content("</tbody>\n", indent=26)
             self.add_content("</table>\n", indent=24)
             self.end_div(indent=20)
-                    
+
         self.end_div(indent=18)
         self.end_div(indent=16)
         self.end_div(indent=14)
@@ -447,7 +467,7 @@ class page(Base):
         return styles
 
     def make_table_of_images(self, contents=None, rows=None, columns=None,
-        code="modal"):
+                             code="modal"):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -465,7 +485,7 @@ class page(Base):
             if True, the table of images is placed inside a container
         """
         table = tables.table_of_images(contents, rows, columns, self.html_file,
-            code=code)
+                                       code=code)
         table.make()
 
     def insert_image(self, path, justify="center", code=None):
@@ -511,27 +531,29 @@ class page(Base):
             self.add_content("<div class='card' style='border: 0px solid black'>\n", indent=4)
             self.add_content("<div class='card-header' id='{}'>\n".format(i), indent=6)
             self.add_content("<h5 class='mb-0'>\n", indent=8)
-            self.add_content("<button class='btn btn-link collapsed' type='button' data-toggle='collapse' "
-                             "data-target='#collapse{}' aria-expanded='false' ".format(i) +
-                             "aria-controls='collapse{}'>\n".format(i), indent=10)
+            self.add_content(
+                "<button class='btn btn-link collapsed' type='button' data-toggle='collapse' "
+                "data-target='#collapse{}' aria-expanded='false' ".format(i)
+                + "aria-controls='collapse{}'>\n".format(i), indent=10)
             self.add_content("{}\n".format(i), indent=12)
             self.add_content("</button>\n", indent=10)
             self.add_content("</h5>\n", indent=8)
             self.add_content("</div>\n", indent=6)
-            self.add_content("<div id='collapse{}' class='collapse' ".format(i) +
-                             "aria-labelledby='{}' data-parent='#accordian'>\n".format(i), indent=6)
+            self.add_content(
+                "<div id='collapse{}' class='collapse' ".format(i)
+                + "aria-labelledby='{}' data-parent='#accordian'>\n".format(i), indent=6)
             self.add_content("<div class='card-body'>\n", indent=8)
-            self.add_content("<img src='{}' ".format(content[num]) +
-                             "alt='No image available' style='width:700px;' " +
-                             "class='mx-auto d-block'>\n", indent=10)
+            self.add_content("<img src='{}' ".format(content[num])
+                             + "alt='No image available' style='width:700px;' "
+                             + "class='mx-auto d-block'>\n", indent=10)
             self.add_content("</div>\n", indent=8)
             self.add_content("</div>\n", indent=6)
             self.add_content("</div>\n", indent=4)
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
 
-    def make_search_bar(self, sidebar=None, popular_options=None, label=None, 
-        code="combine"):
+    def make_search_bar(self, sidebar=None, popular_options=None, label=None,
+                        code="combine"):
         """Generate a search bar to combine the corner plots
         javascript.
 
@@ -551,17 +573,21 @@ class page(Base):
             for i in sidebar:
                 self.add_content("<input type='checkbox' name='type' "
                                  "value='{}' id='{}' style='text-align: center; margin: 0 5px 0;'"
-                                 ">{}<br>\n".format(i,i,i,i), indent=2)
+                                 ">{}<br>\n".format(i, i, i, i), indent=2)
         self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>")
-        self.add_content("<p style='margin-top:2.5em'> Input the parameter names that you would like to compare</p>", indent=2)
+        self.add_content(
+            "<p style='margin-top:2.5em'> Input the parameter names that you "
+            "would like to compare</p>", indent=2)
         self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>\n")
         self.add_content("<input type='text' placeholder='search' id='corner_search'>\n", indent=2)
-        self.add_content("<button type='submit' onclick='{}(undefined, label=\"{}\")' "
+        self.add_content(
+            "<button type='submit' onclick='{}(undefined, label=\"{}\")' "
             "style='cursor: pointer'>Submit</button>\n".format(code, label), indent=2)
-        self.add_content("<button class='w3-button w3-teal w3-xlarge' "
-                         "onclick='side_bar_open()' style='cursor: pointer'>&#8801</button>\n", indent=2) 
+        self.add_content(
+            "<button class='w3-button w3-teal w3-xlarge' "
+            "onclick='side_bar_open()' style='cursor: pointer'>&#8801</button>\n", indent=2)
         self.add_content("</div>\n")
         self.add_content("<div class='row justify-content-center'>\n")
         if popular_options:
@@ -571,16 +597,16 @@ class page(Base):
                                      "onclick='{}(\"{}\", label=\"{}\")' "
                                      "style='margin-left:0.25em; margin-right:0.25em; "
                                      "margin-top: 1.0em; cursor: pointer'>all</button>\n".format(
-                        code, i["all"], label), indent=2)
+                                         code, i["all"], label), indent=2)
                 else:
                     self.add_content("<button type='button' class='btn btn-info' "
                                      "onclick='{}(\"{}\", label=\"{}\")' "
                                      "style='margin-left:0.25em; margin-right:0.25em; "
                                      "margin-top: 1.0em; cursor: pointer'>{}</button>\n".format(
-                        code, i, label, i), indent=2)
+                                         code, i, label, i), indent=2)
         self.add_content("</div>")
         self.add_content("<div class='container' style='margin-top:5em; margin-bottom:5em;"
-                         "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")  
+                         "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")
         self.add_content("<div class='row justify-content-center' id='corner_plot'>\n", indent=2)
         self.add_content("<canvas id='{}' width='600' height='600'></canvas>\n".format(ids), indent=4)
         if code == "combine":
@@ -609,9 +635,9 @@ class page(Base):
         for num, i in enumerate(images):
             if num == 0:
                 self.add_content("<li data-target='#demo' data-slide-to-'%s' "
-                                 "class='active'></li>\n" %(num), indent=10)
+                                 "class='active'></li>\n" % (num), indent=10)
             self.add_content("<li data-target='#demo' data-slide-to-'%s'>"
-                             "</li>\n" %(num), indent=10)
+                             "</li>\n" % (num), indent=10)
         self.add_content("<li data-target='#demo' data-slide-to='0' "
                          "class='active'></li>\n", indent=10)
         self.add_content("<li data-target='#demo' data-slide-to='1'></li>\n", indent=10)

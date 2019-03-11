@@ -24,7 +24,14 @@ python-3.6:
   artifacts:
     paths:
       - htmlcov/
-      - coverage_badge.svg 
+      - coverage_badge.svg
+
+style:
+  stage: test
+  image: python:3.6
+  script:
+    - pip install flake8
+    - flake8 . 
 
 documentation:
   stage: test

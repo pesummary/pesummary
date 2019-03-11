@@ -15,13 +15,9 @@
 
 import subprocess
 import os
-import shutil
 
-import numpy as np
-
-import pesummary
 from pesummary.utils.utils import logger
-from pesummary.inputs import Input, PostProcessing
+from pesummary.inputs import PostProcessing
 
 
 class FinishingTouches(PostProcessing):
@@ -37,34 +33,35 @@ class FinishingTouches(PostProcessing):
         self.send_email()
         self.tidy_up()
         logger.info("Complete. Webpages can be viewed at the following url "
-            "%s" %(self.baseurl+"/home.html"))
+                    "%s" % (self.baseurl + "/home.html"))
 
     def send_email(self, message=None):
         """Send notification email.
         """
         if self.email:
-            logger.info("Sending email to %s" %(self.email))
+            logger.info("Sending email to %s" % (self.email))
             try:
                 self._email_notify(message)
             except Exception as e:
-                logger.info("Unable to send notification email because %s" %(e))
+                logger.info("Unable to send notification email because %s" % (
+                    e))
 
     def _email_message(self, message=None):
         """Message that will be send in the email.
         """
         if not message:
-            message=("Hi %s,\n\nYour output page is ready on %s. You can "
-                     "view the result at %s"
-                     "\n" %(self.user, self.host, self.baseurl+"/home.html"))
+            message = ("Hi %s,\n\nYour output page is ready on %s. You can "
+                       "view the result at %s \n"
+                       % (self.user, self.host, self.baseurl + "/home.html"))
         return message
 
     def _email_notify(self, message):
         """Subprocess to send the notification email.
         """
-        from_address = "%s@%s" %(self.user, self.host)
-        subject = "Output page available at %s" %(self.host)
+        subject = "Output page available at %s" % (self.host)
         message = self._email_message(message)
-        cmd = 'echo -e "%s" | mail -s "%s" "%s"' %(message, subject, address)
+        cmd = 'echo -e "%s" | mail -s "%s" "%s"' % (
+            message, subject, self.email)
         ess = subprocess.Popen(cmd, shell=True)
         ess.wait()
 
@@ -73,4 +70,4 @@ class FinishingTouches(PostProcessing):
         """
         for i in self.result_files:
             if "posterior_samples.h5" not in i:
-               os.remove(i) 
+                os.remove(i)

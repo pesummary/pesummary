@@ -15,6 +15,7 @@
 
 from pesummary.webpage.base import Base
 
+
 class table_of_images(Base):
 
     def __init__(self, content, rows, columns, html_file, code):
@@ -40,13 +41,6 @@ class table_of_images(Base):
         string = "<img src='{}' alt='No image available' ".format(path) + \
                  "style='align-items:center; width:{}px;'".format(width) + \
                  "id={} onclick='{}(\"{}\")'>\n".format(_id, self.code, _id)
-        #if justify == "center":
-        #    string += " class='mx-auto d-block'"
-        #elif justify == "left":
-        #    string = string[:-1] + " float:left;'"
-        #elif justify == "right":
-        #    string = string[:-1] + " float:right;'"
-        #string += ">\n"
         self.add_content(string, indent=indent)
 
     def make(self):
@@ -76,7 +70,8 @@ class table_of_images(Base):
                 self.make_div(8, _class="column", _style=None)
                 for num, j in enumerate(i):
                     _id = j.split("/")[-1][:-4]
-                    self.add_content("<a href='#demo' data-slide-to='%s'>\n" %(ind), indent=6)
+                    self.add_content(
+                        "<a href='#demo' data-slide-to='%s'>\n" % (ind), indent=6)
                     self._insert_image(j, width, 8, _id, justify=None)
                     self.add_content("</a>\n", indent=6)
                     ind += 1

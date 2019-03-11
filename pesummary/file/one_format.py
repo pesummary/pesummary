@@ -21,17 +21,17 @@ import deepdish
 
 import numpy as np
 
-from pesummary.command_line import command_line 
-from pesummary.file.conversions import *
+from pesummary.command_line import command_line
+import pesummary.file.conversions as con
 from pesummary.utils.utils import logger
 
 try:
     from glue.ligolw import ligolw
     from glue.ligolw import lsctables
     from glue.ligolw import utils as ligolw_utils
-    GLUE=True
-except:
-    GLUE=False
+    GLUE = True
+except ImportError:
+    GLUE = False
 
 standard_names = {"logL": "log_likelihood",
                   "logl": "log_likelihood",
@@ -87,7 +87,7 @@ standard_names = {"logL": "log_likelihood",
                   "theta_jn": "iota"}
 
 
-class one_format(object):
+class OneFormat(object):
     """Class to convert a given results file into a standard format with all
     derived posterior distributions included
 
@@ -98,7 +98,7 @@ class one_format(object):
     inj: str
        path to the file containing injection information
     config: str, optional
-       path to the configuration file 
+       path to the configuration file
 
     Attributes
     ----------
@@ -113,7 +113,7 @@ class one_format(object):
     parameters: list
         List of parameters that have corresponding posterior distributions
     samples: list
-        List of posterior samples for each parameter 
+        List of posterior samples for each parameter
     """
     def __init__(self, fil, inj, config=None):
         self.fil = fil
@@ -146,8 +146,8 @@ class one_format(object):
         config.read(self.config)
         fixed_params = None
         if "engine" in config.sections():
-            fixed_params = [list(i) for i in config.items("engine") if "fix" \
-                in i[0]]
+            fixed_params = [
+                list(i) for i in config.items("engine") if "fix" in i[0]]
         return fixed_params
 
     @staticmethod
@@ -165,7 +165,7 @@ class one_format(object):
                 parameters = [i for i in f["posterior"].keys()]
                 if "waveform_approximant" in parameters:
                     approx = f["posterior"]["waveform_approximant"][0]
-            except:
+            except Exception:
                 pass
         return approx
 
@@ -178,10 +178,10 @@ class one_format(object):
         f = h5py.File(self.fil)
         keys = self.keys(self.fil)
         if "lalinference" in keys:
-            logger.info("LALInference was used to generate %s" %(self.fil))
+            logger.info("LALInference was used to generate %s" % (self.fil))
             self._lalinference = True
             sampler = [i for i in f["lalinference"].keys()]
-            self._data_path = "lalinference/%s/posterior_samples" %(sampler[0])
+            self._data_path = "lalinference/%s/posterior_samples" % (sampler[0])
         else:
             self._lalinference = False
 
@@ -206,11 +206,11 @@ class one_format(object):
         self._bilby = False
         keys = self.keys(self.fil)
         if "data" in keys:
-            logger.info("BILBY >= v0.3.3 was used to generate %s" %(self.fil))
+            logger.info("BILBY >= v0.3.3 was used to generate %s" % (self.fil))
             self._bilby = True
             self._data_path = "data/posterior"
         elif "posterior" in keys:
-            logger.info("BILBY >= v0.3.1 was used to generate %s" %(self.fil))
+            logger.info("BILBY >= v0.3.1 was used to generate %s" % (self.fil))
             self._bilby = True
             self._data_path = "posterior"
 
@@ -255,27 +255,27 @@ class one_format(object):
                 if param in self.parameters:
                     pass
                 self.parameters.append(param)
-                self.append_data([float(i[1])]*len(self.samples))
-            except:
+                self.append_data([float(i[1])] * len(self.samples))
+            except Exception:
                 param = i[0].split("fix-")[1]
                 if param == "logdistance":
                     self.parameters.append(standard_names["distance"])
-                    self.append_data([np.exp(float(i[1]))]*len(self.samples))
+                    self.append_data([np.exp(float(i[1]))] * len(self.samples))
                 if param == "costheta_jn":
                     self.parameters.append(standard_names["theta_jn"])
-                    self.append_data([np.arccos(float(i[1]))]*len(self.samples))
+                    self.append_data([np.arccos(float(i[1]))] * len(self.samples))
 
     def injection_parameters(self):
-        return get_injection_parameters(self.parameters, self.inj,
-            LALINFERENCE=self.lalinference, BILBY=self.bilby)
+        return get_injection_parameters(
+            self.parameters, self.inj, LALINFERENCE=self.lalinference,
+            BILBY=self.bilby)
 
     def save(self):
         parameters = np.array(self.parameters, dtype="S")
-        approximant = np.array([self.approximant], dtype="S")
         injection_properties = self.injection_parameters()
         injection_parameters = np.array(injection_properties[0], dtype="S")
         injection_data = np.array(injection_properties[1])
-        f = h5py.File("%s_temp" %(self.fil), "w")
+        f = h5py.File("%s_temp" % (self.fil), "w")
         posterior_samples_group = f.create_group("posterior_samples")
         label_group = posterior_samples_group.create_group("label")
         group = label_group.create_group(self.approximant)
@@ -284,7 +284,7 @@ class one_format(object):
         group.create_dataset("injection_parameters", data=injection_parameters)
         group.create_dataset("injection_data", data=injection_data)
         f.close()
-        return "%s_temp" %(self.fil)
+        return "%s_temp" % (self.fil)
 
     def grab_data(self):
         f = h5py.File(self.fil)
@@ -311,7 +311,7 @@ class one_format(object):
                 parameters, data, approx = load_with_deepdish(f)
             except Exception as e:
                 logger.debug("Failed to load file with deepdish because %s. "
-                             "Using h5py instead" %(e))
+                             "Using h5py instead" % (e))
                 f = h5py.File(self.fil)
                 parameters, data = load_with_h5py(f, self._data_path)
         return parameters, data
@@ -335,83 +335,85 @@ class one_format(object):
     def _mchirp_from_mchirp_source_z(self):
         self.parameters.append("chirp_mass")
         samples = self.specific_parameter_samples(["chirp_mass_source", "redshift"])
-        chirp_mass = mchirp_from_mchirp_source_z(samples[0], samples[1])
+        chirp_mass = con.mchirp_from_mchirp_source_z(samples[0], samples[1])
         self.append_data(chirp_mass)
 
     def _q_from_eta(self):
         self.parameters.append("mass_ratio")
         samples = self.specific_parameter_samples("symmetric_mass_ratio")
-        mass_ratio = q_from_eta(samples)
+        mass_ratio = con.q_from_eta(samples)
         self.append_data(mass_ratio)
 
     def _q_from_m1_m2(self):
         self.parameters.append("mass_ratio")
         samples = self.specific_parameter_samples(["mass_1", "mass_2"])
-        mass_ratio = q_from_m1_m2(samples[0], samples[1])
+        mass_ratio = con.q_from_m1_m2(samples[0], samples[1])
         self.append_data(mass_ratio)
 
     def _invert_q(self):
         ind = self.parameters.index("mass_ratio")
         for num, i in enumerate(self.samples):
-            self.samples[num][ind] = 1./self.samples[num][ind]
+            self.samples[num][ind] = 1. / self.samples[num][ind]
 
     def _mchirp_from_mtotal_q(self):
         self.parameters.append("chirp_mass")
         samples = self.specific_parameter_samples(["total_mass", "mass_ratio"])
-        chirp_mass = mchirp_from_mtotal_q(samples[0], samples[1])
+        chirp_mass = con.mchirp_from_mtotal_q(samples[0], samples[1])
         self.append_data(chirp_mass)
 
     def _m1_from_mchirp_q(self):
         self.parameters.append("mass_1")
         samples = self.specific_parameter_samples(["chirp_mass", "mass_ratio"])
-        mass_1 = m1_from_mchirp_q(samples[0], samples[1])
+        mass_1 = con.m1_from_mchirp_q(samples[0], samples[1])
         self.append_data(mass_1)
 
     def _m2_from_mchirp_q(self):
         self.parameters.append("mass_2")
         samples = self.specific_parameter_samples(["chirp_mass", "mass_ratio"])
-        mass_2 = m2_from_mchirp_q(samples[0], samples[1])
+        mass_2 = con.m2_from_mchirp_q(samples[0], samples[1])
         self.append_data(mass_2)
 
     def _reference_frequency(self):
         self.parameters.append("reference_frequency")
         nsamples = len(self.samples)
-        self.append_data([20.]*nsamples)
+        self.append_data([20.] * nsamples)
 
     def _mtotal_from_m1_m2(self):
         self.parameters.append("total_mass")
         samples = self.specific_parameter_samples(["mass_1", "mass_2"])
-        m_total = m_total_from_m1_m2(samples[0], samples[1])
+        m_total = con.m_total_from_m1_m2(samples[0], samples[1])
         self.append_data(m_total)
 
     def _mchirp_from_m1_m2(self):
         self.parameters.append("chirp_mass")
         samples = self.specific_parameter_samples(["mass_1", "mass_2"])
-        chirp_mass = m_total_from_m1_m2(samples[0], samples[1])
+        chirp_mass = con.m_total_from_m1_m2(samples[0], samples[1])
         self.append_data(chirp_mass)
 
     def _eta_from_m1_m2(self):
         self.parameters.append("symmetric_mass_ratio")
         samples = self.specific_parameter_samples(["mass_1", "mass_2"])
-        eta = eta_from_m1_m2(samples[0], samples[1])
+        eta = con.eta_from_m1_m2(samples[0], samples[1])
         self.append_data(eta)
 
     def _component_spins(self):
         spins = ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
         for i in spins:
             self.parameters.append(i)
-        spin_angles = ["iota", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
-                       "mass_1", "mass_2", "reference_frequency", "phase"]
+        spin_angles = [
+            "iota", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
+            "mass_1", "mass_2", "reference_frequency", "phase"]
         samples = self.specific_parameter_samples(spin_angles)
-        spin_components = component_spins(samples[0], samples[1], samples[2],
-            samples[3], samples[4], samples[5], samples[6], samples[7],
-            samples[8], samples[9], samples[10])
+        spin_components = con.component_spins(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5], samples[6], samples[7], samples[8], samples[9],
+            samples[10])
         spin1x = np.array([i[1] for i in spin_components])
-        spin1y = np.array([i[2] for i in spin_components]) 
-        spin1z = np.array([i[3] for i in spin_components]) 
-        spin2x = np.array([i[4] for i in spin_components]) 
-        spin2y = np.array([i[5] for i in spin_components]) 
-        spin2z = np.array([i[6] for i in spin_components]) 
+        spin1y = np.array([i[2] for i in spin_components])
+        spin1z = np.array([i[3] for i in spin_components])
+        spin2x = np.array([i[4] for i in spin_components])
+        spin2y = np.array([i[5] for i in spin_components])
+        spin2z = np.array([i[6] for i in spin_components])
         self.append_data(spin1x)
         self.append_data(spin1y)
         self.append_data(spin1z)
@@ -421,9 +423,11 @@ class one_format(object):
 
     def _chi_p(self):
         self.parameters.append("chi_p")
-        parameters = ["mass_1", "mass_2", "spin_1x", "spin_1y", "spin_2x", "spin_2y"]
+        parameters = [
+            "mass_1", "mass_2", "spin_1x", "spin_1y", "spin_2x", "spin_2y"]
         samples = self.specific_parameter_samples(parameters)
-        chi_p_samples = chi_p(samples[0], samples[1], samples[2], samples[3], samples[4],
+        chi_p_samples = con.chi_p(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5])
         self.append_data(chi_p_samples)
 
@@ -431,7 +435,8 @@ class one_format(object):
         self.parameters.append("chi_eff")
         parameters = ["mass_1", "mass_2", "spin_1z", "spin_2z"]
         samples = self.specific_parameter_samples(parameters)
-        chi_eff_samples = chi_eff(samples[0], samples[1], samples[2], samples[3])
+        chi_eff_samples = con.chi_eff(
+            samples[0], samples[1], samples[2], samples[3])
         self.append_data(chi_eff_samples)
 
     def _cos_tilt_1_from_tilt_1(self):
@@ -449,52 +454,54 @@ class one_format(object):
     def _dL_from_z(self):
         self.parameters.append("luminosity_distance")
         samples = self.specific_parameter_samples("redshift")
-        distance = dL_from_z(samples)
+        distance = con.dL_from_z(samples)
         self.append_data(distance)
 
     def _z_from_dL(self):
         self.parameters.append("redshift")
         samples = self.specific_parameter_samples("luminosity_distance")
-        redshift = z_from_dL(samples)
+        redshift = con.z_from_dL(samples)
         self.append_data(redshift)
 
     def _comoving_distance_from_z(self):
         self.parameters.append("comoving_distance")
         samples = self.specific_parameter_samples("redshift")
-        distance = comoving_distance_from_z(samples)
+        distance = con.comoving_distance_from_z(samples)
         self.append_data(distance)
 
     def _m1_source_from_m1_z(self):
         self.parameters.append("mass_1_source")
         samples = self.specific_parameter_samples(["mass_1", "redshift"])
-        mass_1_source = m1_source_from_m1_z(samples[0], samples[1])
+        mass_1_source = con.m1_source_from_m1_z(samples[0], samples[1])
         self.append_data(mass_1_source)
 
     def _m2_source_from_m2_z(self):
         self.parameters.append("mass_2_source")
         samples = self.specific_parameter_samples(["mass_2", "redshift"])
-        mass_2_source = m2_source_from_m2_z(samples[0], samples[1])
+        mass_2_source = con.m2_source_from_m2_z(samples[0], samples[1])
         self.append_data(mass_2_source)
-        
+
     def _mtotal_source_from_mtotal_z(self):
         self.parameters.append("total_mass_source")
         samples = self.specific_parameter_samples(["total_mass", "redshift"])
-        total_mass_source = m_total_source_from_mtotal_z(samples[0], samples[1])
+        total_mass_source = con.m_total_source_from_mtotal_z(samples[0], samples[1])
         self.append_data(total_mass_source)
 
     def _mchirp_source_from_mchirp_z(self):
         self.parameters.append("chirp_mass_source")
         samples = self.specific_parameter_samples(["chirp_mass", "redshift"])
-        chirp_mass_source = mchirp_source_from_mchirp_z(samples[0], samples[1])
+        chirp_mass_source = con.mchirp_source_from_mchirp_z(samples[0], samples[1])
         self.append_data(chirp_mass_source)
 
     def generate_all_posterior_samples(self):
-        if "chirp_mass" not in self.parameters and "chirp_mass_source" in self.parameters and \
-            "redshift" in self.parameters:
+        if "chirp_mass" not in self.parameters and "chirp_mass_source" in \
+                self.parameters and "redshift" in self.parameters:
             self._mchirp_from_mchirp_source_z()
-        if "mass_ratio" not in self.parameters and "symmetric_mass_ratio" in self.parameters:
+        if "mass_ratio" not in self.parameters and "symmetric_mass_ratio" in \
+                self.parameters:
             self._q_from_eta()
-        if "mass_ratio" not in self.parameters and "mass_1" in self.parameters and "mass_2" in self.parameters:
+        if "mass_ratio" not in self.parameters and "mass_1" in self.parameters \
+                and "mass_2" in self.parameters:
             self._q_from_m1_m2()
         if "mass_ratio" in self.parameters:
             ind = self.parameters.index("mass_ratio")
@@ -516,9 +523,10 @@ class one_format(object):
                 self._mchirp_from_m1_m2()
             if "symmetric_mass_ratio" not in self.parameters:
                 self._eta_from_m1_m2()
-            spin_components = ["spin_1x", "spin_1y", "spin_1z", "spin_2x",
-                "spin_2y", "spin_2z"]
-            spin_angles = ["iota", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1",
+            spin_components = [
+                "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
+            spin_angles = [
+                "iota", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1",
                 "a_2", "mass_1", "mass_2", "reference_frequency", "phase"]
             if all(i not in self.parameters for i in spin_components):
                 if all(i in self.parameters for i in spin_angles):
@@ -575,7 +583,7 @@ def load_with_deepdish(f):
     Parameters
     ----------
     f: dict
-        results file loaded with deepdish 
+        results file loaded with deepdish
     """
     approx = "none"
     parameters = [i for i in f["posterior"].keys()]
@@ -592,6 +600,7 @@ def load_with_deepdish(f):
             parameters[num] = "log_likelihood"
     return parameters, data, approx
 
+
 def load_with_h5py(f, path):
     """Return the data and parameters that appear in a given h5 file assuming
     that the file has been loaded with h5py
@@ -599,33 +608,34 @@ def load_with_h5py(f, path):
     Parameters
     ----------
     f: h5py._hl.files.File
-        results file loaded with h5py 
+        results file loaded with h5py
     """
     parameters, data = [], []
-    blocks = [i for i in f["%s" %(path)] if "block" in i]
+    blocks = [i for i in f["%s" % (path)] if "block" in i]
     for i in blocks:
         block_name = i.split("_")[0]
         if "items" in i:
-            for par in f["%s/%s" %(path,i)]:
+            for par in f["%s/%s" % (path, i)]:
                 if par == b"waveform_approximant":
-                    blocks.remove(block_name+"_items")
-                    blocks.remove(block_name+"_values")
+                    blocks.remove(block_name + "_items")
+                    blocks.remove(block_name + "_values")
     for i in sorted(blocks):
         if "items" in i:
-            for par in f["%s/%s" %(path,i)]:
+            for par in f["%s/%s" % (path, i)]:
                 if par == b"logL":
                     parameters.append(b"log_likelihood")
                 else:
                     parameters.append(par)
         if "values" in i:
             if len(data) == 0:
-                for dat in f["%s/%s" %(path, i)]:
+                for dat in f["%s/%s" % (path, i)]:
                     data.append(list(np.real(dat)))
             else:
-                for num, dat in enumerate(f["%s/%s" %(path, i)]):
+                for num, dat in enumerate(f["%s/%s" % (path, i)]):
                     data[num] += list(np.real(dat))
     parameters = [i.decode("utf-8") for i in parameters]
     return parameters, data
+
 
 def get_injection_parameters(parameters, inj_file, LALINFERENCE=False,
                              BILBY=False):
@@ -638,11 +648,9 @@ def get_injection_parameters(parameters, inj_file, LALINFERENCE=False,
     inj_file: str
         path to the location of the injection file
     """
-    _q_func = q_from_m1_m2
-    _eta_func = eta_from_m1_m2
-    _M_func = m_total_from_m1_m2
-    func_map = {"chirp_mass": lambda inj:inj.mchirp,
-                "symmetric_mass_ratio": lambda inj: inj.eta,
+    _q_func = con.q_from_m1_m2
+    _eta_func = con.eta_from_m1_m2
+    func_map = {"chirp_mass": lambda inj: inj.mchirp,
                 "luminosity_distance": lambda inj: inj.distance,
                 "mass_1": lambda inj: inj.mass1,
                 "mass_2": lambda inj: inj.mass2,
@@ -655,33 +663,34 @@ def get_injection_parameters(parameters, inj_file, LALINFERENCE=False,
                 "spin_2z": lambda inj: inj.spin2z,
                 "mass_ratio": lambda inj: _q_func(inj.mass1, inj.mass2),
                 "symmetric_mass_ratio": lambda inj: _eta_func(inj.mass1, inj.mass2),
-                "total_mass": lambda inj: inj.mass1+inj.mass2,
-                "chi_p": lambda inj: _chi_p(inj.mass1, inj.mass2, inj.spin1x,
-                                            inj.spin1y, inj.spin2x, inj.spin2y),
-                "chi_eff": lambda inj: _chi_eff(inj.mass1, inj.mass2, inj.spin1z,
-                                                inj.spin2z)}
+                "total_mass": lambda inj: inj.mass1 + inj.mass2,
+                "chi_p": lambda inj: con._chi_p(inj.mass1, inj.mass2, inj.spin1x,
+                                                inj.spin1y, inj.spin2x, inj.spin2y),
+                "chi_eff": lambda inj: con._chi_eff(inj.mass1, inj.mass2, inj.spin1z,
+                                                    inj.spin2z)}
     inj_par = parameters
     if LALINFERENCE:
-        if inj_file == None:
-            inj_data = [float("nan")]*len(parameters)
+        if inj_file is None:
+            inj_data = [float("nan")] * len(parameters)
         else:
             if GLUE:
-                xmldoc = ligolw_utils.load_filename(inj_file, contenthandler= \
-                                     lsctables.use_in(ligolw.LIGOLWContentHandler))
-                table=lsctables.SimInspiralTable.get_table(xmldoc)[0]
-                inj_data = [func_map[i](table) if i in func_map.keys() else \
+                xmldoc = ligolw_utils.load_filename(
+                    inj_file, contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
+                table = lsctables.SimInspiralTable.get_table(xmldoc)[0]
+                inj_data = [func_map[i](table) if i in func_map.keys() else
                             float("nan") for i in parameters]
             else:
-                inj_data = [float("nan")]*len(parameters)
+                inj_data = [float("nan")] * len(parameters)
     if BILBY:
         try:
             f = deepdish.io.load(inj_file)
             inj_keys = f["injection_parameters"].keys()
-            inj_data = [f["injection_parameters"][key] if key in inj_keys \
-                          else float("nan") for key in parameters]
-        except:
-            inj_data = [float("nan")]*len(parameters)
+            inj_data = [f["injection_parameters"][key] if key in inj_keys
+                        else float("nan") for key in parameters]
+        except Exception:
+            inj_data = [float("nan")] * len(parameters)
     return [inj_par, inj_data]
+
 
 def convert_dat_to_h5(f):
     """Convert a dat file to the lalinference framework
@@ -693,12 +702,13 @@ def convert_dat_to_h5(f):
     """
     dat_file = np.genfromtxt(f, names=True)
     file_name = f.split(".dat")[0]
-    h5_file = h5py.File("%s.hdf5" %(file_name), 'w')
+    h5_file = h5py.File("%s.hdf5" % (file_name), 'w')
     lalinference_group = h5_file.create_group('lalinference')
     sampler_group = lalinference_group.create_group('lalinference_mcmc')
     sampler_group.create_dataset('posterior_samples', data=dat_file)
     h5_file.close()
-    return "%s.hdf5" %(file_name)
+    return "%s.hdf5" % (file_name)
+
 
 def add_specific_arguments(parser):
     """Add command line arguments that are specific to pesummary_convert
@@ -706,11 +716,12 @@ def add_specific_arguments(parser):
     Parameters
     ----------
     parser: argparser
-        The parser containing the command line arguments 
+        The parser containing the command line arguments
     """
     parser.add_argument("-o", "--outpath", dest="out",
                         help="location of output file", default=None)
     return parser
+
 
 def main():
     """Top-level interface for pesummary_convert.py
@@ -720,10 +731,10 @@ def main():
     opts = parser.parse_args()
     if opts.inj_file and len(opts.samples) != len(opts.inj_file):
         raise Exception("Please ensure that the number of results files "
-            "matches the number of injection files")
+                        "matches the number of injection files")
     if opts.config and len(opts.samples) != len(opts.config):
         raise Exception("Please ensure that the number of results files "
-            "matches the number of configuration files")
+                        "matches the number of configuration files")
     if not opts.inj_file:
         opts.inj_file = []
         for i in range(len(opts.samples)):
@@ -732,9 +743,8 @@ def main():
         opts.config = []
         for i in range(len(opts.samples)):
             opts.config.append(None)
-    paths = []
     for num, i in enumerate(opts.samples):
-        f = one_format(i, opts.inj_file[num], config=opts.config[num])
+        f = OneFormat(i, opts.inj_file[num], config=opts.config[num])
         f.generate_all_posterior_samples()
         g = f.save()
         if opts.out:

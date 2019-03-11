@@ -19,10 +19,10 @@ import os
 import numpy as np
 import h5py
 
-import pesummary
-from pesummary.utils.utils import logger, rename_group_or_dataset_in_hf5_file
+from pesummary.utils.utils import logger
 from pesummary.inputs import PostProcessing
 from pesummary.utils.utils import check_condition
+
 
 def make_group_in_hf5_file(base_file, group_path):
     """Make a group in an hdf5 file
@@ -32,13 +32,14 @@ def make_group_in_hf5_file(base_file, group_path):
     base_file: str
         path to the file that you want to add content to
     group_path: str
-        the group path that you would like to create 
+        the group path that you would like to create
     """
     condition = not os.path.isfile(base_file)
-    check_condition(condition, "The file %s does not exist" %(base_file))
+    check_condition(condition, "The file %s does not exist" % (base_file))
     f = h5py.File(base_file, "a")
-    group = f.create_group(group_path)
+    f.create_group(group_path)
     f.close()
+
 
 def add_content_to_hdf_file(base_file, dataset_name, content, group=None):
     """Add new content to an hdf5 file
@@ -55,7 +56,7 @@ def add_content_to_hdf_file(base_file, dataset_name, content, group=None):
         group that you want to add content to. Default if the base of the file
     """
     condition = not os.path.isfile(base_file)
-    check_condition(condition, "The file %s does not exist" %(base_file))
+    check_condition(condition, "The file %s does not exist" % (base_file))
     f = h5py.File(base_file, "a")
     if group:
         group = f[group]
@@ -68,6 +69,7 @@ def add_content_to_hdf_file(base_file, dataset_name, content, group=None):
         f.create_dataset(dataset_name, data=content)
     f.close()
 
+
 def combine_hdf_files(base_file, new_file):
     """Combine two hdf5 files
 
@@ -79,17 +81,18 @@ def combine_hdf_files(base_file, new_file):
         path to the file that you want to combine with the base file
     """
     condition = not os.path.isfile(base_file)
-    check_condition(condition, "The base file %s does not exist" %(base_file))
+    check_condition(condition, "The base file %s does not exist" % (base_file))
     condition = not os.path.isfile(new_file)
-    check_condition(condition, "The new file %s does not exist" %(new_file))
+    check_condition(condition, "The new file %s does not exist" % (new_file))
     g = h5py.File(new_file)
     label = list(g["posterior_samples"].keys())[0]
-    approximant = list(g["posterior_samples/%s" %(label)].keys())[0]
-    path = "posterior_samples/%s/%s" %(label, approximant)
-    parameters = np.array([i for i in g["%s/parameter_names" %(path)]])
-    samples = np.array([i for i in g["%s/samples" %(path)]])
-    injection_parameters = np.array([i for i in g["%s/injection_parameters" %(path)]])
-    injection_data = np.array([i for i in g["%s/injection_data" %(path)]])
+    approximant = list(g["posterior_samples/%s" % (label)].keys())[0]
+    path = "posterior_samples/%s/%s" % (label, approximant)
+    parameters = np.array([i for i in g["%s/parameter_names" % (path)]])
+    samples = np.array([i for i in g["%s/samples" % (path)]])
+    injection_parameters = np.array(
+        [i for i in g["%s/injection_parameters" % (path)]])
+    injection_data = np.array([i for i in g["%s/injection_data" % (path)]])
     g.close()
 
     f = h5py.File(base_file, "a")
@@ -98,7 +101,7 @@ def combine_hdf_files(base_file, new_file):
         label_group = f["posterior_samples"].create_group(label)
         approx_group = label_group.create_group(approximant)
     else:
-        approx_group = f["posterior_samples/%s" %(label)].create_group(approximant)
+        approx_group = f["posterior_samples/%s" % (label)].create_group(approximant)
     approx_group.create_dataset("parameter_names", data=parameters)
     approx_group.create_dataset("samples", data=samples)
     approx_group.create_dataset("injection_parameters", data=injection_parameters)
@@ -120,11 +123,11 @@ class MetaFile(PostProcessing):
         logger.info("Starting to generate the meta file")
         self.generate_meta_file()
         logger.info("Finished generating the meta file. The meta file can be "
-            "viewed here: %s" %(self.meta_file))
+                    "viewed here: %s" % (self.meta_file))
 
     @property
     def meta_file(self):
-        return self.webdir+"/samples/posterior_samples.h5"
+        return self.webdir + "/samples/posterior_samples.h5"
 
     @staticmethod
     def get_keys_from_hdf5_file(f, level=None):
@@ -138,7 +141,7 @@ class MetaFile(PostProcessing):
                 return list(g.keys())
         except Exception as e:
             raise Exception("Failed to return the keys in the hdf5 file "
-                "because of %s" %(e))
+                            "because of %s" % (e))
 
     def labels_and_approximants_to_include(self):
         """Return the labels and the approximants that are unique and not
@@ -146,7 +149,8 @@ class MetaFile(PostProcessing):
         """
         labels = self.labels
         approximants = self.approximant
-        names = ["%s_%s" %(i,j) for i,j in zip(self.labels, self.approximant)]
+        names = ["%s_%s" % (i, j) for i, j in zip(
+            self.labels, self.approximant)]
         if self.existing_names:
             labels_to_include, approximants_to_include = [], []
             for num, i in enumerate(names):
@@ -203,18 +207,20 @@ class MetaFile(PostProcessing):
             make_group_in_hf5_file(self.meta_file, "psds")
         for i in labels:
             if self.existing_labels and i not in self.existing_labels:
-                make_group_in_hf5_file(self.meta_file, "psds/%s" %(i))
+                make_group_in_hf5_file(self.meta_file, "psds/%s" % (i))
         for num, i in enumerate(approximants):
-            make_group_in_hf5_file(self.meta_file, "psds/%s/%s" %(labels[num], i))
-            frequencies = [self._grab_frequencies_from_psd_data_file(j) for j \
-                in self.psds]
-            strains = [self._grab_strains_from_psd_data_file(j) for j in \
-                self.psds]
+            make_group_in_hf5_file(self.meta_file, "psds/%s/%s" % (labels[num], i))
+            frequencies = [self._grab_frequencies_from_psd_data_file(j) for j
+                           in self.psds]
+            strains = [self._grab_strains_from_psd_data_file(j) for j in
+                       self.psds]
             for idx, j in enumerate(self.psds):
-                content = np.array([(k, l) for k,l in zip(frequencies[idx],
-                    strains[idx])], dtype=[("Frequencies", "f"), ("Strain", "f")])
-                add_content_to_hdf_file(self.meta_file, self.psd_labels[idx],
-                    content, group="psds/%s/%s" %(labels[num], i))
+                content = np.array([
+                    (k, l) for k, l in zip(frequencies[idx], strains[idx])],
+                    dtype=[("Frequencies", "f"), ("Strain", "f")])
+                add_content_to_hdf_file(
+                    self.meta_file, self.psd_labels[idx], content,
+                    group="psds/%s/%s" % (labels[num], i))
 
     def _add_calibration_to_meta_file(self):
         """

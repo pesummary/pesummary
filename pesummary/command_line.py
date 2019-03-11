@@ -15,6 +15,7 @@
 
 import argparse
 
+
 def command_line():
     """Creates an ArgumentParser object which holds all of the information
     from the command line.
@@ -33,14 +34,15 @@ def command_line():
                         help="waveform approximant used to generate samples",
                         nargs='+', default=None)
     parser.add_argument("--email", action="store",
-                        help="send an e-mail to the given address with a link to the finished page.",
+                        help="send an e-mail to the given address with a link "
+                             "to the finished page.",
                         default=None, metavar="user@ligo.org")
     parser.add_argument("--dump", action="store_true",
                         help="dump all information onto a single html page",
                         default=False)
     parser.add_argument("-c", "--config", dest="config",
-                        help="configuration file associcated with each samples file.", nargs='+',
-                        default=None)
+                        help="configuration file associcated with each "
+                             "samples file.", nargs='+', default=None)
     parser.add_argument("--sensitivity", action="store_true",
                         help="generate sky sensitivities for HL, HLV",
                         default=False)

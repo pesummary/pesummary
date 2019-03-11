@@ -19,11 +19,13 @@ import logging
 
 import h5py
 
+
 def check_condition(condition, error_message):
     """Raise an exception if the condition is not satisfied
     """
     if condition:
         raise Exception(error_message)
+
 
 def rename_group_or_dataset_in_hf5_file(base_file, group=None, dataset=None):
     """Rename a group or dataset in an hdf5 file
@@ -40,7 +42,7 @@ def rename_group_or_dataset_in_hf5_file(base_file, group=None, dataset=None):
         argument
     """
     condition = not os.path.isfile(base_file)
-    check_condition(condition, "The file %s does not exist" %(base_file))
+    check_condition(condition, "The file %s does not exist" % (base_file))
     f = h5py.File(base_file, "a")
     if group:
         f[group[1]] = f[group[0]]
@@ -50,11 +52,13 @@ def rename_group_or_dataset_in_hf5_file(base_file, group=None, dataset=None):
         del f[dataset[0]]
     f.close()
 
+
 def make_dir(path):
     if os.path.isdir(path):
         pass
     else:
         os.makedirs(path)
+
 
 def guess_url(web_dir, host, user):
     """Guess the base url from the host name
@@ -69,9 +73,9 @@ def guess_url(web_dir, host, user):
     user: str
         the user that is current executing the python interpreter
     """
-    ligo_data_grid=False
+    ligo_data_grid = False
     if 'public_html' in web_dir:
-        ligo_data_grid=True
+        ligo_data_grid = True
     if ligo_data_grid:
         path = web_dir.split("public_html")[1]
         if "raven" in host or "arcca" in host:
@@ -97,6 +101,7 @@ def guess_url(web_dir, host, user):
         url = "https://{}".format(web_dir)
     return url
 
+
 def setup_logger():
     """Set up the logger output.
     """
@@ -109,5 +114,6 @@ def setup_logger():
     FORMAT = '%(asctime)s %(name)s %(levelname)-8s: %(message)s'
     logging.basicConfig(format=FORMAT, datefmt='%Y-%m-%d  %H:%M:%S')
 
-setup_logger()                                                                  
+
+setup_logger()
 logger = logging.getLogger('PESummary')

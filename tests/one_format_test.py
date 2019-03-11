@@ -39,36 +39,36 @@ class TestOneFormat(object):
         f.create_dataset("x", np.array([1]))
         f.create_dataset("y", np.array([1]))
         f.close()
-        keys = one_format.one_format.keys("./.outdir/test.h5")
+        keys = one_format.OneFormat.keys("./.outdir/test.h5")
         assert keys == ["x", "y"]
 
     def test_approximant(self):
         f = {"posterior": {"waveform_approximant": ["approx1"]}}
         deepdish.io.save("./.outdir/test_deepdish.h5", f)
-        f = one_format.one_format("./.outdir/test_deepdish.h5", None)
+        f = one_format.OneFormat("./.outdir/test_deepdish.h5", None)
         assert f.approximant == "approx1" 
 
     def test_lalinference(self):
         f = {"posterior": {"waveform_approximant": ["approx1"]}}
         deepdish.io.save("./.outdir/test_deepdish.h5", f)
-        f = one_format.one_format("./.outdir/test_deepdish.h5", None)
+        f = one_format.OneFormat("./.outdir/test_deepdish.h5", None)
         assert f.lalinference == False
 
     def test_bilby(self):
         f = {"posterior": {"waveform_approximant": ["approx1"]}}
         deepdish.io.save("./.outdir/test_deepdish.h5", f)
-        f = one_format.one_format("./.outdir/test_deepdish.h5", None) 
+        f = one_format.OneFormat("./.outdir/test_deepdish.h5", None) 
         assert f.bilby == True
 
     def test_parameters(self):
         f = {"posterior": {"mass_1": [1], "mass_2": [2]}}
         deepdish.io.save("./.outdir/test_deepdish.h5", f)
-        f = one_format.one_format("./.outdir/test_deepdish.h5", None)
+        f = one_format.OneFormat("./.outdir/test_deepdish.h5", None)
         assert all(i in f.parameters for i in ["mass_1", "mass_2"])
 
     def test_samples(self):
         f = {"posterior": {"mass_1": [2., 2.], "mass_2": [2., 2.]}}
         deepdish.io.save("./.outdir/test_deepdish.h5", f)
-        f = one_format.one_format("./.outdir/test_deepdish.h5", None)
+        f = one_format.OneFormat("./.outdir/test_deepdish.h5", None)
         assert f.samples == [[2., 2.], [2., 2.]]
          
