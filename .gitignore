@@ -9,6 +9,12 @@ build/
 dist/
 docs/_*
 
+## ignore files used for testing
+tests/files/*
+
+## ignore images used for documentation
+docs/images/*
+
 ## ignore __pycache__ directories
 __pycache__
 

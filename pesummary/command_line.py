@@ -57,6 +57,9 @@ def command_line():
                         default="albert.einstein")
     parser.add_argument("--gracedb", dest="gracedb",
                         help="gracedb of the event", default=None)
+    parser.add_argument("--psd", dest="psd",
+                        help="psd files used", nargs='+',
+                        default=None)
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="print useful information for debugging purposes")
     return parser

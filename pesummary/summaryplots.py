@@ -28,6 +28,8 @@ import matplotlib.pyplot as plt
 
 import pesummary
 from pesummary.plot import plot
+from pesummary.file.existing import ExistingFile
+from pesummary.utils.utils import rename_group_or_dataset_in_hf5_file
 from pesummary.utils.utils import logger
 
 from pesummary.inputs import command_line, Input, PostProcessing
@@ -96,6 +98,7 @@ class PlotGeneration(PostProcessing):
     """
     def __init__(self, inputs, colors="default"):
         super(PlotGeneration, self).__init__(inputs, colors)
+        self.inputs = inputs
         logger.info("Starting to generate plots")
         self.generate_plots()
         logger.info("Finished generating the plots")
@@ -113,6 +116,8 @@ class PlotGeneration(PostProcessing):
     def generate_plots(self):
         """Generate all plots for all results files.
         """
+        logger.debug("Generating the psd plot")
+        self.try_to_make_a_plot("psd")
         for num, i in enumerate(self.approximant):
             logger.debug("Starting to generate plots for %s\n" %(i))
             self._check_latex_labels(self.parameters[num])
@@ -123,32 +128,17 @@ class PlotGeneration(PostProcessing):
         if self.sensitivity:
             self.try_to_make_a_plot("sensitivity", 0)
         if self.add_to_existing:
-            existing_file = h5py.File(self.existing+"/samples/posterior_samples.h5")
-            labels = list(existing_file.keys())
+            existing = ExistingFile(self.existing)
             existing_config = glob(self.existing+"/config/*")
-            for idx, i in enumerate(labels):
-                approximants = list(existing_file[i].keys())
-                parameters = [[k.decode("utf-8") for k in \
-                    existing_file["%s/%s/parameter_names" %(i, j)]] for j in \
-                    approximants]
-                samples = [[k for k in existing_file["%s/%s/samples" %(i, j)]] \
-                    for j in approximants]
-                existing_file.close()
-                proposed_tags = ["%s_%s" %(i, j) for j in approximants]
-                existing_tags = ["%s_%s" %(k, j) for k,j in \
-                    zip(self.labels, self.approximant)]
-                for num, j in enumerate(proposed_tags):
-                    if j not in existing_tags:
-                        self.approximant.append(approximants[num])
-                        self.result_files.append(self.existing+"/samples/posterior_samples.h5")
-                        self.samples.append(samples[num])
-                        self.parameters.append(parameters[num])
-                        self.labels.append(i)
-                        if self.config and len(existing_config) > 1:
-                            self.config.append(existing_config[idx])
-                    else:
-                        logger.warning("Data for the approximant %s already "
-                            "exists. This approximant is being ignored" %(approximants[num]))
+            for num, i in enumerate(existing.existing_approximant):
+                original_label = existing.existing_labels[num]
+                self.labels.append(original_label)
+                self.approximant.append(existing.existing_approximant[num])
+                self.result_files.append(existing.existing_file)
+                self.samples.append(existing.existing_samples[num])
+                self.parameters.append(existing.existing_parameters[num])
+                if self.config and len(existing_config) > 1:
+                    self.config.append(existing_config[num])
             key_data = self._key_data()
             maxL_list = []
             for idx, j in enumerate(self.parameters):
@@ -174,7 +164,8 @@ class PlotGeneration(PostProcessing):
         idx: int
             The index of the results file that you wish to analyse.
         """
-        plot_type_dictionary = {"corner": self._corner_plot,
+        plot_type_dictionary = {"psd": self._psd_plot,
+                                "corner": self._corner_plot,
                                 "skymap": self._skymap_plot,
                                 "waveform": self._waveform_plot,
                                 "1d_histogram": self._1d_histogram_plots,
@@ -188,6 +179,17 @@ class PlotGeneration(PostProcessing):
         except Exception as e:
             logger.info("Failed to generate %s plot because "
                         "%s" %(plot_type, e))
+
+    def _psd_plot(self, idx=None):
+        """Generate a single plot showing all psds used in analysis
+        """
+        frequencies = [self._grab_frequencies_from_psd_data_file(i) for i in \
+            self.psds]
+        strains = [self._grab_strains_from_psd_data_file(i) for i in self.psds]
+        fig = plot._psd_plot(frequencies, strains, colors=self.colors,
+            labels = self.psd_labels)
+        plt.savefig("%s/psd_plot.png" %(self.savedir))
+        plt.close()
 
     def _corner_plot(self, idx):
         """Generate a corner plot for a given results file.

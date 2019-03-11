@@ -794,3 +794,26 @@ def _time_domain_waveform(detectors, maxL_params,**kwargs):
     plt.legend(loc="best")
     plt.tight_layout()
     return fig
+
+def _psd_plot(frequencies, strains, colors=None, labels=None):
+    """Superimpose all PSD plots onto a single figure.
+
+    Parameters
+    ----------
+    frequencies: nd list
+        list of all frequencies used for each psd file
+    strains: nd list
+        list of all strains used for each psd file
+    colors: optional, list
+        list of colors to be used to differentiate the different PSDs
+    labels: optional, list
+        list of lavels for each PSD
+    """
+    fig = plt.figure()
+    for num, i in enumerate(frequencies):
+        plt.loglog(i, strains[num], color=colors[num], label=labels[num])
+    plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
+    plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
+    plt.legend(loc="best")
+    plt.tight_layout()
+    return fig

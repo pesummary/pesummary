@@ -25,10 +25,11 @@ import h5py
 
 import pesummary
 from pesummary.command_line import command_line
-from pesummary.utils.utils import guess_url, combine_hdf_files, logger
-from pesummary.utils.utils import rename_group_or_dataset_in_hf5_file
+from pesummary.utils.utils import (guess_url, logger,
+    rename_group_or_dataset_in_hf5_file)
 from pesummary.utils import utils
-from pesummary.one_format.data_format import one_format, standard_names 
+from pesummary.file.one_format import one_format, standard_names
+from pesummary.file.existing import ExistingFile 
 
 import lal
 import lalsimulation as lalsim
@@ -78,6 +79,8 @@ class Input(object):
         List containing the detectors used to generate each results file
     labels: str
         A label for this summary page
+    psd: str
+        List of the psds used in the analysis
     """
     def __init__(self, opts):
         logger.info("Command line arguments: %s" %(opts))
@@ -93,7 +96,13 @@ class Input(object):
         self.add_to_existing = opts.add_to_existing
         self.sensitivity = opts.sensitivity
         self.gracedb = opts.gracedb
+        self.psds = opts.psd
         self.dump = opts.dump
+        self.existing_labels = []
+        self.existing_parameters = []
+        self.existing_samples = []
+        self.existing_approximant = []
+        self.existing_names = []
         self.check_approximant_in_results_file()
         self.make_directories()
         self.copy_files()
@@ -234,7 +243,7 @@ class Input(object):
             approximant_list = []
             for i in self.result_files:
                 f = h5py.File(i, "r")
-                approx = list(f["label"].keys())[0]
+                approx = list(f["posterior_samples/label"].keys())[0]
                 f.close()
                 if approx == "none":
                     raise Exception("Failed to extract the approximant "
@@ -313,13 +322,14 @@ class Input(object):
         if not detectors:
             for num, i in enumerate(self.result_files):
                 f = h5py.File(i)
-                params = [j for j in f["label/%s/parameter_names" %(self.approximant[num])]]
+                params = [j for j in f["posterior_samples/label/%s/parameter_names"
+                    %(self.approximant[num])]]
                 f.close()
                 individual_detectors = []
                 for j in params:
                     if b"optimal_snr" in j:
                         individual_detectors.append(j.split(b"_optimal_snr")[0])
-                individual_detectors = [str(i.decode("utf-8")) for i in individual_detectors]
+                individual_detectors = sorted([str(i.decode("utf-8")) for i in individual_detectors])
                 if individual_detectors:
                     detector_list.append("_".join(individual_detectors))
                 else:
@@ -328,6 +338,61 @@ class Input(object):
             detector_list = detectors
         logger.debug("The detector network is %s" %(detector_list))
         self._detectors = detector_list
+
+    @property
+    def existing_labels(self):
+        return self._existing_labels
+
+    @existing_labels.setter
+    def existing_labels(self, existing_labels):
+        self._existing_labels = None
+        if self.add_to_existing:
+            existing = ExistingFile(self.existing)
+            self._existing_labels = existing.existing_labels
+
+    @property
+    def existing_parameters(self):
+        return self._existing_parameters
+
+    @existing_parameters.setter
+    def existing_parameters(self, existing_parameters):
+        self._existing_parameters = None
+        if self.add_to_existing:
+            existing = ExistingFile(self.existing)
+            self._existing_parameters = existing.existing_parameters
+
+    @property
+    def existing_samples(self):
+        return self._existing_samples
+
+    @existing_samples.setter
+    def existing_samples(self, existing_samples):
+        self._existing_samples = None
+        if self.add_to_existing:
+            existing = ExistingFile(self.existing)
+            self._existing_samples = existing.existing_samples
+
+    @property
+    def existing_approximant(self):
+        return self._existing_approximant
+
+    @existing_approximant.setter
+    def existing_approximant(self, existing_approximant):
+        self._existing_approximant = None
+        if self.add_to_existing:
+            existing = ExistingFile(self.existing)
+            self._existing_approximant = existing.existing_approximant
+
+    @property
+    def existing_names(self):
+        return self._existing_names
+
+    @existing_names.setter
+    def existing_names(self, existing_names):
+        self._existing_names = None
+        if self.add_to_existing:
+            self._existing_names = ["%s_%s" %(i,j) for i,j in \
+                zip(self.existing_labels, self.existing_approximant)]
 
     @property
     def labels(self):
@@ -360,17 +425,34 @@ class Input(object):
                 proposed_names[ind] += "_%s" %(j)
                 label_list[ind] += "_%s" %(j)
         if self.add_to_existing:
-            f = h5py.File(self.existing+"/samples/posterior_samples.h5")
-            labels = list(f.keys())
-            current_labels = ["%s_%s" %(i, j) for i in labels \
-                for j in list(f[i].keys())]
-            logger.info("%s" %(current_labels))
+            existing_names = ["%s_%s" %(i, j) for i,j in \
+                zip(self.existing_labels, self.existing_approximant)]
             for num, i in enumerate(proposed_names):
-                if i in current_labels:
+                if i in existing_names:
                     ind = proposed_names.index(i)
                     label_list[ind] += "_%s" %(num)
         logger.debug("The label is %s" %(label_list))
         self._labels = label_list
+
+    @property
+    def psds(self):
+        return self._psds 
+
+    @psds.setter
+    def psds(self, psds):
+        psd_list = []
+        if psds:
+            for i in psds:
+                extension = i.split(".")[-1]
+                if extension == "gz":
+                    print("convert to .dat file")
+                elif extension == "dat":
+                    psd_list.append(i)
+                else:
+                    raise Exception("PSD results file not understood")
+            self._psds = psd_list
+        else:
+            self._psds = None
 
     def check_approximant_in_results_file(self):
         """Check that the approximant that is stored in the results file
@@ -378,11 +460,12 @@ class Input(object):
         """
         for num, i in enumerate(self.result_files):
             f = h5py.File(i, "r")
-            keys = list(f["label"].keys())
+            keys = list(f["posterior_samples/label"].keys())
             f.close()
             if "none" in keys:
                 rename_group_or_dataset_in_hf5_file(i,
-                    group = ["label/none", "label/%s" %(self.approximant[num])])
+                    group = ["posterior_samples/label/none",
+                        "posterior_samples/label/%s" %(self.approximant[num])])
 
     def check_label_in_results_file(self):
         """Check that the label that is stored in the results file corresponds
@@ -390,7 +473,7 @@ class Input(object):
         """
         for num, i in enumerate(self.result_files):
             rename_group_or_dataset_in_hf5_file(i,
-                group = ["label", self.labels[num]])
+                group = ["posterior_samples/label", "posterior_samples/%s" %(self.labels[num])])
 
     def make_directories(self):
         """Make the directorys in the web directory to store all information.
@@ -482,6 +565,12 @@ class PostProcessing(object):
         self.add_to_existing = inputs.add_to_existing
         self.labels = inputs.labels
         self.sensitivity = inputs.sensitivity
+        self.psds = inputs.psds
+        self.existing_labels = inputs.existing_labels
+        self.existing_parameters = inputs.existing_parameters
+        self.existing_samples = inputs.existing_samples
+        self.existing_approximant = inputs.existing_approximant
+        self.existing_names = inputs.existing_names
         self.colors = colors
 
         self.parameters = []
@@ -522,7 +611,7 @@ class PostProcessing(object):
         parameter_list = []
         for num, results_files in enumerate(self.result_files):
             f = h5py.File(results_files, "r")
-            p = [i for i in f["%s/%s/parameter_names" %(
+            p = [i for i in f["posterior_samples/%s/%s/parameter_names" %(
                 self.labels[num], self.approximant[num])]]
             parameter_list.append([i.decode("utf-8") for i in p])
             f.close()
@@ -537,10 +626,10 @@ class PostProcessing(object):
         injection_list = []
         for num, results_files in enumerate(self.result_files):
             f = h5py.File(results_files, "r")
-            inj_p = [i for i in f["%s/%s/injection_parameters" %(
+            inj_p = [i for i in f["posterior_samples/%s/%s/injection_parameters" %(
                 self.labels[num], self.approximant[num])]]
             inj_p = [i.decode("utf-8") for i in inj_p]
-            inj_data = [i for i in f["%s/%s/injection_data" %(
+            inj_data = [i for i in f["posterior_samples/%s/%s/injection_data" %(
                 self.labels[num], self.approximant[num])]]
             injection_list.append({i:j for i,j in zip(inj_p, inj_data)})
         self._injection_data = injection_list
@@ -554,7 +643,7 @@ class PostProcessing(object):
         sample_list = []
         for num, results_files in enumerate(self.result_files):
             f = h5py.File(results_files, "r")
-            s = [i for i in f["%s/%s/samples" %(
+            s = [i for i in f["posterior_samples/%s/%s/samples" %(
                 self.labels[num], self.approximant[num])]]
             sample_list.append(s)
         self._samples = sample_list
@@ -594,6 +683,21 @@ class PostProcessing(object):
                 if i in duplicates.keys():
                     prepend[num]  = labels[num]
         return prepend
+
+    @property
+    def psd_labels(self):
+        labels_list = []
+        for i in self.psds:
+            file_name = i.split("/")[-1]
+            if any(j in file_name for j in ["H1", "0"]):
+                labels_list.append("H1")
+            elif any(j in file_name for j in ["L1", "1"]):
+                labels_list.append("L1")
+            elif any(j in file_name for j in ["V1", "2"]):
+                labels_list.append("V1")
+            else:
+                labels_list.append(file_name)
+        return labels_list
             
     def _key_data(self):
         """Grab the mean, median, maximum likelihood value and the standard
@@ -613,3 +717,30 @@ class PostProcessing(object):
                            "std": np.std(subset)}
             key_data_list.append(data)
         return key_data_list
+
+    def _grab_frequencies_from_psd_data_file(self, file):
+        """Return the frequencies stored in the psd data files
+
+        Parameters
+        ----------
+        file: str
+            path to the psd data file
+        """
+        fil = open(file)
+        fil = fil.readlines()
+        fil = [i.strip().split() for i in fil]
+        return [float(i[0]) for i in fil]
+
+    def _grab_strains_from_psd_data_file(sef, file):
+        """Return the strains stored in the psd data files
+
+        Parameters
+        ----------
+        file: str
+            path to the psd data file
+        """
+        fil = open(file)
+        fil = fil.readlines()
+        fil = [i.strip().split() for i in fil]
+        return [float(i[1]) for i in fil]
+
