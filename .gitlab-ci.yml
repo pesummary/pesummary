@@ -39,6 +39,13 @@ documentation:
     paths:
       - docs/_build/html/
 
+build_examples:
+  stage: deploy
+  script:
+    - curl --request POST --form "token=$CI_EXAMPLES_TRIGGER_TOKEN" --form ref=master https://git.ligo.org/api/v4/projects/3386/trigger/pipeline
+  only:
+    - master
+
 pages:
   stage: deploy
   dependencies:
