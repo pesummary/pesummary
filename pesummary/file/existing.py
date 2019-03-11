@@ -15,9 +15,6 @@
 
 import h5py
 
-import pesummary
-from pesummary.utils.utils import rename_group_or_dataset_in_hf5_file 
-
 
 class ExistingFile():
     """This class handles the existing posterior_samples.h5 file
@@ -67,7 +64,7 @@ class ExistingFile():
         sample_list = []
         f = h5py.File(self.existing_file)
         for num, i in enumerate(self.existing_labels):
-            s = [j for j in f["posterior_samples/%s/%s/samples" %(
+            s = [j for j in f["posterior_samples/%s/%s/samples" % (
                  i, self.existing_approximant[num])]]
             sample_list.append(s)
         f.close()
@@ -82,7 +79,7 @@ class ExistingFile():
         parameter_list = []
         f = h5py.File(self.existing_file)
         for num, i in enumerate(self.existing_labels):
-            p = [j for j in f["posterior_samples/%s/%s/parameter_names" %(
+            p = [j for j in f["posterior_samples/%s/%s/parameter_names" % (
                  i, self.existing_approximant[num])]]
             parameter_list.append([j.decode("utf-8") for j in p])
         f.close()
@@ -93,7 +90,7 @@ class ExistingFile():
         """
         f = h5py.File(self.existing_file)
         labels = list(f["posterior_samples"].keys())
-        structure = {i:j for i in labels for j in \
-            list(f["posterior_samples/%s" %(i)].keys())}
+        structure = {i: j for i in labels for j in list(
+            f["posterior_samples/%s" % (i)].keys())}
         f.close()
         return structure

@@ -13,10 +13,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import numpy as np
+
+
 class Base():
     """Meta class containing helper functions for generating webpages
-    """ 
-
+    """
     def close(self):
         """Close the opened html file.
         """
@@ -48,10 +50,10 @@ class Base():
         if type(content) == list:
             for i in np.arange(len(content)):
                 content[i] == self._check_content(content[i])
-                self.html_file.write(" "*indent + content)
+                self.html_file.write(" " * indent + content)
         else:
-             content = self._check_content(content)
-             self.html_file.write(" "*indent + content)
+            content = self._check_content(content)
+            self.html_file.write(" " * indent + content)
 
     def make_div(self, indent=0, _class=None, _style=None, _id=None):
         """Make a div of your choice
@@ -67,11 +69,11 @@ class Base():
         """
         string = "<div"
         if _class:
-            string += " class='%s'" %(_class)
+            string += " class='%s'" % (_class)
         if _style:
-            string += " style='%s'" %(_style)
+            string += " style='%s'" % (_style)
         if _id:
-            string += " id='%s'" %(_id)
+            string += " id='%s'" % (_id)
         string += ">\n"
         self.add_content(string, indent=indent)
 
