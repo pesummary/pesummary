@@ -45,6 +45,7 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <script src='./js/multiple_posteriors.js'></script>
     <script src='./js/search.js'></script>
     <script src='./js/side_bar.js'></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 """
 
 OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
@@ -57,6 +58,7 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <script src='../js/multiple_posteriors.js'></script>
     <script src='../js/search.js'></script>
     <script src='../js/side_bar.js'></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 """
 
 
@@ -214,7 +216,8 @@ class page(Base):
         """
         self._footer(user, rundir)
 
-    def make_navbar(self, links=None, search=True):
+    def make_navbar(self, links=None, samples_path="./samples", search=True,
+                    histogram_download=None):
         """Make a navigation bar in boostrap format.
 
         Parameters
@@ -228,8 +231,12 @@ class page(Base):
 
                 links=[corner, [1d_histograms, [mass1, mass2, mchirp]]]
 
+        samples_path: str, optional
+            path to the location of the meta file
         search: bool, optional
             if True, search bar will be given in navbar
+        histogram_download: str, optional
+            path to the location of the data associated with the histogram
         """
         self._setup_navbar()
         if links is None:
@@ -327,7 +334,19 @@ class page(Base):
                 self.add_content("</li>\n", indent=8)
         self.add_content("</ul>\n", indent=6)
         self.add_content("</div>\n", indent=4)
-
+        if histogram_download:
+            self.add_content("<a href='%s' download>" % (histogram_download),
+                             indent=4)
+            self.add_content(
+                "<button type='submit' style='margin-right: 15px; cursor:pointer'> "
+                "<i class='fa fa-download'></i> Histogram Data</button>", indent=6)
+            self.add_content("</a>", indent=4)
+        self.add_content("<a href='%s/posterior_samples.h5' download>" % (samples_path),
+                         indent=4)
+        self.add_content(
+            "<button type='submit' style='margin-right: 15px; cursor:pointer'> "
+            "<i class='fa fa-download'></i> Results File</button>", indent=6)
+        self.add_content("</a>", indent=4)
         if search:
             self.add_content("<input type='text' placeholder='search' id='search'>\n", indent=4)
             self.add_content("<button type='submit' onclick='myFunction()'>Search</button>\n", indent=4)
