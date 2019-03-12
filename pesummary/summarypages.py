@@ -56,6 +56,7 @@ class WebpageGeneration(PostProcessing):
         self.navbar_for_approximant_homepage = []
         self.navbar_for_comparison_homepage = []
         self.image_path = {"home": "./plots/", "other": "../plots/"}
+        self.results_path = {"home": "./samples", "other": "../samples"}
         self.generate_webpages()
         logger.info("Finished generating webpages")
         logger.debug("Tailoring the javascript")
@@ -271,7 +272,8 @@ class WebpageGeneration(PostProcessing):
             self.make_comparison_pages()
 
     def _setup_page(self, html_page, links, label=None, title=None,
-                    approximant=None, background_colour=None):
+                    approximant=None, background_colour=None,
+                    histogram_download=False):
         """Set up each webpage with a header and navigation bar.
 
         Parameters
@@ -288,6 +290,9 @@ class WebpageGeneration(PostProcessing):
             The approximant that you would like associated with your html_page
         background_colour: str, optional
             String containing the background colour of your header
+        histogram_download: bool, optional
+            If true, a download link for the each histogram is displayed in
+            the navbar
         """
         html_file = webpage.open_html(
             web_dir=self.webdir, base_url=self.baseurl, html_page=html_page,
@@ -299,7 +304,17 @@ class WebpageGeneration(PostProcessing):
         else:
             html_file.make_header(
                 approximant=approximant, background_colour=background_colour)
-        html_file.make_navbar(links=links)
+        if html_page == "home" or html_page == "home.html":
+            html_file.make_navbar(
+                links=links, samples_path=self.results_path["home"])
+        elif histogram_download:
+            html_file.make_navbar(
+                links=links, samples_path=self.results_path["home"],
+                histogram_download="../samples/dat/%s_%s/%s_%s_samples.dat" % (
+                    label, approximant, label, html_page))
+        else:
+            html_file.make_navbar(
+                links=links, samples_path=self.results_path["other"])
         return html_file
 
     def make_home_pages(self):
@@ -384,7 +399,8 @@ class WebpageGeneration(PostProcessing):
                     self.navbar_for_approximant_homepage[num],
                     self.labels[num], title="%s Posterior PDF for %s" % (
                         app, j),
-                    approximant=app, background_colour=self.colors[num])
+                    approximant=app, background_colour=self.colors[num],
+                    histogram_download=True)
                 path = self.image_path["other"]
                 label = self.labels[num]
                 contents = [[path + "%s_1d_posterior_%s_%s.png" % (label, app, j)],

@@ -21,7 +21,7 @@ import h5py
 
 from pesummary.utils.utils import logger
 from pesummary.inputs import PostProcessing
-from pesummary.utils.utils import check_condition
+from pesummary.utils.utils import check_condition, make_dir
 
 
 def make_group_in_hf5_file(base_file, group_path):
@@ -122,6 +122,7 @@ class MetaFile(PostProcessing):
         super(MetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
         self.generate_meta_file()
+        self.generate_dat_file()
         logger.info("Finished generating the meta file. The meta file can be "
                     "viewed here: %s" % (self.meta_file))
 
@@ -225,3 +226,21 @@ class MetaFile(PostProcessing):
     def _add_calibration_to_meta_file(self):
         """
         """
+
+    def generate_dat_file(self):
+        """Generate a single .dat file that contains all the samples for a
+        given analysis
+        """
+        self.savedir = "%s/samples/dat" % (self.webdir)
+        if not os.path.isdir(self.savedir):
+            make_dir(self.savedir)
+        for num, i in enumerate(self.result_files):
+            if "posterior_samples.h5" not in i:
+                make_dir("%s/%s_%s" % (
+                    self.savedir, self.labels[num], self.approximant[num]))
+                for idx, j in enumerate(self.parameters[num]):
+                    data = [j[idx] for j in self.samples[num]]
+                    np.savetxt("%s/%s_%s/%s_%s_%s_samples.dat" % (
+                        self.savedir, self.labels[num], self.approximant[num],
+                        self.labels[num], self.approximant[num], j), data,
+                        fmt="%s")
