@@ -62,6 +62,9 @@ def command_line():
     parser.add_argument("--psd", dest="psd",
                         help="psd files used", nargs='+',
                         default=None)
+    parser.add_argument("--calibration", dest="calibration",
+                        help="files for the calibration envelope", nargs="+",
+                        default=None)
     parser.add_argument("--labels", dest="labels",
                         help="labels used to distinguish runs", nargs='+',
                         default=None)
