@@ -29,6 +29,7 @@ import warnings
 
 from glob import glob
 import math
+import numpy as np
 
 __doc__ == "Class to generate plots"
 
@@ -112,6 +113,8 @@ class PlotGeneration(PostProcessing):
     def generate_plots(self):
         """Generate all plots for all results files.
         """
+        logger.debug("Generating the calibration plot")
+        self.try_to_make_a_plot("calibration")
         logger.debug("Generating the psd plot")
         self.try_to_make_a_plot("psd")
         for num, i in enumerate(self.approximant):
@@ -160,7 +163,8 @@ class PlotGeneration(PostProcessing):
         idx: int
             The index of the results file that you wish to analyse.
         """
-        plot_type_dictionary = {"psd": self._psd_plot,
+        plot_type_dictionary = {"calibration": self._calibration_plot,
+                                "psd": self._psd_plot,
                                 "corner": self._corner_plot,
                                 "skymap": self._skymap_plot,
                                 "waveform": self._waveform_plot,
@@ -178,14 +182,24 @@ class PlotGeneration(PostProcessing):
             logger.info("Failed to generate %s plot because "
                         "%s" % (plot_type, e))
 
+    def _calibration_plot(self, idx=None):
+        """Generate a single plot showing the calibration envelopes for all
+        IFOs used in the analysis.
+        """
+        frequencies = np.arange(20., 1024., 1. / 4)
+        files = [np.genfromtxt(i) for i in self.calibration]
+        fig = plot._calibration_envelope_plot(
+            frequencies, files, self.calibration_labels)
+        fig.savefig("%s/calibration_plot.png" % (self.savedir))
+        plt.close()
+
     def _psd_plot(self, idx=None):
         """Generate a single plot showing all psds used in analysis
         """
         frequencies = [self._grab_frequencies_from_psd_data_file(i) for i in
                        self.psds]
         strains = [self._grab_strains_from_psd_data_file(i) for i in self.psds]
-        fig = plot._psd_plot(frequencies, strains, colors=self.colors,
-                             labels=self.psd_labels)
+        fig = plot._psd_plot(frequencies, strains, labels=self.psd_labels)
         fig.savefig("%s/psd_plot.png" % (self.savedir))
         plt.close()
 
@@ -262,7 +276,10 @@ class PlotGeneration(PostProcessing):
         idx: int
             The index of the results file that you wish to analyse
         """
-        detectors = self.detectors[idx].split("_")
+        if not self.detectors:
+            detectors = ["H1", "L1"]
+        else:
+            detectors = self.detectors[idx].split("_")
         fig = plot._waveform_plot(detectors, self.maxL_samples[idx])
         plt.savefig(self.savedir + "%s_%s_waveform.png" % (
             self.labels[idx], self.approximant[idx]))

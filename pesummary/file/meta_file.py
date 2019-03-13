@@ -18,6 +18,7 @@ import os
 
 import numpy as np
 import h5py
+import configparser
 
 from pesummary.utils.utils import logger
 from pesummary.inputs import PostProcessing
@@ -171,10 +172,10 @@ class MetaFile(PostProcessing):
             self._add_content_to_meta_file("existing")
         if self.psds:
             self._add_content_to_meta_file("psd")
-        """
         if self.calibration:
             self._add_content_to_meta_file("calibration")
-        """
+        if self.config:
+            self._add_content_to_meta_file("config")
 
     def _add_content_to_meta_file(self, key):
         """Add content to the meta file
@@ -186,7 +187,8 @@ class MetaFile(PostProcessing):
         """
         content_map = {"existing": self._add_to_existing_meta_file,
                        "psd": self._add_psds_to_meta_file,
-                       "calibration": self._add_calibration_to_meta_file}
+                       "calibration": self._add_calibration_to_meta_file,
+                       "config": self._add_config_to_meta_file}
         content_map[key]()
 
     def _generate_meta_file_from_scratch(self):
@@ -224,8 +226,56 @@ class MetaFile(PostProcessing):
                     group="psds/%s/%s" % (labels[num], i))
 
     def _add_calibration_to_meta_file(self):
-        """
-        """
+        keys = self.get_keys_from_hdf5_file(self.meta_file)
+        labels, approximants = self.labels_and_approximants_to_include()
+        if "calibration" not in keys:
+            make_group_in_hf5_file(self.meta_file, "calibration")
+        for i in labels:
+            if self.existing_labels and i not in self.existing_labels:
+                make_group_in_hf5_file(self.meta_file, "calibration/%s" % (i))
+        for num, i in enumerate(approximants):
+            make_group_in_hf5_file(
+                self.meta_file, "calibration/%s/%s" % (labels[num], i))
+            for idx, j in enumerate(self.calibration):
+                data = np.genfromtxt(j)
+                content = np.array([
+                    (k[0], k[1], k[2], k[3], k[4], k[5], k[6]) for k in data],
+                    dtype=[
+                        ("Frequency", "f"), ("Median Mag", "f"),
+                        ("Phase [rad]", "f"), ("-1 Sigma Mag", "f"),
+                        ("-1 Sigma Phase", "f"), ("+1 Sigma Mag", "f"),
+                        ("+1 Sigma Phase", "f")])
+                add_content_to_hdf_file(
+                    self.meta_file, self.calibration_labels[idx], content,
+                    group="calibration/%s/%s" % (labels[num], i))
+
+    def _add_config_to_meta_file(self):
+        keys = self.get_keys_from_hdf5_file(self.meta_file)
+        labels, approximants = self.labels_and_approximants_to_include()
+        if "config" not in keys:
+            make_group_in_hf5_file(self.meta_file, "config")
+        for i in labels:
+            if self.existing_labels and i not in self.existing_labels:
+                make_group_in_hf5_file(self.meta_file, "config/%s" % (i))
+        for num, i in enumerate(approximants):
+            make_group_in_hf5_file(
+                self.meta_file, "config/%s/%s" % (labels[num], i))
+            config = configparser.ConfigParser()
+            try:
+                config.read(self.config[num])
+                sections = config.sections()
+            except Exception:
+                sections = None
+            if sections:
+                for j in sections:
+                    make_group_in_hf5_file(self.meta_file, "config/%s/%s/%s" % (
+                        labels[num], i, j))
+                    for key in config["%s" % (j)]:
+                        content = np.array([config["%s" % (j)]["%s" % (key)]],
+                                           dtype="S")
+                        add_content_to_hdf_file(
+                            self.meta_file, key, content,
+                            group="config/%s/%s/%s" % (labels[num], i, str(j)))
 
     def generate_dat_file(self):
         """Generate a single .dat file that contains all the samples for a

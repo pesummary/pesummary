@@ -332,7 +332,12 @@ class WebpageGeneration(PostProcessing):
         else:
             html_file = self._setup_page("home", self.navbar_for_homepage)
         path = self.image_path["home"]
-        image_contents = [[path + "psd_plot.png"]]
+        image_contents = []
+        if self.psds:
+            image_contents.append(path + "psd_plot.png")
+        if self.calibration:
+            image_contents.append(path + "calibration_plot.png")
+        image_contents = [image_contents]
         html_file.make_table_of_images(contents=image_contents)
         images = [y for x in image_contents for y in x]
         html_file.make_modal_carousel(images=images)

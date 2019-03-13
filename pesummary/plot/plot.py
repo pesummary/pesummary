@@ -31,6 +31,8 @@ try:
 except ImportError:
     LALSIMULATION = None
 
+PSD_COLORS = {"H1": "#1b9e77", "L1": "#d95f02", "V1": "#7570b3"}
+
 
 def _autocorrelation_plot(param, samples):
     """Generate the autocorrelation function for a set of samples for a given
@@ -820,10 +822,64 @@ def _psd_plot(frequencies, strains, colors=None, labels=None):
         list of lavels for each PSD
     """
     fig = plt.figure()
+    if not colors:
+        colors = [PSD_COLORS[i] for i in labels]
     for num, i in enumerate(frequencies):
         plt.loglog(i, strains[num], color=colors[num], label=labels[num])
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
     plt.legend(loc="best")
+    plt.tight_layout()
+    return fig
+
+
+def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
+                               colors=None):
+    """Generate a plot showing the calibration envelope
+
+    Parameters
+    ----------
+    frequency: array
+        frequency bandwidth that you would like to use
+    calibration_envelopes: nd list
+        list containing the calibration envelope data for different IFOs
+    ifos: list
+        list of IFOs that are associated with the calibration envelopes
+    colors: list, optional
+        list of colors to be used to differentiate the different calibration
+        envelopes
+    """
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    if not colors:
+        colors = [PSD_COLORS[i] for i in ifos]
+    for num, i in enumerate(calibration_envelopes):
+        interp = [np.interp(
+            frequency, i[:, 0], i[:, j], left=k, right=k) for j, k in zip(
+                range(1, 7), [1, 0, 1, 0, 1, 0])]
+        amp_median = (1 - interp[0]) * 100
+        phase_median = interp[1] * 180. / np.pi
+        amp_lower_sigma = (1 - interp[2]) * 100
+        phase_lower_sigma = interp[3] * 180. / np.pi
+        amp_upper_sigma = (1 - interp[4]) * 100
+        phase_upper_sigma = interp[5] * 180. / np.pi
+        ax1.plot(frequency, amp_median, color=colors[num], label=ifos[num])
+        ax1.plot(frequency, amp_upper_sigma, color=colors[num], linestyle="--")
+        ax1.plot(frequency, amp_lower_sigma, color=colors[num], linestyle="--")
+        ax1.fill_between(
+            frequency, amp_upper_sigma, amp_lower_sigma, color=colors[num],
+            alpha=0.4)
+        ax1.set_ylabel(r"Amplitude deviation $[\%]$")
+        ax1.legend(loc="best")
+        ax2.plot(frequency, phase_median, color=colors[num], label=ifos[num])
+        ax2.plot(frequency, phase_upper_sigma, color=colors[num],
+                 linestyle="--")
+        ax2.plot(frequency, phase_lower_sigma, color=colors[num],
+                 linestyle="--")
+        ax2.fill_between(
+            frequency, phase_upper_sigma, phase_lower_sigma, color=colors[num],
+            alpha=0.4)
+        ax2.set_ylabel(r"Phase deviation $[\degree]$")
+    plt.xscale('log')
+    plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
     plt.tight_layout()
     return fig

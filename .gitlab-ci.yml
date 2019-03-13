@@ -6,6 +6,7 @@ python-3.5:
   stage: test
   image: python:3.5
   script:
+    - pip install -r requirements.txt
     - pip install -r optional_requirements.txt
     - python setup.py install
     - pytest tests
@@ -14,6 +15,7 @@ python-3.6:
   stage: test
   image: python:3.6
   script:
+    - pip install -r requirements.txt
     - pip install -r optional_requirements.txt
     - python setup.py install
     - coverage run -m pytest tests
@@ -37,6 +39,7 @@ documentation:
   stage: test
   image: python:3.6
   script:
+    - pip install -r requirements.txt
     - pip install -r optional_requirements.txt
     - python setup.py install
     - cd docs

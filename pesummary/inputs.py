@@ -105,6 +105,7 @@ class Input(object):
         self.copy_files()
         self.detectors = None
         self.labels = opts.labels
+        self.calibration = opts.calibration
         self.check_label_in_results_file()
 
     @property
@@ -454,6 +455,23 @@ class Input(object):
         else:
             self._psds = None
 
+    @property
+    def calibration(self):
+        return self._calibration
+
+    @calibration.setter
+    def calibration(self, calibration):
+        calibration_list = []
+        if calibration:
+            for i in calibration:
+                f = np.genfromtxt(i)
+                if len(f[0]) != 7:
+                    raise Exception("Calibration envelope file not understood")
+                calibration_list.append(i)
+            self._calibration = calibration_list
+        else:
+            self._calibration = None
+
     def check_approximant_in_results_file(self):
         """Check that the approximant that is stored in the results file
         corresponds to the given approximant. If not then this will be changed.
@@ -610,6 +628,7 @@ class PostProcessing(object):
         self.gracedb = inputs.gracedb
         self.add_to_existing = inputs.add_to_existing
         self.labels = inputs.labels
+        self.calibration = inputs.calibration
         self.sensitivity = inputs.sensitivity
         self.psds = inputs.psds
         self.existing_labels = inputs.existing_labels
@@ -736,18 +755,31 @@ class PostProcessing(object):
 
     @property
     def psd_labels(self):
-        labels_list = []
-        for i in self.psds:
-            file_name = i.split("/")[-1]
-            if any(j in file_name for j in ["H1", "0"]):
-                labels_list.append("H1")
-            elif any(j in file_name for j in ["L1", "1"]):
-                labels_list.append("L1")
-            elif any(j in file_name for j in ["V1", "2"]):
-                labels_list.append("V1")
-            else:
-                labels_list.append(file_name)
-        return labels_list
+        return [self._IFO_from_file_name(i) for i in self.psds]
+
+    @property
+    def calibration_labels(self):
+        return [self._IFO_from_file_name(i) for i in self.calibration]
+
+    @staticmethod
+    def _IFO_from_file_name(file):
+        """Return a guess of the IFO from the file name.
+
+        Parameters
+        ----------
+        file: str
+            the name of the file that you would like to make a guess for
+        """
+        file_name = file.split("/")[-1]
+        if any(j in file_name for j in ["H", "_0", "IFO0"]):
+            ifo = "H1"
+        elif any(j in file_name for j in ["L", "_1", "IFO1"]):
+            ifo = "L1"
+        elif any(j in file_name for j in ["V", "_2", "IFO2"]):
+            ifo = "V1"
+        else:
+            ifo = file_name
+        return ifo
 
     def _key_data(self):
         """Grab the mean, median, maximum likelihood value and the standard
