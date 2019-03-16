@@ -822,8 +822,12 @@ def _psd_plot(frequencies, strains, colors=None, labels=None):
         list of lavels for each PSD
     """
     fig = plt.figure()
-    if not colors:
+    if not colors and labels in list(PSD_COLORS.keys()):
         colors = [PSD_COLORS[i] for i in labels]
+    elif not colors:
+        colors = ['r', 'b', 'orange', 'c', 'g', 'purple']
+        while len(colors) <= len(labels):
+            colors += colors
     for num, i in enumerate(frequencies):
         plt.loglog(i, strains[num], color=colors[num], label=labels[num])
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
@@ -850,8 +854,12 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         envelopes
     """
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    if not colors:
+    if not colors and ifos in list(PSD_COLORS.keys()):
         colors = [PSD_COLORS[i] for i in ifos]
+    elif not colors:
+        colors = ['r', 'b', 'orange', 'c', 'g', 'purple']
+        while len(colors) <= len(ifos):
+            colors += colors
     for num, i in enumerate(calibration_envelopes):
         interp = [np.interp(
             frequency, i[:, 0], i[:, j], left=k, right=k) for j, k in zip(

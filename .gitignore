@@ -22,8 +22,9 @@ __pycache__
 .outdir/
 .outdir_bilby/
 .outdir_lalinference/
-.outdir_full_cbc/
+.outdir_cbc/
 .outdir_comparison/
 .outdir_addition/
+.outdir_existing/
 .eggs/
 .coverage
