@@ -664,7 +664,7 @@ class PostProcessing(object):
             self._colors = ["#a6b3d0", "#baa997", "#FF6347", "#FFA500",
                             "#003366"]
         else:
-            if not len(self.result_files) <= colors:
+            if not len(self.result_files) <= len(colors):
                 raise Exception("Please give the same number of colors as "
                                 "results files")
             self._colors = colors

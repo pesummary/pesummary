@@ -27,6 +27,37 @@ import pytest
 
 class TestPlot(object):
 
+    def setup(self):
+        if os.path.isdir("./.outdir"):
+            shutil.rmtree("./.outdir")
+        os.makedirs("./.outdir")
+
+    def _grab_frequencies_from_psd_data_file(self, file):
+        """Return the frequencies stored in the psd data files
+
+        Parameters
+        ----------
+        file: str
+            path to the psd data file
+        """
+        fil = open(file)
+        fil = fil.readlines()
+        fil = [i.strip().split() for i in fil]
+        return [float(i[0]) for i in fil]
+
+    def _grab_strains_from_psd_data_file(sef, file):
+        """Return the strains stored in the psd data files
+
+        Parameters
+        ----------
+        file: str
+            path to the psd data file
+        """
+        fil = open(file)
+        fil = fil.readlines()
+        fil = [i.strip().split() for i in fil]
+        return [float(i[1]) for i in fil]
+
     @pytest.mark.parametrize("param, samples, latex_label", [("mass1",
         [10,20,30,40], r"$m_{1}$"),])
     def test_1d_histogram_plot(self, param, samples, latex_label):
@@ -107,4 +138,26 @@ class TestPlot(object):
                        "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
                        "luminosity_distance": 100}
         fig = plot._sky_sensitivity(["H1", "L1"], 1.0, maxL_params)
-        assert isinstance(fig, matplotlib.figure.Figure) == True 
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    def test_psd_plot(self):
+        with open("./.outdir/psd.dat", "w") as f:
+            f.writelines(["0.5 100"])
+            f.writelines(["1.0 150"])
+            f.writelines(["5.0 200"])
+        frequencies = [self._grab_frequencies_from_psd_data_file("./.outdir/psd.dat")]
+        strains = [self._grab_frequencies_from_psd_data_file("./.outdir/psd.dat")]
+        print(frequencies)
+        print(strains)
+        fig = plot._psd_plot(frequencies, strains, labels=["H1"])
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    def test_calibration_plot(self):
+        with open("./.outdir/calibration.dat", "w") as f:
+            f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0\n"])
+            f.writelines(["2000.0 2.0 3.0 4.0 5.0 6.0 7.0"])
+        frequencies = np.arange(20, 100, 0.2)
+        files = [np.genfromtxt("./.outdir/calibration.dat")]
+        ifos = ["H1"]
+        fig = plot._calibration_envelope_plot(frequencies, files, ifos)
+        assert isinstance(fig, matplotlib.figure.Figure) == True

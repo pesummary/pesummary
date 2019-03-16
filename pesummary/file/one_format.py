@@ -558,22 +558,22 @@ class OneFormat(object):
             ind = self.parameters.index("reference_frequency")
             self.parameters.remove(self.parameters[ind])
             for i in self.samples:
-                i.remove(i[ind])
+                del i[ind]
         if "minimum_frequency" in self.parameters:
             ind = self.parameters.index("minimum_frequency")
             self.parameters.remove(self.parameters[ind])
             for i in self.samples:
-                i.remove(i[ind])
+                del i[ind]
         if "logPrior" in self.parameters:
             ind = self.parameters.index("logPrior")
             self.parameters.remove(self.parameters[ind])
             for i in self.samples:
-                i.remove(i[ind])
+                del i[ind]
         if "log_prior" in self.parameters:
             ind = self.parameters.index("log_prior")
             self.parameters.remove(self.parameters[ind])
             for i in self.samples:
-                i.remove(i[ind])
+                del i[ind]
 
 
 def load_with_deepdish(f):

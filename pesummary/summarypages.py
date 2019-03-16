@@ -270,6 +270,7 @@ class WebpageGeneration(PostProcessing):
         self.make_config_pages()
         if len(self.approximant) > 1:
             self.make_comparison_pages()
+        self.make_error_page()
 
     def _setup_page(self, html_page, links, label=None, title=None,
                     approximant=None, background_colour=None,
@@ -584,6 +585,26 @@ class WebpageGeneration(PostProcessing):
                                       {"all": ", ".join(self.same_parameters)}],
                                   label="None", code="combines")
         html_file.make_footer(user=self.user, rundir=self.webdir)
+
+    def make_error_page(self):
+        """Make a page that is shown when something goes wrong.
+        """
+        pages = ["error"]
+        webpage.make_html(web_dir=self.webdir, pages=pages)
+        html_file = webpage.open_html(
+            web_dir=self.webdir, base_url=self.baseurl, html_page="error")
+        html_file.make_div(_class='jumbotron text-center',
+                           _style='background-color: #D3D3D3; margin-botton:0')
+        html_file.make_div(_class='container',
+                           _style=('margin-top:1em; background-color: #D3D3D3;'
+                                   'width: 45em'))
+        html_file.add_content(
+            "<h1 style='color:white; font-size: 8em'>404</h1>")
+        html_file.add_content(
+            "<h2 style='color:white;'> Something went wrong... </h2>")
+        html_file.end_div()
+        html_file.end_div()
+        html_file.close()
 
     def generate_specific_javascript(self):
         """Tailor the javascript to the specific situation.

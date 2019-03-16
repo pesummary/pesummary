@@ -11,59 +11,68 @@
 //                                                                              
 // You should have received a copy of the GNU General Public License along      
 // with this program; if not, write to the Free Software Foundation, Inc.,      
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
+// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 
 function combine(list, label="None") {
-    var loadTimer;
-    var imgObject = new Image();
-    var heading=document.getElementsByTagName("h1")[0]                          
-    var approx = heading.innerHTML.split(" ")[0]
-    var c=document.getElementById("canvas")
-    var ctx=c.getContext("2d")
-    c.width=700
-    ctx.clearRect(0, 0, c.width, c.height);
-    var el= document.getElementById("corner_search").value.split(", ");
-    if ( typeof list === 'undefined' ) {
-        list = 'None';
-    }
-    if ( list == 'None' ) {
-      if ( el.length == 1 ) {                                                     
-          var el = document.getElementById("corner_search").value.split(",");     
-          if ( el.length == 1 ) {                                                 
-              var el = document.getElementById("corner_search").value.split(" "); 
-          }                                                                       
+      var loadTimer;
+      var imgObject = new Image();
+      var heading=document.getElementsByTagName("h1")[0]                          
+      var approx = heading.innerHTML.split(" ")[0]
+      var c=document.getElementById("canvas")
+      var ctx=c.getContext("2d")
+      c.width=700
+      ctx.clearRect(0, 0, c.width, c.height);
+      var el= document.getElementById("corner_search").value.split(", ");
+      if ( typeof list === 'undefined' ) {
+          list = 'None';
       }
-    } else {
-      var el = list.split(", ");
-    }
-    if ( el == "" ) {
-        var el = [];
-        var total = document.getElementsByName("type");
-        var parameters = []
-        for ( var i=0; i<total.length; i++ ) {
-            parameters.push(total[i].id);
+      if ( list == 'None' ) {
+        if ( el.length == 1 ) {                                                     
+            var el = document.getElementById("corner_search").value.split(",");     
+            if ( el.length == 1 ) {                                                 
+                var el = document.getElementById("corner_search").value.split(" "); 
+            }                                                                       
         }
-        var ticked = [];
-        for ( var i=0; i<parameters.length; i++ ) {
-            if ( document.getElementById(parameters[i]).checked == true) {
-                el.push(parameters[i]);
-            }
-        }
-    }
-    imgObject.src = '../plots/corner/'+label+'_'+approx+'_all_density_plots.png';
-    imgObject.onLoad = onImgLoaded();
-    function onImgLoaded() {
-        if (loadTimer != null) clearTimeout(loadTimer);
-        if (!imgObject.complete) {
-            loadTimer = setTimeout(function() {
-                onImgLoaded();
-            }, 3);
-        } else {
-            onPreloadComplete(c, imgObject, el);
-        }
-    }
-    c.width = 0
-    c.height = 0
+      } else {
+        var el = list.split(", ");
+      }
+      if ( el == "" ) {
+          var el = [];
+          var total = document.getElementsByName("type");
+          var parameters = []
+          for ( var i=0; i<total.length; i++ ) {
+              parameters.push(total[i].id);
+          }
+          var ticked = [];
+          for ( var i=0; i<parameters.length; i++ ) {
+              if ( document.getElementById(parameters[i]).checked == true) {
+                  el.push(parameters[i]);
+              }
+          }
+      }
+
+      function onImgLoaded(reject) {
+          if (loadTimer != null) clearTimeout(loadTimer);
+          if (!imgObject.complete) {
+              loadTimer = setTimeout(function() {
+                  onImgLoaded();
+              }, 3);
+          } else {
+              try {
+                  onPreloadComplete(c, imgObject, el);
+              } catch (e) {
+                  reject("Broken");
+              }
+          }
+      }
+      imgObject.src = '../plots/corner/'+label+'_'+approx+'_all_density_plots.png';
+      promise = new Promise((resolve, reject) => {
+          imgObject.onload = () => onImgLoaded(reject)
+      })
+      promise.catch((err) => window.location = "./error.html")
+      c.width = 0
+      c.height = 0
 }
 
 function onPreloadComplete(c, imgObject, object){
@@ -72,7 +81,6 @@ function onPreloadComplete(c, imgObject, object){
     //place image in appropriate div
     var link = document.getElementById("mirror")
     link.src = newImg
-    /*document.getElementById("canvas").innerHTML = "<img src="+newImg+">";*/
 }
 
 function getImagePortion(c, imgObj, array){
@@ -91,7 +99,7 @@ function getImagePortion(c, imgObj, array){
     bufferCanvas.height = imgObj.height;
     bufferContext.drawImage(imgObj, 0, 0);
 
-    var list = ['mass_ratio', 'geocent_time', 'ra', 'dec', 'luminosity_distance', 'psi', 'chirp_mass', 'iota', 'mass_1', 'mass_2', 'total_mass', 'symmetric_mass_ratio', 'redshift', 'mass_1_source', 'mass_2_source', 'total_mass_source', 'chirp_mass_source'];
+    var list = ['redshift', 'phi_jl', 'total_mass', 'chirp_mass_source', 'symmetric_mass_ratio', 'mass_1', 'ra', 'mass_2', 'tilt_2', 'mass_2_source', 'psi', 'phi_12', 'geocent_time', 'a_1', 'a_2', 'chi_p', 'phase', 'mass_1_source', 'luminosity_distance', 'chirp_mass', 'iota', 'chi_eff', 'mass_ratio', 'total_mass_source', 'tilt_1', 'dec', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'luminosity_distance', 'iota', 'dec', 'ra', 'psi', 'phase'];
     var indices = []
     
     var ratio = (157.5*3) / (array.length*210)
