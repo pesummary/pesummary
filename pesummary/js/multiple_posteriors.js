@@ -62,12 +62,13 @@ function combines(list, label) {
                 newimage.src = '../plots/'+label+'_1d_posterior_'+approx+'_'+ticked[i]+'.png';
             }
             images2.push(newimage);
-            
-            setTimeout(function() { 
-                for ( var i=0; i<images2.length; i++ ) { 
-                    ctx.drawImage(images2[i], 0, (500*i)+(i*20), 700, 500);
-                }
-             }, 1000);
+
+            promise = new Promise((resolve, reject) => {
+                onLoadImage(ctx, images2, reject, ticked)
+            })
+            promise.catch((err) => alert(
+                "The parameter '" + err + "' is not recognised. Please open the " +
+                "sidebar for a full list of available parameters"))
         }
     } else {                                                       
         c.height = 520*el.length+50;
@@ -81,14 +82,28 @@ function combines(list, label) {
             }
             images.push(newimage);
             
-            setTimeout(function() { 
-                for ( var i=0; i<images.length; i++ ) { 
-                    ctx.drawImage(images[i], 0, (500*i)+(i*20), 700, 500);
-                }
-             }, 1000);
+            promise = new Promise((resolve, reject) => {
+                onLoadImage(ctx, images, reject, el)
+            })
+            promise.catch((err) => alert(
+                "The parameter '" + err + "' is not recognised. Please open the " +
+                "sidebar for a full list of available parameters"))
         }
     }
 }
+
+function onLoadImage(ctx, images, reject, list) {
+    setTimeout(function() {
+    for ( var i=0; i<images.length; i++ ) {
+        try {
+            ctx.drawImage(images[i], 0, (500*i)+(i*20), 700, 500);
+        } catch (e) {
+            reject(list[i])
+        }
+    }
+    }, 1000);
+}
+
 /*
 function plot(images, ctx, c) {
     for ( var i=0; i<images.length; i++ ) {
