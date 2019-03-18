@@ -105,9 +105,14 @@ function getImagePortion(c, imgObj, array){
     var ratio = (157.5*3) / (array.length*210)
 
     for ( var i=0; i<array.length; i++) {
-        indices[i] = list.indexOf(array[i])
+        if ( list.indexOf(array[i]) == -1 ) {
+            alert(                                       
+                "The parameter '" + array[i] + "' is not recognised. Please open the " +
+                "sidebar for a full list of available parameters")
+        } else {
+             indices[i] = list.indexOf(array[i])
+        }
     }
-
     indices.sort((a,b) => a-b)
 
     for ( var i=0; i<array.length; i++) {
