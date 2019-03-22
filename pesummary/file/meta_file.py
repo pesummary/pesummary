@@ -13,101 +13,63 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import shutil
 import os
 
 import numpy as np
 import h5py
+import json
 import configparser
 
 from pesummary.utils.utils import logger
 from pesummary.inputs import PostProcessing
-from pesummary.utils.utils import check_condition, make_dir
+from pesummary.file.existing import ExistingFile
+from pesummary.utils.utils import make_dir
 
 
-def make_group_in_hf5_file(base_file, group_path):
-    """Make a group in an hdf5 file
-
-    Parameters
-    ----------
-    base_file: str
-        path to the file that you want to add content to
-    group_path: str
-        the group path that you would like to create
-    """
-    condition = not os.path.isfile(base_file)
-    check_condition(condition, "The file %s does not exist" % (base_file))
-    f = h5py.File(base_file, "a")
-    f.create_group(group_path)
-    f.close()
-
-
-def add_content_to_hdf_file(base_file, dataset_name, content, group=None):
-    """Add new content to an hdf5 file
+def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
+    """Recursively save a dictionary to a hdf5 file
 
     Parameters
     ----------
-    base_file: str
-        path to the file that you want to add content to
-    dataset_name: str
-        name of the dataset
-    content: array
-        array of content that you want to add to your hdf5 file
-    group: str, optional
-        group that you want to add content to. Default if the base of the file
+    f: h5py._hl.files.File
+        the open hdf5 file that you would like the data to be saved to
+    dictionary: dict
+        dictionary of data
+    current_path: optional, str
+        string to indicate the level to save the data in the hdf5 file
     """
-    condition = not os.path.isfile(base_file)
-    check_condition(condition, "The file %s does not exist" % (base_file))
-    f = h5py.File(base_file, "a")
-    if group:
-        group = f[group]
-        if dataset_name in list(group.keys()):
-            del group[dataset_name]
-        group.create_dataset(dataset_name, data=content)
-    else:
-        if dataset_name in list(f.keys()):
-            del f[dataset_name]
-        f.create_dataset(dataset_name, data=content)
-    f.close()
+    try:
+        f.create_group("posterior_samples")
+        if "psds" in dictionary.keys():
+            f.create_group("psds")
+        if "calibration_envelope" in dictionary.keys():
+            f.create_group("calibration_envelope")
+        if "config_file" in dictionary.keys():
+            f.create_group("config_file")
+    except Exception:
+        pass
+    if current_path is None:
+        current_path = []
 
-
-def combine_hdf_files(base_file, new_file):
-    """Combine two hdf5 files
-
-    Parameters
-    ----------
-    base_file: str
-        path to the file that you want to add content to
-    new_file: str
-        path to the file that you want to combine with the base file
-    """
-    condition = not os.path.isfile(base_file)
-    check_condition(condition, "The base file %s does not exist" % (base_file))
-    condition = not os.path.isfile(new_file)
-    check_condition(condition, "The new file %s does not exist" % (new_file))
-    g = h5py.File(new_file)
-    label = list(g["posterior_samples"].keys())[0]
-    approximant = list(g["posterior_samples/%s" % (label)].keys())[0]
-    path = "posterior_samples/%s/%s" % (label, approximant)
-    parameters = np.array([i for i in g["%s/parameter_names" % (path)]])
-    samples = np.array([i for i in g["%s/samples" % (path)]])
-    injection_parameters = np.array(
-        [i for i in g["%s/injection_parameters" % (path)]])
-    injection_data = np.array([i for i in g["%s/injection_data" % (path)]])
-    g.close()
-
-    f = h5py.File(base_file, "a")
-    current_labels = list(f["posterior_samples"].keys())
-    if label not in current_labels:
-        label_group = f["posterior_samples"].create_group(label)
-        approx_group = label_group.create_group(approximant)
-    else:
-        approx_group = f["posterior_samples/%s" % (label)].create_group(approximant)
-    approx_group.create_dataset("parameter_names", data=parameters)
-    approx_group.create_dataset("samples", data=samples)
-    approx_group.create_dataset("injection_parameters", data=injection_parameters)
-    approx_group.create_dataset("injection_data", data=injection_data)
-    f.close()
+    for k, v in dictionary.items():
+        if isinstance(v, dict):
+            try:
+                f["/".join(current_path)].create_group(k)
+            except Exception:
+                pass
+            path = current_path + [k]
+            _recursively_save_dictionary_to_hdf5_file(f, v, path)
+        elif isinstance(v, list):
+            if isinstance(v[0], str):
+                f["/".join(current_path)].create_dataset(k, data=np.array(
+                    v, dtype="S"
+                ))
+            elif isinstance(v[0], list):
+                f["/".join(current_path)].create_dataset(k, data=np.array(v))
+        elif isinstance(v, (str, bytes)):
+            f["/".join(current_path)].create_dataset(k, data=np.array(
+                [v], dtype="S"
+            ))
 
 
 class MetaFile(PostProcessing):
@@ -122,160 +84,199 @@ class MetaFile(PostProcessing):
     def __init__(self, inputs):
         super(MetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
-        self.generate_meta_file()
+        self.data = {}
+        self.existing_label = None
+        self.existing_approximant = None
+        self.existing_parameters = None
+        self.existing_samples = None
+        self.generate_meta_file_data()
+
+        if not self.hdf5:
+            self.save_to_json()
+        else:
+            self.save_to_hdf5()
+
         self.generate_dat_file()
         logger.info("Finished generating the meta file. The meta file can be "
                     "viewed here: %s" % (self.meta_file))
 
     @property
     def meta_file(self):
+        if not self.hdf5:
+            return self.webdir + "/samples/posterior_samples.json"
         return self.webdir + "/samples/posterior_samples.h5"
 
     @staticmethod
-    def get_keys_from_hdf5_file(f, level=None):
-        """
-        """
-        g = h5py.File(f)
-        try:
-            if level:
-                return list(g[level].keys())
-            else:
-                return list(g.keys())
-        except Exception as e:
-            raise Exception("Failed to return the keys in the hdf5 file "
-                            "because of %s" % (e))
+    def convert_to_list(data):
+        for num, i in enumerate(data):
+            if isinstance(data[num], np.ndarray):
+                data[num] = list(i)
+            for idx, j in enumerate(i):
+                if isinstance(data[num][idx], np.ndarray):
+                    data[num][idx] = list(i)
+        return data
 
-    def labels_and_approximants_to_include(self):
-        """Return the labels and the approximants that are unique and not
-        already in the existing file.
+    def generate_meta_file_data(self):
+        """Generate dictionary of data which will go into the meta_file
         """
-        labels = self.labels
-        approximants = self.approximant
-        names = ["%s_%s" % (i, j) for i, j in zip(
-            self.labels, self.approximant)]
-        if self.existing_names:
-            labels_to_include, approximants_to_include = [], []
-            for num, i in enumerate(names):
-                if i not in self.existing_names:
-                    labels_to_include.append(labels[num])
-                    approximants_to_include.append(approximants[num])
-            labels = labels_to_include
-            approximants = approximants_to_include
-        return labels, approximants
+        if self.existing:
+            existing_file = ExistingFile(self.existing)
+            self.existing_parameters = existing_file.existing_parameters
+            self.existing_samples = existing_file.existing_samples
+            self.existing_approximant = existing_file.existing_approximant
+            self.existing_label = existing_file.existing_labels
+        self._make_dictionary()
 
-    def generate_meta_file(self):
-        """Combine data into a single meta file.
-        """
-        if self.meta_file not in self.result_files:
-            self._generate_meta_file_from_scratch()
-        else:
-            self._add_content_to_meta_file("existing")
-        if self.psds:
-            self._add_content_to_meta_file("psd")
-        if self.calibration:
-            self._add_content_to_meta_file("calibration")
-        if self.config:
-            self._add_content_to_meta_file("config")
+    def _make_dictionary(self):
+        if self.existing_label:
+            self._make_dictionary_structure(
+                self.existing_label, self.existing_approximant
+            )
+            for num, i in enumerate(self.existing_label):
+                self._add_data(i, self.existing_approximant[num],
+                               self.existing_parameters[num],
+                               self.existing_samples[num],
+                               )
+        self._make_dictionary_structure(self.labels, self.approximant,
+                                        psd=self.psds,
+                                        calibration=self.calibration,
+                                        config=self.config
+                                        )
+        for num, i in enumerate(self.labels):
+            psd = self._grab_psd_data_from_data_files(
+                self.psds, self.psd_labels) if self.psds else None
+            calibration = self._grab_calibration_data_from_data_files(
+                self.calibration, self.calibration_labels) if self.calibration \
+                else None
+            config = self._grab_config_data_from_data_file(self.config[num]) if \
+                self.config and num < len(self.config) else None
+            self._add_data(i, self.approximant[num], self.parameters[num],
+                           self.samples[num], psd=psd, calibration=calibration,
+                           config=config
+                           )
 
-    def _add_content_to_meta_file(self, key):
-        """Add content to the meta file
+    def _grab_psd_data_from_data_files(self, files, psd_labels):
+        """Return the psd data as a dictionary
 
         Parameters
         ----------
-        key: str
-            name of the data you want to append
+        files: list
+            list of psd files
+        psd_labels: list
+            list of labels associated with each psd file
         """
-        content_map = {"existing": self._add_to_existing_meta_file,
-                       "psd": self._add_psds_to_meta_file,
-                       "calibration": self._add_calibration_to_meta_file,
-                       "config": self._add_config_to_meta_file}
-        content_map[key]()
+        return {psd_labels[num]: [[i, j] for i, j in zip(
+            self._grab_frequencies_from_psd_data_file(f),
+            self._grab_strains_from_psd_data_file(f)
+        )] for num, f in enumerate(files)}
 
-    def _generate_meta_file_from_scratch(self):
-        for num, i in enumerate(self.result_files):
-            if num == 0:
-                shutil.copyfile(i, self.meta_file)
-            else:
-                combine_hdf_files(self.meta_file, i)
+    def _grab_calibration_data_from_data_files(self, files, calibration_labels):
+        """Return the calibration envelope data as a dictionary
 
-    def _add_to_existing_meta_file(self):
-        for num, i in enumerate(self.result_files):
-            if "posterior_samples.h5" not in i:
-                combine_hdf_files(self.meta_file, i)
+        Parameters
+        ----------
+        files: list
+            list of calibration envelope files
+        calibration_labels:
+            list of labels associated with each calibration envelope file
+        """
+        dictionary = {}
+        for num, i in enumerate(calibration_labels):
+            data = np.genfromtxt(files[num])
+            dictionary[i] = [
+                [k[0], k[1], k[2], k[3], k[4], k[5], k[6]] for k in data]
+        return dictionary
 
-    def _add_psds_to_meta_file(self):
-        keys = self.get_keys_from_hdf5_file(self.meta_file)
-        labels, approximants = self.labels_and_approximants_to_include()
-        if "psds" not in keys:
-            make_group_in_hf5_file(self.meta_file, "psds")
-        for i in labels:
-            if self.existing_labels and i not in self.existing_labels:
-                make_group_in_hf5_file(self.meta_file, "psds/%s" % (i))
-        for num, i in enumerate(approximants):
-            make_group_in_hf5_file(self.meta_file, "psds/%s/%s" % (labels[num], i))
-            frequencies = [self._grab_frequencies_from_psd_data_file(j) for j
-                           in self.psds]
-            strains = [self._grab_strains_from_psd_data_file(j) for j in
-                       self.psds]
-            for idx, j in enumerate(self.psds):
-                content = np.array([
-                    (k, l) for k, l in zip(frequencies[idx], strains[idx])],
-                    dtype=[("Frequencies", "f"), ("Strain", "f")])
-                add_content_to_hdf_file(
-                    self.meta_file, self.psd_labels[idx], content,
-                    group="psds/%s/%s" % (labels[num], i))
+    def _grab_config_data_from_data_file(self, file):
+        """Return the config data as a dictionary
 
-    def _add_calibration_to_meta_file(self):
-        keys = self.get_keys_from_hdf5_file(self.meta_file)
-        labels, approximants = self.labels_and_approximants_to_include()
-        if "calibration" not in keys:
-            make_group_in_hf5_file(self.meta_file, "calibration")
-        for i in labels:
-            if self.existing_labels and i not in self.existing_labels:
-                make_group_in_hf5_file(self.meta_file, "calibration/%s" % (i))
-        for num, i in enumerate(approximants):
-            make_group_in_hf5_file(
-                self.meta_file, "calibration/%s/%s" % (labels[num], i))
-            for idx, j in enumerate(self.calibration):
-                data = np.genfromtxt(j)
-                content = np.array([
-                    (k[0], k[1], k[2], k[3], k[4], k[5], k[6]) for k in data],
-                    dtype=[
-                        ("Frequency", "f"), ("Median Mag", "f"),
-                        ("Phase [rad]", "f"), ("-1 Sigma Mag", "f"),
-                        ("-1 Sigma Phase", "f"), ("+1 Sigma Mag", "f"),
-                        ("+1 Sigma Phase", "f")])
-                add_content_to_hdf_file(
-                    self.meta_file, self.calibration_labels[idx], content,
-                    group="calibration/%s/%s" % (labels[num], i))
+        Parameters
+        ----------
+        file: str
+            path to the configuration file
+        """
+        data = {}
+        config = configparser.ConfigParser()
+        try:
+            config.read(file)
+            sections = config.sections()
+        except Exception as e:
+            sections = None
+            logger.info("Unable to open %s because %s. The data will not be "
+                        "stored in the meta file" % (file, e))
+        if sections:
+            for i in sections:
+                data[i] = {}
+                for key in config["%s" % (i)]:
+                    data[i][key] = config["%s" % (i)]["%s" % (key)]
+        return data
 
-    def _add_config_to_meta_file(self):
-        keys = self.get_keys_from_hdf5_file(self.meta_file)
-        labels, approximants = self.labels_and_approximants_to_include()
-        if "config" not in keys:
-            make_group_in_hf5_file(self.meta_file, "config")
-        for i in labels:
-            if self.existing_labels and i not in self.existing_labels:
-                make_group_in_hf5_file(self.meta_file, "config/%s" % (i))
-        for num, i in enumerate(approximants):
-            make_group_in_hf5_file(
-                self.meta_file, "config/%s/%s" % (labels[num], i))
-            config = configparser.ConfigParser()
-            try:
-                config.read(self.config[num])
-                sections = config.sections()
-            except Exception:
-                sections = None
-            if sections:
-                for j in sections:
-                    make_group_in_hf5_file(self.meta_file, "config/%s/%s/%s" % (
-                        labels[num], i, j))
-                    for key in config["%s" % (j)]:
-                        content = np.array([config["%s" % (j)]["%s" % (key)]],
-                                           dtype="S")
-                        add_content_to_hdf_file(
-                            self.meta_file, key, content,
-                            group="config/%s/%s/%s" % (labels[num], i, str(j)))
+    def _add_data(self, label, approximant, parameters, samples,
+                  psd=None, calibration=None, config=None):
+        """Add data to the stored dictionary
+
+        Parameters
+        ----------
+        label: str
+            the name of the second level in the dictionary
+        approximant: str
+            the name of the third level in the dictionary
+        parameters: list
+            list of parameters that were used in the study
+        samples: list
+            list of samples that wee used in th study
+        psd: list, optional
+            list of frequencies and strains associated with the psd
+        calibration: list, optional
+            list of data associated with the calibration envelope
+        config: dict, optional
+            data associated with the configuration file
+        """
+        self.data["posterior_samples"][label][approximant] = {
+            "parameter_names": list(parameters),
+            "samples": self.convert_to_list(samples)
+        }
+        if psd:
+            for i in list(psd.keys()):
+                self.data["psds"][label][approximant][i] = psd[i]
+        if calibration:
+            for i in list(calibration.keys()):
+                self.data["calibration_envelope"][label][approximant][i] = \
+                    calibration[i]
+        if config:
+            self.data["config_file"][label][approximant] = config
+
+    def _make_dictionary_structure(self, label, approximant, psd=None,
+                                   calibration=None, config=None):
+        for num, i in enumerate(label):
+            self._add_label_and_approximant(
+                "posterior_samples", i, approximant[num]
+            )
+            if psd:
+                self._add_label_and_approximant("psds", i, approximant[num])
+            if calibration:
+                self._add_label_and_approximant(
+                    "calibration_envelope", i, approximant[num]
+                )
+            if config:
+                self._add_label_and_approximant(
+                    "config_file", i, approximant[num]
+                )
+
+    def _add_label_and_approximant(self, base_level, label, approximant):
+        if base_level not in list(self.data.keys()):
+            self.data[base_level] = {}
+        if label not in list(self.data[base_level].keys()):
+            self.data[base_level][label] = {}
+        self.data[base_level][label][approximant] = {}
+
+    def save_to_json(self):
+        with open(self.meta_file, "w") as f:
+            json.dump(self.data, f, indent=4, sort_keys=True)
+
+    def save_to_hdf5(self):
+        with h5py.File(self.meta_file, "w") as f:
+            _recursively_save_dictionary_to_hdf5_file(f, self.data)
 
     def generate_dat_file(self):
         """Generate a single .dat file that contains all the samples for a

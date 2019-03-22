@@ -276,7 +276,7 @@ class PlotGeneration(PostProcessing):
         idx: int
             The index of the results file that you wish to analyse
         """
-        if not self.detectors:
+        if self.detectors == [None]:
             detectors = ["H1", "L1"]
         else:
             detectors = self.detectors[idx].split("_")
@@ -396,6 +396,11 @@ class PlotGeneration(PostProcessing):
             self.maxL_samples, self.colors,
             approximant_labels=self.label_to_prepend_approximant)
         fig.savefig(self.savedir + "compare_waveforms.png")
+        plt.close()
+        fig = plot._time_domain_waveform_comparison_plot(
+            self.maxL_samples, self.colors,
+            approximant_labels=self.label_to_prepend_approximant)
+        fig.savefig(self.savedir + "compare_time_domain_waveforms.png")
         plt.close()
 
 

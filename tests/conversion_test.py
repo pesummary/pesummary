@@ -184,27 +184,3 @@ class TestConversions(object):
         output = one_format.OneFormat(path, None)
         output.save()
         assert os.path.isfile("./tests/files/lalinference_example.h5_temp")
-
-    def test_load_with_deepdish(self):
-        path = "./tests/files/bilby_example.h5"
-        f = deepdish.io.load(path)
-        output = one_format.load_with_deepdish(f)
-        params = sorted(output[0])
-        samples = output[1]
-        approximant = output[2]
-        expected = [[1.0, 10.0, 10.], [2.0, 10.0, 20.], [3.0, 20.0, 30.], 
-            [0., 0., 0.,]]
-        assert all(i in ["H1_optimal_snr", "log_likelihood", "mass_1"] for i in params)
-        assert all(all(i in expected[num] for i in k) for num, k in enumerate(samples))
-        assert approximant == b"IMRPhenomPv2"
-
-    def test_load_with_h5py(self):
-        path = "./tests/files/GW150914_result.h5"
-        f = h5py.File(path)
-        output = one_format.load_with_h5py(f, "posterior")
-        params = sorted(output[0])
-        expected_params = ['a_1', 'a_2', 'dec', 'geocent_time', 'iota',
-                           'log_likelihood', 'luminosity_distance', 'mass_1',
-                           'mass_2', 'phase', 'phi_12', 'phi_jl', 'psi', 'ra',
-                           'tilt_1', 'tilt_2']
-        assert all(i == j for i,j in zip(params, sorted(expected_params)))

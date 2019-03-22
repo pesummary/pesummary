@@ -20,6 +20,8 @@ from glob import glob
 from pesummary.command_line import command_line
 from pesummary.inputs import Input
 from pesummary.summaryplots import PlotGeneration
+from pesummary.file.meta_file import MetaFile
+from pesummary.summarypages import WebpageGeneration
 
 import pytest
 
@@ -109,7 +111,6 @@ class TestPlotGeneration(object):
         inputs = Input(opts)
         webpage = PlotGeneration(inputs)
         plots = sorted(glob("./.outdir_comparison/plots/*"))
-        print(plots)
         expected_plots = [
             './.outdir_comparison/plots/H1_1d_posterior_IMRPhenomP_H1_optimal_snr.png',
             './.outdir_comparison/plots/H1_1d_posterior_IMRPhenomP_log_likelihood.png',
@@ -143,3 +144,57 @@ class TestPlotGeneration(object):
             './.outdir_comparison/plots/combined_cdf_mass_1.png',
             './.outdir_comparison/plots/corner']
         assert all(i == j for i,j in zip(sorted(plots), sorted(expected_plots)))
+
+    def test_plot_generation_for_add_to_existing(self):
+        parser = command_line()
+        default_arguments = [
+            "--approximant", "IMRPhenomPv2",
+            "--webdir", "./.outdir_add_to_existing",
+            "--samples", "./tests/files/bilby_example.h5"]
+        opts = parser.parse_args(default_arguments)
+        inputs = Input(opts)
+        webpage = PlotGeneration(inputs)
+        webpage = WebpageGeneration(inputs)
+        meta_file = MetaFile(inputs)
+        parser = command_line()
+        default_arguments = [
+            "--approximant", "IMRPhenomP",
+            "--existing_webdir", "./.outdir_add_to_existing",
+            "--samples", "./tests/files/lalinference_example.h5"]
+        opts = parser.parse_args(default_arguments)
+        inputs = Input(opts)
+        webpage = PlotGeneration(inputs) 
+        plots = sorted(glob("./.outdir_add_to_existing/plots/*"))
+        expected_plots = [
+            './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomP_H1_optimal_snr.png',
+            './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomP_log_likelihood.png',
+            './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomP_mass_1.png',
+            './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomPv2_H1_optimal_snr.png',
+            './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomPv2_log_likelihood.png',
+            './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomPv2_mass_1.png',
+            './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomP_H1_optimal_snr.png',
+            './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomP_log_likelihood.png',
+            './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomP_mass_1.png',
+            './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomPv2_H1_optimal_snr.png',
+            './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomPv2_log_likelihood.png',
+            './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomPv2_mass_1.png',
+            './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomP_H1_optimal_snr.png',
+            './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomP_log_likelihood.png',
+            './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomP_mass_1.png',
+            './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomPv2_H1_optimal_snr.png',
+            './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomPv2_log_likelihood.png',
+            './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomPv2_mass_1.png',
+            './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomP_H1_optimal_snr.png',
+            './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomP_log_likelihood.png',
+            './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomP_mass_1.png',
+            './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomPv2_H1_optimal_snr.png',
+            './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomPv2_log_likelihood.png',
+            './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomPv2_mass_1.png',
+            './.outdir_add_to_existing/plots/combined_1d_posterior_H1_optimal_snr.png',
+            './.outdir_add_to_existing/plots/combined_1d_posterior_log_likelihood.png',
+            './.outdir_add_to_existing/plots/combined_1d_posterior_mass_1.png',
+            './.outdir_add_to_existing/plots/combined_cdf_H1_optimal_snr.png',
+            './.outdir_add_to_existing/plots/combined_cdf_log_likelihood.png',
+            './.outdir_add_to_existing/plots/combined_cdf_mass_1.png',
+            './.outdir_add_to_existing/plots/corner']
+        assert all(i == j for i, j in zip(sorted(plots), sorted(expected_plots)))

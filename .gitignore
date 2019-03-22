@@ -25,6 +25,8 @@ __pycache__
 .outdir_cbc/
 .outdir_comparison/
 .outdir_addition/
+.outdir_add_to_existing/
 .outdir_existing/
+.outdir_test/
 .eggs/
 .coverage

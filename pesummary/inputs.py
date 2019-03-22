@@ -95,6 +95,7 @@ class Input(object):
         self.gracedb = opts.gracedb
         self.psds = opts.psd
         self.dump = opts.dump
+        self.hdf5 = opts.save_to_hdf5
         self.existing_labels = []
         self.existing_parameters = []
         self.existing_samples = []
@@ -399,6 +400,13 @@ class Input(object):
                     self.existing_labels, self.existing_approximant)]
 
     @property
+    def existing_meta_file(self):
+        if self.add_to_existing:
+            existing = ExistingFile(self.existing)
+            return existing.existing_file
+        return None
+
+    @property
     def labels(self):
         return self._labels
 
@@ -537,7 +545,6 @@ class Input(object):
         config_file: str, optional
             Path to the configuration file that was used
         """
-        logger.debug("Converting %s to standard format" % (results_file))
         f = OneFormat(results_file, injection_file, config=config_file)
         f.generate_all_posterior_samples()
         return f.save()
@@ -631,16 +638,19 @@ class PostProcessing(object):
         self.calibration = inputs.calibration
         self.sensitivity = inputs.sensitivity
         self.psds = inputs.psds
+        self.hdf5 = inputs.hdf5
         self.existing_labels = inputs.existing_labels
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples
         self.existing_approximant = inputs.existing_approximant
         self.existing_names = inputs.existing_names
+        self.existing_meta_file = inputs.existing_meta_file
         self.colors = colors
 
-        self.parameters = []
-        self.injection_data = []
-        self.samples = []
+        self.grab_data_map = {"existing_file": self._data_from_existing_file,
+                              "standard_format": self._data_from_standard_format}
+
+        self.result_file_data = []
         self.maxL_samples = []
         self.same_parameters = []
 
@@ -673,47 +683,85 @@ class PostProcessing(object):
     def parameters(self):
         return self._parameters
 
-    @parameters.setter
-    def parameters(self, parameters):
-        parameter_list = []
-        for num, results_files in enumerate(self.result_files):
-            f = h5py.File(results_files, "r")
-            p = [i for i in f["posterior_samples/%s/%s/parameter_names" % (
-                self.labels[num], self.approximant[num])]]
-            parameter_list.append([i.decode("utf-8") for i in p])
-            f.close()
-        self._parameters = parameter_list
+    @property
+    def result_file_data(self):
+        return self._data
+
+    @result_file_data.setter
+    def result_file_data(self, data):
+        data, parameters, samples, injection = [], [], [], []
+        for num, result_file in enumerate(self.result_files):
+            if result_file == self.existing_meta_file:
+                key = "existing_file"
+            else:
+                key = "standard_format"
+            data.append(self.grab_data_map[key](result_file, num))
+        for i in data:
+            if isinstance(i[0][0], list):
+                for j in i[0]:
+                    parameters.append(j)
+                for j in i[1]:
+                    samples.append(j)
+                for j in i[2]:
+                    injection.append(j)
+            else:
+                parameters.append(i[0])
+                samples.append(i[1])
+                injection.append(i[2])
+        self._parameters = parameters
+        self._samples = samples
+        self._injection_data = injection
+        self._data = data
+
+    def _data_from_standard_format(self, result_file, index):
+        """Extract data from a file of standard format
+
+        Parameters
+        ----------
+        result_file: str
+            path to the results file that you would like to extrct the
+            information from
+        index: int
+            the index of the results file in self.result_files
+        """
+        f = h5py.File(result_file, "r")
+        p = [i for i in f["posterior_samples/%s/%s/parameter_names" % (
+            self.labels[index], self.approximant[index])]]
+        p = [i.decode("utf-8") for i in p]
+        s = [i for i in f["posterior_samples/%s/%s/samples" % (
+            self.labels[index], self.approximant[index])]]
+        inj_p = [i for i in f["posterior_samples/%s/%s/injection_parameters" % (
+            self.labels[index], self.approximant[index])]]
+        inj_p = [i.decode("utf-8") for i in inj_p]
+        inj_value = [i for i in f["posterior_samples/%s/%s/injection_data" % (
+            self.labels[index], self.approximant[index])]]
+        injection = {i: j for i, j in zip(inj_p, inj_value)}
+        return p, s, injection
+
+    def _data_from_existing_file(self, result_file, index):
+        """Extract data from a file in the existing format
+
+        Parameters
+        ----------
+        result_file: str
+            path to the results file that you would like to extrct the
+            information from
+        index: int
+            the index of the results file in self.result_files
+        """
+        p = self.existing_parameters
+        s = self.existing_samples
+        injection = [
+            {i: float("nan") for i in j} for j in self.existing_parameters]
+        return p, s, injection
 
     @property
     def injection_data(self):
         return self._injection_data
 
-    @injection_data.setter
-    def injection_data(self, injection_data):
-        injection_list = []
-        for num, results_files in enumerate(self.result_files):
-            f = h5py.File(results_files, "r")
-            path = "posterior_samples/%s/%s" % (
-                self.labels[num], self.approximant[num])
-            inj_p = [i for i in f["%s/injection_parameters" % (path)]]
-            inj_p = [i.decode("utf-8") for i in inj_p]
-            inj_data = [i for i in f["%s/injection_data" % (path)]]
-            injection_list.append({i: j for i, j in zip(inj_p, inj_data)})
-        self._injection_data = injection_list
-
     @property
     def samples(self):
         return self._samples
-
-    @samples.setter
-    def samples(self, samples):
-        sample_list = []
-        for num, results_files in enumerate(self.result_files):
-            f = h5py.File(results_files, "r")
-            s = [i for i in f["posterior_samples/%s/%s/samples" % (
-                self.labels[num], self.approximant[num])]]
-            sample_list.append(s)
-        self._samples = sample_list
 
     @property
     def maxL_samples(self):

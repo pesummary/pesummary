@@ -69,5 +69,7 @@ class FinishingTouches(PostProcessing):
         """Remove all unnecessary files.
         """
         for i in self.result_files:
-            if "posterior_samples.h5" not in i:
+            condition1 = "posterior_samples.h5" not in i
+            condition2 = "posterior_samples.json" not in i
+            if condition1 and condition2:
                 os.remove(i)

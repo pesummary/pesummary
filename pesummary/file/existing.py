@@ -13,7 +13,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from glob import glob
+
 import h5py
+import json
 
 
 class ExistingFile():
@@ -38,59 +41,75 @@ class ExistingFile():
     """
     def __init__(self, existing_webdir):
         self.existing = existing_webdir
-        self.existing_parameters = []
-        self.existing_samples = []
+        self.existing_data = []
 
     @property
     def existing_file(self):
-        return self.existing + "/samples/posterior_samples.h5"
+        meta_file = glob(self.existing + "/samples/posterior_samples*")
+        return meta_file[0]
 
     @property
-    def existing_approximant(self):
-        structure = self._data_structure_of_results_file()
-        approximants = [structure[i] for i in structure.keys()]
-        return approximants
+    def extension(self):
+        return self.existing_file.split(".")[-1]
+
+    @property
+    def existing_data(self):
+        return self._existing_data
+
+    @existing_data.setter
+    def existing_data(self, existing_data):
+        func_map = {"h5": self._grab_data_from_hdf5_file,
+                    "json": self._grab_data_from_json_file}
+        self._existing_data = func_map[self.extension]()
+
+    def _grab_data_from_hdf5_file(self):
+        """
+        """
+        f = h5py.File(self.existing_file)
+        existing_data = self._grab_data_from_dictionary(f)
+        f.close()
+        return existing_data
+
+    def _grab_data_from_json_file(self):
+        with open(self.existing_file) as f:
+            data = json.load(f)
+        return self._grab_data_from_dictionary(data)
+
+    def _grab_data_from_dictionary(self, dictionary):
+        """
+        """
+        labels = list(dictionary["posterior_samples"].keys())
+        existing_structure = {
+            i: j for i in labels for j in
+            dictionary["posterior_samples"]["%s" % (i)].keys()}
+        labels = list(existing_structure.keys())
+        approximants = [existing_structure[i] for i in labels]
+
+        parameter_list, sample_list = [], []
+        for num, i in enumerate(labels):
+            p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["%s" % (
+                approximants[num])]["parameter_names"]]
+            s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["%s" % (
+                 approximants[num])]["samples"]]
+            if isinstance(p[0], bytes):
+                parameter_list.append([j.decode("utf-8") for j in p])
+            else:
+                parameter_list.append([j for j in p])
+            sample_list.append(s)
+        return labels, approximants, parameter_list, sample_list
 
     @property
     def existing_labels(self):
-        return list(self._data_structure_of_results_file().keys())
+        return self.existing_data[0]
 
     @property
-    def existing_samples(self):
-        return self._existing_samples
-
-    @existing_samples.setter
-    def existing_samples(self, existing_samples):
-        sample_list = []
-        f = h5py.File(self.existing_file)
-        for num, i in enumerate(self.existing_labels):
-            s = [j for j in f["posterior_samples/%s/%s/samples" % (
-                 i, self.existing_approximant[num])]]
-            sample_list.append(s)
-        f.close()
-        self._existing_samples = sample_list
+    def existing_approximant(self):
+        return self.existing_data[1]
 
     @property
     def existing_parameters(self):
-        return self._existing_parameters
+        return self.existing_data[2]
 
-    @existing_parameters.setter
-    def existing_parameters(self, existing_parameters):
-        parameter_list = []
-        f = h5py.File(self.existing_file)
-        for num, i in enumerate(self.existing_labels):
-            p = [j for j in f["posterior_samples/%s/%s/parameter_names" % (
-                 i, self.existing_approximant[num])]]
-            parameter_list.append([j.decode("utf-8") for j in p])
-        f.close()
-        self._existing_parameters = parameter_list
-
-    def _data_structure_of_results_file(self):
-        """Return the structure of the existing results file
-        """
-        f = h5py.File(self.existing_file)
-        labels = list(f["posterior_samples"].keys())
-        structure = {i: j for i in labels for j in list(
-            f["posterior_samples/%s" % (i)].keys())}
-        f.close()
-        return structure
+    @property
+    def existing_samples(self):
+        return self.existing_data[3]

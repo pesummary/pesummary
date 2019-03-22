@@ -16,6 +16,7 @@
 import configparser
 import shutil
 
+import json
 import h5py
 import deepdish
 
@@ -84,7 +85,52 @@ standard_names = {"logL": "log_likelihood",
                   "mtotal": "total_mass",
                   "q": "mass_ratio",
                   "time": "geocent_time",
-                  "theta_jn": "iota"}
+                  "theta_jn": "theta_jn"}
+
+
+def paths_to_key(key, dictionary, current_path=None):
+    """Return the path to a key stored in a nested dictionary
+
+    Parameters
+    ----------
+    key: str
+        the key that you would like to find
+    dictionary: dict
+        the nested dictionary that has the key stored somewhere within it
+    current_path: str, optional
+        the current level in the dictionary
+    """
+    if current_path is None:
+        current_path = []
+
+    for k, v in dictionary.items():
+        if k == key:
+            yield current_path + [key]
+        else:
+            if isinstance(v, dict):
+                path = current_path + [k]
+                yield from paths_to_key(key, v, path)
+
+
+def load_recusively(key, dictionary):
+    """Return the entry for a key of format 'a/b/c/d'
+
+    Parameters
+    ----------
+    key: str
+        key of format 'a/b/c/d'
+    dictionary: dict
+        the dictionary that has the key stored
+    """
+    if "/" in key:
+        key = key.split("/")
+    if isinstance(key, str):
+        key = [key]
+    if key[-1] in dictionary.keys():
+        yield dictionary[key[-1]]
+    else:
+        old, new = key[0], key[1:]
+        yield from load_recusively(new, dictionary[old])
 
 
 class OneFormat(object):
@@ -95,233 +141,360 @@ class OneFormat(object):
     ----------
     fil: str
        path to the results file
-    inj: str
+    inj: str, optional
        path to the file containing injection information
     config: str, optional
        path to the configuration file
 
     Attributes
     ----------
-    lalinference: Bool
-        Boolean to determine if LALInference was used to generate the results
-        file
-    bilby: Bool
-        Boolean to determine if bilby was used to generate the results file
-    approximant: str
-        The approximant that was used to generate the results file. If the
-        approximant cannot be extracted, this is "none".
+    extension: str
+        the extension of the input file
+    lalinference_hdf5_format: Bool
+        Boolean determining if the hdf5 file is of LALInference format
+    bilby_hdf5_format: Bool
+        Boolean determining if the hdf5 file is of Bilby format
+    data: list
+        list containing the extracted data from the input file
     parameters: list
-        List of parameters that have corresponding posterior distributions
+        list of parameters stored in the input file
     samples: list
-        List of posterior samples for each parameter
+        list of samples stored in the input file
+    approximant: str
+        the approximant stored in the input file
     """
-    def __init__(self, fil, inj, config=None):
+    def __init__(self, fil, inj=None, config=None):
+        logger.info("Extracting the information from %s" % (fil))
         self.fil = fil
         self.inj = inj
         self.config = config
-        self.extension = False
-        if self.extension == "dat":
-            self.fil = convert_dat_to_h5(self.fil)
-        self.lalinference = False
-        self.bilby = False
-        self.approximant = None
-        self.parameters = None
-        self.samples = None
-        fixed_parameters = None
-        if self.config and self.lalinference:
-            fixed_parameters = self.fixed_parameters()
-        if fixed_parameters:
-            self._append_fixed_parameters(fixed_parameters)
-
-    def fixed_parameters(self):
-        """Extract the fixed parameters from the configuration file. This is
-        useful for LALInference data files.
-
-        Parameters
-        ----------
-        cp: str
-            path to the location of the configuration file
-        """
-        config = configparser.ConfigParser()
-        config.read(self.config)
-        fixed_params = None
-        if "engine" in config.sections():
-            fixed_params = [
-                list(i) for i in config.items("engine") if "fix" in i[0]]
-        return fixed_params
-
-    @staticmethod
-    def keys(fil):
-        f = h5py.File(fil)
-        keys = [i for i in f.keys()]
-        f.close()
-        return keys
-
-    def grab_approximant(self):
-        approx = "none"
-        if self.bilby:
-            try:
-                f = deepdish.io.load(self.fil)
-                parameters = [i for i in f["posterior"].keys()]
-                if "waveform_approximant" in parameters:
-                    approx = f["posterior"]["waveform_approximant"][0]
-            except Exception:
-                pass
-        return approx
-
-    @property
-    def lalinference(self):
-        return self._lalinference
-
-    @lalinference.setter
-    def lalinference(self, lalinference):
-        f = h5py.File(self.fil)
-        keys = self.keys(self.fil)
-        if "lalinference" in keys:
-            logger.info("LALInference was used to generate %s" % (self.fil))
-            self._lalinference = True
-            sampler = [i for i in f["lalinference"].keys()]
-            self._data_path = "lalinference/%s/posterior_samples" % (sampler[0])
-        else:
-            self._lalinference = False
+        self.data = None
+        self.injection_data = None
 
     @property
     def extension(self):
-        return self._extension
-
-    @extension.setter
-    def extension(self, extension):
-        ext = self.fil.split(".")[-1]
-        if ext == "h5" or ext == "hdf5":
-            self._extension = "h5"
-        elif ext == "dat":
-            self._extension = "dat"
+        return self.fil.split(".")[-1]
 
     @property
-    def bilby(self):
-        return self._bilby
-
-    @bilby.setter
-    def bilby(self, bilby):
-        self._bilby = False
-        keys = self.keys(self.fil)
-        if "data" in keys:
-            logger.info("BILBY >= v0.3.3 was used to generate %s" % (self.fil))
-            self._bilby = True
-            self._data_path = "data/posterior"
-        elif "posterior" in keys:
-            logger.info("BILBY >= v0.3.1 was used to generate %s" % (self.fil))
-            self._bilby = True
-            self._data_path = "posterior"
+    def lalinference_hdf5_format(self):
+        f = h5py.File(self.fil)
+        keys = list(f.keys())
+        f.close()
+        if "lalinference" in keys:
+            return True
+        return False
 
     @property
-    def approximant(self):
-        return self._approximant
+    def bilby_hdf5_format(self):
+        f = h5py.File(self.fil)
+        keys = list(f.keys())
+        f.close()
+        if "data" in keys or "posterior" in keys:
+            return True
+        return False
 
-    @approximant.setter
-    def approximant(self, approximant):
-        self._approximant = self.grab_approximant()
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        func_map = {"json": self._grab_data_from_json_file,
+                    "hdf5": self._grab_data_from_hdf5_file,
+                    "h5": self._grab_data_from_hdf5_file,
+                    "dat": self._grab_data_from_dat_file}
+        data = func_map[self.extension]()
+        parameters = data[0]
+        samples = data[1]
+
+        if self.fixed_data:
+
+            for i in self.fixed_data.keys():
+                fixed_parameter = i
+                fixed_value = self.fixed_data[i]
+
+                try:
+                    param = standard_names[fixed_parameter]
+                    if param in parameters:
+                        pass
+                    else:
+                        parameters.append(param)
+                        for num in range(len(samples)):
+                            samples[num].append(float(fixed_value))
+                except Exception:
+                    if fixed_parameter == "logdistance":
+                        parameters.append(standard_names["distance"])
+                        for num in range(len(samples)):
+                            samples[num].append(float(fixed_value))
+                    if fixed_parameter == "costheta_jn":
+                        parameters.append(standard_names["theta_jn"])
+                        for num in range(len(samples)):
+                            samples[num].append(float(fixed_value))
+
+        if len(data) > 2:
+            self._data = [parameters, samples, data[2]]
+        else:
+            self._data = [parameters, samples]
+
+    @property
+    def fixed_data(self):
+        if self.config:
+            return self._extract_fixed_data_from_config_file()
+        return None
 
     @property
     def parameters(self):
-        return self._parameters
-
-    @parameters.setter
-    def parameters(self, parameters):
-        self._parameters = self.grab_data()[0]
+        return self.data[0]
 
     @property
     def samples(self):
-        return self._samples
+        return self.data[1]
 
-    @samples.setter
-    def samples(self, samples):
-        self._samples = self.grab_data()[1]
+    @property
+    def approximant(self):
+        if len(self.data) > 2:
+            return self.data[2]
+        return "none"
 
-    def _append_fixed_parameters(self, fixed_parameters):
-        """Generate samples for the fixed parameters and append them to them
-        to the samples array.
+    @property
+    def injection_data(self):
+        return self._injection_data
+
+    @injection_data.setter
+    def injection_data(self, injection_data):
+        if self.inj:
+            extension = self.inj.split(".")[-1]
+            func_map = {"xml": self._grab_injection_data_from_xml_file,
+                        "hdf5": self._grab_injection_data_from_hdf5_file,
+                        "h5": self._grab_injection_data_from_hdf5_file}
+            self._injection_data = func_map[extension]()
+        else:
+            self._injection_data = [
+                self.parameters, [float("nan")] * len(self.parameters)]
+
+    @property
+    def injection_parameters(self):
+        return self.injection_data[0]
+
+    @property
+    def injection_values(self):
+        return self.injection_data[1]
+
+    def _grab_data_from_hdf5_file(self):
+        """Grab the data stored in an hdf5 file
+        """
+        self._data_structure = []
+        if self.lalinference_hdf5_format:
+            return self._grab_data_with_h5py()
+        elif self.bilby_hdf5_format:
+            try:
+                return self._grab_data_with_deepdish()
+            except Exception as e:
+                logger.warning("Failed to open %s with deepdish because %s. "
+                               "Trying to grab the data with 'h5py'." % (
+                                   self.fil, e))
+                return self._grab_data_with_h5py()
+        else:
+            logger.warning("Unrecognised HDF5 format. Trying to open and find "
+                           "the data")
+            try:
+                return self._grab_data_with_h5py()
+            except Exception:
+                raise Exception("Failed to extract the data from the results "
+                                "file. Please reformat to either the bilby "
+                                "or LALInference format")
+
+    def _add_to_list(self, item):
+        self._data_structure.append(item)
+
+    def _grab_data_with_h5py(self):
+        """Grab the data stored in an hdf5 file using h5py
+        """
+        samples = []
+        f = h5py.File(self.fil)
+        f.visit(self._add_to_list)
+        for i in self._data_structure:
+            condition1 = "posterior_samples" in i or "posterior"in i
+            condition2 = "posterior_samples/" not in i and "posterior/" not in i
+            if condition1 and condition2:
+                path = i
+        if self.lalinference_hdf5_format:
+            lalinference_names = f[path].dtype.names
+            parameters = [
+                i for i in lalinference_names if i in standard_names.keys()]
+            for i in f[path]:
+                samples.append(
+                    [i[lalinference_names.index(j)] for j in parameters])
+            parameters = [standard_names[i] for i in parameters]
+
+            condition1 = "luminosity" not in parameters
+            condition2 = "logdistance" in lalinference_names
+            if condition1 and condition2:
+                parameters.append("luminosity_distance")
+                for num, i in enumerate(f[path]):
+                    samples[num].append(
+                        np.exp(i[lalinference_names.index("logdistance")]))
+            if "theta_jn" not in parameters and "costheta_jn" in lalinference_names:
+                parameters.append("theta_jn")
+                for num, i in enumerate(f[self.path]):
+                    samples[num].append(
+                        np.arccos(i[lalinference_names.index("costheta_jn")]))
+        elif self.bilby_hdf5_format:
+            parameters, data = [], []
+            blocks = [i for i in f["%s" % (path)] if "block" in i]
+            for i in blocks:
+                block_name = i.split("_")[0]
+                if "items" in i:
+                    for par in f["%s/%s" % (path, i)]:
+                        if par == b"waveform_approximant":
+                            blocks.remove(block_name + "_items")
+                            blocks.remove(block_name + "_values")
+            for i in sorted(blocks):
+                if "items" in i:
+                    for par in f["%s/%s" % (path, i)]:
+                        if par == b"logL":
+                            parameters.append(b"log_likelihood")
+                        else:
+                            parameters.append(par)
+                if "values" in i:
+                    if len(data) == 0:
+                        for dat in f["%s/%s" % (path, i)]:
+                            data.append(list(np.real(dat)))
+                    else:
+                        for num, dat in enumerate(f["%s/%s" % (path, i)]):
+                            data[num] += list(np.real(dat))
+            parameters = [i.decode("utf-8") for i in parameters]
+        return parameters, samples
+
+    def _grab_data_with_deepdish(self):
+        """Grab the data stored in an hdf5 file using deepdish
+        """
+        approx = "none"
+        f = deepdish.io.load(self.fil)
+        path, = paths_to_key("posterior", f)
+        path = path[0]
+        reduced_f, = load_recusively(path, f)
+        parameters = [i for i in reduced_f.keys()]
+        if "waveform_approximant" in parameters:
+            approx = reduced_f["waveform_approximant"][0]
+            parameters.remove("waveform_approximant")
+        data = np.zeros([len(reduced_f[parameters[0]]), len(parameters)])
+        for num, par in enumerate(parameters):
+            for key, i in enumerate(reduced_f[par]):
+                data[key][num] = float(np.real(i))
+        data = data.tolist()
+        for num, par in enumerate(parameters):
+            if par == "logL":
+                parameters[num] = "log_likelihood"
+        return parameters, data, approx
+
+    def _grab_data_from_json_file(self):
+        """Grab the data stored in a .json file
+        """
+        with open(self.fil) as f:
+            data = json.load(f)
+        path, = paths_to_key("posterior", data)
+        path = path[0]
+        if "content" in data[path].keys():
+            path += "/content"
+        reduced_data, = load_recusively(path, data)
+        parameters = list(reduced_data.keys())
+        path_to_approximant = ("meta_data/likelihood/waveform_arguments/"
+                               "waveform_approximant")
+        try:
+            approximant, = load_recusively(path_to_approximant, data)
+        except Exception:
+            approximant = "none"
+        samples = [
+            [reduced_data[j][i] for j in parameters] for i in range(
+                len(reduced_data[parameters[0]]))]
+        return parameters, samples, approximant
+
+    def _grab_data_from_dat_file(self):
+        """Grab the data stored in a .dat file
+        """
+        dat_file = np.genfromtxt(self.fil, names=True)
+        stored_parameters = [i for i in dat_file.dtype.names]
+        parameters = [
+            i for i in stored_parameters if i in standard_names.keys()]
+        indices = [stored_parameters.index(i) for i in parameters]
+        parameters = [standard_names[i] for i in parameters]
+        samples = [[x[i] for i in indices] for x in dat_file]
+        return parameters, samples
+
+    def _extract_fixed_data_from_config_file(self):
+        """Grab the data from a config file
+        """
+        config = configparser.ConfigParser()
+        try:
+            config.read(self.config)
+            fixed_data = None
+            if "engine" in config.sections():
+                fixed_data = {
+                    key.split("fix-")[1]: item for key, item in
+                    config.items("engine") if "fix" in key}
+            return fixed_data
+        except Exception:
+            return None
+
+    def _grab_injection_data_from_xml_file(self):
+        """Grab the data from an xml injection file
+        """
+        func_map = {
+            "chirp_mass": lambda inj: inj.mchirp,
+            "luminosity_distance": lambda inj: inj.distance,
+            "mass_1": lambda inj: inj.mass1,
+            "mass_2": lambda inj: inj.mass2,
+            "dec": lambda inj: inj.latitude,
+            "spin_1x": lambda inj: inj.spin1x,
+            "spin_1y": lambda inj: inj.spin1y,
+            "spin_1z": lambda inj: inj.spin1z,
+            "spin_2x": lambda inj: inj.spin2x,
+            "spin_2y": lambda inj: inj.spin2y,
+            "spin_2z": lambda inj: inj.spin2z,
+            "mass_ratio": lambda inj: con.q_from_m1_m2(inj.mass1, inj.mass2),
+            "symmetric_mass_ratio": lambda inj: con.eta_from_m1_m2(
+                inj.mass1, inj.mass2),
+            "total_mass": lambda inj: inj.mass1 + inj.mass2,
+            "chi_p": lambda inj: con._chi_p(
+                inj.mass1, inj.mass2, inj.spin1x, inj.spin1y, inj.spin2x,
+                inj.spin2y),
+            "chi_eff": lambda inj: con._chi_eff(inj.mass1, inj.mass2,
+                                                inj.spin1z, inj.spin2z)}
+        injection_parameters = self.parameters
+        if GLUE:
+            xmldoc = ligolw_utils.load_filename(
+                self.inj, contenthandler=lsctables.use_in(
+                    ligolw.LIGOLWContentHandler))
+            table = lsctables.SimInspiralTable.get_table(xmldoc)[0]
+            injection_values = [
+                func_map[i](table) if i in func_map.keys() else float("nan")
+                for i in self.parameters]
+        else:
+            injection_values = [float("nan")] * len(self.parameters)
+        return injection_parameters, injection_values
+
+    def _specific_parameter_samples(self, param):
+        """Return the samples for a specific parameter
 
         Parameters
         ----------
-        fixed_parameters: ndlist
-            list of fixed parameters and their fixed values
+        param: str
+            the parameter that you would like to return the samples for
         """
-        if not fixed_parameters:
-            pass
-        for i in fixed_parameters:
-            try:
-                param = standard_names[i[0].split("fix-")[1]]
-                if param in self.parameters:
-                    pass
-                self.parameters.append(param)
-                self.append_data([float(i[1])] * len(self.samples))
-            except Exception:
-                param = i[0].split("fix-")[1]
-                if param == "logdistance":
-                    self.parameters.append(standard_names["distance"])
-                    self.append_data([np.exp(float(i[1]))] * len(self.samples))
-                if param == "costheta_jn":
-                    self.parameters.append(standard_names["theta_jn"])
-                    self.append_data([np.arccos(float(i[1]))] * len(self.samples))
-
-    def injection_parameters(self):
-        return get_injection_parameters(
-            self.parameters, self.inj, LALINFERENCE=self.lalinference,
-            BILBY=self.bilby)
-
-    def save(self):
-        parameters = np.array(self.parameters, dtype="S")
-        injection_properties = self.injection_parameters()
-        injection_parameters = np.array(injection_properties[0], dtype="S")
-        injection_data = np.array(injection_properties[1])
-        f = h5py.File("%s_temp" % (self.fil), "w")
-        posterior_samples_group = f.create_group("posterior_samples")
-        label_group = posterior_samples_group.create_group("label")
-        group = label_group.create_group(self.approximant)
-        group.create_dataset("parameter_names", data=parameters)
-        group.create_dataset("samples", data=self.samples)
-        group.create_dataset("injection_parameters", data=injection_parameters)
-        group.create_dataset("injection_data", data=injection_data)
-        f.close()
-        return "%s_temp" % (self.fil)
-
-    def grab_data(self):
-        f = h5py.File(self.fil)
-        if self.lalinference:
-            lalinference_names = f[self._data_path].dtype.names
-            data = []
-            parameters = [i for i in lalinference_names if i in standard_names.keys()]
-            for i in f[self._data_path]:
-                data.append([i[lalinference_names.index(j)] for j in parameters])
-            parameters = [standard_names[i] for i in parameters]
-            if "luminosity_distance" not in parameters and "logdistance" in lalinference_names:
-                parameters.append("luminosity_distance")
-                for num, i in enumerate(f[self._data_path]):
-                    data[num].append(np.exp(i[lalinference_names.index("logdistance")]))
-            if "iota" not in parameters and "costheta_jn" in lalinference_names:
-                parameters.append("iota")
-                for num, i in enumerate(f[self._data_path]):
-                    data[num].append(np.arccos(i[lalinference_names.index("costheta_jn")]))
-        if self.bilby:
-            approx = "none"
-            try:
-                logger.debug("Trying to load with file with deepdish")
-                f = deepdish.io.load(self.fil)
-                parameters, data, approx = load_with_deepdish(f)
-            except Exception as e:
-                logger.debug("Failed to load file with deepdish because %s. "
-                             "Using h5py instead" % (e))
-                f = h5py.File(self.fil)
-                parameters, data = load_with_h5py(f, self._data_path)
-        return parameters, data
-
-    def _specific_parameter_samples(self, param):
         ind = self.parameters.index(param)
         samples = np.array([i[ind] for i in self.samples])
         return samples
 
     def specific_parameter_samples(self, param):
+        """Return the samples for either a list or a single parameter
+
+        Parameters
+        ----------
+        param: list/str
+            the parameter/parameters that you would like to return the samples
+            for
+        """
         if type(param) == list:
             samples = [self._specific_parameter_samples(i) for i in param]
         else:
@@ -329,6 +502,13 @@ class OneFormat(object):
         return samples
 
     def append_data(self, samples):
+        """Add a list of samples to the existing samples data object
+
+        Parameters
+        ----------
+        samples: list
+            the list of samples that you would like to append
+        """
         for num, i in enumerate(self.samples):
             self.samples[num].append(samples[num])
 
@@ -397,23 +577,26 @@ class OneFormat(object):
         self.append_data(eta)
 
     def _component_spins(self):
-        spins = ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
+        spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
+                 "spin_2z"]
         for i in spins:
             self.parameters.append(i)
         spin_angles = [
-            "iota", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
+            "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
             "mass_1", "mass_2", "reference_frequency", "phase"]
         samples = self.specific_parameter_samples(spin_angles)
         spin_components = con.component_spins(
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5], samples[6], samples[7], samples[8], samples[9],
             samples[10])
+        iota = np.array([i[0] for i in spin_components])
         spin1x = np.array([i[1] for i in spin_components])
         spin1y = np.array([i[2] for i in spin_components])
         spin1z = np.array([i[3] for i in spin_components])
         spin2x = np.array([i[4] for i in spin_components])
         spin2y = np.array([i[5] for i in spin_components])
         spin2z = np.array([i[6] for i in spin_components])
+        self.append_data(iota)
         self.append_data(spin1x)
         self.append_data(spin1y)
         self.append_data(spin1z)
@@ -494,6 +677,7 @@ class OneFormat(object):
         self.append_data(chirp_mass_source)
 
     def generate_all_posterior_samples(self):
+        logger.debug("Starting to generate all derived posteriors")
         if "chirp_mass" not in self.parameters and "chirp_mass_source" in \
                 self.parameters and "redshift" in self.parameters:
             self._mchirp_from_mchirp_source_z()
@@ -526,7 +710,7 @@ class OneFormat(object):
             spin_components = [
                 "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
             spin_angles = [
-                "iota", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1",
+                "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1",
                 "a_2", "mass_1", "mass_2", "reference_frequency", "phase"]
             if all(i not in self.parameters for i in spin_components):
                 if all(i in self.parameters for i in spin_angles):
@@ -574,140 +758,33 @@ class OneFormat(object):
             self.parameters.remove(self.parameters[ind])
             for i in self.samples:
                 del i[ind]
+        self._update_injection_data()
 
-
-def load_with_deepdish(f):
-    """Return the data and parameters that appear in a given h5 file assuming
-    that the file has been loaded with deepdish
-
-    Parameters
-    ----------
-    f: dict
-        results file loaded with deepdish
-    """
-    approx = "none"
-    parameters = [i for i in f["posterior"].keys()]
-    if "waveform_approximant" in parameters:
-        approx = f["posterior"]["waveform_approximant"][0]
-        parameters.remove("waveform_approximant")
-    data = np.zeros([len(f["posterior"]), len(parameters)])
-    for num, par in enumerate(parameters):
-        for key, i in enumerate(f["posterior"][par]):
-            data[key][num] = float(np.real(i))
-    data = data.tolist()
-    for num, par in enumerate(parameters):
-        if par == "logL":
-            parameters[num] = "log_likelihood"
-    return parameters, data, approx
-
-
-def load_with_h5py(f, path):
-    """Return the data and parameters that appear in a given h5 file assuming
-    that the file has been loaded with h5py
-
-    Parameters
-    ----------
-    f: h5py._hl.files.File
-        results file loaded with h5py
-    """
-    parameters, data = [], []
-    blocks = [i for i in f["%s" % (path)] if "block" in i]
-    for i in blocks:
-        block_name = i.split("_")[0]
-        if "items" in i:
-            for par in f["%s/%s" % (path, i)]:
-                if par == b"waveform_approximant":
-                    blocks.remove(block_name + "_items")
-                    blocks.remove(block_name + "_values")
-    for i in sorted(blocks):
-        if "items" in i:
-            for par in f["%s/%s" % (path, i)]:
-                if par == b"logL":
-                    parameters.append(b"log_likelihood")
-                else:
-                    parameters.append(par)
-        if "values" in i:
-            if len(data) == 0:
-                for dat in f["%s/%s" % (path, i)]:
-                    data.append(list(np.real(dat)))
-            else:
-                for num, dat in enumerate(f["%s/%s" % (path, i)]):
-                    data[num] += list(np.real(dat))
-    parameters = [i.decode("utf-8") for i in parameters]
-    return parameters, data
-
-
-def get_injection_parameters(parameters, inj_file, LALINFERENCE=False,
-                             BILBY=False):
-    """Grab the injection parameters from an xml injection file
-
-    Parameters
-    ----------
-    parameters: list
-        list of parameters that you have samples for
-    inj_file: str
-        path to the location of the injection file
-    """
-    _q_func = con.q_from_m1_m2
-    _eta_func = con.eta_from_m1_m2
-    func_map = {"chirp_mass": lambda inj: inj.mchirp,
-                "luminosity_distance": lambda inj: inj.distance,
-                "mass_1": lambda inj: inj.mass1,
-                "mass_2": lambda inj: inj.mass2,
-                "dec": lambda inj: inj.latitude,
-                "spin_1x": lambda inj: inj.spin1x,
-                "spin_1y": lambda inj: inj.spin1y,
-                "spin_1z": lambda inj: inj.spin1z,
-                "spin_2x": lambda inj: inj.spin2x,
-                "spin_2y": lambda inj: inj.spin2y,
-                "spin_2z": lambda inj: inj.spin2z,
-                "mass_ratio": lambda inj: _q_func(inj.mass1, inj.mass2),
-                "symmetric_mass_ratio": lambda inj: _eta_func(inj.mass1, inj.mass2),
-                "total_mass": lambda inj: inj.mass1 + inj.mass2,
-                "chi_p": lambda inj: con._chi_p(inj.mass1, inj.mass2, inj.spin1x,
-                                                inj.spin1y, inj.spin2x, inj.spin2y),
-                "chi_eff": lambda inj: con._chi_eff(inj.mass1, inj.mass2, inj.spin1z,
-                                                    inj.spin2z)}
-    inj_par = parameters
-    if LALINFERENCE:
-        if inj_file is None:
-            inj_data = [float("nan")] * len(parameters)
+    def _update_injection_data(self):
+        if self.inj:
+            extension = self.inj.split(".")[-1]
+            func_map = {"xml": self._grab_injection_data_from_xml_file,
+                        "hdf5": self._grab_injection_data_from_hdf5_file,
+                        "h5": self._grab_injection_data_from_hdf5_file}
+            self._injection_data = func_map[extension]()
         else:
-            if GLUE:
-                xmldoc = ligolw_utils.load_filename(
-                    inj_file, contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
-                table = lsctables.SimInspiralTable.get_table(xmldoc)[0]
-                inj_data = [func_map[i](table) if i in func_map.keys() else
-                            float("nan") for i in parameters]
-            else:
-                inj_data = [float("nan")] * len(parameters)
-    if BILBY:
-        try:
-            f = deepdish.io.load(inj_file)
-            inj_keys = f["injection_parameters"].keys()
-            inj_data = [f["injection_parameters"][key] if key in inj_keys
-                        else float("nan") for key in parameters]
-        except Exception:
-            inj_data = [float("nan")] * len(parameters)
-    return [inj_par, inj_data]
+            self._injection_data = [
+                self.parameters, [float("nan")] * len(self.parameters)]
 
-
-def convert_dat_to_h5(f):
-    """Convert a dat file to the lalinference framework
-
-    Parameters
-    ----------
-    f: str
-        path to the dat file that you would like to convert to h5
-    """
-    dat_file = np.genfromtxt(f, names=True)
-    file_name = f.split(".dat")[0]
-    h5_file = h5py.File("%s.hdf5" % (file_name), 'w')
-    lalinference_group = h5_file.create_group('lalinference')
-    sampler_group = lalinference_group.create_group('lalinference_mcmc')
-    sampler_group.create_dataset('posterior_samples', data=dat_file)
-    h5_file.close()
-    return "%s.hdf5" % (file_name)
+    def save(self):
+        parameters = np.array(self.parameters, dtype="S")
+        injection_parameters = np.array(self.injection_parameters, dtype="S")
+        injection_data = np.array(self.injection_values)
+        f = h5py.File("%s_temp" % (self.fil), "w")
+        posterior_samples_group = f.create_group("posterior_samples")
+        label_group = posterior_samples_group.create_group("label")
+        group = label_group.create_group(self.approximant)
+        group.create_dataset("parameter_names", data=parameters)
+        group.create_dataset("samples", data=self.samples)
+        group.create_dataset("injection_parameters", data=injection_parameters)
+        group.create_dataset("injection_data", data=injection_data)
+        f.close()
+        return "%s_temp" % (self.fil)
 
 
 def add_specific_arguments(parser):
