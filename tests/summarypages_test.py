@@ -20,6 +20,8 @@ from glob import glob
 from pesummary.command_line import command_line
 from pesummary.inputs import Input
 from pesummary.summarypages import WebpageGeneration
+from pesummary.file.meta_file import MetaFile
+from pesummary.summaryplots import PlotGeneration
 
 import pytest
 
@@ -28,7 +30,8 @@ class TestWebpageGeneration(object):
 
     def setup(self):
         directories = ["./.outdir_cbc", "./.outdir_bilby",
-                       "./.outdir_lalinference", "./.outdir_comparison"]
+                       "./.outdir_lalinference", "./.outdir_comparison",
+                       "./.outdir_addition"]
         for i in directories:
             if os.path.isdir(i):
                 shutil.rmtree(i)
@@ -109,6 +112,48 @@ class TestWebpageGeneration(object):
                          './.outdir_comparison/html/error.html']
         assert all(i == j for i,j in zip(sorted(html), sorted(expected_html)))
 
+    def test_webpage_generation_for_add_to_existing(self):
+        parser = command_line()
+        default_arguments = [
+            "--approximant", "IMRPhenomPv2",
+            "--webdir", "./.outdir_addition",
+            "--samples", "./tests/files/bilby_example.h5"]
+        opts = parser.parse_args(default_arguments)
+        inputs = Input(opts)
+        webpage = WebpageGeneration(inputs)
+        MetaFile(inputs)
+        parser = command_line()
+        default_arguments = [
+            "--approximant", "IMRPhenomP",
+            "--existing_webdir", "./.outdir_addition",
+            "--samples", "./tests/files/lalinference_example.h5"]
+        opts = parser.parse_args(default_arguments)
+        inputs = Input(opts)
+        PlotGeneration(inputs)
+        webpage = WebpageGeneration(inputs)
+        html = sorted(glob("./.outdir_addition/html/*"))
+        expected_html = ['./.outdir_addition/html/Comparison.html',
+                         './.outdir_addition/html/Comparison_H1_optimal_snr.html',
+                         './.outdir_addition/html/Comparison_log_likelihood.html',
+                         './.outdir_addition/html/Comparison_mass_1.html',
+                         './.outdir_addition/html/Comparison_multiple.html',
+                         './.outdir_addition/html/H1_IMRPhenomP.html',
+                         './.outdir_addition/html/H1_IMRPhenomP_H1_optimal_snr.html',
+                         './.outdir_addition/html/H1_IMRPhenomP_config.html',
+                         './.outdir_addition/html/H1_IMRPhenomP_corner.html',
+                         './.outdir_addition/html/H1_IMRPhenomP_log_likelihood.html',
+                         './.outdir_addition/html/H1_IMRPhenomP_mass_1.html',
+                         './.outdir_addition/html/H1_IMRPhenomP_multiple.html',
+                         './.outdir_addition/html/H1_IMRPhenomPv2.html',
+                         './.outdir_addition/html/H1_IMRPhenomPv2_H1_optimal_snr.html',
+                         './.outdir_addition/html/H1_IMRPhenomPv2_config.html',
+                         './.outdir_addition/html/H1_IMRPhenomPv2_corner.html',
+                         './.outdir_addition/html/H1_IMRPhenomPv2_log_likelihood.html',
+                         './.outdir_addition/html/H1_IMRPhenomPv2_mass_1.html',
+                         './.outdir_addition/html/H1_IMRPhenomPv2_multiple.html',
+                         './.outdir_addition/html/error.html']
+        assert all(i == j for i,j in zip(sorted(html), sorted(expected_html)))
+
     def test_webpage_generation_for_full_cbc(self):
         parser = command_line()
         default_arguments = [
@@ -119,45 +164,37 @@ class TestWebpageGeneration(object):
         inputs = Input(opts)
         webpage = WebpageGeneration(inputs)
         html = glob("./.outdir_cbc/html/*")
-        expected_html = ['./.outdir_cbc/html/0_IMRPhenomPv2_dec.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_luminosity_distance.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_phase.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_spin_1z.html',
+        expected_html = ['./.outdir_cbc/html/0_IMRPhenomPv2_luminosity_distance.html',
                          './.outdir_cbc/html/0_IMRPhenomPv2_ra.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_phi_jl.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_spin_2x.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_corner.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_phi_12.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_mass_2.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_symmetric_mass_ratio.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_tilt_2.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_multiple.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_chi_p.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_spin_1y.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_mass_ratio.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_log_likelihood.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_total_mass.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_a_2.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_psi.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_mass_1.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_spin_2z.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_chi_eff.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_geocent_time.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_spin_1x.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_cos_tilt_2.html',
                          './.outdir_cbc/html/0_IMRPhenomPv2_chirp_mass.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_tilt_1.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_mass_2.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_symmetric_mass_ratio.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_geocent_time.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_log_likelihood.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_corner.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2.html',
                          './.outdir_cbc/html/0_IMRPhenomPv2_iota.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_a_1.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_spin_2y.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_phi_12.html',
                          './.outdir_cbc/html/0_IMRPhenomPv2_cos_tilt_1.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_config.html',
                          './.outdir_cbc/html/0_IMRPhenomPv2_redshift.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_a_1.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_dec.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_tilt_2.html',
                          './.outdir_cbc/html/0_IMRPhenomPv2_comoving_distance.html',
-                         './.outdir_cbc/html/0_IMRPhenomPv2_mass_1_source.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_tilt_1.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_psi.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_a_2.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_total_mass.html',
                          './.outdir_cbc/html/0_IMRPhenomPv2_mass_2_source.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_cos_tilt_2.html',
                          './.outdir_cbc/html/0_IMRPhenomPv2_total_mass_source.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_mass_ratio.html',
                          './.outdir_cbc/html/0_IMRPhenomPv2_chirp_mass_source.html',
-                         './.outdir_cbc/html/error.html']
+                         './.outdir_cbc/html/0_IMRPhenomPv2_config.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_phi_jl.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_mass_1_source.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_multiple.html',
+                         './.outdir_cbc/html/error.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_phase.html',
+                         './.outdir_cbc/html/0_IMRPhenomPv2_mass_1.html']
         assert all(i == j for i,j in zip(sorted(expected_html), sorted(html))) 

@@ -75,7 +75,7 @@ class TestPlot(object):
 
     def test_waveform_plot(self):
         maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
-                       "iota": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
+                       "theta_jn": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
                        "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
                        "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
                        "luminosity_distance": 100}
@@ -84,7 +84,7 @@ class TestPlot(object):
     
     def test_timedomain_waveform_plot(self):
         maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
-                       "iota": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
+                       "theta_jn": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
                        "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
                        "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
                        "luminosity_distance": 100}
@@ -93,13 +93,24 @@ class TestPlot(object):
 
     def test_waveform_comparison_plot(self):
         maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
-                       "iota": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
+                       "theta_jn": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
                        "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
                        "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
                        "luminosity_distance": 100}
         maxL_params = [maxL_params, maxL_params]
         maxL_params[1]["mass_1"] = 7.
         fig = plot._waveform_comparison_plot(maxL_params, ["b", "r"])
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    def test_time_domain_waveform_comparison_plot(self):
+        maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
+                       "theta_jn": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
+                       "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
+                       "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
+                       "luminosity_distance": 100}
+        maxL_params = [maxL_params, maxL_params]
+        maxL_params[1]["mass_1"] = 7.
+        fig = plot._time_domain_waveform_comparison_plot(maxL_params, ["b", "r"])
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     @pytest.mark.parametrize("ra, dec", [([1,2,3,4], [1,1,1,1]),])

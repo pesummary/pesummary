@@ -70,4 +70,7 @@ def command_line():
                         default=None)
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="print useful information for debugging purposes")
+    parser.add_argument("--save_to_hdf5", action="store_true",
+                        help="save the meta file in hdf5 format",
+                        default=False)
     return parser

@@ -67,7 +67,3 @@ class TestExistingFile(object):
         assert all(
             i == j for i,j in zip(
                 self.existing_object.existing_parameters[0], ["mass_1", "mass_2"]))
-
-    def test_data_structure_of_results_file(self):
-        assert self.existing_object._data_structure_of_results_file() == {
-            'H1_L1': 'IMRPhenomPv2'}

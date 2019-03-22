@@ -318,7 +318,7 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     if "phi_jl" in maxL_params.keys():
         iota, S1x, S1y, S1z, S2x, S2y, S2z = \
             lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                maxL_params["iota"], maxL_params["phi_jl"], maxL_params["tilt_1"],
+                maxL_params["theta_jn"], maxL_params["phi_jl"], maxL_params["tilt_1"],
                 maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
                 maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
                 maxL_params["phase"])
@@ -394,7 +394,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, approximant_labels=None,
         if "phi_jl" in i.keys():
             iota, S1x, S1y, S1z, S2x, S2y, S2z = \
                 lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                    i["iota"], i["phi_jl"], i["tilt_1"],
+                    i["theta_jn"], i["phi_jl"], i["tilt_1"],
                     i["tilt_2"], i["phi_12"], i["a_1"],
                     i["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
                     i["phase"])
@@ -773,7 +773,7 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
     if "phi_jl" in maxL_params.keys():
         iota, S1x, S1y, S1z, S2x, S2y, S2z = \
             lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                maxL_params["iota"], maxL_params["phi_jl"], maxL_params["tilt_1"],
+                maxL_params["theta_jn"], maxL_params["phi_jl"], maxL_params["tilt_1"],
                 maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
                 maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
                 maxL_params["phase"])
@@ -803,6 +803,77 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
     plt.grid()
     plt.legend(loc="best")
+    plt.tight_layout()
+    return fig
+
+
+def _time_domain_waveform_comparison_plot(maxL_params_list, colors,
+                                          approximant_labels=None, **kwargs):
+    """Generate a plot which compares the maximum likelihood waveforms for
+    each approximant.
+
+    Parameters
+    ----------
+    maxL_params_list: list
+        list of dictionaries containing the maximum likelihood parameter
+        values for each approximant
+    colors: list
+        list of colors to be used to differentiate the different approximants
+    approximant_labels: list, optional
+        label to prepend the approximant in the legend
+    kwargs: dict
+        dictionary of optional keyword arguments
+    """
+    logger.debug("Generating the maximum likelihood time domain waveform "
+                 "comparison plot for H1")
+    if not LALSIMULATION:
+        raise Exception("LALSimulation could not be imported. Please install "
+                        "LALSuite to be able to use all features")
+    labels = [i["approximant"] for i in maxL_params_list]
+    if approximant_labels:
+        labels = ["_".join([i, j]) if i is not None else j for i, j in zip(
+            approximant_labels, labels)]
+    delta_t = 1. / 4096.
+    minimum_frequency = kwargs.get("f_min", 5.)
+
+    fig = plt.figure()
+    for num, i in enumerate(maxL_params_list):
+        t_start = i['geocent_time']
+        t_finish = i['geocent_time'] + 4.
+        time_array = np.arange(t_start, t_finish, delta_t)
+
+        approx = lalsim.GetApproximantFromString(i["approximant"])
+        mass_1 = i["mass_1"] * MSUN_SI
+        mass_2 = i["mass_2"] * MSUN_SI
+        luminosity_distance = i["luminosity_distance"] * PC_SI * 10**6
+        if "phi_jl" in i.keys():
+            iota, S1x, S1y, S1z, S2x, S2y, S2z = \
+                lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+                    i["theta_jn"], i["phi_jl"], i["tilt_1"],
+                    i["tilt_2"], i["phi_12"], i["a_1"],
+                    i["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+                    i["phase"])
+        else:
+            iota, S1x, S1y, S1z, S2x, S2y, S2z = i["iota"], 0., 0., 0., \
+                0., 0., 0.
+        phase = i["phase"] if "phase" in i.keys() else 0.0
+        h_plus, h_cross = lalsim.SimInspiralChooseTDWaveform(
+            mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance,
+            iota, phase, 0.0, 0.0, 0.0, delta_t, minimum_frequency,
+            kwargs.get("f_ref", 10.), None, approx)
+
+        h_plus = h_plus.data.data
+        h_cross = h_cross.data.data
+        h_plus = h_plus[:len(time_array)]
+        h_cross = h_cross[:len(time_array)]
+        ar = __antenna_response("H1", i["ra"], i["dec"], i["psi"],
+                                i["geocent_time"])
+        plt.plot(time_array, abs(h_plus * ar[0] + h_cross * ar[1]),
+                 color=colors[num], label=labels[num], linewidth=2.0)
+    plt.grid()
+    plt.legend(loc="best")
+    plt.xlabel(r"Time $[s]$", fontsize=16)
+    plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
     plt.tight_layout()
     return fig
 

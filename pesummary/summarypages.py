@@ -336,6 +336,12 @@ class WebpageGeneration(PostProcessing):
         image_contents = []
         if self.psds:
             image_contents.append(path + "psd_plot.png")
+        if len(self.approximant) > 1:
+            image_contents.append(path + "compare_time_domain_waveforms.png")
+        else:
+            waveform_plot = "%s_%s_waveform_timedomain.png" % (
+                self.labels[0], self.approximant[0])
+            image_contents.append(path + waveform_plot)
         if self.calibration:
             image_contents.append(path + "calibration_plot.png")
         image_contents = [image_contents]
@@ -475,7 +481,7 @@ class WebpageGeneration(PostProcessing):
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s configuration" % (app),
                 background_colour=self.colors[num], approximant=app)
-            if self.config:
+            if self.config and num < len(self.config):
                 with open(self.config[num], 'r') as f:
                     contents = f.read()
                 styles = html_file.make_code_block(language='ini', contents=contents)
