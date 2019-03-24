@@ -70,6 +70,23 @@ class TestOneFormat(object):
              shutil.rmtree("./.outdir")
         os.mkdir("./.outdir")
 
+    def test_check_definition_of_inclination(self):
+        parameters = ["mass_1", "tilt1", "tilt2", "a1", "a2",
+                      "inclination"]
+        parameters = one_format.OneFormat._check_definition_of_inclination(
+            parameters)
+        assert parameters[5] == "theta_jn"
+        parameters = ["mass_1", "tilt1", "tilt2", "a1", "a2",
+                      "theta_jn"]
+        parameters = one_format.OneFormat._check_definition_of_inclination(
+            parameters)
+        assert parameters[5] == "theta_jn"
+        parameters = ["mass_1", "a1x", "a1y", "a1z", "a2x", "a2y", "a2z",
+                      "inclination"]
+        parameters = one_format.OneFormat._check_definition_of_inclination(
+            parameters)
+        assert parameters[7] == "iota"
+
     def test_extension(self):
         f = {"posterior": {"waveform_approximant": ["approx1"], "mass_1": [10]}}
         deepdish.io.save("./.outdir/test_deepdish.h5", f)

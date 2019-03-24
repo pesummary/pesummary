@@ -19,6 +19,7 @@ from pesummary.utils.utils import logger
 
 try:
     from lalsimulation import SimInspiralTransformPrecessingNewInitialConditions
+    from lalsimulation import SimInspiralTransformPrecessingWvf2PE
     from lal import MSUN_SI
     LALINFERENCE_INSTALL = True
 except ImportError:
@@ -170,9 +171,39 @@ def chi_eff(mass1, mass2, spin1z, spin2z):
     return (spin1z * mass1 + spin2z * mass2) / (mass1 + mass2)
 
 
+def phi_12_from_phi1_phi2(phi1, phi2):
+    """Return the difference in azimuthal angle between S1 and S2 given samples
+    for phi1 and phi2
+    """
+    phi12 = phi2 - phi1
+    if isinstance(phi12, float) and phi12 < 0.:
+        phi12 += 2 * np.pi
+    elif isinstance(phi12, np.ndarray):
+        ind = np.where(phi12 < 0.)
+        phi12[ind] += 2 * np.pi
+    return phi12
+
+
+def spin_angles(mass_1, mass_2, inc, spin1x, spin1y, spin1z, spin2x, spin2y,
+                spin2z, f_ref, phase):
+    """Return the spin angles given samples for mass_1, mass_2, inc, spin1x,
+    spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, phase
+    """
+    if LALINFERENCE_INSTALL:
+        data = []
+        for i in range(len(mass_1)):
+            theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2 = \
+                SimInspiralTransformPrecessingWvf2PE(
+                    incl=inc[i], m1=mass_1[i], m2=mass_2[i], S1x=spin1x[i],
+                    S1y=spin1y[i], S1z=spin1z[i], S2x=spin2z[i], S2y=spin2y[i],
+                    S2z=spin2z[i], fRef=f_ref[i], phiRef=phase[i])
+            data.append([theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2])
+        return data
+
+
 def component_spins(theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1,
                     mass_2, f_ref, phase):
-    """Return the component spins given sames for theta_jn, phi_jl, tilt_1,
+    """Return the component spins given samples for theta_jn, phi_jl, tilt_1,
     tilt_2, phi_12, a_1, a_2, mass_1, mass_2, f_ref, phase
     """
     if LALINFERENCE_INSTALL:
