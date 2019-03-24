@@ -161,6 +161,29 @@ class TestConversions(object):
         chi_eff_value = chi_eff(mass1, mass2, spin1z, spin2z)
         assert chi_eff_value == 0.5
 
+    def test_phi_12_from_phi1_phi2(self):
+        data = phi_12_from_phi1_phi2(0.2, 0.5)
+        assert data == 0.3
+        data = phi_12_from_phi1_phi2(0.5, 0.2)
+        rounded_data = np.round(data, 2)
+        assert rounded_data == 5.98
+        data = phi_12_from_phi1_phi2(np.array([0.5, 0.2]), np.array([0.3, 0.7]))
+        rounded_data = np.round(data, 2)
+        assert all(i == j for i,j in zip(rounded_data, [6.08, 0.5]))
+
+    def test_spin_angles(self):
+        mass1, mass2 = [10., 10.], [5., 5.]
+        inc, spin1x, spin1y = self.opts.iota, self.opts.spin1x, self.opts.spin1y
+        spin1z, spin2x = self.opts.spin1z, self.opts.spin2x,
+        spin2y, spin2z = self.opts.spin2y, self.opts.spin2z
+        f_ref, phase = self.opts.f_ref, self.opts.phase
+        data = spin_angles(mass1, mass2, [inc]*2, [spin1x]*2, [spin1y]*2,
+                           [spin1z]*2, [spin2x]*2, [spin2y]*2, [spin2z]*2,
+                           f_ref, phase)
+        rounded = np.round(data, 4)
+        expected = [0.5460, 2.7475, 0.9828, 0.7854, 0.0, 0.9014, 0.7071]
+        assert all(i == j for i,j in zip(rounded[0], expected))
+
     def test_component_spins(self):
         mass1, mass2 = [10., 10.], [5., 5.]
         thetajn, phijl = self.opts.theta_jn, self.opts.phi_jl

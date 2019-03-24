@@ -36,10 +36,13 @@ except ImportError:
 
 standard_names = {"logL": "log_likelihood",
                   "logl": "log_likelihood",
+                  "lnL": "log_likelihood",
                   "tilt1": "tilt_1",
                   "tilt_spin1": "tilt_1",
+                  "theta_1l": "tilt_1",
                   "tilt2": "tilt_2",
                   "tilt_spin2": "tilt_2",
+                  "theta_2l": "tilt_2",
                   "costilt1": "cos_tilt_1",
                   "costilt2": "cos_tilt_2",
                   "redshift": "redshift",
@@ -60,22 +63,35 @@ standard_names = {"logL": "log_likelihood",
                   "dec": "dec",
                   "declination": "dec",
                   "iota": "iota",
+                  "incl": "iota",
                   "m2_source": "mass_2_source",
                   "m1_source": "mass_1_source",
                   "phi1": "phi_1",
+                  "phi_1l": "phi_1",
                   "phi2": "phi_2",
+                  "phi_2l": "phi_2",
                   "psi": "psi",
                   "polarisation": "psi",
                   "phi12": "phi_12",
                   "phi_12": "phi_12",
                   "phi_jl": "phi_jl",
-                  "phijl": "phijl",
+                  "phijl": "phi_jl",
                   "a1": "a_1",
                   "a_spin1": "a_1",
+                  "spin1": "a_1",
+                  "a1x": "spin_1x",
+                  "a1y": "spin_1y",
+                  "a1z": "spin_1z",
                   "a2": "a_2",
                   "a_spin2": "a_2",
+                  "spin2": "a_2",
+                  "a2x": "spin_2x",
+                  "a2y": "spin_2y",
+                  "a2z": "spin_2z",
                   "chi_p": "chi_p",
                   "phase": "phase",
+                  "phiorb": "phase",
+                  "phi0": "phase",
                   "distance": "luminosity_distance",
                   "dist": "luminosity_distance",
                   "mc": "chirp_mass",
@@ -85,6 +101,7 @@ standard_names = {"logL": "log_likelihood",
                   "mtotal": "total_mass",
                   "q": "mass_ratio",
                   "time": "geocent_time",
+                  "tc": "geocent_time",
                   "theta_jn": "theta_jn"}
 
 
@@ -171,6 +188,36 @@ class OneFormat(object):
         self.data = None
         self.injection_data = None
 
+    @staticmethod
+    def _check_definition_of_inclination(parameters):
+        """Check the definition of inclination given the other parameters
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters used in the study
+        """
+        theta_jn = False
+        spin_angles = ["tilt_1", "tilt_2", "a_1", "a_2"]
+        names = [
+            standard_names[i] for i in parameters if i in standard_names.keys()]
+        if all(i in names for i in spin_angles):
+            theta_jn = True
+        if theta_jn:
+            if "theta_jn" not in names and "inclination" in parameters:
+                logger.warn("Because the spin angles are in your list of "
+                            "parameters, the angle 'inclination' probably "
+                            "refers to 'theta_jn'. If this is a mistake, "
+                            "please change the definition of 'inclination' to "
+                            "'iota' in your results file")
+                index = parameters.index("inclination")
+                parameters[index] = "theta_jn"
+        else:
+            if "inclination" in parameters:
+                index = parameters.index("inclination")
+                parameters[index] = "iota"
+        return parameters
+
     @property
     def extension(self):
         return self.fil.split(".")[-1]
@@ -202,7 +249,8 @@ class OneFormat(object):
         func_map = {"json": self._grab_data_from_json_file,
                     "hdf5": self._grab_data_from_hdf5_file,
                     "h5": self._grab_data_from_hdf5_file,
-                    "dat": self._grab_data_from_dat_file}
+                    "dat": self._grab_data_from_dat_file,
+                    "txt": self._grab_data_from_dat_file}
         data = func_map[self.extension]()
         parameters = data[0]
         samples = data[1]
@@ -230,7 +278,6 @@ class OneFormat(object):
                         parameters.append(standard_names["theta_jn"])
                         for num in range(len(samples)):
                             samples[num].append(float(fixed_value))
-
         if len(data) > 2:
             self._data = [parameters, samples, data[2]]
         else:
@@ -415,11 +462,23 @@ class OneFormat(object):
         """
         dat_file = np.genfromtxt(self.fil, names=True)
         stored_parameters = [i for i in dat_file.dtype.names]
+        stored_parameters = self._check_definition_of_inclination(
+            stored_parameters)
         parameters = [
             i for i in stored_parameters if i in standard_names.keys()]
         indices = [stored_parameters.index(i) for i in parameters]
         parameters = [standard_names[i] for i in parameters]
         samples = [[x[i] for i in indices] for x in dat_file]
+
+        condition1 = "luminosity" not in parameters
+        condition2 = "logdistance" in stored_parameters
+        if condition1 and condition2:
+            parameters.append("luminosity_distance")
+            for num, i in enumerate(dat_file):
+                print(i[stored_parameters.index("logdistance")])
+                samples[num].append(
+                    np.exp(i[stored_parameters.index("logdistance")]))
+
         return parameters, samples
 
     def _extract_fixed_data_from_config_file(self):
@@ -576,6 +635,40 @@ class OneFormat(object):
         eta = con.eta_from_m1_m2(samples[0], samples[1])
         self.append_data(eta)
 
+    def _phi_12_from_phi1_phi2(self):
+        self.parameters.append("phi_12")
+        samples = self.specific_parameter_samples(["phi_1", "phi_2"])
+        phi_12 = con.phi_12_from_phi1_phi2(samples[0], samples[1])
+        self.append_data(phi_12)
+
+    def _spin_angles(self):
+        spin_angles = ["theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12",
+                       "a_1", "a_2"]
+        for i in spin_angles:
+            self.parameters.append(i)
+        spin_components = [
+            "mass_1", "mass_2", "iota", "spin_1x", "spin_1y", "spin_1z",
+            "spin_2x", "spin_2y", "spin_2z", "reference_frequency", "phase"]
+        samples = self.specific_parameter_samples(spin_components)
+        spin_angles = con.spin_angles(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5], samples[6], samples[7], samples[8], samples[9],
+            samples[10])
+        theta_jn = np.array([i[0] for i in spin_angles])
+        phi_jl = np.array([i[1] for i in spin_angles])
+        tilt_1 = np.array([i[2] for i in spin_angles])
+        tilt_2 = np.array([i[3] for i in spin_angles])
+        phi_12 = np.array([i[4] for i in spin_angles])
+        a_1 = np.array([i[5] for i in spin_angles])
+        a_2 = np.array([i[6] for i in spin_angles])
+        self.append_data(theta_jn)
+        self.append_data(phi_jl)
+        self.append_data(tilt_1)
+        self.append_data(tilt_2)
+        self.append_data(phi_12)
+        self.append_data(a_1)
+        self.append_data(a_2)
+
     def _component_spins(self):
         spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
                  "spin_2z"]
@@ -700,6 +793,11 @@ class OneFormat(object):
             self._m2_from_mchirp_q()
         if "reference_frequency" not in self.parameters:
             self._reference_frequency()
+
+        condition1 = "phi_12" not in self.parameters
+        condition2 = "phi_1" in self.parameters and "phi_2" in self.parameters
+        if condition1 and condition2:
+            self._phi_12_from_phi1_phi2()
         if "mass_1" in self.parameters and "mass_2" in self.parameters:
             if "total_mass" not in self.parameters:
                 self._mtotal_from_m1_m2()
@@ -712,6 +810,8 @@ class OneFormat(object):
             spin_angles = [
                 "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1",
                 "a_2", "mass_1", "mass_2", "reference_frequency", "phase"]
+            if all(i in self.parameters for i in spin_components):
+                self._spin_angles()
             if all(i not in self.parameters for i in spin_components):
                 if all(i in self.parameters for i in spin_angles):
                     self._component_spins()
