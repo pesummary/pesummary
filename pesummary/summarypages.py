@@ -208,6 +208,9 @@ class WebpageGeneration(PostProcessing):
             params.append(["masses", self._partition(cond, parameters)])
             cond = self._condition(["source"], [])
             params.append(["source", self._partition(cond, parameters)])
+        if any("theta" in j for j in parameters):
+            cond = self._condition(["theta", "iota"], [])
+            params.append(["inclination", self._partition(cond, parameters)])
         if any("a_1" in j for j in parameters):
             cond = self._condition(["spin", "chi_p", "chi_eff", "a_1", "a_2"],
                                    [])

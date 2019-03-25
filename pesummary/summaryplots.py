@@ -77,7 +77,8 @@ latex_labels = {"luminosity_distance": r"$d_{L} [Mpc]$",
                 "mass_2_source": r"$m_{2}^{source} [M_{\odot}]$",
                 "chirp_mass_source": r"$\mathcal{M}^{source} [M_{\odot}]$",
                 "total_mass_source": r"$M^{source} [M_{\odot}]$",
-                "cos_iota": r"$\cos{\iota}$"}
+                "cos_iota": r"$\cos{\iota}$",
+                "theta_jn": r"$\theta_{JN} [rad]$"}
 
 
 class PlotGeneration(PostProcessing):
