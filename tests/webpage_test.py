@@ -92,12 +92,11 @@ class TestPage(object):
         assert any(elem == "  testing\n" for elem in f) == True
 
     def test_header(self):
-        self.html.make_header(title="My title", approximant="approx")
+        self.html.make_header(approximant="approx")
         self.html.close()
         with open("./.outdir/home.html") as fp:
             soup = BeautifulSoup(fp, features="html.parser")
-        assert str(soup.h1.string) == 'My title'
-        assert soup.div["class"] == ['jumbotron', 'text-center']
+        assert str(soup.h7.string) == 'None'
 
     def test_footer(self):
         self.html.make_footer()

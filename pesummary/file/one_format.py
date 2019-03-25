@@ -271,13 +271,15 @@ class OneFormat(object):
                             samples[num].append(float(fixed_value))
                 except Exception:
                     if fixed_parameter == "logdistance":
-                        parameters.append(standard_names["distance"])
-                        for num in range(len(samples)):
-                            samples[num].append(float(fixed_value))
+                        if "luminosity_distance" not in parameters:
+                            parameters.append(standard_names["distance"])
+                            for num in range(len(samples)):
+                                samples[num].append(float(fixed_value))
                     if fixed_parameter == "costheta_jn":
-                        parameters.append(standard_names["theta_jn"])
-                        for num in range(len(samples)):
-                            samples[num].append(float(fixed_value))
+                        if "theta_jn" not in parameters:
+                            parameters.append(standard_names["theta_jn"])
+                            for num in range(len(samples)):
+                                samples[num].append(float(fixed_value))
         if len(data) > 2:
             self._data = [parameters, samples, data[2]]
         else:

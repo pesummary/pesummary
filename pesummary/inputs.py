@@ -671,7 +671,7 @@ class PostProcessing(object):
     @colors.setter
     def colors(self, colors):
         if colors == "default":
-            self._colors = ["#a6b3d0", "#baa997", "#FF6347", "#FFA500",
+            self._colors = ["#0000ff", "#ff5500", "#FF6347", "#FFA500",
                             "#003366"]
         else:
             if not len(self.result_files) <= len(colors):

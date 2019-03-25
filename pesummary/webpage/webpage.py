@@ -32,7 +32,7 @@ BOOTSTRAP = """<!DOCTYPE html>
     <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css'>
     stylesheet elements
 </head>
-<body style='background-color:#F8F8F8'>
+<body style='background-color:#F8F8F8; margin-top:5em'>
 """
 
 HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
@@ -46,6 +46,7 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <script src='./js/search.js'></script>
     <script src='./js/side_bar.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="./css/navbar.css">
 """
 
 OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
@@ -59,6 +60,7 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <script src='../js/search.js'></script>
     <script src='../js/side_bar.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/navbar.css">
 """
 
 
@@ -141,17 +143,11 @@ class page(Base):
         self.label = label
         self.content = []
 
-    def _header(self, title, colour, approximant):
+    def _header(self, approximant):
         """
         """
         self.add_content("<h7 hidden>{}</h7>".format(self.label))
         self.add_content("<h7 hidden>{}</h7>".format(approximant))
-        self.make_div(_class='jumbotron text-center',
-                      _style='background-color: %s; margin-bottom:0' % (colour))
-        self.add_content("  <h1 id={}>{}</h1>\n".format(approximant, title))
-        self.add_content("<h4><span class='badge badge-info'>Code Version: %s"
-                         "</span></h4>\n" % (pesummary.__version__), indent=2)
-        self.end_div()
 
     def _footer(self, user, rundir):
         """
@@ -185,21 +181,27 @@ class page(Base):
             "View PESummary v%s on git.ligo.org</a> | "
             "<a href='https://git.ligo.org/charlie.hoy/pesummary/issues'>"
             "Report an issue</a> | <a href='https://docs.ligo.org/charlie.hoy/"
-            "pesummary/summarypage.html'> Help on using this webpage</a>" % (pesummary.__version__),
-            indent=2)
+            "pesummary/summarypage.html'> Help on using this webpage</a>" % (
+                pesummary.__version__), indent=2)
         self.end_div()
         self.end_div()
 
-    def _setup_navbar(self):
-        self.add_content("<nav class='navbar navbar-expand-sm navbar-dark bg-dark'>\n")
-        self.add_content("<a class='navbar-brand' href='#'>Navbar</a>\n", indent=2)
+    def _setup_navbar(self, background_colour):
+        if background_colour == "navbar-dark" or background_colour is None:
+            self.add_content("<nav class='navbar navbar-expand-sm navbar-dark "
+                             "bg-dark fixed-top'>\n")
+        else:
+            self.add_content("<nav class='navbar navbar-expand-sm fixed-top "
+                             "navbar-custom' style='background-color: %s'>" % (
+                                 background_colour))
+        self.add_content("<a class='navbar-brand' href='#' style='color: white'"
+                         ">Navbar</a>\n", indent=2)
         self.add_content("<button class='navbar-toggler' type='button' "
                          "data-toggle='collapse' data-target='#collapsibleNavbar'>\n", indent=2)
         self.add_content("<span class='navbar-toggler-icon'></span>\n", indent=4)
         self.add_content("</button>\n", indent=2)
 
-    def make_header(self, title="Parameter Estimation Summary Pages", background_colour="#eee",
-                    approximant="IMRPhenomPv2"):
+    def make_header(self, approximant="IMRPhenomPv2"):
         """Make header for document in bootstrap format.
 
         Parameters
@@ -209,7 +211,7 @@ class page(Base):
         approximant: str, optional
             the approximant that you are analysing
         """
-        self._header(title, background_colour, approximant)
+        self._header(approximant)
 
     def make_footer(self, user=None, rundir=None):
         """Make footer for document in bootstrap format.
@@ -217,7 +219,8 @@ class page(Base):
         self._footer(user, rundir)
 
     def make_navbar(self, links=None, samples_path="./samples", search=True,
-                    histogram_download=None):
+                    histogram_download=None,
+                    background_color="navbar-dark"):
         """Make a navigation bar in boostrap format.
 
         Parameters
@@ -238,7 +241,7 @@ class page(Base):
         histogram_download: str, optional
             path to the location of the data associated with the histogram
         """
-        self._setup_navbar()
+        self._setup_navbar(background_color)
         if links is None:
             raise Exception("Please specify links for use with navbar\n")
         self.add_content("<div class='collapse navbar-collapse' id='collapsibleNavbar'>\n", indent=4)
