@@ -208,6 +208,9 @@ class WebpageGeneration(PostProcessing):
             params.append(["masses", self._partition(cond, parameters)])
             cond = self._condition(["source"], [])
             params.append(["source", self._partition(cond, parameters)])
+        if any("theta" in j for j in parameters):
+            cond = self._condition(["theta", "iota"], [])
+            params.append(["inclination", self._partition(cond, parameters)])
         if any("a_1" in j for j in parameters):
             cond = self._condition(["spin", "chi_p", "chi_eff", "a_1", "a_2"],
                                    [])
@@ -298,24 +301,22 @@ class WebpageGeneration(PostProcessing):
         html_file = webpage.open_html(
             web_dir=self.webdir, base_url=self.baseurl, html_page=html_page,
             label=label)
-        if title:
-            html_file.make_header(
-                title=title, approximant=approximant,
-                background_colour=background_colour)
-        else:
-            html_file.make_header(
-                approximant=approximant, background_colour=background_colour)
+        html_file.make_header(
+            approximant=approximant)
         if html_page == "home" or html_page == "home.html":
             html_file.make_navbar(
-                links=links, samples_path=self.results_path["home"])
+                links=links, samples_path=self.results_path["home"],
+                background_color=background_colour)
         elif histogram_download:
             html_file.make_navbar(
                 links=links, samples_path=self.results_path["home"],
                 histogram_download="../samples/dat/%s_%s/%s_%s_samples.dat" % (
-                    label, approximant, label, html_page))
+                    label, approximant, label, html_page),
+                background_color=background_colour)
         else:
             html_file.make_navbar(
-                links=links, samples_path=self.results_path["other"])
+                links=links, samples_path=self.results_path["other"],
+                background_color=background_colour)
         return html_file
 
     def make_home_pages(self):
@@ -348,6 +349,7 @@ class WebpageGeneration(PostProcessing):
         html_file.make_table_of_images(contents=image_contents)
         images = [y for x in image_contents for y in x]
         html_file.make_modal_carousel(images=images)
+        html_file.close()
         key_data = self._key_data()
         table_data = [{j: i[j] for j in self.same_parameters} for i in
                       key_data]
@@ -364,10 +366,6 @@ class WebpageGeneration(PostProcessing):
             for j in range(len(table_data)):
                 row.append(np.round(table_data[j][i]["std"], 3))
             contents.append(row)
-        html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
-                             contents=contents, heading_span=len(self.samples),
-                             colors=self.colors[:len(self.samples)])
-        html_file.close()
         for num, i in enumerate(self.approximant):
             html_file = self._setup_page(
                 i, self.navbar_for_approximant_homepage[num],
