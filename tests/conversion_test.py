@@ -22,8 +22,8 @@ import h5py
 
 import deepdish
 
-from pesummary.one_format import data_format
-from pesummary.one_format.conversions import *
+from pesummary.file import one_format
+from pesummary.file.conversions import *
 
 import pytest
 
@@ -161,6 +161,29 @@ class TestConversions(object):
         chi_eff_value = chi_eff(mass1, mass2, spin1z, spin2z)
         assert chi_eff_value == 0.5
 
+    def test_phi_12_from_phi1_phi2(self):
+        data = phi_12_from_phi1_phi2(0.2, 0.5)
+        assert data == 0.3
+        data = phi_12_from_phi1_phi2(0.5, 0.2)
+        rounded_data = np.round(data, 2)
+        assert rounded_data == 5.98
+        data = phi_12_from_phi1_phi2(np.array([0.5, 0.2]), np.array([0.3, 0.7]))
+        rounded_data = np.round(data, 2)
+        assert all(i == j for i,j in zip(rounded_data, [6.08, 0.5]))
+
+    def test_spin_angles(self):
+        mass1, mass2 = [10., 10.], [5., 5.]
+        inc, spin1x, spin1y = self.opts.iota, self.opts.spin1x, self.opts.spin1y
+        spin1z, spin2x = self.opts.spin1z, self.opts.spin2x,
+        spin2y, spin2z = self.opts.spin2y, self.opts.spin2z
+        f_ref, phase = self.opts.f_ref, self.opts.phase
+        data = spin_angles(mass1, mass2, [inc]*2, [spin1x]*2, [spin1y]*2,
+                           [spin1z]*2, [spin2x]*2, [spin2y]*2, [spin2z]*2,
+                           f_ref, phase)
+        rounded = np.round(data, 4)
+        expected = [0.5460, 2.7475, 0.9828, 0.7854, 0.0, 0.9014, 0.7071]
+        assert all(i == j for i,j in zip(rounded[0], expected))
+
     def test_component_spins(self):
         mass1, mass2 = [10., 10.], [5., 5.]
         thetajn, phijl = self.opts.theta_jn, self.opts.phi_jl
@@ -177,34 +200,10 @@ class TestConversions(object):
 
     def test_one_format(self):
         path = "./tests/files/GW150914_result.h5"
-        output = data_format.one_format(path, None)
+        output = one_format.OneFormat(path, None)
         output.save()
         assert os.path.isfile("./tests/files/GW150914_result.h5_temp")
         path = "./tests/files/lalinference_example.h5"
-        output = data_format.one_format(path, None)
+        output = one_format.OneFormat(path, None)
         output.save()
         assert os.path.isfile("./tests/files/lalinference_example.h5_temp")
-
-    def test_load_with_deepdish(self):
-        path = "./tests/files/bilby_example.h5"
-        f = deepdish.io.load(path)
-        output = data_format.load_with_deepdish(f)
-        params = sorted(output[0])
-        samples = output[1]
-        approximant = output[2]
-        expected = [[1.0, 10.0, 10.], [2.0, 10.0, 20.], [3.0, 20.0, 30.], 
-            [0., 0., 0.,]]
-        assert all(i in ["H1_optimal_snr", "log_likelihood", "mass_1"] for i in params)
-        assert all(all(i in expected[num] for i in k) for num, k in enumerate(samples))
-        assert approximant == b"IMRPhenomPv2"
-
-    def test_load_with_h5py(self):
-        path = "./tests/files/GW150914_result.h5"
-        f = h5py.File(path)
-        output = data_format.load_with_h5py(f, "posterior")
-        params = sorted(output[0])
-        expected_params = ['a_1', 'a_2', 'dec', 'geocent_time', 'iota',
-                           'log_likelihood', 'luminosity_distance', 'mass_1',
-                           'mass_2', 'phase', 'phi_12', 'phi_jl', 'psi', 'ra',
-                           'tilt_1', 'tilt_2']
-        assert all(i == j for i,j in zip(params, sorted(expected_params)))

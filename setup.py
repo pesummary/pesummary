@@ -20,12 +20,14 @@ import subprocess
 
 version = "0.1.4"
 
+
 def full_description():
     """Get the full readme
     """
     with open("README.md", "r") as f:
         readme = f.read()
     return readme
+
 
 def check_init(version):
     """Add the version number and the git hash to the file
@@ -39,12 +41,13 @@ def check_init(version):
     git_log = subprocess.check_output(
         ["git", "log", "-1", "--pretty=format:%h"]).decode("utf-8")
     with open("pesummary/__init__.py") as f:
-       g = f.readlines()
-       ind = [num for num,i in enumerate(g) if "__version__" in i][0]
-       g[ind] = '__version__ = "%s %s"\n' %(version, git_log)
-       f.close()
+        g = f.readlines()
+        ind = [num for num, i in enumerate(g) if "__version__" in i][0]
+        g[ind] = '__version__ = "%s %s"\n' % (version, git_log)
+        f.close()
     with open("pesummary/__init__.py", "w") as f:
-       f.writelines(g)
+        f.writelines(g)
+
 
 readme = full_description()
 check_init(version)
@@ -55,23 +58,26 @@ setup(name='pesummary',
                   'estimation codes',
       author='Charlie Hoy',
       author_email='charlie.hoy@ligo.org',
-      url='https://git.ligo.org/charlie.hoy/pesummary',
-      download_url='https://git.ligo.org/charlie.hoy/pesummary',
+      url='https://git.ligo.org/lscsoft/pesummary',
+      download_url='https://git.ligo.org/lscsoft/pesummary',
       install_requires=[
-        'h5py',
-        'numpy',
-        'corner',
-        'matplotlib',
-        'deepdish',
-        'pandas',
-        'pygments',
-        'astropy',
-        'lalsuite',
-        'pytest'],
+          'h5py',
+          'numpy',
+          'corner',
+          'matplotlib',
+          'deepdish',
+          'pandas',
+          'pygments',
+          'astropy',
+          'lalsuite',
+          'pytest'],
       include_package_data=True,
       packages=find_packages(),
       package_dir={'pesummary': 'pesummary'},
       package_data={'pesummary': ['js/*.js', 'css/*.css']},
+      entry_points={
+          'console_scripts': [
+              'pesummary_convert.py=pesummary.file.one_format:main']},
       scripts=['pesummary/summarypages.py',
                'pesummary/summaryplots.py',
                'pesummary/inputs.py'],

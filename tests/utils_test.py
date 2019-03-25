@@ -19,7 +19,7 @@ import socket
 import shutil
 
 from pesummary.utils import utils
-from pesummary.summarypages import command_line
+from pesummary.command_line import command_line
 
 import h5py
 import numpy as np
@@ -81,78 +81,6 @@ class TestUtils(object):
             utils.rename_group_or_dataset_in_hf5_file("./.outdir/unknown.h5",
                 group=["None", "replaced"])
         assert "does not exist" in str(info.value) 
-
-    def test_add_new_dataset_to_hdf_file(self):
-        content = np.array([10])
-        utils.add_content_to_hdf_file("./.outdir/add_content.h5",
-                                      "new_dataset", content)
-        f = h5py.File("./.outdir/add_content.h5")
-        assert sorted(list(f.keys())) == ["new_dataset", "test"]
-        assert list(f["test"].keys()) == ["example"]
-        assert len(f["new_dataset"]) == 1
-        assert f["new_dataset"][0] == 10
-
-    def test_add_new_group_to_hdf_file(self):
-        content = np.array([10])
-        utils.add_content_to_hdf_file("./.outdir/add_content.h5",
-                                      "new_dataset", content, group="test")
-        f = h5py.File("./.outdir/add_content.h5")
-        assert sorted(list(f.keys())) == ["test"]
-        assert sorted(list(f["test"].keys())) == ["example", "new_dataset"]
-        assert len(f["test/new_dataset"]) == 1
-        assert f["test/new_dataset"][0] == 10
-
-    def test_replace_dataset_to_hdf_file(self):
-        content = np.array([0])
-        utils.add_content_to_hdf_file("./.outdir/add_content.h5",
-                                      "new_dataset", content, group="test")
-        f = h5py.File("./.outdir/add_content.h5")
-        assert sorted(list(f.keys())) == ["test"]
-        assert sorted(list(f["test"].keys())) == ["example", "new_dataset"]
-        assert len(f["test/new_dataset"]) == 1
-        assert f["test/new_dataset"][0] == 0
-
-    def test_combine_hdf_files(self):
-        f = h5py.File("./.outdir/combine_hdf_files.h5", "w")
-        label = f.create_group("label")
-        group = label.create_group("approx1")
-        parameters = np.array(["m1"], dtype="S")
-        samples = np.array([[1], [2]])
-        approximant = np.array(["approx1"], dtype="S")
-        injection_data = np.array([float("nan")])
-        group.create_dataset("parameter_names", data=parameters)
-        group.create_dataset("samples", data=samples)
-        group.create_dataset("injection_parameters", data=parameters)
-        group.create_dataset("injection_data", data=injection_data)
-
-        g = h5py.File("./.outdir/combine_hdf_files_new.h5", "w")
-        parameters = np.array(["m1"], dtype="S")
-        samples = np.array([[1], [2]])
-        approximant = np.array(["approx2"], dtype="S")
-        injection_data = np.array([float("nan")])
-        label = g.create_group("label")
-        group = label.create_group("approx2")
-        group.create_dataset("parameter_names", data=parameters)
-        group.create_dataset("samples", data=samples)
-        group.create_dataset("injection_parameters", data=parameters)
-        group.create_dataset("injection_data", data=injection_data)
-
-        utils.combine_hdf_files("./.outdir/combine_hdf_files.h5",
-                                "./.outdir/combine_hdf_files_new.h5")
-        f = h5py.File("./.outdir/combine_hdf_files.h5")
-        assert sorted(list(f["label"].keys())) == ["approx1", "approx2"]
-        assert sorted(list(f["label/approx1"].keys())) == ["injection_data", 
-            "injection_parameters", "parameter_names", "samples"]
-        assert [i for i in f["label/approx1"]["samples"]] == [[1], [2]]
-        assert [i for i in f["label/approx1"]["parameter_names"]] == [b"m1"]
-        assert [i for i in f["label/approx1"]["injection_parameters"]] == [b"m1"]
-        assert math.isnan(f["label/approx1"]["injection_data"][0])
-        assert sorted(list(f["label/approx2"].keys())) == ["injection_data",
-            "injection_parameters", "parameter_names", "samples"]
-        assert [i for i in f["label/approx2"]["samples"]] == [[1], [2]]
-        assert [i for i in f["label/approx2"]["parameter_names"]] == [b"m1"]
-        assert [i for i in f["label/approx2"]["injection_parameters"]] == [b"m1"]
-        assert math.isnan(f["label/approx2"]["injection_data"][0])
 
     def test_directory_creation(self):
         directory = './.outdir/test_dir'

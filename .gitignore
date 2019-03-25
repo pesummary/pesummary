@@ -9,6 +9,12 @@ build/
 dist/
 docs/_*
 
+## ignore files used for testing
+tests/files/*
+
+## ignore images used for documentation
+docs/images/*
+
 ## ignore __pycache__ directories
 __pycache__
 
@@ -16,8 +22,11 @@ __pycache__
 .outdir/
 .outdir_bilby/
 .outdir_lalinference/
-.outdir_full_cbc/
+.outdir_cbc/
 .outdir_comparison/
 .outdir_addition/
+.outdir_add_to_existing/
+.outdir_existing/
+.outdir_test/
 .eggs/
 .coverage

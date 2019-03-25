@@ -13,7 +13,7 @@ If only one approximant has been run, then you can generate a summary page with 
                      --webdir /home/albert.einstein/public_html/one_approximant \
                      --samples ./GW150914_result.h5
 
-An example of this is shown `here <https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/one_approximant/home.html>`_.
+An example of this is shown `here <https://docs.ligo.org/charlie.hoy/pesummary_examples/single/home.html>`_.
 
 Double approximant
 ------------------
@@ -26,7 +26,7 @@ If multiple approximants have been run, then you can generate a single summary p
                      --webdir /home/albert.einstein/public_html/two_approximants \
                      --samples ./IMRPhenomPv2/GW150914_result.h5 ./IMRPhenomP/GW150914_result.h5
 
-An example of this is shown `here <https://geo2.arcca.cf.ac.uk/~c1737564/LVC/projects/bilby/GW150914/two_approximant/home.html>`_.
+An example of this is shown `here <https://docs.ligo.org/charlie.hoy/pesummary_examples/double/home.html>`_.
 
 Existing html
 -------------

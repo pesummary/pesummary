@@ -18,13 +18,14 @@ import sys
 import logging
 
 import h5py
-import numpy as np
+
 
 def check_condition(condition, error_message):
     """Raise an exception if the condition is not satisfied
     """
     if condition:
         raise Exception(error_message)
+
 
 def rename_group_or_dataset_in_hf5_file(base_file, group=None, dataset=None):
     """Rename a group or dataset in an hdf5 file
@@ -41,7 +42,7 @@ def rename_group_or_dataset_in_hf5_file(base_file, group=None, dataset=None):
         argument
     """
     condition = not os.path.isfile(base_file)
-    check_condition(condition, "The file %s does not exist" %(base_file))
+    check_condition(condition, "The file %s does not exist" % (base_file))
     f = h5py.File(base_file, "a")
     if group:
         f[group[1]] = f[group[0]]
@@ -51,76 +52,13 @@ def rename_group_or_dataset_in_hf5_file(base_file, group=None, dataset=None):
         del f[dataset[0]]
     f.close()
 
-def add_content_to_hdf_file(base_file, dataset_name, content, group=None):
-    """Add new content to an hdf5 file
-
-    Parameters
-    ----------
-    base_file: str
-        path to the file that you want to add content to
-    dataset_name: str
-        name of the dataset
-    content: array
-        array of content that you want to add to your hdf5 file
-    group: str, optional
-        group that you want to add content to. Default if the base of the file
-    """
-    condition = not os.path.isfile(base_file)
-    check_condition(condition, "The file %s does not exist" %(base_file))
-    f = h5py.File(base_file, "a")
-    if group:
-        group = f[group]
-        if dataset_name in list(group.keys()):
-            del group[dataset_name]
-        group.create_dataset(dataset_name, data=content)
-    else:
-        if dataset_name in list(f.keys()):
-            del f[dataset_name]
-        f.create_dataset(dataset_name, data=content)
-    f.close()
-
-def combine_hdf_files(base_file, new_file):
-    """Combine two hdf5 files
-
-    Parameters
-    ----------
-    base_file: str
-        path to the file that you want to add content to
-    new_file: str
-        path to the file that you want to combine with the base file
-    """
-    condition = not os.path.isfile(base_file)
-    check_condition(condition, "The base file %s does not exist" %(base_file))
-    condition = not os.path.isfile(new_file)
-    check_condition(condition, "The new file %s does not exist" %(new_file))
-    g = h5py.File(new_file)
-    label = list(g.keys())[0]
-    approximant = list(g[label].keys())[0]
-    path = "%s/%s" %(label, approximant)
-    parameters = np.array([i for i in g["%s/parameter_names" %(path)]])
-    samples = np.array([i for i in g["%s/samples" %(path)]])
-    injection_parameters = np.array([i for i in g["%s/injection_parameters" %(path)]])
-    injection_data = np.array([i for i in g["%s/injection_data" %(path)]])
-    g.close()
-
-    f = h5py.File(base_file, "a")
-    current_labels = list(f.keys())
-    if label not in current_labels:
-        label_group = f.create_group(label)
-        approx_group = label_group.create_group(approximant)
-    else:
-        approx_group = f[label].create_group(approximant)
-    approx_group.create_dataset("parameter_names", data=parameters)
-    approx_group.create_dataset("samples", data=samples)
-    approx_group.create_dataset("injection_parameters", data=injection_parameters)
-    approx_group.create_dataset("injection_data", data=injection_data)
-    f.close()
 
 def make_dir(path):
     if os.path.isdir(path):
         pass
     else:
-        os.mkdir(path)
+        os.makedirs(path)
+
 
 def guess_url(web_dir, host, user):
     """Guess the base url from the host name
@@ -135,9 +73,9 @@ def guess_url(web_dir, host, user):
     user: str
         the user that is current executing the python interpreter
     """
-    ligo_data_grid=False
+    ligo_data_grid = False
     if 'public_html' in web_dir:
-        ligo_data_grid=True
+        ligo_data_grid = True
     if ligo_data_grid:
         path = web_dir.split("public_html")[1]
         if "raven" in host or "arcca" in host:
@@ -163,11 +101,12 @@ def guess_url(web_dir, host, user):
         url = "https://{}".format(web_dir)
     return url
 
+
 def setup_logger():
     """Set up the logger output.
     """
     level = 'INFO'
-    if "-v" or "--verbose" in sys.argv:
+    if "-v" in sys.argv or "--verbose" in sys.argv:
         level = 'DEBUG'
 
     logger = logging.getLogger('PESummary')
@@ -175,5 +114,6 @@ def setup_logger():
     FORMAT = '%(asctime)s %(name)s %(levelname)-8s: %(message)s'
     logging.basicConfig(format=FORMAT, datefmt='%Y-%m-%d  %H:%M:%S')
 
-setup_logger()                                                                  
+
+setup_logger()
 logger = logging.getLogger('PESummary')
