@@ -17,8 +17,9 @@
 function combine(list, label="None") {
       var loadTimer;
       var imgObject = new Image();
-      var heading=document.getElementsByTagName("h1")[0]                          
-      var approx = heading.innerHTML.split(" ")[0]
+      var header=document.getElementsByTagName("h1")[0]
+      var el=document.getElementsByTagName("h7")[1]
+      var approx = el.innerHTML
       var c=document.getElementById("canvas")
       var ctx=c.getContext("2d")
       c.width=700
