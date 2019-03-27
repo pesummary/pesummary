@@ -15,6 +15,6 @@
 
 __name__ = "PESummary"
 
-__version__ = "0.1.4 bae24d6"
+__version__ = "0.1.4 07aa9fd"
 
 __bilby_compatibility__ = "0.3.6"

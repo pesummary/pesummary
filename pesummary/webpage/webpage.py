@@ -177,10 +177,10 @@ class page(Base):
         self.end_div()
         self.make_div(_style="text-align:center")
         self.add_content(
-            "<a href='https://git.ligo.org/charlie.hoy/pesummary'>"
+            "<a href='https://git.ligo.org/lscsoft/pesummary'>"
             "View PESummary v%s on git.ligo.org</a> | "
-            "<a href='https://git.ligo.org/charlie.hoy/pesummary/issues'>"
-            "Report an issue</a> | <a href='https://docs.ligo.org/charlie.hoy/"
+            "<a href='https://git.ligo.org/lscsoft/pesummary/issues'>"
+            "Report an issue</a> | <a href='https://docs.ligo.org/lscsoft/"
             "pesummary/summarypage.html'> Help on using this webpage</a>" % (
                 pesummary.__version__), indent=2)
         self.end_div()
@@ -220,7 +220,8 @@ class page(Base):
 
     def make_navbar(self, links=None, samples_path="./samples", search=True,
                     histogram_download=None,
-                    background_color="navbar-dark"):
+                    background_color="navbar-dark",
+                    hdf5=False):
         """Make a navigation bar in boostrap format.
 
         Parameters
@@ -240,6 +241,8 @@ class page(Base):
             if True, search bar will be given in navbar
         histogram_download: str, optional
             path to the location of the data associated with the histogram
+        hdf5: Bool, optional
+            true if a hdf5 file format is chosen for the meta file
         """
         self._setup_navbar(background_color)
         if links is None:
@@ -344,8 +347,11 @@ class page(Base):
                 "<button type='submit' style='margin-right: 15px; cursor:pointer'> "
                 "<i class='fa fa-download'></i> Histogram Data</button>", indent=6)
             self.add_content("</a>", indent=4)
-        self.add_content("<a href='%s/posterior_samples.h5' download>" % (samples_path),
-                         indent=4)
+        if hdf5:
+            path = '%s/posterior_samples.h5' % (samples_path)
+        else:
+            path = '%s/posterior_samples.json' % (samples_path)
+        self.add_content("<a href='%s' download>" % (path), indent=4)
         self.add_content(
             "<button type='submit' style='margin-right: 15px; cursor:pointer'> "
             "<i class='fa fa-download'></i> Results File</button>", indent=6)
