@@ -196,7 +196,7 @@ def spin_angles(mass_1, mass_2, inc, spin1x, spin1y, spin1z, spin2x, spin2y,
                 SimInspiralTransformPrecessingWvf2PE(
                     incl=inc[i], m1=mass_1[i], m2=mass_2[i], S1x=spin1x[i],
                     S1y=spin1y[i], S1z=spin1z[i], S2x=spin2z[i], S2y=spin2y[i],
-                    S2z=spin2z[i], fRef=f_ref[i], phiRef=phase[i])
+                    S2z=spin2z[i], fRef=float(f_ref[i]), phiRef=phase[i])
             data.append([theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2])
         return data
 
@@ -213,7 +213,7 @@ def component_spins(theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1,
                 SimInspiralTransformPrecessingNewInitialConditions(
                     theta_jn[i], phi_jl[i], tilt_1[i], tilt_2[i], phi_12[i],
                     a_1[i], a_2[i], mass_1[i] * MSUN_SI, mass_2[i] * MSUN_SI,
-                    f_ref[i], phase[i])
+                    float(f_ref[i]), phase[i])
             data.append([iota, S1x, S1y, S1z, S2x, S2y, S2z])
         return data
     else:
