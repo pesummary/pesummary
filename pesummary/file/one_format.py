@@ -37,10 +37,13 @@ except ImportError:
 standard_names = {"logL": "log_likelihood",
                   "logl": "log_likelihood",
                   "lnL": "log_likelihood",
+                  "log_likelihood": "log_likelihood",
                   "tilt1": "tilt_1",
+                  "tilt_1": "tilt_1",
                   "tilt_spin1": "tilt_1",
                   "theta_1l": "tilt_1",
                   "tilt2": "tilt_2",
+                  "tilt_2": "tilt_2",
                   "tilt_spin2": "tilt_2",
                   "theta_2l": "tilt_2",
                   "costilt1": "cos_tilt_1",
@@ -53,11 +56,22 @@ standard_names = {"logL": "log_likelihood",
                   "H1_optimal_snr": "H1_optimal_snr",
                   "V1_optimal_snr": "V1_optimal_snr",
                   "E1_optimal_snr": "E1_optimal_snr",
+                  "l1_matched_filter_snr": "L1_matched_filter_snr",
+                  "h1_matched_filter_snr": "H1_matched_filter_snr",
+                  "v1_matched_filter_snr": "V1_matched_filter_snr",
+                  "L1_matched_filter_snr": "L1_matched_filter_snr",
+                  "H1_matched_filter_snr": "H1_matched_filter_snr",
+                  "V1_matched_filter_snr": "V1_matched_filter_snr",
+                  "E1_matched_filter_snr": "E1_matched_filter_snr",
                   "mc_source": "chirp_mass_source",
                   "chirpmass_source": "chirp_mass_source",
+                  "chirp_mass_source": "chirp_mass_source",
                   "eta": "symmetric_mass_ratio",
+                  "symmetric_mass_ratio": "symmetric_mass_ratio",
                   "m1": "mass_1",
+                  "mass_1": "mass_1",
                   "m2": "mass_2",
+                  "mass_2": "mass_2",
                   "ra": "ra",
                   "rightascension": "ra",
                   "dec": "dec",
@@ -65,11 +79,15 @@ standard_names = {"logL": "log_likelihood",
                   "iota": "iota",
                   "incl": "iota",
                   "m2_source": "mass_2_source",
+                  "mass_2_source": "mass_2_source",
                   "m1_source": "mass_1_source",
+                  "mass_1_source": "mass_1_source",
                   "phi1": "phi_1",
                   "phi_1l": "phi_1",
+                  "phi_1": "phi_1",
                   "phi2": "phi_2",
                   "phi_2l": "phi_2",
+                  "phi_2": "phi_2",
                   "psi": "psi",
                   "polarisation": "psi",
                   "phi12": "phi_12",
@@ -77,32 +95,48 @@ standard_names = {"logL": "log_likelihood",
                   "phi_jl": "phi_jl",
                   "phijl": "phi_jl",
                   "a1": "a_1",
+                  "a_1": "a_1",
                   "a_spin1": "a_1",
                   "spin1": "a_1",
                   "a1x": "spin_1x",
                   "a1y": "spin_1y",
                   "a1z": "spin_1z",
+                  "spin_1x": "spin_1x",
+                  "spin_1y": "spin_1y",
+                  "spin_1z": "spin_1z",
                   "a2": "a_2",
+                  "a_2": "a_2",
                   "a_spin2": "a_2",
                   "spin2": "a_2",
                   "a2x": "spin_2x",
                   "a2y": "spin_2y",
                   "a2z": "spin_2z",
+                  "spin_2x": "spin_2x",
+                  "spin_2y": "spin_2y",
+                  "spin_2z": "spin_2z",
                   "chi_p": "chi_p",
                   "phase": "phase",
                   "phiorb": "phase",
                   "phi0": "phase",
                   "distance": "luminosity_distance",
                   "dist": "luminosity_distance",
+                  "luminosity_distance": "luminosity_distance",
                   "mc": "chirp_mass",
                   "chirpmass": "chirp_mass",
+                  "chirp_mass": "chirp_mass",
                   "chi_eff": "chi_eff",
                   "mtotal_source": "total_mass_source",
+                  "total_mass_source": "total_mass_source",
                   "mtotal": "total_mass",
+                  "total_mass": "total_mass",
                   "q": "mass_ratio",
+                  "mass_ratio": "mass_ratio",
                   "time": "geocent_time",
                   "tc": "geocent_time",
-                  "theta_jn": "theta_jn"}
+                  "geocent_time": "geocent_time",
+                  "theta_jn": "theta_jn",
+                  "reference_frequency": "reference_frequency",
+                  "fref": "reference_frequency"}
 
 
 def paths_to_key(key, dictionary, current_path=None):
@@ -448,15 +482,21 @@ class OneFormat(object):
             path += "/content"
         reduced_data, = load_recusively(path, data)
         parameters = list(reduced_data.keys())
-        path_to_approximant = ("meta_data/likelihood/waveform_arguments/"
-                               "waveform_approximant")
+        parameters = [standard_names[i] for i in list(reduced_data.keys()) if i
+                      in standard_names.keys()]
+
+        path_to_approximant = [
+            i for i in paths_to_key("waveform_approximant", reduced_data)]
         try:
-            approximant, = load_recusively(path_to_approximant, data)
+            approximant, = load_recusively("/".join(path_to_approximant[0]),
+                                           data)
         except Exception:
             approximant = "none"
-        samples = [
-            [reduced_data[j][i] for j in parameters] for i in range(
-                len(reduced_data[parameters[0]]))]
+
+        samples = [[
+            reduced_data[j][i] if not isinstance(reduced_data[j][i], dict)
+            else reduced_data[j][i]["real"] for j in parameters] for i in
+            range(len(reduced_data[parameters[0]]))]
         return parameters, samples, approximant
 
     def _grab_data_from_dat_file(self):
@@ -477,7 +517,6 @@ class OneFormat(object):
         if condition1 and condition2:
             parameters.append("luminosity_distance")
             for num, i in enumerate(dat_file):
-                print(i[stored_parameters.index("logdistance")])
                 samples[num].append(
                     np.exp(i[stored_parameters.index("logdistance")]))
 
@@ -646,7 +685,9 @@ class OneFormat(object):
     def _spin_angles(self):
         spin_angles = ["theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12",
                        "a_1", "a_2"]
-        for i in spin_angles:
+        spin_angles_to_calculate = [
+            i for i in spin_angles if i not in self.parameters]
+        for i in spin_angles_to_calculate:
             self.parameters.append(i)
         spin_components = [
             "mass_1", "mass_2", "iota", "spin_1x", "spin_1y", "spin_1z",
@@ -656,25 +697,18 @@ class OneFormat(object):
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5], samples[6], samples[7], samples[8], samples[9],
             samples[10])
-        theta_jn = np.array([i[0] for i in spin_angles])
-        phi_jl = np.array([i[1] for i in spin_angles])
-        tilt_1 = np.array([i[2] for i in spin_angles])
-        tilt_2 = np.array([i[3] for i in spin_angles])
-        phi_12 = np.array([i[4] for i in spin_angles])
-        a_1 = np.array([i[5] for i in spin_angles])
-        a_2 = np.array([i[6] for i in spin_angles])
-        self.append_data(theta_jn)
-        self.append_data(phi_jl)
-        self.append_data(tilt_1)
-        self.append_data(tilt_2)
-        self.append_data(phi_12)
-        self.append_data(a_1)
-        self.append_data(a_2)
+
+        for i in spin_angles_to_calculate:
+            ind = spin_angles.index(i)
+            data = np.array([i[ind] for i in spin_angles])
+            self.append_data(data)
 
     def _component_spins(self):
         spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
                  "spin_2z"]
-        for i in spins:
+        spins_to_calculate = [
+            i for i in spins if i not in self.parameters]
+        for i in spins_to_calculate:
             self.parameters.append(i)
         spin_angles = [
             "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
@@ -684,20 +718,11 @@ class OneFormat(object):
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5], samples[6], samples[7], samples[8], samples[9],
             samples[10])
-        iota = np.array([i[0] for i in spin_components])
-        spin1x = np.array([i[1] for i in spin_components])
-        spin1y = np.array([i[2] for i in spin_components])
-        spin1z = np.array([i[3] for i in spin_components])
-        spin2x = np.array([i[4] for i in spin_components])
-        spin2y = np.array([i[5] for i in spin_components])
-        spin2z = np.array([i[6] for i in spin_components])
-        self.append_data(iota)
-        self.append_data(spin1x)
-        self.append_data(spin1y)
-        self.append_data(spin1z)
-        self.append_data(spin2x)
-        self.append_data(spin2y)
-        self.append_data(spin2z)
+
+        for i in spins_to_calculate:
+            ind = spins.index(i)
+            data = np.array([i[ind] for i in spin_components])
+            self.append_data(data)
 
     def _chi_p(self):
         self.parameters.append("chi_p")
@@ -814,9 +839,8 @@ class OneFormat(object):
                 "a_2", "mass_1", "mass_2", "reference_frequency", "phase"]
             if all(i in self.parameters for i in spin_components):
                 self._spin_angles()
-            if all(i not in self.parameters for i in spin_components):
-                if all(i in self.parameters for i in spin_angles):
-                    self._component_spins()
+            if all(i in self.parameters for i in spin_angles):
+                self._component_spins()
             if "chi_p" not in self.parameters and "chi_eff" not in self.parameters:
                 if all(i in self.parameters for i in spin_angles):
                     self._chi_p()
