@@ -136,7 +136,10 @@ standard_names = {"logL": "log_likelihood",
                   "geocent_time": "geocent_time",
                   "theta_jn": "theta_jn",
                   "reference_frequency": "reference_frequency",
-                  "fref": "reference_frequency"}
+                  "fref": "reference_frequency",
+                  "time_maxl": "marginalized_geocent_time",
+                  "phase_maxl": "marginalized_phase",
+                  "distance_maxl": "marginalized_distance"}
 
 
 def paths_to_key(key, dictionary, current_path=None):
@@ -253,6 +256,21 @@ class OneFormat(object):
         return parameters
 
     @property
+    def config(self):
+        return self._config
+
+    @config.setter
+    def config(self, config):
+        self._config = None
+        self.fixed_data = None
+        self.marg_par = None
+        if config:
+            data = self._extract_data_from_config_file(config)
+            self.fixed_data = data["fixed_data"]
+            self.marg_par = data["marginalized_parameters"]
+            self._config = config
+
+    @property
     def extension(self):
         return self.fil.split(".")[-1]
 
@@ -314,16 +332,59 @@ class OneFormat(object):
                             parameters.append(standard_names["theta_jn"])
                             for num in range(len(samples)):
                                 samples[num].append(float(fixed_value))
+
+        if self.marg_par:
+            for i in self.marg_par.keys():
+                if "time" in i and "geocent_time" not in parameters:
+                    if "marginalized_geocent_time" in parameters:
+                        ind = parameters.index("marginalized_geocent_time")
+                        parameters.remove(parameters[ind])
+                        parameters.append("geocent_time")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(j[ind]))
+                            del j[ind]
+                    else:
+                        logger.warn("You have marginalized over time and "
+                                    "there are no time samples. Manually "
+                                    "setting time to 100000s")
+                        parameters.append("geocent_time")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(100000))
+                if "phi" in i and "phase" not in parameters:
+                    if "marginalized_phase" in parameters:
+                        ind = parameters.index("marginalized_phase")
+                        parameters.remove(parameters[ind])
+                        parameters.append("phase")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(j[ind]))
+                            del j[ind]
+                    else:
+                        logger.warn("You have marginalized over phase and "
+                                    "there are no phase samples. Manually "
+                                    "setting the phase to be 0")
+                        parameters.append("phase")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(0))
+                if "dist" in i and "luminosity_distance" not in parameters:
+                    if "marginalized_distance" in parameters:
+                        ind = parameters.index("marginalized_distance")
+                        parameters.remove(parameters[ind])
+                        parameters.append("luminosity_distance")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(j[ind]))
+                            del j[ind]
+                    else:
+                        logger.warn("You have marginalized over distance and "
+                                    "there are no distance samples. Manually "
+                                    "setting distance to 100Mpc")
+                        parameters.append("luminosity_distance")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(100.0))
+
         if len(data) > 2:
             self._data = [parameters, samples, data[2]]
         else:
             self._data = [parameters, samples]
-
-    @property
-    def fixed_data(self):
-        if self.config:
-            return self._extract_fixed_data_from_config_file()
-        return None
 
     @property
     def parameters(self):
@@ -522,20 +583,26 @@ class OneFormat(object):
 
         return parameters, samples
 
-    def _extract_fixed_data_from_config_file(self):
+    def _extract_data_from_config_file(self, cp):
         """Grab the data from a config file
         """
         config = configparser.ConfigParser()
         try:
-            config.read(self.config)
+            config.read(cp)
             fixed_data = None
+            marg_par = None
             if "engine" in config.sections():
                 fixed_data = {
                     key.split("fix-")[1]: item for key, item in
                     config.items("engine") if "fix" in key}
-            return fixed_data
+                marg_par = {
+                    key.split("marg")[1]: item for key, item in
+                    config.items("engine") if "marg" in key}
+            return {"fixed_data": fixed_data,
+                    "marginalized_parameters": marg_par}
         except Exception:
-            return None
+            return {"fixed_data": None,
+                    "marginalized_parameters": None}
 
     def _grab_injection_data_from_xml_file(self):
         """Grab the data from an xml injection file

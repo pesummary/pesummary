@@ -223,6 +223,9 @@ class WebpageGeneration(PostProcessing):
                 ["ra", "dec", "psi", "luminosity_distance", "redshift",
                  "comoving_distance"], ["mass_ratio"])
             params.append(["location", self._partition(cond, parameters)])
+        if any("geocent_time" in j for j in parameters):
+            cond = self._condition(["geocent_time"], [])
+            params.append(["timings", self._partition(cond, parameters)])
         if any("snr" in j for j in parameters):
             cond = self._condition(["snr"], [])
             params.append(["SNR", self._partition(cond, parameters)])

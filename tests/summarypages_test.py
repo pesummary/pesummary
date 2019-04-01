@@ -69,13 +69,14 @@ class TestWebpageGeneration(object):
         inputs = Input(opts)
         webpage = WebpageGeneration(inputs)
         html = sorted(glob("./.outdir_lalinference/html/*"))
-        expected_html = ['./.outdir_lalinference/html/H1_IMRPhenomPv2_corner.html',
-                         './.outdir_lalinference/html/H1_IMRPhenomPv2.html',
-                         './.outdir_lalinference/html/H1_IMRPhenomPv2_multiple.html',
+        expected_html = ['./.outdir_lalinference/html/H1_IMRPhenomPv2.html',
+                         './.outdir_lalinference/html/H1_IMRPhenomPv2_H1_optimal_snr.html',
+                         './.outdir_lalinference/html/H1_IMRPhenomPv2_config.html',
+                         './.outdir_lalinference/html/H1_IMRPhenomPv2_corner.html',
                          './.outdir_lalinference/html/H1_IMRPhenomPv2_log_likelihood.html',
                          './.outdir_lalinference/html/H1_IMRPhenomPv2_mass_1.html',
-                         './.outdir_lalinference/html/H1_IMRPhenomPv2_config.html',
-                         './.outdir_lalinference/html/H1_IMRPhenomPv2_H1_optimal_snr.html',
+                         './.outdir_lalinference/html/H1_IMRPhenomPv2_multiple.html',
+                         './.outdir_lalinference/html/H1_IMRPhenomPv2_phase.html',
                          './.outdir_lalinference/html/error.html']
         assert all(i == j for i,j in zip(sorted(expected_html), sorted(html)))
 
