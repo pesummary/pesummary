@@ -766,7 +766,7 @@ class OneFormat(object):
             samples[10])
 
         for i in spin_angles_to_calculate:
-            ind = spin_angles.index(i)
+            ind = spin_angles_to_calculate.index(i)
             data = np.array([i[ind] for i in spin_angles])
             self.append_data(data)
 
