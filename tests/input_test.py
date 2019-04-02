@@ -411,8 +411,9 @@ class TestPostProcessing(object):
         assert postprocessing.coherence_test == True 
 
     def test_colors(self):
-        assert self.postprocessing.colors == ["#0000ff", "#ff5500", "#FF6347",
-            "#FFA500", "#003366"]
+        assert self.postprocessing.colors == [
+            "#0173B2", "#DE8F05", "#029E73", "#D55E00", "#CA9161", "#FBAFE4",
+            "#949494", "#ECE133", "#56B4E9"]
         parser = command_line()
         opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
             "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",

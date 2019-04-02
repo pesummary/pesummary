@@ -55,3 +55,6 @@
 - Normalised posterior distributions for the comparison plots allowing for easy
   comparisons [#86](https://git.ligo.org/lscsoft/pesummary/issues/86)
 - Move to LSCSoft namespace [#63](https://git.ligo.org/lscsoft/pesummary/issues/63)
+- Colours for the waveform plots are now standard colours for each detector
+  [#84](https://git.ligo.org/lscsoft/pesummary/issues/84)
+- Default colors are the same as the seaborn colorblind palette
