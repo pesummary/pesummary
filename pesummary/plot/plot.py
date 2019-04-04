@@ -927,6 +927,7 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         colors = ['r', 'b', 'orange', 'c', 'g', 'purple']
         while len(colors) <= len(ifos):
             colors += colors
+
     for num, i in enumerate(calibration_envelopes):
         interp = [np.interp(
             frequency, i[:, 0], i[:, j], left=k, right=k) for j, k in zip(
