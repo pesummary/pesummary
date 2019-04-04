@@ -25,6 +25,8 @@ import numpy as np
 from pesummary.command_line import command_line
 import pesummary.file.conversions as con
 from pesummary.utils.utils import logger
+from pesummary.file.lalinference import LALInferenceResultsFile
+from pesummary.file.standard_names import standard_names
 
 try:
     from glue.ligolw import ligolw
@@ -33,113 +35,6 @@ try:
     GLUE = True
 except ImportError:
     GLUE = False
-
-standard_names = {"logL": "log_likelihood",
-                  "logl": "log_likelihood",
-                  "lnL": "log_likelihood",
-                  "log_likelihood": "log_likelihood",
-                  "tilt1": "tilt_1",
-                  "tilt_1": "tilt_1",
-                  "tilt_spin1": "tilt_1",
-                  "theta_1l": "tilt_1",
-                  "tilt2": "tilt_2",
-                  "tilt_2": "tilt_2",
-                  "tilt_spin2": "tilt_2",
-                  "theta_2l": "tilt_2",
-                  "costilt1": "cos_tilt_1",
-                  "costilt2": "cos_tilt_2",
-                  "redshift": "redshift",
-                  "l1_optimal_snr": "L1_optimal_snr",
-                  "h1_optimal_snr": "H1_optimal_snr",
-                  "v1_optimal_snr": "V1_optimal_snr",
-                  "L1_optimal_snr": "L1_optimal_snr",
-                  "H1_optimal_snr": "H1_optimal_snr",
-                  "V1_optimal_snr": "V1_optimal_snr",
-                  "E1_optimal_snr": "E1_optimal_snr",
-                  "l1_matched_filter_snr": "L1_matched_filter_snr",
-                  "h1_matched_filter_snr": "H1_matched_filter_snr",
-                  "v1_matched_filter_snr": "V1_matched_filter_snr",
-                  "L1_matched_filter_snr": "L1_matched_filter_snr",
-                  "H1_matched_filter_snr": "H1_matched_filter_snr",
-                  "V1_matched_filter_snr": "V1_matched_filter_snr",
-                  "E1_matched_filter_snr": "E1_matched_filter_snr",
-                  "mc_source": "chirp_mass_source",
-                  "chirpmass_source": "chirp_mass_source",
-                  "chirp_mass_source": "chirp_mass_source",
-                  "eta": "symmetric_mass_ratio",
-                  "symmetric_mass_ratio": "symmetric_mass_ratio",
-                  "m1": "mass_1",
-                  "mass_1": "mass_1",
-                  "m2": "mass_2",
-                  "mass_2": "mass_2",
-                  "ra": "ra",
-                  "rightascension": "ra",
-                  "dec": "dec",
-                  "declination": "dec",
-                  "iota": "iota",
-                  "incl": "iota",
-                  "m2_source": "mass_2_source",
-                  "mass_2_source": "mass_2_source",
-                  "m1_source": "mass_1_source",
-                  "mass_1_source": "mass_1_source",
-                  "phi1": "phi_1",
-                  "phi_1l": "phi_1",
-                  "phi_1": "phi_1",
-                  "phi2": "phi_2",
-                  "phi_2l": "phi_2",
-                  "phi_2": "phi_2",
-                  "psi": "psi",
-                  "polarisation": "psi",
-                  "phi12": "phi_12",
-                  "phi_12": "phi_12",
-                  "phi_jl": "phi_jl",
-                  "phijl": "phi_jl",
-                  "a1": "a_1",
-                  "a_1": "a_1",
-                  "a_spin1": "a_1",
-                  "spin1": "a_1",
-                  "a1x": "spin_1x",
-                  "a1y": "spin_1y",
-                  "a1z": "spin_1z",
-                  "spin_1x": "spin_1x",
-                  "spin_1y": "spin_1y",
-                  "spin_1z": "spin_1z",
-                  "a2": "a_2",
-                  "a_2": "a_2",
-                  "a_spin2": "a_2",
-                  "spin2": "a_2",
-                  "a2x": "spin_2x",
-                  "a2y": "spin_2y",
-                  "a2z": "spin_2z",
-                  "spin_2x": "spin_2x",
-                  "spin_2y": "spin_2y",
-                  "spin_2z": "spin_2z",
-                  "chi_p": "chi_p",
-                  "phase": "phase",
-                  "phiorb": "phase",
-                  "phi0": "phase",
-                  "distance": "luminosity_distance",
-                  "dist": "luminosity_distance",
-                  "luminosity_distance": "luminosity_distance",
-                  "mc": "chirp_mass",
-                  "chirpmass": "chirp_mass",
-                  "chirp_mass": "chirp_mass",
-                  "chi_eff": "chi_eff",
-                  "mtotal_source": "total_mass_source",
-                  "total_mass_source": "total_mass_source",
-                  "mtotal": "total_mass",
-                  "total_mass": "total_mass",
-                  "q": "mass_ratio",
-                  "mass_ratio": "mass_ratio",
-                  "time": "geocent_time",
-                  "tc": "geocent_time",
-                  "geocent_time": "geocent_time",
-                  "theta_jn": "theta_jn",
-                  "reference_frequency": "reference_frequency",
-                  "fref": "reference_frequency",
-                  "time_maxl": "marginalized_geocent_time",
-                  "phase_maxl": "marginalized_phase",
-                  "distance_maxl": "marginalized_distance"}
 
 
 def paths_to_key(key, dictionary, current_path=None):
@@ -462,28 +357,12 @@ class OneFormat(object):
             condition2 = "posterior_samples/" not in i and "posterior/" not in i
             if condition1 and condition2:
                 path = i
+        f.close()
         if self.lalinference_hdf5_format:
-            lalinference_names = f[path].dtype.names
-            parameters = [
-                i for i in lalinference_names if i in standard_names.keys()]
-            for i in f[path]:
-                samples.append(
-                    [i[lalinference_names.index(j)] for j in parameters])
-            parameters = [standard_names[i] for i in parameters]
-
-            condition1 = "luminosity" not in parameters
-            condition2 = "logdistance" in lalinference_names
-            if condition1 and condition2:
-                parameters.append("luminosity_distance")
-                for num, i in enumerate(f[path]):
-                    samples[num].append(
-                        np.exp(i[lalinference_names.index("logdistance")]))
-            if "theta_jn" not in parameters and "costheta_jn" in lalinference_names:
-                parameters.append("theta_jn")
-                for num, i in enumerate(f[self.path]):
-                    samples[num].append(
-                        np.arccos(i[lalinference_names.index("costheta_jn")]))
+            g = LALInferenceResultsFile(self.fil)
+            parameters, samples = g.grab_samples()
         elif self.bilby_hdf5_format:
+            f = h5py.File(self.fil)
             parameters, data = [], []
             blocks = [i for i in f["%s" % (path)] if "block" in i]
             for i in blocks:
@@ -508,6 +387,7 @@ class OneFormat(object):
                         for num, dat in enumerate(f["%s/%s" % (path, i)]):
                             data[num] += list(np.real(dat))
             parameters = [i.decode("utf-8") for i in parameters]
+            f.close()
         return parameters, samples
 
     def _grab_data_with_deepdish(self):

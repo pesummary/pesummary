@@ -188,9 +188,8 @@ class PlotGeneration(PostProcessing):
         IFOs used in the analysis.
         """
         frequencies = np.arange(20., 1024., 1. / 4)
-        files = [np.genfromtxt(i) for i in self.calibration]
         fig = plot._calibration_envelope_plot(
-            frequencies, files, self.calibration_labels)
+            frequencies, self.calibration, self.calibration_labels)
         fig.savefig("%s/calibration_plot.png" % (self.savedir))
         plt.close()
 

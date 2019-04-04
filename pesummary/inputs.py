@@ -29,6 +29,7 @@ from pesummary.utils.utils import (guess_url, logger,
 from pesummary.utils import utils
 from pesummary.file.one_format import OneFormat
 from pesummary.file.existing import ExistingFile
+from pesummary.file.lalinference import LALInferenceResultsFile
 
 __doc__ == "Classes to handle the command line inputs"
 
@@ -475,10 +476,46 @@ class Input(object):
                 f = np.genfromtxt(i)
                 if len(f[0]) != 7:
                     raise Exception("Calibration envelope file not understood")
-                calibration_list.append(i)
+                calibration_list.append(f)
             self._calibration = calibration_list
+            self.calibration_labels = [
+                self._IFO_from_file_name(i) for i in calibration]
         else:
-            self._calibration = None
+            logger.debug("No calibration envelope file given. Checking the "
+                         "results file")
+            self._calibration_envelope = False
+            for i in self.result_files:
+                try:
+                    f = LALInferenceResultsFile(i.split("_temp")[0])
+                    data, labels = f.grab_calibration_data()
+                    if data == []:
+                        logger.info("Failed to grab calibration data from %s" % (i))
+                        data, labels = None, None
+                except Exception:
+                    logger.info("Failed to grab calibration data from %s" % (i))
+                    data, labels = None, None
+            self._calibration = data
+            self.calibration_labels = labels
+
+    @staticmethod
+    def _IFO_from_file_name(file):
+        """Return a guess of the IFO from the file name.
+
+        Parameters
+        ----------
+        file: str
+            the name of the file that you would like to make a guess for
+        """
+        file_name = file.split("/")[-1]
+        if any(j in file_name for j in ["H", "_0", "IFO0"]):
+            ifo = "H1"
+        elif any(j in file_name for j in ["L", "_1", "IFO1"]):
+            ifo = "L1"
+        elif any(j in file_name for j in ["V", "_2", "IFO2"]):
+            ifo = "V1"
+        else:
+            ifo = file_name
+        return ifo
 
     def check_approximant_in_results_file(self):
         """Check that the approximant that is stored in the results file
@@ -636,6 +673,7 @@ class PostProcessing(object):
         self.add_to_existing = inputs.add_to_existing
         self.labels = inputs.labels
         self.calibration = inputs.calibration
+        self.calibration_labels = inputs.calibration_labels
         self.sensitivity = inputs.sensitivity
         self.psds = inputs.psds
         self.hdf5 = inputs.hdf5
@@ -805,10 +843,6 @@ class PostProcessing(object):
     @property
     def psd_labels(self):
         return [self._IFO_from_file_name(i) for i in self.psds]
-
-    @property
-    def calibration_labels(self):
-        return [self._IFO_from_file_name(i) for i in self.calibration]
 
     @staticmethod
     def _IFO_from_file_name(file):

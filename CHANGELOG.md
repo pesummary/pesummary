@@ -6,8 +6,9 @@
   [#64](https://git.ligo.org/lscsoft/pesummary/issues/64)
 - PSD plot: plot the PSD when passed with the `--psds` flag
   [#39](https://git.ligo.org/lscsoft/pesummary/issues/39)
-- Calibration plot: plot the calibration uncertainties when passed with the
-  `--calibration` flag
+- Calibration plot: plot the calibration uncertainties when passed either
+  the calibration envelope via the `--calibration` flag or constant values
+  via the configuration file
 - Error page: adding an error page which you are redirected too if there is a
   problem [#90](https://git.ligo.org/lscsoft/pesummary/issues/90)
 - LALInference fixed parameters: load the configuration file and look to see
@@ -35,6 +36,7 @@
 - Generate examples as part of CI: trigger the CI of
   [pesummary_examples](https://git.ligo.org/charlie.hoy/pesummary_examples?nav_source=navbar)
   such that example pages are always up to dat
+- LALInferenceResultsFile class: class to handle the LALInference results file
 
 
 ### Changed
@@ -58,3 +60,4 @@
 - Colours for the waveform plots are now standard colours for each detector
   [#84](https://git.ligo.org/lscsoft/pesummary/issues/84)
 - Default colors are the same as the seaborn colorblind palette
+- Moved the standard_names to a seperate file
