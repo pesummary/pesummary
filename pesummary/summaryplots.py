@@ -276,7 +276,7 @@ class PlotGeneration(PostProcessing):
         idx: int
             The index of the results file that you wish to analyse
         """
-        if self.detectors == [None]:
+        if self.detectors[idx] is None:
             detectors = ["H1", "L1"]
         else:
             detectors = self.detectors[idx].split("_")
