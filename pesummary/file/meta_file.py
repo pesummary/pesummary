@@ -182,9 +182,8 @@ class MetaFile(PostProcessing):
         """
         dictionary = {}
         for num, i in enumerate(calibration_labels):
-            data = np.genfromtxt(files[num])
             dictionary[i] = [
-                [k[0], k[1], k[2], k[3], k[4], k[5], k[6]] for k in data]
+                [k[0], k[1], k[2], k[3], k[4], k[5], k[6]] for k in files[num]]
         return dictionary
 
     def _grab_config_data_from_data_file(self, file):
