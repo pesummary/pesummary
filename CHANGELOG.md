@@ -1,4 +1,4 @@
-## 0.1.4 [unreleased]
+## 0.1.4 [05/04/2019]
 
 ### Added
 - Marginalized parameters: handle marginalized parameters for `LALInference`
