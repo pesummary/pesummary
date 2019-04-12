@@ -13,8 +13,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-__name__ = "PESummary"
+from pesummary.utils.utils import get_version_information
 
-__version__ = "0.1.4 35a8fb8"
+__version__ = get_version_information()
 
 __bilby_compatibility__ = "0.3.6"

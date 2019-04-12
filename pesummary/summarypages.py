@@ -635,7 +635,9 @@ class WebpageGeneration(PostProcessing):
         new_file.close()
 
 
-if __name__ == '__main__':
+def main():
+    """Top level interface for `summarypages`
+    """
     parser = command_line()
     opts = parser.parse_args()
     inputs = Input(opts)
@@ -643,3 +645,7 @@ if __name__ == '__main__':
     WebpageGeneration(inputs)
     MetaFile(inputs)
     FinishingTouches(inputs)
+
+
+if __name__ == '__main__':
+    main()

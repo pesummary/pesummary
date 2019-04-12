@@ -18,7 +18,7 @@ from setuptools import find_packages
 
 import subprocess
 
-version = "0.1.4"
+version = "0.1.5"
 
 
 def full_description():
@@ -40,13 +40,8 @@ def check_init(version):
     """
     git_log = subprocess.check_output(
         ["git", "log", "-1", "--pretty=format:%h"]).decode("utf-8")
-    with open("pesummary/__init__.py") as f:
-        g = f.readlines()
-        ind = [num for num, i in enumerate(g) if "__version__" in i][0]
-        g[ind] = '__version__ = "%s %s"\n' % (version, git_log)
-        f.close()
-    with open("pesummary/__init__.py", "w") as f:
-        f.writelines(g)
+    with open("pesummary/.version", "w") as f:
+        f.writelines(["%s %s" % (version, git_log)])
 
 
 readme = full_description()
@@ -77,10 +72,9 @@ setup(name='pesummary',
       package_data={'pesummary': ['js/*.js', 'css/*.css']},
       entry_points={
           'console_scripts': [
-              'pesummary_convert.py=pesummary.file.one_format:main']},
-      scripts=['pesummary/summarypages.py',
-               'pesummary/summaryplots.py',
-               'pesummary/inputs.py'],
+              'summaryconvert=pesummary.file.one_format:main',
+              'summarypages=pesummary.summarypages:main',
+              'summaryplots=pesummary.summaryplots:main']},
       classifiers=[
           "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6"],
