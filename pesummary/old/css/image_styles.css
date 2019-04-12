@@ -1,0 +1,7 @@
+img {                                                                           
+    border-radius: 5px;                                                         
+    cursor: pointer;                                                            
+    transition: 0.3s;                                                           
+}                                                                               
+                                                                                
+img:hover {opacity: 0.5;}
