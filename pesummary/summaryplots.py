@@ -404,8 +404,14 @@ class PlotGeneration(PostProcessing):
         plt.close()
 
 
-if __name__ == '__main__':
+def main():
+    """Top level interface for `summaryplots`
+    """
     parser = command_line()
     opts = parser.parse_args()
     inputs = Input(opts)
     PlotGeneration(inputs)
+
+
+if __name__ == '__main__':
+    main()

@@ -1,3 +1,9 @@
+## 0.1.5 [unreleased]
+
+### Changed
+- Executables: excutables now no longer have file extensions
+- Entry points: all excutables are now entry points
+
 ## 0.1.4 [05/04/2019]
 
 ### Added
