@@ -29,7 +29,7 @@ def full_description():
     return readme
 
 
-def check_init(version):
+def write_version_file(version):
     """Add the version number and the git hash to the file
     'pesummary.__init__.py'
 
@@ -42,10 +42,11 @@ def check_init(version):
         ["git", "log", "-1", "--pretty=format:%h"]).decode("utf-8")
     with open("pesummary/.version", "w") as f:
         f.writelines(["%s %s" % (version, git_log)])
+    return ".version"
 
 
 readme = full_description()
-check_init(version)
+version_file = write_version_file(version)
 
 setup(name='pesummary',
       version=version,
@@ -69,7 +70,7 @@ setup(name='pesummary',
       include_package_data=True,
       packages=find_packages(),
       package_dir={'pesummary': 'pesummary'},
-      package_data={'pesummary': ['js/*.js', 'css/*.css']},
+      package_data={'pesummary': ['js/*.js', 'css/*.css', version_file]},
       entry_points={
           'console_scripts': [
               'summaryconvert=pesummary.file.one_format:main',
