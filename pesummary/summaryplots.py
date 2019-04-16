@@ -188,9 +188,8 @@ class PlotGeneration(PostProcessing):
         IFOs used in the analysis.
         """
         frequencies = np.arange(20., 1024., 1. / 4)
-        files = [np.genfromtxt(i) for i in self.calibration]
         fig = plot._calibration_envelope_plot(
-            frequencies, files, self.calibration_labels)
+            frequencies, self.calibration, self.calibration_labels)
         fig.savefig("%s/calibration_plot.png" % (self.savedir))
         plt.close()
 
@@ -277,7 +276,7 @@ class PlotGeneration(PostProcessing):
         idx: int
             The index of the results file that you wish to analyse
         """
-        if self.detectors == [None]:
+        if self.detectors[idx] is None:
             detectors = ["H1", "L1"]
         else:
             detectors = self.detectors[idx].split("_")
@@ -405,8 +404,14 @@ class PlotGeneration(PostProcessing):
         plt.close()
 
 
-if __name__ == '__main__':
+def main():
+    """Top level interface for `summaryplots`
+    """
     parser = command_line()
     opts = parser.parse_args()
     inputs = Input(opts)
     PlotGeneration(inputs)
+
+
+if __name__ == '__main__':
+    main()

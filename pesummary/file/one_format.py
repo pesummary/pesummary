@@ -25,6 +25,8 @@ import numpy as np
 from pesummary.command_line import command_line
 import pesummary.file.conversions as con
 from pesummary.utils.utils import logger
+from pesummary.file.lalinference import LALInferenceResultsFile
+from pesummary.file.standard_names import standard_names
 
 try:
     from glue.ligolw import ligolw
@@ -33,76 +35,6 @@ try:
     GLUE = True
 except ImportError:
     GLUE = False
-
-standard_names = {"logL": "log_likelihood",
-                  "logl": "log_likelihood",
-                  "lnL": "log_likelihood",
-                  "tilt1": "tilt_1",
-                  "tilt_spin1": "tilt_1",
-                  "theta_1l": "tilt_1",
-                  "tilt2": "tilt_2",
-                  "tilt_spin2": "tilt_2",
-                  "theta_2l": "tilt_2",
-                  "costilt1": "cos_tilt_1",
-                  "costilt2": "cos_tilt_2",
-                  "redshift": "redshift",
-                  "l1_optimal_snr": "L1_optimal_snr",
-                  "h1_optimal_snr": "H1_optimal_snr",
-                  "v1_optimal_snr": "V1_optimal_snr",
-                  "L1_optimal_snr": "L1_optimal_snr",
-                  "H1_optimal_snr": "H1_optimal_snr",
-                  "V1_optimal_snr": "V1_optimal_snr",
-                  "E1_optimal_snr": "E1_optimal_snr",
-                  "mc_source": "chirp_mass_source",
-                  "chirpmass_source": "chirp_mass_source",
-                  "eta": "symmetric_mass_ratio",
-                  "m1": "mass_1",
-                  "m2": "mass_2",
-                  "ra": "ra",
-                  "rightascension": "ra",
-                  "dec": "dec",
-                  "declination": "dec",
-                  "iota": "iota",
-                  "incl": "iota",
-                  "m2_source": "mass_2_source",
-                  "m1_source": "mass_1_source",
-                  "phi1": "phi_1",
-                  "phi_1l": "phi_1",
-                  "phi2": "phi_2",
-                  "phi_2l": "phi_2",
-                  "psi": "psi",
-                  "polarisation": "psi",
-                  "phi12": "phi_12",
-                  "phi_12": "phi_12",
-                  "phi_jl": "phi_jl",
-                  "phijl": "phi_jl",
-                  "a1": "a_1",
-                  "a_spin1": "a_1",
-                  "spin1": "a_1",
-                  "a1x": "spin_1x",
-                  "a1y": "spin_1y",
-                  "a1z": "spin_1z",
-                  "a2": "a_2",
-                  "a_spin2": "a_2",
-                  "spin2": "a_2",
-                  "a2x": "spin_2x",
-                  "a2y": "spin_2y",
-                  "a2z": "spin_2z",
-                  "chi_p": "chi_p",
-                  "phase": "phase",
-                  "phiorb": "phase",
-                  "phi0": "phase",
-                  "distance": "luminosity_distance",
-                  "dist": "luminosity_distance",
-                  "mc": "chirp_mass",
-                  "chirpmass": "chirp_mass",
-                  "chi_eff": "chi_eff",
-                  "mtotal_source": "total_mass_source",
-                  "mtotal": "total_mass",
-                  "q": "mass_ratio",
-                  "time": "geocent_time",
-                  "tc": "geocent_time",
-                  "theta_jn": "theta_jn"}
 
 
 def paths_to_key(key, dictionary, current_path=None):
@@ -219,6 +151,21 @@ class OneFormat(object):
         return parameters
 
     @property
+    def config(self):
+        return self._config
+
+    @config.setter
+    def config(self, config):
+        self._config = None
+        self.fixed_data = None
+        self.marg_par = None
+        if config:
+            data = self._extract_data_from_config_file(config)
+            self.fixed_data = data["fixed_data"]
+            self.marg_par = data["marginalized_parameters"]
+            self._config = config
+
+    @property
     def extension(self):
         return self.fil.split(".")[-1]
 
@@ -280,16 +227,59 @@ class OneFormat(object):
                             parameters.append(standard_names["theta_jn"])
                             for num in range(len(samples)):
                                 samples[num].append(float(fixed_value))
+
+        if self.marg_par:
+            for i in self.marg_par.keys():
+                if "time" in i and "geocent_time" not in parameters:
+                    if "marginalized_geocent_time" in parameters:
+                        ind = parameters.index("marginalized_geocent_time")
+                        parameters.remove(parameters[ind])
+                        parameters.append("geocent_time")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(j[ind]))
+                            del j[ind]
+                    else:
+                        logger.warn("You have marginalized over time and "
+                                    "there are no time samples. Manually "
+                                    "setting time to 100000s")
+                        parameters.append("geocent_time")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(100000))
+                if "phi" in i and "phase" not in parameters:
+                    if "marginalized_phase" in parameters:
+                        ind = parameters.index("marginalized_phase")
+                        parameters.remove(parameters[ind])
+                        parameters.append("phase")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(j[ind]))
+                            del j[ind]
+                    else:
+                        logger.warn("You have marginalized over phase and "
+                                    "there are no phase samples. Manually "
+                                    "setting the phase to be 0")
+                        parameters.append("phase")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(0))
+                if "dist" in i and "luminosity_distance" not in parameters:
+                    if "marginalized_distance" in parameters:
+                        ind = parameters.index("marginalized_distance")
+                        parameters.remove(parameters[ind])
+                        parameters.append("luminosity_distance")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(j[ind]))
+                            del j[ind]
+                    else:
+                        logger.warn("You have marginalized over distance and "
+                                    "there are no distance samples. Manually "
+                                    "setting distance to 100Mpc")
+                        parameters.append("luminosity_distance")
+                        for num, j in enumerate(samples):
+                            samples[num].append(float(100.0))
+
         if len(data) > 2:
             self._data = [parameters, samples, data[2]]
         else:
             self._data = [parameters, samples]
-
-    @property
-    def fixed_data(self):
-        if self.config:
-            return self._extract_fixed_data_from_config_file()
-        return None
 
     @property
     def parameters(self):
@@ -367,28 +357,12 @@ class OneFormat(object):
             condition2 = "posterior_samples/" not in i and "posterior/" not in i
             if condition1 and condition2:
                 path = i
+        f.close()
         if self.lalinference_hdf5_format:
-            lalinference_names = f[path].dtype.names
-            parameters = [
-                i for i in lalinference_names if i in standard_names.keys()]
-            for i in f[path]:
-                samples.append(
-                    [i[lalinference_names.index(j)] for j in parameters])
-            parameters = [standard_names[i] for i in parameters]
-
-            condition1 = "luminosity" not in parameters
-            condition2 = "logdistance" in lalinference_names
-            if condition1 and condition2:
-                parameters.append("luminosity_distance")
-                for num, i in enumerate(f[path]):
-                    samples[num].append(
-                        np.exp(i[lalinference_names.index("logdistance")]))
-            if "theta_jn" not in parameters and "costheta_jn" in lalinference_names:
-                parameters.append("theta_jn")
-                for num, i in enumerate(f[self.path]):
-                    samples[num].append(
-                        np.arccos(i[lalinference_names.index("costheta_jn")]))
+            g = LALInferenceResultsFile(self.fil)
+            parameters, samples = g.grab_samples()
         elif self.bilby_hdf5_format:
+            f = h5py.File(self.fil)
             parameters, data = [], []
             blocks = [i for i in f["%s" % (path)] if "block" in i]
             for i in blocks:
@@ -413,6 +387,7 @@ class OneFormat(object):
                         for num, dat in enumerate(f["%s/%s" % (path, i)]):
                             data[num] += list(np.real(dat))
             parameters = [i.decode("utf-8") for i in parameters]
+            f.close()
         return parameters, samples
 
     def _grab_data_with_deepdish(self):
@@ -448,15 +423,21 @@ class OneFormat(object):
             path += "/content"
         reduced_data, = load_recusively(path, data)
         parameters = list(reduced_data.keys())
-        path_to_approximant = ("meta_data/likelihood/waveform_arguments/"
-                               "waveform_approximant")
+        parameters = [standard_names[i] for i in list(reduced_data.keys()) if i
+                      in standard_names.keys()]
+
+        path_to_approximant = [
+            i for i in paths_to_key("waveform_approximant", reduced_data)]
         try:
-            approximant, = load_recusively(path_to_approximant, data)
+            approximant, = load_recusively("/".join(path_to_approximant[0]),
+                                           data)
         except Exception:
             approximant = "none"
-        samples = [
-            [reduced_data[j][i] for j in parameters] for i in range(
-                len(reduced_data[parameters[0]]))]
+
+        samples = [[
+            reduced_data[j][i] if not isinstance(reduced_data[j][i], dict)
+            else reduced_data[j][i]["real"] for j in parameters] for i in
+            range(len(reduced_data[parameters[0]]))]
         return parameters, samples, approximant
 
     def _grab_data_from_dat_file(self):
@@ -477,26 +458,31 @@ class OneFormat(object):
         if condition1 and condition2:
             parameters.append("luminosity_distance")
             for num, i in enumerate(dat_file):
-                print(i[stored_parameters.index("logdistance")])
                 samples[num].append(
                     np.exp(i[stored_parameters.index("logdistance")]))
 
         return parameters, samples
 
-    def _extract_fixed_data_from_config_file(self):
+    def _extract_data_from_config_file(self, cp):
         """Grab the data from a config file
         """
         config = configparser.ConfigParser()
         try:
-            config.read(self.config)
+            config.read(cp)
             fixed_data = None
+            marg_par = None
             if "engine" in config.sections():
                 fixed_data = {
                     key.split("fix-")[1]: item for key, item in
                     config.items("engine") if "fix" in key}
-            return fixed_data
+                marg_par = {
+                    key.split("marg")[1]: item for key, item in
+                    config.items("engine") if "marg" in key}
+            return {"fixed_data": fixed_data,
+                    "marginalized_parameters": marg_par}
         except Exception:
-            return None
+            return {"fixed_data": None,
+                    "marginalized_parameters": None}
 
     def _grab_injection_data_from_xml_file(self):
         """Grab the data from an xml injection file
@@ -646,7 +632,9 @@ class OneFormat(object):
     def _spin_angles(self):
         spin_angles = ["theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12",
                        "a_1", "a_2"]
-        for i in spin_angles:
+        spin_angles_to_calculate = [
+            i for i in spin_angles if i not in self.parameters]
+        for i in spin_angles_to_calculate:
             self.parameters.append(i)
         spin_components = [
             "mass_1", "mass_2", "iota", "spin_1x", "spin_1y", "spin_1z",
@@ -656,25 +644,18 @@ class OneFormat(object):
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5], samples[6], samples[7], samples[8], samples[9],
             samples[10])
-        theta_jn = np.array([i[0] for i in spin_angles])
-        phi_jl = np.array([i[1] for i in spin_angles])
-        tilt_1 = np.array([i[2] for i in spin_angles])
-        tilt_2 = np.array([i[3] for i in spin_angles])
-        phi_12 = np.array([i[4] for i in spin_angles])
-        a_1 = np.array([i[5] for i in spin_angles])
-        a_2 = np.array([i[6] for i in spin_angles])
-        self.append_data(theta_jn)
-        self.append_data(phi_jl)
-        self.append_data(tilt_1)
-        self.append_data(tilt_2)
-        self.append_data(phi_12)
-        self.append_data(a_1)
-        self.append_data(a_2)
+
+        for i in spin_angles_to_calculate:
+            ind = spin_angles_to_calculate.index(i)
+            data = np.array([i[ind] for i in spin_angles])
+            self.append_data(data)
 
     def _component_spins(self):
         spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
                  "spin_2z"]
-        for i in spins:
+        spins_to_calculate = [
+            i for i in spins if i not in self.parameters]
+        for i in spins_to_calculate:
             self.parameters.append(i)
         spin_angles = [
             "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
@@ -684,20 +665,11 @@ class OneFormat(object):
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5], samples[6], samples[7], samples[8], samples[9],
             samples[10])
-        iota = np.array([i[0] for i in spin_components])
-        spin1x = np.array([i[1] for i in spin_components])
-        spin1y = np.array([i[2] for i in spin_components])
-        spin1z = np.array([i[3] for i in spin_components])
-        spin2x = np.array([i[4] for i in spin_components])
-        spin2y = np.array([i[5] for i in spin_components])
-        spin2z = np.array([i[6] for i in spin_components])
-        self.append_data(iota)
-        self.append_data(spin1x)
-        self.append_data(spin1y)
-        self.append_data(spin1z)
-        self.append_data(spin2x)
-        self.append_data(spin2y)
-        self.append_data(spin2z)
+
+        for i in spins_to_calculate:
+            ind = spins.index(i)
+            data = np.array([i[ind] for i in spin_components])
+            self.append_data(data)
 
     def _chi_p(self):
         self.parameters.append("chi_p")
@@ -814,9 +786,8 @@ class OneFormat(object):
                 "a_2", "mass_1", "mass_2", "reference_frequency", "phase"]
             if all(i in self.parameters for i in spin_components):
                 self._spin_angles()
-            if all(i not in self.parameters for i in spin_components):
-                if all(i in self.parameters for i in spin_angles):
-                    self._component_spins()
+            if all(i in self.parameters for i in spin_angles):
+                self._component_spins()
             if "chi_p" not in self.parameters and "chi_eff" not in self.parameters:
                 if all(i in self.parameters for i in spin_angles):
                     self._chi_p()

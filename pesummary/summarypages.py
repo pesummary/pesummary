@@ -223,6 +223,9 @@ class WebpageGeneration(PostProcessing):
                 ["ra", "dec", "psi", "luminosity_distance", "redshift",
                  "comoving_distance"], ["mass_ratio"])
             params.append(["location", self._partition(cond, parameters)])
+        if any("geocent_time" in j for j in parameters):
+            cond = self._condition(["geocent_time"], [])
+            params.append(["timings", self._partition(cond, parameters)])
         if any("snr" in j for j in parameters):
             cond = self._condition(["snr"], [])
             params.append(["SNR", self._partition(cond, parameters)])
@@ -306,17 +309,20 @@ class WebpageGeneration(PostProcessing):
         if html_page == "home" or html_page == "home.html":
             html_file.make_navbar(
                 links=links, samples_path=self.results_path["home"],
-                background_color=background_colour)
+                background_color=background_colour,
+                hdf5=self.hdf5)
         elif histogram_download:
             html_file.make_navbar(
                 links=links, samples_path=self.results_path["home"],
                 histogram_download="../samples/dat/%s_%s/%s_%s_samples.dat" % (
                     label, approximant, label, html_page),
-                background_color=background_colour)
+                background_color=background_colour,
+                hdf5=self.hdf5)
         else:
             html_file.make_navbar(
                 links=links, samples_path=self.results_path["other"],
-                background_color=background_colour)
+                background_color=background_colour,
+                hdf5=self.hdf5)
         return html_file
 
     def make_home_pages(self):
@@ -629,7 +635,9 @@ class WebpageGeneration(PostProcessing):
         new_file.close()
 
 
-if __name__ == '__main__':
+def main():
+    """Top level interface for `summarypages`
+    """
     parser = command_line()
     opts = parser.parse_args()
     inputs = Input(opts)
@@ -637,3 +645,7 @@ if __name__ == '__main__':
     WebpageGeneration(inputs)
     MetaFile(inputs)
     FinishingTouches(inputs)
+
+
+if __name__ == '__main__':
+    main()

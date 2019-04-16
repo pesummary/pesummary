@@ -88,15 +88,19 @@ class TestPlotGeneration(object):
             './.outdir_lalinference/plots/H1_1d_posterior_IMRPhenomPv2_H1_optimal_snr.png',
             './.outdir_lalinference/plots/H1_1d_posterior_IMRPhenomPv2_log_likelihood.png',
             './.outdir_lalinference/plots/H1_1d_posterior_IMRPhenomPv2_mass_1.png',
+            './.outdir_lalinference/plots/H1_1d_posterior_IMRPhenomPv2_phase.png',
             './.outdir_lalinference/plots/H1_autocorrelation_IMRPhenomPv2_H1_optimal_snr.png',
             './.outdir_lalinference/plots/H1_autocorrelation_IMRPhenomPv2_log_likelihood.png',
             './.outdir_lalinference/plots/H1_autocorrelation_IMRPhenomPv2_mass_1.png',
+            './.outdir_lalinference/plots/H1_autocorrelation_IMRPhenomPv2_phase.png',
             './.outdir_lalinference/plots/H1_cdf_IMRPhenomPv2_H1_optimal_snr.png',
             './.outdir_lalinference/plots/H1_cdf_IMRPhenomPv2_log_likelihood.png',
             './.outdir_lalinference/plots/H1_cdf_IMRPhenomPv2_mass_1.png',
+            './.outdir_lalinference/plots/H1_cdf_IMRPhenomPv2_phase.png',
             './.outdir_lalinference/plots/H1_sample_evolution_IMRPhenomPv2_H1_optimal_snr.png',
             './.outdir_lalinference/plots/H1_sample_evolution_IMRPhenomPv2_log_likelihood.png',
             './.outdir_lalinference/plots/H1_sample_evolution_IMRPhenomPv2_mass_1.png',
+            './.outdir_lalinference/plots/H1_sample_evolution_IMRPhenomPv2_phase.png',
             './.outdir_lalinference/plots/corner']
         assert all(i == j for i,j in zip(sorted(expected_plots), sorted(plots)))
 

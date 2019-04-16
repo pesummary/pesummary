@@ -363,7 +363,37 @@ class TestInput(object):
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0"])
         assert self.inputs.calibration == None
         self.add_argument(["--calibration", "./.outdir/calibration.dat"])
-        assert self.inputs.calibration == ["./.outdir/calibration.dat"]
+        assert all(i == j for i, j in zip(
+            self.inputs.calibration[0][0],
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]))
+
+    def test_calibration_labels(self):
+        parser = command_line()
+        opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
+            "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
+            "./tests/files/bilby_example.h5", "./tests/files/lalinference_example.h5",
+            "--calibration", "./.outdir/calibration.dat"])
+        inputs = Input(opts)
+        postprocessing = PostProcessing(inputs)
+        assert postprocessing.calibration_labels == ['calibration.dat']
+
+    def test_IFO_from_file_name(self):
+        file_name = "IFO0.dat"
+        assert PostProcessing._IFO_from_file_name(file_name) == "H1"
+        file_name = "IFO1.dat"
+        assert PostProcessing._IFO_from_file_name(file_name) == "L1"
+        file_name = "IFO2.dat"
+        assert PostProcessing._IFO_from_file_name(file_name) == "V1"
+
+        file_name = "IFO_H.dat"
+        assert PostProcessing._IFO_from_file_name(file_name) == "H1"
+        file_name = "IFO_L.dat"
+        assert PostProcessing._IFO_from_file_name(file_name) == "L1"
+        file_name = "IFO_V.dat"
+        assert PostProcessing._IFO_from_file_name(file_name) == "V1"
+        
+        file_name = "example.dat"
+        assert PostProcessing._IFO_from_file_name(file_name) == "example.dat"
 
     def test_make_directories(self):
         assert os.path.isdir("./.outdir/samples/samples") == False
@@ -411,8 +441,9 @@ class TestPostProcessing(object):
         assert postprocessing.coherence_test == True 
 
     def test_colors(self):
-        assert self.postprocessing.colors == ["#0000ff", "#ff5500", "#FF6347",
-            "#FFA500", "#003366"]
+        assert self.postprocessing.colors == [
+            "#0173B2", "#DE8F05", "#029E73", "#D55E00", "#CA9161", "#FBAFE4",
+            "#949494", "#ECE133", "#56B4E9"]
         parser = command_line()
         opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
             "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
@@ -462,36 +493,6 @@ class TestPostProcessing(object):
         inputs = Input(opts)
         postprocessing = PostProcessing(inputs)
         assert postprocessing.psd_labels == ['psd.dat']
-
-    def test_calibration_labels(self):
-        with pytest.raises(Exception) as info:
-            self.postprocessing.calibration_labels
-        parser = command_line()
-        opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
-            "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
-            "./tests/files/bilby_example.h5", "./tests/files/lalinference_example.h5",
-            "--calibration", "./.outdir/calibration.dat"])
-        inputs = Input(opts)
-        postprocessing = PostProcessing(inputs)
-        assert postprocessing.calibration_labels == ['calibration.dat'] 
-
-    def test_IFO_from_file_name(self):
-        file_name = "IFO0.dat"
-        assert PostProcessing._IFO_from_file_name(file_name) == "H1"
-        file_name = "IFO1.dat"
-        assert PostProcessing._IFO_from_file_name(file_name) == "L1"
-        file_name = "IFO2.dat"
-        assert PostProcessing._IFO_from_file_name(file_name) == "V1"
-
-        file_name = "IFO_H.dat"
-        assert PostProcessing._IFO_from_file_name(file_name) == "H1"
-        file_name = "IFO_L.dat"
-        assert PostProcessing._IFO_from_file_name(file_name) == "L1"
-        file_name = "IFO_V.dat"
-        assert PostProcessing._IFO_from_file_name(file_name) == "V1"
-        
-        file_name = "example.dat"
-        assert PostProcessing._IFO_from_file_name(file_name) == "example.dat"
 
     def test_grab_frequencies_from_psd_data_file(self):
         assert(self.postprocessing._grab_frequencies_from_psd_data_file(

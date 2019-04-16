@@ -335,14 +335,12 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     h_plus = h_plus[:len(frequency_array)]
     h_cross = h_cross[:len(frequency_array)]
     fig = plt.figure()
-    colors = ['b', 'r']
-    linestyle = ['-', '--']
+    colors = [PSD_COLORS[i] for i in detectors]
     for num, i in enumerate(detectors):
         ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
                                 maxL_params["psi"], maxL_params["geocent_time"])
         plt.plot(frequency_array, abs(h_plus * ar[0] + h_cross * ar[1]),
-                 color=colors[num], linestyle=linestyle[num],
-                 linewidth=2.0, label=i)
+                 color=colors[num], linewidth=1.0, label=i)
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
@@ -791,14 +789,12 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
     h_plus = h_plus[:len(time_array)]
     h_cross = h_cross[:len(time_array)]
     fig = plt.figure()
-    colors = ['b', 'r']
-    linestyle = ['-', '--']
+    colors = [PSD_COLORS[i] for i in detectors]
     for num, i in enumerate(detectors):
         ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
                                 maxL_params["psi"], maxL_params["geocent_time"])
         plt.plot(time_array, (h_plus * ar[0] + h_cross * ar[1]),
-                 color=colors[num], linestyle=linestyle[num],
-                 linewidth=2.0, label=i)
+                 color=colors[num], linewidth=1.0, label=i)
     plt.xlabel(r"Time $[s]$", fontsize=16)
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
     plt.grid()
@@ -931,6 +927,7 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         colors = ['r', 'b', 'orange', 'c', 'g', 'purple']
         while len(colors) <= len(ifos):
             colors += colors
+
     for num, i in enumerate(calibration_envelopes):
         interp = [np.interp(
             frequency, i[:, 0], i[:, j], left=k, right=k) for j, k in zip(
