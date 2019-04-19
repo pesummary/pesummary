@@ -17,6 +17,8 @@ import argparse
 
 
 def command_line():
+    """Generate an Argument Parser object to control the command line options
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-w", "--webdir", dest="webdir",
                         help="make page and plots in DIR", metavar="DIR",

@@ -14,3 +14,4 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from .command_line import insert_gwspecific_option_group
+from .inputs import GWInput

@@ -23,11 +23,13 @@ from glob import glob
 import numpy as np
 import h5py
 
+from time import time
+
 import pesummary
 from pesummary.utils.utils import (guess_url, logger,
                                    rename_group_or_dataset_in_hf5_file)
 from pesummary.utils import utils
-from pesummary.file.one_format import OneFormat
+from pesummary.core.file.one_format import OneFormat
 from pesummary.file.existing import ExistingFile
 from pesummary.file.lalinference import LALInferenceResultsFile
 
@@ -87,6 +89,7 @@ class Input(object):
         self.webdir = opts.webdir
         self.baseurl = opts.baseurl
         self.inj_file = opts.inj_file
+        self.config = opts.config
         self.result_files = opts.samples
         self.email = opts.email
         self.add_to_existing = opts.add_to_existing
@@ -314,19 +317,16 @@ class Input(object):
             proposed_names = ["%s_%s" % (i, j) for i, j in zip(
                 labels, self.approximant)]
             duplicates = dict(set(
-                (x, proposed_names.count(x)) for x in
-                filter(lambda rec: proposed_names.count(rec) > 1, proposed_names)))
-            if len(duplicates.keys()) >= 1:
+                (x, labels.count(x)) for x in
+                filter(lambda rec: labels.count(rec) > 1, labels)))
+            if len(duplicated.keys()) >= 1:
                 raise Exception(
                     "The labels and approximant combination that you have "
                     "given do not give unique combinations. Please give other "
                     "labels")
             if self.add_to_existing:
-                existing_names = [
-                    "%s_%s" % (i, j) for i, j in zip(
-                        self.existing_labels, self.existing_approximant)]
-                for i in proposed_names:
-                    if i in existing_names:
+                for i in labels:
+                    if i in self.existing_labels:
                         raise Exception(
                             "The labels and approximant combination that you "
                             "have given match those already in the existing "
@@ -391,55 +391,25 @@ class Input(object):
         f.generate_all_posterior_samples()
         return f.save()
 
-    def unique_identifier(result_files, **kwargs):
-        """Return a unique identifier for the given results file
-
-        Parameters
-        ----------
-        results_files: list
-            list of results files
-        """
-        
-
     def _default_labels(self):
         """Return the defaut labels given your detector network.
         """
         label_list = []
         for num, i in enumerate(self.result_files):
-            condition_list = type(self.detectors[num]) == list
-            condition_str = type(self.detectors[num]) == str
-            if self.gracedb and self.detectors and condition_list:
-                for i in self.detectors[num]:
-                    label_list.append("_".join([self.gracedb, i]))
-            elif self.gracedb and self.detectors and condition_str:
-                label_list.append("_".join(
-                    [self.gracedb, self.detectors[num]]))
-            elif self.gracedb:
-                label_list.append(self.gracedb)
-            elif self.detectors and type(self.detectors[num]) == list:
-                for i in self.detectors[num]:
-                    label_list.append("_".join(self.detectors[num]))
-            elif self.detectors and type(self.detectors[num]) == str:
-                label_list.append(self.detectors[num])
-            else:
-                label_list.append("%s" % (num))
-        proposed_names = ["%s_%s" % (i, j) for i, j in zip(
-            label_list, self.approximant)]
+            file_name = ".".join(i.split(".")[:-1])
+            label_list.append("%s_%s" % (time(), file_name))
+
         duplicates = dict(set(
-            (x, proposed_names.count(x)) for x in
-            filter(lambda rec: proposed_names.count(rec) > 1, proposed_names)))
+            (x, label_list.count(x)) for x in
+            filter(lambda rec: label_list.count(rec) > 1, label_list)))
         for i in duplicates.keys():
             for j in range(duplicates[i]):
-                ind = proposed_names.index(i)
-                proposed_names[ind] += "_%s" % (j)
+                ind = label_list.index(i)
                 label_list[ind] += "_%s" % (j)
         if self.add_to_existing:
-            existing_names = [
-                "%s_%s" % (i, j) for i, j in zip(
-                    self.existing_labels, self.existing_approximant)]
-            for num, i in enumerate(proposed_names):
-                if i in existing_names:
-                    ind = proposed_names.index(i)
+            for num, i in enumerate(label_list):
+                if i in self.existing_labels:
+                    ind = label_list.index(i)
                     label_list[ind] += "_%s" % (num)
         return label_list
 
@@ -476,26 +446,18 @@ class PostProcessing(object):
         self.webdir = inputs.webdir
         self.baseurl = inputs.baseurl
         self.result_files = inputs.result_files
-        self.approximant = inputs.approximant
-        self.detectors = inputs.detectors
         self.dump = inputs.dump
         self.email = inputs.email
         self.user = inputs.user
         self.host = inputs.host
         self.config = inputs.config
         self.existing = inputs.existing
-        self.gracedb = inputs.gracedb
         self.add_to_existing = inputs.add_to_existing
         self.labels = inputs.labels
-        self.calibration = inputs.calibration
-        self.calibration_labels = inputs.calibration_labels
-        self.sensitivity = inputs.sensitivity
-        self.psds = inputs.psds
         self.hdf5 = inputs.hdf5
         self.existing_labels = inputs.existing_labels
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples
-        self.existing_approximant = inputs.existing_approximant
         self.existing_names = inputs.existing_names
         self.existing_meta_file = inputs.existing_meta_file
         self.colors = colors
@@ -504,18 +466,7 @@ class PostProcessing(object):
                               "standard_format": self._data_from_standard_format}
 
         self.result_file_data = []
-        self.maxL_samples = []
         self.same_parameters = []
-
-    @property
-    def coherence_test(self):
-        duplicates = dict(set(
-            (x, self.approximant.count(x)) for x in filter(
-                lambda rec: self.approximant.count(rec) > 1,
-                self.approximant)))
-        if len(duplicates.keys()) > 0:
-            return True
-        return False
 
     @property
     def colors(self):
@@ -579,16 +530,16 @@ class PostProcessing(object):
             the index of the results file in self.result_files
         """
         f = h5py.File(result_file, "r")
-        p = [i for i in f["posterior_samples/%s/%s/parameter_names" % (
-            self.labels[index], self.approximant[index])]]
+        p = [i for i in f["posterior_samples/%s/parameter_names" % (
+            self.labels[index])]]
         p = [i.decode("utf-8") for i in p]
-        s = [i for i in f["posterior_samples/%s/%s/samples" % (
-            self.labels[index], self.approximant[index])]]
-        inj_p = [i for i in f["posterior_samples/%s/%s/injection_parameters" % (
-            self.labels[index], self.approximant[index])]]
+        s = [i for i in f["posterior_samples/%s/samples" % (
+            self.labels[index])]]
+        inj_p = [i for i in f["posterior_samples/%s/injection_parameters" % (
+            self.labels[index])]]
         inj_p = [i.decode("utf-8") for i in inj_p]
-        inj_value = [i for i in f["posterior_samples/%s/%s/injection_data" % (
-            self.labels[index], self.approximant[index])]]
+        inj_value = [i for i in f["posterior_samples/%s/injection_data" % (
+            self.labels[index])]]
         injection = {i: j for i, j in zip(inj_p, inj_value)}
         return p, s, injection
 
@@ -618,20 +569,6 @@ class PostProcessing(object):
         return self._samples
 
     @property
-    def maxL_samples(self):
-        return self._maxL_samples
-
-    @maxL_samples.setter
-    def maxL_samples(self, maxL_samples):
-        key_data = self._key_data()
-        maxL_list = []
-        for num, i in enumerate(self.parameters):
-            dictionary = {j: key_data[num][j]["maxL"] for j in i}
-            dictionary["approximant"] = self.approximant[num]
-            maxL_list.append(dictionary)
-        self._maxL_samples = maxL_list
-
-    @property
     def same_parameters(self):
         return self._same_parameters
 
@@ -639,87 +576,3 @@ class PostProcessing(object):
     def same_parameters(self, same_parameters):
         params = list(set.intersection(*[set(l) for l in self.parameters]))
         self._same_parameters = params
-
-    @property
-    def label_to_prepend_approximant(self):
-        labels = [i[len(self.gracedb) + 1:] if self.gracedb else i for i in
-                  self.labels]
-        prepend = [None] * len(self.approximant)
-        duplicates = dict(set(
-            (x, self.approximant.count(x)) for x in filter(
-                lambda rec: self.approximant.count(rec) > 1,
-                self.approximant)))
-        if len(duplicates.keys()) > 0:
-            for num, i in enumerate(self.approximant):
-                if i in duplicates.keys():
-                    prepend[num] = labels[num]
-        return prepend
-
-    @property
-    def psd_labels(self):
-        return [self._IFO_from_file_name(i) for i in self.psds]
-
-    @staticmethod
-    def _IFO_from_file_name(file):
-        """Return a guess of the IFO from the file name.
-
-        Parameters
-        ----------
-        file: str
-            the name of the file that you would like to make a guess for
-        """
-        file_name = file.split("/")[-1]
-        if any(j in file_name for j in ["H", "_0", "IFO0"]):
-            ifo = "H1"
-        elif any(j in file_name for j in ["L", "_1", "IFO1"]):
-            ifo = "L1"
-        elif any(j in file_name for j in ["V", "_2", "IFO2"]):
-            ifo = "V1"
-        else:
-            ifo = file_name
-        return ifo
-
-    def _key_data(self):
-        """Grab the mean, median, maximum likelihood value and the standard
-        deviation of each posteiror distribution for each results file.
-        """
-        key_data_list = []
-        for num, i in enumerate(self.samples):
-            data = {}
-            likelihood_ind = self.parameters[num].index("log_likelihood")
-            logL = [j[likelihood_ind] for j in i]
-            for ind, j in enumerate(self.parameters[num]):
-                index = self.parameters[num].index("%s" % (j))
-                subset = [k[index] for k in i]
-                data[j] = {"mean": np.mean(subset),
-                           "median": np.median(subset),
-                           "maxL": subset[logL.index(np.max(logL))],
-                           "std": np.std(subset)}
-            key_data_list.append(data)
-        return key_data_list
-
-    def _grab_frequencies_from_psd_data_file(self, file):
-        """Return the frequencies stored in the psd data files
-
-        Parameters
-        ----------
-        file: str
-            path to the psd data file
-        """
-        fil = open(file)
-        fil = fil.readlines()
-        fil = [i.strip().split() for i in fil]
-        return [float(i[0]) for i in fil]
-
-    def _grab_strains_from_psd_data_file(sef, file):
-        """Return the strains stored in the psd data files
-
-        Parameters
-        ----------
-        file: str
-            path to the psd data file
-        """
-        fil = open(file)
-        fil = fil.readlines()
-        fil = [i.strip().split() for i in fil]
-        return [float(i[1]) for i in fil]

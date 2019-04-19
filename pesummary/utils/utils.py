@@ -19,6 +19,9 @@ import logging
 
 import h5py
 
+import pesummary
+import cli
+
 
 def check_condition(condition, error_message):
     """Raise an exception if the condition is not satisfied
@@ -101,6 +104,32 @@ def guess_url(web_dir, host, user):
         url = "https://{}".format(web_dir)
     return url
 
+
+def command_line_arguments():
+    """Return the command line arguments
+    """
+    return sys.argv[1:]
+
+
+def gw_results_file():
+    command_line = command_line_arguments()
+    if "--calibration" in command_line or \
+    "--approximant" in command_line or \
+    "--gracedb" in command_line or \
+    "--psds" in command_line or \
+    "--detectors" in command_line:
+        return True
+    else:
+        return False
+
+
+def functions():
+    """
+    """
+    dictionary = {}
+    dictionary["input"] = pesummary.gw.inputs.GWInput if gw_results_file() else pesummary.core.inputs.Input
+    dictionary["PlotGeneration"] = cli.summaryplots.GWPlotGeneration if gw_results_file() else cli.summaryplots.PlotGeneration
+    return dictionary
 
 def setup_logger():
     """Set up the logger output.
