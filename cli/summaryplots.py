@@ -120,6 +120,7 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
         for num, i in enumerate(self.result_files):
             logger.debug("Starting to generate plots for %s\n" % (i))
             self._check_latex_labels(self.parameters[num])
+            self.try_to_make_a_plot("corner", num)
             self.try_to_make_a_plot("1d_histogram", num)
         if self.add_to_existing:
             existing = ExistingFile(self.existing)
@@ -378,6 +379,32 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         fig = gw._psd_plot(frequencies, strains, labels=self.psd_labels)
         fig.savefig("%s/psd_plot.png" % (self.savedir))
         plt.close()
+
+    def _corner_plot(self, idx):
+        """Generate a corner plot for a given results file.
+
+        Parameters
+        ----------
+        idx: int
+            The index of the results file that you wish to analyse
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fig, params = gw._make_corner_plot(
+                self.samples[idx], self.parameters[idx], latex_labels)
+            plt.savefig("%s/corner/%s_all_density_plots.png" % (
+                self.savedir, self.labels[idx]))
+            plt.close()
+            combine_corner = open("%s/js/combine_corner.js" % (self.webdir))
+            combine_corner = combine_corner.readlines()
+            params = [str(i) for i in params]
+            for linenumber, line in enumerate(combine_corner):
+                if "var list = [" in line:
+                    combine_corner[linenumber] = "    var list = %s;\n" % (
+                        params)
+            new_file = open("%s/js/combine_corner.js" % (self.webdir), "w")
+            new_file.writelines(combine_corner)
+            new_file.close()
 
     def _skymap_plot(self, idx):
         """Generate a skymap showing the confidence regions for a given results

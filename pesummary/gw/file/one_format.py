@@ -423,6 +423,9 @@ class OneFormat(object):
             path += "/content"
         reduced_data, = load_recusively(path, data)
         parameters = list(reduced_data.keys())
+        print(parameters)
+        parameters = [standard_names[i] for i in list(reduced_data.keys()) if i
+                      in standard_names.keys()]
 
         path_to_approximant = [
             i for i in paths_to_key("waveform_approximant", reduced_data)]
