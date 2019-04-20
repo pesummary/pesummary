@@ -129,6 +129,7 @@ def functions():
     dictionary = {}
     dictionary["input"] = pesummary.gw.inputs.GWInput if gw_results_file() else pesummary.core.inputs.Input
     dictionary["PlotGeneration"] = cli.summaryplots.GWPlotGeneration if gw_results_file() else cli.summaryplots.PlotGeneration
+    dictionary["WebpageGeneration"] = cli.summarypages.GWWebageGeneration if gw_results_file() else cli.summarypages.WebpageGeneration
     return dictionary
 
 def setup_logger():

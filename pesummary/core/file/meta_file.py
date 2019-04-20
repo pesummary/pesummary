@@ -21,8 +21,8 @@ import json
 import configparser
 
 from pesummary.utils.utils import logger
-from pesummary.inputs import PostProcessing
-from pesummary.file.existing import ExistingFile
+from pesummary.core.inputs import PostProcessing
+from pesummary.core.file.existing import ExistingFile
 from pesummary.utils.utils import make_dir
 
 

@@ -17,7 +17,7 @@ import numpy as np
 import h5py
 from scipy import interpolate
 
-from pesummary.file.standard_names import standard_names
+from pesummary.gw.file.standard_names import standard_names
 
 
 class LALInferenceResultsFile(object):

@@ -1,6 +1,6 @@
 import pesummary
-from pesummary.core import command_line
-from pesummary.gw import insert_gwspecific_option_group
+from pesummary.core.command_line import command_line
+from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.utils import functions
 from .summaryplots import PlotGeneration
 
@@ -8,7 +8,7 @@ import numpy as np
 from scipy import stats
 
 from pesummary.utils.utils import logger
-from pesummary.webpage import webpage
+from pesummary.core.webpage import webpage
 
 
 if __name__ == "__main__":
@@ -22,7 +22,7 @@ def main():
     func = functions()
     args = func["input"](opts)
     func["PlotGeneration"](args)
-    WebpageGeneration(args)
+    func["WebpageGeneration"](args)
 
 __doc__ == "Classes to generate webpages"
 

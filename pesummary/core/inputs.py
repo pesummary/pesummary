@@ -30,8 +30,7 @@ from pesummary.utils.utils import (guess_url, logger,
                                    rename_group_or_dataset_in_hf5_file)
 from pesummary.utils import utils
 from pesummary.core.file.one_format import OneFormat
-from pesummary.file.existing import ExistingFile
-from pesummary.file.lalinference import LALInferenceResultsFile
+from pesummary.core.file.existing import ExistingFile
 
 __doc__ == "Classes to handle the command line inputs"
 
@@ -359,10 +358,10 @@ class Input(object):
         """
         logger.info("Copying the files to %s" % (self.webdir))
         path = pesummary.__file__[:-12]
-        scripts = glob(path + "/js/*.js")
+        scripts = glob(path + "/core/js/*.js")
         for i in scripts:
             shutil.copyfile(i, self.webdir + "/js/%s" % (i.split("/")[-1]))
-        scripts = glob(path + "/css/*.css")
+        scripts = glob(path + "/core/css/*.css")
         for i in scripts:
             shutil.copyfile(i, self.webdir + "/css/%s" % (i.split("/")[-1]))
         if self.config:

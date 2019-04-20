@@ -28,10 +28,10 @@ import pesummary
 from pesummary.utils.utils import (guess_url, logger,
                                    rename_group_or_dataset_in_hf5_file)
 from pesummary.utils import utils
-from pesummary.file.one_format import OneFormat
-from pesummary.file.existing import ExistingFile
-from pesummary.file.lalinference import LALInferenceResultsFile
-from pesummary.core import Input
+from pesummary.core.file.one_format import OneFormat
+from pesummary.core.file.existing import ExistingFile
+from pesummary.gw.file.lalinference import LALInferenceResultsFile
+from pesummary.core.inputs import Input
 
 __doc__ == "Classes to handle the command line inputs"
 

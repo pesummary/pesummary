@@ -74,9 +74,10 @@ setup(name='pesummary',
       include_package_data=True,
       packages=['pesummary', 'pesummary.core', 'pesummary.core.webpage',
                 'pesummary.core.plots', 'pesummary.core.file',
-                'pesummary.gw', 'cli'],
+                'pesummary.gw', 'pesummary.gw.file',
+                'pesummary.gw.plots', 'pesummary.utils', 'cli'],
       package_dir={'pesummary': 'pesummary'},
-      package_data={'pesummary': ['js/*.js', 'css/*.css']},
+      package_data={'pesummary': ['core/js/*.js', 'core/css/*.css']},
       entry_points={
           'console_scripts': [
               'summaryconvert=pesummary.file.one_format:main',

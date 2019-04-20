@@ -22,11 +22,11 @@ import matplotlib.pyplot as plt
 import pesummary
 from pesummary.core.plots import plot as core
 from pesummary.gw.plots import plot as gw
-from pesummary.file.existing import ExistingFile
+from pesummary.core.file.existing import ExistingFile
 from pesummary.utils.utils import logger
-from pesummary.command_line import command_line
-from pesummary.core import Input
-from pesummary.gw import GWInput
+from pesummary.core.command_line import command_line
+from pesummary.core.inputs import Input
+from pesummary.gw.inputs import GWInput
 
 import warnings
 

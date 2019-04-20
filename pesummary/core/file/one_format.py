@@ -22,11 +22,8 @@ import deepdish
 
 import numpy as np
 
-from pesummary.command_line import command_line
-import pesummary.file.conversions as con
+from pesummary.core.command_line import command_line
 from pesummary.utils.utils import logger
-from pesummary.file.lalinference import LALInferenceResultsFile
-from pesummary.file.standard_names import standard_names
 
 try:
     from glue.ligolw import ligolw
@@ -119,36 +116,6 @@ class OneFormat(object):
         self.config = config
         self.data = None
         self.injection_data = None
-
-    @staticmethod
-    def _check_definition_of_inclination(parameters):
-        """Check the definition of inclination given the other parameters
-
-        Parameters
-        ----------
-        parameters: list
-            list of parameters used in the study
-        """
-        theta_jn = False
-        spin_angles = ["tilt_1", "tilt_2", "a_1", "a_2"]
-        names = [
-            standard_names[i] for i in parameters if i in standard_names.keys()]
-        if all(i in names for i in spin_angles):
-            theta_jn = True
-        if theta_jn:
-            if "theta_jn" not in names and "inclination" in parameters:
-                logger.warn("Because the spin angles are in your list of "
-                            "parameters, the angle 'inclination' probably "
-                            "refers to 'theta_jn'. If this is a mistake, "
-                            "please change the definition of 'inclination' to "
-                            "'iota' in your results file")
-                index = parameters.index("inclination")
-                parameters[index] = "theta_jn"
-        else:
-            if "inclination" in parameters:
-                index = parameters.index("inclination")
-                parameters[index] = "iota"
-        return parameters
 
     @property
     def config(self):
@@ -358,10 +325,7 @@ class OneFormat(object):
             if condition1 and condition2:
                 path = i
         f.close()
-        if self.lalinference_hdf5_format:
-            g = LALInferenceResultsFile(self.fil)
-            parameters, samples = g.grab_samples()
-        elif self.bilby_hdf5_format:
+        if self.bilby_hdf5_format:
             f = h5py.File(self.fil)
             parameters, data = [], []
             blocks = [i for i in f["%s" % (path)] if "block" in i]
@@ -442,23 +406,9 @@ class OneFormat(object):
         """Grab the data stored in a .dat file
         """
         dat_file = np.genfromtxt(self.fil, names=True)
-        stored_parameters = [i for i in dat_file.dtype.names]
-        stored_parameters = self._check_definition_of_inclination(
-            stored_parameters)
-        parameters = [
-            i for i in stored_parameters if i in standard_names.keys()]
-        indices = [stored_parameters.index(i) for i in parameters]
-        parameters = [standard_names[i] for i in parameters]
+        parameters = [i for i in dat_file.dtype.names]
+        indices = [parameters.index(i) for i in parameters]
         samples = [[x[i] for i in indices] for x in dat_file]
-
-        condition1 = "luminosity" not in parameters
-        condition2 = "logdistance" in stored_parameters
-        if condition1 and condition2:
-            parameters.append("luminosity_distance")
-            for num, i in enumerate(dat_file):
-                samples[num].append(
-                    np.exp(i[stored_parameters.index("logdistance")]))
-
         return parameters, samples
 
     def _extract_data_from_config_file(self, cp):
@@ -519,316 +469,8 @@ class OneFormat(object):
             injection_values = [float("nan")] * len(self.parameters)
         return injection_parameters, injection_values
 
-    def _specific_parameter_samples(self, param):
-        """Return the samples for a specific parameter
-
-        Parameters
-        ----------
-        param: str
-            the parameter that you would like to return the samples for
-        """
-        ind = self.parameters.index(param)
-        samples = np.array([i[ind] for i in self.samples])
-        return samples
-
-    def specific_parameter_samples(self, param):
-        """Return the samples for either a list or a single parameter
-
-        Parameters
-        ----------
-        param: list/str
-            the parameter/parameters that you would like to return the samples
-            for
-        """
-        if type(param) == list:
-            samples = [self._specific_parameter_samples(i) for i in param]
-        else:
-            samples = self._specific_parameter_samples(param)
-        return samples
-
-    def append_data(self, samples):
-        """Add a list of samples to the existing samples data object
-
-        Parameters
-        ----------
-        samples: list
-            the list of samples that you would like to append
-        """
-        for num, i in enumerate(self.samples):
-            self.samples[num].append(samples[num])
-
-    def _mchirp_from_mchirp_source_z(self):
-        self.parameters.append("chirp_mass")
-        samples = self.specific_parameter_samples(["chirp_mass_source", "redshift"])
-        chirp_mass = con.mchirp_from_mchirp_source_z(samples[0], samples[1])
-        self.append_data(chirp_mass)
-
-    def _q_from_eta(self):
-        self.parameters.append("mass_ratio")
-        samples = self.specific_parameter_samples("symmetric_mass_ratio")
-        mass_ratio = con.q_from_eta(samples)
-        self.append_data(mass_ratio)
-
-    def _q_from_m1_m2(self):
-        self.parameters.append("mass_ratio")
-        samples = self.specific_parameter_samples(["mass_1", "mass_2"])
-        mass_ratio = con.q_from_m1_m2(samples[0], samples[1])
-        self.append_data(mass_ratio)
-
-    def _invert_q(self):
-        ind = self.parameters.index("mass_ratio")
-        for num, i in enumerate(self.samples):
-            self.samples[num][ind] = 1. / self.samples[num][ind]
-
-    def _mchirp_from_mtotal_q(self):
-        self.parameters.append("chirp_mass")
-        samples = self.specific_parameter_samples(["total_mass", "mass_ratio"])
-        chirp_mass = con.mchirp_from_mtotal_q(samples[0], samples[1])
-        self.append_data(chirp_mass)
-
-    def _m1_from_mchirp_q(self):
-        self.parameters.append("mass_1")
-        samples = self.specific_parameter_samples(["chirp_mass", "mass_ratio"])
-        mass_1 = con.m1_from_mchirp_q(samples[0], samples[1])
-        self.append_data(mass_1)
-
-    def _m2_from_mchirp_q(self):
-        self.parameters.append("mass_2")
-        samples = self.specific_parameter_samples(["chirp_mass", "mass_ratio"])
-        mass_2 = con.m2_from_mchirp_q(samples[0], samples[1])
-        self.append_data(mass_2)
-
-    def _reference_frequency(self):
-        self.parameters.append("reference_frequency")
-        nsamples = len(self.samples)
-        self.append_data([20.] * nsamples)
-
-    def _mtotal_from_m1_m2(self):
-        self.parameters.append("total_mass")
-        samples = self.specific_parameter_samples(["mass_1", "mass_2"])
-        m_total = con.m_total_from_m1_m2(samples[0], samples[1])
-        self.append_data(m_total)
-
-    def _mchirp_from_m1_m2(self):
-        self.parameters.append("chirp_mass")
-        samples = self.specific_parameter_samples(["mass_1", "mass_2"])
-        chirp_mass = con.m_total_from_m1_m2(samples[0], samples[1])
-        self.append_data(chirp_mass)
-
-    def _eta_from_m1_m2(self):
-        self.parameters.append("symmetric_mass_ratio")
-        samples = self.specific_parameter_samples(["mass_1", "mass_2"])
-        eta = con.eta_from_m1_m2(samples[0], samples[1])
-        self.append_data(eta)
-
-    def _phi_12_from_phi1_phi2(self):
-        self.parameters.append("phi_12")
-        samples = self.specific_parameter_samples(["phi_1", "phi_2"])
-        phi_12 = con.phi_12_from_phi1_phi2(samples[0], samples[1])
-        self.append_data(phi_12)
-
-    def _spin_angles(self):
-        spin_angles = ["theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12",
-                       "a_1", "a_2"]
-        spin_angles_to_calculate = [
-            i for i in spin_angles if i not in self.parameters]
-        for i in spin_angles_to_calculate:
-            self.parameters.append(i)
-        spin_components = [
-            "mass_1", "mass_2", "iota", "spin_1x", "spin_1y", "spin_1z",
-            "spin_2x", "spin_2y", "spin_2z", "reference_frequency", "phase"]
-        samples = self.specific_parameter_samples(spin_components)
-        spin_angles = con.spin_angles(
-            samples[0], samples[1], samples[2], samples[3], samples[4],
-            samples[5], samples[6], samples[7], samples[8], samples[9],
-            samples[10])
-
-        for i in spin_angles_to_calculate:
-            ind = spin_angles_to_calculate.index(i)
-            data = np.array([i[ind] for i in spin_angles])
-            self.append_data(data)
-
-    def _component_spins(self):
-        spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
-                 "spin_2z"]
-        spins_to_calculate = [
-            i for i in spins if i not in self.parameters]
-        for i in spins_to_calculate:
-            self.parameters.append(i)
-        spin_angles = [
-            "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
-            "mass_1", "mass_2", "reference_frequency", "phase"]
-        samples = self.specific_parameter_samples(spin_angles)
-        spin_components = con.component_spins(
-            samples[0], samples[1], samples[2], samples[3], samples[4],
-            samples[5], samples[6], samples[7], samples[8], samples[9],
-            samples[10])
-
-        for i in spins_to_calculate:
-            ind = spins.index(i)
-            data = np.array([i[ind] for i in spin_components])
-            self.append_data(data)
-
-    def _chi_p(self):
-        self.parameters.append("chi_p")
-        parameters = [
-            "mass_1", "mass_2", "spin_1x", "spin_1y", "spin_2x", "spin_2y"]
-        samples = self.specific_parameter_samples(parameters)
-        chi_p_samples = con.chi_p(
-            samples[0], samples[1], samples[2], samples[3], samples[4],
-            samples[5])
-        self.append_data(chi_p_samples)
-
-    def _chi_eff(self):
-        self.parameters.append("chi_eff")
-        parameters = ["mass_1", "mass_2", "spin_1z", "spin_2z"]
-        samples = self.specific_parameter_samples(parameters)
-        chi_eff_samples = con.chi_eff(
-            samples[0], samples[1], samples[2], samples[3])
-        self.append_data(chi_eff_samples)
-
-    def _cos_tilt_1_from_tilt_1(self):
-        self.parameters.append("cos_tilt_1")
-        samples = self.specific_parameter_samples("tilt_1")
-        cos_tilt_1 = np.cos(samples)
-        self.append_data(cos_tilt_1)
-
-    def _cos_tilt_2_from_tilt_2(self):
-        self.parameters.append("cos_tilt_2")
-        samples = self.specific_parameter_samples("tilt_2")
-        cos_tilt_2 = np.cos(samples)
-        self.append_data(cos_tilt_2)
-
-    def _dL_from_z(self):
-        self.parameters.append("luminosity_distance")
-        samples = self.specific_parameter_samples("redshift")
-        distance = con.dL_from_z(samples)
-        self.append_data(distance)
-
-    def _z_from_dL(self):
-        self.parameters.append("redshift")
-        samples = self.specific_parameter_samples("luminosity_distance")
-        redshift = con.z_from_dL(samples)
-        self.append_data(redshift)
-
-    def _comoving_distance_from_z(self):
-        self.parameters.append("comoving_distance")
-        samples = self.specific_parameter_samples("redshift")
-        distance = con.comoving_distance_from_z(samples)
-        self.append_data(distance)
-
-    def _m1_source_from_m1_z(self):
-        self.parameters.append("mass_1_source")
-        samples = self.specific_parameter_samples(["mass_1", "redshift"])
-        mass_1_source = con.m1_source_from_m1_z(samples[0], samples[1])
-        self.append_data(mass_1_source)
-
-    def _m2_source_from_m2_z(self):
-        self.parameters.append("mass_2_source")
-        samples = self.specific_parameter_samples(["mass_2", "redshift"])
-        mass_2_source = con.m2_source_from_m2_z(samples[0], samples[1])
-        self.append_data(mass_2_source)
-
-    def _mtotal_source_from_mtotal_z(self):
-        self.parameters.append("total_mass_source")
-        samples = self.specific_parameter_samples(["total_mass", "redshift"])
-        total_mass_source = con.m_total_source_from_mtotal_z(samples[0], samples[1])
-        self.append_data(total_mass_source)
-
-    def _mchirp_source_from_mchirp_z(self):
-        self.parameters.append("chirp_mass_source")
-        samples = self.specific_parameter_samples(["chirp_mass", "redshift"])
-        chirp_mass_source = con.mchirp_source_from_mchirp_z(samples[0], samples[1])
-        self.append_data(chirp_mass_source)
-
     def generate_all_posterior_samples(self):
         logger.debug("Starting to generate all derived posteriors")
-        if "chirp_mass" not in self.parameters and "chirp_mass_source" in \
-                self.parameters and "redshift" in self.parameters:
-            self._mchirp_from_mchirp_source_z()
-        if "mass_ratio" not in self.parameters and "symmetric_mass_ratio" in \
-                self.parameters:
-            self._q_from_eta()
-        if "mass_ratio" not in self.parameters and "mass_1" in self.parameters \
-                and "mass_2" in self.parameters:
-            self._q_from_m1_m2()
-        if "mass_ratio" in self.parameters:
-            ind = self.parameters.index("mass_ratio")
-            median = np.median([i[ind] for i in self.samples])
-            if median < 1.:
-                self._invert_q()
-        if "chirp_mass" not in self.parameters and "total_mass" in self.parameters:
-            self._mchirp_from_mtotal_q()
-        if "mass_1" not in self.parameters and "chirp_mass" in self.parameters:
-            self._m1_from_mchirp_q()
-        if "mass_2" not in self.parameters and "chirp_mass" in self.parameters:
-            self._m2_from_mchirp_q()
-        if "reference_frequency" not in self.parameters:
-            self._reference_frequency()
-
-        condition1 = "phi_12" not in self.parameters
-        condition2 = "phi_1" in self.parameters and "phi_2" in self.parameters
-        if condition1 and condition2:
-            self._phi_12_from_phi1_phi2()
-        if "mass_1" in self.parameters and "mass_2" in self.parameters:
-            if "total_mass" not in self.parameters:
-                self._mtotal_from_m1_m2()
-            if "chirp_mass" not in self.parameters:
-                self._mchirp_from_m1_m2()
-            if "symmetric_mass_ratio" not in self.parameters:
-                self._eta_from_m1_m2()
-            spin_components = [
-                "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
-            spin_angles = [
-                "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1",
-                "a_2", "mass_1", "mass_2", "reference_frequency", "phase"]
-            if all(i in self.parameters for i in spin_components):
-                self._spin_angles()
-            if all(i in self.parameters for i in spin_angles):
-                self._component_spins()
-            if "chi_p" not in self.parameters and "chi_eff" not in self.parameters:
-                if all(i in self.parameters for i in spin_angles):
-                    self._chi_p()
-                    self._chi_eff()
-        if "cos_tilt_1" not in self.parameters and "tilt_1" in self.parameters:
-            self._cos_tilt_1_from_tilt_1()
-        if "cos_tilt_2" not in self.parameters and "tilt_2" in self.parameters:
-            self._cos_tilt_2_from_tilt_2()
-        if "luminosity_distance" not in self.parameters and "redshift" in self.parameters:
-            self._dL_from_z()
-        if "redshift" not in self.parameters and "luminosity_distance" in self.parameters:
-            self._z_from_dL()
-        if "comoving_distance" not in self.parameters and "redshift" in self.parameters:
-            self._comoving_distance_from_z()
-        if "redshift" in self.parameters:
-            if "mass_1_source" not in self.parameters and "mass_1" in self.parameters:
-                self._m1_source_from_m1_z()
-            if "mass_2_source" not in self.parameters and "mass_2" in self.parameters:
-                self._m2_source_from_m2_z()
-            if "total_mass_source" not in self.parameters and "total_mass" in self.parameters:
-                self._mtotal_source_from_mtotal_z()
-            if "chirp_mass_source" not in self.parameters and "chirp_mass" in self.parameters:
-                self._mchirp_source_from_mchirp_z()
-        if "reference_frequency" in self.parameters:
-            ind = self.parameters.index("reference_frequency")
-            self.parameters.remove(self.parameters[ind])
-            for i in self.samples:
-                del i[ind]
-        if "minimum_frequency" in self.parameters:
-            ind = self.parameters.index("minimum_frequency")
-            self.parameters.remove(self.parameters[ind])
-            for i in self.samples:
-                del i[ind]
-        if "logPrior" in self.parameters:
-            ind = self.parameters.index("logPrior")
-            self.parameters.remove(self.parameters[ind])
-            for i in self.samples:
-                del i[ind]
-        if "log_prior" in self.parameters:
-            ind = self.parameters.index("log_prior")
-            self.parameters.remove(self.parameters[ind])
-            for i in self.samples:
-                del i[ind]
         self._update_injection_data()
 
     def _update_injection_data(self):
