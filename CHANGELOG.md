@@ -1,3 +1,18 @@
+## 0.1.6 [unreleased]
+
+### Changed
+
+### Added
+- PESummary now supports non GW specific results files
+
+## 0.1.5 [13/04/2019]
+
+### Changed
+- Executables: excutables now no longer have file extensions
+- Entry points: all excutables are now entry points
+- Version file: The code version is now written to a .version file and opened
+  when you type `pesummary.__version__`.
+
 ## 0.1.4 [05/04/2019]
 
 ### Added
