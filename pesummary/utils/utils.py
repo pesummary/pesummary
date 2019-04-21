@@ -126,11 +126,17 @@ def gw_results_file():
 def functions():
     """
     """
+    from cli.summarypages import WebpageGeneration, GWWebpageGeneration
+    from cli.summaryplots import PlotGeneration, GWPlotGeneration
+    from pesummary.core.inputs import Input
+    from pesummary.gw.inputs import GWInput
+    from pesummary.core.file.meta_file import MetaFile
+    from pesummary.gw.file.meta_file import GWMetaFile
     dictionary = {}
-    dictionary["input"] = pesummary.gw.inputs.GWInput if gw_results_file() else pesummary.core.inputs.Input
-    dictionary["PlotGeneration"] = cli.summaryplots.GWPlotGeneration if gw_results_file() else cli.summaryplots.PlotGeneration
-    dictionary["WebpageGeneration"] = cli.summarypages.GWWebageGeneration if gw_results_file() else cli.summarypages.WebpageGeneration
-    dictionary["MetaFile"] = pesummary.gw.core.file.meta_file.MetaFile if gw_results_file() else pesummary.core.file.meta_file.MetaFile
+    dictionary["input"] = GWInput if gw_results_file() else Input
+    dictionary["PlotGeneration"] = GWPlotGeneration if gw_results_file() else PlotGeneration
+    dictionary["WebpageGeneration"] = GWWebpageGeneration if gw_results_file() else WebpageGeneration
+    dictionary["MetaFile"] = GWMetaFile if gw_results_file() else MetaFile
     return dictionary
 
 def setup_logger():

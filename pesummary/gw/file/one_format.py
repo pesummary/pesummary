@@ -22,11 +22,12 @@ import deepdish
 
 import numpy as np
 
-from pesummary.command_line import command_line
-import pesummary.file.conversions as con
+from pesummary.core.command_line import command_line
+import pesummary.gw.file.conversions as con
+from pesummary.core.file.one_format import paths_to_key, load_recusively
 from pesummary.utils.utils import logger
-from pesummary.file.lalinference import LALInferenceResultsFile
-from pesummary.file.standard_names import standard_names
+from pesummary.gw.file.lalinference import LALInferenceResultsFile
+from pesummary.gw.file.standard_names import standard_names
 
 try:
     from glue.ligolw import ligolw
@@ -37,52 +38,7 @@ except ImportError:
     GLUE = False
 
 
-def paths_to_key(key, dictionary, current_path=None):
-    """Return the path to a key stored in a nested dictionary
-
-    Parameters
-    ----------
-    key: str
-        the key that you would like to find
-    dictionary: dict
-        the nested dictionary that has the key stored somewhere within it
-    current_path: str, optional
-        the current level in the dictionary
-    """
-    if current_path is None:
-        current_path = []
-
-    for k, v in dictionary.items():
-        if k == key:
-            yield current_path + [key]
-        else:
-            if isinstance(v, dict):
-                path = current_path + [k]
-                yield from paths_to_key(key, v, path)
-
-
-def load_recusively(key, dictionary):
-    """Return the entry for a key of format 'a/b/c/d'
-
-    Parameters
-    ----------
-    key: str
-        key of format 'a/b/c/d'
-    dictionary: dict
-        the dictionary that has the key stored
-    """
-    if "/" in key:
-        key = key.split("/")
-    if isinstance(key, str):
-        key = [key]
-    if key[-1] in dictionary.keys():
-        yield dictionary[key[-1]]
-    else:
-        old, new = key[0], key[1:]
-        yield from load_recusively(new, dictionary[old])
-
-
-class OneFormat(object):
+class GWOneFormat(object):
     """Class to convert a given results file into a standard format with all
     derived posterior distributions included
 

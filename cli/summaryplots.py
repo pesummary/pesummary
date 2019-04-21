@@ -278,24 +278,16 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         self.generate_plots()
         logger.info("Finished generating the plots")
 
-    @staticmethod
-    def _check_latex_labels(parameters):
-        for i in parameters:
-            if i not in list(latex_labels.keys()):
-                latex_labels[i] = i
-
-    @property
-    def savedir(self):
-        return self.webdir + "/plots/"
-
     def generate_plots(self):
         """Generate all plots for all results files.
         """
-        logger.debug("Generating the calibration plot")
-        self.try_to_make_a_plot("calibration")
-        logger.debug("Generating the psd plot")
-        self.try_to_make_a_plot("psd")
-        for num, i in enumerate(self.approximant):
+        if self.calibration:
+            logger.debug("Generating the calibration plot")
+            self.try_to_make_a_plot("calibration")
+        if self.psds:
+            logger.debug("Generating the psd plot")
+            self.try_to_make_a_plot("psd")
+        for num, i in enumerate(self.result_files):
             logger.debug("Starting to generate plots for %s\n" % (i))
             self._check_latex_labels(self.parameters[num])
             self.try_to_make_a_plot("corner", num)

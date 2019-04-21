@@ -28,7 +28,7 @@ import pesummary
 from pesummary.utils.utils import (guess_url, logger,
                                    rename_group_or_dataset_in_hf5_file)
 from pesummary.utils import utils
-from pesummary.core.file.one_format import OneFormat
+from pesummary.gw.file.one_format import GWOneFormat
 from pesummary.core.file.existing import ExistingFile
 from pesummary.gw.file.lalinference import LALInferenceResultsFile
 from pesummary.core.inputs import Input
@@ -264,6 +264,25 @@ class GWInput(Input):
             ifo = file_name
         return ifo
 
+    def convert_to_standard_format(self, results_file, injection_file=None,
+                                   config_file=None):
+        """Convert a results file to standard form.
+
+        Parameters
+        ----------
+        results_file: str
+            Path to the results file that you wish to convert to standard
+            form
+        injection_file: str, optional
+            Path to the injection file that was used in the analysis to
+            produce the results_file
+        config_file: str, optional
+            Path to the configuration file that was used
+        """
+        f = GWOneFormat(results_file, injection_file, config=config_file)
+        f.generate_all_posterior_samples()
+        return f.save()
+
     def _default_labels(self):
         """Return the defaut labels given your detector network.
         """
@@ -379,7 +398,6 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         maxL_list = []
         for num, i in enumerate(self.parameters):
             dictionary = {j: key_data[num][j]["maxL"] for j in i}
-            dictionary["approximant"] = self.approximant[num]
             maxL_list.append(dictionary)
         self._maxL_samples = maxL_list
 

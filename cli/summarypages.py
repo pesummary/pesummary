@@ -2,8 +2,9 @@ import pesummary
 from pesummary.core.command_line import command_line
 from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.utils import functions
-from .summaryplots import PlotGeneration
+from .summaryplots import PlotGeneration, GWPlotGeneration
 from pesummary.core.file.meta_file import MetaFile
+from pesummary.gw.file.meta_file import GWMetaFile
 
 import numpy as np
 from scipy import stats
