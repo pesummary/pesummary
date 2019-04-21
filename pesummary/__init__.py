@@ -13,6 +13,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-__version__ = "0.1.4 a2c622f"
+__version__ = "0.1.4 70d8693"
 
 __bilby_compatibility__ = "0.3.6"

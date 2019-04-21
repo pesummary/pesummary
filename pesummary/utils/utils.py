@@ -130,6 +130,7 @@ def functions():
     dictionary["input"] = pesummary.gw.inputs.GWInput if gw_results_file() else pesummary.core.inputs.Input
     dictionary["PlotGeneration"] = cli.summaryplots.GWPlotGeneration if gw_results_file() else cli.summaryplots.PlotGeneration
     dictionary["WebpageGeneration"] = cli.summarypages.GWWebageGeneration if gw_results_file() else cli.summarypages.WebpageGeneration
+    dictionary["MetaFile"] = pesummary.gw.core.file.meta_file.MetaFile if gw_results_file() else pesummary.core.file.meta_file.MetaFile
     return dictionary
 
 def setup_logger():
@@ -143,7 +144,6 @@ def setup_logger():
     logger.setLevel(level)
     FORMAT = '%(asctime)s %(name)s %(levelname)-8s: %(message)s'
     logging.basicConfig(format=FORMAT, datefmt='%Y-%m-%d  %H:%M:%S')
-
 
 setup_logger()
 logger = logging.getLogger('PESummary')

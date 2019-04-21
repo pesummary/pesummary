@@ -3,6 +3,7 @@ from pesummary.core.command_line import command_line
 from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.utils import functions
 from .summaryplots import PlotGeneration
+from pesummary.core.file.meta_file import MetaFile
 
 import numpy as np
 from scipy import stats
@@ -23,6 +24,7 @@ def main():
     args = func["input"](opts)
     func["PlotGeneration"](args)
     func["WebpageGeneration"](args)
+    func["MetaFile"](args)
 
 __doc__ == "Classes to generate webpages"
 
@@ -208,7 +210,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
             params.append(["Q-T", self._partition(cond, parameters)])
         if any(any(i[0] in j for j in ["u", "U", "v", "V", "w", "W", "x", "X"])
                 for i in parameters):
-            ond = self._condition(["u", "U", "v", "V", "w", "W", "x", "X"], [])
+            cond = self._condition(["u", "U", "v", "V", "w", "W", "x", "X"], [])
             params.append(["U-X", self._partition(cond, parameters)])
         if any(any(i[0] in j for j in ["y", "Y", "z", "Z"])
                 for i in parameters):
