@@ -18,6 +18,9 @@ docs/images/*
 ## ignore __pycache__ directories
 __pycache__
 
+## ignore version file
+.version
+
 ## ignore directories created from coverage
 .outdir/
 .outdir_bilby/

@@ -29,7 +29,7 @@ def full_description():
     return readme
 
 
-def check_init(version):
+def write_version_file(version):
     """Add the version number and the git hash to the file
     'pesummary.__init__.py'
 
@@ -40,17 +40,12 @@ def check_init(version):
     """
     git_log = subprocess.check_output(
         ["git", "log", "-1", "--pretty=format:%h"]).decode("utf-8")
-    with open("pesummary/__init__.py") as f:
-        g = f.readlines()
-        ind = [num for num, i in enumerate(g) if "__version__" in i][0]
-        g[ind] = '__version__ = "%s %s"\n' % (version, git_log)
-        f.close()
-    with open("pesummary/__init__.py", "w") as f:
-        f.writelines(g)
-
+    with open("pesummary/.version", "w") as f:
+        f.writelines(["%s %s" % (version, git_log)])
+    return ".version"
 
 readme = full_description()
-check_init(version)
+version_file = write_version_file(version)
 
 setup(name='pesummary',
       version=version,
@@ -77,7 +72,7 @@ setup(name='pesummary',
                 'pesummary.gw', 'pesummary.gw.file',
                 'pesummary.gw.plots', 'pesummary.utils', 'cli'],
       package_dir={'pesummary': 'pesummary'},
-      package_data={'pesummary': ['core/js/*.js', 'core/css/*.css']},
+      package_data={'pesummary': ['core/js/*.js', 'core/css/*.css', version_file]},
       entry_points={
           'console_scripts': [
               'summaryconvert=pesummary.file.one_format:main',
