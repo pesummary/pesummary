@@ -15,6 +15,7 @@ Contents:
 
    installation
    executable
+   file_formats
    results_file
    summarypage
    structure

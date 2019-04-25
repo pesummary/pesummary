@@ -26,6 +26,7 @@ def main():
     func["PlotGeneration"](args)
     func["WebpageGeneration"](args)
     func["MetaFile"](args)
+    func["FinishingTouches"](args)
 
 __doc__ == "Classes to generate webpages"
 

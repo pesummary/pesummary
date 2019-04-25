@@ -137,24 +137,6 @@ class OneFormat(object):
         return self.fil.split(".")[-1]
 
     @property
-    def lalinference_hdf5_format(self):
-        f = h5py.File(self.fil)
-        keys = list(f.keys())
-        f.close()
-        if "lalinference" in keys:
-            return True
-        return False
-
-    @property
-    def bilby_hdf5_format(self):
-        f = h5py.File(self.fil)
-        keys = list(f.keys())
-        f.close()
-        if "data" in keys or "posterior" in keys:
-            return True
-        return False
-
-    @property
     def data(self):
         return self._data
 
@@ -174,74 +156,9 @@ class OneFormat(object):
             for i in self.fixed_data.keys():
                 fixed_parameter = i
                 fixed_value = self.fixed_data[i]
-
-                try:
-                    param = standard_names[fixed_parameter]
-                    if param in parameters:
-                        pass
-                    else:
-                        parameters.append(param)
-                        for num in range(len(samples)):
-                            samples[num].append(float(fixed_value))
-                except Exception:
-                    if fixed_parameter == "logdistance":
-                        if "luminosity_distance" not in parameters:
-                            parameters.append(standard_names["distance"])
-                            for num in range(len(samples)):
-                                samples[num].append(float(fixed_value))
-                    if fixed_parameter == "costheta_jn":
-                        if "theta_jn" not in parameters:
-                            parameters.append(standard_names["theta_jn"])
-                            for num in range(len(samples)):
-                                samples[num].append(float(fixed_value))
-
-        if self.marg_par:
-            for i in self.marg_par.keys():
-                if "time" in i and "geocent_time" not in parameters:
-                    if "marginalized_geocent_time" in parameters:
-                        ind = parameters.index("marginalized_geocent_time")
-                        parameters.remove(parameters[ind])
-                        parameters.append("geocent_time")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(j[ind]))
-                            del j[ind]
-                    else:
-                        logger.warn("You have marginalized over time and "
-                                    "there are no time samples. Manually "
-                                    "setting time to 100000s")
-                        parameters.append("geocent_time")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(100000))
-                if "phi" in i and "phase" not in parameters:
-                    if "marginalized_phase" in parameters:
-                        ind = parameters.index("marginalized_phase")
-                        parameters.remove(parameters[ind])
-                        parameters.append("phase")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(j[ind]))
-                            del j[ind]
-                    else:
-                        logger.warn("You have marginalized over phase and "
-                                    "there are no phase samples. Manually "
-                                    "setting the phase to be 0")
-                        parameters.append("phase")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(0))
-                if "dist" in i and "luminosity_distance" not in parameters:
-                    if "marginalized_distance" in parameters:
-                        ind = parameters.index("marginalized_distance")
-                        parameters.remove(parameters[ind])
-                        parameters.append("luminosity_distance")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(j[ind]))
-                            del j[ind]
-                    else:
-                        logger.warn("You have marginalized over distance and "
-                                    "there are no distance samples. Manually "
-                                    "setting distance to 100Mpc")
-                        parameters.append("luminosity_distance")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(100.0))
+                parameters.append(fixed_parameter)
+                for num in range(len(samples)):
+                    samples[num].append(float(fixed_value))
 
         if len(data) > 2:
             self._data = [parameters, samples, data[2]]
@@ -290,25 +207,17 @@ class OneFormat(object):
         """Grab the data stored in an hdf5 file
         """
         self._data_structure = []
-        if self.lalinference_hdf5_format:
-            return self._grab_data_with_h5py()
-        elif self.bilby_hdf5_format:
-            try:
-                return self._grab_data_with_deepdish()
-            except Exception as e:
-                logger.warning("Failed to open %s with deepdish because %s. "
-                               "Trying to grab the data with 'h5py'." % (
-                                   self.fil, e))
-                return self._grab_data_with_h5py()
-        else:
-            logger.warning("Unrecognised HDF5 format. Trying to open and find "
-                           "the data")
+        try:
+            return self._grab_data_with_deepdish()
+        except Exception as e:
+            logger.warning("Failed to open %s with deepdish because %s. "
+                           "Trying to grab the data with 'h5py'." % (
+                           self.fil, e))
             try:
                 return self._grab_data_with_h5py()
-            except Exception:
+            except:
                 raise Exception("Failed to extract the data from the results "
-                                "file. Please reformat to either the bilby "
-                                "or LALInference format")
+                                "file. Please reformat the results file")
 
     def _add_to_list(self, item):
         self._data_structure.append(item)
@@ -320,38 +229,14 @@ class OneFormat(object):
         f = h5py.File(self.fil)
         f.visit(self._add_to_list)
         for i in self._data_structure:
-            condition1 = "posterior_samples" in i or "posterior"in i
+            condition1 = "posterior_samples" in i or "posterior" in i
             condition2 = "posterior_samples/" not in i and "posterior/" not in i
             if condition1 and condition2:
                 path = i
+
+        parameters = f[path].dtype.names
+        samples = [[i[parameters.index(j)] for j in parameters] for i in f[path]]
         f.close()
-        if self.bilby_hdf5_format:
-            f = h5py.File(self.fil)
-            parameters, data = [], []
-            blocks = [i for i in f["%s" % (path)] if "block" in i]
-            for i in blocks:
-                block_name = i.split("_")[0]
-                if "items" in i:
-                    for par in f["%s/%s" % (path, i)]:
-                        if par == b"waveform_approximant":
-                            blocks.remove(block_name + "_items")
-                            blocks.remove(block_name + "_values")
-            for i in sorted(blocks):
-                if "items" in i:
-                    for par in f["%s/%s" % (path, i)]:
-                        if par == b"logL":
-                            parameters.append(b"log_likelihood")
-                        else:
-                            parameters.append(par)
-                if "values" in i:
-                    if len(data) == 0:
-                        for dat in f["%s/%s" % (path, i)]:
-                            data.append(list(np.real(dat)))
-                    else:
-                        for num, dat in enumerate(f["%s/%s" % (path, i)]):
-                            data[num] += list(np.real(dat))
-            parameters = [i.decode("utf-8") for i in parameters]
-            f.close()
         return parameters, samples
 
     def _grab_data_with_deepdish(self):
@@ -363,9 +248,6 @@ class OneFormat(object):
         path = path[0]
         reduced_f, = load_recusively(path, f)
         parameters = [i for i in reduced_f.keys()]
-        if "waveform_approximant" in parameters:
-            approx = reduced_f["waveform_approximant"][0]
-            parameters.remove("waveform_approximant")
         data = np.zeros([len(reduced_f[parameters[0]]), len(parameters)])
         for num, par in enumerate(parameters):
             for key, i in enumerate(reduced_f[par]):
@@ -388,19 +270,11 @@ class OneFormat(object):
         reduced_data, = load_recusively(path, data)
         parameters = list(reduced_data.keys())
 
-        path_to_approximant = [
-            i for i in paths_to_key("waveform_approximant", reduced_data)]
-        try:
-            approximant, = load_recusively("/".join(path_to_approximant[0]),
-                                           data)
-        except Exception:
-            approximant = "none"
-
         samples = [[
             reduced_data[j][i] if not isinstance(reduced_data[j][i], dict)
             else reduced_data[j][i]["real"] for j in parameters] for i in
             range(len(reduced_data[parameters[0]]))]
-        return parameters, samples, approximant
+        return parameters, samples
 
     def _grab_data_from_dat_file(self):
         """Grab the data stored in a .dat file
@@ -470,7 +344,6 @@ class OneFormat(object):
         return injection_parameters, injection_values
 
     def generate_all_posterior_samples(self):
-        logger.debug("Starting to generate all derived posteriors")
         self._update_injection_data()
 
     def _update_injection_data(self):

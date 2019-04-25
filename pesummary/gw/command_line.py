@@ -42,4 +42,7 @@ def insert_gwspecific_option_group(parser):
     gw_group.add_argument("--calibration", dest="calibration",
                           help="files for the calibration envelope",
                           nargs="+", default=None)
+    gw_group.add_argument("--gw", action="store_true",
+                          help="run with the gravitational wave pipeline",
+                          default=False)
     return gw_group

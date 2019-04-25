@@ -112,8 +112,11 @@ def command_line_arguments():
 
 
 def gw_results_file():
+    """
+    """
     command_line = command_line_arguments()
     if "--calibration" in command_line or \
+    "--gw" in command_line or \
     "--approximant" in command_line or \
     "--gracedb" in command_line or \
     "--psds" in command_line or \
@@ -132,11 +135,14 @@ def functions():
     from pesummary.gw.inputs import GWInput
     from pesummary.core.file.meta_file import MetaFile
     from pesummary.gw.file.meta_file import GWMetaFile
+    from pesummary.core.finish import FinishingTouches
+
     dictionary = {}
     dictionary["input"] = GWInput if gw_results_file() else Input
     dictionary["PlotGeneration"] = GWPlotGeneration if gw_results_file() else PlotGeneration
     dictionary["WebpageGeneration"] = GWWebpageGeneration if gw_results_file() else WebpageGeneration
     dictionary["MetaFile"] = GWMetaFile if gw_results_file() else MetaFile
+    dictionary["FinishingTouches"] = FinishingTouches
     return dictionary
 
 
