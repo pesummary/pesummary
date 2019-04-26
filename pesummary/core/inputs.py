@@ -401,6 +401,7 @@ class Input(object):
         duplicates = dict(set(
             (x, label_list.count(x)) for x in
             filter(lambda rec: label_list.count(rec) > 1, label_list)))
+
         for i in duplicates.keys():
             for j in range(duplicates[i]):
                 ind = label_list.index(i)

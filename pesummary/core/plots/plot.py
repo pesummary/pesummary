@@ -111,8 +111,7 @@ def _1d_cdf_plot(param, samples, latex_label):
     return fig
 
 
-def _1d_cdf_comparison_plot(param, approximants, samples, colors,
-                            latex_label, approximant_labels=None):
+def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels):
     """Generate a plot to compare the cdfs for a given parameter for different
     approximants.
 
@@ -133,10 +132,6 @@ def _1d_cdf_comparison_plot(param, approximants, samples, colors,
     """
     logger.debug("Generating the 1d comparison CDF for %s" % (param))
     fig = plt.figure(figsize=(11, 6))
-    labels = approximants
-    if approximant_labels:
-        labels = ["_".join([i, j]) if i is not None else j for i, j in zip(
-                  approximant_labels, labels)]
     for num, i in enumerate(samples):
         n, bins, patches = plt.hist(i, bins=50, alpha=0)
         cdf = np.cumsum(n)
@@ -191,8 +186,8 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
     return fig
 
 
-def _1d_comparison_histogram_plot(param, approximants, samples, colors,
-                                  latex_label, approximant_labels=None):
+def _1d_comparison_histogram_plot(param, samples, colors,
+                                  latex_label, labels):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
 
@@ -213,10 +208,6 @@ def _1d_comparison_histogram_plot(param, approximants, samples, colors,
     """
     logger.debug("Generating the 1d comparison histogram plot for %s" % (param))
     fig = plt.figure(figsize=(11, 6))
-    labels = approximants
-    if approximant_labels:
-        labels = ["_".join([i, j]) if i is not None else j for i, j in zip(
-                  approximant_labels, labels)]
     for num, i in enumerate(samples):
         plt.hist(i, histtype="step", bins=50, color=colors[num],
                  label=labels[num], linewidth=2.0, density=True)

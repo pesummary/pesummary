@@ -436,30 +436,6 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
             "Comparison", self.navbar_for_comparison_homepage,
             title="Comparison Summary Page", approximant="Comparison")
         path = self.image_path["other"]
-        contents = [[path + "combined_skymap.png", path + "compare_waveforms.png"]]
-        html_file.make_table_of_images(contents=contents)
-        images = [y for x in contents for y in x]
-        html_file.make_modal_carousel(images=images)
-        if self.sensitivity:
-            html_file.add_content(
-                "<div class='row justify-content-center' "
-                "style='margin=top: 2.0em;'><p>To see the sky sensitivity for "
-                "the following networks, click the button</p></div>")
-            html_file.add_content(
-                "<div class='row justify-content-center' "
-                "style='margin-top: 0.2em;'><button type='button' class='btn "
-                "btn-info' onclick='%s.src=\"%s/plots/combined_skymap.png\"'"
-                "style='margin-left:0.25em; margin-right:0.25em'>Sky Map</button>"
-                "<button type='button' class='btn btn-info' onclick='%s.src=\""
-                "%s/plots/%s_sky_sensitivity_HL.png\"'"
-                "style='margin-left:0.25em; margin-right:0.25em'>HL</button>"
-                % ("combined_skymap", self.baseurl, "combined_skymap", self.baseurl,
-                   self.approximant[0]))
-            html_file.add_content(
-                "<button type='button' class='btn btn-info' "
-                "onclick='%s.src=\"%s/plots/%s_sky_sensitivity_HLV.png\"'"
-                "style='margin-left:0.25em; margin-right:0.25em'>HLV</button></div>\n"
-                % ("combined_skymap", self.baseurl, self.approximant[0]))
         try:
             statistics = self.comparison_statistics
         except Exception as e:
@@ -468,22 +444,20 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                         "%s" % (e))
         if statistics:
             rows = range(len(self.result_files))
-            labels = ["_".join([i, j]) if i is not None else j for i, j in zip(
-                self.label_to_prepend_approximant, self.approximant)]
             style_ks = "margin-top:5em; margin-bottom:1em; background-color:#FFFFFF; " + \
                 "box-shadow: 0 0 5px grey;"
             style_js = "margin-top:0em; margin-bottom:5em; background-color:#FFFFFF; " + \
                 "box-shadow: 0 0 5px grey;"
             table_contents = {self.same_parameters[num]: [
-                [labels[i]] + statistics[num][0][i] for i in rows]
+                [self.labels[i]] + statistics[num][0][i] for i in rows]
                 for num in range(len(self.same_parameters))}
-            html_file.make_table(headings=[" "] + labels,
+            html_file.make_table(headings=[" "] + self.labels,
                                  contents=table_contents, heading_span=1,
                                  accordian_header="KS test total", style=style_ks)
             table_contents = {self.same_parameters[num]: [
-                [labels[i]] + statistics[num][1][i] for i in rows]
+                [self.labels[i]] + statistics[num][1][i] for i in rows]
                 for num in range(len(self.same_parameters))}
-            html_file.make_table(headings=[" "] + labels,
+            html_file.make_table(headings=[" "] + self.labels,
                                  contents=table_contents, heading_span=1,
                                  accordian_header="JS divergence test total", style=style_js)
         html_file.make_footer(user=self.user, rundir=self.webdir)
@@ -500,13 +474,13 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                                    code="changeimage")
             if statistics:
                 table_contents = [
-                    [labels[i]] + statistics[num][0][i] for i in rows]
-                html_file.make_table(headings=[" "] + labels,
+                    [self.labels[i]] + statistics[num][0][i] for i in rows]
+                html_file.make_table(headings=[" "] + self.labels,
                                      contents=table_contents, heading_span=1,
                                      accordian_header="KS test", style=style_ks)
                 table_contents = [
-                    [labels[i]] + statistics[num][1][i] for i in rows]
-                html_file.make_table(headings=[" "] + labels,
+                    [self.labels[i]] + statistics[num][1][i] for i in rows]
+                html_file.make_table(headings=[" "] + self.labels,
                                      contents=table_contents, heading_span=1,
                                      accordian_header="JS divergence test",
                                      style=style_js)

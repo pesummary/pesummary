@@ -241,15 +241,13 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
                 param_samples = [[k[indices[num]] for k in l] for num, l in
                                  enumerate(self.samples)]
                 fig = core._1d_comparison_histogram_plot(
-                    j, self.approximant, param_samples, self.colors,
-                    latex_labels[j],
-                    approximant_labels=self.label_to_prepend_approximant)
+                    j, param_samples, self.colors,
+                    latex_labels[j], self.labels)
                 plt.savefig(self.savedir + "combined_1d_posterior_%s" % (j))
                 plt.close()
                 fig = core._1d_cdf_comparison_plot(
-                    j, self.approximant, param_samples, self.colors,
-                    latex_labels[j],
-                    approximant_labels=self.label_to_prepend_approximant)
+                    j, param_samples, self.colors,
+                    latex_labels[j], self.labels)
                 fig.savefig(self.savedir + "combined_cdf_%s" % (j))
                 plt.close()
             except Exception as e:
@@ -474,8 +472,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         dec_list = [[k[ind_dec[num]] for k in l] for num, l in
                     enumerate(self.samples)]
         fig = gw._sky_map_comparison_plot(
-            ra_list, dec_list, self.approximant, self.colors,
-            approximant_labels=self.label_to_prepend_approximant)
+            ra_list, dec_list, self.labels, self.colors)
         fig.savefig(self.savedir + "combined_skymap.png")
         plt.close()
 
@@ -490,13 +487,11 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             in the comparsion plots.
         """
         fig = gw._waveform_comparison_plot(
-            self.maxL_samples, self.colors,
-            approximant_labels=self.label_to_prepend_approximant)
+            self.maxL_samples, self.colors, self.labels)
         fig.savefig(self.savedir + "compare_waveforms.png")
         plt.close()
         fig = gw._time_domain_waveform_comparison_plot(
-            self.maxL_samples, self.colors,
-            approximant_labels=self.label_to_prepend_approximant)
+            self.maxL_samples, self.colors, self.labels)
         fig.savefig(self.savedir + "compare_time_domain_waveforms.png")
         plt.close()
 

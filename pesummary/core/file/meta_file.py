@@ -108,6 +108,7 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             for idx, j in enumerate(i):
                 if isinstance(data[num][idx], np.ndarray):
                     data[num][idx] = list(i)
+            data[num] = [float(j) for j in data[num]]
         return data
 
     def generate_meta_file_data(self):
