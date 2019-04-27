@@ -554,61 +554,6 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         self.generate_specific_javascript()
         logger.debug("Finished Tailoring the javascript")
 
-    @property
-    def navbar_for_approximant_homepage(self):
-        return self._navbar_for_approximant_homepage
-
-    @navbar_for_approximant_homepage.setter
-    def navbar_for_approximant_homepage(self, navbar_for_approximant_homepage):
-        links = [["1d_histograms", [{"multiple": i}]] for i in self.labels]
-        for num, i in enumerate(self.parameters):
-            for j in self._categorize_parameters(i):
-                j = [j[0], [{k: self.labels[num]} for k in j[1]]]
-                links[num].append(j)
-        final_links = [[
-            "home", ["Approximants", self._approximant_navbar_links()],
-            {"corner": self.labels[num]}, {"config": self.labels[num]}, j]
-            for num, j in enumerate(links)]
-        if len(self.approximant) > 1:
-            for i in final_links:
-                i[1][1] = i[1][1] + ["Comparison"]
-        self._navbar_for_approximant_homepage = final_links
-
-    @property
-    def navbar_for_comparison_homepage(self):
-        return self._navbar_for_comparison_homepage
-
-    @navbar_for_comparison_homepage.setter
-    def navbar_for_comparison_homepage(self, navbar_for_comparison_homepage):
-        links = ["1d_histograms", ["multiple"]]
-        for i in self._categorize_parameters(self.same_parameters):
-            links.append(i)
-        final_links = [
-            "home", ["Approximants", self._approximant_navbar_links()], links]
-        final_links[1][1] = final_links[1][1] + ["Comparison"]
-        self._navbar_for_comparison_homepage = final_links
-
-    def _approximant_navbar_links(self):
-        """Return the navbar structure for the approximant tab. If we have
-        passed a coherence test, then we need to prepend the approximant by
-        a label so we can determine which tab corresponds to which network.
-        """
-        if self.coherence_test:
-            labels = [i[len(self.gracedb) + 1:] if self.gracedb else i for i in
-                      self.labels]
-            links = [None] * len(self.approximant)
-            duplicates = dict(set(
-                (x, self.approximant.count(x)) for x in filter(
-                    lambda rec: self.approximant.count(rec) > 1,
-                    self.approximant)))
-            if len(duplicates.keys()) > 0:
-                for num, i in enumerate(self.approximant):
-                    if i in duplicates.keys():
-                        links[num] = "_".join([labels[num], i])
-            return [{i: j} if k is None else {k: "None"} for i, j, k in zip(
-                self.approximant, self.labels, links)]
-        return [{i: j} for i, j in zip(self.approximant, self.labels)]
-
     def _categorize_parameters(self, parameters):
         """Categorize the parameters into common headings.
 
@@ -690,62 +635,15 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         self.make_1d_histogram_pages()
         self.make_corner_pages()
         self.make_config_pages()
-        if len(self.approximant) > 1:
+        if len(self.result_files) > 1:
             self.make_comparison_pages()
         self.make_error_page()
-
-    def _setup_page(self, html_page, links, label=None, title=None,
-                    approximant=None, background_colour=None,
-                    histogram_download=False):
-        """Set up each webpage with a header and navigation bar.
-
-        Parameters
-        ----------
-        html_page: str
-            String containing the html page that you would like to set up
-        links: list
-            List containing the navbar structure that you would like to include
-        label: str, optional
-            The label that prepends your webpage name
-        title: str, optional
-            String that you would like to include in your header
-        approximant: str, optional
-            The approximant that you would like associated with your html_page
-        background_colour: str, optional
-            String containing the background colour of your header
-        histogram_download: bool, optional
-            If true, a download link for the each histogram is displayed in
-            the navbar
-        """
-        html_file = webpage.open_html(
-            web_dir=self.webdir, base_url=self.baseurl, html_page=html_page,
-            label=label)
-        html_file.make_header(
-            approximant=approximant)
-        if html_page == "home" or html_page == "home.html":
-            html_file.make_navbar(
-                links=links, samples_path=self.results_path["home"],
-                background_color=background_colour,
-                hdf5=self.hdf5)
-        elif histogram_download:
-            html_file.make_navbar(
-                links=links, samples_path=self.results_path["home"],
-                histogram_download="../samples/dat/%s_%s/%s_%s_samples.dat" % (
-                    label, approximant, label, html_page),
-                background_color=background_colour,
-                hdf5=self.hdf5)
-        else:
-            html_file.make_navbar(
-                links=links, samples_path=self.results_path["other"],
-                background_color=background_colour,
-                hdf5=self.hdf5)
-        return html_file
 
     def make_home_pages(self):
         """Make the home pages.
         """
         pages = ["%s_%s" % (self.labels[num], i) for num, i in enumerate(
-            self.approximant)]
+            self.result_files)]
         pages.append("home")
         webpage.make_html(web_dir=self.webdir, pages=pages)
         if self.gracedb:
@@ -759,12 +657,13 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         image_contents = []
         if self.psds:
             image_contents.append(path + "psd_plot.png")
-        if len(self.approximant) > 1:
-            image_contents.append(path + "compare_time_domain_waveforms.png")
-        else:
-            waveform_plot = "%s_%s_waveform_timedomain.png" % (
-                self.labels[0], self.approximant[0])
-            image_contents.append(path + waveform_plot)
+        if self.approximant:
+            if len(self.result_files) > 1:
+                image_contents.append(path + "compare_time_domain_waveforms.png")
+            else:
+                waveform_plot = "%s_waveform_timedomain.png" % (
+                    self.labels[0])
+                image_contents.append(path + waveform_plot)
         if self.calibration:
             image_contents.append(path + "calibration_plot.png")
         image_contents = [image_contents]
@@ -788,27 +687,27 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             for j in range(len(table_data)):
                 row.append(np.round(table_data[j][i]["std"], 3))
             contents.append(row)
-        for num, i in enumerate(self.approximant):
+        for num, i in enumerate(self.result_files):
             html_file = self._setup_page(
                 i, self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Summary page" % (i),
                 background_colour=self.colors[num], approximant=i)
             path = self.image_path["other"]
             label = self.labels[num]
-            image_contents = [[path + "%s_1d_posterior_%s_mass_1.png" % (label, i),
-                               path + "%s_1d_posterior_%s_mass_2.png" % (label, i),
-                               path + "%s_1d_posterior_%s_a_1.png" % (label, i),
-                               path + "%s_1d_posterior_%s_a_2.png" % (label, i)],
-                              [path + "%s_%s_skymap.png" % (label, i),
-                               path + "%s_%s_waveform.png" % (label, i),
-                               path + "%s_1d_posterior_%s_iota.png" % (label, i),
-                               path + "%s_1d_posterior_%s_luminosity_distance.png" % (label, i)]]
+            image_contents = [[path + "%s_1d_posterior_mass_1.png" % (label),
+                               path + "%s_1d_posterior_mass_2.png" % (label),
+                               path + "%s_1d_posterior_a_1.png" % (label),
+                               path + "%s_1d_posterior_a_2.png" % (label)],
+                              [path + "%s_skymap.png" % (label),
+                               path + "%s_waveform.png" % (label),
+                               path + "%s_1d_posterior_iota.png" % (label),
+                               path + "%s_1d_posterior_luminosity_distance.png" % (label)]]
             html_file.make_table_of_images(contents=image_contents)
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images)
             table_contents = []
             for i in contents:
-                one_approx_content = [i[0]] + [i[j * len(self.approximant)
+                one_approx_content = [i[0]] + [i[j * len(self.result_files)
                                                + num + 1] for j in range(4)]
                 table_contents.append(one_approx_content)
             html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
@@ -820,11 +719,11 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         """Make the 1d histogram pages.
         """
         pages = ["%s_%s_%s" % (self.labels[num], i, j) for num, i in
-                 enumerate(self.approximant) for j in self.parameters[num]]
+                 enumerate(self.result_files) for j in self.parameters[num]]
         pages += ["%s_%s_multiple" % (self.labels[num], i) for num, i in
-                  enumerate(self.approximant)]
+                  enumerate(self.result_files)]
         webpage.make_html(web_dir=self.webdir, pages=pages)
-        for num, app in enumerate(self.approximant):
+        for num, app in enumerate(self.result_files):
             for j in self.parameters[num]:
                 html_file = self._setup_page(
                     "%s_%s" % (app, j),
@@ -835,9 +734,9 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                     histogram_download=True)
                 path = self.image_path["other"]
                 label = self.labels[num]
-                contents = [[path + "%s_1d_posterior_%s_%s.png" % (label, app, j)],
-                            [path + "%s_sample_evolution_%s_%s.png" % (label, app, j),
-                             path + "%s_autocorrelation_%s_%s.png" % (label, app, j)]]
+                contents = [[path + "%s_1d_posterior_%s.png" % (label, j)],
+                            [path + "%s_sample_evolution_%s.png" % (label, j),
+                             path + "%s_autocorrelation_%s.png" % (label, j)]]
                 html_file.make_table_of_images(
                     contents=contents, rows=1, columns=2, code="changeimage")
                 html_file.make_footer(user=self.user, rundir=self.webdir)
@@ -864,9 +763,9 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         """Make the corner pages.
         """
         pages = ["%s_%s_corner" % (self.labels[num], i) for num, i in
-                 enumerate(self.approximant)]
+                 enumerate(self.result_files)]
         webpage.make_html(web_dir=self.webdir, pages=pages)
-        for num, app in enumerate(self.approximant):
+        for num, app in enumerate(self.result_files):
             html_file = self._setup_page(
                 "%s_corner" % (app),
                 self.navbar_for_approximant_homepage[num],
@@ -893,9 +792,9 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         """Make the configuration pages.
         """
         pages = ["%s_%s_config" % (self.labels[num], i) for num, i in
-                 enumerate(self.approximant)]
+                 enumerate(self.result_files)]
         webpage.make_html(web_dir=self.webdir, pages=pages, stylesheets=pages)
-        for num, app in enumerate(self.approximant):
+        for num, app in enumerate(self.result_files):
             html_file = self._setup_page(
                 "%s_config" % (app),
                 self.navbar_for_approximant_homepage[num],
@@ -955,23 +854,21 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             logger.info("Failed to generate comparison statistics because "
                         "%s" % (e))
         if statistics:
-            rows = range(len(self.approximant))
-            labels = ["_".join([i, j]) if i is not None else j for i, j in zip(
-                self.label_to_prepend_approximant, self.approximant)]
+            rows = range(len(self.result_files))
             style_ks = "margin-top:5em; margin-bottom:1em; background-color:#FFFFFF; " + \
                 "box-shadow: 0 0 5px grey;"
             style_js = "margin-top:0em; margin-bottom:5em; background-color:#FFFFFF; " + \
                 "box-shadow: 0 0 5px grey;"
             table_contents = {self.same_parameters[num]: [
-                [labels[i]] + statistics[num][0][i] for i in rows]
+                [self.labels[i]] + statistics[num][0][i] for i in rows]
                 for num in range(len(self.same_parameters))}
-            html_file.make_table(headings=[" "] + labels,
+            html_file.make_table(headings=[" "] + self.labels,
                                  contents=table_contents, heading_span=1,
                                  accordian_header="KS test total", style=style_ks)
             table_contents = {self.same_parameters[num]: [
-                [labels[i]] + statistics[num][1][i] for i in rows]
+                [self.labels[i]] + statistics[num][1][i] for i in rows]
                 for num in range(len(self.same_parameters))}
-            html_file.make_table(headings=[" "] + labels,
+            html_file.make_table(headings=[" "] + self.labels,
                                  contents=table_contents, heading_span=1,
                                  accordian_header="JS divergence test total", style=style_js)
         html_file.make_footer(user=self.user, rundir=self.webdir)
@@ -988,13 +885,13 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                                    code="changeimage")
             if statistics:
                 table_contents = [
-                    [labels[i]] + statistics[num][0][i] for i in rows]
-                html_file.make_table(headings=[" "] + labels,
+                    [self.labels[i]] + statistics[num][0][i] for i in rows]
+                html_file.make_table(headings=[" "] + self.labels,
                                      contents=table_contents, heading_span=1,
                                      accordian_header="KS test", style=style_ks)
                 table_contents = [
-                    [labels[i]] + statistics[num][1][i] for i in rows]
-                html_file.make_table(headings=[" "] + labels,
+                    [self.labels[i]] + statistics[num][1][i] for i in rows]
+                html_file.make_table(headings=[" "] + self.labels,
                                      contents=table_contents, heading_span=1,
                                      accordian_header="JS divergence test",
                                      style=style_js)
@@ -1011,41 +908,3 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                                       {"all": ", ".join(self.same_parameters)}],
                                   label="None", code="combines")
         html_file.make_footer(user=self.user, rundir=self.webdir)
-
-    def make_error_page(self):
-        """Make a page that is shown when something goes wrong.
-        """
-        pages = ["error"]
-        webpage.make_html(web_dir=self.webdir, pages=pages)
-        html_file = webpage.open_html(
-            web_dir=self.webdir, base_url=self.baseurl, html_page="error")
-        html_file.make_div(_class='jumbotron text-center',
-                           _style='background-color: #D3D3D3; margin-botton:0')
-        html_file.make_div(_class='container',
-                           _style=('margin-top:1em; background-color: #D3D3D3;'
-                                   'width: 45em'))
-        html_file.add_content(
-            "<h1 style='color:white; font-size: 8em'>404</h1>")
-        html_file.add_content(
-            "<h2 style='color:white;'> Something went wrong... </h2>")
-        html_file.end_div()
-        html_file.end_div()
-        html_file.close()
-
-    def generate_specific_javascript(self):
-        """Tailor the javascript to the specific situation.
-        """
-        path = self.webdir + "/js/grab.js"
-        existing = open(path)
-        existing = existing.readlines()
-        ind = existing.index("    if ( param == approximant ) {\n")
-        content = existing[:ind]
-        for i in [list(j.keys())[0] for j in self._approximant_navbar_links()]:
-            content.append("    if ( param == \"%s\" ) {\n" % (i))
-            content.append("        approx = \"None\" \n")
-            content.append("    }\n")
-        for i in existing[ind + 1:]:
-            content.append(i)
-        new_file = open(path, "w")
-        new_file.writelines(content)
-        new_file.close()

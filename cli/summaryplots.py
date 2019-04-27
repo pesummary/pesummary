@@ -411,8 +411,8 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         ra = [j[ind_ra] for j in self.samples[idx]]
         dec = [j[ind_dec] for j in self.samples[idx]]
         fig = gw._sky_map_plot(ra, dec)
-        fig.savefig(self.savedir + "/%s_%s_skymap.png" % (
-            self.labels[idx], self.approximant[idx]))
+        fig.savefig(self.savedir + "/%s_skymap.png" % (
+            self.labels[idx]))
         plt.close()
 
     def _sensitivity_plot(self, idx):
@@ -431,7 +431,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         fig = gw._sky_sensitivity(
             ["H1", "L1", "V1"], 0.2, self.maxL_samples[idx])
         fig.savefig(self.savedir + "%s_sky_sensitivity_HLV" % (
-            self.approximant[idx]))
+            self.labels[idx]))
         plt.close()
 
     def _waveform_plot(self, idx):
@@ -448,12 +448,12 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         else:
             detectors = self.detectors[idx].split("_")
         fig = gw._waveform_plot(detectors, self.maxL_samples[idx])
-        plt.savefig(self.savedir + "%s_%s_waveform.png" % (
-            self.labels[idx], self.approximant[idx]))
+        plt.savefig(self.savedir + "%s_waveform.png" % (
+            self.labels[idx]))
         plt.close()
         fig = gw._time_domain_waveform(detectors, self.maxL_samples[idx])
-        fig.savefig(self.savedir + "%s_%s_waveform_timedomain.png" % (
-            self.labels[idx], self.approximant[idx]))
+        fig.savefig(self.savedir + "%s_waveform_timedomain.png" % (
+            self.labels[idx]))
         plt.close()
 
     def _skymap_comparison_plot(self, idx="all"):

@@ -380,13 +380,14 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
 
     @property
     def coherence_test(self):
-        duplicates = dict(set(
-            (x, self.approximant.count(x)) for x in filter(
-                lambda rec: self.approximant.count(rec) > 1,
-                self.approximant)))
-        if len(duplicates.keys()) > 0:
-            return True
         return False
+        #duplicates = dict(set(
+        #    (x, self.approximant.count(x)) for x in filter(
+        #        lambda rec: self.approximant.count(rec) > 1,
+        #        self.approximant)))
+        #if len(duplicates.keys()) > 0:
+        #    return True
+        #return False
 
     @property
     def maxL_samples(self):

@@ -313,9 +313,7 @@ class Input(object):
                 raise Exception(
                     "The number of labels does not match the number of results "
                     "files.")
-            proposed_names = ["%s_%s" % (i, j) for i, j in zip(
-                labels, self.approximant)]
-            duplicates = dict(set(
+            duplicated = dict(set(
                 (x, labels.count(x)) for x in
                 filter(lambda rec: labels.count(rec) > 1, labels)))
             if len(duplicated.keys()) >= 1:
