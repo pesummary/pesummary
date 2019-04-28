@@ -179,7 +179,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         passed a coherence test, then we need to prepend the approximant by
         a label so we can determine which tab corresponds to which network.
         """
-        return [{i: j} for i, j in zip(self.result_files, self.labels)]
+        return [{i.split("/")[-1]: j} for i, j in zip(self.result_files, self.labels)]
 
     def _categorize_parameters(self, parameters):
         """Categorize the parameters into common headings.
@@ -314,7 +314,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
     def make_home_pages(self):
         """Make the home pages.
         """
-        pages = ["%s_%s" % (self.labels[num], i) for num, i in enumerate(
+        pages = ["%s_%s" % (self.labels[num], i.split("/")[-1]) for num, i in enumerate(
             self.result_files)]
         pages.append("home")
         webpage.make_html(web_dir=self.webdir, pages=pages)
@@ -322,16 +322,16 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
 
         for num, i in enumerate(self.result_files):
             html_file = self._setup_page(
-                i, self.navbar_for_approximant_homepage[num],
+                i.split("/")[-1], self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Summary page" % (i),
-                background_colour=self.colors[num], approximant=i)
+                background_colour=self.colors[num], approximant=i.split("/")[-1])
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
     def make_1d_histogram_pages(self):
         """Make the 1d histogram pages.
         """
-        pages = ["%s_%s_%s" % (self.labels[num], i, j) for num, i in
+        pages = ["%s_%s_%s" % (self.labels[num], i.split("/")[-1], j) for num, i in
                  enumerate(self.result_files) for j in self.parameters[num]]
         pages += ["%s_multiple" % (self.labels[num]) for num, i in
                   enumerate(self.result_files)]
@@ -339,11 +339,11 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         for num, app in enumerate(self.result_files):
             for j in self.parameters[num]:
                 html_file = self._setup_page(
-                    "%s_%s" % (app, j),
+                    "%s_%s" % (app.split("/")[-1], j),
                     self.navbar_for_approximant_homepage[num],
                     self.labels[num], title="%s Posterior PDF for %s" % (
                         app, j),
-                    approximant=app, background_colour=self.colors[num],
+                    approximant=app.split("/")[-1], background_colour=self.colors[num],
                     histogram_download=True)
                 path = self.image_path["other"]
                 label = self.labels[num]
@@ -355,10 +355,10 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                 html_file.make_footer(user=self.user, rundir=self.webdir)
                 html_file.close()
             html_file = self._setup_page(
-                "%s_multiple" % (app),
+                "%s_multiple" % (app.split("/")[-1]),
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Posteriors for multiple" % (app),
-                approximant=app, background_colour=self.colors[num])
+                approximant=app.split("/")[-1], background_colour=self.colors[num])
             ordered_parameters = self._categorize_parameters(self.parameters[num])
             ordered_parameters = [i for j in ordered_parameters for i in j[1]]
             html_file.make_search_bar(sidebar=[i for i in self.parameters[num]],
@@ -375,15 +375,15 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
     def make_corner_pages(self):
         """Make the corner pages.
         """
-        pages = ["%s_corner" % (self.labels[num]) for num, i in
+        pages = ["%s_%s_corner" % (self.labels[num], i.split("/")[-1]) for num, i in
                  enumerate(self.result_files)]
         webpage.make_html(web_dir=self.webdir, pages=pages)
         for num, app in enumerate(self.result_files):
             html_file = self._setup_page(
-                "%s_corner" % (self.labels[num]),
+                "%s_corner" % (app.split("/")[-1]),
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Corner Plots" % (app),
-                background_colour=self.colors[num], approximant=app)
+                background_colour=self.colors[num], approximant=app.split("/")[-1])
             params = ["luminosity_distance", "dec", "a_2", "phase",
                       "a_1", "geocent_time", "phi_jl", "psi", "ra",
                       "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
@@ -404,15 +404,15 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
     def make_config_pages(self):
         """Make the configuration pages.
         """
-        pages = ["%s_config" % (self.labels[num]) for num, i in
+        pages = ["%s_%s_config" % (self.labels[num], i.split("/")[-1]) for num, i in
                  enumerate(self.result_files)]
         webpage.make_html(web_dir=self.webdir, pages=pages, stylesheets=pages)
         for num, app in enumerate(self.result_files):
             html_file = self._setup_page(
-                "%s_config" % (self.labels[num]),
+                "%s_config" % (app.split("/")[-1]),
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s configuration" % (app),
-                background_colour=self.colors[num], approximant=app)
+                background_colour=self.colors[num], approximant=app.split("/")[-1])
             if self.config and num < len(self.config):
                 with open(self.config[num], 'r') as f:
                     contents = f.read()
@@ -642,7 +642,7 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
     def make_home_pages(self):
         """Make the home pages.
         """
-        pages = ["%s_%s" % (self.labels[num], i) for num, i in enumerate(
+        pages = ["%s_%s" % (self.labels[num], i.split("/")[-1]) for num, i in enumerate(
             self.result_files)]
         pages.append("home")
         webpage.make_html(web_dir=self.webdir, pages=pages)
@@ -689,9 +689,9 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             contents.append(row)
         for num, i in enumerate(self.result_files):
             html_file = self._setup_page(
-                i, self.navbar_for_approximant_homepage[num],
+                i.split("/")[-1], self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Summary page" % (i),
-                background_colour=self.colors[num], approximant=i)
+                background_colour=self.colors[num], approximant=i.split("/")[-1])
             path = self.image_path["other"]
             label = self.labels[num]
             image_contents = [[path + "%s_1d_posterior_mass_1.png" % (label),
@@ -718,19 +718,19 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
     def make_1d_histogram_pages(self):
         """Make the 1d histogram pages.
         """
-        pages = ["%s_%s_%s" % (self.labels[num], i, j) for num, i in
+        pages = ["%s_%s_%s" % (self.labels[num], i.split("/")[-1], j) for num, i in
                  enumerate(self.result_files) for j in self.parameters[num]]
-        pages += ["%s_%s_multiple" % (self.labels[num], i) for num, i in
+        pages += ["%s_%s_multiple" % (self.labels[num], i.split("/")[-1]) for num, i in
                   enumerate(self.result_files)]
         webpage.make_html(web_dir=self.webdir, pages=pages)
         for num, app in enumerate(self.result_files):
             for j in self.parameters[num]:
                 html_file = self._setup_page(
-                    "%s_%s" % (app, j),
+                    "%s_%s" % (app.split("/")[-1], j),
                     self.navbar_for_approximant_homepage[num],
                     self.labels[num], title="%s Posterior PDF for %s" % (
                         app, j),
-                    approximant=app, background_colour=self.colors[num],
+                    approximant=app.split("/")[-1], background_colour=self.colors[num],
                     histogram_download=True)
                 path = self.image_path["other"]
                 label = self.labels[num]
@@ -742,10 +742,10 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                 html_file.make_footer(user=self.user, rundir=self.webdir)
                 html_file.close()
             html_file = self._setup_page(
-                "%s_multiple" % (app),
+                "%s_multiple" % (app.split("/")[-1]),
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Posteriors for multiple" % (app),
-                approximant=app, background_colour=self.colors[num])
+                approximant=app.split("/")[-1], background_colour=self.colors[num])
             ordered_parameters = self._categorize_parameters(self.parameters[num])
             ordered_parameters = [i for j in ordered_parameters for i in j[1]]
             html_file.make_search_bar(sidebar=[i for i in self.parameters[num]],
@@ -762,15 +762,15 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
     def make_corner_pages(self):
         """Make the corner pages.
         """
-        pages = ["%s_%s_corner" % (self.labels[num], i) for num, i in
+        pages = ["%s_%s_corner" % (self.labels[num], i.split("/")[-1]) for num, i in
                  enumerate(self.result_files)]
         webpage.make_html(web_dir=self.webdir, pages=pages)
         for num, app in enumerate(self.result_files):
             html_file = self._setup_page(
-                "%s_corner" % (app),
+                "%s_corner" % (app.split("/")[-1]),
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Corner Plots" % (app),
-                background_colour=self.colors[num], approximant=app)
+                background_colour=self.colors[num], approximant=app.split("/")[-1])
             params = ["luminosity_distance", "dec", "a_2", "phase",
                       "a_1", "geocent_time", "phi_jl", "psi", "ra",
                       "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
@@ -791,15 +791,15 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
     def make_config_pages(self):
         """Make the configuration pages.
         """
-        pages = ["%s_%s_config" % (self.labels[num], i) for num, i in
+        pages = ["%s_%s_config" % (self.labels[num], i.split("/")[-1]) for num, i in
                  enumerate(self.result_files)]
         webpage.make_html(web_dir=self.webdir, pages=pages, stylesheets=pages)
         for num, app in enumerate(self.result_files):
             html_file = self._setup_page(
-                "%s_config" % (app),
+                "%s_config" % (app.split("/")[-1]),
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s configuration" % (app),
-                background_colour=self.colors[num], approximant=app)
+                background_colour=self.colors[num], approximant=app.split("/")[-1])
             if self.config and num < len(self.config):
                 with open(self.config[num], 'r') as f:
                     contents = f.read()

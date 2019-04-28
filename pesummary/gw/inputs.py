@@ -97,18 +97,16 @@ class GWInput(Input):
         self.hdf5 = opts.save_to_hdf5
         self.gracedb = opts.gracedb
         self.detectors = None
-        self.labels = opts.labels
         self.calibration = opts.calibration
         self.approximant = opts.approximant
         self.sensitivity = opts.sensitivity
         self.psds = opts.psd
-        self.existing_approximant = []
         self.existing_labels = []
         self.existing_parameters = []
         self.existing_samples = []
-        self.existing_names = []
         self.make_directories()
         self.copy_files()
+        self.labels = opts.labels
         self.check_label_in_results_file()
 
     @property
@@ -167,29 +165,6 @@ class GWInput(Input):
             detector_list = detectors
         logger.debug("The detector network is %s" % (detector_list))
         self._detectors = detector_list
-
-    @property
-    def existing_approximant(self):
-        return self._existing_approximant
-
-    @existing_approximant.setter
-    def existing_approximant(self, existing_approximant):
-        self._existing_approximant = None
-        if self.add_to_existing:
-            existing = ExistingFile(self.existing)
-            self._existing_approximant = existing.existing_approximant
-
-    @property
-    def existing_names(self):
-        return self._existing_names
-
-    @existing_names.setter
-    def existing_names(self, existing_names):
-        self._existing_names = None
-        if self.add_to_existing:
-            self._existing_names = [
-                "%s_%s" % (i, j) for i, j in zip(
-                    self.existing_labels, self.existing_approximant)]
 
     @property
     def psds(self):
@@ -359,7 +334,6 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.existing_labels = inputs.existing_labels
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples
-        self.existing_names = inputs.existing_names
         self.existing_meta_file = inputs.existing_meta_file
         self.colors = colors
         self.approximant = inputs.approximant
@@ -369,7 +343,6 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.calibration_labels = inputs.calibration_labels
         self.sensitivity = inputs.sensitivity
         self.psds = inputs.psds
-        self.existing_approximant = inputs.existing_approximant
 
         self.grab_data_map = {"existing_file": self._data_from_existing_file,
                               "standard_format": self._data_from_standard_format}

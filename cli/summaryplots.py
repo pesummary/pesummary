@@ -297,10 +297,9 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         if self.add_to_existing:
             existing = ExistingFile(self.existing)
             existing_config = glob(self.existing + "/config/*")
-            for num, i in enumerate(existing.existing_approximant):
+            for num, i in enumerate(existing.existing_labels):
                 original_label = existing.existing_labels[num]
                 self.labels.append(original_label)
-                self.approximant.append(existing.existing_approximant[num])
                 self.result_files.append(existing.existing_file)
                 self.samples.append(existing.existing_samples[num])
                 self.parameters.append(existing.existing_parameters[num])
@@ -310,7 +309,6 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             maxL_list = []
             for idx, j in enumerate(self.parameters):
                 dictionary = {k: key_data[idx][k]["maxL"] for k in j}
-                dictionary["approximant"] = self.approximant[idx]
                 maxL_list.append(dictionary)
             self.maxL_samples = maxL_list
             self.same_parameters = list(

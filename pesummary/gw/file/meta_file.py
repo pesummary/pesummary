@@ -124,17 +124,16 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             existing_file = ExistingFile(self.existing)
             self.existing_parameters = existing_file.existing_parameters
             self.existing_samples = existing_file.existing_samples
-            self.existing_approximant = existing_file.existing_approximant
             self.existing_label = existing_file.existing_labels
         self._make_dictionary()
 
     def _make_dictionary(self):
         if self.existing_label:
             self._make_dictionary_structure(
-                self.existing_label, self.existing_approximant
+                self.existing_label
             )
             for num, i in enumerate(self.existing_label):
-                self._add_data(i, self.existing_approximant[num],
+                self._add_data(i,
                                self.existing_parameters[num],
                                self.existing_samples[num],
                                )
