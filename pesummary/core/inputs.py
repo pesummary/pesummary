@@ -97,7 +97,6 @@ class Input(object):
         self.existing_labels = []
         self.existing_parameters = []
         self.existing_samples = []
-        self.existing_names = []
         self.make_directories()
         self.copy_files()
         self.labels = opts.labels
@@ -284,18 +283,6 @@ class Input(object):
             self._existing_samples = existing.existing_samples
 
     @property
-    def existing_names(self):
-        return self._existing_names
-
-    @existing_names.setter
-    def existing_names(self, existing_names):
-        self._existing_names = None
-        if self.add_to_existing:
-            self._existing_names = [
-                "%s_%s" % (i, j) for i, j in zip(
-                    self.existing_labels, self.existing_approximant)]
-
-    @property
     def existing_meta_file(self):
         if self.add_to_existing:
             existing = ExistingFile(self.existing)
@@ -451,7 +438,6 @@ class PostProcessing(object):
         self.existing_labels = inputs.existing_labels
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples
-        self.existing_names = inputs.existing_names
         self.existing_meta_file = inputs.existing_meta_file
         self.colors = colors
 

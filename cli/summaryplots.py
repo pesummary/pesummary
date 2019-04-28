@@ -125,7 +125,7 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
         if self.add_to_existing:
             existing = ExistingFile(self.existing)
             existing_config = glob(self.existing + "/config/*")
-            for num, i in enumerate(existing.existing_approximant):
+            for num, i in enumerate(existing.existing_labels):
                 original_label = existing.existing_labels[num]
                 self.labels.append(original_label)
                 self.result_files.append(existing.existing_file)

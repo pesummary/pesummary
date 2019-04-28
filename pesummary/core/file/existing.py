@@ -83,33 +83,26 @@ class ExistingFile():
             i: j for i in labels for j in
             dictionary["posterior_samples"]["%s" % (i)].keys()}
         labels = list(existing_structure.keys())
-        approximants = [existing_structure[i] for i in labels]
 
         parameter_list, sample_list = [], []
         for num, i in enumerate(labels):
-            p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["%s" % (
-                approximants[num])]["parameter_names"]]
-            s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["%s" % (
-                 approximants[num])]["samples"]]
+            p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
+            s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
             else:
                 parameter_list.append([j for j in p])
             sample_list.append(s)
-        return labels, approximants, parameter_list, sample_list
+        return labels, parameter_list, sample_list
 
     @property
     def existing_labels(self):
         return self.existing_data[0]
 
     @property
-    def existing_approximant(self):
+    def existing_parameters(self):
         return self.existing_data[1]
 
     @property
-    def existing_parameters(self):
-        return self.existing_data[2]
-
-    @property
     def existing_samples(self):
-        return self.existing_data[3]
+        return self.existing_data[2]
