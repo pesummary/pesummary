@@ -317,21 +317,16 @@ class Input(object):
                 (x, labels.count(x)) for x in
                 filter(lambda rec: labels.count(rec) > 1, labels)))
             if len(duplicated.keys()) >= 1:
-                raise Exception(
-                    "The labels and approximant combination that you have "
-                    "given do not give unique combinations. Please give other "
-                    "labels")
+                raise Exception("Please give a unique combination of labels")
             if self.add_to_existing:
                 for i in labels:
                     if i in self.existing_labels:
                         raise Exception(
-                            "The labels and approximant combination that you "
-                            "have given match those already in the existing "
-                            "file. Please choose other labels")
+                            "The label '%s' already exists in the existing "
+                            "file. Please pass another unique label")
             self._labels = labels
         else:
-            label_list = self._default_labels()
-            self._labels = label_list
+            self._labels = self._default_labels()
         logger.debug("The label is %s" % (self._labels))
 
     def check_label_in_results_file(self):
@@ -394,7 +389,7 @@ class Input(object):
         label_list = []
         for num, i in enumerate(self.result_files):
             file_name = ".".join(i.split(".")[:-1])
-            label_list.append("%s_%s" % (time(), file_name))
+            label_list.append("%s_%s" % (round(time()), file_name))
 
         duplicates = dict(set(
             (x, label_list.count(x)) for x in

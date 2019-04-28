@@ -22,7 +22,7 @@ from glob import glob
 import numpy as np
 import h5py
 
-import time
+from time import time
 
 import pesummary
 from pesummary.utils.utils import (guess_url, logger,
@@ -297,7 +297,7 @@ class GWInput(Input):
                 label_list.append(self.detectors[num])
             else:
                 file_name = ".".join(i.split(".")[:-1])
-                label_list.append("%s_%s" % (time.time(), file_name))
+                label_list.append("%s_%s" % (round(time()), file_name))
 
         duplicates = dict(set(
             (x, label_list.count(x)) for x in
