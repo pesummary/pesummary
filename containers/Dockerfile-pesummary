@@ -1,0 +1,49 @@
+FROM ubuntu:18.04
+
+LABEL name="PESummary" \
+maintainer="Charlie Hoy <charlie.hoy@ligo.org>" \
+date="20190416"
+
+ENV PATH /opt/conda/bin:$PATH
+
+# Install backend
+RUN apt-get update --fix-missing \
+&& apt-get install -y libglib2.0-0 libxext6 libsm6 libxrender1 libgl1-mesa-glx \
+dh-autoreconf build-essential libarchive-dev wget curl git libhdf5-serial-dev
+
+# Install python3.7
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh -O ~/miniconda.sh && \
+/bin/bash ~/miniconda.sh -b -p /opt/conda && \
+rm ~/miniconda.sh && \
+/opt/conda/bin/conda clean -tipsy && \
+ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+echo "conda activate base" >> ~/.bashrc
+
+# Downgrade to python3.6
+RUN conda install -y python==3.6
+
+# Install requirements
+RUN pip install --upgrade pip \
+&& pip install --upgrade setuptools \
+&& pip install numpy==1.15.4 \
+h5py \
+matplotlib \
+corner \
+tables==3.4.4 \
+deepdish \
+pandas \
+pygments \
+pluggy==0.8.0 \
+astropy==2.0.9 \
+lalsuite \
+configparser \
+pytest \
+coverage \
+coverage-badge \
+beautifulsoup4 \
+Sphinx>=1.2.2 \
+sphinx-argparse \
+sphinx_rtd_theme \
+testfixtures \
+pesummary==0.1.5
