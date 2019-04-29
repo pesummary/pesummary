@@ -372,6 +372,8 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         maxL_list = []
         for num, i in enumerate(self.parameters):
             dictionary = {j: key_data[num][j]["maxL"] for j in i}
+            if self.approximant:
+                dictionary["approximant"] = self.approximant[num]
             maxL_list.append(dictionary)
         self._maxL_samples = maxL_list
 
