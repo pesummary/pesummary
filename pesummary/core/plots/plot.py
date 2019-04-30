@@ -248,18 +248,11 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
         levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
         plot_density=False, plot_datapoints=True, fill_contours=True,
         max_n_ticks=3)
-    corner_parameters = [
-        "luminosity_distance", "dec", "a_2", "a_1", "geocent_time", "phi_jl",
-        "psi", "ra", "phase", "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
-        "tilt_1", "chi_p", "chirp_mass", "mass_ratio", "symmetric_mass_ratio",
-        "total_mass", "chi_eff", "redshift", "mass_1_source", "mass_2_source",
-        "total_mass_source", "chirp_mass_source"]
-    included_parameters = [i for i in params if i in corner_parameters]
-    xs = np.zeros([len(included_parameters), len(samples)])
-    for num, i in enumerate(included_parameters):
+    xs = np.zeros([len(params), len(samples)])
+    for num, i in enumerate(params):
         xs[num] = [j[params.index("%s" % (i))] for j in samples]
-    default_kwargs['range'] = [1.0] * len(included_parameters)
-    default_kwargs["labels"] = [latex_labels[i] for i in included_parameters]
+    default_kwargs['range'] = [1.0] * len(params)
+    default_kwargs["labels"] = [latex_labels[i] for i in params]
     figure = corner.corner(xs.T, **default_kwargs)
     # grab the axes of the subplots
     axes = figure.get_axes()
@@ -267,4 +260,4 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
     width, height = extent.width, extent.height
     width *= figure.dpi
     height *= figure.dpi
-    return figure, included_parameters
+    return figure, params

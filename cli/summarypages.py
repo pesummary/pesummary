@@ -299,9 +299,9 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                 hdf5=self.hdf5)
         elif histogram_download:
             html_file.make_navbar(
-                links=links, samples_path=self.results_path["home"],
-                histogram_download="../samples/dat/%s_%s/%s_%s_samples.dat" % (
-                    label, approximant, label, html_page),
+                links=links, samples_path=self.results_path["other"],
+                histogram_download="../samples/dat/%s/%s_%s_samples.dat" % (
+                    label, label, html_page),
                 background_color=background_colour,
                 hdf5=self.hdf5)
         else:
@@ -333,7 +333,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         """
         pages = ["%s_%s_%s" % (self.labels[num], i.split("/")[-1], j) for num, i in
                  enumerate(self.result_files) for j in self.parameters[num]]
-        pages += ["%s_multiple" % (self.labels[num]) for num, i in
+        pages += ["%s_%s_multiple" % (self.labels[num], i.split("/")[-1]) for num, i in
                   enumerate(self.result_files)]
         webpage.make_html(web_dir=self.webdir, pages=pages)
         for num, app in enumerate(self.result_files):
@@ -363,9 +363,6 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
             ordered_parameters = [i for j in ordered_parameters for i in j[1]]
             html_file.make_search_bar(sidebar=[i for i in self.parameters[num]],
                                       popular_options=[
-                                          "mass_1, mass_2",
-                                          "luminosity_distance, iota, ra, dec",
-                                          "iota, phi_12, phi_jl, tilt_1, tilt_2",
                                           {"all": ", ".join(ordered_parameters)}],
                                       label=self.labels[num],
                                       code="combines")
@@ -384,19 +381,8 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Corner Plots" % (app),
                 background_colour=self.colors[num], approximant=app.split("/")[-1])
-            params = ["luminosity_distance", "dec", "a_2", "phase",
-                      "a_1", "geocent_time", "phi_jl", "psi", "ra",
-                      "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
-                      "tilt_1", "chi_p", "chirp_mass", "mass_ratio",
-                      "symmetric_mass_ratio", "total_mass", "chi_eff",
-                      "redshift", "mass_1_source", "mass_2_source",
-                      "total_mass_source", "chirp_mass_source"]
-            included_parameters = [i for i in self.parameters[num] if i in params]
-            html_file.make_search_bar(sidebar=included_parameters,
-                                      popular_options=[
-                                          "mass_1, mass_2",
-                                          "luminosity_distance, iota, ra, dec",
-                                          "iota, phi_12, phi_jl, tilt_1, tilt_2"],
+            html_file.make_search_bar(sidebar=self.parameters[num],
+                                      popular_options=[],
                                       label=self.labels[num])
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()

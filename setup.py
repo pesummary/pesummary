@@ -13,9 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from distutils.core import setup
-from setuptools import find_packages
-
+from setuptools import setup, find_packages
 import subprocess
 
 version = "0.1.6"
@@ -71,7 +69,6 @@ setup(name='pesummary',
                 'pesummary.core.plots', 'pesummary.core.file',
                 'pesummary.gw', 'pesummary.gw.file',
                 'pesummary.gw.plots', 'pesummary.utils', 'cli'],
-      package_dir={'pesummary': 'pesummary'},
       package_data={'pesummary': ['core/js/*.js', 'core/css/*.css', version_file]},
       entry_points={
           'console_scripts': [

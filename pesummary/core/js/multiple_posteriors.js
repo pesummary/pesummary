@@ -60,7 +60,7 @@ function combines(list, label) {
             if ( approx == "Comparison" ) {
                 newimage.src = '../plots/combined_1d_posterior_'+ticked[i]+'.png'
             } else {
-                newimage.src = '../plots/'+label+'_1d_posterior_'+approx+'_'+ticked[i]+'.png';
+                newimage.src = '../plots/'+label+'_1d_posterior_'+ticked[i]+'.png';
             }
             images2.push(newimage);
 
@@ -79,7 +79,7 @@ function combines(list, label) {
             if ( approx == "Comparison" ) {
                 newimage.src = '../plots/combined_1d_posterior_'+el[i]+'.png'
             } else {                                    
-                newimage.src = '../plots/'+label+'_1d_posterior_'+approx+'_'+el[i]+'.png';
+                newimage.src = '../plots/'+label+'_1d_posterior_'+el[i]+'.png';
             }
             images.push(newimage);
             
