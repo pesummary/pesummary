@@ -13,9 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from distutils.core import setup
-from setuptools import find_packages
-
+from setuptools import setup, find_packages
 import subprocess
 
 version = "0.1.5"
@@ -69,7 +67,6 @@ setup(name='pesummary',
           'pytest'],
       include_package_data=True,
       packages=find_packages(),
-      package_dir={'pesummary': 'pesummary'},
       package_data={'pesummary': ['js/*.js', 'css/*.css', version_file]},
       entry_points={
           'console_scripts': [
