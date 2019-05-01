@@ -13,6 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from pesummary.core.file.existing import ExistingFile
 from pesummary.core.file.one_format import load_recusively
 
 from glob import glob
@@ -21,7 +22,7 @@ import h5py
 import json
 
 
-class ExistingFile():
+class GWExistingFile(ExistingFile):
     """This class handles the existing posterior_samples.h5 file
 
     Parameters
@@ -45,42 +46,6 @@ class ExistingFile():
         self.existing = existing_webdir
         self.existing_data = []
 
-    @property
-    def existing_file(self):
-        if self.existing == "posterior_samples.json" or \
-           self.existing == "posterior_samples.h5":
-            return self.existing
-        else:
-            meta_file = glob(self.existing + "/samples/posterior_samples*")
-            return meta_file[0]
-
-    @property
-    def extension(self):
-        return self.existing_file.split(".")[-1]
-
-    @property
-    def existing_data(self):
-        return self._existing_data
-
-    @existing_data.setter
-    def existing_data(self, existing_data):
-        func_map = {"h5": self._grab_data_from_hdf5_file,
-                    "json": self._grab_data_from_json_file}
-        self._existing_data = func_map[self.extension]()
-
-    def _grab_data_from_hdf5_file(self):
-        """
-        """
-        f = h5py.File(self.existing_file)
-        existing_data = self._grab_data_from_dictionary(f)
-        f.close()
-        return existing_data
-
-    def _grab_data_from_json_file(self):
-        with open(self.existing_file) as f:
-            data = json.load(f)
-        return self._grab_data_from_dictionary(data)
-
     def _grab_data_from_dictionary(self, dictionary):
         """
         """
@@ -99,23 +64,24 @@ class ExistingFile():
             else:
                 parameter_list.append([j for j in p])
             sample_list.append(s)
-            config = None
+            psd, cal, config = None, None, None
             if "config_file" in dictionary.keys():
                 config, = load_recusively("config_file/%s" % (i), dictionary)
-        return labels, parameter_list, sample_list, config
+            if "psds" in dictionary.keys():
+                psd, = load_recusively("psds/%s" % (i), dictionary)
+            if "calibration_envelope" in dictionary.keys():
+                cal, = load_recusively("calibration_envelope/%s" % (i),
+                                      dictionary)
+        return labels, parameter_list, sample_list, psd, cal, config
 
     @property
-    def existing_labels(self):
-        return self.existing_data[0]
+    def existing_psd(self):
+        return self.existing_data[3]
 
     @property
-    def existing_parameters(self):
-        return self.existing_data[1]
-
-    @property
-    def existing_samples(self):
-        return self.existing_data[2]
+    def existing_calibration(self):
+        return self.existing_data[4]
 
     @property
     def existing_config(self):
-        return self.existing_config[3]
+        return self.existing_data[5]
