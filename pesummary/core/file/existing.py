@@ -16,6 +16,7 @@
 from pesummary.core.file.one_format import load_recusively
 
 from glob import glob
+import os
 
 import h5py
 import json
@@ -47,11 +48,10 @@ class ExistingFile():
 
     @property
     def existing_file(self):
-        if self.existing == "posterior_samples.json" or \
-           self.existing == "posterior_samples.h5":
+        if os.path.isfile(self.existing):
             return self.existing
-        else:
-            meta_file = glob(self.existing + "/samples/posterior_samples*")
+        elif os.path.isdir(self.existing):
+            meta_file = glob(self.existing + "/samples/*") 
             return meta_file[0]
 
     @property
