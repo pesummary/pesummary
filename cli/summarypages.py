@@ -231,13 +231,13 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
             list of strings that you would like to neglect
         """
         if len(true) != 0 and len(false) == 0:
-            condition = lambda j: True if any(i[0] in j for i in true) else False
+            condition = lambda j: True if any(i in j[0] for i in true) else False
         if len(true) == 0 and len(false) != 0:
-            condition = lambda j: True if any(i[0] not in j for i in false) else \
+            condition = lambda j: True if any(i not in j[0] for i in false) else \
                 False
         if len(true) and len(false) != 0:
-            condition = lambda j: True if any(i[0] in j for i in true) and \
-                any(i[0] not in j for i in false) else False
+            condition = lambda j: True if any(i in j[0] for i in true) and \
+                any(i not in j[0] for i in false) else False
         return condition
 
     def _partition(self, condition, array):
