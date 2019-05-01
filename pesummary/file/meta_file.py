@@ -289,7 +289,7 @@ class MetaFile(PostProcessing):
                 make_dir("%s/%s_%s" % (
                     self.savedir, self.labels[num], self.approximant[num]))
                 for idx, j in enumerate(self.parameters[num]):
-                    data = [j[idx] for j in self.samples[num]]
+                    data = [k[idx] for k in self.samples[num]]
                     np.savetxt("%s/%s_%s/%s_%s_%s_samples.dat" % (
                         self.savedir, self.labels[num], self.approximant[num],
                         self.labels[num], self.approximant[num], j), data,

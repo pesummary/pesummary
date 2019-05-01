@@ -58,7 +58,8 @@ def paths_to_key(key, dictionary, current_path=None):
         else:
             if isinstance(v, dict):
                 path = current_path + [k]
-                yield from paths_to_key(key, v, path)
+                for z in paths_to_key(key, v, path):
+                    yield z
 
 
 def load_recusively(key, dictionary):
@@ -79,7 +80,8 @@ def load_recusively(key, dictionary):
         yield dictionary[key[-1]]
     else:
         old, new = key[0], key[1:]
-        yield from load_recusively(new, dictionary[old])
+        for z in load_recusively(new, dictionary[old]):
+            yield z
 
 
 class OneFormat(object):
