@@ -17,7 +17,8 @@ import os
 import shutil
 
 from pesummary.core.command_line import command_line
-from pesummary.gw.inputs import Input
+from pesummary.gw.command_line import insert_gwspecific_option_group
+from pesummary.gw.inputs import GWInput
 from pesummary.core.finish import FinishingTouches
 
 import pytest
@@ -30,12 +31,13 @@ class TestFinishingTouches(object):
             shutil.rmtree("./.outdir")
         os.makedirs("./.outdir")
         self.parser = command_line()
+        insert_gwspecific_option_group(self.parser)
         self.default_arguments = [
             "--webdir", "./.outdir",
             "--samples", "./tests/files/bilby_example.h5",
             "--email", "albert.einstein@ligo.org"]
         self.opts = self.parser.parse_args(self.default_arguments)
-        self.inputs = Input(self.opts)
+        self.inputs = GWInput(self.opts)
         self.finish = FinishingTouches(self.inputs)
 
     def test_email_message(self):
