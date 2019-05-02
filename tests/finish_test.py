@@ -16,9 +16,9 @@
 import os
 import shutil
 
-from pesummary.command_line import command_line
-from pesummary.inputs import Input
-from pesummary.finish import FinishingTouches
+from pesummary.core.command_line import command_line
+from pesummary.gw.inputs import Input
+from pesummary.core.finish import FinishingTouches
 
 import pytest
 
@@ -31,11 +31,9 @@ class TestFinishingTouches(object):
         os.makedirs("./.outdir")
         self.parser = command_line()
         self.default_arguments = [
-            "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir",
             "--samples", "./tests/files/bilby_example.h5",
-            "--email", "albert.einstein@ligo.org",
-            "--gracedb", "grace"]
+            "--email", "albert.einstein@ligo.org"]
         self.opts = self.parser.parse_args(self.default_arguments)
         self.inputs = Input(self.opts)
         self.finish = FinishingTouches(self.inputs)

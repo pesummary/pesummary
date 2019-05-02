@@ -28,10 +28,6 @@ def insert_gwspecific_option_group(parser):
     gw_group.add_argument("-a", "--approximant", dest="approximant",
                           help=("waveform approximant used to generate "
                                 "samples"), nargs='+', default=None)
-    gw_group.add_argument("-c", "--config", dest="config",
-                          help=("configuration file associcated with "
-                                "each samples file."),
-                          nargs='+', default=None)
     gw_group.add_argument("--sensitivity", action="store_true",
                           help="generate sky sensitivities for HL, HLV",
                           default=False)

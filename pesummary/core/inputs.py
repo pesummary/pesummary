@@ -348,7 +348,7 @@ class Input(object):
             for num, i in enumerate(self.config):
                 if self.webdir not in i:
                     shutil.copyfile(i, self.webdir + "/config/"
-                                    + self.result_files[num] + "_"
+                                    + self.result_files[num].split("/")[-1] + "_"
                                     + i.split("/")[-1])
 
     def convert_to_standard_format(self, results_file, injection_file=None,

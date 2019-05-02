@@ -29,6 +29,10 @@ def command_line():
     parser.add_argument("-s", "--samples", dest="samples",
                         help="Posterior samples hdf5 file", nargs='+',
                         default=None)
+    parser.add_argument("-c", "--config", dest="config",
+                         help=("configuration file associcated with "
+                               "each samples file."),
+                         nargs='+', default=None)
     parser.add_argument("--email", action="store",
                         help=("send an e-mail to the given address with a link "
                               "to the finished page."), default=None)
