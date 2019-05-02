@@ -18,7 +18,7 @@ import socket
 import shutil
 from glob import glob
 
-from pesummary.webpage import webpage
+from pesummary.core.webpage import webpage
 
 from bs4 import BeautifulSoup
 
