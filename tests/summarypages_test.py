@@ -182,6 +182,7 @@ class TestWebpageGeneration(object):
         expected_html = ['./.outdir_cbc/html/test_GW150914_result.h5_temp_chirp_mass_source.html',
                          './.outdir_cbc/html/test_GW150914_result.h5_temp_log_likelihood.html',
                          './.outdir_cbc/html/test_GW150914_result.h5_temp_tilt_2.html',
+                         './.outdir_cbc/html/test_GW150914_result.h5_temp_tilt_1.html',
                          './.outdir_cbc/html/test_GW150914_result.h5_temp_luminosity_distance.html',
                          './.outdir_cbc/html/test_GW150914_result.h5_temp_phi_12.html',
                          './.outdir_cbc/html/test_GW150914_result.h5_temp_corner.html',
