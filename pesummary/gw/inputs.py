@@ -29,7 +29,7 @@ from pesummary.utils.utils import (guess_url, logger,
                                    rename_group_or_dataset_in_hf5_file)
 from pesummary.utils import utils
 from pesummary.gw.file.one_format import GWOneFormat
-from pesummary.core.file.existing import ExistingFile
+from pesummary.gw.file.existing import GWExistingFile
 from pesummary.gw.file.lalinference import LALInferenceResultsFile
 from pesummary.core.inputs import Input
 
@@ -104,6 +104,7 @@ class GWInput(Input):
         self.existing_labels = []
         self.existing_parameters = []
         self.existing_samples = []
+        self.existing_approximant = []
         self.make_directories()
         self.copy_files()
         self.labels = opts.labels
@@ -218,6 +219,17 @@ class GWInput(Input):
                     data, labels = None, None
             self._calibration = data
             self.calibration_labels = labels
+
+    @property
+    def existing_approximant(self):
+        return self._existing_approximant
+
+    @existing_approximant.setter
+    def existing_approximant(self, existing_approximant):
+        self._existing_approximant = None
+        if self.add_to_existing:
+            existing = GWExistingFile(self.existing)
+            self._existing_approximant = existing.existing_approximant
 
     @staticmethod
     def _IFO_from_file_name(file):

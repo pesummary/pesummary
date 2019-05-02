@@ -23,6 +23,7 @@ import pesummary
 from pesummary.core.plots import plot as core
 from pesummary.gw.plots import plot as gw
 from pesummary.core.file.existing import ExistingFile
+from pesummary.gw.file.existing import GWExistingFile
 from pesummary.utils.utils import logger
 from pesummary.core.command_line import command_line
 from pesummary.core.inputs import Input
@@ -295,7 +296,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         if self.sensitivity:
             self.try_to_make_a_plot("sensitivity", 0)
         if self.add_to_existing:
-            existing = ExistingFile(self.existing)
+            existing = GWExistingFile(self.existing)
             existing_config = glob(self.existing + "/config/*")
             for num, i in enumerate(existing.existing_labels):
                 original_label = existing.existing_labels[num]
@@ -303,6 +304,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
                 self.result_files.append(existing.existing_file)
                 self.samples.append(existing.existing_samples[num])
                 self.parameters.append(existing.existing_parameters[num])
+                self.approximant.append(existing.existing_approximant[num])
                 if self.config and len(existing_config) > 1:
                     self.config.append(existing_config[num])
             key_data = self._key_data()

@@ -140,6 +140,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
         
         self._make_dictionary_structure(self.labels,
                                         psd=self.psds,
+                                        approx=self.approximant,
                                         calibration=self.calibration,
                                         config=self.config
                                         )
@@ -151,9 +152,11 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                 else None
             config = self._grab_config_data_from_data_file(self.config[num]) if \
                 self.config and num < len(self.config) else None
+            approximant = self.approximant if self.approximant else \
+                [None]*len(self.samples)
             self._add_data(i, self.parameters[num],
                            self.samples[num], psd=psd, calibration=calibration,
-                           config=config
+                           config=config, approximant=approximant[num]
                            )
 
     def _grab_psd_data_from_data_files(self, files, psd_labels):
@@ -211,7 +214,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                     data[i][key] = config["%s" % (i)]["%s" % (key)]
         return data
 
-    def _add_data(self, label, parameters, samples,
+    def _add_data(self, label, parameters, samples, approximant=None,
                   psd=None, calibration=None, config=None):
         """Add data to the stored dictionary
 
@@ -245,8 +248,10 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                     calibration[i]
         if config:
             self.data["config_file"][label] = config
+        if approximant:
+            self.data["approximant"][label] = approximant
 
-    def _make_dictionary_structure(self, label, psd=None,
+    def _make_dictionary_structure(self, label, psd=None, approx=None,
                                    calibration=None, config=None):
         for num, i in enumerate(label):
             self._add_label(
@@ -261,4 +266,8 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             if config:
                 self._add_label(
                     "config_file", i,
+                )
+            if approx:
+                self._add_label(
+                    "approximant", i,
                 )

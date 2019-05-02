@@ -55,7 +55,7 @@ class GWExistingFile(ExistingFile):
             dictionary["posterior_samples"]["%s" % (i)].keys()}
         labels = list(existing_structure.keys())
 
-        parameter_list, sample_list = [], []
+        parameter_list, sample_list, approx_list = [], [], []
         for num, i in enumerate(labels):
             p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
@@ -72,7 +72,9 @@ class GWExistingFile(ExistingFile):
             if "calibration_envelope" in dictionary.keys():
                 cal, = load_recusively("calibration_envelope/%s" % (i),
                                       dictionary)
-        return labels, parameter_list, sample_list, psd, cal, config
+            if "approximant" in dictionary.keys():
+                approx_list.append(dictionary["approximant"]["%s" % (i)])
+        return labels, parameter_list, sample_list, psd, cal, config, approx_list
 
     @property
     def existing_psd(self):
@@ -85,3 +87,7 @@ class GWExistingFile(ExistingFile):
     @property
     def existing_config(self):
         return self.existing_data[5]
+
+    @property
+    def existing_approximant(self):
+        return self.existing_data[6]
