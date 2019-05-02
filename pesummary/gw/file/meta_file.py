@@ -47,6 +47,8 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             f.create_group("calibration_envelope")
         if "config_file" in dictionary.keys():
             f.create_group("config_file")
+        if "approximant" in dictionary.keys():
+            f.create_group("approximant")
     except Exception:
         pass
     if current_path is None:
@@ -271,3 +273,8 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                 self._add_label(
                     "approximant", i,
                 )
+
+    def save_to_hdf5(self):
+        with h5py.File(self.meta_file, "w") as f:
+            _recursively_save_dictionary_to_hdf5_file(f, self.data)
+

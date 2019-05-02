@@ -198,7 +198,7 @@ class TestMetaFile(object):
         inputs = GWInput(opts)
         metafile = meta_file.GWMetaFile(inputs)
         f = h5py.File(metafile.meta_file, "r")
-        assert list(f.keys()) == ["posterior_samples"]
+        assert sorted(list(f.keys())) == ["approximant", "posterior_samples"]
         for i, j in zip(sorted(["grace_H1", "H1_L1"]),
                         sorted(list(f["posterior_samples"].keys()))):
             assert i in j
