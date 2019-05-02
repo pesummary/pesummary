@@ -283,7 +283,7 @@ class GWInput(Input):
             elif self.detectors[num]:
                 label_list.append(self.detectors[num])
             else:
-                file_name = ".".join(i.split(".")[:-1])
+                file_name = ".".join(i.split("/")[-1].split(".")[:-1])
                 label_list.append("%s_%s" % (round(time()), file_name))
 
         duplicates = dict(set(
