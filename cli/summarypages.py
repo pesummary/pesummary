@@ -628,10 +628,6 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
     def make_home_pages(self):
         """Make the home pages.
         """
-        for num, i in enumerate(self.result_files):
-            print(i)
-            print(i.split("/")[-1])
-            print("%s_%s" % (self.labels[num], i.split("/")[-1]))
         pages = ["%s_%s" % (self.labels[num], i.split("/")[-1]) for num, i in enumerate(
             self.result_files)]
         pages.append("home")

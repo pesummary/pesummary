@@ -147,7 +147,6 @@ class GWInput(Input):
         if not detectors:
             for num, i in enumerate(self.result_files):
                 f = h5py.File(i)
-                print(f["posterior_samples"].keys())
                 path = ("posterior_samples/label/parameter_names")
                 params = [j for j in f[path]]
                 f.close()
