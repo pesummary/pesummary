@@ -220,7 +220,7 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
                 make_dir("%s/%s" % (
                     self.savedir, self.labels[num]))
                 for idx, j in enumerate(self.parameters[num]):
-                    data = [j[idx] for j in self.samples[num]]
+                    data = [k[idx] for k in self.samples[num]]
                     np.savetxt("%s/%s/%s_%s_%s_samples.dat" % (
                         self.savedir, self.labels[num],
                         self.labels[num], self.result_files[num], j), data,
