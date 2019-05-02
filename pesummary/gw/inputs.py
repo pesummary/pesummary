@@ -14,20 +14,13 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import socket
-import os
-import shutil
-from glob import glob
-
 import numpy as np
 import h5py
 
 from time import time
 
 import pesummary
-from pesummary.utils.utils import (guess_url, logger,
-                                   rename_group_or_dataset_in_hf5_file)
-from pesummary.utils import utils
+from pesummary.utils.utils import logger
 from pesummary.gw.file.one_format import GWOneFormat
 from pesummary.gw.file.existing import GWExistingFile
 from pesummary.gw.file.lalinference import LALInferenceResultsFile
@@ -300,7 +293,6 @@ class GWInput(Input):
         return label_list
 
 
-
 class GWPostProcessing(pesummary.core.inputs.PostProcessing):
     """Class to extract parameters from the results files
 
@@ -365,13 +357,6 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
     @property
     def coherence_test(self):
         return False
-        #duplicates = dict(set(
-        #    (x, self.approximant.count(x)) for x in filter(
-        #        lambda rec: self.approximant.count(rec) > 1,
-        #        self.approximant)))
-        #if len(duplicates.keys()) > 0:
-        #    return True
-        #return False
 
     @property
     def maxL_samples(self):

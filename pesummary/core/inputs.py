@@ -20,7 +20,6 @@ import os
 import shutil
 from glob import glob
 
-import numpy as np
 import h5py
 
 from time import time

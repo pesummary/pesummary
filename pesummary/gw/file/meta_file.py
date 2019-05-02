@@ -13,17 +13,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os
-
 import numpy as np
 import h5py
-import json
 import configparser
 
 from pesummary.utils.utils import logger
 from pesummary.gw.inputs import GWPostProcessing
 from pesummary.core.file.existing import ExistingFile
-from pesummary.utils.utils import make_dir
 from pesummary.core.file.meta_file import MetaFile
 
 
@@ -139,7 +135,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                                self.existing_parameters[num],
                                self.existing_samples[num],
                                )
-        
+
         self._make_dictionary_structure(self.labels,
                                         psd=self.psds,
                                         approx=self.approximant,
@@ -155,7 +151,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             config = self._grab_config_data_from_data_file(self.config[num]) if \
                 self.config and num < len(self.config) else None
             approximant = self.approximant if self.approximant else \
-                [None]*len(self.samples)
+                [None] * len(self.samples)
             self._add_data(i, self.parameters[num],
                            self.samples[num], psd=psd, calibration=calibration,
                            config=config, approximant=approximant[num]
@@ -277,4 +273,3 @@ class GWMetaFile(GWPostProcessing, MetaFile):
     def save_to_hdf5(self):
         with h5py.File(self.meta_file, "w") as f:
             _recursively_save_dictionary_to_hdf5_file(f, self.data)
-

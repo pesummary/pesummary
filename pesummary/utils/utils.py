@@ -19,9 +19,6 @@ import logging
 
 import h5py
 
-import pesummary
-import cli
-
 
 def check_condition(condition, error_message):
     """Raise an exception if the condition is not satisfied
@@ -115,12 +112,9 @@ def gw_results_file():
     """
     """
     command_line = command_line_arguments()
-    if "--calibration" in command_line or \
-    "--gw" in command_line or \
-    "--approximant" in command_line or \
-    "--gracedb" in command_line or \
-    "--psds" in command_line or \
-    "--detectors" in command_line:
+    if "--calibration" in command_line or "--gw" in command_line or \
+            "--approximant" in command_line or "--gracedb" in command_line or \
+            "--psds" in command_line or "--detectors" in command_line:
         return True
     else:
         return False
@@ -169,6 +163,7 @@ def setup_logger():
     logger.setLevel(level)
     FORMAT = '%(asctime)s %(name)s %(levelname)-8s: %(message)s'
     logging.basicConfig(format=FORMAT, datefmt='%Y-%m-%d  %H:%M:%S')
+
 
 setup_logger()
 logger = logging.getLogger('PESummary')

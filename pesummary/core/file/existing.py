@@ -51,7 +51,7 @@ class ExistingFile():
         if os.path.isfile(self.existing):
             return self.existing
         elif os.path.isdir(self.existing):
-            meta_file = glob(self.existing + "/samples/posterior_samples*") 
+            meta_file = glob(self.existing + "/samples/posterior_samples*")
             return meta_file[0]
 
     @property

@@ -379,7 +379,6 @@ class GWOneFormat(object):
             path += "/content"
         reduced_data, = load_recusively(path, data)
         parameters = list(reduced_data.keys())
-        print(parameters)
         parameters = [standard_names[i] for i in list(reduced_data.keys()) if i
                       in standard_names.keys()]
 
@@ -850,7 +849,7 @@ def main():
         for i in range(len(opts.samples)):
             opts.config.append(None)
     for num, i in enumerate(opts.samples):
-        f = OneFormat(i, opts.inj_file[num], config=opts.config[num])
+        f = GWOneFormat(i, opts.inj_file[num], config=opts.config[num])
         f.generate_all_posterior_samples()
         g = f.save()
         if opts.out:

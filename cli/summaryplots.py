@@ -28,6 +28,9 @@ from pesummary.utils.utils import logger
 from pesummary.core.command_line import command_line
 from pesummary.core.inputs import Input
 from pesummary.gw.inputs import GWInput
+from pesummary.gw.command_line import insert_gwspecific_option_group
+from pesummary.utils import functions
+
 
 import warnings
 
@@ -496,12 +499,14 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         plt.close()
 
 
-if __name__ == '__main__':
-    main()
-
-
 def main():
     parser = command_line()
+    insert_gwspecific_option_group(parser)
     opts = parser.parse_args()
-    inputs = Input(opts)
-    PlotGeneration(inputs)
+    func = functions()
+    args = func["input"](opts)
+    func["PlotGeneration"](args)
+
+
+if __name__ == "__main__":
+    main()

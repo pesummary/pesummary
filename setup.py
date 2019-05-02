@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from setuptools import setup, find_packages
+from setuptools import setup
 import subprocess
 
 version = "0.1.6"
@@ -41,6 +41,7 @@ def write_version_file(version):
     with open("pesummary/.version", "w") as f:
         f.writelines(["%s %s" % (version, git_log)])
     return ".version"
+
 
 readme = full_description()
 version_file = write_version_file(version)

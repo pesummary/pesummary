@@ -12,22 +12,6 @@ from scipy import stats
 from pesummary.utils.utils import logger
 from pesummary.core.webpage import webpage
 
-
-if __name__ == "__main__":
-    main()
-
-
-def main():
-    parser = command_line()
-    insert_gwspecific_option_group(parser)
-    opts = parser.parse_args()
-    func = functions()
-    args = func["input"](opts)
-    func["PlotGeneration"](args)
-    func["WebpageGeneration"](args)
-    func["MetaFile"](args)
-    func["FinishingTouches"](args)
-
 __doc__ == "Classes to generate webpages"
 
 
@@ -523,7 +507,6 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         new_file.close()
 
 
-
 class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneration):
     def __init__(self, inputs, colors="default"):
         super(GWWebpageGeneration, self).__init__(inputs, colors)
@@ -868,3 +851,19 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                                       {"all": ", ".join(self.same_parameters)}],
                                   label="None", code="combines")
         html_file.make_footer(user=self.user, rundir=self.webdir)
+
+
+def main():
+    parser = command_line()
+    insert_gwspecific_option_group(parser)
+    opts = parser.parse_args()
+    func = functions()
+    args = func["input"](opts)
+    func["PlotGeneration"](args)
+    func["WebpageGeneration"](args)
+    func["MetaFile"](args)
+    func["FinishingTouches"](args)
+
+
+if __name__ == "__main__":
+    main()

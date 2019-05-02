@@ -25,14 +25,6 @@ import numpy as np
 from pesummary.core.command_line import command_line
 from pesummary.utils.utils import logger
 
-try:
-    from glue.ligolw import ligolw
-    from glue.ligolw import lsctables
-    from glue.ligolw import utils as ligolw_utils
-    GLUE = True
-except ImportError:
-    GLUE = False
-
 
 def paths_to_key(key, dictionary, current_path=None):
     """Return the path to a key stored in a nested dictionary
@@ -214,10 +206,10 @@ class OneFormat(object):
         except Exception as e:
             logger.warning("Failed to open %s with deepdish because %s. "
                            "Trying to grab the data with 'h5py'." % (
-                           self.fil, e))
+                               self.fil, e))
             try:
                 return self._grab_data_with_h5py()
-            except:
+            except Exception:
                 raise Exception("Failed to extract the data from the results "
                                 "file. Please reformat the results file")
 
@@ -307,43 +299,6 @@ class OneFormat(object):
         except Exception:
             return {"fixed_data": None,
                     "marginalized_parameters": None}
-
-    def _grab_injection_data_from_xml_file(self):
-        """Grab the data from an xml injection file
-        """
-        func_map = {
-            "chirp_mass": lambda inj: inj.mchirp,
-            "luminosity_distance": lambda inj: inj.distance,
-            "mass_1": lambda inj: inj.mass1,
-            "mass_2": lambda inj: inj.mass2,
-            "dec": lambda inj: inj.latitude,
-            "spin_1x": lambda inj: inj.spin1x,
-            "spin_1y": lambda inj: inj.spin1y,
-            "spin_1z": lambda inj: inj.spin1z,
-            "spin_2x": lambda inj: inj.spin2x,
-            "spin_2y": lambda inj: inj.spin2y,
-            "spin_2z": lambda inj: inj.spin2z,
-            "mass_ratio": lambda inj: con.q_from_m1_m2(inj.mass1, inj.mass2),
-            "symmetric_mass_ratio": lambda inj: con.eta_from_m1_m2(
-                inj.mass1, inj.mass2),
-            "total_mass": lambda inj: inj.mass1 + inj.mass2,
-            "chi_p": lambda inj: con._chi_p(
-                inj.mass1, inj.mass2, inj.spin1x, inj.spin1y, inj.spin2x,
-                inj.spin2y),
-            "chi_eff": lambda inj: con._chi_eff(inj.mass1, inj.mass2,
-                                                inj.spin1z, inj.spin2z)}
-        injection_parameters = self.parameters
-        if GLUE:
-            xmldoc = ligolw_utils.load_filename(
-                self.inj, contenthandler=lsctables.use_in(
-                    ligolw.LIGOLWContentHandler))
-            table = lsctables.SimInspiralTable.get_table(xmldoc)[0]
-            injection_values = [
-                func_map[i](table) if i in func_map.keys() else float("nan")
-                for i in self.parameters]
-        else:
-            injection_values = [float("nan")] * len(self.parameters)
-        return injection_parameters, injection_values
 
     def generate_all_posterior_samples(self):
         self._update_injection_data()

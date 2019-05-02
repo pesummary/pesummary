@@ -16,11 +16,6 @@
 from pesummary.core.file.existing import ExistingFile
 from pesummary.core.file.one_format import load_recusively
 
-from glob import glob
-
-import h5py
-import json
-
 
 class GWExistingFile(ExistingFile):
     """This class handles the existing posterior_samples.h5 file
@@ -71,7 +66,7 @@ class GWExistingFile(ExistingFile):
                 psd, = load_recusively("psds/%s" % (i), dictionary)
             if "calibration_envelope" in dictionary.keys():
                 cal, = load_recusively("calibration_envelope/%s" % (i),
-                                      dictionary)
+                                       dictionary)
             if "approximant" in dictionary.keys():
                 approx_list.append(dictionary["approximant"]["%s" % (i)])
         return labels, parameter_list, sample_list, psd, cal, config, approx_list
