@@ -18,7 +18,8 @@ import shutil
 
 import argparse
 
-from pesummary.plot import plot
+from pesummary.core.plots import plot
+from pesummary.gw.plots import plot as gwplot
 
 import numpy as np
 import matplotlib
@@ -64,13 +65,13 @@ class TestPlot(object):
         fig = plot._1d_histogram_plot(param, samples, latex_label)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
-    @pytest.mark.parametrize("param, approximants, samples, colors, latex_label",
-        [("mass1", ["approx1", "approx2"], [[10,20,30,40], [1,2,3,4]],
-        ["b", "r"], r"$m_{1}$"), ])
-    def test_1d_comparison_plot(self, param, approximants, samples, colors,
-                                latex_label):
-        fig = plot._1d_comparison_histogram_plot(param, approximants, samples,
-                                                 colors, latex_label)
+    @pytest.mark.parametrize("param, samples, colors, latex_label, labels",
+        [("mass1", [[10,20,30,40], [1,2,3,4]],
+        ["b", "r"], r"$m_{1}$", "approx1"),])
+    def test_1d_comparison_plot(self, param, samples, colors,
+                                latex_label, labels):
+        fig = plot._1d_comparison_histogram_plot(param, samples, colors,
+                                                 latex_label, labels)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_waveform_plot(self):
@@ -79,7 +80,7 @@ class TestPlot(object):
                        "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
                        "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
                        "luminosity_distance": 100}
-        fig = plot._waveform_plot(["H1"], maxL_params)
+        fig = gwplot._waveform_plot(["H1"], maxL_params)
         assert isinstance(fig, matplotlib.figure.Figure) == True
     
     def test_timedomain_waveform_plot(self):
@@ -88,7 +89,7 @@ class TestPlot(object):
                        "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
                        "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
                        "luminosity_distance": 100}
-        fig = plot._time_domain_waveform(["H1"], maxL_params)
+        fig = gwplot._time_domain_waveform(["H1"], maxL_params)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_waveform_comparison_plot(self):
@@ -99,7 +100,8 @@ class TestPlot(object):
                        "luminosity_distance": 100}
         maxL_params = [maxL_params, maxL_params]
         maxL_params[1]["mass_1"] = 7.
-        fig = plot._waveform_comparison_plot(maxL_params, ["b", "r"])
+        fig = gwplot._waveform_comparison_plot(maxL_params, ["b", "r"],
+                                               ["IMRPhenomPv2"]*2)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_time_domain_waveform_comparison_plot(self):
@@ -110,18 +112,19 @@ class TestPlot(object):
                        "luminosity_distance": 100}
         maxL_params = [maxL_params, maxL_params]
         maxL_params[1]["mass_1"] = 7.
-        fig = plot._time_domain_waveform_comparison_plot(maxL_params, ["b", "r"])
+        fig = gwplot._time_domain_waveform_comparison_plot(maxL_params, ["b", "r"],
+                                                           ["IMRPhenomPv2"]*2)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     @pytest.mark.parametrize("ra, dec", [([1,2,3,4], [1,1,1,1]),])
     def test_sky_map_plot(self, ra, dec):
-        fig = plot._sky_map_plot(ra, dec)
+        fig = gwplot._sky_map_plot(ra, dec)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     @pytest.mark.parametrize("ra, dec, approx, colors", [([[1,2,3,4],[1,2,2,1]],
         [[1,1,2,1],[1,1,1,1]], ["approx1", "approx2"], ["b", "r"]),])
     def test_sky_map_comparison_plot(self, ra, dec, approx, colors):
-        fig = plot._sky_map_comparison_plot(ra, dec, approx, colors)
+        fig = gwplot._sky_map_comparison_plot(ra, dec, approx, colors)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_corner_plot(self):
@@ -139,7 +142,7 @@ class TestPlot(object):
         samples = [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]]*21
         samples = [np.random.random(21).tolist() for i in range(21)]
         params = list(latex_labels.keys())
-        fig, included_params = plot._make_corner_plot(samples, params, latex_labels) 
+        fig, included_params = gwplot._make_corner_plot(samples, params, latex_labels) 
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_sensitivity_plot(self):
@@ -148,7 +151,7 @@ class TestPlot(object):
                        "phi_12": 0., "a_1": 0.5, "a_2": 0., "phase": 0.,
                        "ra": 1., "dec": 1., "psi": 0., "geocent_time": 0.,
                        "luminosity_distance": 100}
-        fig = plot._sky_sensitivity(["H1", "L1"], 1.0, maxL_params)
+        fig = gwplot._sky_sensitivity(["H1", "L1"], 1.0, maxL_params)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_psd_plot(self):
@@ -158,9 +161,7 @@ class TestPlot(object):
             f.writelines(["5.0 200"])
         frequencies = [self._grab_frequencies_from_psd_data_file("./.outdir/psd.dat")]
         strains = [self._grab_frequencies_from_psd_data_file("./.outdir/psd.dat")]
-        print(frequencies)
-        print(strains)
-        fig = plot._psd_plot(frequencies, strains, labels=["H1"])
+        fig = gwplot._psd_plot(frequencies, strains, labels=["H1"])
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_calibration_plot(self):
@@ -170,5 +171,5 @@ class TestPlot(object):
         frequencies = np.arange(20, 100, 0.2)
         files = [np.genfromtxt("./.outdir/calibration.dat")]
         ifos = ["H1"]
-        fig = plot._calibration_envelope_plot(frequencies, files, ifos)
+        fig = gwplot._calibration_envelope_plot(frequencies, files, ifos)
         assert isinstance(fig, matplotlib.figure.Figure) == True
