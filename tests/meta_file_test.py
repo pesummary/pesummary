@@ -16,9 +16,10 @@
 import os
 import shutil
 
-from pesummary.file import meta_file
-from pesummary.command_line import command_line
-from pesummary.inputs import Input
+from pesummary.gw.file import meta_file
+from pesummary.core.command_line import command_line
+from pesummary.gw.command_line import insert_gwspecific_option_group
+from pesummary.gw.inputs import GWInput
 
 import h5py
 import numpy as np
@@ -34,24 +35,20 @@ def test_recursively_save_dictionary_to_hdf5_file():
 
     data = {
                "posterior_samples": {
-                   "H1_L1": {
-                       "IMRPhenomPv2": {
-                           "parameters": ["mass_1", "mass_2"],
-                           "samples": [[10, 2], [50, 5], [100, 90]]
+                   "H1_L1_IMRPhenomPv2": {
+                       "parameters": ["mass_1", "mass_2"],
+                       "samples": [[10, 2], [50, 5], [100, 90]]
                        },
-                       "IMRPhenomP": {
-                           "parameters": ["ra", "dec"],
-                           "samples": [[0.5, 0.8], [1.2, 0.4], [0.9, 1.5]]
-                       }
-                   },
-                   "H1": {
-                       "SEOBNRv4": {
-                           "parameters": ["psi", "phi"],
-                           "samples": [[1.2, 0.2], [3.14, 0.1], [0.5, 0.3]]
+                   "H1_L1_IMRPhenomP": {
+                       "parameters": ["ra", "dec"],
+                       "samples": [[0.5, 0.8], [1.2, 0.4], [0.9, 1.5]]
+                       },
+                   "H1_SEOBNRv4": {
+                       "parameters": ["psi", "phi"],
+                       "samples": [[1.2, 0.2], [3.14, 0.1], [0.5, 0.3]]
                        }
                    }
                }
-           }
 
     with h5py.File("./.outdir/test.h5") as f:
         meta_file._recursively_save_dictionary_to_hdf5_file(f, data)
@@ -59,64 +56,61 @@ def test_recursively_save_dictionary_to_hdf5_file():
     f = h5py.File("./.outdir/test.h5", "r")
     assert sorted(list(f.keys())) == sorted(["posterior_samples"])
     assert sorted(list(f["posterior_samples"].keys())) == sorted(
-        ["H1_L1", "H1"]
-    )
-    assert sorted(list(f["posterior_samples/H1_L1"].keys())) == sorted(
-        ["IMRPhenomPv2", "IMRPhenomP"]
+        ["H1_L1_IMRPhenomPv2", "H1_L1_IMRPhenomP", "H1_SEOBNRv4"]
     )
     assert sorted(
-        list(f["posterior_samples/H1_L1/IMRPhenomPv2"].keys())) == sorted(
+        list(f["posterior_samples/H1_L1_IMRPhenomPv2"].keys())) == sorted(
             ["parameters", "samples"]
     )
-    assert f["posterior_samples/H1_L1/IMRPhenomPv2/parameters"][0].decode("utf-8") == "mass_1"
-    assert f["posterior_samples/H1_L1/IMRPhenomPv2/parameters"][1].decode("utf-8") == "mass_2"
-    assert f["posterior_samples/H1_L1/IMRPhenomP/parameters"][0].decode("utf-8") == "ra"
-    assert f["posterior_samples/H1_L1/IMRPhenomP/parameters"][1].decode("utf-8") == "dec"
-    assert f["posterior_samples/H1/SEOBNRv4/parameters"][0].decode("utf-8") == "psi"
-    assert f["posterior_samples/H1/SEOBNRv4/parameters"][1].decode("utf-8") == "phi"
+    assert f["posterior_samples/H1_L1_IMRPhenomPv2/parameters"][0].decode("utf-8") == "mass_1"
+    assert f["posterior_samples/H1_L1_IMRPhenomPv2/parameters"][1].decode("utf-8") == "mass_2"
+    assert f["posterior_samples/H1_L1_IMRPhenomP/parameters"][0].decode("utf-8") == "ra"
+    assert f["posterior_samples/H1_L1_IMRPhenomP/parameters"][1].decode("utf-8") == "dec"
+    assert f["posterior_samples/H1_SEOBNRv4/parameters"][0].decode("utf-8") == "psi"
+    assert f["posterior_samples/H1_SEOBNRv4/parameters"][1].decode("utf-8") == "phi"
 
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1/IMRPhenomPv2/samples"][0],
+        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomPv2/samples"][0],
             [10, 2]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1/IMRPhenomPv2/samples"][1],
+        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomPv2/samples"][1],
             [50, 5]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1/IMRPhenomPv2/samples"][2],
+        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomPv2/samples"][2],
             [100, 90]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1/IMRPhenomP/samples"][0],
+        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomP/samples"][0],
             [0.5, 0.8]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1/IMRPhenomP/samples"][1],
+        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomP/samples"][1],
             [1.2, 0.4]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1/IMRPhenomP/samples"][2],
+        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomP/samples"][2],
             [0.9, 1.5]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1/SEOBNRv4/samples"][0],
+        i == j for i,j in zip(f["posterior_samples/H1_SEOBNRv4/samples"][0],
             [1.2, 0.2]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1/SEOBNRv4/samples"][1],
+        i == j for i,j in zip(f["posterior_samples/H1_SEOBNRv4/samples"][1],
             [3.14, 0.1]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1/SEOBNRv4/samples"][2],
+        i == j for i,j in zip(f["posterior_samples/H1_SEOBNRv4/samples"][2],
             [0.5, 0.3]
         )
     )
@@ -130,6 +124,7 @@ class TestMetaFile(object):
             shutil.rmtree("./.outdir")
         os.makedirs("./.outdir")
         self.parser = command_line()
+        insert_gwspecific_option_group(self.parser)
         self.default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir",
@@ -137,8 +132,8 @@ class TestMetaFile(object):
             "--email", "albert.einstein@ligo.org",
             "--gracedb", "grace"]
         self.opts = self.parser.parse_args(self.default_arguments)
-        self.inputs = Input(self.opts)
-        self.metafile = meta_file.MetaFile(self.inputs)
+        self.inputs = GWInput(self.opts)
+        self.metafile = meta_file.GWMetaFile(self.inputs)
 
     @staticmethod
     def make_existing_file(path):
@@ -150,17 +145,17 @@ class TestMetaFile(object):
         f = h5py.File(path + "/posterior_samples.h5", "w")
         posterior_samples = f.create_group("posterior_samples")
         label = posterior_samples.create_group("H1_L1")
-        approx = label.create_group("IMRPhenomPv2")
-        approx.create_dataset("parameter_names", data=parameters)
-        approx.create_dataset("samples", data=samples)
-        approx.create_dataset("injected_parameters", data=parameters)
-        approx.create_dataset("injected_samples", data=injected_samples)
+        label.create_dataset("parameter_names", data=parameters)
+        label.create_dataset("samples", data=samples)
+        label.create_dataset("injected_parameters", data=parameters)
+        label.create_dataset("injected_samples", data=injected_samples)
         f.close()
         return path + "/posterior_samples.h5"
 
     def test_meta_file(self):
         assert self.metafile.meta_file == "./.outdir/samples/posterior_samples.json"
         parser = command_line()
+        insert_gwspecific_option_group(parser)
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir",
@@ -169,13 +164,13 @@ class TestMetaFile(object):
             "--gracedb", "grace",
             "--save_to_hdf5"]
         opts = self.parser.parse_args(default_arguments)
-        inputs = Input(opts)
-        metafile = meta_file.MetaFile(inputs)
+        inputs = GWInput(opts)
+        metafile = meta_file.GWMetaFile(inputs)
         assert metafile.meta_file == "./.outdir/samples/posterior_samples.h5"
 
     def test_convert_to_list(self):
          array = [np.array([1,2,3]), np.array([4,5,6])]
-         test_list = meta_file.MetaFile.convert_to_list(array)
+         test_list = meta_file.GWMetaFile.convert_to_list(array)
          assert isinstance(test_list, list)
          assert isinstance(test_list[0], list)
          assert isinstance(test_list[1], list)
@@ -191,6 +186,7 @@ class TestMetaFile(object):
             f.writelines(["test"])
         self.make_existing_file("./.outdir_addition/samples")
         parser = command_line()
+        insert_gwspecific_option_group(parser)
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--existing_webdir", "./.outdir_addition",
@@ -199,17 +195,18 @@ class TestMetaFile(object):
             "--gracedb", "grace",
             "--save_to_hdf5"]
         opts = self.parser.parse_args(default_arguments)
-        inputs = Input(opts)
-        metafile = meta_file.MetaFile(inputs)
+        inputs = GWInput(opts)
+        metafile = meta_file.GWMetaFile(inputs)
         f = h5py.File(metafile.meta_file, "r")
         assert list(f.keys()) == ["posterior_samples"]
         for i, j in zip(sorted(["grace_H1", "H1_L1"]),
                         sorted(list(f["posterior_samples"].keys()))):
             assert i in j
-        assert list(f["posterior_samples/H1_L1"].keys()) == ["IMRPhenomPv2"]
+        assert list(f["posterior_samples/H1_L1"].keys()) == ["parameter_names", "samples"]
 
     def test_generate_dat_file(self):
         parser = command_line()
+        insert_gwspecific_option_group(parser)
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir",
@@ -217,15 +214,15 @@ class TestMetaFile(object):
             "--email", "albert.einstein@ligo.org",
             "--config", "tests/files/config_lalinference.ini"]
         opts = parser.parse_args(default_arguments) 
-        inputs = Input(opts)
-        metafile = meta_file.MetaFile(inputs)
+        inputs = GWInput(opts)
+        metafile = meta_file.GWMetaFile(inputs)
         if os.path.isdir("./.outdir/samples/dat"):
             shutil.rmtree("./.outdir/samples/dat")
         metafile.generate_dat_file()
         assert os.path.isdir("./.outdir/samples/dat")
         assert os.path.isfile(
-            "./.outdir/samples/dat/H1_IMRPhenomPv2/H1_IMRPhenomPv2_mass_1_samples.dat")
-        f = open("./.outdir/samples/dat/H1_IMRPhenomPv2/H1_IMRPhenomPv2_mass_1_samples.dat")
+            "./.outdir/samples/dat/H1/H1_bilby_example.h5_temp_mass_1_samples.dat")
+        f = open("./.outdir/samples/dat/H1/H1_bilby_example.h5_temp_mass_1_samples.dat")
         f = f.readlines()
         f = sorted([i.strip().split() for i in f])
         assert f[0] == ["10.0"]
