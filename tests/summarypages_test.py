@@ -210,8 +210,5 @@ class TestWebpageGeneration(object):
                          './.outdir_cbc/html/test_GW150914_result.h5_temp_mass_ratio.html',
                          './.outdir_cbc/html/test_GW150914_result.h5_temp_phase.html',
                          './.outdir_cbc/html/test_GW150914_result.h5_temp_mass_1_source.html',
-                         './.outdir_cbc/html/error.html',
-                         './.outdir_cbc/html/1556815094_GW150914_result_GW150914_result.h5_temp_tilt_1.html']
-        print(sorted(expected_html))
-        print(sorted(html))
+                         './.outdir_cbc/html/error.html']
         assert all(i == j for i,j in zip(sorted(expected_html), sorted(html))) 
