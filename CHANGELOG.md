@@ -1,9 +1,14 @@
 ## 0.1.6 [unreleased]
 
 ### Changed
+- Python2.7: Change the yield statements in pesummary.core.file.one_format to
+  make the code python2.7 compatible.
+- setuptools: Change the setup.py file to import setup from `setuptools` rather
+  than using `distutils.core` 
 
 ### Added
 - PESummary now supports non GW specific results files
+- Docker image for PESummary. Simply run `docker pull 08hoyc/pesummary:v0.1.5
 
 ## 0.1.5 [13/04/2019]
 
