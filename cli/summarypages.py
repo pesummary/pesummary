@@ -404,7 +404,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                     contents = f.read()
                 styles = html_file.make_code_block(language='ini', contents=contents)
                 with open('{0:s}/css/{1:s}_{2:s}_config.css'.format(self.webdir,
-                          self.labels[num], app), 'w') as f:
+                          self.labels[num], self.result_files[num].split("/")[-1]), 'w') as f:
                     f.write(styles)
             else:
                 html_file.add_content(
@@ -631,6 +631,7 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         pages = ["%s_%s" % (self.labels[num], i.split("/")[-1]) for num, i in enumerate(
             self.result_files)]
         pages.append("home")
+        print(pages)
         webpage.make_html(web_dir=self.webdir, pages=pages)
         if self.gracedb:
             html_file = self._setup_page(
@@ -771,33 +772,6 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                                           "luminosity_distance, iota, ra, dec",
                                           "iota, phi_12, phi_jl, tilt_1, tilt_2"],
                                       label=self.labels[num])
-            html_file.make_footer(user=self.user, rundir=self.webdir)
-            html_file.close()
-
-    def make_config_pages(self):
-        """Make the configuration pages.
-        """
-        pages = ["%s_%s_config" % (self.labels[num], i.split("/")[-1]) for num, i in
-                 enumerate(self.result_files)]
-        webpage.make_html(web_dir=self.webdir, pages=pages, stylesheets=pages)
-        for num, app in enumerate(self.result_files):
-            html_file = self._setup_page(
-                "%s_config" % (app.split("/")[-1]),
-                self.navbar_for_approximant_homepage[num],
-                self.labels[num], title="%s configuration" % (app),
-                background_colour=self.colors[num], approximant=app.split("/")[-1])
-            if self.config and num < len(self.config):
-                with open(self.config[num], 'r') as f:
-                    contents = f.read()
-                styles = html_file.make_code_block(language='ini', contents=contents)
-                with open('{0:s}/css/{1:s}_{2:s}_config.css'.format(self.webdir,
-                          self.labels[num], app), 'w') as f:
-                    f.write(styles)
-            else:
-                html_file.add_content(
-                    "<div class='row justify-content-center'>"
-                    "<p style='margin-top:2.5em'> No configuration file was "
-                    "provided </p></div>")
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 

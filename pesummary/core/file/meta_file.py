@@ -223,5 +223,5 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
                     data = [k[idx] for k in self.samples[num]]
                     np.savetxt("%s/%s/%s_%s_%s_samples.dat" % (
                         self.savedir, self.labels[num],
-                        self.labels[num], self.result_files[num], j), data,
+                        self.labels[num], self.result_files[num].split("/")[-1], j), data,
                         fmt="%s")
