@@ -31,7 +31,7 @@ class TestPlotGeneration(object):
 
     def setup(self):
         directories = ["./.outdir_bilby", "./.outdir_lalinference",
-                       "./.outdir_comparison"]
+                       "./.outdir_comparison", "./.outdir_add_to_existing"]
         for i in directories:
             if os.path.isdir(i):
                 shutil.rmtree(i)
@@ -182,39 +182,15 @@ class TestPlotGeneration(object):
                           './.outdir_add_to_existing/plots/H1_0_sample_evolution_log_likelihood.png',
                           './.outdir_add_to_existing/plots/H1_0_sample_evolution_mass_1.png',
                           './.outdir_add_to_existing/plots/H1_1d_posterior_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomP_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomP_log_likelihood.png',
-                          './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomP_mass_1.png',
-                          './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomPv2_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomPv2_log_likelihood.png',
-                          './.outdir_add_to_existing/plots/H1_1d_posterior_IMRPhenomPv2_mass_1.png',
                           './.outdir_add_to_existing/plots/H1_1d_posterior_log_likelihood.png',
                           './.outdir_add_to_existing/plots/H1_1d_posterior_mass_1.png',
                           './.outdir_add_to_existing/plots/H1_autocorrelation_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomP_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomP_log_likelihood.png',
-                          './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomP_mass_1.png',
-                          './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomPv2_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomPv2_log_likelihood.png',
-                          './.outdir_add_to_existing/plots/H1_autocorrelation_IMRPhenomPv2_mass_1.png',
                           './.outdir_add_to_existing/plots/H1_autocorrelation_log_likelihood.png',
                           './.outdir_add_to_existing/plots/H1_autocorrelation_mass_1.png',
                           './.outdir_add_to_existing/plots/H1_cdf_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomP_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomP_log_likelihood.png',
-                          './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomP_mass_1.png',
-                          './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomPv2_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomPv2_log_likelihood.png',
-                          './.outdir_add_to_existing/plots/H1_cdf_IMRPhenomPv2_mass_1.png',
                           './.outdir_add_to_existing/plots/H1_cdf_log_likelihood.png',
                           './.outdir_add_to_existing/plots/H1_cdf_mass_1.png',
                           './.outdir_add_to_existing/plots/H1_sample_evolution_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomP_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomP_log_likelihood.png',
-                          './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomP_mass_1.png',
-                          './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomPv2_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomPv2_log_likelihood.png',
-                          './.outdir_add_to_existing/plots/H1_sample_evolution_IMRPhenomPv2_mass_1.png',
                           './.outdir_add_to_existing/plots/H1_sample_evolution_log_likelihood.png',
                           './.outdir_add_to_existing/plots/H1_sample_evolution_mass_1.png',
                           './.outdir_add_to_existing/plots/combined_1d_posterior_H1_optimal_snr.png',
