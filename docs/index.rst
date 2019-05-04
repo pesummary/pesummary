@@ -8,18 +8,27 @@
 Welcome to PESummary's documentation!
 =====================================
 
-Contents:
+PESummary
+---------
+
+PESummary: The Parameter Estimation Summarypage generator
+
+The aim of `PESummary` is to produce summarypages for results files generated from all sample generated codes. It is primarily designed to be used with the results files from GW specific codes, but can be used for more general packages. For installation instructions see https://lscsoft.docs.ligo.org/pesummary/installation.html. 
+
+Contents
+--------
 
 .. toctree::
    :maxdepth: 2
 
    installation
+   python_example
    executable
+   cli_example
    file_formats
    results_file
    summarypage
    structure
-   examples
 
 Indices and tables
 ==================

@@ -12,13 +12,17 @@ All webpages produced by :code:`PESummary` have the following structure,
 .. code-block:: console
 
    home.html
-     -> Approximant1
+     -> Results_file1
        -> Corner
        -> Config
        -> 1d histogram pages
          -> multiple
-         -> masses
-           -> chirp mass
+         -> A-E
+           -> amplitude
+
+.. note::
+    
+    If you run with a GW specific results file, then the 1d histogram pages are sorted according to their common parameter. For instance, mass1, mass2, mass_ratio are all sorted under the mass heading.
 
 This webpage opts for a multiple tab approach for each of navigation. Below we will discuss each section and give examples of what the page looks like. 
 
