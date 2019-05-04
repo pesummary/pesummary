@@ -69,6 +69,8 @@ class GWExistingFile(ExistingFile):
                                        dictionary)
             if "approximant" in dictionary.keys():
                 approx_list.append(dictionary["approximant"]["%s" % (i)])
+            else:
+                approx_list.append(None)
         return labels, parameter_list, sample_list, psd, cal, config, approx_list
 
     @property

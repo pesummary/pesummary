@@ -20,6 +20,7 @@ from pesummary.gw.file import meta_file
 from pesummary.core.command_line import command_line
 from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.gw.inputs import GWInput
+from cli.summaryplots import GWPlotGeneration
 
 import h5py
 import numpy as np

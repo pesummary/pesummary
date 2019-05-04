@@ -133,7 +133,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
         if self.existing_label:
             self._make_dictionary_structure(
                 self.existing_label,
-                psd = self.existing_psd,
+                psd=self.existing_psd,
                 approx=self.existing_approximant,
                 calibration=self.existing_calibration,
                 config=self.existing_config
@@ -142,10 +142,10 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                 self._add_data(i,
                                self.existing_parameters[num],
                                self.existing_samples[num],
-                               approximant = self.existing_approximant[num],
-                               psd = self.existing_psd,
-                               calibration = self.existing_calibration,
-                               config = self.existing_config
+                               approximant=self.existing_approximant[num],
+                               psd=self.existing_psd,
+                               calibration=self.existing_calibration,
+                               config=self.existing_config
                                )
 
         self._make_dictionary_structure(self.labels,

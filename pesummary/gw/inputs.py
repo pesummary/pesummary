@@ -109,7 +109,7 @@ class GWInput(Input):
 
     @approximant.setter
     def approximant(self, approximant):
-        approximant_list = [None]*len(self.result_files)
+        approximant_list = [None] * len(self.result_files)
         if not approximant:
             logger.warning("No approximant given. Waveform plots will not be "
                            "generated")
