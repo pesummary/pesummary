@@ -29,7 +29,7 @@ parser = command_line.command_line()
 opts = parser.parse_args(["--samples", "example.json",
                           "--webdir", "./outdir"])
 
-# Do low level checks of the 
+# Do low level checks of the inputs
 args = inputs.Input(opts)
 
 # Generate all plots for the given results file
