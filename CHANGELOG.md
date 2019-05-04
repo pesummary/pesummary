@@ -8,7 +8,10 @@
 
 ### Added
 - PESummary now supports non GW specific results files
-- Docker image for PESummary. Simply run `docker pull 08hoyc/pesummary:v0.1.5
+- Docker image for PESummary. Simply run `docker pull 08hoyc/pesummary:v0.1.6
+- Example python script for running PESummary from within python shell
+- Extract all information including psd and calibration information from the
+  gw specific results file
 
 ## 0.1.5 [13/04/2019]
 
