@@ -307,7 +307,10 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
                 self.result_files.append(existing.existing_file)
                 self.samples.append(existing.existing_samples[num])
                 self.parameters.append(existing.existing_parameters[num])
-                self.approximant.append(existing.existing_approximant[num])
+                if existing.existing_approximant[num]:
+                    self.approximant.append(existing.existing_approximant[num])
+                else:
+                    self.approximant.append(None)
                 if self.config and len(existing_config) > 1:
                     self.config.append(existing_config[num])
             key_data = self._key_data()

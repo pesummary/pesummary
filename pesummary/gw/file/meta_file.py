@@ -19,7 +19,7 @@ import configparser
 
 from pesummary.utils.utils import logger
 from pesummary.gw.inputs import GWPostProcessing
-from pesummary.core.file.existing import ExistingFile
+from pesummary.gw.file.existing import GWExistingFile
 from pesummary.core.file.meta_file import MetaFile
 
 
@@ -119,21 +119,33 @@ class GWMetaFile(GWPostProcessing, MetaFile):
         """Generate dictionary of data which will go into the meta_file
         """
         if self.existing:
-            existing_file = ExistingFile(self.existing)
+            existing_file = GWExistingFile(self.existing)
             self.existing_parameters = existing_file.existing_parameters
             self.existing_samples = existing_file.existing_samples
             self.existing_label = existing_file.existing_labels
+            self.existing_psd = existing_file.existing_psd
+            self.existing_calibration = existing_file.existing_calibration
+            self.existing_config = existing_file.existing_config
+            self.existing_approximant = existing_file.existing_approximant
         self._make_dictionary()
 
     def _make_dictionary(self):
         if self.existing_label:
             self._make_dictionary_structure(
-                self.existing_label
+                self.existing_label,
+                psd = self.existing_psd,
+                approx=self.existing_approximant,
+                calibration=self.existing_calibration,
+                config=self.existing_config
             )
             for num, i in enumerate(self.existing_label):
                 self._add_data(i,
                                self.existing_parameters[num],
                                self.existing_samples[num],
+                               approximant = self.existing_approximant[num],
+                               psd = self.existing_psd,
+                               calibration = self.existing_calibration,
+                               config = self.existing_config
                                )
 
         self._make_dictionary_structure(self.labels,
