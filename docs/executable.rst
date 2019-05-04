@@ -13,17 +13,48 @@ The primary user-interface for this code is a command line tool :code:`summarypa
 
 You will then see that there are general command line arguments,
 
-.. argparse::
-   :ref: pesummary.core.command_line.command_line
-   :prog: pesummary
-   :noepilog:
+.. code-block:: console
 
-and GW specific command line arguments,
+    usage: summarypages [-h] [-w DIR] [-b DIR] [-s SAMPLES [SAMPLES ...]]
+                        [-c CONFIG [CONFIG ...]] [--email EMAIL] [--dump]
+                        [--add_to_existing] [-e EXISTING]
+                        [-i INJ_FILE [INJ_FILE ...]]
+                        [--labels LABELS [LABELS ...]] [-v] [--save_to_hdf5]
+                        [-a APPROXIMANT [APPROXIMANT ...]] [--sensitivity]
+                        [--gracedb GRACEDB] [--psd PSD [PSD ...]]
+                        [--calibration CALIBRATION [CALIBRATION ...]] [--gw]
 
-.. argparse::
-   :ref: pesummary.gw.command_line.insert_gwspecific_option_group
-   :prog: pesummary
-   :noepilog:
+    optional arguments:
+      -h, --help            show this help message and exit
+      -w DIR, --webdir DIR  make page and plots in DIR
+      -b DIR, --baseurl DIR
+                            make the page at this url
+      -s SAMPLES [SAMPLES ...], --samples SAMPLES [SAMPLES ...]
+                            Posterior samples hdf5 file
+      -c CONFIG [CONFIG ...], --config CONFIG [CONFIG ...]
+                            configuration file associcated with each samples file.
+      --email EMAIL         send an e-mail to the given address with a link to the
+                            finished page.
+      --dump                dump all information onto a single html page
+      --add_to_existing     add new results to an existing html page
+      -e EXISTING, --existing_webdir EXISTING
+                            web directory of existing output
+      -i INJ_FILE [INJ_FILE ...], --inj_file INJ_FILE [INJ_FILE ...]
+                            path to injetcion file
+      --labels LABELS [LABELS ...]
+                            labels used to distinguish runs
+      -v, --verbose         print useful information for debugging purposes
+      --save_to_hdf5        save the meta file in hdf5 format
+
+    Options specific for gravitational wave results files:
+      -a APPROXIMANT [APPROXIMANT ...], --approximant APPROXIMANT [APPROXIMANT ...]
+                            waveform approximant used to generate samples
+      --sensitivity         generate sky sensitivities for HL, HLV
+      --gracedb GRACEDB     gracedb of the event
+      --psd PSD [PSD ...]   psd files used
+      --calibration CALIBRATION [CALIBRATION ...]
+                            files for the calibration envelope
+      --gw                  run with the gravitational wave pipeline
 
 Running PESummary
 -----------------

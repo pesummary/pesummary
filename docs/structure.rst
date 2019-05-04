@@ -2,15 +2,6 @@
 Code overview
 =============
 
-Python Modules
---------------
-
-Below is a flowchart showing the dependency of different packages and modules within :code:`PESummary`.
-                                                                                
-.. image:: images/pesummary_layout.png
-
-each module (e.g., :code:`pesummary.core.webpage.webpage`) serves a different purpose. On this page, we will give a short description of each module.
-
 pesummary.utils
 ---------------
 
