@@ -8,4 +8,4 @@ You are able to run :code:`PESummary` from within an iPython shell. Below are in
    :language: python                                                            
    :linenos:
 
-Running the script above will generate summarypages in the `` directory.
+Running the script above will generate summarypages in the `./outdir` directory.
