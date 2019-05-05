@@ -636,7 +636,11 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                     self.gracedb))
         else:
             html_file = self._setup_page("home", self.navbar_for_homepage)
-        html_file.make_banner(approximant="Summary", key="Summary")
+        if self.gracedb:
+            html_file.make_banner(approximant="Summary for %s" % (self.gracedb),
+                                  key="Summary")
+        else:
+            html_file.make_banner(approximant="Summary", key="Summary")
         path = self.image_path["home"]
         image_contents = []
         if self.psds:

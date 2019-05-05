@@ -268,16 +268,16 @@ def _sky_map_plot(ra, dec, **kwargs):
     kwargs: dict
         optional keyword arguments
     """
-    ra = [i - np.pi for i in ra]
+    ra = [-i + np.pi for i in ra]
     logger.debug("Generating the sky map plot")
     fig = plt.figure()
     ax = plt.subplot(111, projection="hammer")
     ax.cla()
     ax.grid()
     ax.set_xticklabels([
-        r"$22^{h}$", r"$20^{h}$", r"$18^{h}$", r"$16^{h}$", r"$14^{h}$",
-        r"$12^{h}$", r"$10^{h}$", r"$8^{h}$", r"$6^{h}$", r"$4^{h}$",
-        r"$2^{h}$"])
+        r"$2^{h}$", r"$4^{h}$", r"$6^{h}$", r"$8^{h}$", r"$10^{h}$",
+        r"$12^{h}$", r"$14^{h}$", r"$16^{h}$", r"$18^{h}$", r"$20^{h}$",
+        r"$22^{h}$"])
     levels = [1.0 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9. / 2.)]
 
     H, X, Y = np.histogram2d(ra, dec, bins=50)
@@ -321,10 +321,10 @@ def _sky_map_plot(ra, dec, **kwargs):
     plt.contour(X2, Y2, H2.T, V, colors=["#AED6F1", "#3498DB", "#21618C"],
                 linewidths=2.0)
 
-    xticks = np.arange(-np.pi, np.pi, np.pi / 6)
+    xticks = np.arange(-np.pi, np.pi + np.pi / 6, np.pi / 6)
     ax.set_xticks(xticks)
     labels = [r"$%s^{h}$" % (np.round((i + np.pi) * 3.82, 1)) for i in xticks]
-    ax.set_xticklabels(labels)
+    ax.set_xticklabels(labels[::-1])
     return fig
 
 
@@ -346,16 +346,16 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
     kwargs: dict
         optional keyword arguments
     """
-    ra_list = [[i - np.pi for i in j] for j in ra_list]
+    ra_list = [[-i + np.pi for i in j] for j in ra_list]
     logger.debug("Generating the sky map comparison plot")
     fig = plt.figure()
     ax = plt.subplot(111, projection="hammer")
     ax.cla()
     ax.grid()
     ax.set_xticklabels([
-        r"$22^{h}$", r"$20^{h}$", r"$18^{h}$", r"$16^{h}$", r"$14^{h}$",
-        r"$12^{h}$", r"$10^{h}$", r"$8^{h}$", r"$6^{h}$", r"$4^{h}$",
-        r"$2^{h}$"])
+        r"$2^{h}$", r"$4^{h}$", r"$6^{h}$", r"$8^{h}$", r"$10^{h}$",
+        r"$12^{h}$", r"$14^{h}$", r"$16^{h}$", r"$18^{h}$", r"$20^{h}$",
+        r"$22^{h}$"])
     levels = [1.0 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9. / 2.)]
     for num, i in enumerate(ra_list):
         H, X, Y = np.histogram2d(i, dec_list[num], bins=50)
@@ -399,10 +399,10 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
         CS.collections[0].set_label(labels[num])
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
                mode="expand", ncol=2)
-    xticks = np.arange(-np.pi, np.pi, np.pi / 6)
+    xticks = np.arange(-np.pi, np.pi + np.pi / 6, np.pi / 6)
     ax.set_xticks(xticks)
     labels = [r"$%s^{h}$" % (np.round((i + np.pi) * 3.82, 1)) for i in xticks]
-    ax.set_xticklabels(labels)
+    ax.set_xticklabels(labels[::-1])
     return fig
 
 
