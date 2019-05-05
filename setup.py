@@ -69,7 +69,7 @@ setup(name='pesummary',
       packages=['pesummary', 'pesummary.core', 'pesummary.core.webpage',
                 'pesummary.core.plots', 'pesummary.core.file',
                 'pesummary.gw', 'pesummary.gw.file',
-                'pesummary.gw.plots', 'pesummary.utils', 'cli']
+                'pesummary.gw.plots', 'pesummary.utils', 'cli'],
       package_data={'pesummary': ['core/js/*.js', 'core/css/*.css', version_file]},
       entry_points={
           'console_scripts': [
