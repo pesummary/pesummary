@@ -159,15 +159,16 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                 psd = self._grab_psd_data_from_data_files(
                     self.psds, self.psd_labels) if self.psds else None
                 calibration = self._grab_calibration_data_from_data_files(
-                    self.calibration, self.calibration_labels) if self.calibration \
-                    else None
-                config = self._grab_config_data_from_data_file(self.config[num]) if \
-                    self.config and num < len(self.config) else None
+                    self.calibration, self.calibration_labels) if \
+                    self.calibration else None
+                config = self._grab_config_data_from_data_file(self.config[num]) \
+                    if self.config and num < len(self.config) else None
                 approximant = self.approximant if self.approximant else \
                     [None] * len(self.samples)
                 self._add_data(i, self.parameters[num],
-                               self.samples[num], psd=psd, calibration=calibration,
-                               config=config, approximant=approximant[num]
+                               self.samples[num], psd=psd,
+                               calibration=calibration, config=config,
+                               approximant=approximant[num]
                                )
 
     def _grab_psd_data_from_data_files(self, files, psd_labels):
