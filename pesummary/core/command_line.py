@@ -17,8 +17,7 @@ import argparse
 
 
 def command_line():
-    """Creates an ArgumentParser object which holds all of the information
-    from the command line.
+    """Generate an Argument Parser object to control the command line options
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-w", "--webdir", dest="webdir",
@@ -30,47 +29,30 @@ def command_line():
     parser.add_argument("-s", "--samples", dest="samples",
                         help="Posterior samples hdf5 file", nargs='+',
                         default=None)
-    parser.add_argument("-a", "--approximant", dest="approximant",
-                        help="waveform approximant used to generate samples",
+    parser.add_argument("-c", "--config", dest="config",
+                        help=("configuration file associcated with "
+                              "each samples file."),
                         nargs='+', default=None)
     parser.add_argument("--email", action="store",
-                        help="send an e-mail to the given address with a link "
-                             "to the finished page.",
-                        default=None, metavar="user@ligo.org")
+                        help=("send an e-mail to the given address with a link "
+                              "to the finished page."), default=None)
     parser.add_argument("--dump", action="store_true",
                         help="dump all information onto a single html page",
-                        default=False)
-    parser.add_argument("-c", "--config", dest="config",
-                        help="configuration file associcated with each "
-                             "samples file.", nargs='+', default=None)
-    parser.add_argument("--sensitivity", action="store_true",
-                        help="generate sky sensitivities for HL, HLV",
                         default=False)
     parser.add_argument("--add_to_existing", action="store_true",
                         help="add new results to an existing html page",
                         default=False)
     parser.add_argument("-e", "--existing_webdir", dest="existing",
-                        help="web directory of existing output",
-                        default=None)
+                        help="web directory of existing output", default=None)
     parser.add_argument("-i", "--inj_file", dest="inj_file",
-                        help="path to injetcion file", nargs='+',
-                        default=None)
+                        help="path to injetcion file", nargs='+', default=None)
     parser.add_argument("--user", dest="user", help=argparse.SUPPRESS,
                         default="albert.einstein")
-    parser.add_argument("--gracedb", dest="gracedb",
-                        help="gracedb of the event", default=None)
-    parser.add_argument("--psd", dest="psd",
-                        help="psd files used", nargs='+',
-                        default=None)
-    parser.add_argument("--calibration", dest="calibration",
-                        help="files for the calibration envelope", nargs="+",
-                        default=None)
     parser.add_argument("--labels", dest="labels",
                         help="labels used to distinguish runs", nargs='+',
                         default=None)
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="print useful information for debugging purposes")
     parser.add_argument("--save_to_hdf5", action="store_true",
-                        help="save the meta file in hdf5 format",
-                        default=False)
+                        help="save the meta file in hdf5 format", default=False)
     return parser

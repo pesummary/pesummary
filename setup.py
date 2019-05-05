@@ -13,10 +13,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from setuptools import setup, find_packages
+from setuptools import setup
 import subprocess
 
-version = "0.1.5"
+version = "0.1.6"
 
 
 def full_description():
@@ -66,13 +66,16 @@ setup(name='pesummary',
           'lalsuite',
           'pytest'],
       include_package_data=True,
-      packages=find_packages(),
-      package_data={'pesummary': ['js/*.js', 'css/*.css', version_file]},
+      packages=['pesummary', 'pesummary.core', 'pesummary.core.webpage',
+                'pesummary.core.plots', 'pesummary.core.file',
+                'pesummary.gw', 'pesummary.gw.file',
+                'pesummary.gw.plots', 'pesummary.utils', 'cli'],
+      package_data={'pesummary': ['core/js/*.js', 'core/css/*.css', version_file]},
       entry_points={
           'console_scripts': [
               'summaryconvert=pesummary.file.one_format:main',
-              'summarypages=pesummary.summarypages:main',
-              'summaryplots=pesummary.summaryplots:main']},
+              'summarypages=cli.summarypages:main',
+              'summaryplots=cli.summaryplots:main']},
       classifiers=[
           "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6"],

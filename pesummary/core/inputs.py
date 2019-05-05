@@ -20,16 +20,16 @@ import os
 import shutil
 from glob import glob
 
-import numpy as np
 import h5py
+
+from time import time
 
 import pesummary
 from pesummary.utils.utils import (guess_url, logger,
                                    rename_group_or_dataset_in_hf5_file)
 from pesummary.utils import utils
-from pesummary.file.one_format import OneFormat
-from pesummary.file.existing import ExistingFile
-from pesummary.file.lalinference import LALInferenceResultsFile
+from pesummary.core.file.one_format import OneFormat
+from pesummary.core.file.existing import ExistingFile
 
 __doc__ == "Classes to handle the command line inputs"
 
@@ -89,25 +89,16 @@ class Input(object):
         self.inj_file = opts.inj_file
         self.config = opts.config
         self.result_files = opts.samples
-        self.approximant = opts.approximant
         self.email = opts.email
         self.add_to_existing = opts.add_to_existing
-        self.sensitivity = opts.sensitivity
-        self.gracedb = opts.gracedb
-        self.psds = opts.psd
         self.dump = opts.dump
         self.hdf5 = opts.save_to_hdf5
         self.existing_labels = []
         self.existing_parameters = []
         self.existing_samples = []
-        self.existing_approximant = []
-        self.existing_names = []
-        self.check_approximant_in_results_file()
         self.make_directories()
         self.copy_files()
-        self.detectors = None
         self.labels = opts.labels
-        self.calibration = opts.calibration
         self.check_label_in_results_file()
 
     @property
@@ -122,7 +113,7 @@ class Input(object):
                          % (self._user))
         except Exception as e:
             logger.info("Failed to grab user information because %s. "
-                        "Default will be used" % (e))
+                        "Default will be used (%s)" % (e, user))
             self._user = user
 
     @property
@@ -149,7 +140,7 @@ class Input(object):
         if not webdir and not self.existing:
             raise Exception("Please provide a web directory to store the "
                             "webpages. If this is an existing directory "
-                            "pass this path under the --existing_dir "
+                            "pass this path under the --existing_webdir "
                             "argument. If this is a new directory then "
                             "pass this under the --webdir argument")
         elif not webdir and self.existing:
@@ -209,55 +200,10 @@ class Input(object):
         for num, i in enumerate(samples):
             if not os.path.isfile(i):
                 raise Exception("File %s does not exist" % (i))
-            config = None
-            if self.config and len(samples) != len(self.config):
-                raise Exception("Ensure that the number of results files "
-                                "match the number of configuration files")
-            if self.config:
-                config = self.config[num]
-            std_form = self.convert_to_standard_format(i, self.inj_file[num],
-                                                       config_file=config)
+            std_form = self.convert_to_standard_format(
+                i, self.inj_file[num], config_file=None)
             sample_list.append(std_form)
         self._samples = sample_list
-    """
-    @property
-    def config(self):
-        return self._config
-
-    @config.setter
-    def config(self, config):
-        if config and len(self.result_files) != len(config):
-            raise Exception("Ensure that the number of results files match "
-                            "the number of configuration files")
-        self._config = config
-    """
-
-    @property
-    def approximant(self):
-        return self._approximant
-
-    @approximant.setter
-    def approximant(self, approximant):
-        if not approximant:
-            logger.debug("No approximant is given. Trying to extract from "
-                         "results file")
-            approximant_list = []
-            for i in self.result_files:
-                f = h5py.File(i, "r")
-                approx = list(f["posterior_samples/label"].keys())[0]
-                f.close()
-                if approx == "none":
-                    raise Exception("Failed to extract the approximant "
-                                    "from the file: %s. Please pass the "
-                                    "approximant with the flag "
-                                    "--approximant" % (i.split("_temp")[0]))
-                approximant_list.append(approx)
-        else:
-            approximant_list = approximant
-        if len(approximant_list) != len(self.result_files):
-            raise Exception("The number of results files does not match the "
-                            "number of approximants")
-        self._approximant = approximant_list
 
     @property
     def email(self):
@@ -293,56 +239,14 @@ class Input(object):
             self._add_to_existing = True
 
     @property
-    def gracedb(self):
-        return self._gracedb
-
-    @gracedb.setter
-    def gracedb(self, gracedb):
-        if gracedb:
-            self._gracedb = gracedb
-        else:
-            self._gracedb = None
-
-    @property
     def dump(self):
         return self._dump
 
     @dump.setter
     def dump(self, dump):
+        self._dump = False
         if dump:
             self._dump = True
-        else:
-            self._dump = False
-
-    @property
-    def detectors(self):
-        return self._detectors
-
-    @detectors.setter
-    def detectors(self, detectors):
-        detector_list = []
-        if not detectors:
-            for num, i in enumerate(self.result_files):
-                f = h5py.File(i)
-                path = ("posterior_samples/label/%s/parameter_names"
-                        % (self.approximant[num]))
-                params = [j for j in f[path]]
-                f.close()
-                individual_detectors = []
-                for j in params:
-                    if b"optimal_snr" in j:
-                        det = j.split(b"_optimal_snr")[0]
-                        individual_detectors.append(det)
-                individual_detectors = sorted(
-                    [str(i.decode("utf-8")) for i in individual_detectors])
-                if individual_detectors:
-                    detector_list.append("_".join(individual_detectors))
-                else:
-                    detector_list.append(None)
-        else:
-            detector_list = detectors
-        logger.debug("The detector network is %s" % (detector_list))
-        self._detectors = detector_list
 
     @property
     def existing_labels(self):
@@ -378,29 +282,6 @@ class Input(object):
             self._existing_samples = existing.existing_samples
 
     @property
-    def existing_approximant(self):
-        return self._existing_approximant
-
-    @existing_approximant.setter
-    def existing_approximant(self, existing_approximant):
-        self._existing_approximant = None
-        if self.add_to_existing:
-            existing = ExistingFile(self.existing)
-            self._existing_approximant = existing.existing_approximant
-
-    @property
-    def existing_names(self):
-        return self._existing_names
-
-    @existing_names.setter
-    def existing_names(self, existing_names):
-        self._existing_names = None
-        if self.add_to_existing:
-            self._existing_names = [
-                "%s_%s" % (i, j) for i, j in zip(
-                    self.existing_labels, self.existing_approximant)]
-
-    @property
     def existing_meta_file(self):
         if self.add_to_existing:
             existing = ExistingFile(self.existing)
@@ -418,119 +299,21 @@ class Input(object):
                 raise Exception(
                     "The number of labels does not match the number of results "
                     "files.")
-            proposed_names = ["%s_%s" % (i, j) for i, j in zip(
-                labels, self.approximant)]
-            duplicates = dict(set(
-                (x, proposed_names.count(x)) for x in
-                filter(lambda rec: proposed_names.count(rec) > 1, proposed_names)))
-            if len(duplicates.keys()) >= 1:
-                raise Exception(
-                    "The labels and approximant combination that you have "
-                    "given do not give unique combinations. Please give other "
-                    "labels")
+            duplicated = dict(set(
+                (x, labels.count(x)) for x in
+                filter(lambda rec: labels.count(rec) > 1, labels)))
+            if len(duplicated.keys()) >= 1:
+                raise Exception("Please give a unique combination of labels")
             if self.add_to_existing:
-                existing_names = [
-                    "%s_%s" % (i, j) for i, j in zip(
-                        self.existing_labels, self.existing_approximant)]
-                for i in proposed_names:
-                    if i in existing_names:
+                for i in labels:
+                    if i in self.existing_labels:
                         raise Exception(
-                            "The labels and approximant combination that you "
-                            "have given match those already in the existing "
-                            "file. Please choose other labels")
+                            "The label '%s' already exists in the existing "
+                            "file. Please pass another unique label")
             self._labels = labels
         else:
-            label_list = self._default_labels()
-            self._labels = label_list
+            self._labels = self._default_labels()
         logger.debug("The label is %s" % (self._labels))
-
-    @property
-    def psds(self):
-        return self._psds
-
-    @psds.setter
-    def psds(self, psds):
-        psd_list = []
-        if psds:
-            for i in psds:
-                extension = i.split(".")[-1]
-                if extension == "gz":
-                    print("convert to .dat file")
-                elif extension == "dat":
-                    psd_list.append(i)
-                else:
-                    raise Exception("PSD results file not understood")
-            self._psds = psd_list
-        else:
-            self._psds = None
-
-    @property
-    def calibration(self):
-        return self._calibration
-
-    @calibration.setter
-    def calibration(self, calibration):
-        calibration_list = []
-        if calibration:
-            for i in calibration:
-                f = np.genfromtxt(i)
-                if len(f[0]) != 7:
-                    raise Exception("Calibration envelope file not understood")
-                calibration_list.append(f)
-            self._calibration = calibration_list
-            self.calibration_labels = [
-                self._IFO_from_file_name(i) for i in calibration]
-        else:
-            logger.debug("No calibration envelope file given. Checking the "
-                         "results file")
-            self._calibration_envelope = False
-            for i in self.result_files:
-                try:
-                    f = LALInferenceResultsFile(i.split("_temp")[0])
-                    data, labels = f.grab_calibration_data()
-                    if data == []:
-                        logger.info("Failed to grab calibration data from %s" % (i))
-                        data, labels = None, None
-                except Exception:
-                    logger.info("Failed to grab calibration data from %s" % (i))
-                    data, labels = None, None
-            self._calibration = data
-            self.calibration_labels = labels
-
-    @staticmethod
-    def _IFO_from_file_name(file):
-        """Return a guess of the IFO from the file name.
-
-        Parameters
-        ----------
-        file: str
-            the name of the file that you would like to make a guess for
-        """
-        file_name = file.split("/")[-1]
-        if any(j in file_name for j in ["H", "_0", "IFO0"]):
-            ifo = "H1"
-        elif any(j in file_name for j in ["L", "_1", "IFO1"]):
-            ifo = "L1"
-        elif any(j in file_name for j in ["V", "_2", "IFO2"]):
-            ifo = "V1"
-        else:
-            ifo = file_name
-        return ifo
-
-    def check_approximant_in_results_file(self):
-        """Check that the approximant that is stored in the results file
-        corresponds to the given approximant. If not then this will be changed.
-        """
-        for num, i in enumerate(self.result_files):
-            f = h5py.File(i, "r")
-            path = "posterior_samples/label"
-            keys = list(f["posterior_samples/label"].keys())
-            f.close()
-            if "none" in keys:
-                rename_group_or_dataset_in_hf5_file(
-                    i, group=[
-                        "%s/none" % (path),
-                        "%s/%s" % (path, self.approximant[num])])
 
     def check_label_in_results_file(self):
         """Check that the label that is stored in the results file corresponds
@@ -554,17 +337,17 @@ class Input(object):
         """
         logger.info("Copying the files to %s" % (self.webdir))
         path = pesummary.__file__[:-12]
-        scripts = glob(path + "/js/*.js")
+        scripts = glob(path + "/core/js/*.js")
         for i in scripts:
             shutil.copyfile(i, self.webdir + "/js/%s" % (i.split("/")[-1]))
-        scripts = glob(path + "/css/*.css")
+        scripts = glob(path + "/core/css/*.css")
         for i in scripts:
             shutil.copyfile(i, self.webdir + "/css/%s" % (i.split("/")[-1]))
         if self.config:
             for num, i in enumerate(self.config):
                 if self.webdir not in i:
                     shutil.copyfile(i, self.webdir + "/config/"
-                                    + self.approximant[num] + "_"
+                                    + self.result_files[num].split("/")[-1] + "_"
                                     + i.split("/")[-1])
 
     def convert_to_standard_format(self, results_file, injection_file=None,
@@ -591,40 +374,21 @@ class Input(object):
         """
         label_list = []
         for num, i in enumerate(self.result_files):
-            condition_list = type(self.detectors[num]) == list
-            condition_str = type(self.detectors[num]) == str
-            if self.gracedb and self.detectors and condition_list:
-                for i in self.detectors[num]:
-                    label_list.append("_".join([self.gracedb, i]))
-            elif self.gracedb and self.detectors and condition_str:
-                label_list.append("_".join(
-                    [self.gracedb, self.detectors[num]]))
-            elif self.gracedb:
-                label_list.append(self.gracedb)
-            elif self.detectors and type(self.detectors[num]) == list:
-                for i in self.detectors[num]:
-                    label_list.append("_".join(self.detectors[num]))
-            elif self.detectors and type(self.detectors[num]) == str:
-                label_list.append(self.detectors[num])
-            else:
-                label_list.append("%s" % (num))
-        proposed_names = ["%s_%s" % (i, j) for i, j in zip(
-            label_list, self.approximant)]
+            file_name = ".".join(i.split("/")[-1].split(".")[:-1])
+            label_list.append("%s_%s" % (round(time()), file_name))
+
         duplicates = dict(set(
-            (x, proposed_names.count(x)) for x in
-            filter(lambda rec: proposed_names.count(rec) > 1, proposed_names)))
+            (x, label_list.count(x)) for x in
+            filter(lambda rec: label_list.count(rec) > 1, label_list)))
+
         for i in duplicates.keys():
             for j in range(duplicates[i]):
-                ind = proposed_names.index(i)
-                proposed_names[ind] += "_%s" % (j)
+                ind = label_list.index(i)
                 label_list[ind] += "_%s" % (j)
         if self.add_to_existing:
-            existing_names = [
-                "%s_%s" % (i, j) for i, j in zip(
-                    self.existing_labels, self.existing_approximant)]
-            for num, i in enumerate(proposed_names):
-                if i in existing_names:
-                    ind = proposed_names.index(i)
+            for num, i in enumerate(label_list):
+                if i in self.existing_labels:
+                    ind = label_list.index(i)
                     label_list[ind] += "_%s" % (num)
         return label_list
 
@@ -661,27 +425,18 @@ class PostProcessing(object):
         self.webdir = inputs.webdir
         self.baseurl = inputs.baseurl
         self.result_files = inputs.result_files
-        self.approximant = inputs.approximant
-        self.detectors = inputs.detectors
         self.dump = inputs.dump
         self.email = inputs.email
         self.user = inputs.user
         self.host = inputs.host
         self.config = inputs.config
         self.existing = inputs.existing
-        self.gracedb = inputs.gracedb
         self.add_to_existing = inputs.add_to_existing
         self.labels = inputs.labels
-        self.calibration = inputs.calibration
-        self.calibration_labels = inputs.calibration_labels
-        self.sensitivity = inputs.sensitivity
-        self.psds = inputs.psds
         self.hdf5 = inputs.hdf5
         self.existing_labels = inputs.existing_labels
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples
-        self.existing_approximant = inputs.existing_approximant
-        self.existing_names = inputs.existing_names
         self.existing_meta_file = inputs.existing_meta_file
         self.colors = colors
 
@@ -689,18 +444,7 @@ class PostProcessing(object):
                               "standard_format": self._data_from_standard_format}
 
         self.result_file_data = []
-        self.maxL_samples = []
         self.same_parameters = []
-
-    @property
-    def coherence_test(self):
-        duplicates = dict(set(
-            (x, self.approximant.count(x)) for x in filter(
-                lambda rec: self.approximant.count(rec) > 1,
-                self.approximant)))
-        if len(duplicates.keys()) > 0:
-            return True
-        return False
 
     @property
     def colors(self):
@@ -764,16 +508,16 @@ class PostProcessing(object):
             the index of the results file in self.result_files
         """
         f = h5py.File(result_file, "r")
-        p = [i for i in f["posterior_samples/%s/%s/parameter_names" % (
-            self.labels[index], self.approximant[index])]]
+        p = [i for i in f["posterior_samples/%s/parameter_names" % (
+            self.labels[index])]]
         p = [i.decode("utf-8") for i in p]
-        s = [i for i in f["posterior_samples/%s/%s/samples" % (
-            self.labels[index], self.approximant[index])]]
-        inj_p = [i for i in f["posterior_samples/%s/%s/injection_parameters" % (
-            self.labels[index], self.approximant[index])]]
+        s = [i for i in f["posterior_samples/%s/samples" % (
+            self.labels[index])]]
+        inj_p = [i for i in f["posterior_samples/%s/injection_parameters" % (
+            self.labels[index])]]
         inj_p = [i.decode("utf-8") for i in inj_p]
-        inj_value = [i for i in f["posterior_samples/%s/%s/injection_data" % (
-            self.labels[index], self.approximant[index])]]
+        inj_value = [i for i in f["posterior_samples/%s/injection_data" % (
+            self.labels[index])]]
         injection = {i: j for i, j in zip(inj_p, inj_value)}
         return p, s, injection
 
@@ -803,20 +547,6 @@ class PostProcessing(object):
         return self._samples
 
     @property
-    def maxL_samples(self):
-        return self._maxL_samples
-
-    @maxL_samples.setter
-    def maxL_samples(self, maxL_samples):
-        key_data = self._key_data()
-        maxL_list = []
-        for num, i in enumerate(self.parameters):
-            dictionary = {j: key_data[num][j]["maxL"] for j in i}
-            dictionary["approximant"] = self.approximant[num]
-            maxL_list.append(dictionary)
-        self._maxL_samples = maxL_list
-
-    @property
     def same_parameters(self):
         return self._same_parameters
 
@@ -824,87 +554,3 @@ class PostProcessing(object):
     def same_parameters(self, same_parameters):
         params = list(set.intersection(*[set(l) for l in self.parameters]))
         self._same_parameters = params
-
-    @property
-    def label_to_prepend_approximant(self):
-        labels = [i[len(self.gracedb) + 1:] if self.gracedb else i for i in
-                  self.labels]
-        prepend = [None] * len(self.approximant)
-        duplicates = dict(set(
-            (x, self.approximant.count(x)) for x in filter(
-                lambda rec: self.approximant.count(rec) > 1,
-                self.approximant)))
-        if len(duplicates.keys()) > 0:
-            for num, i in enumerate(self.approximant):
-                if i in duplicates.keys():
-                    prepend[num] = labels[num]
-        return prepend
-
-    @property
-    def psd_labels(self):
-        return [self._IFO_from_file_name(i) for i in self.psds]
-
-    @staticmethod
-    def _IFO_from_file_name(file):
-        """Return a guess of the IFO from the file name.
-
-        Parameters
-        ----------
-        file: str
-            the name of the file that you would like to make a guess for
-        """
-        file_name = file.split("/")[-1]
-        if any(j in file_name for j in ["H", "_0", "IFO0"]):
-            ifo = "H1"
-        elif any(j in file_name for j in ["L", "_1", "IFO1"]):
-            ifo = "L1"
-        elif any(j in file_name for j in ["V", "_2", "IFO2"]):
-            ifo = "V1"
-        else:
-            ifo = file_name
-        return ifo
-
-    def _key_data(self):
-        """Grab the mean, median, maximum likelihood value and the standard
-        deviation of each posteiror distribution for each results file.
-        """
-        key_data_list = []
-        for num, i in enumerate(self.samples):
-            data = {}
-            likelihood_ind = self.parameters[num].index("log_likelihood")
-            logL = [j[likelihood_ind] for j in i]
-            for ind, j in enumerate(self.parameters[num]):
-                index = self.parameters[num].index("%s" % (j))
-                subset = [k[index] for k in i]
-                data[j] = {"mean": np.mean(subset),
-                           "median": np.median(subset),
-                           "maxL": subset[logL.index(np.max(logL))],
-                           "std": np.std(subset)}
-            key_data_list.append(data)
-        return key_data_list
-
-    def _grab_frequencies_from_psd_data_file(self, file):
-        """Return the frequencies stored in the psd data files
-
-        Parameters
-        ----------
-        file: str
-            path to the psd data file
-        """
-        fil = open(file)
-        fil = fil.readlines()
-        fil = [i.strip().split() for i in fil]
-        return [float(i[0]) for i in fil]
-
-    def _grab_strains_from_psd_data_file(sef, file):
-        """Return the strains stored in the psd data files
-
-        Parameters
-        ----------
-        file: str
-            path to the psd data file
-        """
-        fil = open(file)
-        fil = fil.readlines()
-        fil = [i.strip().split() for i in fil]
-        return [float(i[1]) for i in fil]

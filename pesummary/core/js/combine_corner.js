@@ -67,7 +67,7 @@ function combine(list, label="None") {
               }
           }
       }
-      imgObject.src = '../plots/corner/'+label+'_'+approx+'_all_density_plots.png';
+      imgObject.src = '../plots/corner/'+label+'_all_density_plots.png';
       promise = new Promise((resolve, reject) => {
           imgObject.onload = () => onImgLoaded(reject)
       })

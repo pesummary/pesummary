@@ -22,8 +22,8 @@ import h5py
 
 import deepdish
 
-from pesummary.file import one_format
-from pesummary.file.conversions import *
+from pesummary.gw.file import one_format
+from pesummary.gw.file.conversions import *
 
 import pytest
 
@@ -200,10 +200,10 @@ class TestConversions(object):
 
     def test_one_format(self):
         path = "./tests/files/GW150914_result.h5"
-        output = one_format.OneFormat(path, None)
+        output = one_format.GWOneFormat(path, None)
         output.save()
         assert os.path.isfile("./tests/files/GW150914_result.h5_temp")
         path = "./tests/files/lalinference_example.h5"
-        output = one_format.OneFormat(path, None)
+        output = one_format.GWOneFormat(path, None)
         output.save()
         assert os.path.isfile("./tests/files/lalinference_example.h5_temp")

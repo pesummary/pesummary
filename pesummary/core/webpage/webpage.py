@@ -15,8 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import pesummary
-from pesummary.webpage import tables
-from pesummary.webpage.base import Base
+from pesummary.core.webpage import tables
+from pesummary.core.webpage.base import Base
 
 import sys
 from pygments import highlight
@@ -47,6 +47,7 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <script src='./js/side_bar.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="./css/navbar.css">
+    <link rel="stylesheet" href="./css/font.css">
 """
 
 OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
@@ -61,6 +62,7 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <script src='../js/side_bar.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="../css/font.css">
 """
 
 
@@ -162,11 +164,13 @@ class page(Base):
             _class='jumbotron', _style='margin-bottom:0; line-height: 0.5;'
             + 'background-color:#E0E0E0')
         self.add_content(
-            "<p>This page was produced by {} at {} on {} on behalf "
-            "of the Parameter Estimation group\n".format(
+            "<p style='font-family:Arial-body'>This page was produced by {} at "
+            "{} on {} on behalf of the Parameter Estimation group\n".format(
                 user, time.strftime("%H:%M"), time.strftime("%B %d %Y")), indent=2)
-        self.add_content("<p>Run directories found at {}</p>\n".format(rundir), indent=2)
-        self.add_content("<p>This code was generated with the following command line call:</p>", indent=2)
+        self.add_content("<p style='font-family:Arial-body'>Run directories "
+                         "found at {}</p>\n".format(rundir), indent=2)
+        self.add_content("<p style='font-family:Arial-body'>This code was "
+                         "generated with the following command line call:</p>", indent=2)
         self.add_content("<p> </p>", indent=2)
         self.make_div(
             _class='container', _style='background-color:#FFFFFF; '
@@ -217,6 +221,30 @@ class page(Base):
         """Make footer for document in bootstrap format.
         """
         self._footer(user, rundir)
+
+    def make_banner(self, approximant=None, key="Summary"):
+        """Make a banner for the document.
+        """
+        self.make_div(indent=2, _class='banner')
+        self.add_content("%s" % (approximant))
+        self.end_div()
+        self.make_div(indent=2, _class='paragraph')
+        if key == "Summary":
+            self.add_content(
+                "The figures below show the summary plots for the run")
+        elif key == "config":
+            self.add_content(
+                "Below is the config file for %s" % (approximant))
+        elif key == "corner":
+            self.add_content(
+                "Below is the custom corner plotter for %s" % (approximant))
+        elif key == "Comparison":
+            self.add_content(
+                "Below are the summary comparison plots")
+        else:
+            self.add_content(
+                "The figures below show the plots for %s" % (approximant))
+        self.end_div()
 
     def make_navbar(self, links=None, samples_path="./samples", search=True,
                     histogram_download=None,
@@ -605,8 +633,8 @@ class page(Base):
         self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>")
         self.add_content(
-            "<p style='margin-top:2.5em'> Input the parameter names that you "
-            "would like to compare</p>", indent=2)
+            "<p style='margin-top:2.5em; font-family: Arial-body; font-size:14px'>"
+            " Input the parameter names that you would like to compare</p>", indent=2)
         self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>\n")
         self.add_content("<input type='text' placeholder='search' id='corner_search'>\n", indent=2)

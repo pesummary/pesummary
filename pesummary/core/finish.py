@@ -17,7 +17,7 @@ import subprocess
 import os
 
 from pesummary.utils.utils import logger
-from pesummary.inputs import PostProcessing
+from pesummary.core.inputs import PostProcessing
 
 
 class FinishingTouches(PostProcessing):
