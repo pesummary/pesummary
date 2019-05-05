@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from setuptools import setup, find_packages
+from setuptools import setup
 import subprocess
 
 version = "0.1.6"
@@ -66,7 +66,10 @@ setup(name='pesummary',
           'lalsuite',
           'pytest'],
       include_package_data=True,
-      packages=find_packages(),
+      packages=['pesummary', 'pesummary.core', 'pesummary.core.webpage',
+                'pesummary.core.plots', 'pesummary.core.file',
+                'pesummary.gw', 'pesummary.gw.file',
+                'pesummary.gw.plots', 'pesummary.utils', 'cli']
       package_data={'pesummary': ['core/js/*.js', 'core/css/*.css', version_file]},
       entry_points={
           'console_scripts': [
