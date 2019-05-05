@@ -84,10 +84,14 @@ class GWMetaFile(GWPostProcessing, MetaFile):
         super(GWMetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
         self.data = {}
-        self.existing_label = None
+        self.existing_label = [None]
         self.existing_approximant = None
         self.existing_parameters = None
         self.existing_samples = None
+        self.existing_psd = None
+        self.existing_calibration = None
+        self.existing_config = None
+
         self.generate_meta_file_data()
 
         if not self.hdf5:
@@ -130,7 +134,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
         self._make_dictionary()
 
     def _make_dictionary(self):
-        if self.existing_label:
+        if self.existing:
             self._make_dictionary_structure(
                 self.existing_label,
                 psd=self.existing_psd,

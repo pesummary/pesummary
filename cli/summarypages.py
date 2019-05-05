@@ -614,7 +614,6 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         pages = ["%s_%s" % (self.labels[num], i.split("/")[-1]) for num, i in enumerate(
             self.result_files)]
         pages.append("home")
-        print(pages)
         webpage.make_html(web_dir=self.webdir, pages=pages)
         if self.gracedb:
             html_file = self._setup_page(
