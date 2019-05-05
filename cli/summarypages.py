@@ -303,12 +303,15 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         pages.append("home")
         webpage.make_html(web_dir=self.webdir, pages=pages)
         html_file = self._setup_page("home", self.navbar_for_homepage)
+        html_file.make_banner(approximant="Summary", key="Summary")
 
         for num, i in enumerate(self.result_files):
             html_file = self._setup_page(
                 i.split("/")[-1], self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Summary page" % (i),
                 background_colour=self.colors[num], approximant=i.split("/")[-1])
+            html_file.make_banner(approximant=self.labels[num],
+                                  key=self.labels[num])
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
@@ -329,6 +332,8 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                         app, j),
                     approximant=app.split("/")[-1], background_colour=self.colors[num],
                     histogram_download=True)
+                html_file.make_banner(approximant=self.labels[num],
+                                      key=self.labels[num])
                 path = self.image_path["other"]
                 label = self.labels[num]
                 contents = [[path + "%s_1d_posterior_%s.png" % (label, j)],
@@ -343,6 +348,8 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Posteriors for multiple" % (app),
                 approximant=app.split("/")[-1], background_colour=self.colors[num])
+            html_file.make_banner(approximant=self.labels[num],
+                                  key=self.labels[num])
             ordered_parameters = self._categorize_parameters(self.parameters[num])
             ordered_parameters = [i for j in ordered_parameters for i in j[1]]
             html_file.make_search_bar(sidebar=[i for i in self.parameters[num]],
@@ -365,6 +372,8 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Corner Plots" % (app),
                 background_colour=self.colors[num], approximant=app.split("/")[-1])
+            html_file.make_banner(approximant=self.labels[num],
+                                  key="corner")
             html_file.make_search_bar(sidebar=self.parameters[num],
                                       popular_options=[],
                                       label=self.labels[num])
@@ -383,6 +392,8 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s configuration" % (app),
                 background_colour=self.colors[num], approximant=app.split("/")[-1])
+            html_file.make_banner(approximant=self.labels[num],
+                                  key="config")
             if self.config and num < len(self.config):
                 with open(self.config[num], 'r') as f:
                     contents = f.read()
@@ -392,7 +403,8 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                     f.write(styles)
             else:
                 html_file.add_content(
-                    "<div class='row justify-content-center'>"
+                    "<div class='row justify-content-center'; style='font-family: Arial-body;"
+                    "font-size: 14px'>"
                     "<p style='margin-top:2.5em'> No configuration file was "
                     "provided </p></div>")
             html_file.make_footer(user=self.user, rundir=self.webdir)
@@ -405,6 +417,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         html_file = self._setup_page(
             "Comparison", self.navbar_for_comparison_homepage,
             title="Comparison Summary Page", approximant="Comparison")
+        html_file.make_banner(approximant="Comparison", key="Comparison")
         path = self.image_path["other"]
         try:
             statistics = self.comparison_statistics
@@ -440,6 +453,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                 self.navbar_for_comparison_homepage,
                 title="Comparison PDF for %s" % (i),
                 approximant="Comparison")
+            html_file.make_banner(approximant="Comparison", key="Comparison")
             html_file.insert_image(path + "combined_1d_posterior_%s.png" % (i),
                                    code="changeimage")
             if statistics:
@@ -622,6 +636,7 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                     self.gracedb))
         else:
             html_file = self._setup_page("home", self.navbar_for_homepage)
+        html_file.make_banner(approximant="Summary", key="Summary")
         path = self.image_path["home"]
         image_contents = []
         if self.psds:
@@ -661,6 +676,8 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                 i.split("/")[-1], self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Summary page" % (i),
                 background_colour=self.colors[num], approximant=i.split("/")[-1])
+            html_file.make_banner(approximant=self.labels[num],
+                                  key=self.labels[num])
             path = self.image_path["other"]
             label = self.labels[num]
             image_contents = [[path + "%s_1d_posterior_mass_1.png" % (label),
@@ -701,6 +718,8 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                         app, j),
                     approximant=app.split("/")[-1], background_colour=self.colors[num],
                     histogram_download=True)
+                html_file.make_banner(approximant=self.labels[num],
+                                      key=self.labels[num])
                 path = self.image_path["other"]
                 label = self.labels[num]
                 contents = [[path + "%s_1d_posterior_%s.png" % (label, j)],
@@ -740,6 +759,8 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                 self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Corner Plots" % (app),
                 background_colour=self.colors[num], approximant=app.split("/")[-1])
+            html_file.make_banner(approximant=self.labels[num],
+                                  key="corner")
             params = ["luminosity_distance", "dec", "a_2", "phase",
                       "a_1", "geocent_time", "phi_jl", "psi", "ra",
                       "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
@@ -764,6 +785,7 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         html_file = self._setup_page(
             "Comparison", self.navbar_for_comparison_homepage,
             title="Comparison Summary Page", approximant="Comparison")
+        html_file.make_banner(approximant="Comparison", key="Comparison")
         path = self.image_path["other"]
         contents = [[path + "combined_skymap.png", path + "compare_waveforms.png"]]
         html_file.make_table_of_images(contents=contents)
@@ -823,6 +845,7 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                 self.navbar_for_comparison_homepage,
                 title="Comparison PDF for %s" % (i),
                 approximant="Comparison")
+            html_file.make_banner(approximant="Comparison", key="Comparison")
             html_file.insert_image(path + "combined_1d_posterior_%s.png" % (i),
                                    code="changeimage")
             if statistics:

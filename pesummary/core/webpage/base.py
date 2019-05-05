@@ -96,7 +96,7 @@ class Base():
             the indent of the new line
         """
         if not style:
-            style = "margin-top:7.5em; margin-bottom:5em; background-color:#FFFFFF; " + \
+            style = "margin-top:3em; margin-bottom:5em; background-color:#FFFFFF; " + \
                     "box-shadow: 0 0 5px grey;"
         self.make_div(indent, _class="container", _style=style)
 
