@@ -16,7 +16,7 @@
 from setuptools import setup, find_packages
 import subprocess
 
-version = "0.1.5"
+version = "0.1.6"
 
 
 def full_description():
@@ -67,12 +67,12 @@ setup(name='pesummary',
           'pytest'],
       include_package_data=True,
       packages=find_packages(),
-      package_data={'pesummary': ['js/*.js', 'css/*.css', version_file]},
+      package_data={'pesummary': ['core/js/*.js', 'core/css/*.css', version_file]},
       entry_points={
           'console_scripts': [
               'summaryconvert=pesummary.file.one_format:main',
-              'summarypages=pesummary.summarypages:main',
-              'summaryplots=pesummary.summaryplots:main']},
+              'summarypages=cli.summarypages:main',
+              'summaryplots=cli.summaryplots:main']},
       classifiers=[
           "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6"],

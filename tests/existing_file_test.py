@@ -16,7 +16,7 @@
 import os
 import shutil
 
-from pesummary.file.existing import ExistingFile
+from pesummary.gw.file.existing import GWExistingFile
 
 import h5py
 import numpy as np
@@ -36,24 +36,19 @@ class TestExistingFile(object):
         samples = np.array([[2.0, 1.0], [4.0, 2.0]])
         f = h5py.File("./.outdir_existing/samples/posterior_samples.h5")
         posterior_samples = f.create_group("posterior_samples")
-        label = posterior_samples.create_group("H1_L1")
-        approx = label.create_group("IMRPhenomPv2")
-        approx.create_dataset("parameter_names", data=parameters)
-        approx.create_dataset("samples", data=samples)
+        label = posterior_samples.create_group("label")
+        label.create_dataset("parameter_names", data=parameters)
+        label.create_dataset("samples", data=samples)
         f.close()
 
-        self.existing_object = ExistingFile(self.existing)
+        self.existing_object = GWExistingFile(self.existing)
 
     def test_existing_file(self):
         assert self.existing_object.existing_file == (
             "./.outdir_existing/samples/posterior_samples.h5")
 
-    def test_existing_approximant(self):
-        assert self.existing_object.existing_approximant == [
-            "IMRPhenomPv2"]
-
     def test_existing_labels(self):
-        assert self.existing_object.existing_labels == ["H1_L1"]
+        assert self.existing_object.existing_labels == ["label"]
 
     def test_existing_samples(self):
         assert all(

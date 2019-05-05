@@ -33,6 +33,15 @@ If you choose to install :code:`PESummary` using :code:`conda`, then simply run:
     $ source ~/virtualenvs/pesummary_pyenv3.6/bin/activate
     $ conda install -c conda-forge pesummary
 
+Pulling the PESummary docker image
+----------------------------------
+
+If you would like, you are able to pull the :code:`PESummary` docker image. To do this, simply run:
+
+.. code-block:: console
+
+    $ docker pull 08hoyc/pesummary:v0.1.5
+
 Installing PESummary from source
 --------------------------------
 
@@ -66,6 +75,6 @@ We recommend that you always keep up to date with new releases. If you would lik
 .. code:: console
 
    $ python -c "import pesummary; print(pesummary.__version__)"
-   0.1.3
+   0.1.5
 
-This shows that we are running version 0.1.3.
+This shows that we are running version 0.1.5.

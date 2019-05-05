@@ -13,17 +13,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os
-
 import numpy as np
 import h5py
-import json
 import configparser
 
 from pesummary.utils.utils import logger
-from pesummary.inputs import PostProcessing
-from pesummary.file.existing import ExistingFile
-from pesummary.utils.utils import make_dir
+from pesummary.gw.inputs import GWPostProcessing
+from pesummary.gw.file.existing import GWExistingFile
+from pesummary.core.file.meta_file import MetaFile
 
 
 def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
@@ -46,6 +43,8 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             f.create_group("calibration_envelope")
         if "config_file" in dictionary.keys():
             f.create_group("config_file")
+        if "approximant" in dictionary.keys():
+            f.create_group("approximant")
     except Exception:
         pass
     if current_path is None:
@@ -72,7 +71,7 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             ))
 
 
-class MetaFile(PostProcessing):
+class GWMetaFile(GWPostProcessing, MetaFile):
     """This class handles the creation of a meta file storing all information
     from the analysis
 
@@ -82,13 +81,17 @@ class MetaFile(PostProcessing):
         name of the meta file storing all information
     """
     def __init__(self, inputs):
-        super(MetaFile, self).__init__(inputs)
+        super(GWMetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
         self.data = {}
-        self.existing_label = None
+        self.existing_label = [None]
         self.existing_approximant = None
         self.existing_parameters = None
         self.existing_samples = None
+        self.existing_psd = None
+        self.existing_calibration = None
+        self.existing_config = None
+
         self.generate_meta_file_data()
 
         if not self.hdf5:
@@ -120,40 +123,57 @@ class MetaFile(PostProcessing):
         """Generate dictionary of data which will go into the meta_file
         """
         if self.existing:
-            existing_file = ExistingFile(self.existing)
+            existing_file = GWExistingFile(self.existing)
             self.existing_parameters = existing_file.existing_parameters
             self.existing_samples = existing_file.existing_samples
-            self.existing_approximant = existing_file.existing_approximant
             self.existing_label = existing_file.existing_labels
+            self.existing_psd = existing_file.existing_psd
+            self.existing_calibration = existing_file.existing_calibration
+            self.existing_config = existing_file.existing_config
+            self.existing_approximant = existing_file.existing_approximant
         self._make_dictionary()
 
     def _make_dictionary(self):
-        if self.existing_label:
+        if self.existing:
             self._make_dictionary_structure(
-                self.existing_label, self.existing_approximant
+                self.existing_label,
+                psd=self.existing_psd,
+                approx=self.existing_approximant,
+                calibration=self.existing_calibration,
+                config=self.existing_config
             )
             for num, i in enumerate(self.existing_label):
-                self._add_data(i, self.existing_approximant[num],
+                self._add_data(i,
                                self.existing_parameters[num],
                                self.existing_samples[num],
+                               approximant=self.existing_approximant[num],
+                               psd=self.existing_psd,
+                               calibration=self.existing_calibration,
+                               config=self.existing_config
                                )
-        self._make_dictionary_structure(self.labels, self.approximant,
+
+        self._make_dictionary_structure(self.labels,
                                         psd=self.psds,
+                                        approx=self.approximant,
                                         calibration=self.calibration,
                                         config=self.config
                                         )
         for num, i in enumerate(self.labels):
-            psd = self._grab_psd_data_from_data_files(
-                self.psds, self.psd_labels) if self.psds else None
-            calibration = self._grab_calibration_data_from_data_files(
-                self.calibration, self.calibration_labels) if self.calibration \
-                else None
-            config = self._grab_config_data_from_data_file(self.config[num]) if \
-                self.config and num < len(self.config) else None
-            self._add_data(i, self.approximant[num], self.parameters[num],
-                           self.samples[num], psd=psd, calibration=calibration,
-                           config=config
-                           )
+            if i not in self.existing_label:
+                psd = self._grab_psd_data_from_data_files(
+                    self.psds, self.psd_labels) if self.psds else None
+                calibration = self._grab_calibration_data_from_data_files(
+                    self.calibration, self.calibration_labels) if \
+                    self.calibration else None
+                config = self._grab_config_data_from_data_file(self.config[num]) \
+                    if self.config and num < len(self.config) else None
+                approximant = self.approximant if self.approximant else \
+                    [None] * len(self.samples)
+                self._add_data(i, self.parameters[num],
+                               self.samples[num], psd=psd,
+                               calibration=calibration, config=config,
+                               approximant=approximant[num]
+                               )
 
     def _grab_psd_data_from_data_files(self, files, psd_labels):
         """Return the psd data as a dictionary
@@ -210,7 +230,7 @@ class MetaFile(PostProcessing):
                     data[i][key] = config["%s" % (i)]["%s" % (key)]
         return data
 
-    def _add_data(self, label, approximant, parameters, samples,
+    def _add_data(self, label, parameters, samples, approximant=None,
                   psd=None, calibration=None, config=None):
         """Add data to the stored dictionary
 
@@ -231,66 +251,43 @@ class MetaFile(PostProcessing):
         config: dict, optional
             data associated with the configuration file
         """
-        self.data["posterior_samples"][label][approximant] = {
+        self.data["posterior_samples"][label] = {
             "parameter_names": list(parameters),
             "samples": self.convert_to_list(samples)
         }
         if psd:
             for i in list(psd.keys()):
-                self.data["psds"][label][approximant][i] = psd[i]
+                self.data["psds"][label][i] = psd[i]
         if calibration:
             for i in list(calibration.keys()):
-                self.data["calibration_envelope"][label][approximant][i] = \
+                self.data["calibration_envelope"][label][i] = \
                     calibration[i]
         if config:
-            self.data["config_file"][label][approximant] = config
+            self.data["config_file"][label] = config
+        if approximant:
+            self.data["approximant"][label] = approximant
 
-    def _make_dictionary_structure(self, label, approximant, psd=None,
+    def _make_dictionary_structure(self, label, psd=None, approx=None,
                                    calibration=None, config=None):
         for num, i in enumerate(label):
-            self._add_label_and_approximant(
-                "posterior_samples", i, approximant[num]
+            self._add_label(
+                "posterior_samples", i
             )
             if psd:
-                self._add_label_and_approximant("psds", i, approximant[num])
+                self._add_label("psds", i)
             if calibration:
-                self._add_label_and_approximant(
-                    "calibration_envelope", i, approximant[num]
+                self._add_label(
+                    "calibration_envelope", i
                 )
             if config:
-                self._add_label_and_approximant(
-                    "config_file", i, approximant[num]
+                self._add_label(
+                    "config_file", i,
                 )
-
-    def _add_label_and_approximant(self, base_level, label, approximant):
-        if base_level not in list(self.data.keys()):
-            self.data[base_level] = {}
-        if label not in list(self.data[base_level].keys()):
-            self.data[base_level][label] = {}
-        self.data[base_level][label][approximant] = {}
-
-    def save_to_json(self):
-        with open(self.meta_file, "w") as f:
-            json.dump(self.data, f, indent=4, sort_keys=True)
+            if approx:
+                self._add_label(
+                    "approximant", i,
+                )
 
     def save_to_hdf5(self):
         with h5py.File(self.meta_file, "w") as f:
             _recursively_save_dictionary_to_hdf5_file(f, self.data)
-
-    def generate_dat_file(self):
-        """Generate a single .dat file that contains all the samples for a
-        given analysis
-        """
-        self.savedir = "%s/samples/dat" % (self.webdir)
-        if not os.path.isdir(self.savedir):
-            make_dir(self.savedir)
-        for num, i in enumerate(self.result_files):
-            if "posterior_samples.h5" not in i:
-                make_dir("%s/%s_%s" % (
-                    self.savedir, self.labels[num], self.approximant[num]))
-                for idx, j in enumerate(self.parameters[num]):
-                    data = [k[idx] for k in self.samples[num]]
-                    np.savetxt("%s/%s_%s/%s_%s_%s_samples.dat" % (
-                        self.savedir, self.labels[num], self.approximant[num],
-                        self.labels[num], self.approximant[num], j), data,
-                        fmt="%s")

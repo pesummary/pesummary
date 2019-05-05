@@ -15,8 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import pesummary
-from pesummary.webpage import tables
-from pesummary.webpage.base import Base
+from pesummary.core.webpage import tables
+from pesummary.core.webpage.base import Base
 
 import sys
 from pygments import highlight
