@@ -115,14 +115,14 @@ def m1_from_mchirp_q(mchirp, q):
     """Return the mass of the larger black hole given the chirp mass and
     mass ratio
     """
-    return (q**(2. / 5.)) * ((1.0 + q)**(1. / 5.)) * mchirp
+    return ((1. / q)**(2. / 5.)) * ((1.0 + (1. / q))**(1. / 5.)) * mchirp
 
 
 def m2_from_mchirp_q(mchirp, q):
     """Return the mass of the smaller black hole given the chirp mass and
     mass ratio
     """
-    return (q**(-3. / 5.)) * ((1.0 + q)**(1. / 5.)) * mchirp
+    return ((1. / q)**(-3. / 5.)) * ((1.0 + (1. / q))**(1. / 5.)) * mchirp
 
 
 def eta_from_m1_m2(mass1, mass2):
@@ -134,21 +134,21 @@ def eta_from_m1_m2(mass1, mass2):
 def q_from_m1_m2(mass1, mass2):
     """Return the mass ratio given the samples for mass1 and mass2
     """
-    return mass1 / mass2
+    return mass2 / mass1
 
 
 def q_from_eta(symmetric_mass_ratio):
     """Return the mass ratio given samples for symmetric mass ratio
     """
     temp = (1 / symmetric_mass_ratio / 2 - 1)
-    return temp - (temp ** 2 - 1) ** 0.5
+    return (temp - (temp ** 2 - 1) ** 0.5)
 
 
 def mchirp_from_mtotal_q(total_mass, mass_ratio):
     """Return the chirp mass given samples for total mass and mass ratio
     """
-    mass1 = mass_ratio * total_mass / (1. + mass_ratio)
-    mass2 = total_mass / (1. + mass_ratio)
+    mass1 = (1. / mass_ratio) * total_mass / (1. + (1. / mass_ratio))
+    mass2 = total_mass / (1. + (1. / mass_ratio))
     return eta_from_m1_m2(mass1, mass2)**(3. / 5) * (mass1 + mass2)
 
 

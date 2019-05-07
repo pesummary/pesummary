@@ -163,7 +163,6 @@ class GWOneFormat(object):
             for i in self.fixed_data.keys():
                 fixed_parameter = i
                 fixed_value = self.fixed_data[i]
-
                 try:
                     param = standard_names[fixed_parameter]
                     if param in parameters:
@@ -713,7 +712,7 @@ class GWOneFormat(object):
         if "mass_ratio" in self.parameters:
             ind = self.parameters.index("mass_ratio")
             median = np.median([i[ind] for i in self.samples])
-            if median < 1.:
+            if median > 1.:
                 self._invert_q()
         if "chirp_mass" not in self.parameters and "total_mass" in self.parameters:
             self._mchirp_from_mtotal_q()

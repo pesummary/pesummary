@@ -200,8 +200,11 @@ class Input(object):
         for num, i in enumerate(samples):
             if not os.path.isfile(i):
                 raise Exception("File %s does not exist" % (i))
+            config = None
+            if self.config:
+                config = self.config[num]
             std_form = self.convert_to_standard_format(
-                i, self.inj_file[num], config_file=None)
+                i, self.inj_file[num], config_file=config)
             sample_list.append(std_form)
         self._samples = sample_list
 
