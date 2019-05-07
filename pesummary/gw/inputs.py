@@ -233,11 +233,11 @@ class GWInput(Input):
             the name of the file that you would like to make a guess for
         """
         file_name = file.split("/")[-1]
-        if any(j in file_name for j in ["H", "_0", "IFO0"]):
+        if any(j in file_name for j in ["H1", "_0", "IFO0"]):
             ifo = "H1"
-        elif any(j in file_name for j in ["L", "_1", "IFO1"]):
+        elif any(j in file_name for j in ["L1", "_1", "IFO1"]):
             ifo = "L1"
-        elif any(j in file_name for j in ["V", "_2", "IFO2"]):
+        elif any(j in file_name for j in ["V1", "_2", "IFO2"]):
             ifo = "V1"
         else:
             ifo = file_name

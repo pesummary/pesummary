@@ -9,6 +9,8 @@ from pesummary.gw.file.meta_file import GWMetaFile
 import numpy as np
 from scipy import stats
 
+import os
+
 from pesummary.utils.utils import logger
 from pesummary.core.webpage import webpage
 
@@ -163,7 +165,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         passed a coherence test, then we need to prepend the approximant by
         a label so we can determine which tab corresponds to which network.
         """
-        return [{i.split("/")[-1]: j} for i, j in zip(self.result_files, self.labels)]
+        return [{j: j} for j in self.labels]
 
     def _categorize_parameters(self, parameters):
         """Categorize the parameters into common headings.
@@ -244,7 +246,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         self.make_1d_histogram_pages()
         self.make_corner_pages()
         self.make_config_pages()
-        if len(self.result_files) > 1:
+        if len(self.labels) > 1:
             self.make_comparison_pages()
         self.make_error_page()
 
@@ -298,58 +300,49 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
     def make_home_pages(self):
         """Make the home pages.
         """
-        pages = ["%s_%s" % (self.labels[num], i.split("/")[-1]) for num, i in enumerate(
-            self.result_files)]
+        pages = ["%s_%s" % (i, i) for i in self.labels]
         pages.append("home")
         webpage.make_html(web_dir=self.webdir, pages=pages)
         html_file = self._setup_page("home", self.navbar_for_homepage)
         html_file.make_banner(approximant="Summary", key="Summary")
 
-        for num, i in enumerate(self.result_files):
+        for num, i in enumerate(self.labels):
             html_file = self._setup_page(
-                i.split("/")[-1], self.navbar_for_approximant_homepage[num],
-                self.labels[num], title="%s Summary page" % (i),
-                background_colour=self.colors[num], approximant=i.split("/")[-1])
-            html_file.make_banner(approximant=self.labels[num],
-                                  key=self.labels[num])
+                i, self.navbar_for_approximant_homepage[num],
+                i, title="%s Summary page" % (i),
+                background_colour=self.colors[num], approximant=i)
+            html_file.make_banner(approximant=i, key=i)
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
     def make_1d_histogram_pages(self):
         """Make the 1d histogram pages.
         """
-        pages = ["%s_%s_%s" % (self.labels[num], i.split("/")[-1], j) for num, i in
-                 enumerate(self.result_files) for j in self.parameters[num]]
-        pages += ["%s_%s_multiple" % (self.labels[num], i.split("/")[-1]) for num, i in
-                  enumerate(self.result_files)]
+        pages = ["%s_%s_%s" % (i, i, j) for num, i in enumerate(self.labels)
+                 for j in self.parameters[num]]
+        pages += ["%s_%s_multiple" % (i, i) for i in self.labels]
         webpage.make_html(web_dir=self.webdir, pages=pages)
-        for num, app in enumerate(self.result_files):
+        for num, app in enumerate(self.labels):
             for j in self.parameters[num]:
                 html_file = self._setup_page(
-                    "%s_%s" % (app.split("/")[-1], j),
-                    self.navbar_for_approximant_homepage[num],
-                    self.labels[num], title="%s Posterior PDF for %s" % (
-                        app, j),
-                    approximant=app.split("/")[-1], background_colour=self.colors[num],
+                    "%s_%s" % (app, j), self.navbar_for_approximant_homepage[num],
+                    app, title="%s Posterior PDF for %s" % (app, j),
+                    approximant=app, background_colour=self.colors[num],
                     histogram_download=True)
-                html_file.make_banner(approximant=self.labels[num],
-                                      key=self.labels[num])
+                html_file.make_banner(approximant=app, key=app)
                 path = self.image_path["other"]
-                label = self.labels[num]
-                contents = [[path + "%s_1d_posterior_%s.png" % (label, j)],
-                            [path + "%s_sample_evolution_%s.png" % (label, j),
-                             path + "%s_autocorrelation_%s.png" % (label, j)]]
+                contents = [[path + "%s_1d_posterior_%s.png" % (app, j)],
+                            [path + "%s_sample_evolution_%s.png" % (app, j),
+                             path + "%s_autocorrelation_%s.png" % (app, j)]]
                 html_file.make_table_of_images(
                     contents=contents, rows=1, columns=2, code="changeimage")
                 html_file.make_footer(user=self.user, rundir=self.webdir)
                 html_file.close()
             html_file = self._setup_page(
-                "%s_multiple" % (app.split("/")[-1]),
-                self.navbar_for_approximant_homepage[num],
-                self.labels[num], title="%s Posteriors for multiple" % (app),
-                approximant=app.split("/")[-1], background_colour=self.colors[num])
-            html_file.make_banner(approximant=self.labels[num],
-                                  key=self.labels[num])
+                "%s_multiple" % (app), self.navbar_for_approximant_homepage[num],
+                app, title="%s Posteriors for multiple" % (app),
+                approximant=app, background_colour=self.colors[num])
+            html_file.make_banner(approximant=app, key=app)
             ordered_parameters = self._categorize_parameters(self.parameters[num])
             ordered_parameters = [i for j in ordered_parameters for i in j[1]]
             html_file.make_search_bar(sidebar=[i for i in self.parameters[num]],
@@ -363,17 +356,14 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
     def make_corner_pages(self):
         """Make the corner pages.
         """
-        pages = ["%s_%s_corner" % (self.labels[num], i.split("/")[-1]) for num, i in
-                 enumerate(self.result_files)]
+        pages = ["%s_%s_corner" % (i, i) for i in self.labels]
         webpage.make_html(web_dir=self.webdir, pages=pages)
-        for num, app in enumerate(self.result_files):
+        for num, app in enumerate(self.labels):
             html_file = self._setup_page(
-                "%s_corner" % (app.split("/")[-1]),
-                self.navbar_for_approximant_homepage[num],
-                self.labels[num], title="%s Corner Plots" % (app),
-                background_colour=self.colors[num], approximant=app.split("/")[-1])
-            html_file.make_banner(approximant=self.labels[num],
-                                  key="corner")
+                "%s_corner" % (app), self.navbar_for_approximant_homepage[num],
+                app, title="%s Corner Plots" % (app),
+                background_colour=self.colors[num], approximant=app)
+            html_file.make_banner(approximant=app, key="corner")
             html_file.make_search_bar(sidebar=self.parameters[num],
                                       popular_options=[],
                                       label=self.labels[num])
@@ -383,23 +373,20 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
     def make_config_pages(self):
         """Make the configuration pages.
         """
-        pages = ["%s_%s_config" % (self.labels[num], i.split("/")[-1]) for num, i in
-                 enumerate(self.result_files)]
+        pages = ["%s_%s_config" % (i, i) for i in self.labels]
         webpage.make_html(web_dir=self.webdir, pages=pages, stylesheets=pages)
-        for num, app in enumerate(self.result_files):
+        for num, app in enumerate(self.labels):
             html_file = self._setup_page(
-                "%s_config" % (app.split("/")[-1]),
-                self.navbar_for_approximant_homepage[num],
-                self.labels[num], title="%s configuration" % (app),
-                background_colour=self.colors[num], approximant=app.split("/")[-1])
-            html_file.make_banner(approximant=self.labels[num],
-                                  key="config")
+                "%s_config" % (app), self.navbar_for_approximant_homepage[num],
+                app, title="%s configuration" % (app),
+                background_colour=self.colors[num], approximant=app)
+            html_file.make_banner(approximant=app, key="config")
             if self.config and num < len(self.config):
                 with open(self.config[num], 'r') as f:
                     contents = f.read()
                 styles = html_file.make_code_block(language='ini', contents=contents)
                 with open('{0:s}/css/{1:s}_{2:s}_config.css'.format(self.webdir,
-                          self.labels[num], self.result_files[num].split("/")[-1]), 'w') as f:
+                          self.labels[num], self.labels[num]), 'w') as f:
                     f.write(styles)
             else:
                 html_file.add_content(
@@ -611,22 +598,10 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         """
         return list(filter(condition, array))
 
-    def generate_webpages(self):
-        """Generate all webpages that we need.
-        """
-        self.make_home_pages()
-        self.make_1d_histogram_pages()
-        self.make_corner_pages()
-        self.make_config_pages()
-        if len(self.result_files) > 1:
-            self.make_comparison_pages()
-        self.make_error_page()
-
     def make_home_pages(self):
         """Make the home pages.
         """
-        pages = ["%s_%s" % (self.labels[num], i.split("/")[-1]) for num, i in enumerate(
-            self.result_files)]
+        pages = ["%s_%s" % (i, i) for i in self.labels]
         pages.append("home")
         webpage.make_html(web_dir=self.webdir, pages=pages)
         if self.gracedb:
@@ -643,21 +618,43 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             html_file.make_banner(approximant="Summary", key="Summary")
         path = self.image_path["home"]
         image_contents = []
-        if self.psds:
-            image_contents.append(path + "psd_plot.png")
-        if self.approximant:
-            if len(self.result_files) > 1:
-                image_contents.append(path + "compare_time_domain_waveforms.png")
-            else:
-                waveform_plot = "%s_waveform_timedomain.png" % (
-                    self.labels[0])
-                image_contents.append(path + waveform_plot)
-        if self.calibration:
-            image_contents.append(path + "calibration_plot.png")
-        image_contents = [image_contents]
-        html_file.make_table_of_images(contents=image_contents)
-        images = [y for x in image_contents for y in x]
-        html_file.make_modal_carousel(images=images)
+
+        if len(self.labels) > 1:
+            if self.approximant:
+                image_contents.append(
+                    path + "compare_time_domain_waveforms.png")
+            image_contents = [image_contents]
+            html_file.make_table_of_images(contents=image_contents)
+            images = [y for x in image_contents for y in x]
+            html_file.make_modal_carousel(images=images)
+            for num, i in enumerate(self.labels):
+                html_file.make_banner(approximant=i, key=i)
+                image_contents = []
+                if os.path.isfile(self.webdir + "/plots/%s_psd_plot.png" % (i)):
+                    image_contents.append(path + "%s_psd_plot.png" % (i))
+                if os.path.isfile(self.webdir + "/plots/%s_waveform_timedomain.png" % (i)):
+                    image_contents.append(path + "%s_waveform_timedomain.png" % (i))
+                if os.path.isfile(self.webdir + "/plots/%s_calibration_plot.png" % (i)):
+                    image_contents.append(path + "%s_calibration_plot.png" % (i))
+                image_contents = [image_contents]
+                html_file.make_table_of_images(contents=image_contents)
+                images = [y for x in image_contents for y in x]
+                html_file.make_modal_carousel(images=images)
+        else:
+            if self.psds:
+                image_contents.append(path + "%s_psd_plot.png" % (
+                    self.labels[0]))
+            if self.approximant:
+                image_contents.append(path + "%s_waveform_timedomain.png" % (
+                    self.labels[0]))
+            if self.calibration:
+                image_contents.append(path + "%s_calibration_plot.png" % (
+                    self.labels[0]))
+            image_contents = [image_contents]
+            html_file.make_table_of_images(contents=image_contents)
+            images = [y for x in image_contents for y in x]
+            html_file.make_modal_carousel(images=images)
+
         html_file.close()
         key_data = self._key_data()
         table_data = [{j: i[j] for j in self.same_parameters} for i in
@@ -675,30 +672,28 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             for j in range(len(table_data)):
                 row.append(np.round(table_data[j][i]["std"], 3))
             contents.append(row)
-        for num, i in enumerate(self.result_files):
+        for num, i in enumerate(self.labels):
             html_file = self._setup_page(
-                i.split("/")[-1], self.navbar_for_approximant_homepage[num],
+                i, self.navbar_for_approximant_homepage[num],
                 self.labels[num], title="%s Summary page" % (i),
-                background_colour=self.colors[num], approximant=i.split("/")[-1])
-            html_file.make_banner(approximant=self.labels[num],
-                                  key=self.labels[num])
+                background_colour=self.colors[num], approximant=i)
+            html_file.make_banner(approximant=i, key=i)
             path = self.image_path["other"]
-            label = self.labels[num]
-            image_contents = [[path + "%s_1d_posterior_mass_1.png" % (label),
-                               path + "%s_1d_posterior_mass_2.png" % (label),
-                               path + "%s_1d_posterior_a_1.png" % (label),
-                               path + "%s_1d_posterior_a_2.png" % (label)],
-                              [path + "%s_skymap.png" % (label),
-                               path + "%s_waveform.png" % (label),
-                               path + "%s_1d_posterior_iota.png" % (label),
-                               path + "%s_1d_posterior_luminosity_distance.png" % (label)]]
+            image_contents = [[path + "%s_1d_posterior_mass_1.png" % (i),
+                               path + "%s_1d_posterior_mass_2.png" % (i),
+                               path + "%s_1d_posterior_a_1.png" % (i),
+                               path + "%s_1d_posterior_a_2.png" % (i)],
+                              [path + "%s_skymap.png" % (i),
+                               path + "%s_waveform.png" % (i),
+                               path + "%s_1d_posterior_iota.png" % (i),
+                               path + "%s_1d_posterior_luminosity_distance.png" % (i)]]
             html_file.make_table_of_images(contents=image_contents)
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images)
             table_contents = []
-            for i in contents:
-                one_approx_content = [i[0]] + [i[j * len(self.result_files)
-                                               + num + 1] for j in range(4)]
+            for j in contents:
+                one_approx_content = [j[0]] + [j[k * len(self.result_files)
+                                               + num + 1] for k in range(4)]
                 table_contents.append(one_approx_content)
             html_file.make_table(headings=[" ", "maxL", "mean", "median", "std"],
                                  contents=table_contents, heading_span=1)
@@ -708,36 +703,30 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
     def make_1d_histogram_pages(self):
         """Make the 1d histogram pages.
         """
-        pages = ["%s_%s_%s" % (self.labels[num], i.split("/")[-1], j) for num, i in
-                 enumerate(self.result_files) for j in self.parameters[num]]
-        pages += ["%s_%s_multiple" % (self.labels[num], i.split("/")[-1]) for num, i in
-                  enumerate(self.result_files)]
+        pages = ["%s_%s_%s" % (i, i, j) for num, i in enumerate(self.labels)
+                 for j in self.parameters[num]]
+        pages += ["%s_%s_multiple" % (i, i) for i in self.labels]
         webpage.make_html(web_dir=self.webdir, pages=pages)
-        for num, app in enumerate(self.result_files):
+        for num, app in enumerate(self.labels):
             for j in self.parameters[num]:
                 html_file = self._setup_page(
-                    "%s_%s" % (app.split("/")[-1], j),
-                    self.navbar_for_approximant_homepage[num],
-                    self.labels[num], title="%s Posterior PDF for %s" % (
-                        app, j),
-                    approximant=app.split("/")[-1], background_colour=self.colors[num],
+                    "%s_%s" % (app, j), self.navbar_for_approximant_homepage[num],
+                    app, title="%s Posterior PDF for %s" % (app, j),
+                    approximant=app, background_colour=self.colors[num],
                     histogram_download=True)
-                html_file.make_banner(approximant=self.labels[num],
-                                      key=self.labels[num])
+                html_file.make_banner(approximant=app, key=app)
                 path = self.image_path["other"]
-                label = self.labels[num]
-                contents = [[path + "%s_1d_posterior_%s.png" % (label, j)],
-                            [path + "%s_sample_evolution_%s.png" % (label, j),
-                             path + "%s_autocorrelation_%s.png" % (label, j)]]
+                contents = [[path + "%s_1d_posterior_%s.png" % (app, j)],
+                            [path + "%s_sample_evolution_%s.png" % (app, j),
+                             path + "%s_autocorrelation_%s.png" % (app, j)]]
                 html_file.make_table_of_images(
                     contents=contents, rows=1, columns=2, code="changeimage")
                 html_file.make_footer(user=self.user, rundir=self.webdir)
                 html_file.close()
             html_file = self._setup_page(
-                "%s_multiple" % (app.split("/")[-1]),
-                self.navbar_for_approximant_homepage[num],
-                self.labels[num], title="%s Posteriors for multiple" % (app),
-                approximant=app.split("/")[-1], background_colour=self.colors[num])
+                "%s_multiple" % (app), self.navbar_for_approximant_homepage[num],
+                app, title="%s Posteriors for multiple" % (app),
+                approximant=app, background_colour=self.colors[num])
             ordered_parameters = self._categorize_parameters(self.parameters[num])
             ordered_parameters = [i for j in ordered_parameters for i in j[1]]
             html_file.make_search_bar(sidebar=[i for i in self.parameters[num]],
@@ -754,17 +743,14 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
     def make_corner_pages(self):
         """Make the corner pages.
         """
-        pages = ["%s_%s_corner" % (self.labels[num], i.split("/")[-1]) for num, i in
-                 enumerate(self.result_files)]
+        pages = ["%s_%s_corner" % (i, i) for i in self.labels]
         webpage.make_html(web_dir=self.webdir, pages=pages)
-        for num, app in enumerate(self.result_files):
+        for num, app in enumerate(self.labels):
             html_file = self._setup_page(
-                "%s_corner" % (app.split("/")[-1]),
-                self.navbar_for_approximant_homepage[num],
-                self.labels[num], title="%s Corner Plots" % (app),
-                background_colour=self.colors[num], approximant=app.split("/")[-1])
-            html_file.make_banner(approximant=self.labels[num],
-                                  key="corner")
+                "%s_corner" % (app), self.navbar_for_approximant_homepage[num],
+                app, title="%s Corner Plots" % (app),
+                background_colour=self.colors[num], approximant=app)
+            html_file.make_banner(approximant=app, key="corner")
             params = ["luminosity_distance", "dec", "a_2", "phase",
                       "a_1", "geocent_time", "phi_jl", "psi", "ra",
                       "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
