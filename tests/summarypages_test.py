@@ -45,19 +45,20 @@ class TestWebpageGeneration(object):
             "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir_bilby",
             "--samples", "./tests/files/bilby_example.h5",
-            "--config", "./tests/files/config_bilby.ini"]
+            "--config", "./tests/files/config_bilby.ini",
+            "--label", "test"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWWebpageGeneration(inputs)
         html = sorted(glob("./.outdir_bilby/html/*"))
-        expected_html = ['./.outdir_bilby/html/H1_bilby_example.h5_temp.html',
-                         './.outdir_bilby/html/H1_bilby_example.h5_temp_H1_optimal_snr.html',
-                         './.outdir_bilby/html/H1_bilby_example.h5_temp_config.html',
-                         './.outdir_bilby/html/H1_bilby_example.h5_temp_corner.html',
-                         './.outdir_bilby/html/H1_bilby_example.h5_temp_log_likelihood.html',
-                         './.outdir_bilby/html/H1_bilby_example.h5_temp_mass_1.html',
-                         './.outdir_bilby/html/H1_bilby_example.h5_temp_multiple.html',
-                         './.outdir_bilby/html/error.html']
+        expected_html = ['./.outdir_bilby/html/error.html',
+                         './.outdir_bilby/html/test_test.html',
+                         './.outdir_bilby/html/test_test_H1_optimal_snr.html',
+                         './.outdir_bilby/html/test_test_config.html',
+                         './.outdir_bilby/html/test_test_corner.html',
+                         './.outdir_bilby/html/test_test_log_likelihood.html',
+                         './.outdir_bilby/html/test_test_mass_1.html',
+                         './.outdir_bilby/html/test_test_multiple.html']
         assert all(i == j for i,j in zip(sorted(expected_html), sorted(html)))
 
     def test_webpage_generation_for_lalinference_structure(self):
@@ -67,18 +68,19 @@ class TestWebpageGeneration(object):
             "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir_lalinference",
             "--samples", "./tests/files/lalinference_example.h5",
-            "--config", "./tests/files/config_lalinference.ini"]
+            "--config", "./tests/files/config_lalinference.ini",
+            "--label", "test"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWWebpageGeneration(inputs)
         html = sorted(glob("./.outdir_lalinference/html/*"))
-        expected_html = ['./.outdir_lalinference/html/H1_lalinference_example.h5_temp.html',
-                         './.outdir_lalinference/html/H1_lalinference_example.h5_temp_H1_optimal_snr.html',
-                         './.outdir_lalinference/html/H1_lalinference_example.h5_temp_config.html',
-                         './.outdir_lalinference/html/H1_lalinference_example.h5_temp_corner.html',
-                         './.outdir_lalinference/html/H1_lalinference_example.h5_temp_log_likelihood.html',
-                         './.outdir_lalinference/html/H1_lalinference_example.h5_temp_mass_1.html',
-                         './.outdir_lalinference/html/H1_lalinference_example.h5_temp_multiple.html',
+        expected_html = ['./.outdir_lalinference/html/test_test.html',
+                         './.outdir_lalinference/html/test_test_H1_optimal_snr.html',
+                         './.outdir_lalinference/html/test_test_config.html',
+                         './.outdir_lalinference/html/test_test_corner.html',
+                         './.outdir_lalinference/html/test_test_log_likelihood.html',
+                         './.outdir_lalinference/html/test_test_mass_1.html',
+                         './.outdir_lalinference/html/test_test_multiple.html',
                          './.outdir_lalinference/html/error.html']
         assert all(i == j for i,j in zip(sorted(expected_html), sorted(html)))
 
@@ -89,31 +91,33 @@ class TestWebpageGeneration(object):
             "--approximant", "IMRPhenomPv2", "IMRPhenomP",
             "--webdir", "./.outdir_comparison",
             "--samples", "./tests/files/bilby_example.h5",
-            "./tests/files/lalinference_example.h5"]
+            "./tests/files/lalinference_example.h5",
+            "--label", "test1", "test2"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWWebpageGeneration(inputs)
         html = sorted(glob("./.outdir_comparison/html/*"))
+        print(html)
         expected_html = ['./.outdir_comparison/html/Comparison.html',
                          './.outdir_comparison/html/Comparison_H1_optimal_snr.html',
                          './.outdir_comparison/html/Comparison_log_likelihood.html',
                          './.outdir_comparison/html/Comparison_mass_1.html',
                          './.outdir_comparison/html/Comparison_multiple.html',
-                         './.outdir_comparison/html/H1_0_bilby_example.h5_temp.html',
-                         './.outdir_comparison/html/H1_0_bilby_example.h5_temp_H1_optimal_snr.html',
-                         './.outdir_comparison/html/H1_0_bilby_example.h5_temp_config.html',
-                         './.outdir_comparison/html/H1_0_bilby_example.h5_temp_corner.html',
-                         './.outdir_comparison/html/H1_0_bilby_example.h5_temp_log_likelihood.html',
-                         './.outdir_comparison/html/H1_0_bilby_example.h5_temp_mass_1.html',
-                         './.outdir_comparison/html/H1_0_bilby_example.h5_temp_multiple.html',
-                         './.outdir_comparison/html/H1_1_lalinference_example.h5_temp.html',
-                         './.outdir_comparison/html/H1_1_lalinference_example.h5_temp_H1_optimal_snr.html',
-                         './.outdir_comparison/html/H1_1_lalinference_example.h5_temp_config.html',
-                         './.outdir_comparison/html/H1_1_lalinference_example.h5_temp_corner.html',
-                         './.outdir_comparison/html/H1_1_lalinference_example.h5_temp_log_likelihood.html',
-                         './.outdir_comparison/html/H1_1_lalinference_example.h5_temp_mass_1.html',
-                         './.outdir_comparison/html/H1_1_lalinference_example.h5_temp_multiple.html',
-                         './.outdir_comparison/html/error.html']
+                         './.outdir_comparison/html/error.html',
+                         './.outdir_comparison/html/test1_test1.html',
+                         './.outdir_comparison/html/test1_test1_H1_optimal_snr.html',
+                         './.outdir_comparison/html/test1_test1_config.html',
+                         './.outdir_comparison/html/test1_test1_corner.html',
+                         './.outdir_comparison/html/test1_test1_log_likelihood.html',
+                         './.outdir_comparison/html/test1_test1_mass_1.html',
+                         './.outdir_comparison/html/test1_test1_multiple.html',
+                         './.outdir_comparison/html/test2_test2.html',
+                         './.outdir_comparison/html/test2_test2_H1_optimal_snr.html',
+                         './.outdir_comparison/html/test2_test2_config.html',
+                         './.outdir_comparison/html/test2_test2_corner.html',
+                         './.outdir_comparison/html/test2_test2_log_likelihood.html',
+                         './.outdir_comparison/html/test2_test2_mass_1.html',
+                         './.outdir_comparison/html/test2_test2_multiple.html']
         assert all(i == j for i,j in zip(sorted(html), sorted(expected_html)))
 
     def test_webpage_generation_for_add_to_existing(self):
@@ -122,7 +126,8 @@ class TestWebpageGeneration(object):
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir_addition",
-            "--samples", "./tests/files/bilby_example.h5"]
+            "--samples", "./tests/files/bilby_example.h5",
+            "--labels", "test"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWWebpageGeneration(inputs)
@@ -132,7 +137,8 @@ class TestWebpageGeneration(object):
         default_arguments = [
             "--approximant", "IMRPhenomP",
             "--existing_webdir", "./.outdir_addition",
-            "--samples", "./tests/files/lalinference_example.h5"]
+            "--samples", "./tests/files/lalinference_example.h5",
+            "--labels", "test2"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         GWPlotGeneration(inputs)
@@ -143,28 +149,21 @@ class TestWebpageGeneration(object):
                          './.outdir_addition/html/Comparison_log_likelihood.html',
                          './.outdir_addition/html/Comparison_mass_1.html',
                          './.outdir_addition/html/Comparison_multiple.html',
-                         './.outdir_addition/html/H1_0_lalinference_example.h5_temp.html',
-                         './.outdir_addition/html/H1_0_lalinference_example.h5_temp_H1_optimal_snr.html',
-                         './.outdir_addition/html/H1_0_lalinference_example.h5_temp_config.html',
-                         './.outdir_addition/html/H1_0_lalinference_example.h5_temp_corner.html',
-                         './.outdir_addition/html/H1_0_lalinference_example.h5_temp_log_likelihood.html',
-                         './.outdir_addition/html/H1_0_lalinference_example.h5_temp_mass_1.html',
-                         './.outdir_addition/html/H1_0_lalinference_example.h5_temp_multiple.html',
-                         './.outdir_addition/html/H1_bilby_example.h5_temp.html',
-                         './.outdir_addition/html/H1_bilby_example.h5_temp_H1_optimal_snr.html',
-                         './.outdir_addition/html/H1_bilby_example.h5_temp_config.html',
-                         './.outdir_addition/html/H1_bilby_example.h5_temp_corner.html',
-                         './.outdir_addition/html/H1_bilby_example.h5_temp_log_likelihood.html',
-                         './.outdir_addition/html/H1_bilby_example.h5_temp_mass_1.html',
-                         './.outdir_addition/html/H1_bilby_example.h5_temp_multiple.html',
-                         './.outdir_addition/html/H1_posterior_samples.json.html',
-                         './.outdir_addition/html/H1_posterior_samples.json_H1_optimal_snr.html',
-                         './.outdir_addition/html/H1_posterior_samples.json_config.html',
-                         './.outdir_addition/html/H1_posterior_samples.json_corner.html',
-                         './.outdir_addition/html/H1_posterior_samples.json_log_likelihood.html',
-                         './.outdir_addition/html/H1_posterior_samples.json_mass_1.html',
-                         './.outdir_addition/html/H1_posterior_samples.json_multiple.html',
-                         './.outdir_addition/html/error.html']
+                         './.outdir_addition/html/error.html',
+                         './.outdir_addition/html/test2_test2.html',
+                         './.outdir_addition/html/test2_test2_H1_optimal_snr.html',
+                         './.outdir_addition/html/test2_test2_config.html',
+                         './.outdir_addition/html/test2_test2_corner.html',
+                         './.outdir_addition/html/test2_test2_log_likelihood.html',
+                         './.outdir_addition/html/test2_test2_mass_1.html',
+                         './.outdir_addition/html/test2_test2_multiple.html',
+                         './.outdir_addition/html/test_test.html',
+                         './.outdir_addition/html/test_test_H1_optimal_snr.html',
+                         './.outdir_addition/html/test_test_config.html',
+                         './.outdir_addition/html/test_test_corner.html',
+                         './.outdir_addition/html/test_test_log_likelihood.html',
+                         './.outdir_addition/html/test_test_mass_1.html',
+                         './.outdir_addition/html/test_test_multiple.html']
         assert all(i == j for i,j in zip(sorted(html), sorted(expected_html)))
 
     def test_webpage_generation_for_full_cbc(self):
@@ -179,37 +178,37 @@ class TestWebpageGeneration(object):
         inputs = GWInput(opts)
         webpage = GWWebpageGeneration(inputs)
         html = glob("./.outdir_cbc/html/*")
-        expected_html = ['./.outdir_cbc/html/test_GW150914_result.h5_temp_chirp_mass_source.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_log_likelihood.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_tilt_2.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_tilt_1.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_luminosity_distance.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_phi_12.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_corner.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_cos_tilt_1.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_multiple.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_chirp_mass.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_a_1.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_dec.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_ra.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_mass_2.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_symmetric_mass_ratio.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_total_mass_source.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_mass_1.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_psi.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_a_2.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_mass_2_source.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_iota.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_comoving_distance.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_config.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_phi_jl.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_geocent_time.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_total_mass.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_cos_tilt_2.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_redshift.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_mass_ratio.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_phase.html',
-                         './.outdir_cbc/html/test_GW150914_result.h5_temp_mass_1_source.html',
-                         './.outdir_cbc/html/error.html']
+        expected_html = ['./.outdir_cbc/html/test_test_mass_2.html',
+                         './.outdir_cbc/html/test_test_ra.html',
+                         './.outdir_cbc/html/test_test_total_mass_source.html',
+                         './.outdir_cbc/html/test_test.html',
+                         './.outdir_cbc/html/test_test_a_2.html',
+                         './.outdir_cbc/html/test_test_psi.html',
+                         './.outdir_cbc/html/test_test_total_mass.html',
+                         './.outdir_cbc/html/test_test_corner.html',
+                         './.outdir_cbc/html/test_test_cos_tilt_2.html',
+                         './.outdir_cbc/html/test_test_log_likelihood.html',
+                         './.outdir_cbc/html/test_test_phi_12.html',
+                         './.outdir_cbc/html/test_test_redshift.html',
+                         './.outdir_cbc/html/test_test_iota.html',
+                         './.outdir_cbc/html/test_test_mass_ratio.html',
+                         './.outdir_cbc/html/test_test_chirp_mass_source.html',
+                         './.outdir_cbc/html/test_test_tilt_2.html',
+                         './.outdir_cbc/html/test_test_geocent_time.html',
+                         './.outdir_cbc/html/test_test_tilt_1.html',
+                         './.outdir_cbc/html/test_test_mass_2_source.html',
+                         './.outdir_cbc/html/test_test_cos_tilt_1.html',
+                         './.outdir_cbc/html/test_test_symmetric_mass_ratio.html',
+                         './.outdir_cbc/html/test_test_luminosity_distance.html',
+                         './.outdir_cbc/html/test_test_phi_jl.html',
+                         './.outdir_cbc/html/test_test_config.html',
+                         './.outdir_cbc/html/test_test_multiple.html',
+                         './.outdir_cbc/html/test_test_dec.html',
+                         './.outdir_cbc/html/test_test_mass_1_source.html',
+                         './.outdir_cbc/html/test_test_a_1.html',
+                         './.outdir_cbc/html/test_test_comoving_distance.html',
+                         './.outdir_cbc/html/error.html',
+                         './.outdir_cbc/html/test_test_chirp_mass.html',
+                         './.outdir_cbc/html/test_test_phase.html',
+                         './.outdir_cbc/html/test_test_mass_1.html']
         assert all(i == j for i,j in zip(sorted(expected_html), sorted(html))) 

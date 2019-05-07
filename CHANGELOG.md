@@ -4,7 +4,9 @@
 - Python2.7: Change the yield statements in pesummary.core.file.one_format to
   make the code python2.7 compatible.
 - setuptools: Change the setup.py file to import setup from `setuptools` rather
-  than using `distutils.core` 
+  than using `distutils.core`
+- Labels: Labels are now used under the approximant tab to distinguish
+  different runs. 
 
 ### Added
 - PESummary now supports non GW specific results files

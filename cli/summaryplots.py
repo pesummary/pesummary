@@ -285,10 +285,12 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         """
         if self.calibration:
             logger.debug("Generating the calibration plot")
-            self.try_to_make_a_plot("calibration")
+            for num, i in enumerate(self.result_files):
+                self.try_to_make_a_plot("calibration", num)
         if self.psds:
             logger.debug("Generating the psd plot")
-            self.try_to_make_a_plot("psd")
+            for num, i in enumerate(self.result_files):
+                self.try_to_make_a_plot("psd", num)
         for num, i in enumerate(self.result_files):
             logger.debug("Starting to generate plots for %s\n" % (i))
             self._check_latex_labels(self.parameters[num])
@@ -363,7 +365,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         frequencies = np.arange(20., 1024., 1. / 4)
         fig = gw._calibration_envelope_plot(
             frequencies, self.calibration, self.calibration_labels)
-        fig.savefig("%s/calibration_plot.png" % (self.savedir))
+        fig.savefig("%s/%s_calibration_plot.png" % (self.savedir, self.labels[idx]))
         plt.close()
 
     def _psd_plot(self, idx=None):
@@ -373,7 +375,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
                        self.psds]
         strains = [self._grab_strains_from_psd_data_file(i) for i in self.psds]
         fig = gw._psd_plot(frequencies, strains, labels=self.psd_labels)
-        fig.savefig("%s/psd_plot.png" % (self.savedir))
+        fig.savefig("%s/%s_psd_plot.png" % (self.savedir, self.labels[idx]))
         plt.close()
 
     def _corner_plot(self, idx):
