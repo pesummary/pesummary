@@ -31,7 +31,6 @@ class FinishingTouches(PostProcessing):
     def __init__(self, inputs):
         super(FinishingTouches, self).__init__(inputs)
         self.send_email()
-        self.tidy_up()
         logger.info("Complete. Webpages can be viewed at the following url "
                     "%s" % (self.baseurl + "/home.html"))
 
@@ -64,12 +63,3 @@ class FinishingTouches(PostProcessing):
             message, subject, self.email)
         ess = subprocess.Popen(cmd, shell=True)
         ess.wait()
-
-    def tidy_up(self):
-        """Remove all unnecessary files.
-        """
-        for i in self.result_files:
-            condition1 = "posterior_samples.h5" not in i
-            condition2 = "posterior_samples.json" not in i
-            if condition1 and condition2:
-                os.remove(i)
