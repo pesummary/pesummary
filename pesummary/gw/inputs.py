@@ -101,7 +101,6 @@ class GWInput(Input):
         self.make_directories()
         self.copy_files()
         self.labels = opts.labels
-        self.check_label_in_results_file()
 
     @property
     def approximant(self):
@@ -139,17 +138,14 @@ class GWInput(Input):
         detector_list = []
         if not detectors:
             for num, i in enumerate(self.result_files):
-                f = h5py.File(i)
-                path = ("posterior_samples/label/parameter_names")
-                params = [j for j in f[path]]
-                f.close()
+                params = self.parameters[num]
                 individual_detectors = []
                 for j in params:
-                    if b"optimal_snr" in j:
-                        det = j.split(b"_optimal_snr")[0]
+                    if "optimal_snr" in j:
+                        det = j.split("_optimal_snr")[0]
                         individual_detectors.append(det)
                 individual_detectors = sorted(
-                    [str(i.decode("utf-8")) for i in individual_detectors])
+                    [str(i) for i in individual_detectors])
                 if individual_detectors:
                     detector_list.append("_".join(individual_detectors))
                 else:
@@ -304,7 +300,12 @@ class GWInput(Input):
         """
         f = GWOneFormat(results_file, injection_file, config=config_file)
         f.generate_all_posterior_samples()
-        return f.save()
+        parameters = f.parameters
+        samples = f.samples
+        inj_p = f.injection_parameters
+        inj_value = f.injection_values
+        injection = {i: j for i, j in zip(inj_p, inj_value)}
+        return parameters, samples, injection
 
     def _default_labels(self):
         """Return the defaut labels given your detector network.
@@ -406,7 +407,9 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.grab_data_map = {"existing_file": self._data_from_existing_file,
                               "standard_format": self._data_from_standard_format}
 
-        self.result_file_data = []
+        self.parameters = inputs.parameters
+        self.samples = inputs.samples
+        self.injection_data = inputs.injection_data
         self.maxL_samples = []
         self.same_parameters = []
 
@@ -546,7 +549,8 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
                 return [[i for i in input.keys()] for j in range(len(self.labels))]
             else:
                 return [[i for i in input.keys()] for j in input]
-        return [self._IFO_from_file_name(i) for i in input]
+        return [[self._IFO_from_file_name(i) for i in input] for j in
+                range(len(self.labels))]
 
     def _key_data(self):
         """Grab the mean, median, maximum likelihood value and the standard

@@ -232,7 +232,7 @@ class TestInput(object):
         assert self.inputs.webdir == "./.outdir"
 
     def test_samples(self):
-        assert self.inputs.result_files == ["./tests/files/bilby_example.h5_temp"]
+        assert self.inputs.result_files == ["./tests/files/bilby_example.h5"]
 
     def test_approximant(self):
         assert self.inputs.approximant == ["IMRPhenomPv2"]
@@ -337,7 +337,8 @@ class TestInput(object):
             "--calibration", "./.outdir/calibration.dat"])
         inputs = GWInput(opts)
         postprocessing = GWPostProcessing(inputs)
-        assert postprocessing.calibration_labels == ['calibration.dat']
+        assert postprocessing.calibration_labels == [['calibration.dat'],
+                                                     ['calibration.dat']]
 
     def test_IFO_from_file_name(self):
         file_name = "IFO0.dat"
@@ -375,7 +376,7 @@ class TestInput(object):
             "./.outdir/samples/js/combine_corner.js") == True
         print(glob.glob("./.outdir/samples/config/*"))
         assert os.path.isfile(
-            "./.outdir/samples/config/bilby_example.h5_temp_config_lalinference.ini") == True
+            "./.outdir/samples/config/bilby_example.h5_config_lalinference.ini") == True
 
     def test_default_labels(self):
         assert self.inputs._default_labels() == ['grace_H1']
@@ -460,7 +461,7 @@ class TestPostProcessing(object):
             "--psd", "./.outdir/psd.dat"])
         inputs = GWInput(opts)
         postprocessing = GWPostProcessing(inputs)
-        assert postprocessing.psd_labels == ['psd.dat']
+        assert postprocessing.psd_labels == [['psd.dat'], ['psd.dat']]
 
     def test_grab_frequencies_from_psd_data_file(self):
         assert(self.postprocessing._grab_frequencies_from_psd_data_file(

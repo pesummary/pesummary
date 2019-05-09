@@ -222,8 +222,8 @@ class TestMetaFile(object):
         metafile.generate_dat_file()
         assert os.path.isdir("./.outdir/samples/dat")
         assert os.path.isfile(
-            "./.outdir/samples/dat/H1/H1_bilby_example.h5_temp_mass_1_samples.dat")
-        f = open("./.outdir/samples/dat/H1/H1_bilby_example.h5_temp_mass_1_samples.dat")
+            "./.outdir/samples/dat/H1/H1_bilby_example.h5_mass_1_samples.dat")
+        f = open("./.outdir/samples/dat/H1/H1_bilby_example.h5_mass_1_samples.dat")
         f = f.readlines()
         f = sorted([i.strip().split() for i in f])
         assert f[0] == ["10.0"]

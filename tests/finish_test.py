@@ -41,11 +41,4 @@ class TestFinishingTouches(object):
         self.finish = FinishingTouches(self.inputs)
 
     def test_email_message(self):
-        assert "Your output page is ready on" in str(self.finish._email_message())
-
-    def test_tidy_up(self):
-        shutil.copy("./tests/files/bilby_example.h5",
-                    "./tests/files/bilby_example.h5_temp") 
-        assert os.path.isfile("./tests/files/bilby_example.h5_temp") == True  
-        self.finish.tidy_up()
-        assert os.path.isfile("./tests/files/bilby_example.h5_temp") == False    
+        assert "Your output page is ready on" in str(self.finish._email_message()) 
