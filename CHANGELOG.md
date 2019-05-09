@@ -6,14 +6,21 @@
 - setuptools: Change the setup.py file to import setup from `setuptools` rather
   than using `distutils.core`
 - Labels: Labels are now used under the approximant tab to distinguish
-  different runs. 
+  different runs.
+- Multiple psds/calibration: The user can now pass different psds and different
+  calibration envelopes for different results files. Before if you passed a PSD
+  or calibration envelope it was assigned to all results files.
+- guess_url: Change the guess_url function to include LLO
+- Skymap: Flipped the x axis on the skymap plot to run from 24 -> 0 instead of
+  0 -> 24. 
 
 ### Added
 - PESummary now supports non GW specific results files
 - Docker image for PESummary. Simply run `docker pull 08hoyc/pesummary:v0.1.6
 - Example python script for running PESummary from within python shell
 - Extract all information including psd and calibration information from the
-  gw specific results file
+  gw specific pesummary metafile
+- Add class to handle dictionary command line inputs
 
 ## 0.1.5 [13/04/2019]
 
