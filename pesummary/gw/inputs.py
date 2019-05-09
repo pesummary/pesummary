@@ -225,9 +225,10 @@ class GWInput(Input):
             logger.debug("No calibration envelope file given. Checking the "
                          "results file")
             self._calibration_envelope = False
+            label_list = []
             for i in self.result_files:
                 try:
-                    f = LALInferenceResultsFile(i.split("_temp")[0])
+                    f = LALInferenceResultsFile(i)
                     data, labels = f.grab_calibration_data()
                     if data == []:
                         logger.info("Failed to grab calibration data from %s" % (i))
@@ -235,8 +236,10 @@ class GWInput(Input):
                 except Exception:
                     logger.info("Failed to grab calibration data from %s" % (i))
                     data, labels = None, None
-            self._calibration = data
-            self.calibration_labels = labels
+                label_list.append(labels)
+            calibration_list = data
+            self._calibration = calibration_list
+            self.calibration_labels = label_list
 
     def _check_calibration_file(self, file):
         """Check the contents of the calibration file to ensure that it is
@@ -605,5 +608,8 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         file: str
             path to the calibration data file
         """
-        f = np.genfromtxt(file)
-        return f
+        try:
+            f = np.genfromtxt(file)
+            return f
+        except Exception:
+            return file
