@@ -364,17 +364,17 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         """
         frequencies = np.arange(20., 1024., 1. / 4)
         fig = gw._calibration_envelope_plot(
-            frequencies, self.calibration, self.calibration_labels)
+            frequencies, self.calibration_envelopes[idx],
+            self.calibration_labels[idx])
         fig.savefig("%s/%s_calibration_plot.png" % (self.savedir, self.labels[idx]))
         plt.close()
 
     def _psd_plot(self, idx=None):
         """Generate a single plot showing all psds used in analysis
         """
-        frequencies = [self._grab_frequencies_from_psd_data_file(i) for i in
-                       self.psds]
-        strains = [self._grab_strains_from_psd_data_file(i) for i in self.psds]
-        fig = gw._psd_plot(frequencies, strains, labels=self.psd_labels)
+        frequencies = self.psd_frequencies[idx]
+        strains = self.psd_strains[idx]
+        fig = gw._psd_plot(frequencies, strains, labels=self.psd_labels[idx])
         fig.savefig("%s/%s_psd_plot.png" % (self.savedir, self.labels[idx]))
         plt.close()
 

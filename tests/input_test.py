@@ -326,9 +326,7 @@ class TestInput(object):
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0"])
         assert self.inputs.calibration == None
         self.add_argument(["--calibration", "./.outdir/calibration.dat"])
-        assert all(i == j for i, j in zip(
-            self.inputs.calibration[0][0],
-            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]))
+        assert self.inputs.calibration == ['./.outdir/calibration.dat']
 
     def test_calibration_labels(self):
         parser = command_line()
@@ -349,11 +347,11 @@ class TestInput(object):
         file_name = "IFO2.dat"
         assert GWPostProcessing._IFO_from_file_name(file_name) == "V1"
 
-        file_name = "IFO_H.dat"
+        file_name = "IFO_H1.dat"
         assert GWPostProcessing._IFO_from_file_name(file_name) == "H1"
-        file_name = "IFO_L.dat"
+        file_name = "IFO_L1.dat"
         assert GWPostProcessing._IFO_from_file_name(file_name) == "L1"
-        file_name = "IFO_V.dat"
+        file_name = "IFO_V1.dat"
         assert GWPostProcessing._IFO_from_file_name(file_name) == "V1"
         
         file_name = "example.dat"
@@ -453,8 +451,7 @@ class TestPostProcessing(object):
         assert postprocessing.label_to_prepend_approximant == ['H1_0', 'H1_1']
 
     def test_psd_labels(self):
-        with pytest.raises(Exception) as info:
-            self.postprocessing.psd_labels
+        assert self.postprocessing.psd_labels == None
         parser = command_line()
         insert_gwspecific_option_group(parser)
         opts = parser.parse_args(["--approximant", "IMRPhenomPv2",

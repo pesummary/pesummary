@@ -160,10 +160,16 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                                         )
         for num, i in enumerate(self.labels):
             if i not in self.existing_label:
-                psd = self._grab_psd_data_from_data_files(
-                    self.psds, self.psd_labels) if self.psds else None
-                calibration = self._grab_calibration_data_from_data_files(
-                    self.calibration, self.calibration_labels) if \
+                psd_frequencies = self.psd_frequencies[num] if self.psds else \
+                    None
+                psd_strains = self.psd_strains[num] if self.psds else None
+                psd = self._combine_psd_frequency_strain(
+                    psd_frequencies, psd_strains, self.psd_labels[num]) if \
+                    self.psds else None
+                calibration_envelopes = self.calibration_envelopes[num] if \
+                    self.calibration else None
+                calibration = self._combine_calibration_envelopes(
+                    calibration_envelopes, self.calibration_labels[num]) if \
                     self.calibration else None
                 config = self._grab_config_data_from_data_file(self.config[num]) \
                     if self.config and num < len(self.config) else None
@@ -175,36 +181,36 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                                approximant=approximant[num]
                                )
 
-    def _grab_psd_data_from_data_files(self, files, psd_labels):
+    def _combine_psd_frequency_strain(self, frequencies, strains, psd_labels):
         """Return the psd data as a dictionary
 
         Parameters
         ----------
-        files: list
-            list of psd files
+        frequencies: list
+            list of frequencies for the different IFOs
+        strains: list
+            list of strains for the different IFOs
         psd_labels: list
-            list of labels associated with each psd file
+            list of psd labels corresponding to the different frequencies
         """
-        return {psd_labels[num]: [[i, j] for i, j in zip(
-            self._grab_frequencies_from_psd_data_file(f),
-            self._grab_strains_from_psd_data_file(f)
-        )] for num, f in enumerate(files)}
+        return {psd_labels[num]: [[j, k] for j, k in zip(i, strains[num])] for
+                num, i in enumerate(frequencies)}
 
-    def _grab_calibration_data_from_data_files(self, files, calibration_labels):
-        """Return the calibration envelope data as a dictionary
+    def _combine_calibration_envelopes(self, calibration_envelopes,
+                                       calibration_labels):
+        """Return the calibration data as a dictionary
 
         Parameters
         ----------
-        files: list
-            list of calibration envelope files
-        calibration_labels:
-            list of labels associated with each calibration envelope file
+        calibration_envelopes: list
+            list of calibration envelopes for the different IFOs
+        calibration_labels: list
+            list of calibration labels corresponding to the different
+            calibration envelopes
         """
-        dictionary = {}
-        for num, i in enumerate(calibration_labels):
-            dictionary[i] = [
-                [k[0], k[1], k[2], k[3], k[4], k[5], k[6]] for k in files[num]]
-        return dictionary
+        return {calibration_labels[num]: [
+            [j[0], j[1], j[2], j[3], j[4], j[5], j[6]] for j in i] for num, i
+            in enumerate(calibration_envelopes)}
 
     def _grab_config_data_from_data_file(self, file):
         """Return the config data as a dictionary
