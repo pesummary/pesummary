@@ -37,7 +37,7 @@ class TestConversions(object):
             mass2 = 5.
             mtotal = 30.
             mchirp = 10.
-            q = 4.
+            q = 1. / 4.
             eta = 0.214
             iota = 0.5
             spin1x = 0.75
@@ -135,7 +135,7 @@ class TestConversions(object):
     def test_q_from_m1_m2(self):
         mass1, mass2 = self.opts.mass1, self.opts.mass2
         q = q_from_m1_m2(mass1, mass2)
-        assert q == 2.
+        assert q == 1. / 2.
 
     def test_q_from_eta(self):
         eta = self.opts.eta

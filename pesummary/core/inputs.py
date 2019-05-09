@@ -99,7 +99,6 @@ class Input(object):
         self.make_directories()
         self.copy_files()
         self.labels = opts.labels
-        self.check_label_in_results_file()
 
     @property
     def user(self):
@@ -185,11 +184,24 @@ class Input(object):
 
     @property
     def result_files(self):
+        return self._result_files
+
+    @property
+    def parameters(self):
+        return self._parameters
+
+    @property
+    def samples(self):
         return self._samples
+
+    @property
+    def injection_data(self):
+        return self._injection_data
 
     @result_files.setter
     def result_files(self, samples):
-        sample_list = []
+        result_file_list = []
+        parameters_list, samples_list, injection_list = [], [], []
         if not samples:
             raise Exception("Please provide a results file")
         if self.inj_file and len(samples) != len(self.inj_file):
@@ -200,10 +212,19 @@ class Input(object):
         for num, i in enumerate(samples):
             if not os.path.isfile(i):
                 raise Exception("File %s does not exist" % (i))
-            std_form = self.convert_to_standard_format(
-                i, self.inj_file[num], config_file=None)
-            sample_list.append(std_form)
-        self._samples = sample_list
+            config = None
+            if self.config:
+                config = self.config[num]
+            p, s, inj = self.convert_to_standard_format(
+                i, self.inj_file[num], config_file=config)
+            result_file_list.append(i)
+            parameters_list.append(p)
+            samples_list.append(s)
+            injection_list.append(inj)
+        self._result_files = result_file_list
+        self._parameters = parameters_list
+        self._samples = samples_list
+        self._injection_data = injection_list
 
     @property
     def email(self):
@@ -315,15 +336,6 @@ class Input(object):
             self._labels = self._default_labels()
         logger.debug("The label is %s" % (self._labels))
 
-    def check_label_in_results_file(self):
-        """Check that the label that is stored in the results file corresponds
-        to the given label. If not then this will be changed.
-        """
-        for num, i in enumerate(self.result_files):
-            rename_group_or_dataset_in_hf5_file(
-                i, group=["posterior_samples/label",
-                          "posterior_samples/%s" % (self.labels[num])])
-
     def make_directories(self):
         """Make the directorys in the web directory to store all information.
         """
@@ -346,6 +358,7 @@ class Input(object):
         if self.config:
             for num, i in enumerate(self.config):
                 if self.webdir not in i:
+                    print(self.result_files[num])
                     shutil.copyfile(i, self.webdir + "/config/"
                                     + self.result_files[num].split("/")[-1] + "_"
                                     + i.split("/")[-1])
@@ -367,7 +380,12 @@ class Input(object):
         """
         f = OneFormat(results_file, injection_file, config=config_file)
         f.generate_all_posterior_samples()
-        return f.save()
+        parameters = f.parameters
+        samples = f.samples
+        inj_p = f.injection_parameters
+        inj_value = f.injection_values
+        injection = {i: j for i, j in zip(inj_p, inj_value)}
+        return parameters, samples, injection
 
     def _default_labels(self):
         """Return the defaut labels given your detector network.
@@ -443,7 +461,9 @@ class PostProcessing(object):
         self.grab_data_map = {"existing_file": self._data_from_existing_file,
                               "standard_format": self._data_from_standard_format}
 
-        self.result_file_data = []
+        self.parameters = inputs.parameters
+        self.samples = inputs.samples
+        self.injection_data = inputs.injection_data
         self.same_parameters = []
 
     @property
@@ -461,40 +481,6 @@ class PostProcessing(object):
                 raise Exception("Please give the same number of colors as "
                                 "results files")
             self._colors = colors
-
-    @property
-    def parameters(self):
-        return self._parameters
-
-    @property
-    def result_file_data(self):
-        return self._data
-
-    @result_file_data.setter
-    def result_file_data(self, data):
-        data, parameters, samples, injection = [], [], [], []
-        for num, result_file in enumerate(self.result_files):
-            if result_file == self.existing_meta_file:
-                key = "existing_file"
-            else:
-                key = "standard_format"
-            data.append(self.grab_data_map[key](result_file, num))
-        for i in data:
-            if isinstance(i[0][0], list):
-                for j in i[0]:
-                    parameters.append(j)
-                for j in i[1]:
-                    samples.append(j)
-                for j in i[2]:
-                    injection.append(j)
-            else:
-                parameters.append(i[0])
-                samples.append(i[1])
-                injection.append(i[2])
-        self._parameters = parameters
-        self._samples = samples
-        self._injection_data = injection
-        self._data = data
 
     def _data_from_standard_format(self, result_file, index):
         """Extract data from a file of standard format
@@ -537,14 +523,6 @@ class PostProcessing(object):
         injection = [
             {i: float("nan") for i in j} for j in self.existing_parameters]
         return p, s, injection
-
-    @property
-    def injection_data(self):
-        return self._injection_data
-
-    @property
-    def samples(self):
-        return self._samples
 
     @property
     def same_parameters(self):

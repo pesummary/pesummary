@@ -101,7 +101,6 @@ class GWInput(Input):
         self.make_directories()
         self.copy_files()
         self.labels = opts.labels
-        self.check_label_in_results_file()
 
     @property
     def approximant(self):
@@ -139,17 +138,14 @@ class GWInput(Input):
         detector_list = []
         if not detectors:
             for num, i in enumerate(self.result_files):
-                f = h5py.File(i)
-                path = ("posterior_samples/label/parameter_names")
-                params = [j for j in f[path]]
-                f.close()
+                params = self.parameters[num]
                 individual_detectors = []
                 for j in params:
-                    if b"optimal_snr" in j:
-                        det = j.split(b"_optimal_snr")[0]
+                    if "optimal_snr" in j:
+                        det = j.split("_optimal_snr")[0]
                         individual_detectors.append(det)
                 individual_detectors = sorted(
-                    [str(i.decode("utf-8")) for i in individual_detectors])
+                    [str(i) for i in individual_detectors])
                 if individual_detectors:
                     detector_list.append("_".join(individual_detectors))
                 else:
@@ -167,17 +163,39 @@ class GWInput(Input):
     def psds(self, psds):
         psd_list = []
         if psds:
-            for i in psds:
-                extension = i.split(".")[-1]
-                if extension == "gz":
-                    print("convert to .dat file")
-                elif extension == "dat":
+            if isinstance(psds, dict):
+                keys = psds.keys()
+                for key in keys:
+                    if isinstance(psds[key], str):
+                        self._check_psd_extension(psds[key])
+                    else:
+                        for j in psds[key]:
+                            self._check_psd_extension(j)
+                psd_list = psds
+            else:
+                for i in psds:
+                    self._check_psd_extension(i)
                     psd_list.append(i)
-                else:
-                    raise Exception("PSD results file not understood")
             self._psds = psd_list
         else:
             self._psds = None
+
+    def _check_psd_extension(self, file):
+        """Check that the file extension on the psd file can be read and
+        understood by PESummary.
+
+        Parameters
+        ----------
+        file: str
+            path to the file that you would like to check
+        """
+        extension = file.split(".")[-1]
+        if extension == "gz":
+            print("convert to .dat file")
+        elif extension == "dat":
+            pass
+        else:
+            raise Exception("PSD results file not understood")
 
     @property
     def calibration(self):
@@ -187,14 +205,22 @@ class GWInput(Input):
     def calibration(self, calibration):
         calibration_list = []
         if calibration:
-            for i in calibration:
-                f = np.genfromtxt(i)
-                if len(f[0]) != 7:
-                    raise Exception("Calibration envelope file not understood")
-                calibration_list.append(f)
+            labels = None
+            if isinstance(calibration, dict):
+                keys = calibration.keys()
+                for key in keys:
+                    if isinstance(calibration[key], str):
+                        self._check_calibration_file(calibration[key])
+                    else:
+                        for j in calibration[key]:
+                            self._check_calibration_file(j)
+                calibration_list = calibration
+            else:
+                for i in calibration:
+                    self._check_calibration_file(i)
+                    calibration_list.append(i)
             self._calibration = calibration_list
-            self.calibration_labels = [
-                self._IFO_from_file_name(i) for i in calibration]
+            self.calibration_labels = labels
         else:
             logger.debug("No calibration envelope file given. Checking the "
                          "results file")
@@ -211,6 +237,20 @@ class GWInput(Input):
                     data, labels = None, None
             self._calibration = data
             self.calibration_labels = labels
+
+    def _check_calibration_file(self, file):
+        """Check the contents of the calibration file to ensure that it is
+        of the correct format.
+
+        Parameters
+        ----------
+        file: str
+            path to the calibration file
+        """
+        f = np.genfromtxt(file)
+        if len(f[0]) != 7:
+            raise Exception("Calibration envelope file not understood")
+        pass
 
     @property
     def existing_approximant(self):
@@ -233,11 +273,11 @@ class GWInput(Input):
             the name of the file that you would like to make a guess for
         """
         file_name = file.split("/")[-1]
-        if any(j in file_name for j in ["H", "_0", "IFO0"]):
+        if any(j in file_name for j in ["H1", "_0", "IFO0"]):
             ifo = "H1"
-        elif any(j in file_name for j in ["L", "_1", "IFO1"]):
+        elif any(j in file_name for j in ["L1", "_1", "IFO1"]):
             ifo = "L1"
-        elif any(j in file_name for j in ["V", "_2", "IFO2"]):
+        elif any(j in file_name for j in ["V1", "_2", "IFO2"]):
             ifo = "V1"
         else:
             ifo = file_name
@@ -260,7 +300,12 @@ class GWInput(Input):
         """
         f = GWOneFormat(results_file, injection_file, config=config_file)
         f.generate_all_posterior_samples()
-        return f.save()
+        parameters = f.parameters
+        samples = f.samples
+        inj_p = f.injection_parameters
+        inj_value = f.injection_values
+        injection = {i: j for i, j in zip(inj_p, inj_value)}
+        return parameters, samples, injection
 
     def _default_labels(self):
         """Return the defaut labels given your detector network.
@@ -346,11 +391,25 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.calibration_labels = inputs.calibration_labels
         self.sensitivity = inputs.sensitivity
         self.psds = inputs.psds
+        self.psd_dict = False
+        self.psd_list = False
+        if isinstance(self.psds, dict):
+            self.psd_dict = True
+        else:
+            self.psd_list = True
+        self.calibration_dict = False
+        self.calibration_list = False
+        if isinstance(self.calibration, dict):
+            self.calibration_dict = True
+        else:
+            self.calibration_list = True
 
         self.grab_data_map = {"existing_file": self._data_from_existing_file,
                               "standard_format": self._data_from_standard_format}
 
-        self.result_file_data = []
+        self.parameters = inputs.parameters
+        self.samples = inputs.samples
+        self.injection_data = inputs.injection_data
         self.maxL_samples = []
         self.same_parameters = []
 
@@ -390,7 +449,40 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
 
     @property
     def psd_labels(self):
-        return [self._IFO_from_file_name(i) for i in self.psds]
+        if self.psds:
+            return self._labels_from_dictionary(self.psds)
+        return None
+
+    @property
+    def calibration_labels(self):
+        return self._calibration_labels
+
+    @calibration_labels.setter
+    def calibration_labels(self, calibration_labels):
+        if not calibration_labels and self.calibration:
+            self._calibration_labels = self._labels_from_dictionary(
+                self.calibration)
+        elif self.calibration:
+            self._calibration_labels = calibration_labels
+        else:
+            self._calibration_labels = None
+
+    @property
+    def psd_frequencies(self):
+        return self._setup_psd_calibration(
+            self.psds, self.psd_labels,
+            self._grab_frequencies_from_psd_data_file)
+
+    @property
+    def psd_strains(self):
+        return self._setup_psd_calibration(
+            self.psds, self.psd_labels, self._grab_strains_from_psd_data_file)
+
+    @property
+    def calibration_envelopes(self):
+        return self._setup_psd_calibration(
+            self.calibration, self.calibration_labels,
+            self._grab_calibration_data_from_data_file)
 
     @staticmethod
     def _IFO_from_file_name(file):
@@ -402,15 +494,63 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
             the name of the file that you would like to make a guess for
         """
         file_name = file.split("/")[-1]
-        if any(j in file_name for j in ["H", "_0", "IFO0"]):
+        if any(j in file_name for j in ["H1", "_0", "IFO0"]):
             ifo = "H1"
-        elif any(j in file_name for j in ["L", "_1", "IFO1"]):
+        elif any(j in file_name for j in ["L1", "_1", "IFO1"]):
             ifo = "L1"
-        elif any(j in file_name for j in ["V", "_2", "IFO2"]):
+        elif any(j in file_name for j in ["V1", "_2", "IFO2"]):
             ifo = "V1"
         else:
             ifo = file_name
         return ifo
+
+    def _setup_psd_calibration(self, data, labels, executable):
+        """Determine which result files correspond to which calibration/psd
+        files.
+
+        Parameters
+        ----------
+        data: list/dict
+            list/dict containing paths to calibration/psd files
+        labels: list
+            list of labels corresponding to the calibration/psd files
+        executable: PESummary object
+            executable that is used to extract the data from the calibration/psd
+            files
+        """
+        output = []
+        if not isinstance(data, dict):
+            for i in labels:
+                temp = [executable(i) for i in data]
+                output.append(temp)
+        else:
+            keys = list(data.keys())
+            if isinstance(data[keys[0]], list):
+                for idx in range(len(data[keys[0]])):
+                    temp = [executable(data[i][idx]) for i in list(keys)]
+                    output.append(temp)
+            else:
+                for i in labels:
+                    temp = [executable(data[i]) for i in list(keys)]
+                    output.append(temp)
+        return output
+
+    def _labels_from_dictionary(self, input):
+        """Return the labels from either a list of a dictionary input
+
+        Parameters
+        ----------
+        input: list/dict
+            list/dict containing paths to files
+        """
+        if isinstance(input, dict):
+            keys = list(input.keys())
+            if isinstance(input[keys[0]], list):
+                return [[i for i in input.keys()] for j in range(len(self.labels))]
+            else:
+                return [[i for i in input.keys()] for j in input]
+        return [[self._IFO_from_file_name(i) for i in input] for j in
+                range(len(self.labels))]
 
     def _key_data(self):
         """Grab the mean, median, maximum likelihood value and the standard
@@ -444,7 +584,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         fil = [i.strip().split() for i in fil]
         return [float(i[0]) for i in fil]
 
-    def _grab_strains_from_psd_data_file(sef, file):
+    def _grab_strains_from_psd_data_file(self, file):
         """Return the strains stored in the psd data files
 
         Parameters
@@ -456,3 +596,14 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         fil = fil.readlines()
         fil = [i.strip().split() for i in fil]
         return [float(i[1]) for i in fil]
+
+    def _grab_calibration_data_from_data_file(self, file):
+        """Return the data stored in the calibration data file
+
+        Parameters
+        ----------
+        file: str
+            path to the calibration data file
+        """
+        f = np.genfromtxt(file)
+        return f

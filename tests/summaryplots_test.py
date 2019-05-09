@@ -63,15 +63,15 @@ class TestPlotGeneration(object):
                           './.outdir_bilby/plots/H1_autocorrelation_H1_optimal_snr.png',
                           './.outdir_bilby/plots/H1_autocorrelation_log_likelihood.png',
                           './.outdir_bilby/plots/H1_autocorrelation_mass_1.png',
+                          './.outdir_bilby/plots/H1_calibration_plot.png',
                           './.outdir_bilby/plots/H1_cdf_H1_optimal_snr.png',
                           './.outdir_bilby/plots/H1_cdf_log_likelihood.png',
                           './.outdir_bilby/plots/H1_cdf_mass_1.png',
+                          './.outdir_bilby/plots/H1_psd_plot.png',
                           './.outdir_bilby/plots/H1_sample_evolution_H1_optimal_snr.png',
                           './.outdir_bilby/plots/H1_sample_evolution_log_likelihood.png',
                           './.outdir_bilby/plots/H1_sample_evolution_mass_1.png',
-                          './.outdir_bilby/plots/calibration_plot.png',
-                          './.outdir_bilby/plots/corner',
-                          './.outdir_bilby/plots/psd_plot.png']
+                          './.outdir_bilby/plots/corner']
         assert all(i == j for i,j in zip(sorted(expected_plots), sorted(plots)))
 
     def test_plot_generation_for_lalinference_structure(self):
@@ -89,15 +89,19 @@ class TestPlotGeneration(object):
         expected_plots = ['./.outdir_lalinference/plots/H1_1d_posterior_H1_optimal_snr.png',
                           './.outdir_lalinference/plots/H1_1d_posterior_log_likelihood.png',
                           './.outdir_lalinference/plots/H1_1d_posterior_mass_1.png',
+                          './.outdir_lalinference/plots/H1_1d_posterior_phase.png',
                           './.outdir_lalinference/plots/H1_autocorrelation_H1_optimal_snr.png',
                           './.outdir_lalinference/plots/H1_autocorrelation_log_likelihood.png',
                           './.outdir_lalinference/plots/H1_autocorrelation_mass_1.png',
+                          './.outdir_lalinference/plots/H1_autocorrelation_phase.png',
                           './.outdir_lalinference/plots/H1_cdf_H1_optimal_snr.png',
                           './.outdir_lalinference/plots/H1_cdf_log_likelihood.png',
                           './.outdir_lalinference/plots/H1_cdf_mass_1.png',
+                          './.outdir_lalinference/plots/H1_cdf_phase.png',
                           './.outdir_lalinference/plots/H1_sample_evolution_H1_optimal_snr.png',
                           './.outdir_lalinference/plots/H1_sample_evolution_log_likelihood.png',
                           './.outdir_lalinference/plots/H1_sample_evolution_mass_1.png',
+                          './.outdir_lalinference/plots/H1_sample_evolution_phase.png',
                           './.outdir_lalinference/plots/corner']
         assert all(i == j for i,j in zip(sorted(expected_plots), sorted(plots)))
 

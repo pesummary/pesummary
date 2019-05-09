@@ -80,10 +80,12 @@ def guess_url(web_dir, host, user):
         path = web_dir.split("public_html")[1]
         if "raven" in host or "arcca" in host:
             url = "https://geo2.arcca.cf.ac.uk/~{}".format(user)
-        elif "cit" in host or "caltech" in host:
-            url = "https://ldas-jobs.ligo.caltech.edu/~{}".format(user)
         elif 'ligo-wa' in host:
             url = "https://ldas-jobs.ligo-wa.caltech.edu/~{}".format(user)
+        elif 'ligo-la' in host:
+            url = "https://ldas-jobs.ligo-la.caltech.edu/~{}".format(user)
+        elif "cit" in host or "caltech" in host:
+            url = "https://ldas-jobs.ligo.caltech.edu/~{}".format(user)
         elif 'uwm' in host or 'nemo' in host:
             url = "https://ldas-jobs.phys.uwm.edu/~{}".format(user)
         elif 'phy.syr.edu' in host:
