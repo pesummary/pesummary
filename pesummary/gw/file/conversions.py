@@ -218,3 +218,21 @@ def component_spins(theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1,
         return data
     else:
         raise Exception("Please install LALSuite for full conversions")
+
+
+def spin_angles_from_azimuthal_and_polar_angles(
+        a_1, a_2, a_1_azimuthal, a_1_polar, a_2_azimuthal, a_2_polar):
+    """Return the spin angles given samples for a_1, a_2, a_1_azimuthal,
+    a_1_polar, a_2_azimuthal, a_2_polar
+    """
+    spin1x = a_1 * np.sin(a_1_polar) * np.cos(a_1_azimuthal)
+    spin1y = a_1 * np.sin(a_1_polar) * np.sin(a_1_azimuthal)
+    spin1z = a_1 * np.cos(a_1_polar)
+
+    spin2x = a_2 * np.sin(a_2_polar) * np.cos(a_2_azimuthal)
+    spin2y = a_2 * np.sin(a_2_polar) * np.sin(a_2_azimuthal)
+    spin2z = a_2 * np.cos(a_2_polar)
+
+    data = [[s1x, s1y, s1z, s2x, s2y, s2z] for s1x, s1y, s1z, s2x, s2y, s2z in
+            zip(spin1x, spin1y, spin1z, spin2x, spin2y, spin2z)]
+    return data

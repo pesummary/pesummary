@@ -24,7 +24,7 @@ import numpy as np
 
 from pesummary.core.command_line import command_line
 import pesummary.gw.file.conversions as con
-from pesummary.core.file.one_format import paths_to_key, load_recusively
+from pesummary.core.file.one_format import paths_to_key, load_recusively, OneFormat
 from pesummary.utils.utils import logger
 from pesummary.gw.file.lalinference import LALInferenceResultsFile
 from pesummary.gw.file.standard_names import standard_names
@@ -38,7 +38,7 @@ except ImportError:
     GLUE = False
 
 
-class GWOneFormat(object):
+class GWOneFormat(OneFormat):
     """Class to convert a given results file into a standard format with all
     derived posterior distributions included
 
@@ -153,7 +153,8 @@ class GWOneFormat(object):
                     "hdf5": self._grab_data_from_hdf5_file,
                     "h5": self._grab_data_from_hdf5_file,
                     "dat": self._grab_data_from_dat_file,
-                    "txt": self._grab_data_from_dat_file}
+                    "txt": self._grab_data_from_dat_file,
+                    "hdf": self._grab_data_from_hdf5_file}
         data = func_map[self.extension]()
         parameters = data[0]
         samples = data[1]
@@ -289,14 +290,16 @@ class GWOneFormat(object):
                                    self.fil, e))
                 return self._grab_data_with_h5py()
         else:
-            logger.warning("Unrecognised HDF5 format. Trying to open and find "
-                           "the data")
             try:
-                return self._grab_data_with_h5py()
+                parameters, samples = super(
+                    GWOneFormat, self)._grab_data_with_h5py()
+                parameters = self._check_definition_of_inclination(
+                    parameters)
+                parameters = [standard_names[i] for i in parameters]
+                return parameters, samples
             except Exception:
                 raise Exception("Failed to extract the data from the results "
-                                "file. Please reformat to either the bilby "
-                                "or LALInference format")
+                                "file. Please reformat to the results file")
 
     def _add_to_list(self, item):
         self._data_structure.append(item)
@@ -593,8 +596,15 @@ class GWOneFormat(object):
             self.parameters.append(i)
         spin_components = [
             "mass_1", "mass_2", "iota", "spin_1x", "spin_1y", "spin_1z",
-            "spin_2x", "spin_2y", "spin_2z", "reference_frequency", "phase"]
+            "spin_2x", "spin_2y", "spin_2z", "reference_frequency"]
         samples = self.specific_parameter_samples(spin_components)
+        if "phase" in self.parameters:
+            spin_components.append("phase")
+            samples.append(self.specific_parameter_samples("phase"))
+        else:
+            logger.warn("Phase it not given, we will be assuming that a "
+                        "reference phase of 0 to calculate all the spin angles")
+            samples.append([0] * len(samples[0]))
         spin_angles = con.spin_angles(
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5], samples[6], samples[7], samples[8], samples[9],
@@ -621,6 +631,25 @@ class GWOneFormat(object):
             samples[5], samples[6], samples[7], samples[8], samples[9],
             samples[10])
 
+        for i in spins_to_calculate:
+            ind = spins.index(i)
+            data = np.array([i[ind] for i in spin_components])
+            self.append_data(data)
+
+    def _component_spins_from_azimuthal_and_polar_angles(self):
+        spins = ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
+                 "spin_2z"]
+        spins_to_calculate = [
+            i for i in spins if i not in self.parameters]
+        for i in spins_to_calculate:
+            self.parameters.append(i)
+        spin_angles = [
+            "a_1", "a_2", "a_1_azimuthal", "a_1_polar", "a_2_azimuthal",
+            "a_2_polar"]
+        samples = self.specific_parameter_samples(spin_angles)
+        spin_components = con.spin_angles_from_azimuthal_and_polar_angles(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5])
         for i in spins_to_calculate:
             ind = spins.index(i)
             data = np.array([i[ind] for i in spin_components])
@@ -727,6 +756,11 @@ class GWOneFormat(object):
         condition2 = "phi_1" in self.parameters and "phi_2" in self.parameters
         if condition1 and condition2:
             self._phi_12_from_phi1_phi2()
+        spin_angles = [
+            "a_1", "a_2", "a_1_azimuthal", "a_1_polar", "a_2_azimuthal",
+            "a_2_polar"]
+        if all(i in self.parameters for i in spin_angles):
+            self._component_spins_from_azimuthal_and_polar_angles()
         if "mass_1" in self.parameters and "mass_2" in self.parameters:
             if "total_mass" not in self.parameters:
                 self._mtotal_from_m1_m2()
