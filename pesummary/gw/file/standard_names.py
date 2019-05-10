@@ -120,5 +120,6 @@ standard_names = {"logL": "log_likelihood",
                   "reference_frequency": "reference_frequency",
                   "fref": "reference_frequency",
                   "time_maxl": "marginalized_geocent_time",
+                  "tref": "marginalized_geocent_time",
                   "phase_maxl": "marginalized_phase",
                   "distance_maxl": "marginalized_distance"}
