@@ -315,7 +315,7 @@ class GWInput(Input):
         """
         label_list = []
         for num, i in enumerate(self.result_files):
-            if self.gracedb and self.detectors:
+            if self.gracedb and self.detectors[num]:
                 label_list.append("_".join(
                     [self.gracedb, self.detectors[num]]))
             elif self.gracedb:
