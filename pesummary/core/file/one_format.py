@@ -223,13 +223,28 @@ class OneFormat(object):
         f = h5py.File(self.fil)
         f.visit(self._add_to_list)
         for i in self._data_structure:
-            condition1 = "posterior_samples" in i or "posterior" in i
-            condition2 = "posterior_samples/" not in i and "posterior/" not in i
+            condition1 = "posterior_samples" in i or "posterior" in i or \
+                         "samples" in i
+            condition2 = "posterior_samples/" not in i and "posterior/" not in \
+                         i and "samples/" not in i
             if condition1 and condition2:
                 path = i
 
-        parameters = f[path].dtype.names
-        samples = [[i[parameters.index(j)] for j in parameters] for i in f[path]]
+        if isinstance(f[path], h5py._hl.group.Group):
+            parameters = [i for i in f[path].keys()]
+            n_samples = len(f[path][parameters[0]])
+            samples = [[f[path][i][num] for i in parameters] for num in range(n_samples)]
+            cond1 = "loglr" not in parameters or "log_likelihood" not in \
+                parameters
+            cond2 = "likelihood_stats" in f.keys() and "loglr" in \
+                f["likelihood_stats"]
+            if cond1 and cond2:
+                parameters.append("log_likelihood")
+                for num, i in enumerate(samples):
+                    samples[num].append(f["likelihood_stats/loglr"][num])
+        elif isinstance(f[path], np.ndarray):
+            parameters = f[path].dtype.names
+            samples = [[i[parameters.index(j)] for j in parameters] for i in f[path]]
         f.close()
         return parameters, samples
 
