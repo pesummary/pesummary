@@ -194,6 +194,8 @@ class GWInput(Input):
             print("convert to .dat file")
         elif extension == "dat":
             pass
+        elif extension == "txt":
+            pass
         else:
             raise Exception("PSD results file not understood")
 
