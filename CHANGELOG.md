@@ -1,4 +1,4 @@
-## 0.1.6 [unreleased]
+## 0.1.6 [13/05/2019]
 
 ### Changed
 - Python2.7: Change the yield statements in pesummary.core.file.one_format to
