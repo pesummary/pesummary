@@ -22,7 +22,7 @@ import h5py
 import json
 
 
-class ExistingFile():
+class ExistingFile(object):
     """This class handles the existing posterior_samples.h5 file
 
     Parameters
