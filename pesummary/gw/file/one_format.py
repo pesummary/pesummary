@@ -778,7 +778,7 @@ class GWOneFormat(OneFormat):
             if all(i in self.parameters for i in spin_angles):
                 self._component_spins()
             if "chi_p" not in self.parameters and "chi_eff" not in self.parameters:
-                if all(i in self.parameters for i in spin_angles):
+                if all(i in self.parameters for i in spin_components):
                     self._chi_p()
                     self._chi_eff()
         if "cos_tilt_1" not in self.parameters and "tilt_1" in self.parameters:
