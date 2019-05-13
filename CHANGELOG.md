@@ -12,7 +12,8 @@
   or calibration envelope it was assigned to all results files.
 - guess_url: Change the guess_url function to include LLO
 - Skymap: Flipped the x axis on the skymap plot to run from 24 -> 0 instead of
-  0 -> 24. 
+  0 -> 24.
+- BUG: Fixed a bug in the pesummary.gw.file.conversions.spin_angles function 
 
 ### Added
 - PESummary now supports non GW specific results files
