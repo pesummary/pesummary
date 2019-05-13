@@ -46,4 +46,4 @@ Sphinx>=1.2.2 \
 sphinx-argparse \
 sphinx_rtd_theme \
 testfixtures \
-pesummary==0.1.5
+pesummary==0.1.6
