@@ -181,7 +181,7 @@ class TestConversions(object):
                            [spin1z]*2, [spin2x]*2, [spin2y]*2, [spin2z]*2,
                            f_ref, phase)
         rounded = np.round(data, 4)
-        expected = [0.5460, 2.7475, 0.9828, 0.7854, 0.0, 0.9014, 0.7071]
+        expected = [0.5345, 2.797, 0.9828, 0.0, 0.0, 0.9014, 0.5]
         assert all(i == j for i,j in zip(rounded[0], expected))
 
     def test_component_spins(self):
