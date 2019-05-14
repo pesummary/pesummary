@@ -16,7 +16,7 @@
 from setuptools import setup
 import subprocess
 
-version = "0.1.6"
+version = "0.1.7"
 
 
 def full_description():
@@ -36,8 +36,13 @@ def write_version_file(version):
     version: str
         the release version of the code that you are running
     """
-    git_log = subprocess.check_output(
-        ["git", "log", "-1", "--pretty=format:%h"]).decode("utf-8")
+    try:
+        git_log = subprocess.check_output(
+            ["git", "log", "-1", "--pretty=format:%h"]).decode("utf-8")
+    except Exception as e:
+        print("Unable to obtain git version information, because %s" % (e))
+        git_log = ""
+
     with open("pesummary/.version", "w") as f:
         f.writelines(["%s %s" % (version, git_log)])
     return ".version"

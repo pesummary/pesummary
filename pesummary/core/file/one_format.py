@@ -242,7 +242,7 @@ class OneFormat(object):
                 parameters.append("log_likelihood")
                 for num, i in enumerate(samples):
                     samples[num].append(f["likelihood_stats/loglr"][num])
-        elif isinstance(f[path], np.ndarray):
+        elif isinstance(f[path], h5py._hl.dataset.Dataset):
             parameters = f[path].dtype.names
             samples = [[i[parameters.index(j)] for j in parameters] for i in f[path]]
         f.close()

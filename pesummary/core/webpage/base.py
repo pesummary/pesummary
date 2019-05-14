@@ -16,7 +16,7 @@
 import numpy as np
 
 
-class Base():
+class Base(object):
     """Meta class containing helper functions for generating webpages
     """
     def close(self):
