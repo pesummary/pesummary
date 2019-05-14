@@ -727,6 +727,19 @@ class GWOneFormat(OneFormat):
         chirp_mass_source = con.mchirp_source_from_mchirp_z(samples[0], samples[1])
         self.append_data(chirp_mass_source)
 
+    def _time_in_each_ifo(self):
+        detectors = []
+        for i in self.parameters:
+            if "optimal_snr" in i:
+                det = i.split("_optimal_snr")[0]
+                detectors.append(det)
+        print(detectors)
+        samples = self.specific_parameter_samples(["ra", "dec", "geocent_time"])
+        for i in detectors:
+            self.parameters.append("time_in_%s" % (i))
+            time = con.time_in_each_ifo(i, samples[0], samples[1], samples[2])
+            self.append_data(time)
+
     def generate_all_posterior_samples(self):
         logger.debug("Starting to generate all derived posteriors")
         if "chirp_mass" not in self.parameters and "chirp_mass_source" in \
@@ -800,6 +813,13 @@ class GWOneFormat(OneFormat):
                 self._mtotal_source_from_mtotal_z()
             if "chirp_mass_source" not in self.parameters and "chirp_mass" in self.parameters:
                 self._mchirp_source_from_mchirp_z()
+
+        location = ["geocent_time", "ra", "dec"]
+        print(self.parameters)
+        if all(i in self.parameters for i in location):
+            print("yes")
+            self._time_in_each_ifo()
+
         if "reference_frequency" in self.parameters:
             ind = self.parameters.index("reference_frequency")
             self.parameters.remove(self.parameters[ind])
