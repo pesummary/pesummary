@@ -733,10 +733,10 @@ class GWOneFormat(OneFormat):
             if "optimal_snr" in i:
                 det = i.split("_optimal_snr")[0]
                 detectors.append(det)
-        print(detectors)
+
         samples = self.specific_parameter_samples(["ra", "dec", "geocent_time"])
         for i in detectors:
-            self.parameters.append("time_in_%s" % (i))
+            self.parameters.append("%s_time" % (i))
             time = con.time_in_each_ifo(i, samples[0], samples[1], samples[2])
             self.append_data(time)
 
