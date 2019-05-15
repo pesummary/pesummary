@@ -23,6 +23,7 @@ import deepdish
 import numpy as np
 
 from pesummary.core.command_line import command_line
+from pesummary.gw.command_line import insert_gwspecific_option_group
 import pesummary.gw.file.conversions as con
 from pesummary.core.file.one_format import paths_to_key, load_recusively, OneFormat
 from pesummary.utils.utils import logger
@@ -862,10 +863,11 @@ def add_specific_arguments(parser):
 
 
 def main():
-    """Top-level interface for pesummary_convert.py
+    """Top-level interface for summaryconvert
     """
     parser = command_line()
     parser = add_specific_arguments(parser)
+    insert_gwspecific_option_group(parser)
     opts = parser.parse_args()
     if opts.inj_file and len(opts.samples) != len(opts.inj_file):
         raise Exception("Please ensure that the number of results files "

@@ -80,7 +80,7 @@ setup(name='pesummary',
       package_data={'pesummary': ['core/js/*.js', 'core/css/*.css', version_file]},
       entry_points={
           'console_scripts': [
-              'summaryconvert=pesummary.file.one_format:main',
+              'summaryconvert=pesummary.gw.file.one_format:main',
               'summarypages=cli.summarypages:main',
               'summaryplots=cli.summaryplots:main']},
       classifiers=[
