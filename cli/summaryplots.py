@@ -22,6 +22,8 @@ import matplotlib.pyplot as plt
 import pesummary
 from pesummary.core.plots import plot as core
 from pesummary.gw.plots import plot as gw
+from pesummary.gw.plots.latex_labels import GWlatex_labels
+from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.core.file.existing import ExistingFile
 from pesummary.gw.file.existing import GWExistingFile
 from pesummary.utils.utils import logger
@@ -31,7 +33,6 @@ from pesummary.gw.inputs import GWInput
 from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.utils import functions
 
-
 import warnings
 
 from glob import glob
@@ -40,56 +41,8 @@ import numpy as np
 
 __doc__ == "Class to generate plots"
 
-latex_labels = {"luminosity_distance": r"$d_{L} [Mpc]$",
-                "geocent_time": r"$t_{c} [s]$",
-                "dec": r"$\delta [rad]$",
-                "ra": r"$\alpha [rad]$",
-                "a_1": r"$a_{1}$",
-                "a_2": r"$a_{2}$",
-                "phi_jl": r"$\phi_{JL} [rad]$",
-                "phase": r"$\phi [rad]$",
-                "psi": r"$\Psi [rad]$",
-                "iota": r"$\iota [rad]$",
-                "tilt_1": r"$\theta_{1} [rad]$",
-                "tilt_2": r"$\theta_{2} [rad]$",
-                "phi_12": r"$\phi_{12} [rad]$",
-                "mass_2": r"$m_{2} [M_{\odot}]$",
-                "mass_1": r"$m_{1} [M_{\odot}]$",
-                "total_mass": r"$M [M_{\odot}]$",
-                "chirp_mass": r"$\mathcal{M} [M_{\odot}]$",
-                "log_likelihood": r"$\log{\mathcal{L}}$",
-                "H1_matched_filter_snr": r"$\rho^{H}_{mf}$",
-                "L1_matched_filter_snr": r"$\rho^{L}_{mf}$",
-                "H1_optimal_snr": r"$\rho^{H}_{opt}$",
-                "L1_optimal_snr": r"$\rho^{L}_{opt}$",
-                "V1_optimal_snr": r"$\rho^{V}_{opt}$",
-                "E1_optimal_snr": r"$\rho^{E}_{opts}$",
-                "H1_time": r"$t_{H} [s]$",
-                "L1_time": r"$t_{L} [s]$",
-                "V1_time": r"$t_{V} [s]$",
-                "E1_time": r"$t_{E} [s]$",
-                "spin_1x": r"$S_{1}x$",
-                "spin_1y": r"$S_{1}y$",
-                "spin_1z": r"$S_{1}z$",
-                "spin_2x": r"$S_{2}x$",
-                "spin_2y": r"$S_{2}y$",
-                "spin_2z": r"$S_{2}z$",
-                "chi_p": r"$\chi_{p}$",
-                "chi_eff": r"$\chi_{eff}$",
-                "mass_ratio": r"$q$",
-                "symmetric_mass_ratio": r"$\eta$",
-                "phi_1": r"$\phi_{1} [rad]$",
-                "phi_2": r"$\phi_{2} [rad]$",
-                "cos_tilt_1": r"$\cos{\theta_{1}}$",
-                "cos_tilt_2": r"$\cos{\theta_{2}}$",
-                "redshift": r"$z$",
-                "comoving_distance": r"$d_{com} [Mpc]$",
-                "mass_1_source": r"$m_{1}^{source} [M_{\odot}]$",
-                "mass_2_source": r"$m_{2}^{source} [M_{\odot}]$",
-                "chirp_mass_source": r"$\mathcal{M}^{source} [M_{\odot}]$",
-                "total_mass_source": r"$M^{source} [M_{\odot}]$",
-                "cos_iota": r"$\cos{\iota}$",
-                "theta_jn": r"$\theta_{JN} [rad]$"}
+
+latex_labels.update(GWlatex_labels)
 
 
 class PlotGeneration(pesummary.core.inputs.PostProcessing):
