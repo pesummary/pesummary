@@ -198,6 +198,12 @@ class TestConversions(object):
         for num, i in enumerate(rounded):
             assert i.tolist() == expected[num]
 
+    def test_time_in_each_ifo(self):
+        optimal_ra, optimal_dec = -0.2559168059473027, 0.81079526383
+        time = time_in_each_ifo("H1", optimal_ra, optimal_dec, 0)
+        light_time = 6371*10**3 / (3.0*10**8)
+        assert -np.round(light_time, 4) == np.round(time, 4)
+
     def test_one_format(self):
         path = "./tests/files/GW150914_result.h5"
         output = one_format.GWOneFormat(path, None)
