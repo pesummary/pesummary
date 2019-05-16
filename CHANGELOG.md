@@ -1,8 +1,11 @@
 ## 0.1.7 [unreleased]
 
 ### Changed
+- Latex_labels: Moved the latex labels into pesummary.core.plots.latex_labels
+  and pesummary.gw.plots.latex_labels
 
 ### Added
+- Added a conversion to calculate the posterior for the time in each detector 
 
 ## 0.1.6 [13/05/2019]
 
