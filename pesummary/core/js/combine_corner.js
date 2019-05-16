@@ -93,7 +93,7 @@ function getImagePortion(c, imgObj, array){
     tnCanvasContext.fillStyle = "white";
     tnCanvasContext.fillRect(0, 0, 600, 600);
    
-    /* use the sourceCanvas to duplicate the entire image. This step was crucial for iOS4 and under devices. Follow the link at the end of this post to see what happens when you don’t do this */
+    /* use the sourceCanvas to duplicate the entire image. This step was crucial for iOS4 and under devices. Follow the link at the end of this post to see what happens when you don't do this */
     var bufferCanvas = document.createElement('canvas');
     var bufferContext = bufferCanvas.getContext('2d');
     bufferCanvas.width = imgObj.width;
@@ -103,7 +103,7 @@ function getImagePortion(c, imgObj, array){
     var list = ['redshift', 'phi_jl', 'total_mass', 'chirp_mass_source', 'symmetric_mass_ratio', 'mass_1', 'ra', 'mass_2', 'tilt_2', 'mass_2_source', 'psi', 'phi_12', 'geocent_time', 'a_1', 'a_2', 'chi_p', 'phase', 'mass_1_source', 'luminosity_distance', 'chirp_mass', 'iota', 'chi_eff', 'mass_ratio', 'total_mass_source', 'tilt_1', 'dec', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'luminosity_distance', 'iota', 'dec', 'ra', 'psi', 'phase'];
     var indices = []
     
-    var ratio = (157.5*3) / (array.length*210)
+    var ratio = (157.5*3) / (array.length*210)
 
     for ( var i=0; i<array.length; i++) {
         if ( list.indexOf(array[i]) == -1 ) {
