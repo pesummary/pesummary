@@ -358,7 +358,7 @@ def add_specific_arguments(parser):
 
 
 def main():
-    """Top-level interface for pesummary_convert.py
+    """Top-level interface for summaryconvert
     """
     parser = command_line()
     parser = add_specific_arguments(parser)

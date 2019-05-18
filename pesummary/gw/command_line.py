@@ -79,6 +79,9 @@ def insert_gwspecific_option_group(parser):
     gw_group.add_argument("--calibration", dest="calibration",
                           help="files for the calibration envelope",
                           nargs="+", action=DictionaryAction, default=None)
+    gw_group.add_argument("--trigfile", dest="inj_file",
+                          help="xml file containing the trigger values",
+                          nargs='+', default=None)
     gw_group.add_argument("--gw", action="store_true",
                           help="run with the gravitational wave pipeline",
                           default=False)

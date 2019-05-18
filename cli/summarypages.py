@@ -555,7 +555,7 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                  "comoving_distance"], ["mass_ratio"])
             params.append(["location", self._partition(cond, parameters)])
         if any("geocent_time" in j for j in parameters):
-            cond = self._condition(["geocent_time"], [])
+            cond = self._condition(["time"], [])
             params.append(["timings", self._partition(cond, parameters)])
         if any("snr" in j for j in parameters):
             cond = self._condition(["snr"], [])

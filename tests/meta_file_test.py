@@ -148,8 +148,9 @@ class TestMetaFile(object):
         label = posterior_samples.create_group("H1_L1")
         label.create_dataset("parameter_names", data=parameters)
         label.create_dataset("samples", data=samples)
-        label.create_dataset("injected_parameters", data=parameters)
-        label.create_dataset("injected_samples", data=injected_samples)
+        injected_data = f.create_group("injection_data")
+        label = injected_data.create_group("H1_L1")
+        label.create_dataset("injection_values", data=injected_samples)
         f.close()
         return path + "/posterior_samples.h5"
 
@@ -199,7 +200,8 @@ class TestMetaFile(object):
         inputs = GWInput(opts)
         metafile = meta_file.GWMetaFile(inputs)
         f = h5py.File(metafile.meta_file, "r")
-        assert sorted(list(f.keys())) == ["approximant", "posterior_samples"]
+        assert sorted(list(f.keys())) == ["approximant", "injection_data",
+                                          "posterior_samples"]
         for i, j in zip(sorted(["grace_H1", "H1_L1"]),
                         sorted(list(f["posterior_samples"].keys()))):
             assert i in j

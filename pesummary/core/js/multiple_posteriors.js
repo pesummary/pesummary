@@ -37,7 +37,7 @@ function combines(list, label) {
     } else {                                                                    
       var el = list.split(", ");                                                
     }
-    c.width = 700;
+    c.width = 750;
     if ( el == "" ) {
         var total = document.getElementsByName("type");
         var parameters = []
@@ -53,7 +53,6 @@ function combines(list, label) {
                 ticked.push(parameters[i]);
             }
         }
-        c.height = 520*ticked.length+50;
         var images2 = [];
         for ( var i=0; i<ticked.length; i++ ) {
             var newimage = new Image();
@@ -65,14 +64,13 @@ function combines(list, label) {
             images2.push(newimage);
 
             promise = new Promise((resolve, reject) => {
-                onLoadImage(ctx, images2, reject, ticked)
+                onLoadImage(c, ctx, images2, reject, ticked)
             })
             promise.catch((err) => alert(
                 "The parameter '" + err + "' is not recognised. Please open the " +
                 "sidebar for a full list of available parameters"))
         }
     } else {                                                       
-        c.height = 520*el.length+50;
         var images = [];                                                                                 
         for ( var i=0; i<el.length; i++ ) { 
             var newimage = new Image();
@@ -84,7 +82,7 @@ function combines(list, label) {
             images.push(newimage);
             
             promise = new Promise((resolve, reject) => {
-                onLoadImage(ctx, images, reject, el)
+                onLoadImage(c, ctx, images, reject, el)
             })
             promise.catch((err) => alert(
                 "The parameter '" + err + "' is not recognised. Please open the " +
@@ -93,16 +91,26 @@ function combines(list, label) {
     }
 }
 
-function onLoadImage(ctx, images, reject, list) {
-    setTimeout(function() {
-    for ( var i=0; i<images.length; i++ ) {
-        try {
-            ctx.drawImage(images[i], 0, (500*i)+(i*20), 700, 500);
-        } catch (e) {
-            reject(list[i])
+function onLoadImage(c, ctx, images, reject, list) {
+    images[0].onload = function() {
+        var width = this.naturalWidth;
+        var height = this.naturalHeight;
+        var scalefactor = c.width / width
+
+        c.height = height*scalefactor*images.length + 20*images.length
+        setTimeout(function() {
+        for ( var i=0; i<images.length; i++ ) {
+            try {
+                ctx.drawImage(images[i], 0, (height*scalefactor*i)+(i*20), c.width, height*scalefactor);
+            } catch (e) {
+                reject(list[i])
+            }
         }
+        }, 1000);
     }
-    }, 1000);
+    images[0].onerror = function() {
+        reject(list[0]);
+    }
 }
 
 /*

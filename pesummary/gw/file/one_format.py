@@ -23,6 +23,7 @@ import deepdish
 import numpy as np
 
 from pesummary.core.command_line import command_line
+from pesummary.gw.command_line import insert_gwspecific_option_group
 import pesummary.gw.file.conversions as con
 from pesummary.core.file.one_format import paths_to_key, load_recusively, OneFormat
 from pesummary.utils.utils import logger
@@ -445,6 +446,35 @@ class GWOneFormat(OneFormat):
     def _grab_injection_data_from_xml_file(self):
         """Grab the data from an xml injection file
         """
+        if GLUE:
+            xmldoc = ligolw_utils.load_filename(
+                self.inj, contenthandler=lsctables.use_in(
+                    ligolw.LIGOLWContentHandler))
+            try:
+                table = lsctables.SimInspiralTable.get_table(xmldoc)[0]
+            except Exception:
+                table = lsctables.SnglInspiralTable.get_table(xmldoc)[0]
+            injection_values = self._return_all_injection_parameters(
+                self.parameters, table)
+        else:
+            injection_values = [float("nan")] * len(self.parameters)
+        return self.parameters, injection_values
+
+    def _grab_injection_data_from_hdf5_file(self):
+        """Grab the data from an hdf5 injection file
+        """
+        pass
+
+    def _return_all_injection_parameters(self, parameters, table):
+        """Return the full list of injection parameters
+
+        Parameters
+        ----------
+        parameters: list
+            full list of parameters being used in the analysis
+        table: glue.ligolw.lsctables.SnglInspiral
+            table containing the trigger values
+        """
         func_map = {
             "chirp_mass": lambda inj: inj.mchirp,
             "luminosity_distance": lambda inj: inj.distance,
@@ -457,27 +487,27 @@ class GWOneFormat(OneFormat):
             "spin_2x": lambda inj: inj.spin2x,
             "spin_2y": lambda inj: inj.spin2y,
             "spin_2z": lambda inj: inj.spin2z,
-            "mass_ratio": lambda inj: con.q_from_m1_m2(inj.mass1, inj.mass2),
+            "mass_ratio": lambda inj: con.q_from_m1_m2(
+                inj.mass1, inj.mass2),
             "symmetric_mass_ratio": lambda inj: con.eta_from_m1_m2(
                 inj.mass1, inj.mass2),
             "total_mass": lambda inj: inj.mass1 + inj.mass2,
             "chi_p": lambda inj: con._chi_p(
                 inj.mass1, inj.mass2, inj.spin1x, inj.spin1y, inj.spin2x,
                 inj.spin2y),
-            "chi_eff": lambda inj: con._chi_eff(inj.mass1, inj.mass2,
-                                                inj.spin1z, inj.spin2z)}
-        injection_parameters = self.parameters
-        if GLUE:
-            xmldoc = ligolw_utils.load_filename(
-                self.inj, contenthandler=lsctables.use_in(
-                    ligolw.LIGOLWContentHandler))
-            table = lsctables.SimInspiralTable.get_table(xmldoc)[0]
-            injection_values = [
-                func_map[i](table) if i in func_map.keys() else float("nan")
-                for i in self.parameters]
-        else:
-            injection_values = [float("nan")] * len(self.parameters)
-        return injection_parameters, injection_values
+            "chi_eff": lambda inj: con._chi_eff(
+                inj.mass1, inj.mass2, inj.spin1z, inj.spin2z)}
+
+        injection_values = []
+        for i in parameters:
+            try:
+                if func_map[i](table) is not None:
+                    injection_values.append(func_map[i](table))
+                else:
+                    injection_values.append(float("nan"))
+            except Exception:
+                injection_values.append(float("nan"))
+        return injection_values
 
     def _specific_parameter_samples(self, param):
         """Return the samples for a specific parameter
@@ -694,7 +724,7 @@ class GWOneFormat(OneFormat):
     def _z_from_dL(self):
         self.parameters.append("redshift")
         samples = self.specific_parameter_samples("luminosity_distance")
-        redshift = con.z_from_dL(samples)
+        redshift = con.z_from_dL_approx(samples)
         self.append_data(redshift)
 
     def _comoving_distance_from_z(self):
@@ -726,6 +756,19 @@ class GWOneFormat(OneFormat):
         samples = self.specific_parameter_samples(["chirp_mass", "redshift"])
         chirp_mass_source = con.mchirp_source_from_mchirp_z(samples[0], samples[1])
         self.append_data(chirp_mass_source)
+
+    def _time_in_each_ifo(self):
+        detectors = []
+        for i in self.parameters:
+            if "optimal_snr" in i:
+                det = i.split("_optimal_snr")[0]
+                detectors.append(det)
+
+        samples = self.specific_parameter_samples(["ra", "dec", "geocent_time"])
+        for i in detectors:
+            self.parameters.append("%s_time" % (i))
+            time = con.time_in_each_ifo(i, samples[0], samples[1], samples[2])
+            self.append_data(time)
 
     def generate_all_posterior_samples(self):
         logger.debug("Starting to generate all derived posteriors")
@@ -800,6 +843,11 @@ class GWOneFormat(OneFormat):
                 self._mtotal_source_from_mtotal_z()
             if "chirp_mass_source" not in self.parameters and "chirp_mass" in self.parameters:
                 self._mchirp_source_from_mchirp_z()
+
+        location = ["geocent_time", "ra", "dec"]
+        if all(i in self.parameters for i in location):
+            self._time_in_each_ifo()
+
         if "reference_frequency" in self.parameters:
             ind = self.parameters.index("reference_frequency")
             self.parameters.remove(self.parameters[ind])
@@ -862,10 +910,11 @@ def add_specific_arguments(parser):
 
 
 def main():
-    """Top-level interface for pesummary_convert.py
+    """Top-level interface for summaryconvert
     """
     parser = command_line()
     parser = add_specific_arguments(parser)
+    insert_gwspecific_option_group(parser)
     opts = parser.parse_args()
     if opts.inj_file and len(opts.samples) != len(opts.inj_file):
         raise Exception("Please ensure that the number of results files "

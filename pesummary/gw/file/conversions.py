@@ -20,7 +20,8 @@ from pesummary.utils.utils import logger
 try:
     from lalsimulation import SimInspiralTransformPrecessingNewInitialConditions
     from lalsimulation import SimInspiralTransformPrecessingWvf2PE
-    from lal import MSUN_SI
+    from lalsimulation import DetectorPrefixToLALDetector
+    from lal import MSUN_SI, C_SI
     LALINFERENCE_INSTALL = True
 except ImportError:
     LALINFERENCE_INSTALL = False
@@ -28,6 +29,7 @@ except ImportError:
 try:
     from astropy.cosmology import z_at_value, Planck15
     import astropy.units as u
+    from astropy.time import Time
     ASTROPY = True
 except ImportError:
     ASTROPY = False
@@ -36,10 +38,28 @@ except ImportError:
 
 
 @np.vectorize
-def z_from_dL(luminosity_distance):
+def z_from_dL_exact(luminosity_distance):
     """Return the redshift given samples for the luminosity distance
     """
+    logger.warning("Estimating the exact redshift for every luminosity "
+                   "distance. This may take a few minutes.")
     return z_at_value(Planck15.luminosity_distance, luminosity_distance * u.Mpc)
+
+
+def z_from_dL_approx(luminosity_distance):
+    """Return the approximate redshift given samples for the luminosity
+    distance. This technique uses interpolation to estimate the redshift
+    """
+    logger.warning("The redshift is being approximated using interpolation. "
+                   "Bare in mind that this does introduce a small error.")
+    d_min = np.min(luminosity_distance)
+    d_max = np.max(luminosity_distance)
+    zmin = z_at_value(Planck15.luminosity_distance, d_min * u.Mpc)
+    zmax = z_at_value(Planck15.luminosity_distance, d_max * u.Mpc)
+    zgrid = np.logspace(np.log10(zmin), np.log10(zmax), 100)
+    Dgrid = [Planck15.luminosity_distance(i).value for i in zgrid]
+    zvals = np.interp(luminosity_distance, Dgrid, zgrid)
+    return zvals
 
 
 def dL_from_z(redshift):
@@ -236,3 +256,24 @@ def spin_angles_from_azimuthal_and_polar_angles(
     data = [[s1x, s1y, s1z, s2x, s2y, s2z] for s1x, s1y, s1z, s2x, s2y, s2z in
             zip(spin1x, spin1y, spin1z, spin2x, spin2y, spin2z)]
     return data
+
+
+def time_in_each_ifo(detector, ra, dec, time_gps):
+    """Return the event time in a given detector, given samples for ra, dec,
+    time
+    """
+    if LALINFERENCE_INSTALL and ASTROPY:
+        gmst = Time(time_gps, format='gps', location=(0, 0))
+        corrected_ra = gmst.sidereal_time('mean').rad - ra
+
+        i = np.cos(dec) * np.cos(corrected_ra)
+        j = np.cos(dec) * -1 * np.sin(corrected_ra)
+        k = np.sin(dec)
+        n = np.array([i, j, k])
+
+        dx = [0, 0, 0] - DetectorPrefixToLALDetector(detector).location
+        dt = dx.dot(n) / C_SI
+        return time_gps + dt
+    else:
+        raise Exception("Please install LALSuite and astropy for full "
+                        "conversions")

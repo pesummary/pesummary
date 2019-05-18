@@ -90,10 +90,12 @@ class ExistingFile(object):
             dictionary["posterior_samples"]["%s" % (i)].keys()}
         labels = list(existing_structure.keys())
 
-        parameter_list, sample_list = [], []
+        parameter_list, sample_list, inj_list = [], [], []
         for num, i in enumerate(labels):
             p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
+            inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
+            inj_list.append(inj)
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
             else:
@@ -102,7 +104,7 @@ class ExistingFile(object):
             config = None
             if "config_file" in dictionary.keys():
                 config, = load_recusively("config_file/%s" % (i), dictionary)
-        return labels, parameter_list, sample_list, config
+        return labels, parameter_list, sample_list, config, inj_list
 
     @property
     def existing_labels(self):
@@ -118,4 +120,8 @@ class ExistingFile(object):
 
     @property
     def existing_config(self):
-        return self.existing_config[3]
+        return self.existing_data[3]
+
+    @property
+    def existing_injection(self):
+        return self.existing_data[4]

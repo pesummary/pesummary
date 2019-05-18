@@ -41,6 +41,8 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
         f.create_group("posterior_samples")
         if "config_file" in dictionary.keys():
             f.create_group("config_file")
+        if "injection_data" in dictionary.keys():
+            f.create_group("injection_data")
     except Exception:
         pass
     if current_path is None:
@@ -83,6 +85,7 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         self.existing_label = None
         self.existing_parameters = None
         self.existing_samples = None
+        self.existing_injection = None
         self.generate_meta_file_data()
 
         if not self.hdf5:
@@ -119,6 +122,7 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             self.existing_parameters = existing_file.existing_parameters
             self.existing_samples = existing_file.existing_samples
             self.existing_label = existing_file.existing_labels
+            self.existing_injection = existing_file.existing_injection
         self._make_dictionary()
 
     def _make_dictionary(self):
@@ -129,14 +133,18 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             for num, i in enumerate(self.existing_label):
                 self._add_data(i, self.existing_parameters[num],
                                self.existing_samples[num],
+                               self.existing_injection[num],
+                               config=self.existing_config
                                )
         self._make_dictionary_structure(self.labels, config=self.config
                                         )
         for num, i in enumerate(self.labels):
+            injection = [self.injection_data[num]["%s" % (i)] for i in
+                         self.parameters[num]]
             config = self._grab_config_data_from_data_file(self.config[num]) if \
                 self.config and num < len(self.config) else None
             self._add_data(i, self.parameters[num], self.samples[num],
-                           config=config
+                           injection, config=config
                            )
 
     def _grab_config_data_from_data_file(self, file):
@@ -188,6 +196,9 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         for num, i in enumerate(label):
             self._add_label(
                 "posterior_samples", i,
+            )
+            self._add_label(
+                "injection_data", i,
             )
             if config:
                 self._add_label(

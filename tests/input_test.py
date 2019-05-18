@@ -202,8 +202,9 @@ class TestInput(object):
         label = posterior_samples.create_group("H1_L1")
         label.create_dataset("parameter_names", data=parameters)
         label.create_dataset("samples", data=samples)
-        label.create_dataset("injected_parameters", data=parameters)
-        label.create_dataset("injected_samples", data=injected_samples)
+        injection_data = f.create_group("injection_data")
+        label = injection_data.create_group("H1_L1")
+        label.create_dataset("injection_values", data=injected_samples)
         f.close()
         return path + "/posterior_samples.h5"
 

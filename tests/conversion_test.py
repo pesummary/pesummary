@@ -64,8 +64,10 @@ class TestConversions(object):
 
     def test_z_from_dL(self):
         l_distance = self.opts.l_distance
-        redshift = z_from_dL(l_distance)
+        redshift = z_from_dL_approx(l_distance)
+        redshift_exact = z_from_dL_exact(l_distance)
         assert np.round(redshift, 4) == 0.1049
+        assert np.round(redshift_exact, 4) == 0.1049
 
     def test_dL_from_z(self):
         redshift = self.opts.redshift
@@ -197,6 +199,12 @@ class TestConversions(object):
                     [0.5,0.,0.,0.5,0.,0.,0.]]
         for num, i in enumerate(rounded):
             assert i.tolist() == expected[num]
+
+    def test_time_in_each_ifo(self):
+        optimal_ra, optimal_dec = -0.2559168059473027, 0.81079526383
+        time = time_in_each_ifo("H1", optimal_ra, optimal_dec, 0)
+        light_time = 6371*10**3 / (3.0*10**8)
+        assert -np.round(light_time, 4) == np.round(time, 4)
 
     def test_one_format(self):
         path = "./tests/files/GW150914_result.h5"
