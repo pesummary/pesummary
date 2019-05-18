@@ -64,8 +64,10 @@ class TestConversions(object):
 
     def test_z_from_dL(self):
         l_distance = self.opts.l_distance
-        redshift = z_from_dL(l_distance)
+        redshift = z_from_dL_approx(l_distance)
+        redshift_exact = z_from_dL_exact(l_distance)
         assert np.round(redshift, 4) == 0.1049
+        assert np.round(redshift_exact, 4) == 0.1049
 
     def test_dL_from_z(self):
         redshift = self.opts.redshift
