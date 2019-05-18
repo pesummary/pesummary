@@ -45,6 +45,8 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             f.create_group("config_file")
         if "approximant" in dictionary.keys():
             f.create_group("approximant")
+        if "injection_data" in dictionary.keys():
+            f.create_group("injection_data")
     except Exception:
         pass
     if current_path is None:
@@ -91,6 +93,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
         self.existing_psd = None
         self.existing_calibration = None
         self.existing_config = None
+        self.existing_injection = None
 
         self.generate_meta_file_data()
 
@@ -131,6 +134,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             self.existing_calibration = existing_file.existing_calibration
             self.existing_config = existing_file.existing_config
             self.existing_approximant = existing_file.existing_approximant
+            self.existing_injection = existing_file.existing_injection
         self._make_dictionary()
 
     def _make_dictionary(self):
@@ -146,6 +150,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                 self._add_data(i,
                                self.existing_parameters[num],
                                self.existing_samples[num],
+                               self.existing_injection[num],
                                approximant=self.existing_approximant[num],
                                psd=self.existing_psd,
                                calibration=self.existing_calibration,
@@ -160,6 +165,8 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                                         )
         for num, i in enumerate(self.labels):
             if i not in self.existing_label:
+                injection = [self.injection_data[num]["%s" % (i)] for i in
+                             self.parameters[num]]
                 psd_frequencies = self.psd_frequencies[num] if self.psds else \
                     None
                 psd_strains = self.psd_strains[num] if self.psds else None
@@ -176,9 +183,9 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                 approximant = self.approximant if self.approximant else \
                     [None] * len(self.samples)
                 self._add_data(i, self.parameters[num],
-                               self.samples[num], psd=psd,
+                               self.samples[num], injection, psd=psd,
                                calibration=calibration, config=config,
-                               approximant=approximant[num]
+                               approximant=approximant[num],
                                )
 
     def _combine_psd_frequency_strain(self, frequencies, strains, psd_labels):
@@ -236,7 +243,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                     data[i][key] = config["%s" % (i)]["%s" % (key)]
         return data
 
-    def _add_data(self, label, parameters, samples, approximant=None,
+    def _add_data(self, label, parameters, samples, injection, approximant=None,
                   psd=None, calibration=None, config=None):
         """Add data to the stored dictionary
 
@@ -261,6 +268,9 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             "parameter_names": list(parameters),
             "samples": self.convert_to_list(samples)
         }
+        self.data["injection_data"][label] = {
+            "injection_values": list(injection)
+        }
         if psd:
             for i in list(psd.keys()):
                 self.data["psds"][label][i] = psd[i]
@@ -278,6 +288,9 @@ class GWMetaFile(GWPostProcessing, MetaFile):
         for num, i in enumerate(label):
             self._add_label(
                 "posterior_samples", i
+            )
+            self._add_label(
+                "injection_data", i
             )
             if psd:
                 self._add_label("psds", i)

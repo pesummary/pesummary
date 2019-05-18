@@ -446,6 +446,35 @@ class GWOneFormat(OneFormat):
     def _grab_injection_data_from_xml_file(self):
         """Grab the data from an xml injection file
         """
+        if GLUE:
+            xmldoc = ligolw_utils.load_filename(
+                self.inj, contenthandler=lsctables.use_in(
+                    ligolw.LIGOLWContentHandler))
+            try:
+                table = lsctables.SimInspiralTable.get_table(xmldoc)[0]
+            except Exception:
+                table = lsctables.SnglInspiralTable.get_table(xmldoc)[0]
+            injection_values = self._return_all_injection_parameters(
+                self.parameters, table)
+        else:
+            injection_values = [float("nan")] * len(self.parameters)
+        return self.parameters, injection_values
+
+    def _grab_injection_data_from_hdf5_file(self):
+        """Grab the data from an hdf5 injection file
+        """
+        pass
+
+    def _return_all_injection_parameters(self, parameters, table):
+        """Return the full list of injection parameters
+
+        Parameters
+        ----------
+        parameters: list
+            full list of parameters being used in the analysis
+        table: glue.ligolw.lsctables.SnglInspiral
+            table containing the trigger values
+        """
         func_map = {
             "chirp_mass": lambda inj: inj.mchirp,
             "luminosity_distance": lambda inj: inj.distance,
@@ -458,27 +487,27 @@ class GWOneFormat(OneFormat):
             "spin_2x": lambda inj: inj.spin2x,
             "spin_2y": lambda inj: inj.spin2y,
             "spin_2z": lambda inj: inj.spin2z,
-            "mass_ratio": lambda inj: con.q_from_m1_m2(inj.mass1, inj.mass2),
+            "mass_ratio": lambda inj: con.q_from_m1_m2(
+                inj.mass1, inj.mass2),
             "symmetric_mass_ratio": lambda inj: con.eta_from_m1_m2(
                 inj.mass1, inj.mass2),
             "total_mass": lambda inj: inj.mass1 + inj.mass2,
             "chi_p": lambda inj: con._chi_p(
                 inj.mass1, inj.mass2, inj.spin1x, inj.spin1y, inj.spin2x,
                 inj.spin2y),
-            "chi_eff": lambda inj: con._chi_eff(inj.mass1, inj.mass2,
-                                                inj.spin1z, inj.spin2z)}
-        injection_parameters = self.parameters
-        if GLUE:
-            xmldoc = ligolw_utils.load_filename(
-                self.inj, contenthandler=lsctables.use_in(
-                    ligolw.LIGOLWContentHandler))
-            table = lsctables.SimInspiralTable.get_table(xmldoc)[0]
-            injection_values = [
-                func_map[i](table) if i in func_map.keys() else float("nan")
-                for i in self.parameters]
-        else:
-            injection_values = [float("nan")] * len(self.parameters)
-        return injection_parameters, injection_values
+            "chi_eff": lambda inj: con._chi_eff(
+                inj.mass1, inj.mass2, inj.spin1z, inj.spin2z)}
+
+        injection_values = []
+        for i in parameters:
+            try:
+                if func_map[i](table) is not None:
+                    injection_values.append(func_map[i](table))
+                else:
+                    injection_values.append(float("nan"))
+            except Exception:
+                injection_values.append(float("nan"))
+        return injection_values
 
     def _specific_parameter_samples(self, param):
         """Return the samples for a specific parameter
@@ -816,9 +845,7 @@ class GWOneFormat(OneFormat):
                 self._mchirp_source_from_mchirp_z()
 
         location = ["geocent_time", "ra", "dec"]
-        print(self.parameters)
         if all(i in self.parameters for i in location):
-            print("yes")
             self._time_in_each_ifo()
 
         if "reference_frequency" in self.parameters:

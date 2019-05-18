@@ -50,10 +50,12 @@ class GWExistingFile(ExistingFile):
             dictionary["posterior_samples"]["%s" % (i)].keys()}
         labels = list(existing_structure.keys())
 
-        parameter_list, sample_list, approx_list = [], [], []
+        parameter_list, sample_list, approx_list, inj_list = [], [], [], []
         for num, i in enumerate(labels):
             p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
+            inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
+            inj_list.append(inj)
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
             else:
@@ -71,7 +73,7 @@ class GWExistingFile(ExistingFile):
                 approx_list.append(dictionary["approximant"]["%s" % (i)])
             else:
                 approx_list.append(None)
-        return labels, parameter_list, sample_list, psd, cal, config, approx_list
+        return labels, parameter_list, sample_list, psd, cal, config, approx_list, inj_list
 
     @property
     def existing_psd(self):
@@ -88,3 +90,7 @@ class GWExistingFile(ExistingFile):
     @property
     def existing_approximant(self):
         return self.existing_data[6]
+
+    @property
+    def existing_injection(self):
+        return self.existing_data[7]

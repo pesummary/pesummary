@@ -34,11 +34,15 @@ class TestExistingFile(object):
 
         parameters = np.array(["mass_1", "mass_2"], dtype="S")
         samples = np.array([[2.0, 1.0], [4.0, 2.0]])
+        injection_values = np.array([1.0, 2.0])
         f = h5py.File("./.outdir_existing/samples/posterior_samples.h5")
         posterior_samples = f.create_group("posterior_samples")
         label = posterior_samples.create_group("label")
         label.create_dataset("parameter_names", data=parameters)
         label.create_dataset("samples", data=samples)
+        injection_data = f.create_group("injection_data")
+        label = injection_data.create_group("label")
+        label.create_dataset("injection_values", data=injection_values)
         f.close()
 
         self.existing_object = GWExistingFile(self.existing)
@@ -62,3 +66,8 @@ class TestExistingFile(object):
         assert all(
             i == j for i,j in zip(
                 self.existing_object.existing_parameters[0], ["mass_1", "mass_2"]))
+
+    def test_existing_injection(self):
+        assert all(
+            i == j for i,j in zip(
+                self.existing_object.existing_injection[0], [1.0, 2.0]))
