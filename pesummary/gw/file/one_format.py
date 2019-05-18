@@ -695,7 +695,7 @@ class GWOneFormat(OneFormat):
     def _z_from_dL(self):
         self.parameters.append("redshift")
         samples = self.specific_parameter_samples("luminosity_distance")
-        redshift = con.z_from_dL(samples)
+        redshift = con.z_from_dL_approx(samples)
         self.append_data(redshift)
 
     def _comoving_distance_from_z(self):

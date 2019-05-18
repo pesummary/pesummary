@@ -38,10 +38,28 @@ except ImportError:
 
 
 @np.vectorize
-def z_from_dL(luminosity_distance):
+def z_from_dL_exact(luminosity_distance):
     """Return the redshift given samples for the luminosity distance
     """
+    logger.warning("Estimating the exact redshift for every luminosity "
+                   "distance. This may take a few minutes.")
     return z_at_value(Planck15.luminosity_distance, luminosity_distance * u.Mpc)
+
+
+def z_from_dL_approx(luminosity_distance):
+    """Return the approximate redshift given samples for the luminosity
+    distance. This technique uses interpolation to estimate the redshift
+    """
+    logger.warning("The redshift is being approximated using interpolation. "
+                   "Bare in mind that this does introduce a small error.")
+    d_min = np.min(luminosity_distance)
+    d_max = np.max(luminosity_distance)
+    zmin = z_at_value(Planck15.luminosity_distance, d_min * u.Mpc)
+    zmax = z_at_value(Planck15.luminosity_distance, d_max * u.Mpc)
+    zgrid = np.logspace(np.log10(zmin), np.log10(zmax), 100)
+    Dgrid = [Planck15.luminosity_distance(i).value for i in zgrid]
+    zvals = np.interp(luminosity_distance, Dgrid, zgrid)
+    return zvals
 
 
 def dL_from_z(redshift):
