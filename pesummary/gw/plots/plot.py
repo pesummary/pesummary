@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import corner
 
 import numpy as np
+import math
 from scipy.ndimage import gaussian_filter
 from astropy.time import Time
 
@@ -139,6 +140,8 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     kwargs: dict
         dictionary of optional keyword arguments
     """
+    if math.isnan(maxL_params["mass_1"]):
+        return
     logger.debug("Generating the maximum likelihood waveform plot")
     if not LALSIMULATION:
         raise Exception("lalsimulation could not be imported. please install "
@@ -219,6 +222,8 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
 
     fig = plt.figure()
     for num, i in enumerate(maxL_params_list):
+        if math.isnan(i["mass_1"]):
+            continue
         approx = lalsim.GetApproximantFromString(i["approximant"])
         mass_1 = i["mass_1"] * MSUN_SI
         mass_2 = i["mass_2"] * MSUN_SI
@@ -536,6 +541,8 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
     kwargs: dict
         dictionary of optional keyword arguments
     """
+    if math.isnan(maxL_params["mass_1"]):
+        return
     logger.debug("Generating the maximum likelihood waveform time domain plot")
     if not LALSIMULATION:
         raise Exception("lalsimulation could not be imported. please install "
@@ -612,6 +619,8 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
 
     fig = plt.figure()
     for num, i in enumerate(maxL_params_list):
+        if math.isnan(i["mass_1"]):
+            continue
         t_start = i['geocent_time']
         t_finish = i['geocent_time'] + 4.
         time_array = np.arange(t_start, t_finish, delta_t)
@@ -644,10 +653,10 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
                                 i["geocent_time"])
         plt.plot(time_array, abs(h_plus * ar[0] + h_cross * ar[1]),
                  color=colors[num], label=labels[num], linewidth=2.0)
-    plt.grid()
-    plt.legend(loc="best")
     plt.xlabel(r"Time $[s]$", fontsize=16)
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
+    plt.grid()
+    plt.legend(loc="best")
     plt.tight_layout()
     return fig
 

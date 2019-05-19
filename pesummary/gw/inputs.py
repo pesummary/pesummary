@@ -571,8 +571,11 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
                 subset = [k[index] for k in i]
                 data[j] = {"mean": np.mean(subset),
                            "median": np.median(subset),
-                           "maxL": subset[logL.index(np.max(logL))],
                            "std": np.std(subset)}
+                if np.max(logL) == 0:
+                    data[j]["maxL"] = float("nan")
+                else:
+                    data[j]["maxL"] = subset[logL.index(np.max(logL))]
             key_data_list.append(data)
         return key_data_list
 
