@@ -3,9 +3,19 @@
 ### Changed
 - Latex_labels: Moved the latex labels into pesummary.core.plots.latex_labels
   and pesummary.gw.plots.latex_labels
+- z_from_dL: The redshift is no longer calculated exactly from the luminosity
+  distance because it was very slow. Now we compute the redshift for 100
+  distances and interpolate to find the redshift for all distances. This
+  sped of the function `pesummary.gw.file.conversions.z_from_dL` by 4000x.
+- Aspect ratio: Fix the aspect ratio for the plots showed on the multiple tab
 
 ### Added
-- Added a conversion to calculate the posterior for the time in each detector 
+- Added a conversion to calculate the posterior for the time in each detector
+- Add a conversion to work out the time in each detector from samples for
+  `geocent_time`
+- Allow the user to pass a trigger file (coinc.xml) to PESummary using the
+  `--trigfile` flag
+- Allow the user to pass the command line arguments in a configuration file
 
 ## 0.1.6 [13/05/2019]
 

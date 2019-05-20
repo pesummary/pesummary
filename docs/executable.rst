@@ -22,39 +22,47 @@ You will then see that there are general command line arguments,
                         [--labels LABELS [LABELS ...]] [-v] [--save_to_hdf5]
                         [-a APPROXIMANT [APPROXIMANT ...]] [--sensitivity]
                         [--gracedb GRACEDB] [--psd PSD [PSD ...]]
-                        [--calibration CALIBRATION [CALIBRATION ...]] [--gw]
+                        [--calibration CALIBRATION [CALIBRATION ...]]
+                        [--trigfile INJ_FILE [INJ_FILE ...]] [--gw]
+                        [pesummary]
+
+    positional arguments:
+       pesummary             configuration file containing the command line
+                             arguments
 
     optional arguments:
-      -h, --help            show this help message and exit
-      -w DIR, --webdir DIR  make page and plots in DIR
-      -b DIR, --baseurl DIR
-                            make the page at this url
-      -s SAMPLES [SAMPLES ...], --samples SAMPLES [SAMPLES ...]
-                            Posterior samples hdf5 file
-      -c CONFIG [CONFIG ...], --config CONFIG [CONFIG ...]
-                            configuration file associcated with each samples file.
-      --email EMAIL         send an e-mail to the given address with a link to the
-                            finished page.
-      --dump                dump all information onto a single html page
-      --add_to_existing     add new results to an existing html page
-      -e EXISTING, --existing_webdir EXISTING
-                            web directory of existing output
-      -i INJ_FILE [INJ_FILE ...], --inj_file INJ_FILE [INJ_FILE ...]
-                            path to injetcion file
-      --labels LABELS [LABELS ...]
-                            labels used to distinguish runs
-      -v, --verbose         print useful information for debugging purposes
-      --save_to_hdf5        save the meta file in hdf5 format
+       -h, --help            show this help message and exit
+       -w DIR, --webdir DIR  make page and plots in DIR
+       -b DIR, --baseurl DIR
+                             make the page at this url
+       -s SAMPLES [SAMPLES ...], --samples SAMPLES [SAMPLES ...]
+                             Posterior samples hdf5 file
+       -c CONFIG [CONFIG ...], --config CONFIG [CONFIG ...]
+                             configuration file associcated with each samples file.
+       --email EMAIL         send an e-mail to the given address with a link to the
+                             finished page.
+       --dump                dump all information onto a single html page
+       --add_to_existing     add new results to an existing html page
+       -e EXISTING, --existing_webdir EXISTING
+                             web directory of existing output
+       -i INJ_FILE [INJ_FILE ...], --inj_file INJ_FILE [INJ_FILE ...]
+                             path to injetcion file
+       --labels LABELS [LABELS ...]
+                             labels used to distinguish runs
+       -v, --verbose         print useful information for debugging purposes
+       --save_to_hdf5        save the meta file in hdf5 format
 
     Options specific for gravitational wave results files:
-      -a APPROXIMANT [APPROXIMANT ...], --approximant APPROXIMANT [APPROXIMANT ...]
-                            waveform approximant used to generate samples
-      --sensitivity         generate sky sensitivities for HL, HLV
-      --gracedb GRACEDB     gracedb of the event
-      --psd PSD [PSD ...]   psd files used
-      --calibration CALIBRATION [CALIBRATION ...]
-                            files for the calibration envelope
-      --gw                  run with the gravitational wave pipeline
+       -a APPROXIMANT [APPROXIMANT ...], --approximant APPROXIMANT [APPROXIMANT ...]
+                             waveform approximant used to generate samples
+       --sensitivity         generate sky sensitivities for HL, HLV
+       --gracedb GRACEDB     gracedb of the event
+       --psd PSD [PSD ...]   psd files used
+       --calibration CALIBRATION [CALIBRATION ...]
+                             files for the calibration envelope
+       --trigfile INJ_FILE [INJ_FILE ...]
+                             xml file containing the trigger values
+       --gw                  run with the gravitational wave pipeline
 
 Running PESummary
 -----------------
@@ -124,3 +132,26 @@ If you have already generated a summary page using :code:`PESummary`, you are ab
                   --samples ./results_file3.h5
 
 Here, :code:`PESummary` will first derive all posterior samples available from `results_file3.h5`. It will then generate all plots for `results_file3.h5`. :code:`PESummary` will then read the `posterior_samples.h5` file located in the `/home/albert.einstein/public_html/LVC/existing/samples` directory to grab all samples from `results_file.h5` and `results_file2.h5`. Comparison plots will then be generated to compare all files and a new webpage is generated to show the information. Finally, the samples from `results_file3.h5` are incorporated into the `posterior_samples.h5` metafile.
+
+Passing a PESummary configuration file
+--------------------------------------
+
+You are also able to pass :code:`PESummary` a configuration file storing all of the command line arguments. For instance, you can generate a summarypage by running,
+
+.. code-block:: console
+
+    $ summarypages pesummary.ini
+
+Where the configuration file has the following structure:
+
+.. literalinclude:: ../examples/pesummary.ini                             
+   :language: ini                                                            
+   :linenos: 
+
+You are also able to override all commands in the configuration file by also including them in the command line. For instance, if you run,
+
+.. code-block:: console
+
+    $ summarypages pesummary.ini --webdir ./different_webpage
+
+The webpages will be saved in the directory `./different_webpage`.

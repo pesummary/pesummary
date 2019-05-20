@@ -110,20 +110,18 @@ def command_line_arguments():
     return sys.argv[1:]
 
 
-def gw_results_file():
+def gw_results_file(opts):
+    """Determine if a GW results file is passed
     """
-    """
-    command_line = command_line_arguments()
-    if "--calibration" in command_line or "--gw" in command_line or \
-            "--approximant" in command_line or "--gracedb" in command_line or \
-            "--psds" in command_line or "--detectors" in command_line:
+    if opts.gw or opts.calibration or opts.gracedb or opts.approximant or opts.psd:
         return True
     else:
         return False
 
 
-def functions():
-    """
+def functions(opts):
+    """Return a dictionary of functions that are either specific to GW results
+    files or core.
     """
     from cli.summarypages import WebpageGeneration, GWWebpageGeneration
     from cli.summaryplots import PlotGeneration, GWPlotGeneration
@@ -134,10 +132,10 @@ def functions():
     from pesummary.core.finish import FinishingTouches
 
     dictionary = {}
-    dictionary["input"] = GWInput if gw_results_file() else Input
-    dictionary["PlotGeneration"] = GWPlotGeneration if gw_results_file() else PlotGeneration
-    dictionary["WebpageGeneration"] = GWWebpageGeneration if gw_results_file() else WebpageGeneration
-    dictionary["MetaFile"] = GWMetaFile if gw_results_file() else MetaFile
+    dictionary["input"] = GWInput if gw_results_file(opts) else Input
+    dictionary["PlotGeneration"] = GWPlotGeneration if gw_results_file(opts) else PlotGeneration
+    dictionary["WebpageGeneration"] = GWWebpageGeneration if gw_results_file(opts) else WebpageGeneration
+    dictionary["MetaFile"] = GWMetaFile if gw_results_file(opts) else MetaFile
     dictionary["FinishingTouches"] = FinishingTouches
     return dictionary
 
