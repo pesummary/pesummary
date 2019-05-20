@@ -871,7 +871,7 @@ def main():
     parser = command_line()
     insert_gwspecific_option_group(parser)
     opts = parser.parse_args()
-    func = functions()
+    func = functions(opts)
     args = func["input"](opts)
     func["PlotGeneration"](args)
     func["WebpageGeneration"](args)
