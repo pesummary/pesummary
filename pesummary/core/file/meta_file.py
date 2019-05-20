@@ -171,7 +171,7 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
                     data[i][key] = config["%s" % (i)]["%s" % (key)]
         return data
 
-    def _add_data(self, label, parameters, samples, config=None):
+    def _add_data(self, label, parameters, samples, injection, config=None):
         """Add data to the stored dictionary
 
         Parameters
