@@ -118,7 +118,7 @@ class TestPlot(object):
 
     @pytest.mark.parametrize("ra, dec", [([1,2,3,4], [1,1,1,1]),])
     def test_sky_map_plot(self, ra, dec):
-        fig = gwplot._sky_map_plot(ra, dec)
+        fig = gwplot._default_skymap_plot(ra, dec)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     @pytest.mark.parametrize("ra, dec, approx, colors", [([[1,2,3,4],[1,2,2,1]],
