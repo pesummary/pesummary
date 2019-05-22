@@ -173,10 +173,8 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                 psd = self._combine_psd_frequency_strain(
                     psd_frequencies, psd_strains, self.psd_labels[num]) if \
                     self.psds else None
-                calibration_envelopes = self.calibration_envelopes[num] if \
-                    self.calibration else None
                 calibration = self._combine_calibration_envelopes(
-                    calibration_envelopes, self.calibration_labels[num]) if \
+                    self.calibration_envelopes[num], self.calibration_labels[num]) if \
                     self.calibration else None
                 config = self._grab_config_data_from_data_file(self.config[num]) \
                     if self.config and num < len(self.config) else None

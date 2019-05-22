@@ -15,6 +15,7 @@
 
 from pesummary.utils.utils import logger
 
+import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -31,6 +32,7 @@ try:
     LALSIMULATION = True
 except ImportError:
     LALSIMULATION = None
+
 
 PSD_COLORS = {"H1": "#1b9e77", "L1": "#d95f02", "V1": "#7570b3"}
 
@@ -261,8 +263,62 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
     return fig
 
 
-def _sky_map_plot(ra, dec, **kwargs):
-    """Plot the sky location of the source for a given approximant
+def _ligo_skymap_plot(ra, dec, **kwargs):
+    """Plot the sky location of the source for a given approximant using the
+    ligo.skymap package
+
+    Parameters
+    ----------
+    ra: list
+        list of samples for right ascension
+    dec: list
+        list of samples for declination
+    kwargs: dict
+        optional keyword arguments
+    """
+    import healpy as hp
+    import astropy
+    from ligo.skymap.io import fits
+    from ligo.skymap import plot
+    from ligo.skymap import postprocess
+    from astropy.coordinates import SkyCoord
+    from ligo.skymap.bayestar import rasterize
+    from ligo.skymap.kde import Clustered2DSkyKDE
+    from ligo.skymap import io
+
+    fig = plt.figure()
+    pts = np.column_stack((ra, dec))
+    skypost = Clustered2DSkyKDE(pts, trials=5, multiprocess=2)
+
+    hpmap = skypost.as_healpix()
+    io.write_sky_map("./skymap.fits", hpmap, nest=True)
+    hdus = astropy.io.fits.open("skymap.fits")
+    os.remove("./skymap.fits")
+
+    table = io.read_sky_map(hdus, moc=True)
+    io.write_sky_map("lalinference.fits", rasterize(table, order=None), nest=True)
+
+    skymap, metadata = fits.read_sky_map("./lalinference.fits", nest=None)
+    nside = hp.npix2nside(len(skymap))
+    deg2perpix = hp.nside2pixarea(nside, degrees=True)
+    probperdeg2 = skymap / deg2perpix
+
+    ax = plt.axes(projection='astro hours mollweide')
+    ax.grid()
+
+    vmax = probperdeg2.max()
+    ax.imshow_hpx((probperdeg2, 'ICRS'), nested=True, vmin=0.,
+                  vmax=vmax, cmap="cylon")
+    cls = 100 * postprocess.find_greedy_credible_levels(skymap)
+    cs = ax.contour_hpx((cls, 'ICRS'), nested=True, colors='k',
+                        linewidths=0.5, levels=[50, 90])
+    plt.clabel(cs, fmt=r'%g\%%', fontsize=6, inline=True)
+    plot.outline_text(ax)
+    return fig
+
+
+def _default_skymap_plot(ra, dec, **kwargs):
+    """Plot the default sky location of the source for a given approximant
 
     Parameters
     ----------
@@ -276,14 +332,16 @@ def _sky_map_plot(ra, dec, **kwargs):
     ra = [-i + np.pi for i in ra]
     logger.debug("Generating the sky map plot")
     fig = plt.figure()
-    ax = plt.subplot(111, projection="hammer")
+    ax = plt.subplot(111, projection="mollweide",
+                     facecolor=(1.0, 0.939165516411, 0.880255669068))
     ax.cla()
+    ax.title.set_text("Preliminary")
     ax.grid()
     ax.set_xticklabels([
         r"$2^{h}$", r"$4^{h}$", r"$6^{h}$", r"$8^{h}$", r"$10^{h}$",
         r"$12^{h}$", r"$14^{h}$", r"$16^{h}$", r"$18^{h}$", r"$20^{h}$",
         r"$22^{h}$"])
-    levels = [1.0 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9. / 2.)]
+    levels = [0.9, 0.5]
 
     H, X, Y = np.histogram2d(ra, dec, bins=50)
     H = gaussian_filter(H, kwargs.get("smooth", 0.9))
@@ -323,13 +381,20 @@ def _sky_map_plot(ra, dec, **kwargs):
     Y2 = np.concatenate([Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]), Y1,
                          Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]), ])
 
-    plt.contour(X2, Y2, H2.T, V, colors=["#AED6F1", "#3498DB", "#21618C"],
-                linewidths=2.0)
+    ax.pcolormesh(X2, Y2, H2.T, vmin=0., vmax=H2.T.max(), cmap="cylon")
+    cs = plt.contour(X2, Y2, H2.T, V, colors="k", linewidths=0.5)
 
-    xticks = np.arange(-np.pi, np.pi + np.pi / 6, np.pi / 6)
+    fmt = {l: s for l, s in zip(cs.levels, [r"$50\%$", r"$90\%$"])}
+    plt.clabel(cs, fmt=fmt, fontsize=8, inline=True)
+
+    xticks = np.arange(-np.pi, np.pi + np.pi / 6, np.pi / 4)
     ax.set_xticks(xticks)
-    labels = [r"$%s^{h}$" % (np.round((i + np.pi) * 3.82, 1)) for i in xticks]
-    ax.set_xticklabels(labels[::-1])
+    ax.set_yticks([-np.pi / 3, -np.pi / 6, 0, np.pi / 6, np.pi / 3])
+    labels = [r"$%s^{h}$" % (int(np.round((i + np.pi) * 3.82, 1))) for i in xticks]
+    ax.set_xticklabels(labels[::-1], fontsize=10)
+    ax.set_yticklabels([r"$-60^\degree$", r"$-30^\degree$", r"$0^\degree$",
+                        r"$30^\degree$", r"$60^\degree$"], fontsize=10)
+    ax.grid()
     return fig
 
 
@@ -354,14 +419,15 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
     ra_list = [[-i + np.pi for i in j] for j in ra_list]
     logger.debug("Generating the sky map comparison plot")
     fig = plt.figure()
-    ax = plt.subplot(111, projection="hammer")
+    ax = plt.subplot(111, projection="mollweide",
+                     facecolor=(1.0, 0.939165516411, 0.880255669068))
     ax.cla()
     ax.grid()
     ax.set_xticklabels([
         r"$2^{h}$", r"$4^{h}$", r"$6^{h}$", r"$8^{h}$", r"$10^{h}$",
         r"$12^{h}$", r"$14^{h}$", r"$16^{h}$", r"$18^{h}$", r"$20^{h}$",
         r"$22^{h}$"])
-    levels = [1.0 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9. / 2.)]
+    levels = [0.9, 0.5]
     for num, i in enumerate(ra_list):
         H, X, Y = np.histogram2d(i, dec_list[num], bins=50)
         H = gaussian_filter(H, kwargs.get("smooth", 0.9))
@@ -404,10 +470,14 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
         CS.collections[0].set_label(labels[num])
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
                mode="expand", ncol=2)
-    xticks = np.arange(-np.pi, np.pi + np.pi / 6, np.pi / 6)
+    xticks = np.arange(-np.pi, np.pi + np.pi / 6, np.pi / 4)
     ax.set_xticks(xticks)
-    labels = [r"$%s^{h}$" % (np.round((i + np.pi) * 3.82, 1)) for i in xticks]
-    ax.set_xticklabels(labels[::-1])
+    ax.set_yticks([-np.pi / 3, -np.pi / 6, 0, np.pi / 6, np.pi / 3])
+    labels = [r"$%s^{h}$" % (int(np.round((i + np.pi) * 3.82, 1))) for i in xticks]
+    ax.set_xticklabels(labels[::-1], fontsize=10)
+    ax.set_yticklabels([r"$-60^\degree$", r"$-30^\degree$", r"$0^\degree$",
+                        r"$30^\degree$", r"$60^\degree$"], fontsize=10)
+    ax.grid()
     return fig
 
 
