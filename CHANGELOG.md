@@ -16,6 +16,7 @@
 - Allow the user to pass a trigger file (coinc.xml) to PESummary using the
   `--trigfile` flag
 - Allow the user to pass the command line arguments in a configuration file
+- Plot the skymap using the ligo.skymap module if it is installed
 
 ## 0.1.6 [13/05/2019]
 

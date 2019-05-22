@@ -34,10 +34,18 @@ from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.utils import functions
 
 import warnings
+import multiprocessing as mp
 
 from glob import glob
 import math
 import numpy as np
+
+try:
+    import ligo.skymap
+    SKYMAP = True
+except ImportError:
+    SKYMAP = False
+
 
 __doc__ == "Class to generate plots"
 
@@ -375,7 +383,35 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         ind_dec = self.parameters[idx].index("dec")
         ra = [j[ind_ra] for j in self.samples[idx]]
         dec = [j[ind_dec] for j in self.samples[idx]]
-        fig = gw._sky_map_plot(ra, dec)
+
+        fig = gw._default_skymap_plot(ra, dec)
+        fig.savefig(self.savedir + "/%s_skymap.png" % (
+            self.labels[idx]))
+        plt.close()
+
+        if SKYMAP:
+            try:
+                process = mp.Process(target=self._ligo_skymap_plot,
+                                     args=[ra, dec, idx])
+                process.start()
+            except Exception as e:
+                logger.warn("Failed to generate a skymap using the ligo.skymap "
+                            "package because %s. Using the default PESummary "
+                            "skymap plotter instead" % (e))
+
+    def _ligo_skymap_plot(self, ra, dec, idx):
+        """Generate a skymap produced from the ligo.skymap code
+
+        Parameters
+        ----------
+        ra: list
+            list of samples for right ascension
+        dec: list
+            list of samples for declination
+        idx: int
+            the index of the results file that you wish to analyse
+        """
+        fig = gw._ligo_skymap_plot(ra, dec)
         fig.savefig(self.savedir + "/%s_skymap.png" % (
             self.labels[idx]))
         plt.close()
