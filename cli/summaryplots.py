@@ -368,6 +368,16 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             new_file = open("%s/js/combine_corner.js" % (self.webdir), "w")
             new_file.writelines(combine_corner)
             new_file.close()
+            fig = gw._make_source_corner_plot(
+                self.samples[idx], self.parameters[idx], latex_labels)
+            plt.savefig("%s/corner/%s_source_frame.png" % (
+                self.savedir, self.labels[idx]))
+            plt.close()
+            fig = gw._make_extrinsic_corner_plot(
+                self.samples[idx], self.parameters[idx], latex_labels)
+            plt.savefig("%s/corner/%s_extrinsic.png" % (
+                self.savedir, self.labels[idx]))
+            plt.close()
 
     def _skymap_plot(self, idx):
         """Generate a skymap showing the confidence regions for a given results
