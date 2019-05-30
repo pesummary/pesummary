@@ -54,8 +54,9 @@ class GWExistingFile(ExistingFile):
         for num, i in enumerate(labels):
             p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
-            inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
-            inj_list.append(inj)
+            if "injection_data" in dictionary.keys():
+                inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
+                inj_list.append(inj)
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
             else:
@@ -63,12 +64,11 @@ class GWExistingFile(ExistingFile):
             sample_list.append(s)
             psd, cal, config = None, None, None
             if "config_file" in dictionary.keys():
-                config, = load_recusively("config_file/%s" % (i), dictionary)
+                config, = load_recusively("config_file", dictionary)
             if "psds" in dictionary.keys():
-                psd, = load_recusively("psds/%s" % (i), dictionary)
+                psd, = load_recusively("psds", dictionary)
             if "calibration_envelope" in dictionary.keys():
-                cal, = load_recusively("calibration_envelope/%s" % (i),
-                                       dictionary)
+                cal, = load_recusively("calibration_envelope", dictionary)
             if "approximant" in dictionary.keys():
                 approx_list.append(dictionary["approximant"]["%s" % (i)])
             else:

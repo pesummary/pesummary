@@ -358,7 +358,7 @@ def _ligo_skymap_plot(ra, dec, **kwargs):
 
     fig = plt.figure()
     pts = np.column_stack((ra, dec))
-    skypost = Clustered2DSkyKDE(pts, trials=5, multiprocess=2)
+    skypost = Clustered2DSkyKDE(pts, trials=5)
 
     hpmap = skypost.as_healpix()
     io.write_sky_map("./skymap.fits", hpmap, nest=True)
@@ -854,6 +854,9 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         colors = ['r', 'b', 'orange', 'c', 'g', 'purple']
         while len(colors) <= len(ifos):
             colors += colors
+
+    for num, i in enumerate(calibration_envelopes):
+        calibration_envelopes[num] = np.array(calibration_envelopes[num])
 
     for num, i in enumerate(calibration_envelopes):
         interp = [np.interp(
