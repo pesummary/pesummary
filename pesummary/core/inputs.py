@@ -82,23 +82,40 @@ class Input(object):
     """
     def __init__(self, opts):
         logger.info("Command line arguments: %s" % (opts))
-        self.user = opts.user
-        self.existing = opts.existing
-        self.webdir = opts.webdir
-        self.baseurl = opts.baseurl
-        self.inj_file = opts.inj_file
-        self.config = opts.config
-        self.result_files = opts.samples
-        self.email = opts.email
-        self.add_to_existing = opts.add_to_existing
-        self.dump = opts.dump
-        self.hdf5 = opts.save_to_hdf5
+        self.opts = opts
+        self.user = self.opts.user
+        self.existing = self.opts.existing
+        self.webdir = self.opts.webdir
+        self.make_directories()
+        self.baseurl = self.opts.baseurl
+        self.inj_file = self.opts.inj_file
+        self.config = self.opts.config
+        self.result_files = self.opts.samples
+        self.email = self.opts.email
+        self.add_to_existing = self.opts.add_to_existing
+        self.dump = self.opts.dump
+        self.hdf5 = self.opts.save_to_hdf5
         self.existing_labels = []
         self.existing_parameters = []
         self.existing_samples = []
-        self.make_directories()
         self.copy_files()
-        self.labels = opts.labels
+        self.labels = self.opts.labels
+
+    @staticmethod
+    def is_pesummary_metafile(proposed_file):
+        """Determine if a file is a PESummary metafile or not
+
+        Parameters
+        ----------
+        proposed_file: str
+            path to the file
+        """
+        try:
+            f = ExistingFile(proposed_file)
+            params = f.existing_parameters
+            return True
+        except Exception:
+            return False
 
     @property
     def user(self):
@@ -209,18 +226,75 @@ class Input(object):
                             "number of injection files")
         if not self.inj_file:
             self.inj_file = [None] * len(samples)
+        self.grab_data_from_input_files(samples)
+
+    @staticmethod
+    def grab_data_from_metafile(existing_file, webdir="./"):
+        """Grab the data from a metafile
+
+        Parameters
+        ----------
+        existing_file: str
+            path to the existing PESummary metafile
+        webdir: str
+            path to the web directory
+        """
+        f = ExistingFile(existing_file)
+        p = f.existing_parameters
+        s = f.existing_samples
+        inj_values = f.existing_injection
+        labels = f.existing_labels
+
+        if inj_values == []:
+            for num, i in enumerate(p):
+                inj_values.append([float("nan")] * len(i))
+
+        for idx, j in enumerate(inj_values):
+            for ind, k in enumerate(j):
+                if k == "nan":
+                    inj_values[idx][ind] = float("nan")
+
+        injection = [{i: j for i, j in zip(j, inj_values[num])} for num, j in
+                     enumerate(p)]
+
+        if f.existing_config is not None:
+            config = []
+            for i in f.existing_config.keys():
+                f.write_config_to_file(i, outdir="%s/config" % (webdir))
+                config.append("%s/config/%s_config.ini" % (webdir, i))
+        else:
+            config = None
+
+        return p, s, injection, labels, config
+
+    def grab_data_from_input_files(self, samples):
+        """
+        """
+        result_file_list = []
+        parameters_list, samples_list, injection_list = [], [], []
         for num, i in enumerate(samples):
             if not os.path.isfile(i):
                 raise Exception("File %s does not exist" % (i))
             config = None
             if self.config:
                 config = self.config[num]
-            p, s, inj = self.convert_to_standard_format(
-                i, self.inj_file[num], config_file=config)
-            result_file_list.append(i)
-            parameters_list.append(p)
-            samples_list.append(s)
-            injection_list.append(inj)
+            if self.is_pesummary_metafile(i):
+                p, s, inj, labels, con = self.grab_data_from_metafile(
+                    i, webdir=self.webdir)
+                self.opts.labels = labels
+                self.config = con
+                for idx, j in enumerate(p):
+                    parameters_list.append(j)
+                    samples_list.append(s[idx])
+                    injection_list.append(inj[idx])
+                    result_file_list.append(i)
+            else:
+                p, s, inj = self.convert_to_standard_format(
+                    i, self.inj_file[num], config_file=config)
+                parameters_list.append(p)
+                samples_list.append(s)
+                injection_list.append(inj)
+                result_file_list.append(i)
         self._result_files = result_file_list
         self._parameters = parameters_list
         self._samples = samples_list
@@ -358,7 +432,6 @@ class Input(object):
         if self.config:
             for num, i in enumerate(self.config):
                 if self.webdir not in i:
-                    print(self.result_files[num])
                     shutil.copyfile(i, self.webdir + "/config/"
                                     + self.result_files[num].split("/")[-1] + "_"
                                     + i.split("/")[-1])

@@ -32,7 +32,7 @@ class TestWebpageGeneration(object):
     def setup(self):
         directories = ["./.outdir_cbc", "./.outdir_bilby",
                        "./.outdir_lalinference", "./.outdir_comparison",
-                       "./.outdir_addition"]
+                       "./.outdir_addition", "./.outdir_cbc_copy"]
         for i in directories:
             if os.path.isdir(i):
                 shutil.rmtree(i)
@@ -177,6 +177,7 @@ class TestWebpageGeneration(object):
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWWebpageGeneration(inputs)
+        metafile = GWMetaFile(inputs)
         html = glob("./.outdir_cbc/html/*")
         expected_html = ['./.outdir_cbc/html/test_test_mass_2.html',
                          './.outdir_cbc/html/test_test_ra.html',
@@ -211,4 +212,16 @@ class TestWebpageGeneration(object):
                          './.outdir_cbc/html/test_test_chirp_mass.html',
                          './.outdir_cbc/html/test_test_phase.html',
                          './.outdir_cbc/html/test_test_mass_1.html']
-        assert all(i == j for i,j in zip(sorted(expected_html), sorted(html))) 
+        assert all(i == j for i,j in zip(sorted(expected_html), sorted(html)))
+        parser = command_line()
+        insert_gwspecific_option_group(parser)
+        default_arguments = [
+            "--approximant", "IMRPhenomPv2",
+            "--webdir", "./.outdir",
+            "--samples", "./.outdir_cbc/samples/posterior_samples.json",
+            "--labels", "test"]
+        opts = parser.parse_args(default_arguments)
+        inputs = GWInput(opts)
+        webpage = GWWebpageGeneration(inputs)
+        html_copy = glob("./.outdir_cbc_copy/html/*")
+        assert all(i == j for i,j in zip(sorted(html_copy), sorted(html)))

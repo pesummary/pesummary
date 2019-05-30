@@ -18,6 +18,7 @@ import numpy as np
 import h5py
 
 from time import time
+import os
 
 import pesummary
 from pesummary.utils.utils import logger
@@ -77,30 +78,31 @@ class GWInput(Input):
     """
     def __init__(self, opts):
         logger.info("Command line arguments: %s" % (opts))
-        self.user = opts.user
-        self.existing = opts.existing
-        self.webdir = opts.webdir
-        self.baseurl = opts.baseurl
-        self.inj_file = opts.inj_file
-        self.config = opts.config
-        self.result_files = opts.samples
-        self.email = opts.email
-        self.add_to_existing = opts.add_to_existing
-        self.dump = opts.dump
+        self.opts = opts
+        self.user = self.opts.user
+        self.existing = self.opts.existing
+        self.webdir = self.opts.webdir
+        self.make_directories()
+        self.baseurl = self.opts.baseurl
+        self.inj_file = self.opts.inj_file
+        self.config = self.opts.config
+        self.result_files = self.opts.samples
+        self.email = self.opts.email
+        self.add_to_existing = self.opts.add_to_existing
+        self.dump = self.opts.dump
         self.hdf5 = opts.save_to_hdf5
-        self.gracedb = opts.gracedb
+        self.gracedb = self.opts.gracedb
         self.detectors = None
-        self.calibration = opts.calibration
-        self.approximant = opts.approximant
-        self.sensitivity = opts.sensitivity
-        self.psds = opts.psd
+        self.calibration = self.opts.calibration
+        self.approximant = self.opts.approximant
+        self.sensitivity = self.opts.sensitivity
+        self.psds = self.opts.psd
         self.existing_labels = []
         self.existing_parameters = []
         self.existing_samples = []
         self.existing_approximant = []
-        self.make_directories()
         self.copy_files()
-        self.labels = opts.labels
+        self.labels = self.opts.labels
 
     @property
     def approximant(self):
@@ -207,22 +209,12 @@ class GWInput(Input):
     def calibration(self, calibration):
         calibration_list = []
         if calibration:
-            labels = None
             if isinstance(calibration, dict):
-                keys = calibration.keys()
-                for key in keys:
-                    if isinstance(calibration[key], str):
-                        self._check_calibration_file(calibration[key])
-                    else:
-                        for j in calibration[key]:
-                            self._check_calibration_file(j)
                 calibration_list = calibration
             else:
                 for i in calibration:
-                    self._check_calibration_file(i)
                     calibration_list.append(i)
             self._calibration = calibration_list
-            self.calibration_labels = labels
         else:
             logger.debug("No calibration envelope file given. Checking the "
                          "results file")
@@ -252,10 +244,140 @@ class GWInput(Input):
         file: str
             path to the calibration file
         """
-        f = np.genfromtxt(file)
-        if len(f[0]) != 7:
-            raise Exception("Calibration envelope file not understood")
-        pass
+        try:
+            f = np.genfromtxt(file)
+            if len(f[0]) != 7:
+                raise Exception("Calibration envelope file not understood")
+            pass
+        except Exception:
+            pass
+
+    @staticmethod
+    def grab_data_from_metafile(existing_file, webdir="./"):
+        """Grab the data from a metafile
+
+        Parameters
+        ----------
+        existing_file: str
+            path to the existing PESummary metafile
+        webdir: str
+            path to the web directory
+        """
+        f = GWExistingFile(existing_file)
+        p = f.existing_parameters
+        s = f.existing_samples
+        inj_values = f.existing_injection
+        labels = f.existing_labels
+
+        if inj_values == []:
+            for num, i in enumerate(p):
+                inj_values.append([float("nan")] * len(i))
+
+        for idx, j in enumerate(inj_values):
+            for ind, k in enumerate(j):
+                if k == "nan":
+                    inj_values[idx][ind] = float("nan")
+
+        injection = [{i: j for i, j in zip(j, inj_values[num])} for num, j in
+                     enumerate(p)]
+
+        approximant = f.existing_approximant
+        label = lambda i: f.existing_labels[i]
+
+        if f.existing_config is not None:
+            config = []
+            for i in f.existing_config.keys():
+                f.write_config_to_file(i, outdir="%s/config" % (webdir))
+                config.append("%s/config/%s_config.ini" % (webdir, i))
+        else:
+            config = None
+
+        if f.existing_psd is not None:
+            psd = ["extracted_%s.txt" % (i) for i in list(f.existing_psd.keys())]
+
+            psd_labels = [[i for i in list(f.existing_psd[label(idx)].keys())]
+                          for idx, j in enumerate(p)]
+
+            psd_frequencies = [[[l[0] for l in f.existing_psd[label(idx)][k]]
+                               for k in f.existing_psd[label(idx)].keys()]
+                               for idx, j in enumerate(p)]
+
+            psd_strains = [[[l[1] for l in f.existing_psd[label(idx)][k]]
+                           for k in f.existing_psd[label(idx)].keys()]
+                           for idx, j in enumerate(p)]
+        else:
+            psd = psd_labels = psd_frequencies = psd_strains = None
+
+        if f.existing_calibration is not None:
+            calibration = ["extracted_%s.txt" % (i) for i in
+                           list(f.existing_calibration.keys())]
+
+            calibration_labels = [[i for i in list(
+                                  f.existing_calibration[label(idx)].keys())]
+                                  for idx, j in enumerate(p)]
+
+            calibration_envelopes = [np.array([f.existing_calibration[label(idx)][k]
+                                     for k in f.existing_calibration[label(idx)].keys()])
+                                     for idx, j in enumerate(p)]
+        else:
+            calibration = calibration_labels = calibration_envelopes = None
+        return p, s, injection, labels, psd, approximant, psd_labels, \
+            psd_frequencies, psd_strains, calibration, calibration_labels, \
+            calibration_envelopes, config
+
+    def grab_data_from_input_files(self, samples):
+        """
+        """
+        result_file_list = []
+        parameters_list, samples_list, injection_list = [], [], []
+        psd_labels, psd_frequencies, psd_strains = [], [], []
+        calibration_labels, calibration_envelopes = [], []
+        for num, i in enumerate(samples):
+            if not os.path.isfile(i):
+                raise Exception("File %s does not exist" % (i))
+            config = None
+            if self.config:
+                config = self.config[num]
+            if self.is_pesummary_metafile(i):
+                p, s, inj, labels, psd, approx, psd_l, psd_f, psd_s, cal, cal_l, cal_env, con = \
+                    self.grab_data_from_metafile(i, webdir=self.webdir)
+                self.opts.psd = psd
+                self.opts.calibration = cal
+                self.opts.labels = labels
+                self.opts.approximant = approx
+                self.config = con
+                for idx, j in enumerate(p):
+                    parameters_list.append(j)
+                    samples_list.append(s[idx])
+                    injection_list.append(inj[idx])
+                    result_file_list.append(i)
+                    if psd is not None:
+                        psd_labels.append(psd_l[idx])
+                        psd_frequencies.append(psd_f[idx])
+                        psd_strains.append(psd_s[idx])
+                    if cal is not None:
+                        calibration_labels.append(cal_l[idx])
+                        calibration_envelopes.append(cal_env[idx])
+            else:
+                p, s, inj = self.convert_to_standard_format(
+                    i, self.inj_file[num], config_file=config)
+                result_file_list.append(i)
+                parameters_list.append(p)
+                samples_list.append(s)
+                injection_list.append(inj)
+        self._result_files = result_file_list
+        self._parameters = parameters_list
+        self._samples = samples_list
+        self._injection_data = injection_list
+
+        if psd_labels != [] and psd_frequencies != [] and psd_strains != []:
+            self.psd_labels = psd_labels
+            self.psd_frequencies = psd_frequencies
+            self.psd_strains = psd_strains
+
+        if calibration_labels != [] and calibration_envelopes != []:
+            self.calibration_labels = calibration_labels
+            self.calibration_envelopes = calibration_envelopes
 
     @property
     def existing_approximant(self):
@@ -393,7 +515,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.detectors = inputs.detectors
         self.gracedb = inputs.gracedb
         self.calibration = inputs.calibration
-        self.calibration_labels = inputs.calibration_labels
+        self.calibration_labels = None
         self.sensitivity = inputs.sensitivity
         self.psds = inputs.psds
         self.psd_dict = False
@@ -454,7 +576,9 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
 
     @property
     def psd_labels(self):
-        if self.psds:
+        if hasattr(self.inputs, "psd_labels"):
+            return self.inputs.psd_labels
+        elif self.psds:
             return self._labels_from_dictionary(self.psds)
         return None
 
@@ -464,7 +588,9 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
 
     @calibration_labels.setter
     def calibration_labels(self, calibration_labels):
-        if not calibration_labels and self.calibration:
+        if hasattr(self.inputs, "calibration_labels"):
+            self._calibration_labels = self.inputs.calibration_labels
+        elif not calibration_labels and self.calibration:
             self._calibration_labels = self._labels_from_dictionary(
                 self.calibration)
         elif self.calibration:
@@ -474,20 +600,30 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
 
     @property
     def psd_frequencies(self):
+        if hasattr(self.inputs, "psd_frequencies"):
+            return self.inputs.psd_frequencies
         return self._setup_psd_calibration(
             self.psds, self.psd_labels,
             self._grab_frequencies_from_psd_data_file)
 
     @property
     def psd_strains(self):
+        if hasattr(self.inputs, "psd_strains"):
+            return self.inputs.psd_strains
         return self._setup_psd_calibration(
-            self.psds, self.psd_labels, self._grab_strains_from_psd_data_file)
+            self.psds, self.psd_labels,
+            self._grab_strains_from_psd_data_file)
 
     @property
     def calibration_envelopes(self):
-        return self._setup_psd_calibration(
-            self.calibration, self.calibration_labels,
-            self._grab_calibration_data_from_data_file)
+        if hasattr(self.inputs, "calibration_envelopes"):
+            return self.inputs.calibration_envelopes
+        try:
+            return self._setup_psd_calibration(
+                self.calibration, self.calibration_labels,
+                self._grab_calibration_data_from_data_file)
+        except Exception:
+            raise Exception("Failed to extract data from calibration files")
 
     @staticmethod
     def _IFO_from_file_name(file):
