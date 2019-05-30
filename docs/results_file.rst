@@ -51,7 +51,7 @@ Extracting information from metafile
 
 All information can be extracted from the metafile using the code below,
 
-.. literalinclude:: /../examples/results_file/extract_information.py 
+.. literalinclude:: /../examples/extract_information.py 
    :language: python                                                            
    :linenos: 
 
