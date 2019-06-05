@@ -17,6 +17,9 @@
   `--trigfile` flag
 - Allow the user to pass the command line arguments in a configuration file
 - Plot the skymap using the ligo.skymap module if it is installed
+- Added an `existing_samples_dict` property to the ExistingFile class which
+  puts the existing_labels, existing_parameters and exising_samples in a
+  dictionary
 
 ## 0.1.6 [13/05/2019]
 
