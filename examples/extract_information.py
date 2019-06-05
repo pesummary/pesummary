@@ -8,7 +8,7 @@ from pesummary.core.file.existing import ExistingFile
 
 f = ExistingFile("./core.json")
 config_data = f.existing_config
-samples = f.existing_samples
+samples = f.existing_samples_dict
 parameters = f.existing_parameters
 labels = f.existing_labels
 injection_values = f.existing_injection
@@ -27,7 +27,7 @@ from pesummary.gw.file.existing import GWExistingFile
 
 f = GWExistingFile("./gw.json")
 config_data = f.existing_config
-samples = f.existing_samples
+samples = f.existing_samples_dict
 parameters = f.existing_parameters
 labels = f.existing_labels
 injection_values = f.existing_injection

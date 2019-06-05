@@ -20,6 +20,7 @@ import os
 
 import h5py
 import json
+import numpy as np
 import configparser
 
 
@@ -123,6 +124,14 @@ class ExistingFile(object):
     @property
     def existing_config(self):
         return self.existing_data[3]
+
+    @property
+    def existing_samples_dict(self):
+        zipped = zip(self.existing_labels, self.existing_parameters,
+                     self.existing_samples)
+        outdict = {label: dict(zip(pars, np.array(samples).T)) for label, pars,
+                   samples in zipped}
+        return outdict
 
     @property
     def existing_injection(self):
