@@ -328,11 +328,12 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         IFOs used in the analysis.
         """
         frequencies = np.arange(20., 1024., 1. / 4)
-        fig = gw._calibration_envelope_plot(
-            frequencies, self.calibration_envelopes[idx],
-            self.calibration_labels[idx])
-        fig.savefig("%s/%s_calibration_plot.png" % (self.savedir, self.labels[idx]))
-        plt.close()
+        if self.calibration_envelopes[idx] is not None:
+            fig = gw._calibration_envelope_plot(
+                frequencies, self.calibration_envelopes[idx],
+                self.calibration_labels[idx])
+            fig.savefig("%s/%s_calibration_plot.png" % (self.savedir, self.labels[idx]))
+            plt.close()
 
     def _psd_plot(self, idx=None):
         """Generate a single plot showing all psds used in analysis

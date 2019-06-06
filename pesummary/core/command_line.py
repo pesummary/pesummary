@@ -144,6 +144,10 @@ def command_line():
     parser.add_argument("--labels", dest="labels",
                         help="labels used to distinguish runs", nargs='+',
                         default=None)
+    parser.add_argument("--compare_results", dest="compare_results",
+                        help="labels for events stored in the "
+                             "posterior_samples.json that you wish to compare",
+                        nargs='+', default=None)
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="print useful information for debugging purposes")
     parser.add_argument("--save_to_hdf5", action="store_true",
