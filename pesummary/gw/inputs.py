@@ -86,6 +86,7 @@ class GWInput(Input):
         self.baseurl = self.opts.baseurl
         self.inj_file = self.opts.inj_file
         self.config = self.opts.config
+        self.compare_results = self.opts.compare_results
         self.result_files = self.opts.samples
         self.email = self.opts.email
         self.add_to_existing = self.opts.add_to_existing
@@ -219,7 +220,7 @@ class GWInput(Input):
             logger.debug("No calibration envelope file given. Checking the "
                          "results file")
             self._calibration_envelope = False
-            label_list = []
+            label_list, data_list = [], []
             for i in self.result_files:
                 try:
                     f = LALInferenceResultsFile(i)
@@ -231,8 +232,10 @@ class GWInput(Input):
                     logger.info("Failed to grab calibration data from %s" % (i))
                     data, labels = None, None
                 label_list.append(labels)
-            calibration_list = data
+                data_list.append(data)
+            calibration_list = data_list
             self._calibration = calibration_list
+            self.calibration_envelopes = calibration_list
             self.calibration_labels = label_list
 
     def _check_calibration_file(self, file):
@@ -253,7 +256,7 @@ class GWInput(Input):
             pass
 
     @staticmethod
-    def grab_data_from_metafile(existing_file, webdir="./"):
+    def grab_data_from_metafile(existing_file, webdir="./", compare=None):
         """Grab the data from a metafile
 
         Parameters
@@ -262,65 +265,82 @@ class GWInput(Input):
             path to the existing PESummary metafile
         webdir: str
             path to the web directory
+        compare: list
+            list of labels for the events that you wish to compare
         """
         f = GWExistingFile(existing_file)
-        p = f.existing_parameters
-        s = f.existing_samples
-        inj_values = f.existing_injection
         labels = f.existing_labels
+        indicies = [i for i in range(len(labels))]
+
+        if compare:
+            for i in compare:
+                if i not in labels:
+                    raise Exception("Label %s does not exist in the metafile. "
+                                    "Please check that the labels for the runs "
+                                    "you wish to compare are correct." % (i))
+            indicies = [labels.index(i) for i in compare]
+
+        p = [f.existing_parameters[i] for i in indicies]
+        s = [f.existing_samples[i] for i in indicies]
+
+        if f.existing_injection == []:
+            inj_values = []
+        else:
+            inj_values = [f.existing_injection[i] for i in indicies]
 
         if inj_values == []:
             for num, i in enumerate(p):
                 inj_values.append([float("nan")] * len(i))
 
-        for idx, j in enumerate(inj_values):
-            for ind, k in enumerate(j):
-                if k == "nan":
-                    inj_values[idx][ind] = float("nan")
-
         injection = [{i: j for i, j in zip(j, inj_values[num])} for num, j in
                      enumerate(p)]
 
-        approximant = f.existing_approximant
+        approximant = [f.existing_approximant[i] for i in indicies]
         label = lambda i: f.existing_labels[i]
 
         if f.existing_config is not None:
             config = []
-            for i in f.existing_config.keys():
-                f.write_config_to_file(i, outdir="%s/config" % (webdir))
-                config.append("%s/config/%s_config.ini" % (webdir, i))
+            for i in indicies:
+                j = f.existing_config[i]
+                f.write_config_to_file(j, outdir="%s/config" % (webdir))
+                config.append("%s/config/%s_config.ini" % (webdir, j))
         else:
             config = None
 
         if f.existing_psd is not None:
-            psd = ["extracted_%s.txt" % (i) for i in list(f.existing_psd.keys())]
+            psd = ["extracted_%s.txt" % (f.existing_psd[i]) for i in indicies]
 
             psd_labels = [[i for i in list(f.existing_psd[label(idx)].keys())]
-                          for idx, j in enumerate(p)]
+                          for idx in indicies]
 
             psd_frequencies = [[[l[0] for l in f.existing_psd[label(idx)][k]]
                                for k in f.existing_psd[label(idx)].keys()]
-                               for idx, j in enumerate(p)]
+                               for idx in indicies]
 
             psd_strains = [[[l[1] for l in f.existing_psd[label(idx)][k]]
                            for k in f.existing_psd[label(idx)].keys()]
-                           for idx, j in enumerate(p)]
+                           for idx in indicies]
         else:
             psd = psd_labels = psd_frequencies = psd_strains = None
 
         if f.existing_calibration is not None:
-            calibration = ["extracted_%s.txt" % (i) for i in
-                           list(f.existing_calibration.keys())]
-
-            calibration_labels = [[i for i in list(
-                                  f.existing_calibration[label(idx)].keys())]
-                                  for idx, j in enumerate(p)]
-
-            calibration_envelopes = [np.array([f.existing_calibration[label(idx)][k]
-                                     for k in f.existing_calibration[label(idx)].keys()])
-                                     for idx, j in enumerate(p)]
+            calibration, calibration_labels, calibration_envelopes = [], [], []
+            for i in indicies:
+                if label(i) in list(f.existing_calibration.keys()):
+                    calibration.append("extracted_%s.txt" % (
+                        f.existing_calibration[label(i)]))
+                    calibration_labels.append([
+                        i for i in list(f.existing_calibration[label(i)])])
+                    calibration_envelopes.append(np.array([
+                        f.existing_calibration[label(i)][k] for k in
+                        f.existing_calibration[label(i)].keys()]))
+                else:
+                    calibration.append(None)
+                    calibration_labels.append(None)
+                    calibration_envelopes.append(None)
         else:
             calibration = calibration_labels = calibration_envelopes = None
+        labels = [labels[i] for i in indicies]
         return p, s, injection, labels, psd, approximant, psd_labels, \
             psd_frequencies, psd_strains, calibration, calibration_labels, \
             calibration_envelopes, config
@@ -340,7 +360,8 @@ class GWInput(Input):
                 config = self.config[num]
             if self.is_pesummary_metafile(i):
                 p, s, inj, labels, psd, approx, psd_l, psd_f, psd_s, cal, cal_l, cal_env, con = \
-                    self.grab_data_from_metafile(i, webdir=self.webdir)
+                    self.grab_data_from_metafile(
+                        i, webdir=self.webdir, compare=self.compare_results)
                 self.opts.psd = psd
                 self.opts.calibration = cal
                 self.opts.labels = labels

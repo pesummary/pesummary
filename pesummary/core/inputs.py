@@ -90,6 +90,7 @@ class Input(object):
         self.baseurl = self.opts.baseurl
         self.inj_file = self.opts.inj_file
         self.config = self.opts.config
+        self.compare_results = self.opts.compare_results
         self.result_files = self.opts.samples
         self.email = self.opts.email
         self.add_to_existing = self.opts.add_to_existing
@@ -229,7 +230,7 @@ class Input(object):
         self.grab_data_from_input_files(samples)
 
     @staticmethod
-    def grab_data_from_metafile(existing_file, webdir="./"):
+    def grab_data_from_metafile(existing_file, webdir="./", compare=None):
         """Grab the data from a metafile
 
         Parameters
@@ -238,12 +239,28 @@ class Input(object):
             path to the existing PESummary metafile
         webdir: str
             path to the web directory
+        compare: list
+            list of labels for the events that you wish to compare
         """
         f = ExistingFile(existing_file)
-        p = f.existing_parameters
-        s = f.existing_samples
-        inj_values = f.existing_injection
         labels = f.existing_labels
+        indicies = [i for i in range(len(labels))]
+
+        if compare:
+            for i in compare:
+                if i not in labels:
+                    raise Exception("Label %s does not exist in the metafile. "
+                                    "Please check that the labels for the runs "
+                                    "you wish to compare are correct." % (i))
+            indicies = [labels.index(i) for i in compare]
+
+        p = [f.existing_parameters[i] for i in indicies]
+        s = [f.existing_samples[i] for i in indicies]
+
+        if f.existing_injection == []:
+            inj_values = []
+        else:
+            inj_values = [f.existing_injection[i] for i in indicies]
 
         if inj_values == []:
             for num, i in enumerate(p):
@@ -259,12 +276,14 @@ class Input(object):
 
         if f.existing_config is not None:
             config = []
-            for i in f.existing_config.keys():
-                f.write_config_to_file(i, outdir="%s/config" % (webdir))
-                config.append("%s/config/%s_config.ini" % (webdir, i))
+            for i in indicies:
+                j = f.existing_config[i]
+                f.write_config_to_file(j, outdir="%s/config" % (webdir))
+                config.append("%s/config/%s_config.ini" % (webdir, j))
         else:
             config = None
 
+        labels = [labels[i] for i in indicies]
         return p, s, injection, labels, config
 
     def grab_data_from_input_files(self, samples):
@@ -280,7 +299,7 @@ class Input(object):
                 config = self.config[num]
             if self.is_pesummary_metafile(i):
                 p, s, inj, labels, con = self.grab_data_from_metafile(
-                    i, webdir=self.webdir)
+                    i, webdir=self.webdir, compare=self.compare_results)
                 self.opts.labels = labels
                 self.config = con
                 for idx, j in enumerate(p):

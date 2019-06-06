@@ -325,7 +325,7 @@ class TestInput(object):
         with open("./.outdir/calibration.dat", "w") as f:
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0\n"])
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0"])
-        assert self.inputs.calibration == None
+        assert self.inputs.calibration == [None]
         self.add_argument(["--calibration", "./.outdir/calibration.dat"])
         assert self.inputs.calibration == ['./.outdir/calibration.dat']
 

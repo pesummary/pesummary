@@ -20,6 +20,9 @@
 - Added an `existing_samples_dict` property to the ExistingFile class which
   puts the existing_labels, existing_parameters and exising_samples in a
   dictionary
+- Added a `compare_results` flag which allows the user to specify which results
+  files they wish to compare. In order to use this flag you must pass a
+  PESummary meta file.
 
 ## 0.1.6 [13/05/2019]
 
