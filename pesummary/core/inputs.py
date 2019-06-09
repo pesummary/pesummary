@@ -273,13 +273,13 @@ class Input(object):
 
         injection = [{i: j for i, j in zip(j, inj_values[num])} for num, j in
                      enumerate(p)]
+        label = lambda i: f.existing_labels[i]
 
         if f.existing_config is not None:
             config = []
             for i in indicies:
-                j = f.existing_config[i]
-                f.write_config_to_file(j, outdir="%s/config" % (webdir))
-                config.append("%s/config/%s_config.ini" % (webdir, j))
+                f.write_config_to_file(label(i), outdir="%s/config" % (webdir))
+                config.append("%s/config/%s_config.ini" % (webdir, label(i)))
         else:
             config = None
 

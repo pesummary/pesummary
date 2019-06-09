@@ -301,14 +301,13 @@ class GWInput(Input):
         if f.existing_config is not None:
             config = []
             for i in indicies:
-                j = f.existing_config[i]
-                f.write_config_to_file(j, outdir="%s/config" % (webdir))
-                config.append("%s/config/%s_config.ini" % (webdir, j))
+                f.write_config_to_file(label(i), outdir="%s/config" % (webdir))
+                config.append("%s/config/%s_config.ini" % (webdir, label(i)))
         else:
             config = None
 
         if f.existing_psd is not None:
-            psd = ["extracted_%s.txt" % (f.existing_psd[i]) for i in indicies]
+            psd = ["extracted_%s.txt" % (f.existing_psd[label(i)]) for i in indicies]
 
             psd_labels = [[i for i in list(f.existing_psd[label(idx)].keys())]
                           for idx in indicies]

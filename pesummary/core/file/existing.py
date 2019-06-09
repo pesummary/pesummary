@@ -148,7 +148,7 @@ class ExistingFile(object):
             path indicating where you would like to configuration file to be
             saved. Default is current working directory
         """
-        if label not in self.existing_config.keys():
+        if label not in list(self.existing_config.keys()):
             raise Exception("The label %s does not exist." % (label))
         config_dict = self.existing_config[label]
         config = configparser.ConfigParser()
