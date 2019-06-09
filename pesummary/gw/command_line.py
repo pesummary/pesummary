@@ -82,6 +82,9 @@ def insert_gwspecific_option_group(parser):
     gw_group.add_argument("--trigfile", dest="inj_file",
                           help="xml file containing the trigger values",
                           nargs='+', default=None)
+    gw_group.add_argument("--no_ligo_skymap", action="store_true",
+                          help="do not generate a skymap with ligo.skymap",
+                          default=False)
     gw_group.add_argument("--gw", action="store_true",
                           help="run with the gravitational wave pipeline",
                           default=False)
