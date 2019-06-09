@@ -97,6 +97,7 @@ class GWInput(Input):
         self.calibration = self.opts.calibration
         self.approximant = self.opts.approximant
         self.sensitivity = self.opts.sensitivity
+        self.no_ligo_skymap = self.opts.no_ligo_skymap
         self.psds = self.opts.psd
         self.existing_labels = []
         self.existing_parameters = []
@@ -551,6 +552,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
             self.calibration_dict = True
         else:
             self.calibration_list = True
+        self.no_ligo_skymap = inputs.no_ligo_skymap
 
         self.grab_data_map = {"existing_file": self._data_from_existing_file,
                               "standard_format": self._data_from_standard_format}

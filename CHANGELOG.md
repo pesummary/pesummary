@@ -8,6 +8,8 @@
   distances and interpolate to find the redshift for all distances. This
   sped of the function `pesummary.gw.file.conversions.z_from_dL` by 4000x.
 - Aspect ratio: Fix the aspect ratio for the plots showed on the multiple tab
+- LALInference.fits - LALInference.fits file produced from the
+  `pesummary.gw.plots.plot._ligo_skymap_plot` now saved in the web directory
 
 ### Added
 - Added a conversion to calculate the posterior for the time in each detector
@@ -23,6 +25,8 @@
 - Added a `compare_results` flag which allows the user to specify which results
   files they wish to compare. In order to use this flag you must pass a
   PESummary meta file.
+- Added a `--no_ligo_skymap` option which will prevent ligo.skymap from
+  generating a skymap
 
 ## 0.1.6 [13/05/2019]
 
