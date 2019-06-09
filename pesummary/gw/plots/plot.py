@@ -333,7 +333,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
     return fig
 
 
-def _ligo_skymap_plot(ra, dec, **kwargs):
+def _ligo_skymap_plot(ra, dec, savedir="./", **kwargs):
     """Plot the sky location of the source for a given approximant using the
     ligo.skymap package
 
@@ -343,6 +343,8 @@ def _ligo_skymap_plot(ra, dec, **kwargs):
         list of samples for right ascension
     dec: list
         list of samples for declination
+    savedir: str
+        path to the directory where you would like to save the output files
     kwargs: dict
         optional keyword arguments
     """
@@ -366,9 +368,11 @@ def _ligo_skymap_plot(ra, dec, **kwargs):
     os.remove("./skymap.fits")
 
     table = io.read_sky_map(hdus, moc=True)
-    io.write_sky_map("lalinference.fits", rasterize(table, order=None), nest=True)
+    io.write_sky_map("%s/lalinference.fits" % (savedir),
+                     rasterize(table, order=None), nest=True)
 
-    skymap, metadata = fits.read_sky_map("./lalinference.fits", nest=None)
+    skymap, metadata = fits.read_sky_map("%s/lalinference.fits" % (savedir),
+                                         nest=None)
     nside = hp.npix2nside(len(skymap))
     deg2perpix = hp.nside2pixarea(nside, degrees=True)
     probperdeg2 = skymap / deg2perpix
