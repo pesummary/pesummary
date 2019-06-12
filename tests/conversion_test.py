@@ -46,6 +46,9 @@ class TestConversions(object):
             spin2x = 0.
             spin2y = 0.
             spin2z = 0.5
+            lambda1 = 500.
+            lambda2 = 500.
+            lambda_tilde = 1000.
 
             theta_jn = [0.5, 0.5]
             phi_jl = [0.3, 0.3]
@@ -205,6 +208,28 @@ class TestConversions(object):
         time = time_in_each_ifo("H1", optimal_ra, optimal_dec, 0)
         light_time = 6371*10**3 / (3.0*10**8)
         assert -np.round(light_time, 4) == np.round(time, 4)
+
+    def test_lambda_tilde_from_lambda1_lambda2(self):
+        lambda_tilde = lambda_tilde_from_lambda1_lambda2(
+            self.opts.lambda1, self.opts.lambda2, self.opts.mass1,
+            self.opts.mass2)
+        assert np.round(lambda_tilde, 4) == 630.5793
+
+    def test_delta_lambda_from_lambda1_lambda2(self):
+        delta_lambda = delta_lambda_from_lambda1_lambda2(
+            self.opts.lambda1, self.opts.lambda2, self.opts.mass1,
+            self.opts.mass2)
+        assert np.round(delta_lambda, 4) == -150.1964
+
+    def test_lambda1_from_lambda_tilde(self):
+        lambda1 = lambda1_from_lambda_tilde(
+            self.opts.lambda_tilde, self.opts.mass1, self.opts.mass2)
+        assert np.round(lambda1, 4) == 192.8101
+
+    def test_lambda2_from_lambda1(self):
+        lambda2 = lambda2_from_lambda1(
+            self.opts.lambda1, self.opts.mass1, self.opts.mass2)
+        assert np.round(lambda2, 4) == 16000.0
 
     def test_one_format(self):
         path = "./tests/files/GW150914_result.h5"

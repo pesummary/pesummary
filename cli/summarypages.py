@@ -544,11 +544,14 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             params.append(["inclination", self._partition(cond, parameters)])
         if any("a_1" in j for j in parameters):
             cond = self._condition(["spin", "chi_p", "chi_eff", "a_1", "a_2"],
-                                   [])
+                                   ["lambda"])
             params.append(["spins", self._partition(cond, parameters)])
         if any("phi" in j for j in parameters):
             cond = self._condition(["phi", "tilt"], [])
             params.append(["spin_angles", self._partition(cond, parameters)])
+        if any("lambda" in j for j in parameters):
+            cond = self._condition(["lambda"], [])
+            params.append(["tidal", self._partition(cond, parameters)])
         if any("ra" in j for j in parameters):
             cond = self._condition(
                 ["ra", "dec", "psi", "luminosity_distance", "redshift",
