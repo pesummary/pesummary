@@ -277,3 +277,48 @@ def time_in_each_ifo(detector, ra, dec, time_gps):
     else:
         raise Exception("Please install LALSuite and astropy for full "
                         "conversions")
+
+
+def lambda_tilde_from_lambda1_lambda2(lambda1, lambda2, mass1, mass2):
+    """Return the dominant tidal term given samples for lambda1 and lambda2
+    """
+    eta = eta_from_m1_m2(mass1, mass2)
+    plus = lambda1 + lambda2
+    minus = lambda1 - lambda2
+    lambda_tilde = 8 / 13 * (
+        (1 + 7 * eta - 31 * eta**2) * plus
+        + (1 - 4 * eta)**0.5 * (1 + 9 * eta - 11 * eta**2) * minus)
+    return lambda_tilde
+
+
+def delta_lambda_from_lambda1_lambda2(lambda1, lambda2, mass1, mass2):
+    """Return the second dominant tidal term given samples for lambda1 and
+    lambda 2
+    """
+    eta = eta_from_m1_m2(mass1, mass2)
+    plus = lambda1 + lambda2
+    minus = lambda1 - lambda2
+    delta_lambda = 1 / 2 * (
+        (1 - 4 * eta) ** 0.5 * (1 - 13272 / 1319 * eta + 8944 / 1319 * eta**2)
+        * plus + (1 - 15910 / 1319 * eta + 32850 / 1319 * eta**2
+                  + 3380 / 1319 * eta**3) * minus)
+    return delta_lambda
+
+
+def lambda1_from_lambda_tilde(lambda_tilde, mass1, mass2):
+    """Return the individual tidal parameter given samples for lambda_tilde
+    """
+    eta = eta_from_m1_m2(mass1, mass2)
+    q = q_from_m1_m2(mass1, mass2)
+    lambda1 = 13 / 8 * lambda_tilde / (
+        (1 + 7 * eta - 31 * eta**2) * (1 + q**-5)
+        + (1 - 4 * eta)**0.5 * (1 + 9 * eta - 11 * eta**2) * (1 - q**-5))
+    return lambda1
+
+
+def lambda2_from_lambda1(lambda1, mass1, mass2):
+    """Return the individual tidal parameter given samples for lambda1
+    """
+    q = q_from_m1_m2(mass1, mass2)
+    lambda2 = lambda1 / q**5
+    return lambda2

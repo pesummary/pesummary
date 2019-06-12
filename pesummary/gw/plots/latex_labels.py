@@ -63,4 +63,8 @@ GWlatex_labels = {"luminosity_distance": r"$d_{L} [Mpc]$",
                   "chirp_mass_source": r"$\mathcal{M}^{source} [M_{\odot}]$",
                   "total_mass_source": r"$M^{source} [M_{\odot}]$",
                   "cos_iota": r"$\cos{\iota}$",
-                  "theta_jn": r"$\theta_{JN} [rad]$"}
+                  "theta_jn": r"$\theta_{JN} [rad]$",
+                  "lambda_1": r"$\lambda_{1}$",
+                  "lambda_2": r"$\lambda_{2}$",
+                  "lambda_tilde": r"$\tilde{\lambda}$",
+                  "delta_lambda": r"$\delta\lambda$"}

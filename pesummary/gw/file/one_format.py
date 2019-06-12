@@ -645,6 +645,31 @@ class GWOneFormat(OneFormat):
             data = np.array([i[ind] for i in spin_angles])
             self.append_data(data)
 
+    def _non_precessing_component_spins(self):
+        spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
+                 "spin_2z"]
+        spin_angles = ["a_1", "a_2", "theta_jn", "tilt_1", "tilt_2"]
+        if all(i in self.parameters for i in spin_angles):
+            samples = self.specific_parameter_samples(spin_angles)
+            cond1 = all(i in [0, np.pi] for i in samples[3])
+            cond2 = all(i in [0, np.pi] for i in samples[4])
+            spins_to_calculate = [
+                i for i in spins if i not in self.parameters]
+            if cond1 and cond1:
+                spin_1x = np.array([0.] * len(samples[0]))
+                spin_1y = np.array([0.] * len(samples[0]))
+                spin_1z = samples[0] * np.cos(samples[3])
+                spin_2x = np.array([0.] * len(samples[0]))
+                spin_2y = np.array([0.] * len(samples[0]))
+                spin_2z = samples[1] * np.cos(samples[4])
+                iota = np.array(samples[2])
+                data = [
+                    iota, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z]
+
+                for num, i in enumerate(spins_to_calculate):
+                    self.parameters.append(i)
+                    self.append_data(data[num])
+
     def _component_spins(self):
         spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
                  "spin_2z"]
@@ -654,8 +679,15 @@ class GWOneFormat(OneFormat):
             self.parameters.append(i)
         spin_angles = [
             "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
-            "mass_1", "mass_2", "reference_frequency", "phase"]
+            "mass_1", "mass_2", "reference_frequency"]
         samples = self.specific_parameter_samples(spin_angles)
+        if "phase" in self.parameters:
+            spin_angles.append("phase")
+            samples.append(self.specific_parameter_samples("phase"))
+        else:
+            logger.warn("Phase it not given, we will be assuming that a "
+                        "reference phase of 0 to calculate all the spin angles")
+            samples.append([0] * len(samples[0]))
         spin_components = con.component_spins(
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5], samples[6], samples[7], samples[8], samples[9],
@@ -770,6 +802,36 @@ class GWOneFormat(OneFormat):
             time = con.time_in_each_ifo(i, samples[0], samples[1], samples[2])
             self.append_data(time)
 
+    def _lambda1_from_lambda_tilde(self):
+        self.parameters.append("lambda_1")
+        samples = self.specific_parameter_samples([
+            "lambda_tilde", "mass_1", "mass_2"])
+        lambda_1 = con.lambda1_from_lambda_tilde(samples[0], samples[1], samples[2])
+        self.append_data(lambda_1)
+
+    def _lambda2_from_lambda1(self):
+        self.parameters.append("lambda_2")
+        samples = self.specific_parameter_samples([
+            "lambda_1", "mass_1", "mass_2"])
+        lambda_2 = con.lambda2_from_lambda1(samples[0], samples[1], samples[2])
+        self.append_data(lambda_2)
+
+    def _lambda_tilde_from_lambda1_lambda2(self):
+        self.parameters.append("lambda_tilde")
+        samples = self.specific_parameter_samples([
+            "lambda_1", "lambda_2", "mass_1", "mass_2"])
+        lambda_tilde = con.lambda_tilde_from_lambda1_lambda2(
+            samples[0], samples[1], samples[2], samples[3])
+        self.append_data(lambda_tilde)
+
+    def _delta_lambda_from_lambda1_lambda2(self):
+        self.parameters.append("delta_lambda")
+        samples = self.specific_parameter_samples([
+            "lambda_1", "lambda_2", "mass_1", "mass_2"])
+        delta_lambda = con.delta_lambda_from_lambda1_lambda2(
+            samples[0], samples[1], samples[2], samples[3])
+        self.append_data(delta_lambda)
+
     def generate_all_posterior_samples(self):
         logger.debug("Starting to generate all derived posteriors")
         if "chirp_mass" not in self.parameters and "chirp_mass_source" in \
@@ -813,17 +875,33 @@ class GWOneFormat(OneFormat):
                 self._eta_from_m1_m2()
             spin_components = [
                 "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
-            spin_angles = [
-                "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1",
-                "a_2", "mass_1", "mass_2", "reference_frequency", "phase"]
+            spin_angles = ["a_1", "a_2", "tilt_1", "tilt_2", "theta_jn"]
             if all(i in self.parameters for i in spin_components):
                 self._spin_angles()
             if all(i in self.parameters for i in spin_angles):
-                self._component_spins()
+                samples = self.specific_parameter_samples(["tilt_1", "tilt_2"])
+                cond1 = all(i in [0, np.pi] for i in samples[0])
+                cond2 = all(i in [0, np.pi] for i in samples[1])
+                if cond1 and cond1:
+                    self._non_precessing_component_spins()
+                else:
+                    spin_angles = [
+                        "phi_jl", "phi_12", "reference_frequency"]
+                    if all(i in self.parameters for i in spin_angles):
+                        self._component_spins()
             if "chi_p" not in self.parameters and "chi_eff" not in self.parameters:
                 if all(i in self.parameters for i in spin_components):
                     self._chi_p()
                     self._chi_eff()
+            if "lambda_tilde" in self.parameters and "lambda_1" not in self.parameters:
+                self._lambda1_from_lambda_tilde()
+            if "lambda_2" not in self.parameters and "lambda_1" in self.parameters:
+                self._lambda2_from_lambda1()
+            if "lambda_1" in self.parameters and "lambda_2" in self.parameters:
+                if "lambda_tilde" not in self.parameters:
+                    self._lambda_tilde_from_lambda1_lambda2()
+                if "delta_lambda" not in self.parameters:
+                    self._delta_lambda_from_lambda1_lambda2()
         if "cos_tilt_1" not in self.parameters and "tilt_1" in self.parameters:
             self._cos_tilt_1_from_tilt_1()
         if "cos_tilt_2" not in self.parameters and "tilt_2" in self.parameters:
