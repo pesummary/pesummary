@@ -173,9 +173,11 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                 psd = self._combine_psd_frequency_strain(
                     psd_frequencies, psd_strains, self.psd_labels[num]) if \
                     self.psds else None
-                calibration = self._combine_calibration_envelopes(
-                    self.calibration_envelopes[num], self.calibration_labels[num]) if \
-                    self.calibration else None
+                if self.calibration_envelopes[num] is not None:
+                    calibration = self._combine_calibration_envelopes(
+                        self.calibration_envelopes[num], self.calibration_labels[num])
+                else:
+                    calibration = None
                 config = self._grab_config_data_from_data_file(self.config[num]) \
                     if self.config and num < len(self.config) else None
                 approximant = self.approximant if self.approximant else \
@@ -293,9 +295,14 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             if psd:
                 self._add_label("psds", i)
             if calibration:
-                self._add_label(
-                    "calibration_envelope", i
-                )
+                if type(calibration) == list and calibration[num] is not None:
+                    self._add_label(
+                        "calibration_envelope", i
+                    )
+                elif type(calibration) == dict:
+                    self._add_label(
+                        "calibration_envelope", i
+                    )
             if config:
                 self._add_label(
                     "config_file", i,

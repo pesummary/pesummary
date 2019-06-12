@@ -84,6 +84,76 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
     return figure, included_parameters
 
 
+def _make_source_corner_plot(samples, params, latex_labels, **kwargs):
+    """Generate the corner plots for a given approximant
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from the command line
+    samples: nd list
+        nd list of samples for each parameter for a given approximant
+    params: list
+        list of parameters associated with each element in samples
+    approximant: str
+        name of approximant that was used to generate the samples
+    latex_labels: dict
+        dictionary of latex labels for each parameter
+    """
+    default_kwargs = dict(
+        bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
+        title_kwargs=dict(fontsize=16), color='#0072C1',
+        truth_color='tab:orange', quantiles=[0.16, 0.84],
+        levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
+        plot_density=False, plot_datapoints=True, fill_contours=True,
+        max_n_ticks=3)
+    corner_parameters = [
+        "luminosity_distance", "mass_1_source", "mass_2_source",
+        "total_mass_source", "chirp_mass_source", "redshift"]
+    source_parameters = [i for i in params if i in corner_parameters]
+    xs = np.zeros([len(source_parameters), len(samples)])
+    for num, i in enumerate(source_parameters):
+        xs[num] = [j[params.index("%s" % (i))] for j in samples]
+    default_kwargs['range'] = [1.0] * len(source_parameters)
+    default_kwargs["labels"] = [latex_labels[i] for i in source_parameters]
+    figure = corner.corner(xs.T, **default_kwargs)
+    return figure
+
+
+def _make_extrinsic_corner_plot(samples, params, latex_labels, **kwargs):
+    """Generate the corner plots for a given approximant
+
+    Parameters
+    ----------
+    opts: argparse
+        argument parser object to hold all information from the command line
+    samples: nd list
+        nd list of samples for each parameter for a given approximant
+    params: list
+        list of parameters associated with each element in samples
+    approximant: str
+        name of approximant that was used to generate the samples
+    latex_labels: dict
+        dictionary of latex labels for each parameter
+    """
+    default_kwargs = dict(
+        bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
+        title_kwargs=dict(fontsize=16), color='#0072C1',
+        truth_color='tab:orange', quantiles=[0.16, 0.84],
+        levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
+        plot_density=False, plot_datapoints=True, fill_contours=True,
+        max_n_ticks=3)
+    corner_parameters = ["luminosity_distance", "psi", "ra", "dec"]
+    extrinsic_parameters = [i for i in params if i in corner_parameters]
+    xs = np.zeros([len(extrinsic_parameters), len(samples)])
+    for num, i in enumerate(extrinsic_parameters):
+        xs[num] = [j[params.index("%s" % (i))] for j in samples]
+    default_kwargs['range'] = [1.0] * len(extrinsic_parameters)
+    default_kwargs["labels"] = [latex_labels[i] for i in extrinsic_parameters]
+    figure = corner.corner(xs.T, **default_kwargs)
+    return figure
+
+
 def __antenna_response(name, ra, dec, psi, time_gps):
     """Calculate the antenna response function
 
@@ -263,7 +333,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
     return fig
 
 
-def _ligo_skymap_plot(ra, dec, **kwargs):
+def _ligo_skymap_plot(ra, dec, savedir="./", **kwargs):
     """Plot the sky location of the source for a given approximant using the
     ligo.skymap package
 
@@ -273,6 +343,8 @@ def _ligo_skymap_plot(ra, dec, **kwargs):
         list of samples for right ascension
     dec: list
         list of samples for declination
+    savedir: str
+        path to the directory where you would like to save the output files
     kwargs: dict
         optional keyword arguments
     """
@@ -288,7 +360,7 @@ def _ligo_skymap_plot(ra, dec, **kwargs):
 
     fig = plt.figure()
     pts = np.column_stack((ra, dec))
-    skypost = Clustered2DSkyKDE(pts, trials=5, multiprocess=2)
+    skypost = Clustered2DSkyKDE(pts, trials=5)
 
     hpmap = skypost.as_healpix()
     io.write_sky_map("./skymap.fits", hpmap, nest=True)
@@ -296,9 +368,11 @@ def _ligo_skymap_plot(ra, dec, **kwargs):
     os.remove("./skymap.fits")
 
     table = io.read_sky_map(hdus, moc=True)
-    io.write_sky_map("lalinference.fits", rasterize(table, order=None), nest=True)
+    io.write_sky_map("%s/lalinference.fits" % (savedir),
+                     rasterize(table, order=None), nest=True)
 
-    skymap, metadata = fits.read_sky_map("./lalinference.fits", nest=None)
+    skymap, metadata = fits.read_sky_map("%s/lalinference.fits" % (savedir),
+                                         nest=None)
     nside = hp.npix2nside(len(skymap))
     deg2perpix = hp.nside2pixarea(nside, degrees=True)
     probperdeg2 = skymap / deg2perpix
@@ -784,6 +858,9 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         colors = ['r', 'b', 'orange', 'c', 'g', 'purple']
         while len(colors) <= len(ifos):
             colors += colors
+
+    for num, i in enumerate(calibration_envelopes):
+        calibration_envelopes[num] = np.array(calibration_envelopes[num])
 
     for num, i in enumerate(calibration_envelopes):
         interp = [np.interp(

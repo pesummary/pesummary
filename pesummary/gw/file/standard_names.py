@@ -132,4 +132,12 @@ standard_names = {"logL": "log_likelihood",
                   "spin1_azimuthal": "a_1_azimuthal",
                   "spin1_polar": "a_1_polar",
                   "spin2_azimuthal": "a_2_azimuthal",
-                  "spin2_polar": "a_2_polar"}
+                  "spin2_polar": "a_2_polar",
+                  "lambda1": "lambda_1",
+                  "lambda_1": "lambda_1",
+                  "lambda2": "lambda_2",
+                  "lambda_2": "lambda_2",
+                  "lambda_tilde": "lambda_tilde",
+                  "lambdaT": "lambda_tilde",
+                  "delta_lambda": "delta_lambda",
+                  "dLambdaT": "delta_lambda"}

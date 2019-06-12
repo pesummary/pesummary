@@ -189,6 +189,10 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             "parameter_names": list(parameters),
             "samples": self.convert_to_list(samples)
         }
+        self.data["injection_data"][label] = {
+            "injection_values": list(injection)
+        }
+
         if config:
             self.data["config_file"][label] = config
 

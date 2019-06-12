@@ -328,11 +328,12 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         IFOs used in the analysis.
         """
         frequencies = np.arange(20., 1024., 1. / 4)
-        fig = gw._calibration_envelope_plot(
-            frequencies, self.calibration_envelopes[idx],
-            self.calibration_labels[idx])
-        fig.savefig("%s/%s_calibration_plot.png" % (self.savedir, self.labels[idx]))
-        plt.close()
+        if self.calibration_envelopes[idx] is not None:
+            fig = gw._calibration_envelope_plot(
+                frequencies, self.calibration_envelopes[idx],
+                self.calibration_labels[idx])
+            fig.savefig("%s/%s_calibration_plot.png" % (self.savedir, self.labels[idx]))
+            plt.close()
 
     def _psd_plot(self, idx=None):
         """Generate a single plot showing all psds used in analysis
@@ -368,6 +369,16 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             new_file = open("%s/js/combine_corner.js" % (self.webdir), "w")
             new_file.writelines(combine_corner)
             new_file.close()
+            fig = gw._make_source_corner_plot(
+                self.samples[idx], self.parameters[idx], latex_labels)
+            plt.savefig("%s/corner/%s_source_frame.png" % (
+                self.savedir, self.labels[idx]))
+            plt.close()
+            fig = gw._make_extrinsic_corner_plot(
+                self.samples[idx], self.parameters[idx], latex_labels)
+            plt.savefig("%s/corner/%s_extrinsic.png" % (
+                self.savedir, self.labels[idx]))
+            plt.close()
 
     def _skymap_plot(self, idx):
         """Generate a skymap showing the confidence regions for a given results
@@ -389,7 +400,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             self.labels[idx]))
         plt.close()
 
-        if SKYMAP:
+        if SKYMAP and not self.no_ligo_skymap:
             try:
                 process = mp.Process(target=self._ligo_skymap_plot,
                                      args=[ra, dec, idx])
@@ -411,7 +422,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         idx: int
             the index of the results file that you wish to analyse
         """
-        fig = gw._ligo_skymap_plot(ra, dec)
+        fig = gw._ligo_skymap_plot(ra, dec, savedir=self.webdir + "/samples")
         fig.savefig(self.savedir + "/%s_skymap.png" % (
             self.labels[idx]))
         plt.close()

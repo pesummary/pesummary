@@ -88,6 +88,22 @@ class LALInferenceResultsFile(object):
             for num, i in enumerate(f[self.path]):
                 samples[num].append(
                     np.arccos(i[lalinference_names.index("costheta_jn")]))
+        spin_magnitudes = ["a_1", "a_2"]
+        spin_angles = ["phi_jl", "tilt_1", "tilt_2", "phi_12"]
+        if all(i in parameters for i in spin_magnitudes):
+            if all(i not in parameters for i in spin_angles):
+                parameters.append("tilt_1")
+                parameters.append("tilt_2")
+                for num, i in enumerate(f[self.path]):
+                    samples[num].append(
+                        np.arccos(np.sign(i[lalinference_names.index("a1")])))
+                    samples[num].append(
+                        np.arccos(np.sign(i[lalinference_names.index("a2")])))
+                ind_a1 = parameters.index("a_1")
+                ind_a2 = parameters.index("a_2")
+                for num, i in enumerate(f[self.path]):
+                    samples[num][ind_a1] = abs(samples[num][ind_a1])
+                    samples[num][ind_a2] = abs(samples[num][ind_a2])
         f.close()
         return parameters, samples
 

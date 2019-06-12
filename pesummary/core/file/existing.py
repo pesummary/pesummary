@@ -20,6 +20,8 @@ import os
 
 import h5py
 import json
+import numpy as np
+import configparser
 
 
 class ExistingFile(object):
@@ -94,8 +96,9 @@ class ExistingFile(object):
         for num, i in enumerate(labels):
             p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
-            inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
-            inj_list.append(inj)
+            if "injection_data" in dictionary.keys():
+                inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
+                inj_list.append(inj)
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
             else:
@@ -103,7 +106,7 @@ class ExistingFile(object):
             sample_list.append(s)
             config = None
             if "config_file" in dictionary.keys():
-                config, = load_recusively("config_file/%s" % (i), dictionary)
+                config, = load_recusively("config_file", dictionary)
         return labels, parameter_list, sample_list, config, inj_list
 
     @property
@@ -123,5 +126,34 @@ class ExistingFile(object):
         return self.existing_data[3]
 
     @property
+    def existing_samples_dict(self):
+        zipped = zip(self.existing_labels, self.existing_parameters,
+                     self.existing_samples)
+        outdict = {label: dict(zip(pars, np.array(samples).T)) for label, pars,
+                   samples in zipped}
+        return outdict
+
+    @property
     def existing_injection(self):
         return self.existing_data[4]
+
+    def write_config_to_file(self, label, outdir="./"):
+        """Write the config file stored as a dictionary to file
+
+        Parameters
+        ----------
+        label: str
+            the label for the dictionary that you would like to write to file
+        outdir: str, optional
+            path indicating where you would like to configuration file to be
+            saved. Default is current working directory
+        """
+        if label not in list(self.existing_config.keys()):
+            raise Exception("The label %s does not exist." % (label))
+        config_dict = self.existing_config[label]
+        config = configparser.ConfigParser()
+        for i in config_dict.keys():
+            config[i] = config_dict[i]
+
+        with open("%s/%s_config.ini" % (outdir, label), "w") as configfile:
+            config.write(configfile)

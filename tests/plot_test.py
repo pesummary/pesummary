@@ -145,6 +145,42 @@ class TestPlot(object):
         fig, included_params = gwplot._make_corner_plot(samples, params, latex_labels) 
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
+    def test_source_corner_plot(self):
+        latex_labels = {"luminosity_distance": r"$d_{L}$",
+                        "dec": r"$\delta$",
+                        "a_2": r"$a_{2}$", "a_1": r"$a_{1}$",
+                        "geocent_time": r"$t$", "phi_jl": r"$\phi_{JL}$",
+                        "psi": r"$\Psi$", "ra": r"$\alpha$", "phase": r"$\psi$",
+                        "mass_2": r"$m_{2}$", "mass_1": r"$m_{1}$",
+                        "phi_12": r"$\phi_{12}$", "tilt_2": r"$t_{1}$",
+                        "iota": r"$\iota$", "tilt_1": r"$t_{1}$",
+                        "chi_p": r"$\chi_{p}$", "chirp_mass": r"$\mathcal{M}$",
+                        "mass_ratio": r"$q$", "symmetric_mass_ratio": r"$\eta$",
+                        "total_mass": r"$M$", "chi_eff": r"$\chi_{eff}$"}
+        samples = [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]]*21
+        samples = [np.random.random(21).tolist() for i in range(21)]
+        params = list(latex_labels.keys())
+        fig = gwplot._make_source_corner_plot(samples, params, latex_labels) 
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+    
+    def test_extrinsic_corner_plot(self):
+        latex_labels = {"luminosity_distance": r"$d_{L}$",
+                        "dec": r"$\delta$",
+                        "a_2": r"$a_{2}$", "a_1": r"$a_{1}$",
+                        "geocent_time": r"$t$", "phi_jl": r"$\phi_{JL}$",
+                        "psi": r"$\Psi$", "ra": r"$\alpha$", "phase": r"$\psi$",
+                        "mass_2": r"$m_{2}$", "mass_1": r"$m_{1}$",
+                        "phi_12": r"$\phi_{12}$", "tilt_2": r"$t_{1}$",
+                        "iota": r"$\iota$", "tilt_1": r"$t_{1}$",
+                        "chi_p": r"$\chi_{p}$", "chirp_mass": r"$\mathcal{M}$",
+                        "mass_ratio": r"$q$", "symmetric_mass_ratio": r"$\eta$",
+                        "total_mass": r"$M$", "chi_eff": r"$\chi_{eff}$"}
+        samples = [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]]*21
+        samples = [np.random.random(21).tolist() for i in range(21)]
+        params = list(latex_labels.keys())
+        fig = gwplot._make_extrinsic_corner_plot(samples, params, latex_labels) 
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
     def test_sensitivity_plot(self):
         maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
                        "iota": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
