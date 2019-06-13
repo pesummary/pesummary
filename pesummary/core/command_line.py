@@ -64,13 +64,17 @@ class ConfigAction(argparse.Action):
         """
         mydict = {}
         if "{" in string:
-            string.replace("{", "")
+            string = string.replace("{", "")
         if "}" in string:
-            string.replace("}", "")
-        if " " in string and ": " not in string:
+            string = string.replace("}", "")
+
+        if " " in string and "," not in string:
             string = string.split(" ")
-        elif "," in string:
+        elif "," in string and ", " not in string:
             string = string.split(",")
+        elif ", " in string:
+            string = string.split(", ")
+
         for i in string:
             value = i.split(":")
             if " " in value[0]:
