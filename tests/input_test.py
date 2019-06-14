@@ -104,6 +104,10 @@ class TestCommandLine(object):
         opts = self.parser.parse_args(["-v"])
         assert opts.verbose == True
 
+    def test_gwdata(self):
+        opts = self.parser.parse_args(["--gwdata", "H1:H1-CALIB-STRAIN:hello.lcf"])
+        assert opts.gwdata == {"H1:H1-CALIB-STRAIN": "hello.lcf"}
+
 
 class TestInputExceptions(object):
 

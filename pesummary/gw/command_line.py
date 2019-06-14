@@ -41,6 +41,8 @@ class DictionaryAction(argparse.Action):
         items = copy.copy(items)
         for value in values:
             value = value.split(':')
+            if len(value) > 2:
+                value = [":".join(value[:-1]), value[-1]]
             if len(value) == 2:
                 if value[0] in items.keys():
                     if not isinstance(items[value[0]], list):
@@ -82,6 +84,10 @@ def insert_gwspecific_option_group(parser):
     gw_group.add_argument("--trigfile", dest="inj_file",
                           help="xml file containing the trigger values",
                           nargs='+', default=None)
+    gw_group.add_argument("--gwdata", dest="gwdata",
+                          help="channels and paths to strain cache files",
+                          action=DictionaryAction, metavar="CHANNEL:CACHEFILE",
+                          nargs="+", default=None)
     gw_group.add_argument("--no_ligo_skymap", action="store_true",
                           help="do not generate a skymap with ligo.skymap",
                           default=False)

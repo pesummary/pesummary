@@ -185,7 +185,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                 self._add_data(i, self.parameters[num],
                                self.samples[num], injection, psd=psd,
                                calibration=calibration, config=config,
-                               approximant=approximant[num],
+                               approximant=approximant[num]
                                )
 
     def _combine_psd_frequency_strain(self, frequencies, strains, psd_labels):
