@@ -633,6 +633,8 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             for num, i in enumerate(self.labels):
                 html_file.make_banner(approximant=i, key=i)
                 image_contents = []
+                if os.path.isfile(self.webdir + "/plots/%s_strain.png" % (i)):
+                    image_contents.append(path + "%s_strain.png" % (i))
                 if os.path.isfile(self.webdir + "/plots/%s_psd_plot.png" % (i)):
                     image_contents.append(path + "%s_psd_plot.png" % (i))
                 if os.path.isfile(self.webdir + "/plots/%s_waveform_timedomain.png" % (i)):
@@ -644,13 +646,15 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                 images = [y for x in image_contents for y in x]
                 html_file.make_modal_carousel(images=images)
         else:
-            if self.psds:
-                image_contents.append(path + "%s_psd_plot.png" % (
-                    self.labels[0]))
+            if self.gwdata and self.approximant:
+                image_contents.append(path + "%s_strain.png" % (self.labels[0]))
             if self.approximant:
                 image_contents.append(path + "%s_waveform_timedomain.png" % (
                     self.labels[0]))
-            if self.calibration:
+            if self.psds:
+                image_contents.append(path + "%s_psd_plot.png" % (
+                    self.labels[0]))
+            if self.calibration[0] is not None:
                 image_contents.append(path + "%s_calibration_plot.png" % (
                     self.labels[0]))
             image_contents = [image_contents]

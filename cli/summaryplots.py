@@ -262,6 +262,8 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             self.try_to_make_a_plot("corner", num)
             self.try_to_make_a_plot("skymap", num)
             self.try_to_make_a_plot("waveform", num)
+            if self.gwdata:
+                self.try_to_make_a_plot("data", num)
             self.try_to_make_a_plot("1d_histogram", num)
         if self.sensitivity:
             self.try_to_make_a_plot("sensitivity", 0)
@@ -309,6 +311,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
                                 "corner": self._corner_plot,
                                 "skymap": self._skymap_plot,
                                 "waveform": self._waveform_plot,
+                                "data": self._strain_plot,
                                 "1d_histogram": self._1d_histogram_plots,
                                 "1d_histogram_comparison":
                                 self._1d_histogram_comparison_plots,
@@ -401,6 +404,8 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         plt.close()
 
         if SKYMAP and not self.no_ligo_skymap:
+            logger.info("Launching subprocess to generate skymap plot with "
+                        "ligo.skymap")
             try:
                 process = mp.Process(target=self._ligo_skymap_plot,
                                      args=[ra, dec, idx])
@@ -466,6 +471,24 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         fig = gw._time_domain_waveform(detectors, self.maxL_samples[idx])
         fig.savefig(self.savedir + "%s_waveform_timedomain.png" % (
             self.labels[idx]))
+        plt.close()
+
+    def _strain_plot(self, idx):
+        """Launch a subprocess to generate a the strain plot
+        """
+        logger.info("Launching subprocess to generate strain plot")
+        try:
+            process = mp.Process(target=self.__strain_plot, args=[idx])
+            process.start()
+        except Exception as e:
+            logger.warn("Failed to generate the strain plot because %s" % (e))
+
+    def __strain_plot(self, idx):
+        """Generate a plot showing the data with the maximum likelihood
+        waveform in each available detector
+        """
+        fig = gw._strain_plot(self.gwdata, self.maxL_samples[idx])
+        plt.savefig(self.savedir + "%s_strain.png" % (self.labels[idx]))
         plt.close()
 
     def _skymap_comparison_plot(self, idx="all"):
