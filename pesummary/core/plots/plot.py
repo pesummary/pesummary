@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import corner
 
 import numpy as np
+from scipy import signal
 
 
 def _autocorrelation_plot(param, samples):
@@ -35,16 +36,15 @@ def _autocorrelation_plot(param, samples):
         list of samples for param
     """
     logger.debug("Generating the autocorrelation function for %s" % (param))
-    n_samples = len(samples)
-    samples = np.array(samples)
-    y = samples - np.mean(samples)
-    norm = np.sum(y**2)
-    correlated = np.correlate(y, y, mode="full") / norm
-    correlated = correlated[-n_samples:]
+    samples = samples[int(len(samples) / 2):]
+    x = samples - np.mean(samples)
+    y = np.conj(x[::-1])
+    acf = np.fft.ifftshift(signal.fftconvolve(y, x, mode='full'))
+    N = np.array(samples).shape[0]
+    acf = acf[0:N]
     fig = plt.figure()
-    plt.plot(range(n_samples), correlated, linestyle=' ', marker='o',
-             markersize=0.5)
-    plt.xlabel("samples", fontsize=16)
+    plt.plot(acf / acf[0], linestyle=' ', marker='o', markersize=0.5)
+    plt.xlabel("lag", fontsize=16)
     plt.ylabel("ACF", fontsize=16)
     plt.tight_layout()
     return fig
