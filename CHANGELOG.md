@@ -1,4 +1,4 @@
-## 0.1.7 [unreleased]
+## 0.1.7 [15/06/2019]
 
 ### Changed
 - Latex_labels: Moved the latex labels into pesummary.core.plots.latex_labels
