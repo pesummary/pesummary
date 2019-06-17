@@ -24,6 +24,7 @@ import pesummary
 from pesummary.utils.utils import logger
 from pesummary.gw.file.one_format import GWOneFormat
 from pesummary.gw.file.existing import GWExistingFile
+from pesummary.gw.file.strain import StrainFile
 from pesummary.gw.file.lalinference import LALInferenceResultsFile
 from pesummary.core.inputs import Input
 
@@ -99,6 +100,7 @@ class GWInput(Input):
         self.sensitivity = self.opts.sensitivity
         self.no_ligo_skymap = self.opts.no_ligo_skymap
         self.psds = self.opts.psd
+        self.gwdata = self.opts.gwdata
         self.existing_labels = []
         self.existing_parameters = []
         self.existing_samples = []
@@ -183,6 +185,22 @@ class GWInput(Input):
             self._psds = psd_list
         else:
             self._psds = None
+
+    @property
+    def gwdata(self):
+        return self._gwdata
+
+    @gwdata.setter
+    def gwdata(self, gwdata):
+        self._gwdata = None
+        if gwdata:
+            for i in gwdata.keys():
+                if not os.path.isfile(gwdata[i]):
+                    raise Exception("The file %s does not exist. Please check "
+                                    "the path to your strain file")
+            f = StrainFile(gwdata)
+            timeseries = f.return_timeseries()
+            self._gwdata = timeseries
 
     def _check_psd_extension(self, file):
         """Check that the file extension on the psd file can be read and
@@ -539,6 +557,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.calibration_labels = None
         self.sensitivity = inputs.sensitivity
         self.psds = inputs.psds
+        self.gwdata = inputs.gwdata
         self.psd_dict = False
         self.psd_list = False
         if isinstance(self.psds, dict):

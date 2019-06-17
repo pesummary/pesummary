@@ -25,6 +25,7 @@ import numpy as np
 import math
 from scipy.ndimage import gaussian_filter
 from astropy.time import Time
+from gwpy.timeseries import TimeSeries
 
 from lal import MSUN_SI, PC_SI
 try:
@@ -717,17 +718,17 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
         phase, 0.0, 0.0, 0.0, delta_t, minimum_frequency,
         kwargs.get("f_ref", 10.), None, approx)
 
-    h_plus = h_plus.data.data
-    h_cross = h_cross.data.data
-    h_plus = h_plus[:len(time_array)]
-    h_cross = h_cross[:len(time_array)]
     fig = plt.figure()
     colors = [PSD_COLORS[i] for i in detectors]
     for num, i in enumerate(detectors):
         ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
                                 maxL_params["psi"], maxL_params["geocent_time"])
-        plt.plot(time_array, (h_plus * ar[0] + h_cross * ar[1]),
+        h_t = h_plus.data.data * ar[0] + h_cross.data.data * ar[1]
+        h_t = TimeSeries(h_t[:], dt=h_plus.deltaT, t0=h_plus.epoch)
+        h_t.times = [float(np.array(i)) + t_start for i in h_t.times]
+        plt.plot(h_t.times, h_t,
                  color=colors[num], linewidth=1.0, label=i)
+        plt.xlim([t_start - 3, t_start + 0.5])
     plt.xlabel(r"Time $[s]$", fontsize=16)
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
     plt.grid()
@@ -789,16 +790,17 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
             iota, phase, 0.0, 0.0, 0.0, delta_t, minimum_frequency,
             kwargs.get("f_ref", 10.), None, approx)
 
-        h_plus = h_plus.data.data
-        h_cross = h_cross.data.data
-        h_plus = h_plus[:len(time_array)]
-        h_cross = h_cross[:len(time_array)]
         ar = __antenna_response("H1", i["ra"], i["dec"], i["psi"],
                                 i["geocent_time"])
-        plt.plot(time_array, abs(h_plus * ar[0] + h_cross * ar[1]),
+        h_t = h_plus.data.data * ar[0] + h_cross.data.data * ar[1]
+        h_t = TimeSeries(h_t[:], dt=h_plus.deltaT, t0=h_plus.epoch)
+        h_t.times = [float(np.array(i)) + t_start for i in h_t.times]
+
+        plt.plot(h_t.times, h_t,
                  color=colors[num], label=labels[num], linewidth=2.0)
     plt.xlabel(r"Time $[s]$", fontsize=16)
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
+    plt.xlim([t_start - 3, t_start + 0.5])
     plt.grid()
     plt.legend(loc="best")
     plt.tight_layout()
@@ -891,5 +893,92 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         ax2.set_ylabel(r"Phase deviation $[\degree]$")
     plt.xscale('log')
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
+    plt.tight_layout()
+    return fig
+
+
+def _strain_plot(strain, maxL_params, **kwargs):
+    """Generate a plot showing the strain data and the maxL waveform
+
+    Parameters
+    ----------
+    strain: gwpy.timeseries
+        timeseries containing the strain data
+    maxL_samples: dict
+        dictionary of maximum likelihood parameter values
+    """
+    logger.debug("Generating the strain plot")
+    from pesummary.gw.file.conversions import time_in_each_ifo
+
+    fig = plt.figure()
+    time = maxL_params["geocent_time"]
+    delta_t = 1. / 4096.
+    minimum_frequency = kwargs.get("f_min", 5.)
+    t_start = time - 15.0
+    t_finish = time + 0.06
+    time_array = np.arange(t_start, t_finish, delta_t)
+
+    approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
+    mass_1 = maxL_params["mass_1"] * MSUN_SI
+    mass_2 = maxL_params["mass_2"] * MSUN_SI
+    luminosity_distance = maxL_params["luminosity_distance"] * PC_SI * 10**6
+    if "phi_jl" in maxL_params.keys():
+        iota, S1x, S1y, S1z, S2x, S2y, S2z = \
+            lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+                maxL_params["theta_jn"], maxL_params["phi_jl"], maxL_params["tilt_1"],
+                maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
+                maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+                maxL_params["phase"])
+    else:
+        iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params["iota"], 0., 0., 0., \
+            0., 0., 0.
+    phase = maxL_params["phase"] if "phase" in maxL_params.keys() else 0.0
+    h_plus, h_cross = lalsim.SimInspiralChooseTDWaveform(
+        mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance, iota,
+        phase, 0.0, 0.0, 0.0, delta_t, minimum_frequency,
+        kwargs.get("f_ref", 10.), None, approx)
+
+    for num, key in enumerate(list(strain.keys())):
+        ifo_time = time_in_each_ifo(key, maxL_params["ra"], maxL_params["dec"],
+                                    maxL_params["geocent_time"])
+
+        asd = strain[key].asd(8, 4, method="median")
+        strain_data_frequency = strain[key].fft()
+        asd_interp = asd.interpolate(float(np.array(strain_data_frequency.df)))
+        asd_interp = asd_interp[:len(strain_data_frequency)]
+        strain_data_time = (strain_data_frequency / asd_interp).ifft()
+        strain_data_time = strain_data_time.highpass(30)
+        strain_data_time = strain_data_time.lowpass(300)
+
+        ar = __antenna_response(key, maxL_params["ra"], maxL_params["dec"],
+                                maxL_params["psi"], maxL_params["geocent_time"])
+
+        h_t = ar[0] * h_plus.data.data + ar[1] * h_cross.data.data
+        h_t = TimeSeries(h_t[:], dt=h_plus.deltaT, t0=h_plus.epoch)
+        h_t_frequency = h_t.fft()
+        asd_interp = asd.interpolate(float(np.array(h_t_frequency.df)))
+        asd_interp = asd_interp[:len(h_t_frequency)]
+        h_t_time = (h_t_frequency / asd_interp).ifft()
+        h_t_time = h_t_time.highpass(30)
+        h_t_time = h_t_time.lowpass(300)
+        h_t_time.times = [float(np.array(i)) + ifo_time - 1 for i in h_t_time.times]
+
+        strain_data_crop = strain_data_time.crop(ifo_time - 0.1, ifo_time + 0.06)
+        try:
+            h_t_time = h_t_time.crop(ifo_time - 0.1, ifo_time + 0.06)
+        except Exception:
+            pass
+        max_strain = np.max(strain_data_crop).value
+
+        plt.subplot(len(strain.keys()), 1, num + 1)
+        plt.plot(strain_data_crop, color='grey', alpha=0.75, label="data")
+        plt.plot(h_t_time, color='orange', label="template")
+        plt.xlim([ifo_time - 0.1, ifo_time + 0.06])
+        if not math.isnan(max_strain):
+            plt.ylim([-max_strain * 1.5, max_strain * 1.5])
+        plt.ylabel("Whitened %s strain" % (key), fontsize=8)
+        plt.grid(False)
+        plt.legend(loc="best", prop={'size': 8})
+    plt.xlabel("Time $[s]$", fontsize=16)
     plt.tight_layout()
     return fig
