@@ -147,7 +147,7 @@ class GWInput(Input):
                 params = self.parameters[num]
                 individual_detectors = []
                 for j in params:
-                    if "optimal_snr" in j:
+                    if "optimal_snr" in j and j != "network_optimal_snr":
                         det = j.split("_optimal_snr")[0]
                         individual_detectors.append(det)
                 individual_detectors = sorted(

@@ -58,7 +58,8 @@ class TestWebpageGeneration(object):
                          './.outdir_bilby/html/test_test_corner.html',
                          './.outdir_bilby/html/test_test_log_likelihood.html',
                          './.outdir_bilby/html/test_test_mass_1.html',
-                         './.outdir_bilby/html/test_test_multiple.html']
+                         './.outdir_bilby/html/test_test_multiple.html',
+                         './.outdir_bilby/html/test_test_network_optimal_snr.html',]
         assert all(i == j for i,j in zip(sorted(expected_html), sorted(html)))
 
     def test_webpage_generation_for_lalinference_structure(self):
@@ -81,6 +82,7 @@ class TestWebpageGeneration(object):
                          './.outdir_lalinference/html/test_test_log_likelihood.html',
                          './.outdir_lalinference/html/test_test_mass_1.html',
                          './.outdir_lalinference/html/test_test_multiple.html',
+                         './.outdir_lalinference/html/test_test_network_optimal_snr.html',
                          './.outdir_lalinference/html/error.html']
         assert all(i == j for i,j in zip(sorted(expected_html), sorted(html)))
 
@@ -103,6 +105,7 @@ class TestWebpageGeneration(object):
                          './.outdir_comparison/html/Comparison_log_likelihood.html',
                          './.outdir_comparison/html/Comparison_mass_1.html',
                          './.outdir_comparison/html/Comparison_multiple.html',
+                         './.outdir_comparison/html/Comparison_network_optimal_snr.html',
                          './.outdir_comparison/html/error.html',
                          './.outdir_comparison/html/test1_test1.html',
                          './.outdir_comparison/html/test1_test1_H1_optimal_snr.html',
@@ -111,13 +114,15 @@ class TestWebpageGeneration(object):
                          './.outdir_comparison/html/test1_test1_log_likelihood.html',
                          './.outdir_comparison/html/test1_test1_mass_1.html',
                          './.outdir_comparison/html/test1_test1_multiple.html',
+                         './.outdir_comparison/html/test1_test1_network_optimal_snr.html',
                          './.outdir_comparison/html/test2_test2.html',
                          './.outdir_comparison/html/test2_test2_H1_optimal_snr.html',
                          './.outdir_comparison/html/test2_test2_config.html',
                          './.outdir_comparison/html/test2_test2_corner.html',
                          './.outdir_comparison/html/test2_test2_log_likelihood.html',
                          './.outdir_comparison/html/test2_test2_mass_1.html',
-                         './.outdir_comparison/html/test2_test2_multiple.html']
+                         './.outdir_comparison/html/test2_test2_multiple.html',
+                         './.outdir_comparison/html/test2_test2_network_optimal_snr.html']
         assert all(i == j for i,j in zip(sorted(html), sorted(expected_html)))
 
     def test_webpage_generation_for_add_to_existing(self):
@@ -149,6 +154,7 @@ class TestWebpageGeneration(object):
                          './.outdir_addition/html/Comparison_log_likelihood.html',
                          './.outdir_addition/html/Comparison_mass_1.html',
                          './.outdir_addition/html/Comparison_multiple.html',
+                         './.outdir_addition/html/Comparison_network_optimal_snr.html',
                          './.outdir_addition/html/error.html',
                          './.outdir_addition/html/test2_test2.html',
                          './.outdir_addition/html/test2_test2_H1_optimal_snr.html',
@@ -157,13 +163,15 @@ class TestWebpageGeneration(object):
                          './.outdir_addition/html/test2_test2_log_likelihood.html',
                          './.outdir_addition/html/test2_test2_mass_1.html',
                          './.outdir_addition/html/test2_test2_multiple.html',
+                         './.outdir_addition/html/test2_test2_network_optimal_snr.html',
                          './.outdir_addition/html/test_test.html',
                          './.outdir_addition/html/test_test_H1_optimal_snr.html',
                          './.outdir_addition/html/test_test_config.html',
                          './.outdir_addition/html/test_test_corner.html',
                          './.outdir_addition/html/test_test_log_likelihood.html',
                          './.outdir_addition/html/test_test_mass_1.html',
-                         './.outdir_addition/html/test_test_multiple.html']
+                         './.outdir_addition/html/test_test_multiple.html',
+                         './.outdir_addition/html/test_test_network_optimal_snr.html']
         assert all(i == j for i,j in zip(sorted(html), sorted(expected_html)))
 
     def test_webpage_generation_for_full_cbc(self):
