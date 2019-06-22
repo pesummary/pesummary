@@ -74,6 +74,15 @@ class TestPlot(object):
                                                  latex_label, labels)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
+    @pytest.mark.parametrize("param, samples, colors, latex_label, labels",
+        [("mass1", [[10,20,30,40], [1,2,3,4]],
+        ["b", "r"], r"$m_{1}$", ["approx1", "approx2"]),])
+    def test_comparison_box_plot(self, param, samples, colors,
+                                 latex_label, labels):
+        fig = plot._comparison_box_plot(param, samples, colors, latex_label,
+                                        labels)
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
     def test_waveform_plot(self):
         maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
                        "theta_jn": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
