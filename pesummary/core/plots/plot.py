@@ -47,6 +47,7 @@ def _autocorrelation_plot(param, samples):
     plt.xlabel("lag", fontsize=16)
     plt.ylabel("ACF", fontsize=16)
     plt.tight_layout()
+    plt.grid(b=True)
     return fig
 
 
@@ -73,6 +74,7 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
     plt.xlabel("samples", fontsize=16)
     plt.ylabel(latex_label, fontsize=16)
     plt.tight_layout()
+    plt.grid(b=True)
     return fig
 
 
@@ -105,7 +107,7 @@ def _1d_cdf_plot(param, samples, latex_label):
     median = np.round(median, 2)
     plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
     plt.plot(bins[1:], cdf, color='b')
-    plt.grid()
+    plt.grid(b=True)
     plt.ylim([0, 1.05])
     plt.tight_layout()
     return fig
@@ -131,7 +133,7 @@ def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels):
         label to prepend the approximant in the legend
     """
     logger.debug("Generating the 1d comparison CDF for %s" % (param))
-    fig = plt.figure(figsize=(11, 6))
+    fig = plt.figure(figsize=(8, 6))
     for num, i in enumerate(samples):
         n, bins, patches = plt.hist(i, bins=50, alpha=0)
         cdf = np.cumsum(n)
@@ -141,9 +143,10 @@ def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels):
                  label=labels[num])
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Cumulative Density Function", fontsize=16)
-    plt.grid()
+    plt.grid(b=True)
     plt.ylim([0, 1.05])
-    plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., prop={'size': 12})
+    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+               ncol=2, mode="expand", borderaxespad=0.)
     plt.tight_layout()
     return fig
 
@@ -180,7 +183,7 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
     lower = np.round(median - lower_percentile, 2)
     median = np.round(median, 2)
     plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
-    plt.grid()
+    plt.grid(b=True)
     plt.ylim(y_range)
     plt.tight_layout()
     return fig
@@ -207,7 +210,7 @@ def _1d_comparison_histogram_plot(param, samples, colors,
         label to prepend the approximant in the legend
     """
     logger.debug("Generating the 1d comparison histogram plot for %s" % (param))
-    fig = plt.figure(figsize=(11, 6))
+    fig = plt.figure(figsize=(8, 6))
     for num, i in enumerate(samples):
         plt.hist(i, histtype="step", bins=50, color=colors[num],
                  label=labels[num], linewidth=2.0, density=True)
@@ -217,9 +220,44 @@ def _1d_comparison_histogram_plot(param, samples, colors,
                     linewidth=2.0)
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
-    plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., prop={'size': 12})
-    plt.grid()
+    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+               ncol=2, mode="expand", borderaxespad=0.)
+    plt.grid(b=True)
     plt.tight_layout()
+    return fig
+
+
+def _comparison_box_plot(param, samples, colors, latex_label, labels):
+    """Generate a box plot to compare 1d_histograms for a given parameter
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    approximants: list
+        list of approximant names that you would like to compare
+    samples: 2d list
+        list of samples for param for each approximant
+    colors: list
+        list of colors to be used to differentiate the different approximants
+    latex_label: str
+        latex label for param
+    approximant_labels: list, optional
+        label to prepend the approximant in the legend
+    """
+    logger.debug("Generating the 1d comparison boxplot plot for %s" % (param))
+    fig = plt.figure()
+    maximum = np.max([np.max(i) for i in samples])
+    minimum = np.min([np.min(i) for i in samples])
+    middle = (maximum + minimum) * 0.5
+    plt.boxplot(samples, widths=0.2, vert=False, whis=np.inf, labels=labels)
+    for num, i in enumerate(labels):
+        plt.annotate(i, xy=(middle, 1), xytext=(middle, num + 1. + 0.2),
+                     ha="center")
+    plt.yticks([])
+    plt.xlabel(latex_label, fontsize=16)
+    plt.tight_layout()
+    plt.grid(b=True)
     return fig
 
 

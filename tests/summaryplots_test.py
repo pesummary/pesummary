@@ -147,6 +147,9 @@ class TestPlotGeneration(object):
                           './.outdir_comparison/plots/combined_cdf_H1_optimal_snr.png',
                           './.outdir_comparison/plots/combined_cdf_log_likelihood.png',
                           './.outdir_comparison/plots/combined_cdf_mass_1.png',
+                          './.outdir_comparison/plots/combined_boxplot_H1_optimal_snr.png',
+                          './.outdir_comparison/plots/combined_boxplot_log_likelihood.png',
+                          './.outdir_comparison/plots/combined_boxplot_mass_1.png',
                           './.outdir_comparison/plots/corner']
         assert all(i == j for i,j in zip(sorted(plots), sorted(expected_plots)))
 
@@ -172,7 +175,6 @@ class TestPlotGeneration(object):
         inputs = GWInput(opts)
         webpage = GWPlotGeneration(inputs) 
         plots = sorted(glob("./.outdir_add_to_existing/plots/*"))
-        print(plots)
         expected_plots = ['./.outdir_add_to_existing/plots/H1_0_1d_posterior_H1_optimal_snr.png',
                           './.outdir_add_to_existing/plots/H1_0_1d_posterior_log_likelihood.png',
                           './.outdir_add_to_existing/plots/H1_0_1d_posterior_mass_1.png',
@@ -183,7 +185,7 @@ class TestPlotGeneration(object):
                           './.outdir_add_to_existing/plots/H1_0_cdf_log_likelihood.png',
                           './.outdir_add_to_existing/plots/H1_0_cdf_mass_1.png',
                           './.outdir_add_to_existing/plots/H1_0_sample_evolution_H1_optimal_snr.png',
-                          './.outdir_add_to_existing/plots/H1_0_sample_evolution_log_likelihood.png',
+                          './.outdir_add_to_existing/plots/H1_0_sample_evolution_log_likelihood.png', 
                           './.outdir_add_to_existing/plots/H1_0_sample_evolution_mass_1.png',
                           './.outdir_add_to_existing/plots/H1_1d_posterior_H1_optimal_snr.png',
                           './.outdir_add_to_existing/plots/H1_1d_posterior_log_likelihood.png',
@@ -200,6 +202,9 @@ class TestPlotGeneration(object):
                           './.outdir_add_to_existing/plots/combined_1d_posterior_H1_optimal_snr.png',
                           './.outdir_add_to_existing/plots/combined_1d_posterior_log_likelihood.png',
                           './.outdir_add_to_existing/plots/combined_1d_posterior_mass_1.png',
+                          './.outdir_add_to_existing/plots/combined_boxplot_H1_optimal_snr.png',
+                          './.outdir_add_to_existing/plots/combined_boxplot_log_likelihood.png',
+                          './.outdir_add_to_existing/plots/combined_boxplot_mass_1.png',
                           './.outdir_add_to_existing/plots/combined_cdf_H1_optimal_snr.png',
                           './.outdir_add_to_existing/plots/combined_cdf_log_likelihood.png',
                           './.outdir_add_to_existing/plots/combined_cdf_mass_1.png',

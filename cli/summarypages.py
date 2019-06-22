@@ -441,8 +441,13 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                 title="Comparison PDF for %s" % (i),
                 approximant="Comparison")
             html_file.make_banner(approximant="Comparison", key="Comparison")
-            html_file.insert_image(path + "combined_1d_posterior_%s.png" % (i),
-                                   code="changeimage")
+
+            path = self.image_path["other"]
+            contents = [[path + "combined_1d_posterior_%s.png" % (i)],
+                        [path + "combined_cdf_%s.png" % (i),
+                         path + "combined_boxplot_%s.png" % (i)]]
+            html_file.make_table_of_images(
+                contents=contents, rows=1, columns=2, code="changeimage")
             if statistics:
                 table_contents = [
                     [self.labels[i]] + statistics[num][0][i] for i in rows]
@@ -843,8 +848,13 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                 title="Comparison PDF for %s" % (i),
                 approximant="Comparison")
             html_file.make_banner(approximant="Comparison", key="Comparison")
-            html_file.insert_image(path + "combined_1d_posterior_%s.png" % (i),
-                                   code="changeimage")
+            path = self.image_path["other"]
+            contents = [[path + "combined_1d_posterior_%s.png" % (i)],
+                        [path + "combined_cdf_%s.png" % (i),
+                         path + "combined_boxplot_%s.png" % (i)]]
+            html_file.make_table_of_images(
+                contents=contents, rows=1, columns=2, code=None)
+
             if statistics:
                 table_contents = [
                     [self.labels[i]] + statistics[num][0][i] for i in rows]
