@@ -5,6 +5,7 @@
 
 ### Added
 - Generate box plots to compare the different result files
+- Conversion to calculate network SNR
 
 ## 0.1.7 [15/06/2019]
 

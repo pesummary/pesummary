@@ -426,7 +426,7 @@ class TestPostProcessing(object):
 
     def test_injection_data(self):
         assert sorted(list(self.postprocessing.injection_data[0].keys())) == [
-            'H1_optimal_snr', 'log_likelihood', 'mass_1']
+            'H1_optimal_snr', 'log_likelihood', 'mass_1', "network_optimal_snr"]
 
     def test_maxL_samples(self):
         assert self.postprocessing.maxL_samples[0]["mass_1"] == 20.0
@@ -443,7 +443,7 @@ class TestPostProcessing(object):
         inputs = GWInput(opts)
         postprocessing = GWPostProcessing(inputs)
         assert sorted(postprocessing.same_parameters) == [
-            'H1_optimal_snr', 'log_likelihood', 'mass_1']
+            'H1_optimal_snr', 'log_likelihood', 'mass_1', "network_optimal_snr"]
 
     def test_label_to_prepend_approximant(self):
         assert self.postprocessing.label_to_prepend_approximant == [None]

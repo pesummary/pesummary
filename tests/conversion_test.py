@@ -231,6 +231,15 @@ class TestConversions(object):
             self.opts.lambda1, self.opts.mass1, self.opts.mass2)
         assert np.round(lambda2, 4) == 16000.0
 
+    def test_network_snr(self):
+        snr_H1 = snr_L1 = snr_V1 = np.array([2., 3.])
+        assert network_snr([snr_H1[0], snr_L1[0], snr_V1[0]]) == np.sqrt(3) * 2
+        print(snr_H1)
+        network = network_snr([snr_H1, snr_L1, snr_V1])
+        print(network)
+        assert network[0] == np.sqrt(3) * 2
+        assert network[1] == np.sqrt(3) * 3
+
     def test_one_format(self):
         path = "./tests/files/GW150914_result.h5"
         output = one_format.GWOneFormat(path, None)
