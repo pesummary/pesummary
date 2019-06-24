@@ -157,3 +157,20 @@ class ExistingFile(object):
 
         with open("%s/%s_config.ini" % (outdir, label), "w") as configfile:
             config.write(configfile)
+
+    def to_bilby(self):
+        """Convert a PESummary metafile to a bilby results object
+        """
+        from bilby.core.result import Result
+        from pandas import DataFrame
+
+        objects = {}
+        for num, i in enumerate(self.existing_labels):
+            posterior_data_frame = DataFrame(
+                self.existing_samples[num], columns=self.existing_parameters[num])
+            bilby_object = Result(
+                search_parameter_keys=self.existing_parameters[num],
+                posterior=posterior_data_frame, label="pesummary_%s" % (i),
+                samples=self.existing_samples[num])
+            objects[i] = bilby_object
+        return objects

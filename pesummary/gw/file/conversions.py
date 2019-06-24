@@ -322,3 +322,17 @@ def lambda2_from_lambda1(lambda1, mass1, mass2):
     q = q_from_m1_m2(mass1, mass2)
     lambda2 = lambda1 / q**5
     return lambda2
+
+
+def network_snr(snrs):
+    """Return the network SNR for N IFOs
+
+    Parameters
+    ----------
+    snrs: list
+        list of numpy.array objects containing the snrs samples for a particular
+        IFO
+    """
+    squares = [i**2 for i in snrs]
+    network_snr = np.sqrt(np.sum(squares, axis=0))
+    return network_snr

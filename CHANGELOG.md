@@ -1,8 +1,13 @@
 ## 0.1.8 [unreleased]
 
 ### Changed
+- Comparison pages: Display both the CDF and box plots on the comparison pages
 
 ### Added
+- Generate box plots to compare the different result files
+- Conversion to calculate network SNR
+- Functions to convert the PESummary metafile to either a bilby results object
+  or save as a lalinference results file
 
 ## 0.1.7 [15/06/2019]
 

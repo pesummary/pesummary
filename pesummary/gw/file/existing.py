@@ -94,3 +94,61 @@ class GWExistingFile(ExistingFile):
     @property
     def existing_injection(self):
         return self.existing_data[7]
+
+    @property
+    def existing_detectors(self):
+        det_list = []
+        for i in self.existing_parameters:
+            detectors = []
+            for param in i:
+                if "_optimal_snr" in param and param != "network_optimal_snr":
+                    detectors.append(param.split("_optimal_snr")[0])
+            if detectors == []:
+                detectors.append(None)
+            det_list.append(detectors)
+        return det_list
+
+    def to_bilby(self):
+        """Convert a PESummary metafile to a bilby results object
+        """
+        from bilby.gw.result import CompactBinaryCoalescenceResult
+        from pandas import DataFrame
+
+        objects = {}
+        for num, i in enumerate(self.existing_labels):
+            posterior_data_frame = DataFrame(
+                self.existing_samples[num], columns=self.existing_parameters[num])
+            meta_data = {
+                "likelihood": {
+                    "waveform_arguments": {
+                        "waveform_approximant": self.existing_approximant[num]},
+                    "interferometers": self.existing_detectors[num]}}
+            bilby_object = CompactBinaryCoalescenceResult(
+                search_parameter_keys=self.existing_parameters[num],
+                posterior=posterior_data_frame, label="pesummary_%s" % (i),
+                samples=self.existing_samples[num],
+                meta_data=meta_data)
+            objects[i] = bilby_object
+        return objects
+
+    def to_lalinference(self, outdir="./"):
+        """Save a PESummary metafile as a lalinference hdf5 file
+        """
+        import numpy as np
+        import h5py
+
+        for num, i in enumerate(self.existing_labels):
+            lalinference_samples = np.array(
+                [tuple(i) for i in self.existing_samples[num]],
+                dtype=[(i, '<f4') for i in self.existing_parameters[num]])
+
+            try:
+                f = h5py.File("%s/lalinference_file_%s.hdf5" % (outdir, i), "w")
+            except Exception:
+                raise Exception("Please make sure you have write permission in "
+                                "%s" % (outdir))
+            lalinference = f.create_group("lalinference")
+            sampler = lalinference.create_group("lalinference_sampler")
+            samples = sampler.create_dataset(
+                "posterior_samples", data=lalinference_samples)
+            f.close()

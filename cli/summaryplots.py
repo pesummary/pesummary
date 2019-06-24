@@ -219,6 +219,11 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
                     latex_labels[j], self.labels)
                 fig.savefig(self.savedir + "combined_cdf_%s" % (j))
                 plt.close()
+                fig = core._comparison_box_plot(
+                    j, param_samples, self.colors, latex_labels[j],
+                    self.labels)
+                fig.savefig(self.savedir + "combined_boxplot_%s" % (j))
+                plt.close()
             except Exception as e:
                 logger.info("Failed to generate comparison plots for %s "
                             "because %s" % (j, e))

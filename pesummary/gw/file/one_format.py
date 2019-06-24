@@ -792,7 +792,7 @@ class GWOneFormat(OneFormat):
     def _time_in_each_ifo(self):
         detectors = []
         for i in self.parameters:
-            if "optimal_snr" in i:
+            if "optimal_snr" in i and i != "network_optimal_snr":
                 det = i.split("_optimal_snr")[0]
                 detectors.append(det)
 
@@ -831,6 +831,20 @@ class GWOneFormat(OneFormat):
         delta_lambda = con.delta_lambda_from_lambda1_lambda2(
             samples[0], samples[1], samples[2], samples[3])
         self.append_data(delta_lambda)
+
+    def _optimal_network_snr(self):
+        snrs = [i for i in self.parameters if "_optimal_snr" in i]
+        samples = self.specific_parameter_samples(snrs)
+        self.parameters.append("network_optimal_snr")
+        network_snr = con.network_snr(samples)
+        self.append_data(network_snr)
+
+    def _matched_filter_network_snr(self):
+        snrs = [i for i in self.parameters if "_matched_filter_snr" in i]
+        samples = self.specific_parameter_samples(snrs)
+        self.parameters.append("network_matched_filter_snr")
+        network_snr = con.network_snr(samples)
+        self.append_data(network_snr)
 
     def generate_all_posterior_samples(self):
         logger.debug("Starting to generate all derived posteriors")
@@ -925,6 +939,12 @@ class GWOneFormat(OneFormat):
         location = ["geocent_time", "ra", "dec"]
         if all(i in self.parameters for i in location):
             self._time_in_each_ifo()
+        if any("_optimal_snr" in i for i in self.parameters):
+            if "network_optimal_snr" not in self.parameters:
+                self._optimal_network_snr()
+        if any("_matched_filter_snr" in i for i in self.parameters):
+            if "network_matched_filter_snr" not in self.parameters:
+                self._matched_filter_network_snr()
 
         if "reference_frequency" in self.parameters:
             ind = self.parameters.index("reference_frequency")
