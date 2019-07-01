@@ -142,4 +142,5 @@ standard_names = {"logL": "log_likelihood",
                   "lambda_tilde": "lambda_tilde",
                   "lambdaT": "lambda_tilde",
                   "delta_lambda": "delta_lambda",
+                  "delta_lambda_tilde": "delta_lambda",
                   "dLambdaT": "delta_lambda"}
