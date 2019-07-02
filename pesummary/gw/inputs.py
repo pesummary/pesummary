@@ -99,6 +99,8 @@ class GWInput(Input):
         self.approximant = self.opts.approximant
         self.sensitivity = self.opts.sensitivity
         self.no_ligo_skymap = self.opts.no_ligo_skymap
+        self.multi_threading_for_skymap = self.opts.multi_threading_for_skymap
+        self.nsamples_for_skymap = self.opts.nsamples_for_skymap
         self.psds = self.opts.psd
         self.gwdata = self.opts.gwdata
         self.existing_labels = []
@@ -201,6 +203,16 @@ class GWInput(Input):
             f = StrainFile(gwdata)
             timeseries = f.return_timeseries()
             self._gwdata = timeseries
+
+    @property
+    def nsamples_for_skymap(self):
+        return self._nsamples_for_skymap
+
+    @nsamples_for_skymap.setter
+    def nsamples_for_skymap(self, nsamples_for_skymap):
+        self._nsamples_for_skymap = nsamples_for_skymap
+        if nsamples_for_skymap:
+            self._nsamples_for_skymap = int(nsamples_for_skymap)
 
     def _check_psd_extension(self, file):
         """Check that the file extension on the psd file can be read and
@@ -571,6 +583,8 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         else:
             self.calibration_list = True
         self.no_ligo_skymap = inputs.no_ligo_skymap
+        self.multi_threading_for_skymap = inputs.multi_threading_for_skymap
+        self.nsamples_for_skymap = inputs.nsamples_for_skymap
 
         self.grab_data_map = {"existing_file": self._data_from_existing_file,
                               "standard_format": self._data_from_standard_format}

@@ -88,6 +88,14 @@ def insert_gwspecific_option_group(parser):
                           help="channels and paths to strain cache files",
                           action=DictionaryAction, metavar="CHANNEL:CACHEFILE",
                           nargs="+", default=None)
+    gw_group.add_argument("--multi_threading_for_skymap", action="store_true",
+                          help=("use multi-threading to speed up generation of "
+                                "ligo.skymap"), default=False)
+    gw_group.add_argument("--nsamples_for_skymap", dest="nsamples_for_skymap",
+                          help=("The number of samples used to generate the "
+                                "ligo.skymap. These samples will be randomly "
+                                "drawn from the posterior distributions"),
+                          default=None)
     gw_group.add_argument("--no_ligo_skymap", action="store_true",
                           help="do not generate a skymap with ligo.skymap",
                           default=False)
