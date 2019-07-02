@@ -473,15 +473,15 @@ def _default_skymap_plot(ra, dec, **kwargs):
 
     ax.pcolormesh(X2, Y2, H2.T, vmin=0., vmax=H2.T.max(), cmap="cylon")
     cs = plt.contour(X2, Y2, H2.T, V, colors="k", linewidths=0.5)
-
-    fmt = {l: s for l, s in zip(cs.levels, [r"$50\%$", r"$90\%$"])}
+    fmt = {l: s for l, s in zip(cs.levels, [r"$90\%$", r"$50\%$"])}
     plt.clabel(cs, fmt=fmt, fontsize=8, inline=True)
-
     text = []
     for i, j in zip(cs.collections, [90, 50]):
-        x = i.get_paths()[0].vertices[:, 0]
-        y = i.get_paths()[0].vertices[:, 1]
-        area = 0.5 * np.sum(y[:-1] * np.diff(x) - x[:-1] * np.diff(y))
+        area = 0.
+        for k in i.get_paths():
+            x = k.vertices[:, 0]
+            y = k.vertices[:, 1]
+            area += 0.5 * np.sum(y[:-1] * np.diff(x) - x[:-1] * np.diff(y))
         area = int(np.abs(area) * (180 / np.pi) * (180 / np.pi))
         text.append(u'{:d}% area: {:d} deg²'.format(
             int(j), area, grouping=True))
