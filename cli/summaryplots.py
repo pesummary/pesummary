@@ -26,7 +26,7 @@ from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.core.file.existing import ExistingFile
 from pesummary.gw.file.existing import GWExistingFile
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, resample_posterior_distribution
 from pesummary.core.command_line import command_line
 from pesummary.core.inputs import Input
 from pesummary.gw.inputs import GWInput
@@ -432,7 +432,14 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         idx: int
             the index of the results file that you wish to analyse
         """
-        fig = gw._ligo_skymap_plot(ra, dec, savedir=self.webdir + "/samples")
+        downsampled = False
+        if self.nsamples_for_skymap:
+            ra, dec = resample_posterior_distribution(
+                [ra, dec], self.nsamples_for_skymap)
+            downsampled = True
+        fig = gw._ligo_skymap_plot(ra, dec, savedir=self.webdir + "/samples",
+                                   nprocess=self.multi_threading_for_skymap,
+                                   downsampled=downsampled)
         fig.savefig(self.savedir + "/%s_skymap.png" % (
             self.labels[idx]))
         plt.close()
