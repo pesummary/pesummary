@@ -8,6 +8,8 @@
 - Conversion to calculate network SNR
 - Functions to convert the PESummary metafile to either a bilby results object
   or save as a lalinference results file
+- Arguments `--nsamples_for_skymap` and `--multi_threading_for_skymap` to
+  reduce the runtime of ligo.skymap
 
 ## 0.1.7 [15/06/2019]
 

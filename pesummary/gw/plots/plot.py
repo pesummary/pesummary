@@ -259,7 +259,7 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     plt.yscale("log")
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
-    plt.grid()
+    plt.grid(b=True)
     plt.legend(loc="best")
     plt.tight_layout()
     return fig
@@ -326,7 +326,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
                  color=colors[num], label=labels[num], linewidth=2.0)
     plt.xscale("log")
     plt.yscale("log")
-    plt.grid()
+    plt.grid(b=True)
     plt.legend(loc="best")
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
@@ -334,7 +334,8 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
     return fig
 
 
-def _ligo_skymap_plot(ra, dec, savedir="./", **kwargs):
+def _ligo_skymap_plot(ra, dec, savedir="./", nprocess=1, downsampled=False,
+                      **kwargs):
     """Plot the sky location of the source for a given approximant using the
     ligo.skymap package
 
@@ -346,6 +347,10 @@ def _ligo_skymap_plot(ra, dec, savedir="./", **kwargs):
         list of samples for declination
     savedir: str
         path to the directory where you would like to save the output files
+    nprocess: Bool
+        Boolean for whether to use multithreading or not
+    downsampled: Bool
+        Boolean for whether the samples have been downsampled or not
     kwargs: dict
         optional keyword arguments
     """
@@ -361,7 +366,7 @@ def _ligo_skymap_plot(ra, dec, savedir="./", **kwargs):
 
     fig = plt.figure()
     pts = np.column_stack((ra, dec))
-    skypost = Clustered2DSkyKDE(pts, trials=5)
+    skypost = Clustered2DSkyKDE(pts, trials=5, multiprocess=nprocess)
 
     hpmap = skypost.as_healpix()
     io.write_sky_map("./skymap.fits", hpmap, nest=True)
@@ -379,7 +384,9 @@ def _ligo_skymap_plot(ra, dec, savedir="./", **kwargs):
     probperdeg2 = skymap / deg2perpix
 
     ax = plt.axes(projection='astro hours mollweide')
-    ax.grid()
+    ax.grid(b=True)
+    if downsampled:
+        ax.set_title("Downsampled to %s" % (len(ra)), fontdict={'fontsize': 11})
 
     vmax = probperdeg2.max()
     ax.imshow_hpx((probperdeg2, 'ICRS'), nested=True, vmin=0.,
@@ -388,6 +395,14 @@ def _ligo_skymap_plot(ra, dec, savedir="./", **kwargs):
     cs = ax.contour_hpx((cls, 'ICRS'), nested=True, colors='k',
                         linewidths=0.5, levels=[50, 90])
     plt.clabel(cs, fmt=r'%g\%%', fontsize=6, inline=True)
+    text = []
+    pp = np.round([50, 90]).astype(int)
+    ii = np.round(
+        np.searchsorted(np.sort(cls), [50, 90]) * deg2perpix).astype(int)
+    for i, p in zip(ii, pp):
+        text.append(u'{:d}% area: {:d} deg²'.format(p, i, grouping=True))
+    ax.text(1, 1.05, '\n'.join(text), transform=ax.transAxes, ha='right',
+            fontsize=10)
     plot.outline_text(ax)
     return fig
 
@@ -410,8 +425,8 @@ def _default_skymap_plot(ra, dec, **kwargs):
     ax = plt.subplot(111, projection="mollweide",
                      facecolor=(1.0, 0.939165516411, 0.880255669068))
     ax.cla()
-    ax.title.set_text("Preliminary")
-    ax.grid()
+    ax.set_title("Preliminary", fontdict={'fontsize': 11})
+    ax.grid(b=True)
     ax.set_xticklabels([
         r"$2^{h}$", r"$4^{h}$", r"$6^{h}$", r"$8^{h}$", r"$10^{h}$",
         r"$12^{h}$", r"$14^{h}$", r"$16^{h}$", r"$18^{h}$", r"$20^{h}$",
@@ -458,10 +473,20 @@ def _default_skymap_plot(ra, dec, **kwargs):
 
     ax.pcolormesh(X2, Y2, H2.T, vmin=0., vmax=H2.T.max(), cmap="cylon")
     cs = plt.contour(X2, Y2, H2.T, V, colors="k", linewidths=0.5)
-
-    fmt = {l: s for l, s in zip(cs.levels, [r"$50\%$", r"$90\%$"])}
+    fmt = {l: s for l, s in zip(cs.levels, [r"$90\%$", r"$50\%$"])}
     plt.clabel(cs, fmt=fmt, fontsize=8, inline=True)
-
+    text = []
+    for i, j in zip(cs.collections, [90, 50]):
+        area = 0.
+        for k in i.get_paths():
+            x = k.vertices[:, 0]
+            y = k.vertices[:, 1]
+            area += 0.5 * np.sum(y[:-1] * np.diff(x) - x[:-1] * np.diff(y))
+        area = int(np.abs(area) * (180 / np.pi) * (180 / np.pi))
+        text.append(u'{:d}% area: {:d} deg²'.format(
+            int(j), area, grouping=True))
+    ax.text(1, 1.05, '\n'.join(text[::-1]), transform=ax.transAxes, ha='right',
+            fontsize=10)
     xticks = np.arange(-np.pi, np.pi + np.pi / 6, np.pi / 4)
     ax.set_xticks(xticks)
     ax.set_yticks([-np.pi / 3, -np.pi / 6, 0, np.pi / 6, np.pi / 3])
@@ -469,7 +494,7 @@ def _default_skymap_plot(ra, dec, **kwargs):
     ax.set_xticklabels(labels[::-1], fontsize=10)
     ax.set_yticklabels([r"$-60^\degree$", r"$-30^\degree$", r"$0^\degree$",
                         r"$30^\degree$", r"$60^\degree$"], fontsize=10)
-    ax.grid()
+    ax.grid(b=True)
     return fig
 
 
@@ -497,7 +522,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
     ax = plt.subplot(111, projection="mollweide",
                      facecolor=(1.0, 0.939165516411, 0.880255669068))
     ax.cla()
-    ax.grid()
+    ax.grid(b=True)
     ax.set_xticklabels([
         r"$2^{h}$", r"$4^{h}$", r"$6^{h}$", r"$8^{h}$", r"$10^{h}$",
         r"$12^{h}$", r"$14^{h}$", r"$16^{h}$", r"$18^{h}$", r"$20^{h}$",
@@ -552,7 +577,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
     ax.set_xticklabels(labels[::-1], fontsize=10)
     ax.set_yticklabels([r"$-60^\degree$", r"$-30^\degree$", r"$0^\degree$",
                         r"$30^\degree$", r"$60^\degree$"], fontsize=10)
-    ax.grid()
+    ax.grid(b=True)
     return fig
 
 
@@ -663,7 +688,7 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
     fig = plt.figure()
     ax = plt.subplot(111, projection="hammer")
     ax.cla()
-    ax.grid()
+    ax.grid(b=True)
     plt.pcolormesh(X, Y, N)
     ax.set_xticklabels([
         r"$22^{h}$", r"$20^{h}$", r"$18^{h}$", r"$16^{h}$", r"$14^{h}$",
@@ -731,7 +756,7 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
         plt.xlim([t_start - 3, t_start + 0.5])
     plt.xlabel(r"Time $[s]$", fontsize=16)
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
-    plt.grid()
+    plt.grid(b=True)
     plt.legend(loc="best")
     plt.tight_layout()
     return fig
@@ -801,7 +826,7 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
     plt.xlabel(r"Time $[s]$", fontsize=16)
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
     plt.xlim([t_start - 3, t_start + 0.5])
-    plt.grid()
+    plt.grid(b=True)
     plt.legend(loc="best")
     plt.tight_layout()
     return fig

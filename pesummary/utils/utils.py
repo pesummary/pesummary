@@ -17,7 +17,37 @@ import os
 import sys
 import logging
 
+import numpy as np
+from scipy.integrate import cumtrapz
+from scipy.interpolate import interp1d
 import h5py
+
+
+def resample_posterior_distribution(posterior, nsamples):
+    """Randomly draw nsamples from the posterior distribution
+
+    Parameters
+    ----------
+    posterior: ndlist
+        nd list of posterior samples. If you only want to resample one
+        posterior distribution then posterior=[[1., 2., 3., 4.]]. For multiple
+        posterior distributions then posterior=[[1., 2., 3., 4.], [1., 2., 3.]]
+    nsamples: int
+        number of samples that you wish to randomly draw from the distribution
+    """
+    if len(posterior) == 1:
+        n, bins = np.histogram(posterior, bins=50)
+        n = np.array([0] + [i for i in n])
+        cdf = cumtrapz(n, bins, initial=0)
+        cdf /= cdf[-1]
+        icdf = interp1d(cdf, bins)
+        samples = icdf(np.random.rand(nsamples))
+    else:
+        posterior = np.array([i for i in posterior])
+        keep_idxs = np.random.choice(
+            len(posterior[0]), nsamples, replace=False)
+        samples = [i[keep_idxs] for i in posterior]
+    return samples
 
 
 def check_condition(condition, error_message):
