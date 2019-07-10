@@ -651,15 +651,15 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                 images = [y for x in image_contents for y in x]
                 html_file.make_modal_carousel(images=images)
         else:
-            if self.gwdata and self.approximant:
+            if os.path.isfile(path + "%s_strain.png" % (self.labels[0])):
                 image_contents.append(path + "%s_strain.png" % (self.labels[0]))
-            if self.approximant:
+            if os.path.isfile(path + "%s_waveform_timedoain.png" % (self.labels[0])):
                 image_contents.append(path + "%s_waveform_timedomain.png" % (
                     self.labels[0]))
-            if self.psds:
+            if os.path.isfile(path + "%s_psd_plot.png" % (self.labels[0])):
                 image_contents.append(path + "%s_psd_plot.png" % (
                     self.labels[0]))
-            if self.calibration[0] is not None:
+            if os.path.isfile(path + "%s_calibration_plot.png" % (self.labels[0])):
                 image_contents.append(path + "%s_calibration_plot.png" % (
                     self.labels[0]))
             image_contents = [image_contents]
