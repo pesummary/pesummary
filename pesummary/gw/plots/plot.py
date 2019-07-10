@@ -986,7 +986,7 @@ def _strain_plot(strain, maxL_params, **kwargs):
         h_t_time = (h_t_frequency / asd_interp).ifft()
         h_t_time = h_t_time.highpass(30)
         h_t_time = h_t_time.lowpass(300)
-        h_t_time.times = [float(np.array(i)) + ifo_time - 1 for i in h_t_time.times]
+        h_t_time.times = [float(np.array(i)) + ifo_time for i in h_t.times]
 
         strain_data_crop = strain_data_time.crop(ifo_time - 0.1, ifo_time + 0.06)
         try:
