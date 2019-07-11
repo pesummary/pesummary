@@ -798,9 +798,9 @@ class GWOneFormat(OneFormat):
 
         samples = self.specific_parameter_samples(["ra", "dec", "geocent_time"])
         for i in detectors:
-            self.parameters.append("%s_time" % (i))
             time = con.time_in_each_ifo(i, samples[0], samples[1], samples[2])
             self.append_data(time)
+            self.parameters.append("%s_time" % (i))
 
     def _lambda1_from_lambda_tilde(self):
         self.parameters.append("lambda_1")
@@ -938,7 +938,11 @@ class GWOneFormat(OneFormat):
 
         location = ["geocent_time", "ra", "dec"]
         if all(i in self.parameters for i in location):
-            self._time_in_each_ifo()
+            try:
+                self._time_in_each_ifo()
+            except Exception as e:
+                logger.warn("Failed to generate posterior samples for the time in each "
+                            "detector because %s" % (e))
         if any("_optimal_snr" in i for i in self.parameters):
             if "network_optimal_snr" not in self.parameters:
                 self._optimal_network_snr()
