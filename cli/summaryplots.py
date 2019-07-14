@@ -91,6 +91,8 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
             self._check_latex_labels(self.parameters[num])
             self.try_to_make_a_plot("corner", num)
             self.try_to_make_a_plot("1d_histogram", num)
+            if self.custom_plotting:
+                self.try_to_make_a_plot("custom", num)
         if self.add_to_existing:
             existing = ExistingFile(self.existing)
             existing_config = glob(self.existing + "/config/*")
@@ -121,7 +123,8 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
         plot_type_dictionary = {"corner": self._corner_plot,
                                 "1d_histogram": self._1d_histogram_plots,
                                 "1d_histogram_comparison":
-                                self._1d_histogram_comparison_plots}
+                                self._1d_histogram_comparison_plots,
+                                "custom": self._custom_plots}
         try:
             plot_type_dictionary[plot_type](idx)
         except Exception as e:
@@ -229,6 +232,29 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
                             "because %s" % (j, e))
                 continue
 
+    def _custom_plots(self, idx):
+        """Generate custom plots according to the passed python file
+
+        Parameters
+        ----------
+        idx: int
+            The index of the results file that you wish to analyse
+        """
+        import importlib
+
+        if self.custom_plotting[0] != "":
+            import sys
+
+            sys.path.append(self.custom_plotting[0])
+        mod = importlib.import_module(self.custom_plotting[1])
+        methods = [getattr(mod, i) for i in mod.__all__]
+
+        for num, i in enumerate(methods):
+            fig = i(self.parameters[idx], self.samples[idx])
+            fig.savefig(self.savedir + "%s_custom_plotting_%s" % (
+                self.labels[idx], num))
+            plt.close()
+
 
 class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
     """Class to generate all available plots for each results file.
@@ -270,6 +296,8 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             if self.gwdata:
                 self.try_to_make_a_plot("data", num)
             self.try_to_make_a_plot("1d_histogram", num)
+            if self.custom_plotting:
+                self.try_to_make_a_plot("custom", num)
         if self.sensitivity:
             self.try_to_make_a_plot("sensitivity", 0)
         if self.add_to_existing:
@@ -324,7 +352,8 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
                                 self._skymap_comparison_plot,
                                 "waveform_comparison":
                                 self._waveform_comparison_plot,
-                                "sensitivity": self._sensitivity_plot}
+                                "sensitivity": self._sensitivity_plot,
+                                "custom": self._custom_plots}
         try:
             plot_type_dictionary[plot_type](idx)
         except Exception as e:

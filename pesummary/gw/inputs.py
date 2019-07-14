@@ -89,6 +89,7 @@ class GWInput(Input):
         self.config = self.opts.config
         self.compare_results = self.opts.compare_results
         self.result_files = self.opts.samples
+        self.custom_plotting = self.opts.custom_plotting
         self.email = self.opts.email
         self.add_to_existing = self.opts.add_to_existing
         self.dump = self.opts.dump
@@ -548,6 +549,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.webdir = inputs.webdir
         self.baseurl = inputs.baseurl
         self.result_files = inputs.result_files
+        self.custom_plotting = inputs.custom_plotting
         self.dump = inputs.dump
         self.email = inputs.email
         self.user = inputs.user

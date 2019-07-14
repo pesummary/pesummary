@@ -10,6 +10,8 @@
   or save as a lalinference results file
 - Arguments `--nsamples_for_skymap` and `--multi_threading_for_skymap` to
   reduce the runtime of ligo.skymap
+- Argument `--custom_plotting` which allows the user to pass a python file
+  containing custom plots
 
 ## 0.1.7 [15/06/2019]
 
