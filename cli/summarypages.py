@@ -312,6 +312,19 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                 i, title="%s Summary page" % (i),
                 background_colour=self.colors[num], approximant=i)
             html_file.make_banner(approximant=i, key=i)
+            if self.custom_plotting:
+                from glob import glob
+
+                custom_plots = glob(
+                    "%s/plots/%s_custom_plotting_*" % (self.webdir, i))
+                path = self.image_path["other"]
+                for num, i in enumerate(custom_plots):
+                    custom_plots[num] = path + i.split("/")[-1]
+                image_contents = [
+                    custom_plots[i:4 + i] for i in range(0, len(custom_plots), 4)]
+                html_file.make_table_of_images(contents=image_contents)
+                images = [y for x in image_contents for y in x]
+                html_file.make_modal_carousel(images=images)
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
@@ -702,6 +715,21 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             html_file.make_table_of_images(contents=image_contents)
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images)
+
+            if self.custom_plotting:
+                from glob import glob
+
+                custom_plots = glob(
+                    "%s/plots/%s_custom_plotting_*" % (self.webdir, i))
+                path = self.image_path["other"]
+                for num, i in enumerate(custom_plots):
+                    custom_plots[num] = path + i.split("/")[-1]
+                image_contents = [
+                    custom_plots[i:4 + i] for i in range(0, len(custom_plots), 4)]
+                html_file.make_table_of_images(contents=image_contents)
+                images = [y for x in image_contents for y in x]
+                html_file.make_modal_carousel(images=images)
+
             table_contents = []
             for j in contents:
                 one_approx_content = [j[0]] + [j[k * len(self.result_files)

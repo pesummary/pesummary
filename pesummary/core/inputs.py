@@ -92,6 +92,7 @@ class Input(object):
         self.config = self.opts.config
         self.compare_results = self.opts.compare_results
         self.result_files = self.opts.samples
+        self.custom_plotting = self.opts.custom_plotting
         self.email = self.opts.email
         self.add_to_existing = self.opts.add_to_existing
         self.dump = self.opts.dump
@@ -203,6 +204,37 @@ class Input(object):
     @property
     def result_files(self):
         return self._result_files
+
+    @property
+    def custom_plotting(self):
+        return self._custom_plotting
+
+    @custom_plotting.setter
+    def custom_plotting(self, custom_plotting):
+        self._custom_plotting = None
+        if custom_plotting:
+            import importlib
+
+            path_to_python_file = "/".join(custom_plotting.split("/")[:-1])
+            python_file = custom_plotting.split("/")[-1].split(".py")[0]
+            if path_to_python_file != "":
+                import sys
+
+                sys.path.append(path_to_python_file)
+            try:
+                mod = importlib.import_module(python_file)
+                try:
+                    methods = mod.__all__
+                    self._custom_plotting = [path_to_python_file, python_file]
+                except Exception:
+                    logger.warn(
+                        "No __all__ in %s. No custom plotting will be done. "
+                        "Please add an __all__ variable in %s for future "
+                        "use" % (python_file, python_file))
+            except Exception as e:
+                logger.warn(
+                    "Failed to import %s because %s. No custom plotting will "
+                    "be done" % (python_file, e))
 
     @property
     def parameters(self):
@@ -535,6 +567,7 @@ class PostProcessing(object):
         self.webdir = inputs.webdir
         self.baseurl = inputs.baseurl
         self.result_files = inputs.result_files
+        self.custom_plotting = inputs.custom_plotting
         self.dump = inputs.dump
         self.email = inputs.email
         self.user = inputs.user
