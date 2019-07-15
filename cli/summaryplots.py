@@ -77,7 +77,7 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
     def _check_latex_labels(parameters):
         for i in parameters:
             if i not in list(latex_labels.keys()):
-                latex_labels[i] = i
+                latex_labels[i] = i.replace("_", " ")
 
     @property
     def savedir(self):
