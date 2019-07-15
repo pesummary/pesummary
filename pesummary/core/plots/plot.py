@@ -44,6 +44,7 @@ def _autocorrelation_plot(param, samples):
     acf = acf[0:N]
     fig = plt.figure()
     plt.plot(acf / acf[0], linestyle=' ', marker='o', markersize=0.5)
+    plt.ticklabel_format(axis="x", style="plain")
     plt.xlabel("lag", fontsize=16)
     plt.ylabel("ACF", fontsize=16)
     plt.tight_layout()
@@ -71,6 +72,7 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
     n_samples = len(samples)
     plt.plot(range(n_samples), samples, linestyle=' ', marker='o',
              markersize=0.5)
+    plt.ticklabel_format(axis="x", style="plain")
     plt.xlabel("samples", fontsize=16)
     plt.ylabel(latex_label, fontsize=16)
     plt.tight_layout()
