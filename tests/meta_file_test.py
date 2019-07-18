@@ -115,7 +115,6 @@ def test_recursively_save_dictionary_to_hdf5_file():
             [0.5, 0.3]
         )
     )
-    
 
 
 class TestMetaFile(object):
@@ -155,7 +154,9 @@ class TestMetaFile(object):
         return path + "/posterior_samples.h5"
 
     def test_meta_file(self):
-        assert self.metafile.meta_file == "./.outdir/samples/posterior_samples.json"
+        expected_sample_file = os.path.abspath(
+            "./.outdir/samples/posterior_samples.json")
+        assert self.metafile.meta_file == expected_sample_file
         parser = command_line()
         insert_gwspecific_option_group(parser)
         default_arguments = [
@@ -168,7 +169,9 @@ class TestMetaFile(object):
         opts = self.parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         metafile = meta_file.GWMetaFile(inputs)
-        assert metafile.meta_file == "./.outdir/samples/posterior_samples.h5"
+        expected_sample_file = os.path.abspath(
+            "./.outdir/samples/posterior_samples.h5")
+        assert metafile.meta_file == expected_sample_file
 
     def test_convert_to_list(self):
          array = [np.array([1,2,3]), np.array([4,5,6])]

@@ -25,8 +25,7 @@ import h5py
 from time import time
 
 import pesummary
-from pesummary.utils.utils import (guess_url, logger,
-                                   rename_group_or_dataset_in_hf5_file)
+from pesummary.utils.utils import guess_url, logger
 from pesummary.utils import utils
 from pesummary.core.file.one_format import OneFormat
 from pesummary.core.file.existing import ExistingFile
@@ -61,24 +60,12 @@ class Input(object):
     config: list
         List containing paths to the configuration files used to generate each
         results files
-    approximant: list
-        List of approximants used in the analysis to generate each results
-        files
     email: str
         The email address to notify when the job has completed
-    sensitivity: Bool
-        Boolean to determine if you wish to plot the sky sensitivity for
-        different detector networks
-    gracedb: str
-        The gracedb of the event that produced the results files
     dump: Bool
         Boolean to determine if you wish to produce a dumped html page layout
-    detectors: list
-        List containing the detectors used to generate each results file
     labels: str
         A label for this summary page
-    psd: str
-        List of the psds used in the analysis
     """
     def __init__(self, opts):
         logger.info("Command line arguments: %s" % (opts))
@@ -147,7 +134,7 @@ class Input(object):
         if not existing:
             self._existing = None
         else:
-            self._existing = existing
+            self._existing = os.path.abspath(existing)
 
     @property
     def webdir(self):
@@ -166,7 +153,7 @@ class Input(object):
                 raise Exception("The directory %s does not "
                                 "exist" % (self.existing))
             entries = glob(self.existing + "/*")
-            if "%s/home.html" % (self.existing) not in entries:
+            if os.path.join(self.existing, "home.html") not in entries:
                 raise Exception("Please give the base directory of an "
                                 "existing output")
             self._webdir = self.existing
@@ -175,7 +162,7 @@ class Input(object):
                 logger.debug("Given web directory does not exist. "
                              "Creating it now")
                 utils.make_dir(webdir)
-            self._webdir = webdir
+            self._webdir = os.path.abspath(webdir)
 
     @property
     def baseurl(self):
@@ -215,8 +202,8 @@ class Input(object):
         if custom_plotting:
             import importlib
 
-            path_to_python_file = "/".join(custom_plotting.split("/")[:-1])
-            python_file = custom_plotting.split("/")[-1].split(".py")[0]
+            path_to_python_file = os.path.dirname(custom_plotting)
+            python_file = os.path.splitext(os.path.basename(custom_plotting))[0]
             if path_to_python_file != "":
                 import sys
 
@@ -250,8 +237,6 @@ class Input(object):
 
     @result_files.setter
     def result_files(self, samples):
-        result_file_list = []
-        parameters_list, samples_list, injection_list = [], [], []
         if not samples:
             raise Exception("Please provide a results file")
         if self.inj_file and len(samples) != len(self.inj_file):
@@ -310,8 +295,11 @@ class Input(object):
         if f.existing_config is not None:
             config = []
             for i in indicies:
-                f.write_config_to_file(label(i), outdir="%s/config" % (webdir))
-                config.append("%s/config/%s_config.ini" % (webdir, label(i)))
+                config_dir = os.path.join(webdir, "config")
+                f.write_config_to_file(label(i), outdir=config_dir)
+                config_file = os.path.join(
+                    config_dir, "{}_config.ini".format(label(i)))
+                config.append(config_file)
         else:
             config = None
 
@@ -380,7 +368,7 @@ class Input(object):
             self._add_to_existing = True
         if add_to_existing and self.existing:
             if self.config:
-                for i in glob(self.existing + "/config/*"):
+                for i in glob(os.path.join(self.existing, "config/*")):
                     self.config.append(i)
             self._add_to_existing = True
 
@@ -467,25 +455,29 @@ class Input(object):
         dirs = ["samples", "plots", "js", "html", "css", "plots/corner",
                 "config"]
         for i in dirs:
-            utils.make_dir(self.webdir + "/%s" % (i))
+            utils.make_dir(os.path.join(self.webdir, i))
 
     def copy_files(self):
         """Copy the relevant files to the web directory.
         """
         logger.info("Copying the files to %s" % (self.webdir))
         path = pesummary.__file__[:-12]
-        scripts = glob(path + "/core/js/*.js")
+        scripts = glob(os.path.join(path, "core/js/*.js"))
         for i in scripts:
-            shutil.copyfile(i, self.webdir + "/js/%s" % (i.split("/")[-1]))
+            shutil.copyfile(i, os.path.join(
+                self.webdir, "js", os.path.basename(i)))
         scripts = glob(path + "/core/css/*.css")
         for i in scripts:
-            shutil.copyfile(i, self.webdir + "/css/%s" % (i.split("/")[-1]))
+            shutil.copyfile(i, os.path.join(
+                self.webdir, "css", os.path.basename(i)))
         if self.config:
             for num, i in enumerate(self.config):
                 if self.webdir not in i:
-                    shutil.copyfile(i, self.webdir + "/config/"
-                                    + self.result_files[num].split("/")[-1] + "_"
-                                    + i.split("/")[-1])
+                    filename = "_".join([
+                        os.path.basename(self.result_files[num]),
+                        os.path.basename(i)])
+                    shutil.copyfile(i, os.path.join(
+                        self.webdir, "config", filename))
 
     def convert_to_standard_format(self, results_file, injection_file=None,
                                    config_file=None):
@@ -512,11 +504,11 @@ class Input(object):
         return parameters, samples, injection
 
     def _default_labels(self):
-        """Return the defaut labels given your detector network.
+        """Return the default labels given your detector network.
         """
         label_list = []
         for num, i in enumerate(self.result_files):
-            file_name = ".".join(i.split("/")[-1].split(".")[:-1])
+            file_name = os.path.splitext(os.path.basename(i))[0]
             label_list.append("%s_%s" % (round(time()), file_name))
 
         duplicates = dict(set(
