@@ -138,7 +138,8 @@ class TestInputExceptions(object):
         with pytest.raises(Exception) as info:
             opts = self.parser.parse_args(['--existing_webdir', './.existing'])
             x = GWInput(opts)
-        assert "The directory ./.existing does not exist" in str(info.value)
+        dir_name = os.path.abspath('./.existing')
+        assert "The directory {} does not exist".format(dir_name) in str(info.value)
 
     def test_not_base_of_existing_directory(self):
         if os.path.isdir("./.existing2"):
@@ -234,7 +235,7 @@ class TestInput(object):
         self.inputs = GWInput(self.opts)
 
     def test_webdir(self):
-        assert self.inputs.webdir == "./.outdir"
+        assert self.inputs.webdir == os.path.abspath("./.outdir")
 
     def test_samples(self):
         assert self.inputs.result_files == ["./tests/files/bilby_example.h5"]
@@ -246,7 +247,7 @@ class TestInput(object):
         assert self.inputs.existing == None
 
     def test_baseurl(self):
-        assert self.inputs.baseurl == "https://./.outdir"
+        assert self.inputs.baseurl == "https://" + os.path.abspath("./.outdir")
 
     def test_inj_file(self):
         assert self.inputs.inj_file == [None]
