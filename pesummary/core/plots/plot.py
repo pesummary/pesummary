@@ -167,7 +167,7 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
     if np.ptp(samples) == 0:
         plt.axvline(samples[0], color='b')
     else:
-        plt.hist(samples, histtype="step", bins=50, color='b')
+        plt.hist(samples, histtype="step", bins=50, color='b', density=True)
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
     upper_percentile = np.percentile(samples, 90)
