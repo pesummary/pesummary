@@ -95,10 +95,7 @@ def _1d_cdf_plot(param, samples, latex_label):
     """
     logger.debug("Generating the 1d CDF for %s" % (param))
     fig = plt.figure()
-    n, bins, patches = plt.hist(samples, bins=50, alpha=0)
-    cdf = np.cumsum(n)
-    cdf = np.array([float(i) for i in cdf])
-    cdf /= cdf[-1]
+    samples.sort()
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Cumulative Density Function", fontsize=16)
     upper_percentile = np.percentile(samples, 90)
@@ -108,7 +105,7 @@ def _1d_cdf_plot(param, samples, latex_label):
     lower = np.round(median - lower_percentile, 2)
     median = np.round(median, 2)
     plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
-    plt.plot(bins[1:], cdf, color='b')
+    plt.plot(samples, np.linspace(0, 1, len(samples)), color='b')
     plt.grid(b=True)
     plt.ylim([0, 1.05])
     plt.tight_layout()
@@ -137,11 +134,8 @@ def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels):
     logger.debug("Generating the 1d comparison CDF for %s" % (param))
     fig = plt.figure(figsize=(8, 6))
     for num, i in enumerate(samples):
-        n, bins, patches = plt.hist(i, bins=50, alpha=0)
-        cdf = np.cumsum(n)
-        cdf = np.array([float(i) for i in cdf])
-        cdf /= cdf[-1]
-        plt.plot(bins[1:], cdf, color=colors[num], linewidth=2.0,
+        i.sort()
+        plt.plot(i, np.linspace(0, 1, len(i)), color=colors[num],
                  label=labels[num])
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Cumulative Density Function", fontsize=16)
@@ -170,23 +164,24 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
     """
     logger.debug("Generating the 1d histogram plot for %s" % (param))
     fig = plt.figure()
-    n, bins, patches = plt.hist(samples, histtype="step", bins=50, color='b')
+    if np.ptp(samples) == 0:
+        plt.axvline(samples[0], color='b')
+    else:
+        plt.hist(samples, histtype="step", bins=50, color='b')
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
     upper_percentile = np.percentile(samples, 90)
     lower_percentile = np.percentile(samples, 10)
-    y_range = [0, np.max(n) + 0.1 * np.max(n)]
     if inj_value:
-        plt.plot([inj_value] * 2, y_range, color='r', linestyle='--')
-    plt.plot([upper_percentile] * 2, y_range, color='b', linestyle='--')
-    plt.plot([lower_percentile] * 2, y_range, color='b', linestyle='--')
+        plt.axvline(inj_value, color='r', linestyle='--')
+    plt.axvline(upper_percentile, color='b', linestyle='--')
+    plt.axvline(lower_percentile, color='b', linestyle='--')
     median = np.median(samples)
     upper = np.round(upper_percentile - median, 2)
     lower = np.round(median - lower_percentile, 2)
     median = np.round(median, 2)
     plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
     plt.grid(b=True)
-    plt.ylim(y_range)
     plt.tight_layout()
     return fig
 
@@ -214,8 +209,11 @@ def _1d_comparison_histogram_plot(param, samples, colors,
     logger.debug("Generating the 1d comparison histogram plot for %s" % (param))
     fig = plt.figure(figsize=(8, 6))
     for num, i in enumerate(samples):
-        plt.hist(i, histtype="step", bins=50, color=colors[num],
-                 label=labels[num], linewidth=2.0, density=True)
+        if np.ptp(i) == 0:
+            plt.axvline(i[0], color=colors[num], label=labels[num])
+        else:
+            plt.hist(i, histtype="step", bins=50, color=colors[num],
+                     label=labels[num], linewidth=2.0, density=True)
         plt.axvline(x=np.percentile(i, 90), color=colors[num], linestyle='--',
                     linewidth=2.0)
         plt.axvline(x=np.percentile(i, 10), color=colors[num], linestyle='--',
