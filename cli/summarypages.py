@@ -581,8 +581,8 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         if any("snr" in j for j in parameters):
             cond = self._condition(["snr"], [])
             params.append(["SNR", self._partition(cond, parameters)])
-        if any("phase" in j for j in parameters):
-            cond = self._condition(["phase", "likelihood"], [])
+        if any("likelihood" in j for j in parameters):
+            cond = self._condition(["phase", "likelihood", "prior"], [])
             params.append(["others", self._partition(cond, parameters)])
         return params
 

@@ -960,16 +960,6 @@ class GWOneFormat(OneFormat):
             self.parameters.remove(self.parameters[ind])
             for i in self.samples:
                 del i[ind]
-        if "logPrior" in self.parameters:
-            ind = self.parameters.index("logPrior")
-            self.parameters.remove(self.parameters[ind])
-            for i in self.samples:
-                del i[ind]
-        if "log_prior" in self.parameters:
-            ind = self.parameters.index("log_prior")
-            self.parameters.remove(self.parameters[ind])
-            for i in self.samples:
-                del i[ind]
         self._update_injection_data()
 
     def _update_injection_data(self):
