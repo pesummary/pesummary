@@ -21,6 +21,7 @@ class GitInformation(object):
     """
     def __init__(self):
         self.last_commit_info = self.get_last_commit_info()
+        self.last_version = self.get_last_version()
         self.hash = self.last_commit_info[0]
         self.author = self.last_commit_info[1]
         self.status = self.get_status()
@@ -75,6 +76,16 @@ class GitInformation(object):
         if git_diff:
             return "UNCLEAN: Modified working tree"
         return "CLEAN: All modifications committed"
+
+    def get_last_version(self):
+        """Return the last stable version
+        """
+        try:
+            tag_list = self.call(["git", "tag"]).decode("utf-8").split("\n")
+            tag_list = [i for i in tag_list if i.startswith('v')]
+            return tag_list[-1].split("v")[-1]
+        except Exception:
+            return "Not found"
 
 
 class PackageInformation(GitInformation):
