@@ -36,20 +36,25 @@ def write_version_file(version):
     version: str
         the release version of the code that you are running
     """
-    try:
-        git_log = subprocess.check_output(
-            ["git", "log", "-1", "--pretty=format:%h"]).decode("utf-8")
-    except Exception as e:
-        print("Unable to obtain git version information, because %s" % (e))
-        git_log = ""
+    from pesummary.utils.version_helper import GitInformation, PackageInformation
+
+    git_info = GitInformation()
+    packages = PackageInformation()
 
     with open("pesummary/.version", "w") as f:
-        f.writelines(["%s %s" % (version, git_log)])
+        f.writelines(["# Generated automatically by pesummary\n\n"])
+        f.writelines(["last_release = %s\n" % (version)])
+        f.writelines(["\ngit_hash = %s\n" % (git_info.hash)])
+        f.writelines(["git_author = %s\n" % (git_info.author)])
+        f.writelines(["git_status = %s\n" % (git_info.status)])
+        f.writelines(["git_builder = %s\n" % (git_info.builder)])
+        f.writelines(["git_build_date = %s\n" % (git_info.build_date)])
+        f.writelines(['git_build_packages = """%s"""' % (packages.package_info)])
     return ".version"
 
 
-readme = full_description()
 version_file = write_version_file(version)
+readme = full_description()
 
 setup(name='pesummary',
       version=version,
@@ -76,8 +81,8 @@ setup(name='pesummary',
       include_package_data=True,
       packages=['pesummary', 'pesummary.core', 'pesummary.core.webpage',
                 'pesummary.core.plots', 'pesummary.core.file',
-                'pesummary.gw', 'pesummary.gw.file',
-                'pesummary.gw.plots', 'pesummary.utils', 'cli'],
+                'pesummary.core.file.formats', 'pesummary.gw', 'pesummary.gw.file',
+                'pesummary.gw.file.formats', 'pesummary.gw.plots', 'pesummary.utils', 'cli'],
       package_data={
           'pesummary': [version_file],
           'pesummary.core': ['js/*.js', 'css/*.css'],

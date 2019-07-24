@@ -22,10 +22,7 @@ import os
 
 import pesummary
 from pesummary.utils.utils import logger
-from pesummary.gw.file.one_format import GWOneFormat
-from pesummary.gw.file.existing import GWExistingFile
-from pesummary.gw.file.strain import StrainFile
-from pesummary.gw.file.lalinference import LALInferenceResultsFile
+from pesummary.gw.file.read import read as GWRead
 from pesummary.core.inputs import Input
 
 __doc__ == "Classes to handle the command line inputs"
@@ -195,14 +192,14 @@ class GWInput(Input):
 
     @gwdata.setter
     def gwdata(self, gwdata):
+        from pesummary.gw.file.formats.base_read import GWRead as StrainFile
         self._gwdata = None
         if gwdata:
             for i in gwdata.keys():
                 if not os.path.isfile(gwdata[i]):
                     raise Exception("The file %s does not exist. Please check "
                                     "the path to your strain file")
-            f = StrainFile(gwdata)
-            timeseries = f.return_timeseries()
+            timeseries = StrainFile.load_strain_data(gwdata)
             self._gwdata = timeseries
 
     @property
@@ -249,22 +246,20 @@ class GWInput(Input):
                     calibration_list.append(i)
             self._calibration = calibration_list
         else:
-            logger.debug("No calibration envelope file given. Checking the "
-                         "results file")
-            self._calibration_envelope = False
             label_list, data_list = [], []
             for i in self.result_files:
-                try:
-                    f = LALInferenceResultsFile(i)
-                    data, labels = f.grab_calibration_data()
-                    if data == []:
-                        logger.info("Failed to grab calibration data from %s" % (i))
-                        data, labels = None, None
-                except Exception:
-                    logger.info("Failed to grab calibration data from %s" % (i))
-                    data, labels = None, None
-                label_list.append(labels)
-                data_list.append(data)
+                f = GWRead(i)
+                calib_data = f.calibration_data_in_results_file
+                if calib_data is None:
+                    data_list.append(None)
+                    label_list.append(None)
+                elif isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
+                    for num, i in enumerate(calib_data[0]):
+                        data_list.append(i)
+                        label_list.append(list(calib_data[1][num]))
+                else:
+                    data_list.append(calib_data[0])
+                    label_list.append(list(calib_data[1]))
             calibration_list = data_list
             self._calibration = calibration_list
             self.calibration_envelopes = calibration_list
@@ -300,8 +295,8 @@ class GWInput(Input):
         compare: list
             list of labels for the events that you wish to compare
         """
-        f = GWExistingFile(existing_file)
-        labels = f.existing_labels
+        f = GWRead(existing_file)
+        labels = f.labels
         indicies = [i for i in range(len(labels))]
 
         if compare:
@@ -312,13 +307,13 @@ class GWInput(Input):
                                     "you wish to compare are correct." % (i))
             indicies = [labels.index(i) for i in compare]
 
-        p = [f.existing_parameters[i] for i in indicies]
-        s = [f.existing_samples[i] for i in indicies]
+        p = [f.parameters[i] for i in indicies]
+        s = [f.samples[i] for i in indicies]
 
-        if f.existing_injection == []:
+        if f.injection_parameters == []:
             inj_values = []
         else:
-            inj_values = [f.existing_injection[i] for i in indicies]
+            inj_values = [f.injection_parameters[i] for i in indicies]
 
         if inj_values == []:
             for num, i in enumerate(p):
@@ -327,10 +322,10 @@ class GWInput(Input):
         injection = [{i: j for i, j in zip(j, inj_values[num])} for num, j in
                      enumerate(p)]
 
-        approximant = [f.existing_approximant[i] for i in indicies]
-        label = lambda i: f.existing_labels[i]
+        approximant = [f.approximant[i] for i in indicies]
+        label = lambda i: f.labels[i]
 
-        if f.existing_config is not None:
+        if f.config is not None:
             config = []
             for i in indicies:
                 f.write_config_to_file(label(i), outdir="%s/config" % (webdir))
@@ -338,33 +333,33 @@ class GWInput(Input):
         else:
             config = None
 
-        if f.existing_psd is not None:
-            psd = ["extracted_%s.txt" % (f.existing_psd[label(i)]) for i in indicies]
+        if f.psd is not None:
+            psd = ["extracted_%s.txt" % (f.psd[label(i)]) for i in indicies]
 
-            psd_labels = [[i for i in list(f.existing_psd[label(idx)].keys())]
+            psd_labels = [[i for i in list(f.psd[label(idx)].keys())]
                           for idx in indicies]
 
-            psd_frequencies = [[[l[0] for l in f.existing_psd[label(idx)][k]]
-                               for k in f.existing_psd[label(idx)].keys()]
+            psd_frequencies = [[[l[0] for l in f.psd[label(idx)][k]]
+                               for k in f.psd[label(idx)].keys()]
                                for idx in indicies]
 
-            psd_strains = [[[l[1] for l in f.existing_psd[label(idx)][k]]
-                           for k in f.existing_psd[label(idx)].keys()]
+            psd_strains = [[[l[1] for l in f.psd[label(idx)][k]]
+                           for k in f.psd[label(idx)].keys()]
                            for idx in indicies]
         else:
             psd = psd_labels = psd_frequencies = psd_strains = None
 
-        if f.existing_calibration is not None:
+        if f.calibration is not None:
             calibration, calibration_labels, calibration_envelopes = [], [], []
             for i in indicies:
-                if label(i) in list(f.existing_calibration.keys()):
+                if label(i) in list(f.calibration.keys()):
                     calibration.append("extracted_%s.txt" % (
-                        f.existing_calibration[label(i)]))
+                        f.calibration[label(i)]))
                     calibration_labels.append([
-                        i for i in list(f.existing_calibration[label(i)])])
+                        i for i in list(f.calibration[label(i)])])
                     calibration_envelopes.append(np.array([
-                        f.existing_calibration[label(i)][k] for k in
-                        f.existing_calibration[label(i)].keys()]))
+                        f.calibration[label(i)][k] for k in
+                        f.calibration[label(i)].keys()]))
                 else:
                     calibration.append(None)
                     calibration_labels.append(None)
@@ -439,8 +434,8 @@ class GWInput(Input):
     def existing_approximant(self, existing_approximant):
         self._existing_approximant = None
         if self.add_to_existing:
-            existing = GWExistingFile(self.existing)
-            self._existing_approximant = existing.existing_approximant
+            existing = GWRead(self.existing_meta_file)
+            self._existing_approximant = existing.approximant
 
     @staticmethod
     def _IFO_from_file_name(file):
@@ -477,13 +472,20 @@ class GWInput(Input):
         config_file: str, optional
             Path to the configuration file that was used
         """
-        f = GWOneFormat(results_file, injection_file, config=config_file)
+        f = GWRead(results_file)
+        if config_file:
+            f.add_fixed_parameters_from_config_file(config_file)
+            f.add_marginalized_parameters_from_config_file(config_file)
+        if injection_file:
+            f.add_injection_parameters_from_file(injection_file)
         f.generate_all_posterior_samples()
         parameters = f.parameters
         samples = f.samples
-        inj_p = f.injection_parameters
-        inj_value = f.injection_values
-        injection = {i: j for i, j in zip(inj_p, inj_value)}
+        if hasattr(f, "injection_parameters"):
+            injection = f.injection_parameters
+        else:
+            injection = {i: j for i, j in zip(
+                parameters, [float("nan")] * len(parameters))}
         return parameters, samples, injection
 
     def _default_labels(self):
@@ -559,6 +561,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.add_to_existing = inputs.add_to_existing
         self.labels = inputs.labels
         self.hdf5 = inputs.hdf5
+        self.existing_meta_file = inputs.existing_meta_file
         self.existing_labels = inputs.existing_labels
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples

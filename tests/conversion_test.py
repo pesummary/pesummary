@@ -22,7 +22,6 @@ import h5py
 
 import deepdish
 
-from pesummary.gw.file import one_format
 from pesummary.gw.file.conversions import *
 
 import pytest
@@ -239,13 +238,3 @@ class TestConversions(object):
         print(network)
         assert network[0] == np.sqrt(3) * 2
         assert network[1] == np.sqrt(3) * 3
-
-    def test_one_format(self):
-        path = "./tests/files/GW150914_result.h5"
-        output = one_format.GWOneFormat(path, None)
-        output.save()
-        assert os.path.isfile("./tests/files/GW150914_result.h5_temp")
-        path = "./tests/files/lalinference_example.h5"
-        output = one_format.GWOneFormat(path, None)
-        output.save()
-        assert os.path.isfile("./tests/files/lalinference_example.h5_temp")

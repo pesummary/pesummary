@@ -85,6 +85,39 @@ $ git fetch lscsoft
 $ git checkout -b my-new-feature lscsoft/master
 ```
 
+## Pre-commit hook
+PEP8 checks can be run automatically as part of a pre-commit hook. In order to
+install this pre-commit hook, run the following commands,
+
+```bash
+$ cd pesummary
+$ pip install pre-commit
+$ pre-commit install
+$ pre-commit install --hook-type pre-commit
+```
+
+This will then run [black](https://black.readthedocs.io/en/stable/) prior to
+every commit and only commit the reformatted files. A successful pre-commit hook
+will show a message like:
+
+```bash
+black....................................................................Passed
+[pre-commit-hook 201237f] commit message
+ 1 file changed, 6 insertions(+)
+```
+
+A failed pre-commit hook will show a message like:
+
+```bash
+black....................................................................Failed
+hookid: black
+
+error: cannot format ...
+```
+
+For a failed pre-commit hook, the file will still be commited, but will not be
+PEP8 compatible.
+
 ## Unit tests
 Unit tests and code coverage measurement are run automatically as part of the
 continuous integration (CI) for every branch and for every merge request. New

@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.core.file.one_format import load_recusively
+from pesummary.core.file.formats.base_read import Read
 
 from glob import glob
 import os
@@ -24,7 +24,7 @@ import numpy as np
 import configparser
 
 
-class ExistingFile(object):
+class PESummary(Read):
     """This class handles the existing posterior_samples.h5 file
 
     Parameters
@@ -44,46 +44,54 @@ class ExistingFile(object):
         nd list of samples stored for each approximant used in the previous
         analysis
     """
-    def __init__(self, existing_webdir):
-        self.existing = existing_webdir
-        self.existing_data = []
+    def __init__(self, path_to_results_file):
+        super(PESummary, self).__init__(path_to_results_file)
+        self.load(self._grab_data_from_pesummary_file)
 
-    @property
-    def existing_file(self):
-        if os.path.isfile(self.existing):
-            return self.existing
-        elif os.path.isdir(self.existing):
-            meta_file = glob(self.existing + "/samples/posterior_samples*")
-            return meta_file[0]
+    @classmethod
+    def load_file(cls, path):
+        if os.path.isdir(path):
+            files = glob(path + "/*")
+            if "home.html" in files:
+                path = glob(path + "/samples/posterior_samples*")[0]
+            else:
+                raise Exception(
+                    "Unable to find a file called 'posterior_samples' in "
+                    "the directory %s" % (path + "/samples"))
+        if not os.path.isfile(path):
+            raise Exception("%s does not exist" % (path))
+        return cls(path)
 
-    @property
-    def extension(self):
-        return self.existing_file.split(".")[-1]
-
-    @property
-    def existing_data(self):
-        return self._existing_data
-
-    @existing_data.setter
-    def existing_data(self, existing_data):
-        func_map = {"h5": self._grab_data_from_hdf5_file,
-                    "json": self._grab_data_from_json_file}
-        self._existing_data = func_map[self.extension]()
-
-    def _grab_data_from_hdf5_file(self):
+    @staticmethod
+    def _grab_data_from_pesummary_file(path, **kwargs):
         """
         """
-        f = h5py.File(self.existing_file)
-        existing_data = self._grab_data_from_dictionary(f)
+        func_map = {"h5": PESummary._grab_data_from_hdf5_file,
+                    "hdf5": PESummary._grab_data_from_hdf5_file,
+                    "json": PESummary._grab_data_from_json_file}
+        return func_map[Read.extension_from_path(path)](path, **kwargs)
+
+    @staticmethod
+    def _grab_data_from_hdf5_file(path, **kwargs):
+        """
+        """
+        function = kwargs.get(
+            "grab_data_from_dictionary", PESummary._grab_data_from_dictionary)
+        f = h5py.File(path)
+        existing_data = function(f)
         f.close()
         return existing_data
 
-    def _grab_data_from_json_file(self):
-        with open(self.existing_file) as f:
+    @staticmethod
+    def _grab_data_from_json_file(path, **kwargs):
+        function = kwargs.get(
+            "grab_data_from_dictionary", PESummary._grab_data_from_dictionary)
+        with open(path) as f:
             data = json.load(f)
-        return self._grab_data_from_dictionary(data)
+        return function(data)
 
-    def _grab_data_from_dictionary(self, dictionary):
+    @staticmethod
+    def _grab_data_from_dictionary(dictionary):
         """
         """
         labels = list(dictionary["posterior_samples"].keys())
@@ -106,36 +114,17 @@ class ExistingFile(object):
             sample_list.append(s)
             config = None
             if "config_file" in dictionary.keys():
-                config, = load_recusively("config_file", dictionary)
-        return labels, parameter_list, sample_list, config, inj_list
+                config, = Read.load_recusively("config_file", dictionary)
+        setattr(PESummary, "labels", labels)
+        setattr(PESummary, "config", config)
+        return parameter_list, sample_list, inj_list
 
     @property
-    def existing_labels(self):
-        return self.existing_data[0]
-
-    @property
-    def existing_parameters(self):
-        return self.existing_data[1]
-
-    @property
-    def existing_samples(self):
-        return self.existing_data[2]
-
-    @property
-    def existing_config(self):
-        return self.existing_data[3]
-
-    @property
-    def existing_samples_dict(self):
-        zipped = zip(self.existing_labels, self.existing_parameters,
-                     self.existing_samples)
+    def samples_dict(self):
+        zipped = zip(self.labels, self.parameters, self.samples)
         outdict = {label: dict(zip(pars, np.array(samples).T)) for label, pars,
                    samples in zipped}
         return outdict
-
-    @property
-    def existing_injection(self):
-        return self.existing_data[4]
 
     def write_config_to_file(self, label, outdir="./"):
         """Write the config file stored as a dictionary to file
@@ -148,9 +137,9 @@ class ExistingFile(object):
             path indicating where you would like to configuration file to be
             saved. Default is current working directory
         """
-        if label not in list(self.existing_config.keys()):
+        if label not in list(self.config.keys()):
             raise Exception("The label %s does not exist." % (label))
-        config_dict = self.existing_config[label]
+        config_dict = self.config[label]
         config = configparser.ConfigParser()
         for i in config_dict.keys():
             config[i] = config_dict[i]
@@ -165,12 +154,36 @@ class ExistingFile(object):
         from pandas import DataFrame
 
         objects = {}
-        for num, i in enumerate(self.existing_labels):
+        for num, i in enumerate(self.labels):
             posterior_data_frame = DataFrame(
-                self.existing_samples[num], columns=self.existing_parameters[num])
+                self.samples[num], columns=self.parameters[num])
             bilby_object = Result(
-                search_parameter_keys=self.existing_parameters[num],
+                search_parameter_keys=self.parameters[num],
                 posterior=posterior_data_frame, label="pesummary_%s" % (i),
-                samples=self.existing_samples[num])
+                samples=self.samples[num])
             objects[i] = bilby_object
         return objects
+
+    def to_dat(self, label="all", outdir="./"):
+        """Convert the samples stored in a PESummary metafile to a .dat file
+
+        Parameters
+        ----------
+        label: str, optional
+            the label of the analysis that you wish to save. By default, all
+            samples in the metafile will be saved to seperate files
+        outdir: str, optional
+            path indicating where you would like to configuration file to be
+            saved. Default is current working directory
+        """
+        if label != "all" and label not in list(self.labels):
+            raise Exception("The label %s does not exist." % (label))
+        if label == "all":
+            label = list(self.labels)
+        else:
+            label = [label]
+        for num, i in enumerate(label):
+            ind = self.labels.index(i)
+            np.savetxt(
+                "pesummary_%s.dat" % (i), self.samples[ind], delimiter="\t",
+                header="\t".join(self.parameters[ind]), comments='')
