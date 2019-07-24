@@ -24,8 +24,8 @@ from pesummary.core.plots import plot as core
 from pesummary.gw.plots import plot as gw
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.core.plots.latex_labels import latex_labels
-from pesummary.core.file.existing import ExistingFile
-from pesummary.gw.file.existing import GWExistingFile
+from pesummary.core.file.read import read as Read
+from pesummary.gw.file.read import read as GWRead
 from pesummary.utils.utils import logger, resample_posterior_distribution
 from pesummary.core.command_line import command_line
 from pesummary.core.inputs import Input
@@ -94,14 +94,14 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
             if self.custom_plotting:
                 self.try_to_make_a_plot("custom", num)
         if self.add_to_existing:
-            existing = ExistingFile(self.existing)
+            existing = Read(self.existing_meta_file)
             existing_config = glob(self.existing + "/config/*")
-            for num, i in enumerate(existing.existing_labels):
-                original_label = existing.existing_labels[num]
+            for num, i in enumerate(existing.labels):
+                original_label = existing.labels[num]
                 self.labels.append(original_label)
-                self.result_files.append(existing.existing_file)
-                self.samples.append(existing.existing_samples[num])
-                self.parameters.append(existing.existing_parameters[num])
+                self.result_files.append(self.existing)
+                self.samples.append(existing.samples[num])
+                self.parameters.append(existing.parameters[num])
                 if self.config and len(existing_config) > 1:
                     self.config.append(existing_config[num])
             self.same_parameters = list(
@@ -301,16 +301,16 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         if self.sensitivity:
             self.try_to_make_a_plot("sensitivity", 0)
         if self.add_to_existing:
-            existing = GWExistingFile(self.existing)
+            existing = GWRead(self.existing_meta_file)
             existing_config = glob(self.existing + "/config/*")
-            for num, i in enumerate(existing.existing_labels):
-                original_label = existing.existing_labels[num]
+            for num, i in enumerate(existing.labels):
+                original_label = existing.labels[num]
                 self.labels.append(original_label)
-                self.result_files.append(existing.existing_file)
-                self.samples.append(existing.existing_samples[num])
-                self.parameters.append(existing.existing_parameters[num])
-                if existing.existing_approximant[num]:
-                    self.approximant.append(existing.existing_approximant[num])
+                self.result_files.append(self.existing)
+                self.samples.append(existing.samples[num])
+                self.parameters.append(existing.parameters[num])
+                if existing.approximant[num]:
+                    self.approximant.append(existing.approximant[num])
                 else:
                     self.approximant.append(None)
                 if self.config and len(existing_config) > 1:

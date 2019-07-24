@@ -13,11 +13,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.core.file.existing import ExistingFile
-from pesummary.core.file.one_format import load_recusively
+import pesummary
+from pesummary.gw.file.formats.base_read import GWRead
+from pesummary.core.file.formats.pesummary import PESummary as CorePESummary
+
+import os
+from glob import glob
 
 
-class GWExistingFile(ExistingFile):
+class PESummary(CorePESummary):
     """This class handles the existing posterior_samples.h5 file
 
     Parameters
@@ -37,11 +41,28 @@ class GWExistingFile(ExistingFile):
         nd list of samples stored for each approximant used in the previous
         analysis
     """
-    def __init__(self, existing_webdir):
-        self.existing = existing_webdir
-        self.existing_data = []
+    def __init__(self, path_to_results_file, **kwargs):
+        super(PESummary, self).__init__(path_to_results_file)
+        load_kwargs = {
+            "grab_data_from_dictionary": PESummary._grab_data_from_dictionary}
+        self.load(self._grab_data_from_pesummary_file, **load_kwargs)
 
-    def _grab_data_from_dictionary(self, dictionary):
+    @classmethod
+    def load_file(cls, path):
+        if os.path.isdir(path):
+            files = glob(path + "/*")
+            if "home.html" in files:
+                path = glob(path + "/samples/posterior_samples*")[0]
+            else:
+                raise Exception(
+                    "Unable to find a file called 'posterior_samples' in "
+                    "the directory %s" % (path + "/samples"))
+        if not os.path.isfile(path):
+            raise Exception("%s does not exist" % (path))
+        return cls(path)
+
+    @staticmethod
+    def _grab_data_from_dictionary(dictionary):
         """
         """
         labels = list(dictionary["posterior_samples"].keys())
@@ -64,41 +85,35 @@ class GWExistingFile(ExistingFile):
             sample_list.append(s)
             psd, cal, config = None, None, None
             if "config_file" in dictionary.keys():
-                config, = load_recusively("config_file", dictionary)
+                config, = GWRead.load_recusively("config_file", dictionary)
             if "psds" in dictionary.keys():
-                psd, = load_recusively("psds", dictionary)
+                psd, = GWRead.load_recusively("psds", dictionary)
             if "calibration_envelope" in dictionary.keys():
-                cal, = load_recusively("calibration_envelope", dictionary)
+                cal, = GWRead.load_recusively("calibration_envelope", dictionary)
             if "approximant" in dictionary.keys():
                 approx_list.append(dictionary["approximant"]["%s" % (i)])
             else:
                 approx_list.append(None)
-        return labels, parameter_list, sample_list, psd, cal, config, approx_list, inj_list
+        setattr(PESummary, "labels", labels)
+        setattr(PESummary, "config", config)
+        setattr(PESummary, "psd", psd)
+        setattr(PESummary, "calibration", cal)
+        setattr(PESummary, "approximant", approx_list)
+        return parameter_list, sample_list, inj_list
 
     @property
-    def existing_psd(self):
-        return self.existing_data[3]
+    def calibration_data_in_results_file(self):
+        if self.calibration:
+            keys = [list(self.calibration[i].keys()) for i in self.labels]
+            total = [[self.calibration[key][ifo] for ifo in keys[num]] for
+                     num, key in enumerate(self.labels)]
+            return total, keys
+        return None
 
     @property
-    def existing_calibration(self):
-        return self.existing_data[4]
-
-    @property
-    def existing_config(self):
-        return self.existing_data[5]
-
-    @property
-    def existing_approximant(self):
-        return self.existing_data[6]
-
-    @property
-    def existing_injection(self):
-        return self.existing_data[7]
-
-    @property
-    def existing_detectors(self):
+    def detectors(self):
         det_list = []
-        for i in self.existing_parameters:
+        for i in self.parameters:
             detectors = []
             for param in i:
                 if "_optimal_snr" in param and param != "network_optimal_snr":
@@ -115,14 +130,14 @@ class GWExistingFile(ExistingFile):
         from pandas import DataFrame
 
         objects = {}
-        for num, i in enumerate(self.existing_labels):
+        for num, i in enumerate(self.labels):
             posterior_data_frame = DataFrame(
-                self.existing_samples[num], columns=self.existing_parameters[num])
+                self.samples[num], columns=self.parameters[num])
             meta_data = {
                 "likelihood": {
                     "waveform_arguments": {
-                        "waveform_approximant": self.existing_approximant[num]},
-                    "interferometers": self.existing_detectors[num]}}
+                        "waveform_approximant": self.approximant[num]},
+                    "interferometers": self.detectors[num]}}
             bilby_object = CompactBinaryCoalescenceResult(
                 search_parameter_keys=self.existing_parameters[num],
                 posterior=posterior_data_frame, label="pesummary_%s" % (i),

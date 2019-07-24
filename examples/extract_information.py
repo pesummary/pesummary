@@ -4,41 +4,41 @@
 # gravitational wave specific results file `gw.json`
 
 # First let us extract the information from the `core.json` file
-from pesummary.core.file.existing import ExistingFile
+from pesummary.core.file.read import read
 
-f = ExistingFile("./core.json")
-config_data = f.existing_config
-samples = f.existing_samples_dict
-parameters = f.existing_parameters
-labels = f.existing_labels
-injection_values = f.existing_injection
+f = read("./core.json")
+config_data = f.config
+samples = f.samples_dict
+parameters = f.parameters
+labels = f.labels
+injection_values = f.injection_parameters
 injection_data = {i: j for i, j in zip(parameters, injection_values)}
 
 # If you want to, you are able to write the config_data stored in the metafile
 # to a valid configuration file. This is done by using the
-# `ExistingFile.write_config_to_file` function. This function takes 1 argument
-# and 1 optional argument. Run `help(ExistingFile.write_config_to_file)` to
+# `read.write_config_to_file` function. This function takes 1 argument
+# and 1 optional argument. Run `help(read.write_config_to_file)` to
 # learn about these arguments
 
 f.write_config_to_file(labels[0], outdir="./outdir")
 
 # Now let us extract the information from the `gw.json` file
-from pesummary.gw.file.existing import GWExistingFile
+from pesummary.gw.file.read import read as GWread
 
-f = GWExistingFile("./gw.json")
-config_data = f.existing_config
-samples = f.existing_samples_dict
-parameters = f.existing_parameters
-labels = f.existing_labels
-injection_values = f.existing_injection
+f = GWread("./gw.json")
+config_data = f.config
+samples = f.samples_dict
+parameters = f.parameters
+labels = f.labels
+injection_values = f.injection_parameters
 injection_data = {i: j for i, j in zip(parameters, injection_values)}
 
-calibration_envelopes = f.existing_calibration
-psds = f.existing_psds
-approximants = f.existing_approximants
+calibration_envelopes = f.calibration
+psds = f.psd
+approximants = f.approximants
 
-# As GWExistingFile is inherited from ExistingFile, all the same functions
-# can be used for the GWExistingFile. For instance, you are able to save the
+# As GWread is inherited from read, all the same functions
+# can be used for the GWread. For instance, you are able to save the
 # config_data as a valid configuration file by running
 
 f.write_config_to_file(labels[0], outdir="./outdir")

@@ -13,69 +13,147 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import configparser
-import shutil
-
-import json
-import h5py
-import deepdish
-
 import numpy as np
-
-from pesummary.core.command_line import command_line
-from pesummary.gw.command_line import insert_gwspecific_option_group
-import pesummary.gw.file.conversions as con
-from pesummary.core.file.one_format import paths_to_key, load_recusively, OneFormat
-from pesummary.utils.utils import logger
-from pesummary.gw.file.lalinference import LALInferenceResultsFile
+from scipy import interpolate
 from pesummary.gw.file.standard_names import standard_names
-
-try:
-    from glue.ligolw import ligolw
-    from glue.ligolw import lsctables
-    from glue.ligolw import utils as ligolw_utils
-    GLUE = True
-except ImportError:
-    GLUE = False
+from pesummary.core.file.formats.base_read import Read
+from pesummary.utils.utils import logger
+from pesummary.gw.file import conversions as con
 
 
-class GWOneFormat(OneFormat):
-    """Class to convert a given results file into a standard format with all
-    derived posterior distributions included
-
-    Parameters
-    ----------
-    fil: str
-       path to the results file
-    inj: str, optional
-       path to the file containing injection information
-    config: str, optional
-       path to the configuration file
-
-    Attributes
-    ----------
-    extension: str
-        the extension of the input file
-    lalinference_hdf5_format: Bool
-        Boolean determining if the hdf5 file is of LALInference format
-    bilby_hdf5_format: Bool
-        Boolean determining if the hdf5 file is of Bilby format
-    data: list
-        list containing the extracted data from the input file
-    parameters: list
-        list of parameters stored in the input file
-    samples: list
-        list of samples stored in the input file
-    approximant: str
-        the approximant stored in the input file
+class GWRead(Read):
+    """Base class to read in a results file
     """
-    def __init__(self, fil, inj=None, config=None):
-        logger.info("Extracting the information from %s" % (fil))
-        self.fil = fil
-        self.inj = inj
-        self.config = config
-        self.data = None
-        self.injection_data = None
+    def __init__(self, path_to_results_file):
+        super(GWRead, self).__init__(path_to_results_file)
+
+    def load(self, function, **kwargs):
+        """Load a results file according to a given function
+
+        Parameters
+        ----------
+        function: func
+            callable function that will load in your results file
+        """
+        data = self.load_from_function(
+            function, self.path_to_results_file, **kwargs)
+        self.data = list(self.translate_parameters(data[0], data[1]))
+        self.data.append(data[2])
+
+    @staticmethod
+    def check_for_calibration_data(function, path_to_results_file):
+        """Check to see if there is any calibration data in the results file
+
+        Parameters
+        ----------
+        function: func
+            callable function that will check to see if calibration data is in
+            the results file
+        path_to_results_file: str
+            path to the results file
+        """
+        return function(path_to_results_file)
+
+    @staticmethod
+    def grab_calibration_data(function, path_to_results_file):
+        """Grab the calibration data from the results file
+
+        Parameters
+        ----------
+        function: func
+            callable function that will grab the calibration data from the
+            results file
+        path_to_results_file: str
+            path to the results file
+        """
+        log_frequencies, amp_params, phase_params = function(path_to_results_file)
+        total = []
+        for key in log_frequencies.keys():
+            f = np.exp(log_frequencies[key])
+            fs = np.linspace(np.min(f), np.max(f), 100)
+            data = [interpolate.spline(log_frequencies[key], samp, np.log(fs)) for samp
+                    in np.column_stack(amp_params[key])]
+            amplitude_upper = 1. - np.percentile(data, 90, axis=0)
+            amplitude_lower = 1. - np.percentile(data, 10, axis=0)
+            amplitude_median = 1. - np.median(data, axis=0)
+
+            data = [interpolate.spline(log_frequencies[key], samp, np.log(fs)) for samp
+                    in np.column_stack(phase_params[key])]
+
+            phase_upper = np.percentile(data, 90, axis=0)
+            phase_lower = np.percentile(data, 10, axis=0)
+            phase_median = np.median(data, axis=0)
+            total.append(np.column_stack(
+                [fs, amplitude_median, phase_median, amplitude_lower,
+                 phase_lower, amplitude_upper, phase_upper]))
+        return total, log_frequencies.keys()
+
+    @staticmethod
+    def load_strain_data(path_to_strain_file):
+        """Load the strain data
+
+        Parameters
+        ----------
+        path_to_strain_file: str
+            path to the strain file that you wish to load
+        """
+        func_map = {"lcf": GWRead._timeseries_from_cache_file}
+        ext = GWRead.extension_from_path(path_to_strain_file)
+        function = func_map[ext]
+        return GWRead.load_from_function(function, path_to_strain_file)
+
+    def _timeseries_from_cache_file(self, channel, cached_file):
+        """Return a time series from a cache file
+
+        Parameters
+        ----------
+        channel: str
+            the name of the channel for the cache file
+        cached_file: str
+            path to the cached file
+        """
+        from gwpy.timeseries import TimeSeries
+
+        try:
+            from glue.lal import Cache
+            GLUE = True
+        except ImportError:
+            GLUE = False
+
+        if not GLUE:
+            raise Exception("lscsoft-glue is required to read from a cached "
+                            "file. Please install this package")
+        with open(cached_file, "r") as f:
+            data = Cache.fromfile(f)
+        try:
+            strain_data = TimeSeries.read(data, channel)
+        except Exception as e:
+            raise Exception("Failed to read in the cached file because %s" % (
+                            e))
+        return strain_data
+
+    @staticmethod
+    def translate_parameters(parameters, samples):
+        """Translate parameters to a standard names
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters used in the analysis
+        samples: list
+            list of samples for each parameters
+        """
+        path = ("https://git.ligo.org/lscsoft/pesummary/blob/master/pesummary/"
+                "gw/file/standard_names.py")
+        standard_params = [i for i in parameters if i in standard_names.keys()]
+        parameters_not_included = [
+            i for i in parameters if i not in standard_params]
+        standard_samples = []
+        for i in samples:
+            standard_samples.append(
+                [i[parameters.index(j)] for j in standard_params])
+        standard_params = [standard_names[i] for i in standard_params]
+        return standard_params, standard_samples
 
     @staticmethod
     def _check_definition_of_inclination(parameters):
@@ -107,64 +185,46 @@ class GWOneFormat(OneFormat):
                 parameters[index] = "iota"
         return parameters
 
-    @property
-    def config(self):
-        return self._config
+    def add_fixed_parameters_from_config_file(self, config_file):
+        """Search the conifiguration file and add fixed parameters to the
+        list of parameters and samples
 
-    @config.setter
-    def config(self, config):
-        self._config = None
-        self.fixed_data = None
-        self.marg_par = None
-        if config:
-            data = self._extract_data_from_config_file(config)
-            self.fixed_data = data["fixed_data"]
-            self.marg_par = data["marginalized_parameters"]
-            self._config = config
+        Parameters
+        ----------
+        config_file: str
+            path to the configuration file
+        """
+        self._add_fixed_parameters_from_config_file(
+            config_file, self._add_fixed_parameters)
 
-    @property
-    def extension(self):
-        return self.fil.split(".")[-1]
+    @staticmethod
+    def _add_fixed_parameters(parameters, samples, config_file):
+        """Open a LALInference configuration file and add the fixed parameters
+        to the list of parameters and samples
 
-    @property
-    def lalinference_hdf5_format(self):
-        f = h5py.File(self.fil)
-        keys = list(f.keys())
-        f.close()
-        if "lalinference" in keys:
-            return True
-        return False
+        Parameters
+        ----------
+        parameters: list
+            list of existing parameters
+        samples: list
+            list of existing samples
+        config_file: str
+            path to the configuration file
+        """
+        import configparser
+        from pesummary.gw.file.standard_names import standard_names
 
-    @property
-    def bilby_hdf5_format(self):
-        f = h5py.File(self.fil)
-        keys = list(f.keys())
-        f.close()
-        if "data" in keys or "posterior" in keys:
-            return True
-        return False
-
-    @property
-    def data(self):
-        return self._data
-
-    @data.setter
-    def data(self, data):
-        func_map = {"json": self._grab_data_from_json_file,
-                    "hdf5": self._grab_data_from_hdf5_file,
-                    "h5": self._grab_data_from_hdf5_file,
-                    "dat": self._grab_data_from_dat_file,
-                    "txt": self._grab_data_from_dat_file,
-                    "hdf": self._grab_data_from_hdf5_file}
-        data = func_map[self.extension]()
-        parameters = data[0]
-        samples = data[1]
-
-        if self.fixed_data:
-
-            for i in self.fixed_data.keys():
+        config = configparser.ConfigParser()
+        try:
+            config.read(config_file)
+            fixed_data = None
+            if "engine" in config.sections():
+                fixed_data = {
+                    key.split("fix-")[1]: item for key, item in
+                    config.items("engine") if "fix" in key}
+            for i in fixed_data.keys():
                 fixed_parameter = i
-                fixed_value = self.fixed_data[i]
+                fixed_value = fixed_data[i]
                 try:
                     param = standard_names[fixed_parameter]
                     if param in parameters:
@@ -184,330 +244,9 @@ class GWOneFormat(OneFormat):
                             parameters.append(standard_names["theta_jn"])
                             for num in range(len(samples)):
                                 samples[num].append(float(fixed_value))
-
-        if self.marg_par:
-            for i in self.marg_par.keys():
-                if "time" in i and "geocent_time" not in parameters:
-                    if "marginalized_geocent_time" in parameters:
-                        ind = parameters.index("marginalized_geocent_time")
-                        parameters.remove(parameters[ind])
-                        parameters.append("geocent_time")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(j[ind]))
-                            del j[ind]
-                    else:
-                        logger.warn("You have marginalized over time and "
-                                    "there are no time samples. Manually "
-                                    "setting time to 100000s")
-                        parameters.append("geocent_time")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(100000))
-                if "phi" in i and "phase" not in parameters:
-                    if "marginalized_phase" in parameters:
-                        ind = parameters.index("marginalized_phase")
-                        parameters.remove(parameters[ind])
-                        parameters.append("phase")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(j[ind]))
-                            del j[ind]
-                    else:
-                        logger.warn("You have marginalized over phase and "
-                                    "there are no phase samples. Manually "
-                                    "setting the phase to be 0")
-                        parameters.append("phase")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(0))
-                if "dist" in i and "luminosity_distance" not in parameters:
-                    if "marginalized_distance" in parameters:
-                        ind = parameters.index("marginalized_distance")
-                        parameters.remove(parameters[ind])
-                        parameters.append("luminosity_distance")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(j[ind]))
-                            del j[ind]
-                    else:
-                        logger.warn("You have marginalized over distance and "
-                                    "there are no distance samples. Manually "
-                                    "setting distance to 100Mpc")
-                        parameters.append("luminosity_distance")
-                        for num, j in enumerate(samples):
-                            samples[num].append(float(100.0))
-
-        if len(data) > 2:
-            self._data = [parameters, samples, data[2]]
-        else:
-            self._data = [parameters, samples]
-
-    @property
-    def parameters(self):
-        return self.data[0]
-
-    @property
-    def samples(self):
-        return self.data[1]
-
-    @property
-    def approximant(self):
-        if len(self.data) > 2:
-            return self.data[2]
-        return "none"
-
-    @property
-    def injection_data(self):
-        return self._injection_data
-
-    @injection_data.setter
-    def injection_data(self, injection_data):
-        if self.inj:
-            extension = self.inj.split(".")[-1]
-            func_map = {"xml": self._grab_injection_data_from_xml_file,
-                        "hdf5": self._grab_injection_data_from_hdf5_file,
-                        "h5": self._grab_injection_data_from_hdf5_file}
-            self._injection_data = func_map[extension]()
-        else:
-            self._injection_data = [
-                self.parameters, [float("nan")] * len(self.parameters)]
-
-    @property
-    def injection_parameters(self):
-        return self.injection_data[0]
-
-    @property
-    def injection_values(self):
-        return self.injection_data[1]
-
-    def _grab_data_from_hdf5_file(self):
-        """Grab the data stored in an hdf5 file
-        """
-        self._data_structure = []
-        if self.lalinference_hdf5_format:
-            return self._grab_data_with_h5py()
-        elif self.bilby_hdf5_format:
-            try:
-                return self._grab_data_with_deepdish()
-            except Exception as e:
-                logger.warning("Failed to open %s with deepdish because %s. "
-                               "Trying to grab the data with 'h5py'." % (
-                                   self.fil, e))
-                return self._grab_data_with_h5py()
-        else:
-            try:
-                parameters, samples = super(
-                    GWOneFormat, self)._grab_data_with_h5py()
-                parameters = self._check_definition_of_inclination(
-                    parameters)
-                parameters = [standard_names[i] for i in parameters]
-                return parameters, samples
-            except Exception:
-                raise Exception("Failed to extract the data from the results "
-                                "file. Please reformat to the results file")
-
-    def _add_to_list(self, item):
-        self._data_structure.append(item)
-
-    def _grab_data_with_h5py(self):
-        """Grab the data stored in an hdf5 file using h5py
-        """
-        samples = []
-        f = h5py.File(self.fil)
-        f.visit(self._add_to_list)
-        for i in self._data_structure:
-            condition1 = "posterior_samples" in i or "posterior"in i
-            condition2 = "posterior_samples/" not in i and "posterior/" not in i
-            if condition1 and condition2:
-                path = i
-        f.close()
-        if self.lalinference_hdf5_format:
-            g = LALInferenceResultsFile(self.fil)
-            parameters, samples = g.grab_samples()
-        elif self.bilby_hdf5_format:
-            f = h5py.File(self.fil)
-            parameters, data = [], []
-            blocks = [i for i in f["%s" % (path)] if "block" in i]
-            for i in blocks:
-                block_name = i.split("_")[0]
-                if "items" in i:
-                    for par in f["%s/%s" % (path, i)]:
-                        if par == b"waveform_approximant":
-                            blocks.remove(block_name + "_items")
-                            blocks.remove(block_name + "_values")
-            for i in sorted(blocks):
-                if "items" in i:
-                    for par in f["%s/%s" % (path, i)]:
-                        if par == b"logL":
-                            parameters.append(b"log_likelihood")
-                        else:
-                            parameters.append(par)
-                if "values" in i:
-                    if len(data) == 0:
-                        for dat in f["%s/%s" % (path, i)]:
-                            data.append(list(np.real(dat)))
-                    else:
-                        for num, dat in enumerate(f["%s/%s" % (path, i)]):
-                            data[num] += list(np.real(dat))
-            parameters = [i.decode("utf-8") for i in parameters]
-            f.close()
-        return parameters, samples
-
-    def _grab_data_with_deepdish(self):
-        """Grab the data stored in an hdf5 file using deepdish
-        """
-        approx = "none"
-        f = deepdish.io.load(self.fil)
-        path, = paths_to_key("posterior", f)
-        path = path[0]
-        reduced_f, = load_recusively(path, f)
-        parameters = [i for i in reduced_f.keys()]
-        if "waveform_approximant" in parameters:
-            approx = reduced_f["waveform_approximant"][0]
-            parameters.remove("waveform_approximant")
-        data = np.zeros([len(reduced_f[parameters[0]]), len(parameters)])
-        for num, par in enumerate(parameters):
-            for key, i in enumerate(reduced_f[par]):
-                data[key][num] = float(np.real(i))
-        data = data.tolist()
-        for num, par in enumerate(parameters):
-            if par == "logL":
-                parameters[num] = "log_likelihood"
-        return parameters, data, approx
-
-    def _grab_data_from_json_file(self):
-        """Grab the data stored in a .json file
-        """
-        with open(self.fil) as f:
-            data = json.load(f)
-        path, = paths_to_key("posterior", data)
-        path = path[0]
-        if "content" in data[path].keys():
-            path += "/content"
-        reduced_data, = load_recusively(path, data)
-        parameters = list(reduced_data.keys())
-        parameters = [standard_names[i] for i in list(reduced_data.keys()) if i
-                      in standard_names.keys()]
-
-        path_to_approximant = [
-            i for i in paths_to_key("waveform_approximant", reduced_data)]
-        try:
-            approximant, = load_recusively("/".join(path_to_approximant[0]),
-                                           data)
+            return parameters, samples
         except Exception:
-            approximant = "none"
-
-        samples = [[
-            reduced_data[j][i] if not isinstance(reduced_data[j][i], dict)
-            else reduced_data[j][i]["real"] for j in parameters] for i in
-            range(len(reduced_data[parameters[0]]))]
-        return parameters, samples, approximant
-
-    def _grab_data_from_dat_file(self):
-        """Grab the data stored in a .dat file
-        """
-        dat_file = np.genfromtxt(self.fil, names=True)
-        stored_parameters = [i for i in dat_file.dtype.names]
-        stored_parameters = self._check_definition_of_inclination(
-            stored_parameters)
-        parameters = [
-            i for i in stored_parameters if i in standard_names.keys()]
-        indices = [stored_parameters.index(i) for i in parameters]
-        parameters = [standard_names[i] for i in parameters]
-        samples = [[x[i] for i in indices] for x in dat_file]
-
-        condition1 = "luminosity" not in parameters
-        condition2 = "logdistance" in stored_parameters
-        if condition1 and condition2:
-            parameters.append("luminosity_distance")
-            for num, i in enumerate(dat_file):
-                samples[num].append(
-                    np.exp(i[stored_parameters.index("logdistance")]))
-
-        return parameters, samples
-
-    def _extract_data_from_config_file(self, cp):
-        """Grab the data from a config file
-        """
-        config = configparser.ConfigParser()
-        try:
-            config.read(cp)
-            fixed_data = None
-            marg_par = None
-            if "engine" in config.sections():
-                fixed_data = {
-                    key.split("fix-")[1]: item for key, item in
-                    config.items("engine") if "fix" in key}
-                marg_par = {
-                    key.split("marg")[1]: item for key, item in
-                    config.items("engine") if "marg" in key}
-            return {"fixed_data": fixed_data,
-                    "marginalized_parameters": marg_par}
-        except Exception:
-            return {"fixed_data": None,
-                    "marginalized_parameters": None}
-
-    def _grab_injection_data_from_xml_file(self):
-        """Grab the data from an xml injection file
-        """
-        if GLUE:
-            xmldoc = ligolw_utils.load_filename(
-                self.inj, contenthandler=lsctables.use_in(
-                    ligolw.LIGOLWContentHandler))
-            try:
-                table = lsctables.SimInspiralTable.get_table(xmldoc)[0]
-            except Exception:
-                table = lsctables.SnglInspiralTable.get_table(xmldoc)[0]
-            injection_values = self._return_all_injection_parameters(
-                self.parameters, table)
-        else:
-            injection_values = [float("nan")] * len(self.parameters)
-        return self.parameters, injection_values
-
-    def _grab_injection_data_from_hdf5_file(self):
-        """Grab the data from an hdf5 injection file
-        """
-        pass
-
-    def _return_all_injection_parameters(self, parameters, table):
-        """Return the full list of injection parameters
-
-        Parameters
-        ----------
-        parameters: list
-            full list of parameters being used in the analysis
-        table: glue.ligolw.lsctables.SnglInspiral
-            table containing the trigger values
-        """
-        func_map = {
-            "chirp_mass": lambda inj: inj.mchirp,
-            "luminosity_distance": lambda inj: inj.distance,
-            "mass_1": lambda inj: inj.mass1,
-            "mass_2": lambda inj: inj.mass2,
-            "dec": lambda inj: inj.latitude,
-            "spin_1x": lambda inj: inj.spin1x,
-            "spin_1y": lambda inj: inj.spin1y,
-            "spin_1z": lambda inj: inj.spin1z,
-            "spin_2x": lambda inj: inj.spin2x,
-            "spin_2y": lambda inj: inj.spin2y,
-            "spin_2z": lambda inj: inj.spin2z,
-            "mass_ratio": lambda inj: con.q_from_m1_m2(
-                inj.mass1, inj.mass2),
-            "symmetric_mass_ratio": lambda inj: con.eta_from_m1_m2(
-                inj.mass1, inj.mass2),
-            "total_mass": lambda inj: inj.mass1 + inj.mass2,
-            "chi_p": lambda inj: con._chi_p(
-                inj.mass1, inj.mass2, inj.spin1x, inj.spin1y, inj.spin2x,
-                inj.spin2y),
-            "chi_eff": lambda inj: con._chi_eff(
-                inj.mass1, inj.mass2, inj.spin1z, inj.spin2z)}
-
-        injection_values = []
-        for i in parameters:
-            try:
-                if func_map[i](table) is not None:
-                    injection_values.append(func_map[i](table))
-                else:
-                    injection_values.append(float("nan"))
-            except Exception:
-                injection_values.append(float("nan"))
-        return injection_values
+            return parameters, samples
 
     def _specific_parameter_samples(self, param):
         """Return the samples for a specific parameter
@@ -960,71 +699,3 @@ class GWOneFormat(OneFormat):
             self.parameters.remove(self.parameters[ind])
             for i in self.samples:
                 del i[ind]
-        self._update_injection_data()
-
-    def _update_injection_data(self):
-        if self.inj:
-            extension = self.inj.split(".")[-1]
-            func_map = {"xml": self._grab_injection_data_from_xml_file,
-                        "hdf5": self._grab_injection_data_from_hdf5_file,
-                        "h5": self._grab_injection_data_from_hdf5_file}
-            self._injection_data = func_map[extension]()
-        else:
-            self._injection_data = [
-                self.parameters, [float("nan")] * len(self.parameters)]
-
-    def save(self):
-        parameters = np.array(self.parameters, dtype="S")
-        injection_parameters = np.array(self.injection_parameters, dtype="S")
-        injection_data = np.array(self.injection_values)
-        f = h5py.File("%s_temp" % (self.fil), "w")
-        posterior_samples_group = f.create_group("posterior_samples")
-        group = posterior_samples_group.create_group("label")
-        group.create_dataset("parameter_names", data=parameters)
-        group.create_dataset("samples", data=self.samples)
-        group.create_dataset("injection_parameters", data=injection_parameters)
-        group.create_dataset("injection_data", data=injection_data)
-        f.close()
-        return "%s_temp" % (self.fil)
-
-
-def add_specific_arguments(parser):
-    """Add command line arguments that are specific to pesummary_convert
-
-    Parameters
-    ----------
-    parser: argparser
-        The parser containing the command line arguments
-    """
-    parser.add_argument("-o", "--outpath", dest="out",
-                        help="location of output file", default=None)
-    return parser
-
-
-def main():
-    """Top-level interface for summaryconvert
-    """
-    parser = command_line()
-    parser = add_specific_arguments(parser)
-    insert_gwspecific_option_group(parser)
-    opts = parser.parse_args()
-    if opts.inj_file and len(opts.samples) != len(opts.inj_file):
-        raise Exception("Please ensure that the number of results files "
-                        "matches the number of injection files")
-    if opts.config and len(opts.samples) != len(opts.config):
-        raise Exception("Please ensure that the number of results files "
-                        "matches the number of configuration files")
-    if not opts.inj_file:
-        opts.inj_file = []
-        for i in range(len(opts.samples)):
-            opts.inj_file.append(None)
-    if not opts.config:
-        opts.config = []
-        for i in range(len(opts.samples)):
-            opts.config.append(None)
-    for num, i in enumerate(opts.samples):
-        f = GWOneFormat(i, opts.inj_file[num], config=opts.config[num])
-        f.generate_all_posterior_samples()
-        g = f.save()
-        if opts.out:
-            shutil.move(g, opts.out)

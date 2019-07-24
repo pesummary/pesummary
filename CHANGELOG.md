@@ -2,6 +2,8 @@
 
 ### Changed
 - Comparison pages: Display both the CDF and box plots on the comparison pages
+- Reading in files: Changed how files are read in with PESummary. We now have
+  seperate classes for `bilby` and `lalinference` as well as a default class.
 
 ### Added
 - Generate box plots to compare the different result files
@@ -10,6 +12,9 @@
   or save as a lalinference results file
 - Arguments `--nsamples_for_skymap` and `--multi_threading_for_skymap` to
   reduce the runtime of ligo.skymap
+- Extra information to the .version file (builder, last committer, date)
+- Pre-commit hook which will run `black` in order to autoformat commited files
+  to PEP8
 - Argument `--custom_plotting` which allows the user to pass a python file
   containing custom plots
 

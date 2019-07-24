@@ -22,7 +22,7 @@ import configparser
 
 import pesummary
 from pesummary.utils.utils import logger, make_dir
-from pesummary.core.file.existing import ExistingFile
+from pesummary.core.file.read import read as Read
 
 
 def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
@@ -118,11 +118,11 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         """Generate dictionary of data which will go into the meta_file
         """
         if self.existing:
-            existing_file = ExistingFile(self.existing)
-            self.existing_parameters = existing_file.existing_parameters
-            self.existing_samples = existing_file.existing_samples
-            self.existing_label = existing_file.existing_labels
-            self.existing_injection = existing_file.existing_injection
+            existing_file = Read(self.existing_meta_file)
+            self.existing_parameters = existing_file.parameters
+            self.existing_samples = existing_file.samples
+            self.existing_label = existing_file.labels
+            self.existing_injection = existing_file.injection_parameters
         self._make_dictionary()
 
     def _make_dictionary(self):

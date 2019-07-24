@@ -1,0 +1,72 @@
+# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+from pesummary.core.file.formats.base_read import Read
+import os
+import numpy as np
+
+
+class Bilby(Read):
+    """PESummary wrapper of `bilby` (https://git.ligo.org/lscsoft/bilby). The
+    path_to_results_file argument will be passed directly to
+    `bilby.core.result.read_in_result`. All functions therefore use `bilby`
+    methods and requires `bilby` to be installed.
+
+    Attributes
+    ----------
+    path_to_results_file: str
+        path to the results file that you wish to read in with `bilby`.
+    """
+    def __init__(self, path_to_results_file):
+        super(Bilby, self).__init__(path_to_results_file)
+        self.load(self._grab_data_from_bilby_file)
+
+    @classmethod
+    def load_file(cls, path):
+        if not os.path.isfile(path):
+            raise Exception("%s does not exist" % (path))
+        return cls(path)
+
+    @staticmethod
+    def _grab_data_from_bilby_file(path):
+        """Load the results file using the `bilby` library
+        """
+        from bilby.core.result import read_in_result
+
+        bilby_object = read_in_result(filename=path)
+        posterior = bilby_object.posterior
+        parameters = list(posterior.keys())
+        number = len(posterior[parameters[0]])
+        samples = [[np.real(posterior[param][i]) for param in parameters] for i in range(number)]
+        injection = bilby_object.injection_parameters
+        if injection is None:
+            injection = {i: j for i, j in zip(
+                parameters, [float("nan")] * len(parameters))}
+        else:
+            for i in parameters:
+                if i not in injection.keys():
+                    injection[i] = float("nan")
+        return parameters, samples, injection
+
+    def add_marginalized_parameters_from_config_file(self, config_file):
+        """Search the configuration file and add the marginalized parameters
+        to the list of parameters and samples
+
+        Parameters
+        ----------
+        config_file: str
+            path to the configuration file
+        """
+        pass

@@ -27,8 +27,7 @@ from time import time
 import pesummary
 from pesummary.utils.utils import guess_url, logger
 from pesummary.utils import utils
-from pesummary.core.file.one_format import OneFormat
-from pesummary.core.file.existing import ExistingFile
+from pesummary.core.file.read import read as Read
 
 __doc__ == "Classes to handle the command line inputs"
 
@@ -99,11 +98,16 @@ class Input(object):
         proposed_file: str
             path to the file
         """
-        try:
-            f = ExistingFile(proposed_file)
-            params = f.existing_parameters
-            return True
-        except Exception:
+        extension = proposed_file.split(".")[-1]
+        if extension == "h5" or extension == "hdf5" or extension == "hdf":
+            from pesummary.core.file.read import is_pesummary_hdf5_file
+
+            return is_pesummary_hdf5_file(proposed_file)
+        elif extension == "json":
+            from pesummary.core.file.read import is_pesummary_json_file
+
+            return is_pesummary_json_file(proposed_file)
+        else:
             return False
 
     @property
@@ -259,8 +263,8 @@ class Input(object):
         compare: list
             list of labels for the events that you wish to compare
         """
-        f = ExistingFile(existing_file)
-        labels = f.existing_labels
+        f = Read(existing_file)
+        labels = f.labels
         indicies = [i for i in range(len(labels))]
 
         if compare:
@@ -271,13 +275,13 @@ class Input(object):
                                     "you wish to compare are correct." % (i))
             indicies = [labels.index(i) for i in compare]
 
-        p = [f.existing_parameters[i] for i in indicies]
-        s = [f.existing_samples[i] for i in indicies]
+        p = [f.parameters[i] for i in indicies]
+        s = [f.samples[i] for i in indicies]
 
-        if f.existing_injection == []:
+        if f.injection_parameters == []:
             inj_values = []
         else:
-            inj_values = [f.existing_injection[i] for i in indicies]
+            inj_values = [f.injection_parameters[i] for i in indicies]
 
         if inj_values == []:
             for num, i in enumerate(p):
@@ -292,7 +296,7 @@ class Input(object):
                      enumerate(p)]
         label = lambda i: f.existing_labels[i]
 
-        if f.existing_config is not None:
+        if f.config is not None:
             config = []
             for i in indicies:
                 config_dir = os.path.join(webdir, "config")
@@ -390,8 +394,11 @@ class Input(object):
     def existing_labels(self, existing_labels):
         self._existing_labels = None
         if self.add_to_existing:
-            existing = ExistingFile(self.existing)
-            self._existing_labels = existing.existing_labels
+            from glob import glob
+
+            f = glob(self.existing + "/samples/posterior_samples*")
+            existing = Read(f[0])
+            self._existing_labels = existing.labels
 
     @property
     def existing_parameters(self):
@@ -401,8 +408,8 @@ class Input(object):
     def existing_parameters(self, existing_parameters):
         self._existing_parameters = None
         if self.add_to_existing:
-            existing = ExistingFile(self.existing)
-            self._existing_parameters = existing.existing_parameters
+            existing = Read(self.existing_meta_file)
+            self._existing_parameters = existing.parameters
 
     @property
     def existing_samples(self):
@@ -412,14 +419,16 @@ class Input(object):
     def existing_samples(self, existing_samples):
         self._existing_samples = None
         if self.add_to_existing:
-            existing = ExistingFile(self.existing)
-            self._existing_samples = existing.existing_samples
+            existing = Read(self.existing_meta_file)
+            self._existing_samples = existing.samples
 
     @property
     def existing_meta_file(self):
         if self.add_to_existing:
-            existing = ExistingFile(self.existing)
-            return existing.existing_file
+            from glob import glob
+
+            f = glob(self.existing + "/samples/posterior_samples*")
+            return f[0]
         return None
 
     @property
@@ -494,13 +503,18 @@ class Input(object):
         config_file: str, optional
             Path to the configuration file that was used
         """
-        f = OneFormat(results_file, injection_file, config=config_file)
-        f.generate_all_posterior_samples()
+        f = Read(results_file)
+        if config_file:
+            f.add_fixed_parameters_from_config_file(config_file)
+        if injection_file:
+            f.add_injection_parameters_from_file(injection_file)
         parameters = f.parameters
         samples = f.samples
-        inj_p = f.injection_parameters
-        inj_value = f.injection_values
-        injection = {i: j for i, j in zip(inj_p, inj_value)}
+        if hasattr(f, "injection_parameters"):
+            injection = f.injection_parameters
+        else:
+            injection = {i: j for i, j in zip(
+                parameters, [float("nan")] * len(parameters))}
         return parameters, samples, injection
 
     def _default_labels(self):
@@ -569,10 +583,10 @@ class PostProcessing(object):
         self.add_to_existing = inputs.add_to_existing
         self.labels = inputs.labels
         self.hdf5 = inputs.hdf5
+        self.existing_meta_file = inputs.existing_meta_file
         self.existing_labels = inputs.existing_labels
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples
-        self.existing_meta_file = inputs.existing_meta_file
         self.colors = colors
 
         self.grab_data_map = {"existing_file": self._data_from_existing_file,
