@@ -17,6 +17,8 @@
   to PEP8
 - Argument `--custom_plotting` which allows the user to pass a python file
   containing custom plots
+- Version tab on homepage to display PESummary version used to generate the
+  pages
 
 ## 0.1.7 [15/06/2019]
 
