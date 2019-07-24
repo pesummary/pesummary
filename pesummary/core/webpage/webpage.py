@@ -241,6 +241,10 @@ class page(Base):
         elif key == "Comparison":
             self.add_content(
                 "Below are the summary comparison plots")
+        elif key == "Version":
+            self.add_content(
+                "Below is the PESummary version information used to generate "
+                "these pages")
         else:
             self.add_content(
                 "The figures below show the plots for %s" % (approximant))
@@ -519,7 +523,7 @@ class page(Base):
         render = highlight(contents, lexer, formatter)
         self.add_content(render)
         styles = formatter.get_style_defs('.highlight')
-        styles += ".highlight {margin: 20px; padding: 20px;}"
+        styles += ".highlight {margin: 5px; padding: 10px; background: #FFFFFF}"
         return styles
 
     def make_table_of_images(self, contents=None, rows=None, columns=None,

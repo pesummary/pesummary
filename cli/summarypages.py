@@ -58,7 +58,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
     @navbar_for_homepage.setter
     def navbar_for_homepage(self, navbar_for_homepage):
         approximant_links = self._approximant_navbar_links()
-        links = ["home", ["Approximants", approximant_links]]
+        links = ["home", ["Approximants", approximant_links], "version"]
         if len(self.result_files) > 1:
             links[1][1] = links[1][1] + ["Comparison"]
         self._navbar_for_homepage = links
@@ -249,6 +249,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         if len(self.labels) > 1:
             self.make_comparison_pages()
         self.make_error_page()
+        self.make_version_page()
 
     def _setup_page(self, html_page, links, label=None, title=None,
                     approximant=None, background_colour=None,
@@ -397,7 +398,9 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
             if self.config and num < len(self.config):
                 with open(self.config[num], 'r') as f:
                     contents = f.read()
+                html_file.make_container()
                 styles = html_file.make_code_block(language='ini', contents=contents)
+                html_file.end_container()
                 with open('{0:s}/css/{1:s}_{2:s}_config.css'.format(self.webdir,
                           self.labels[num], self.labels[num]), 'w') as f:
                     f.write(styles)
@@ -486,6 +489,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                                       {"all": ", ".join(self.same_parameters)}],
                                   label="None", code="combines")
         html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.close()
 
     def make_error_page(self):
         """Make a page that is shown when something goes wrong.
@@ -505,6 +509,27 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
             "<h2 style='color:white;'> Something went wrong... </h2>")
         html_file.end_div()
         html_file.end_div()
+        html_file.close()
+
+    def make_version_page(self):
+        """Make a page to display the version information
+        """
+        pages = ["version"]
+        webpage.make_html(web_dir=self.webdir, pages=pages, stylesheets=pages)
+        html_file = webpage.open_html(
+            web_dir=self.webdir, base_url=self.baseurl, html_page="version")
+        html_file = self._setup_page(
+            "version", self.navbar_for_homepage, title="Version information")
+        html_file.make_banner(approximant="Version", key="Version")
+        path = pesummary.__file__[:-12]
+        with open(path + "/.version", 'r') as f:
+            contents = f.read()
+        html_file.make_container()
+        styles = html_file.make_code_block(language='shell', contents=contents)
+        with open('{0:s}/css/version.css'.format(self.webdir), 'w') as f:
+            f.write(styles)
+        html_file.end_container()
+        html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
     def generate_specific_javascript(self):
