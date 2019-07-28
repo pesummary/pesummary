@@ -89,28 +89,41 @@ class GWRead(Read):
         return total, log_frequencies.keys()
 
     @staticmethod
-    def load_strain_data(path_to_strain_file):
+    def load_strain_data(strain_data):
         """Load the strain data
 
         Parameters
         ----------
-        path_to_strain_file: str
-            path to the strain file that you wish to load
+        strain_data: dict
+            strain data with key equal to the channel and value the path to
+            the strain data
         """
         func_map = {"lcf": GWRead._timeseries_from_cache_file}
-        ext = GWRead.extension_from_path(path_to_strain_file)
-        function = func_map[ext]
-        return GWRead.load_from_function(function, path_to_strain_file)
+        timeseries = {}
+        for key in list(strain_data.keys()):
+            ext = GWRead.extension_from_path(strain_data[key])
+            function = func_map[ext]
+            reduced_dict = {key: strain_data[key]}
+            if "H1" in key:
+                ifo = "H1"
+            elif "L1" in key:
+                ifo = "L1"
+            elif "V1" in key:
+                ifo = "V1"
+            else:
+                ifo = key
+            timeseries[ifo] = GWRead.load_from_function(function, reduced_dict)
+        return timeseries
 
-    def _timeseries_from_cache_file(self, channel, cached_file):
+    @staticmethod
+    def _timeseries_from_cache_file(strain_dictionary):
         """Return a time series from a cache file
 
         Parameters
         ----------
-        channel: str
-            the name of the channel for the cache file
-        cached_file: str
-            path to the cached file
+        strain_dictionary: dict
+            dictionary containing one key (channel) and one value (path to
+            cache file)
         """
         from gwpy.timeseries import TimeSeries
 
@@ -123,6 +136,8 @@ class GWRead(Read):
         if not GLUE:
             raise Exception("lscsoft-glue is required to read from a cached "
                             "file. Please install this package")
+        channel = list(strain_dictionary.keys())[0]
+        cached_file = strain_dictionary[channel]
         with open(cached_file, "r") as f:
             data = Cache.fromfile(f)
         try:
