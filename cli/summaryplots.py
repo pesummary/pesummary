@@ -150,10 +150,10 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
             combine_corner = open("%s/js/combine_corner.js" % (self.webdir))
             combine_corner = combine_corner.readlines()
             params = [str(i) for i in params]
-            for linenumber, line in enumerate(combine_corner):
-                if "var list = [" in line:
-                    combine_corner[linenumber] = "    var list = %s;\n" % (
-                        params)
+            ind = [linenumber for linenumber, line in enumerate(combine_corner)
+                   if "var list = {}" in line][0]
+            combine_corner.insert(ind + 1, "    list['%s'] = %s;\n" % (
+                self.labels[idx], params))
             new_file = open("%s/js/combine_corner.js" % (self.webdir), "w")
             new_file.writelines(combine_corner)
             new_file.close()
@@ -408,10 +408,10 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             combine_corner = open("%s/js/combine_corner.js" % (self.webdir))
             combine_corner = combine_corner.readlines()
             params = [str(i) for i in params]
-            for linenumber, line in enumerate(combine_corner):
-                if "var list = [" in line:
-                    combine_corner[linenumber] = "    var list = %s;\n" % (
-                        params)
+            ind = [linenumber for linenumber, line in enumerate(combine_corner)
+                   if "var list = {}" in line][0]
+            combine_corner.insert(ind + 1, "    list['%s'] = %s;\n" % (
+                self.labels[idx], params))
             new_file = open("%s/js/combine_corner.js" % (self.webdir), "w")
             new_file.writelines(combine_corner)
             new_file.close()
