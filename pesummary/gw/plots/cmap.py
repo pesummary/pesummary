@@ -31,3 +31,28 @@ def cylon():
     locals().update({"cylon": cmap})
     # Register with Matplotlib.
     cm.register_cmap(cmap=cmap)
+
+
+def colormap_with_fixed_hue(color, N=10):
+    """Create a linear colormap with fixed hue
+
+    Parameters
+    ----------
+    color: tuple
+        color that determines the hue
+    N: int, optional
+        number of colors used in the palette
+    """
+    import seaborn
+    from matplotlib.colors import LinearSegmentedColormap
+    from matplotlib.colors import rgb_to_hsv, hsv_to_rgb, hex2color
+
+    color_hsv = rgb_to_hsv(hex2color(color))
+    base = seaborn.color_palette("Blues", 10)
+    base_hsv = np.array(list(map(rgb_to_hsv, base)))
+    h, s, v = base_hsv.T
+
+    h_fixed = np.ones_like(h) * color_hsv[0]
+    color_array = np.array(list(map(
+        hsv_to_rgb, np.vstack([h_fixed, s * color_hsv[1], v]).T)))
+    return LinearSegmentedColormap.from_list("mycmap", color_array)

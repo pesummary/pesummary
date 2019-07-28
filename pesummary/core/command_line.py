@@ -159,4 +159,6 @@ def command_line():
     parser.add_argument("--custom_plotting", dest="custom_plotting",
                         help=("python file containing functions for custom "
                               "plotting"), default=None)
+    parser.add_argument("--publication", action="store_true",
+                        help="generate production quality plots", default=None)
     return parser

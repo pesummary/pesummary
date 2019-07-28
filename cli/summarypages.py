@@ -58,7 +58,10 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
     @navbar_for_homepage.setter
     def navbar_for_homepage(self, navbar_for_homepage):
         approximant_links = self._approximant_navbar_links()
-        links = ["home", ["Approximants", approximant_links], "version"]
+        links = ["home", ["Approximants", approximant_links]]
+        if self.publication:
+            links.append("Publication")
+        links.append("version")
         if len(self.result_files) > 1:
             links[1][1] = links[1][1] + ["Comparison"]
         self._navbar_for_homepage = links
@@ -567,6 +570,20 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         self.generate_specific_javascript()
         logger.debug("Finished Tailoring the javascript")
 
+    def generate_webpages(self):
+        """Generate all webpages that we need.
+        """
+        self.make_home_pages()
+        self.make_1d_histogram_pages()
+        self.make_corner_pages()
+        self.make_config_pages()
+        if len(self.labels) > 1:
+            self.make_comparison_pages()
+        self.make_error_page()
+        self.make_version_page()
+        if self.publication:
+            self.make_publication_pages()
+
     def _categorize_parameters(self, parameters):
         """Categorize the parameters into common headings.
 
@@ -933,6 +950,48 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                                       {"all": ", ".join(self.same_parameters)}],
                                   label="None", code="combines")
         html_file.make_footer(user=self.user, rundir=self.webdir)
+
+    def make_publication_pages(self):
+        """Make publication pages
+        """
+        from glob import glob
+        from subprocess import check_output
+
+        webpage.make_html(web_dir=self.webdir, pages=["Publication"])
+        html_file = webpage.open_html(
+            web_dir=self.webdir, base_url=self.baseurl, html_page="Publication")
+        html_file = self._setup_page(
+            "Publication", self.navbar_for_homepage, title="Publication Plots")
+        html_file.make_banner(approximant="Publication", key="Publication")
+        path = self.image_path["other"]
+        executable = check_output(["which", "summarypublication"]).decode("utf-8").strip()
+        general_cli = "%s --webdir %s --samples %s --labels %s " % (
+            executable, self.webdir + "/plots/publication",
+            " ".join([i for i in self.result_files]),
+            " ".join([i for i in self.labels]))
+        general_cli += "--plot {}"
+        pub_plots = glob("%s/plots/publication/*.png" % (self.webdir))
+        cli = []
+        for i in pub_plots:
+            filename = i.split("/")[-1]
+            if "violin_plot" in filename:
+                parameter = filename.split("violin_plot_")[-1].split(".png")[0]
+                cli.append(general_cli.format("violin")
+                           + " --parameters %s" % (parameter))
+            elif "spin_disk" in filename:
+                cli.append(general_cli.format("spin_disk"))
+            elif "2d_contour" in filename:
+                parameters = filename.split("2d_contour_plot_")[-1].split(".png")[0]
+                cli.append(general_cli.format("2d_contour")
+                           + " --parameters %s" % (parameters.replace("_and_", " ")))
+        image_contents = [
+            pub_plots[i:4 + i] for i in range(0, len(pub_plots), 4)]
+        command_lines = [
+            cli[i:4 + i] for i in range(0, len(cli), 4)]
+        html_file.make_table_of_images(contents=image_contents, cli=command_lines)
+        images = [y for x in image_contents for y in x]
+        html_file.make_modal_carousel(images=images)
+        html_file.close()
 
 
 def main():

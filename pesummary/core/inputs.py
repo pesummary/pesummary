@@ -72,6 +72,7 @@ class Input(object):
         self.user = self.opts.user
         self.existing = self.opts.existing
         self.webdir = self.opts.webdir
+        self.publication = self.opts.publication
         self.make_directories()
         self.baseurl = self.opts.baseurl
         self.inj_file = self.opts.inj_file
@@ -463,6 +464,9 @@ class Input(object):
         """
         dirs = ["samples", "plots", "js", "html", "css", "plots/corner",
                 "config"]
+
+        if self.publication:
+            dirs.append("plots/publication")
         for i in dirs:
             utils.make_dir(os.path.join(self.webdir, i))
 
@@ -583,6 +587,7 @@ class PostProcessing(object):
         self.add_to_existing = inputs.add_to_existing
         self.labels = inputs.labels
         self.hdf5 = inputs.hdf5
+        self.publication = inputs.publication
         self.existing_meta_file = inputs.existing_meta_file
         self.existing_labels = inputs.existing_labels
         self.existing_parameters = inputs.existing_parameters
