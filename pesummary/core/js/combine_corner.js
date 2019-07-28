@@ -61,7 +61,7 @@ function combine(list, label="None") {
               }, 3);
           } else {
               try {
-                  onPreloadComplete(c, imgObject, el);
+                  onPreloadComplete(c, imgObject, el, label);
               } catch (e) {
                   reject("Broken");
               }
@@ -76,15 +76,15 @@ function combine(list, label="None") {
       c.height = 0
 }
 
-function onPreloadComplete(c, imgObject, object){
-    var newImg = getImagePortion(c, imgObject, object);
+function onPreloadComplete(c, imgObject, object, label){
+    var newImg = getImagePortion(c, imgObject, object, label);
   
     //place image in appropriate div
     var link = document.getElementById("mirror")
     link.src = newImg
 }
 
-function getImagePortion(c, imgObj, array){
+function getImagePortion(c, imgObj, array, label){
     /* the parameters: - the image element - the new width - the new height - the x point we start taking pixels - the y point we start taking pixels - the ratio */
     // set up canvas for thumbnail
     var tnCanvas = document.createElement('canvas');
@@ -100,25 +100,25 @@ function getImagePortion(c, imgObj, array){
     bufferCanvas.height = imgObj.height;
     bufferContext.drawImage(imgObj, 0, 0);
 
-    var list = ['redshift', 'phi_jl', 'total_mass', 'chirp_mass_source', 'symmetric_mass_ratio', 'mass_1', 'ra', 'mass_2', 'tilt_2', 'mass_2_source', 'psi', 'phi_12', 'geocent_time', 'a_1', 'a_2', 'chi_p', 'phase', 'mass_1_source', 'luminosity_distance', 'chirp_mass', 'iota', 'chi_eff', 'mass_ratio', 'total_mass_source', 'tilt_1', 'dec', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'luminosity_distance', 'iota', 'dec', 'ra', 'psi', 'phase'];
+    var list = {}
     var indices = []
     
     var ratio = (157.5*3) / (array.length*210)
 
     for ( var i=0; i<array.length; i++) {
-        if ( list.indexOf(array[i]) == -1 ) {
+        if ( list[label].indexOf(array[i]) == -1 ) {
             alert(                                       
                 "The parameter '" + array[i] + "' is not recognised. Please open the " +
                 "sidebar for a full list of available parameters")
         } else {
-             indices[i] = list.indexOf(array[i])
+             indices[i] = list[label].indexOf(array[i])
         }
     }
     indices.sort((a,b) => a-b)
 
     for ( var i=0; i<array.length; i++) {
 
-        tnCanvasContext.drawImage(bufferCanvas, 100+208*indices[i]+2*(indices[i]-1), 34+208*list.length+2*(list.length-1), 208, 80, 210*i*ratio+120, 210*array.length*ratio, 208*ratio, 80*ratio)
+        tnCanvasContext.drawImage(bufferCanvas, 100+208*indices[i]+2*(indices[i]-1), 34+208*list[label].length+2*(list[label].length-1), 208, 80, 210*i*ratio+120, 210*array.length*ratio, 208*ratio, 80*ratio)
         tnCanvasContext.drawImage(bufferCanvas, 10, 36+208*indices[i]+2*(indices[i]-1), 80, 208, 100-74*ratio, 210*i*ratio, 74*ratio, 208*ratio)
         for ( var j=i; j<array.length; j++) {
             tnCanvasContext.drawImage(bufferCanvas, 100+208*indices[i]+2*(indices[i]-1), 36+208*indices[j]+2*(indices[j]-1), 208, 208, 210*i*ratio+120, 210*j*ratio, 208*ratio, 208*ratio)
