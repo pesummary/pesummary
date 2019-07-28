@@ -970,7 +970,11 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             " ".join([i for i in self.result_files]),
             " ".join([i for i in self.labels]))
         general_cli += "--plot {}"
+        path = self.image_path["other"]
         pub_plots = glob("%s/plots/publication/*.png" % (self.webdir))
+        for num, i in enumerate(pub_plots):
+            shortened_path = i.split("/plots/")[-1]
+            pub_plots[num] = path + shortened_path
         cli = []
         for i in pub_plots:
             filename = i.split("/")[-1]
