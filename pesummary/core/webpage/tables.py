@@ -18,7 +18,7 @@ from pesummary.core.webpage.base import Base
 
 class table_of_images(Base):
 
-    def __init__(self, content, rows, columns, html_file, code):
+    def __init__(self, content, rows, columns, html_file, code, cli):
         """
 
         Parameters
@@ -32,6 +32,7 @@ class table_of_images(Base):
         self.columns = columns
         self.html_file = html_file
         self.code = code
+        self.cli = cli
         self._add_scripts()
 
     def _add_scripts(self):
@@ -66,14 +67,36 @@ class table_of_images(Base):
             _class = "row justify-content-center"
             self.make_div(4, _class=_class, _style=None)
             self.make_div(6, _class="row", _style=None)
-            for i in self.content:
-                self.make_div(8, _class="column", _style=None)
+            for idx, i in enumerate(self.content):
+                self.make_div(8, _class="column", _style="padding-left: 1em;")
                 for num, j in enumerate(i):
                     _id = j.split("/")[-1][:-4]
+                    self.make_div(10, _class='container',
+                                  _style=("display: inline-block; width: auto; "
+                                          "padding: 0;"))
                     self.add_content(
                         "<a href='#demo' data-slide-to='%s'>\n" % (ind), indent=6)
                     self._insert_image(j, width, 8, _id, justify=None)
                     self.add_content("</a>\n", indent=6)
+                    if self.cli:
+                        self.make_div(10, _class="imgButton", _style=None)
+                        self.add_content("<button value='test' data-toggle='modal' "
+                                         "data-target='#my%s%sModal'>Command Line<"
+                                         "/button>" % (idx, num), indent=12)
+                        self.end_div(10)
+                        self.add_content("<div class='modal' id='my%s%sModal'>" % (
+                            idx, num), indent=10)
+                        self.make_div(12, _class='modal-dialog',
+                                      _style="max-width: 1000px; padding-top: 250px;")
+                        self.make_div(14, _class='modal-content', _style=None)
+                        self.make_div(16, _class='modal-body',
+                                      _style="font-size: 0.75rem;")
+                        self.add_content("%s" % (self.cli[idx][num]), indent=18)
+                        self.end_div(16)
+                        self.end_div(14)
+                        self.end_div(12)
+                        self.end_div(10)
+                    self.end_div(10)
                     ind += 1
                 self.end_div(8)
             self.end_div(6)

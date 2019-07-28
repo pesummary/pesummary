@@ -245,6 +245,10 @@ class page(Base):
             self.add_content(
                 "Below is the PESummary version information used to generate "
                 "these pages")
+        elif key == "Publication":
+            self.add_content(
+                "Below are publication quality plots for the passed result "
+                "files")
         else:
             self.add_content(
                 "The figures below show the plots for %s" % (approximant))
@@ -527,7 +531,7 @@ class page(Base):
         return styles
 
     def make_table_of_images(self, contents=None, rows=None, columns=None,
-                             code="modal"):
+                             code="modal", cli=None):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -545,7 +549,7 @@ class page(Base):
             if True, the table of images is placed inside a container
         """
         table = tables.table_of_images(contents, rows, columns, self.html_file,
-                                       code=code)
+                                       code=code, cli=cli)
         table.make()
 
     def insert_image(self, path, justify="center", code=None):

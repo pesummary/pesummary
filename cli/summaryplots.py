@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import pesummary
 from pesummary.core.plots import plot as core
 from pesummary.gw.plots import plot as gw
+from pesummary.gw.plots import publication as pub
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.core.file.read import read as Read
@@ -328,6 +329,10 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             self.try_to_make_a_plot("1d_histogram_comparison", "all")
             self.try_to_make_a_plot("skymap_comparison", "all")
             self.try_to_make_a_plot("waveform_comparison", "all")
+            if self.publication:
+                self.try_to_make_a_plot("2d_comparison_contour_plots", "all")
+                self.try_to_make_a_plot("violin_plots", "all")
+                self.try_to_make_a_plot("spin_disk_plots", "all")
 
     def try_to_make_a_plot(self, plot_type, idx=None):
         """Try and make a plot. If it fails, return an error.
@@ -353,7 +358,11 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
                                 "waveform_comparison":
                                 self._waveform_comparison_plot,
                                 "sensitivity": self._sensitivity_plot,
-                                "custom": self._custom_plots}
+                                "custom": self._custom_plots,
+                                "2d_comparison_contour_plots":
+                                self._2d_comparison_contour_plots,
+                                "violin_plots": self._violin_plots,
+                                "spin_disk_plots": self._spin_disk_plots}
         try:
             plot_type_dictionary[plot_type](idx)
         except Exception as e:
@@ -570,6 +579,103 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             self.maxL_samples, self.colors, self.labels)
         fig.savefig(self.savedir + "compare_time_domain_waveforms.png")
         plt.close()
+
+    def _2d_comparison_contour_plots(self, idx="all"):
+        """Generate 2d comparison contour plots
+
+        Parameters
+        ----------
+        idx: int, optional
+            The indicies of the results files that you wish to be included
+            in the comparsion plots.
+        """
+        twod_plots = [["mass_ratio", "chi_eff"], ["mass_1", "mass_2"],
+                      ["luminosity_distance", "chirp_mass_source"],
+                      ["mass_1_source", "mass_2_source"],
+                      ["theta_jn", "luminosity_distance"],
+                      ["network_optimal_snr", "chirp_mass_source"]]
+        for i in twod_plots:
+            if not all(all(j in k for j in i) for k in self.parameters):
+                logger.warn("Failed to generate 2d comparison contour plot for "
+                            "%s" % ("_and_".join(i)))
+                continue
+            try:
+                ind1 = [j.index(i[0]) for j in self.parameters]
+                ind2 = [j.index(i[1]) for j in self.parameters]
+                samples1 = [[k[ind1[num]] for k in l] for num, l in
+                            enumerate(self.samples)]
+                samples2 = [[k[ind2[num]] for k in l] for num, l in
+                            enumerate(self.samples)]
+                samples = [[j, k] for j, k in zip(samples1, samples2)]
+                fig = pub.twod_contour_plots(
+                    i, samples, self.labels, latex_labels)
+                fig.savefig("%s/publication/2d_contour_plot_%s.png" % (
+                    self.savedir, "_and_".join(i)))
+                plt.close()
+            except Exception:
+                logger.warn("Failed to generate 2d contour plot for %s" % (
+                            "_and_".join(i)))
+                continue
+
+    def _violin_plots(self, idx="all"):
+        """Generate 2d comparison contour plots
+
+        Parameters
+        ----------
+        idx: int, optional
+            The indicies of the results files that you wish to be included
+            in the comparsion plots.
+        """
+        violin_plots = ["mass_ratio", "chi_eff", "chi_p", "luminosity_distance"]
+        for i in violin_plots:
+            if not all(i in j for j in self.parameters):
+                logger.warn("Failed to generate violin plots for %s because "
+                            "%s is not in all result files" % (i, i))
+                continue
+            try:
+                ind = [j.index(i) for j in self.parameters]
+                samples = [[k[ind[num]] for k in l] for num, l in
+                           enumerate(self.samples)]
+                fig = pub.violin_plots(i, samples, self.labels, latex_labels)
+                fig.savefig("%s/publication/violin_plot_%s.png" % (
+                    self.savedir, i))
+                plt.close()
+            except Exception:
+                logger.warn("Failed to generate a violin plot for %s" % (i))
+                continue
+
+    def _spin_disk_plots(self, idx="all"):
+        """Generate spin disk plots
+
+        Parameters
+        ----------
+        idx: int, optional
+            The indicies of the results files that you wish to be included
+            in the comparsion plots.
+        """
+        import seaborn
+
+        palette = seaborn.color_palette(
+            palette="pastel", n_colors=len(self.samples))
+        parameters = ["a_1", "a_2", "tilt_1", "tilt_2"]
+        for num, i in enumerate(self.parameters):
+            if not all(all(j in k for k in self.parameters) for j in parameters):
+                logger.warn("Failed to generate spin disk plots for %s because "
+                            "%s are not in the result file" % (
+                                self.labels[num], " and ".join(parameters)))
+                continue
+            try:
+                ind = [i.index(j) for j in parameters]
+                samples = [[k[idx] for k in self.samples[num]] for idx in ind]
+                fig = pub.spin_distribution_plots(
+                    parameters, samples, self.labels[num], palette[num])
+                fig.savefig("%s/publication/spin_disk_plot_%s.png" % (
+                    self.savedir, self.labels[num]))
+                plt.close()
+            except Exception as e:
+                logger.warn("Failed to generate a spin disk plot for %s" % (
+                            self.labels[num]))
+                continue
 
 
 def main():

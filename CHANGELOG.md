@@ -19,6 +19,12 @@
   containing custom plots
 - Version tab on homepage to display PESummary version used to generate the
   pages
+- `summarypublication` executable which produces publication quality plots
+  based on the passed result files.
+- Argument `--publication` calls the `summarypublication` executable and adds
+  a new Publication tab to the homepage to show publication plots
+- Added a `command_line` button which is displayed under the plot showing the
+  command line used to generate the plot.
 
 ## 0.1.7 [15/06/2019]
 
