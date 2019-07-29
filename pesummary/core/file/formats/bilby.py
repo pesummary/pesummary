@@ -13,9 +13,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.core.file.formats.base_read import Read
 import os
 import numpy as np
+from pesummary.core.file.formats.base_read import Read
+from pesummary.core.plots.latex_labels import latex_labels
 
 
 class Bilby(Read):
@@ -58,6 +59,14 @@ class Bilby(Read):
             for i in parameters:
                 if i not in injection.keys():
                     injection[i] = float("nan")
+        for key in (
+                bilby_object.constraint_parameter_keys
+                + bilby_object.search_parameter_keys
+                + bilby_object.fixed_parameter_keys):
+            if key not in latex_labels:
+                label = bilby_object.get_latex_labels_from_parameter_keys(
+                    [key])[0]
+                latex_labels[key] = label
         return parameters, samples, injection
 
     def add_marginalized_parameters_from_config_file(self, config_file):

@@ -31,7 +31,6 @@ GWlatex_labels = {"luminosity_distance": r"$d_{L} [Mpc]$",
                   "mass_1": r"$m_{1} [M_{\odot}]$",
                   "total_mass": r"$M [M_{\odot}]$",
                   "chirp_mass": r"$\mathcal{M} [M_{\odot}]$",
-                  "log_likelihood": r"$\log{\mathcal{L}}$",
                   "H1_matched_filter_snr": r"$\rho^{H}_{mf}$",
                   "L1_matched_filter_snr": r"$\rho^{L}_{mf}$",
                   "network_matched_filter_snr": r"$\rho^{N}_{mf}$",
@@ -78,4 +77,4 @@ GWlatex_labels = {"luminosity_distance": r"$d_{L} [Mpc]$",
                   "lambda_2": r"$\lambda_{2}$",
                   "lambda_tilde": r"$\tilde{\lambda}$",
                   "delta_lambda": r"$\delta\lambda$",
-                  "log_prior": r"$\log{P}$"}
+                  }

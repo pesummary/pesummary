@@ -16,6 +16,7 @@
 import os
 import numpy as np
 from pesummary.gw.file.formats.base_read import GWRead
+from pesummary.gw.plots.latex_labels import GWlatex_labels
 
 
 class Bilby(GWRead):
@@ -148,6 +149,14 @@ class Bilby(GWRead):
             for i in parameters:
                 if i not in injection.keys():
                     injection[i] = float("nan")
+        for key in (
+                bilby_object.constraint_parameter_keys
+                + bilby_object.search_parameter_keys
+                + bilby_object.fixed_parameter_keys):
+            if key not in GWlatex_labels:
+                label = bilby_object.get_latex_labels_from_parameter_keys(
+                    [key])[0]
+                GWlatex_labels[key] = label
         return parameters, samples, injection
 
     def add_marginalized_parameters_from_config_file(self, config_file):
