@@ -14,4 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-latex_labels = {}
+latex_labels = {
+    "log_likelihood": r"$\log{\mathcal{L}}$",
+    "log_prior": r"$\log{P}$"
+}
