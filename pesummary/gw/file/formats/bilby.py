@@ -138,6 +138,8 @@ class Bilby(GWRead):
 
         bilby_object = read_in_result(filename=path)
         posterior = bilby_object.posterior
+        # Drop all non numeric bilby data outputs
+        posterior = posterior.select_dtypes(include=[float, int])
         parameters = list(posterior.keys())
         number = len(posterior[parameters[0]])
         samples = [[np.real(posterior[param][i]) for param in parameters] for i in range(number)]
