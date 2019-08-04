@@ -215,13 +215,15 @@ class Input(object):
                 sys.path.append(path_to_python_file)
             try:
                 mod = importlib.import_module(python_file)
-                try:
-                    methods = mod.__all__
+                methods = getattr(mod, '__single_plots__', list()).copy()
+                methods += getattr(mod, '__comparison_plots__', list())
+                if len(methods) > 0:
                     self._custom_plotting = [path_to_python_file, python_file]
-                except Exception:
+                else:
                     logger.warn(
-                        "No __all__ in %s. No custom plotting will be done. "
-                        "Please add an __all__ variable in %s for future "
+                        "No __single_plots__ or __comparison_plots__ in %s. "
+                        "No custom plotting will be done. "
+                        "Please specify at least one of these in %s for future "
                         "use" % (python_file, python_file))
             except Exception as e:
                 logger.warn(

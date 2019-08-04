@@ -1,3 +1,5 @@
+from glob import glob
+
 import pesummary
 from pesummary.core.command_line import command_line
 from pesummary.gw.command_line import insert_gwspecific_option_group
@@ -317,7 +319,6 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
                 background_colour=self.colors[num], approximant=i)
             html_file.make_banner(approximant=i, key=i)
             if self.custom_plotting:
-                from glob import glob
 
                 custom_plots = glob(
                     "%s/plots/%s_custom_plotting_*" % (self.webdir, i))
@@ -424,6 +425,17 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
             "Comparison", self.navbar_for_comparison_homepage,
             title="Comparison Summary Page", approximant="Comparison")
         html_file.make_banner(approximant="Comparison", key="Comparison")
+        if self.custom_plotting:
+            custom_plots = glob(
+                "%s/plots/combined_custom_plotting_*" % (self.webdir))
+            path = self.image_path["other"]
+            for num, i in enumerate(custom_plots):
+                custom_plots[num] = path + i.split("/")[-1]
+            image_contents = [
+                custom_plots[i:4 + i] for i in range(0, len(custom_plots), 4)]
+            html_file.make_table_of_images(contents=image_contents)
+            images = [y for x in image_contents for y in x]
+            html_file.make_modal_carousel(images=images)
         path = self.image_path["other"]
         try:
             statistics = self.comparison_statistics
@@ -883,6 +895,19 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                 "onclick='%s.src=\"%s/plots/%s_sky_sensitivity_HLV.png\"'"
                 "style='margin-left:0.25em; margin-right:0.25em'>HLV</button></div>\n"
                 % ("combined_skymap", self.baseurl, self.approximant[0]))
+
+        if self.custom_plotting:
+            custom_plots = glob(
+                "%s/plots/combined_custom_plotting_*" % (self.webdir))
+            path = self.image_path["other"]
+            for num, i in enumerate(custom_plots):
+                custom_plots[num] = path + i.split("/")[-1]
+            image_contents = [
+                custom_plots[i:4 + i] for i in range(0, len(custom_plots), 4)]
+            html_file.make_table_of_images(contents=image_contents)
+            images = [y for x in image_contents for y in x]
+            html_file.make_modal_carousel(images=images)
+
         try:
             statistics = self.comparison_statistics
         except Exception as e:
@@ -954,7 +979,6 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
     def make_publication_pages(self):
         """Make publication pages
         """
-        from glob import glob
         from subprocess import check_output
 
         webpage.make_html(web_dir=self.webdir, pages=["Publication"])
