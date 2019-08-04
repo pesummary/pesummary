@@ -110,6 +110,8 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
         if len(self.samples) > 1:
             logger.debug("Starting to generate comparison plots\n")
             self.try_to_make_a_plot("1d_histogram_comparison", "all")
+            if self.custom_plotting:
+                self.try_to_make_a_plot("custom", "all")
 
     def try_to_make_a_plot(self, plot_type, idx=None):
         """Try and make a plot. If it fails, return an error.
@@ -131,6 +133,7 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
         except Exception as e:
             logger.info("Failed to generate %s plot because "
                         "%s" % (plot_type, e))
+            plt.close()
 
     def _corner_plot(self, idx):
         """Generate a corner plot for a given results file.
@@ -196,6 +199,7 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
             except Exception as e:
                 logger.info("Failed to generate 1d_histogram plots for %s "
                             "because %s" % (j, e))
+                plt.close()
                 continue
 
     def _1d_histogram_comparison_plots(self, idx="all"):
@@ -231,9 +235,10 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
             except Exception as e:
                 logger.info("Failed to generate comparison plots for %s "
                             "because %s" % (j, e))
+                plt.close()
                 continue
 
-    def _custom_plots(self, idx):
+    def _custom_plots(self, idx="all"):
         """Generate custom plots according to the passed python file
 
         Parameters
@@ -248,13 +253,22 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
 
             sys.path.append(self.custom_plotting[0])
         mod = importlib.import_module(self.custom_plotting[1])
-        methods = [getattr(mod, i) for i in mod.__all__]
 
-        for num, i in enumerate(methods):
-            fig = i(self.parameters[idx], self.samples[idx])
-            fig.savefig(self.savedir + "%s_custom_plotting_%s" % (
-                self.labels[idx], num))
-            plt.close()
+        if idx != "all":
+            methods = [getattr(mod, i) for i in mod.__single_plots__]
+
+            for num, i in enumerate(methods):
+                fig = i(self.parameters[idx], self.samples[idx])
+                fig.savefig(self.savedir + "%s_custom_plotting_%s" % (
+                    self.labels[idx], num))
+                plt.close()
+        else:
+            methods = [getattr(mod, i) for i in mod.__comparison_plots__]
+
+            for num, i in enumerate(methods):
+                fig = i(self.parameters, self.samples, self.labels)
+                fig.savefig(self.savedir + "combined_custom_plotting_%s" % (num))
+                plt.close()
 
 
 class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
@@ -368,6 +382,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         except Exception as e:
             logger.info("Failed to generate %s plot because "
                         "%s" % (plot_type, e))
+            plt.close()
 
     def _calibration_plot(self, idx=None):
         """Generate a single plot showing the calibration envelopes for all
