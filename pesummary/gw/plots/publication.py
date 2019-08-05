@@ -118,8 +118,10 @@ def twod_contour_plots(parameters, samples, labels, latex_labels):
     transform = xlow = xhigh = ylow = yhigh = None
     for num, i in enumerate(samples):
         if parameters[0] == "mass_ratio":
+            xlow = 0.
             xhigh = 1.
         if parameters[1] == "mass_ratio":
+            ylow = 0.
             yhigh = 1.
         if all("mass_1" in j or "mass_2" in j for j in parameters):
             transform = chirp_mass_and_q_from_mass1_mass2
@@ -160,7 +162,8 @@ def twod_contour_plots(parameters, samples, labels, latex_labels):
         ax1.fill_betweenx(y, xlim[0], x, color='gray', alpha=0.75)
     ax1.set_xlabel(latex_labels[parameters[0]])
     ax1.set_ylabel(latex_labels[parameters[1]])
-    plt.legend(loc="best")
+    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+               ncol=4, mode="expand", borderaxespad=0.)
     plt.tight_layout()
     return fig
 

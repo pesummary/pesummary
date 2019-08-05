@@ -19,6 +19,7 @@
   containing custom plots
 - Version tab on homepage to display PESummary version used to generate the
   pages
+- Logging tab on homepage to display the output from the PESummary code
 - `summarypublication` executable which produces publication quality plots
   based on the passed result files.
 - Argument `--publication` calls the `summarypublication` executable and adds

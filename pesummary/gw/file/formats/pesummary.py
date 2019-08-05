@@ -77,7 +77,7 @@ class PESummary(CorePESummary):
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
             if "injection_data" in dictionary.keys():
                 inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
-                inj_list.append(inj)
+                inj_list.append({i: j for i, j in zip(p, inj)})
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
             else:

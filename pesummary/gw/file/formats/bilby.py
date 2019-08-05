@@ -148,6 +148,9 @@ class Bilby(GWRead):
             injection = {i: j for i, j in zip(
                 parameters, [float("nan")] * len(parameters))}
         else:
+            for key in injection.keys():
+                if not isinstance(injection[key], str):
+                    injection[key] = float(injection[key])
             for i in parameters:
                 if i not in injection.keys():
                     injection[i] = float("nan")
@@ -160,6 +163,12 @@ class Bilby(GWRead):
                     [key])[0]
                 GWlatex_labels[key] = label
         return parameters, samples, injection
+
+    def add_injection_parameters_from_file(self, injection_file):
+        """
+        """
+        self.injection_parameters = self._add_injection_parameters_from_file(
+            injection_file, self._grab_injection_parameters_from_file)
 
     def add_marginalized_parameters_from_config_file(self, config_file):
         """Search the configuration file and add the marginalized parameters

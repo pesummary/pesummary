@@ -106,7 +106,11 @@ class PESummary(Read):
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
             if "injection_data" in dictionary.keys():
                 inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
-                inj_list.append(inj)
+                for num, j in enumerate(inj):
+                    if isinstance(j, (str, bytes)):
+                        if j.decode("utf-8") == "NaN":
+                            inj[num] = float("nan")
+                inj_list.append({i: j for i, j in zip(p, inj)})
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
             else:
@@ -121,9 +125,9 @@ class PESummary(Read):
 
     @property
     def samples_dict(self):
-        zipped = zip(self.labels, self.parameters, self.samples)
-        outdict = {label: dict(zip(pars, np.array(samples).T)) for label, pars,
-                   samples in zipped}
+        outdict = {label: {par: [i[num] for i in self.samples[idx]] for num, par
+                   in enumerate(self.parameters[idx])} for idx, label in
+                   enumerate(self.labels)}
         return outdict
 
     def write_config_to_file(self, label, outdir="./"):
@@ -185,5 +189,6 @@ class PESummary(Read):
         for num, i in enumerate(label):
             ind = self.labels.index(i)
             np.savetxt(
-                "pesummary_%s.dat" % (i), self.samples[ind], delimiter="\t",
-                header="\t".join(self.parameters[ind]), comments='')
+                "%s/pesummary_%s.dat" % (outdir, i), self.samples[ind],
+                delimiter="\t", header="\t".join(self.parameters[ind]),
+                comments='')

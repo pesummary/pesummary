@@ -295,7 +295,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             if psd:
                 self._add_label("psds", i)
             if calibration:
-                if type(calibration) == list and calibration[num] is not None:
+                if type(calibration) == list and calibration[0] is not None:
                     self._add_label(
                         "calibration_envelope", i
                     )

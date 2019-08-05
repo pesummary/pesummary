@@ -20,6 +20,14 @@ from pesummary.core.file.formats.base_read import Read
 from pesummary.utils.utils import logger
 from pesummary.gw.file import conversions as con
 
+try:
+    from glue.ligolw import ligolw
+    from glue.ligolw import lsctables
+    from glue.ligolw import utils as ligolw_utils
+    GLUE = True
+except ImportError:
+    GLUE = False
+
 
 class GWRead(Read):
     """Base class to read in a results file
@@ -39,6 +47,80 @@ class GWRead(Read):
             function, self.path_to_results_file, **kwargs)
         self.data = list(self.translate_parameters(data[0], data[1]))
         self.data.append(data[2])
+        self.injection_parameters = self.data[2]
+
+    def _grab_injection_parameters_from_file(self, injection_file):
+        extension = injection_file.split(".")[-1]
+        func_map = {"xml": self._grab_injection_data_from_xml_file,
+                    "hdf5": self._grab_injection_data_from_hdf5_file,
+                    "h5": self._grab_injection_data_from_hdf5_file}
+        return func_map[extension](injection_file)
+
+    def _grab_injection_data_from_xml_file(self, injection_file):
+        """Grab the data from an xml injection file
+        """
+        if GLUE:
+            xmldoc = ligolw_utils.load_filename(
+                injection_file, contenthandler=lsctables.use_in(
+                    ligolw.LIGOLWContentHandler))
+            try:
+                table = lsctables.SimInspiralTable.get_table(xmldoc)[0]
+            except Exception:
+                table = lsctables.SnglInspiralTable.get_table(xmldoc)[0]
+            injection_values = self._return_all_injection_parameters(
+                self.parameters, table)
+        else:
+            injection_values = [float("nan")] * len(self.parameters)
+        return {i: j for i, j in zip(self.parameters, injection_values)}
+
+    def _return_all_injection_parameters(self, parameters, table):
+        """Return the full list of injection parameters
+
+        Parameters
+        ----------
+        parameters: list
+            full list of parameters being used in the analysis
+        table: glue.ligolw.lsctables.SnglInspiral
+            table containing the trigger values
+        """
+        func_map = {
+            "chirp_mass": lambda inj: inj.mchirp,
+            "luminosity_distance": lambda inj: inj.distance,
+            "mass_1": lambda inj: inj.mass1,
+            "mass_2": lambda inj: inj.mass2,
+            "dec": lambda inj: inj.latitude,
+            "spin_1x": lambda inj: inj.spin1x,
+            "spin_1y": lambda inj: inj.spin1y,
+            "spin_1z": lambda inj: inj.spin1z,
+            "spin_2x": lambda inj: inj.spin2x,
+            "spin_2y": lambda inj: inj.spin2y,
+            "spin_2z": lambda inj: inj.spin2z,
+            "mass_ratio": lambda inj: con.q_from_m1_m2(
+                inj.mass1, inj.mass2),
+            "symmetric_mass_ratio": lambda inj: con.eta_from_m1_m2(
+                inj.mass1, inj.mass2),
+            "total_mass": lambda inj: inj.mass1 + inj.mass2,
+            "chi_p": lambda inj: con._chi_p(
+                inj.mass1, inj.mass2, inj.spin1x, inj.spin1y, inj.spin2x,
+                inj.spin2y),
+            "chi_eff": lambda inj: con._chi_eff(
+                inj.mass1, inj.mass2, inj.spin1z, inj.spin2z)}
+
+        injection_values = []
+        for i in parameters:
+            try:
+                if func_map[i](table) is not None:
+                    injection_values.append(func_map[i](table))
+                else:
+                    injection_values.append(float("nan"))
+            except Exception:
+                injection_values.append(float("nan"))
+        return injection_values
+
+    def _grab_injection_data_from_hdf5_file(self):
+        """Grab the data from an hdf5 injection file
+        """
+        pass
 
     @staticmethod
     def check_for_calibration_data(function, path_to_results_file):

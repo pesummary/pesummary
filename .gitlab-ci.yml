@@ -23,6 +23,7 @@ python-3.6:
   script:
     - pip install -r requirements.txt
     - pip install -r optional_requirements.txt
+    - pip install bilby
     - python setup.py install
     - coverage run -m pytest tests
     - coverage report
@@ -40,6 +41,7 @@ python-3.7:
   script:
     - pip install -r requirements.txt
     - pip install -r optional_requirements.txt
+    - pip install bilby
     - python setup.py install
     - pytest tests
 

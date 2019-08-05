@@ -13,32 +13,40 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os
 import shutil
-
-from pesummary.core.command_line import command_line
-from pesummary.gw.command_line import insert_gwspecific_option_group
-from pesummary.gw.inputs import GWInput
-from pesummary.core.finish import FinishingTouches
-
+import os
 import pytest
+
+from base import make_argparse
+from pesummary.core.finish import FinishingTouches
 
 
 class TestFinishingTouches(object):
-
+    """Class to test pesummary.core.finish.FinishingTouches
+    """
     def setup(self):
-        if os.path.isdir("./.outdir"):
-            shutil.rmtree("./.outdir")
-        os.makedirs("./.outdir")
-        self.parser = command_line()
-        insert_gwspecific_option_group(self.parser)
-        self.default_arguments = [
-            "--webdir", "./.outdir",
-            "--samples", "./tests/files/bilby_example.h5",
-            "--email", "albert.einstein@ligo.org"]
-        self.opts = self.parser.parse_args(self.default_arguments)
-        self.inputs = GWInput(self.opts)
-        self.finish = FinishingTouches(self.inputs)
+        """Setup the pesummary.core.finish.FinishingTouches class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        opts, inputs = make_argparse()
+        self.finish = FinishingTouches(inputs)
 
-    def test_email_message(self):
-        assert "Your output page is ready on" in str(self.finish._email_message()) 
+    def teardown(self):
+        """Remove the any files generated
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_default_message(self):
+        """Test the default email message
+        """
+        message = self.finish._email_message()
+        assert message is not None
+
+    def test_custom_message(self):
+        """Test a custom email message
+        """
+        custom_message = "This is a test message"
+        message = self.finish._email_message(message=custom_message)
+        assert message == custom_message

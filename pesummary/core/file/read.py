@@ -72,10 +72,10 @@ def is_bilby_hdf5_file(path):
     path: str
         path to the results file
     """
-    import h5py
-    f = h5py.File(path)
+    import deepdish
     try:
-        if "bilby" in f["version"][0]:
+        f = deepdish.io.load(path)
+        if "bilby" in f["version"]:
             return True
     except Exception:
         return False

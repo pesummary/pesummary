@@ -57,12 +57,18 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             path = current_path + [k]
             _recursively_save_dictionary_to_hdf5_file(f, v, path)
         elif isinstance(v, list):
+            import math
+
             if isinstance(v[0], str):
                 f["/".join(current_path)].create_dataset(k, data=np.array(
                     v, dtype="S"
                 ))
             elif isinstance(v[0], list):
                 f["/".join(current_path)].create_dataset(k, data=np.array(v))
+            elif math.isnan(v[0]):
+                f["/".join(current_path)].create_dataset(k, data=np.array(
+                    ["NaN"] * len(v), dtype="S"
+                ))
         elif isinstance(v, (str, bytes)):
             f["/".join(current_path)].create_dataset(k, data=np.array(
                 [v], dtype="S"
@@ -82,7 +88,7 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         super(MetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
         self.data = {}
-        self.existing_label = None
+        self.existing_label = [None]
         self.existing_parameters = None
         self.existing_samples = None
         self.existing_injection = None
@@ -123,12 +129,13 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             self.existing_samples = existing_file.samples
             self.existing_label = existing_file.labels
             self.existing_injection = existing_file.injection_parameters
+            self.existing_config = existing_file.config
         self._make_dictionary()
 
     def _make_dictionary(self):
-        if self.existing_label:
+        if self.existing:
             self._make_dictionary_structure(
-                self.existing_label
+                self.existing_label, config=self.existing_config
             )
             for num, i in enumerate(self.existing_label):
                 self._add_data(i, self.existing_parameters[num],
@@ -139,13 +146,14 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         self._make_dictionary_structure(self.labels, config=self.config
                                         )
         for num, i in enumerate(self.labels):
-            injection = [self.injection_data[num]["%s" % (i)] for i in
-                         self.parameters[num]]
-            config = self._grab_config_data_from_data_file(self.config[num]) if \
-                self.config and num < len(self.config) else None
-            self._add_data(i, self.parameters[num], self.samples[num],
-                           injection, config=config
-                           )
+            if i not in self.existing_label:
+                injection = [self.injection_data[num]["%s" % (i)] for i in
+                             self.parameters[num]]
+                config = self._grab_config_data_from_data_file(self.config[num]) \
+                    if self.config and num < len(self.config) else None
+                self._add_data(i, self.parameters[num], self.samples[num],
+                               injection, config=config
+                               )
 
     def _grab_config_data_from_data_file(self, file):
         """Return the config data as a dictionary

@@ -60,6 +60,12 @@ class Read():
     def samples(self):
         return self.data[1]
 
+    @property
+    def samples_dict(self):
+        outdict = {par: [i[num] for i in self.samples] for num, par in
+                   enumerate(self.parameters)}
+        return outdict
+
     @staticmethod
     def paths_to_key(key, dictionary, current_path=None):
         """Return the path to a key stored in a nested dictionary
@@ -149,12 +155,15 @@ class Read():
             data = json.load(f)
         try:
             path, = Read.paths_to_key("posterior", data)
+            path = path[0]
+            path += "/posterior"
         except Exception:
             path, = Read.paths_to_key("posterior_samples", data)
-        path = path[0]
-        if "content" in data[path].keys():
-            path += "/content"
+            path = path[0]
+            path += "/posterior_samples"
         reduced_data, = Read.load_recusively(path, data)
+        if "content" in list(reduced_data.keys()):
+            reduced_data = reduced_data["content"]
         parameters = list(reduced_data.keys())
 
         samples = [[
@@ -172,6 +181,17 @@ class Read():
         samples = [list(x) for x in dat_file]
         return parameters, samples
 
+    def add_fixed_parameters_from_config_file(self, config_file):
+        """Search the conifiguration file and add fixed parameters to the
+        list of parameters and samples
+
+        Parameters
+        ----------
+        config_file: str
+            path to the configuration file
+        """
+        pass
+
     def _add_fixed_parameters_from_config_file(self, config_file, function):
         """Search the conifiguration file and add fixed parameters to the
         list of parameters and samples
@@ -184,7 +204,7 @@ class Read():
             function you wish to use to extract the information from the
             configuration file
         """
-        self.data = function(self.parameters, self.samples, config_file)
+        self.data[0], self.data[1] = function(self.parameters, self.samples, config_file)
 
     def _add_marginalized_parameters_from_config_file(self, config_file, function):
         """Search the configuration file and add marginalized parameters to the
@@ -198,7 +218,7 @@ class Read():
             function you wish to use to extract the information from the
             configuration file
         """
-        self.data = function(self.parameters, self.samples, config_file)
+        self.data[0], self.data[1] = function(self.parameters, self.samples, config_file)
 
     def _add_injection_parameters_from_file(self, injection_file, function):
         """Add the injection parameters from file
@@ -211,4 +231,4 @@ class Read():
             funcion you wish to use to extract the information from the
             injection file
         """
-        self.data[3] = function(injection_file)
+        return function(injection_file)

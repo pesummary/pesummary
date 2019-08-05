@@ -33,6 +33,7 @@ class FinishingTouches(PostProcessing):
         self.send_email()
         logger.info("Complete. Webpages can be viewed at the following url "
                     "%s" % (self.baseurl + "/home.html"))
+        self.remove_tmp_directories()
 
     def send_email(self, message=None):
         """Send notification email.
@@ -63,3 +64,10 @@ class FinishingTouches(PostProcessing):
             message, subject, self.email)
         ess = subprocess.Popen(cmd, shell=True)
         ess.wait()
+
+    def remove_tmp_directories(self):
+        """Remove the temp directories created by PESummary
+        """
+        from pesummary.utils import utils
+
+        utils.remove_tmp_directories()
