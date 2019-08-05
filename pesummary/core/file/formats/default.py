@@ -72,9 +72,9 @@ class Default(Read):
         """Grab the data stored in an hdf5 file
         """
         try:
-            return Read._grab_data_with_deepdish(path)
+            return Default._grab_data_with_deepdish(path)
         except Exception:
-            return Read._grab_data_with_h5py(path)
+            return Default._grab_data_with_h5py(path)
 
     @staticmethod
     def _grab_data_with_deepdish(path):
@@ -112,8 +112,8 @@ class Default(Read):
         if isinstance(f[path_to_samples], h5py._hl.group.Group):
             parameters = [i for i in f[path_to_samples].keys()]
             n_samples = len(f[path_to_samples][parameters[0]])
-            samples = [[f[path_to_samples][i][num] for i in parameters] for
-                       num in range(n_samples)]
+            samples = [[float(f[path_to_samples][i][num]) for i in parameters]
+                       for num in range(n_samples)]
             cond1 = "loglr" not in parameters or "log_likelihood" not in \
                 parameters
             cond2 = "likelihood_stats" in f.keys() and "loglr" in \
@@ -121,10 +121,11 @@ class Default(Read):
             if cond1 and cond2:
                 parameters.append("log_likelihood")
                 for num, i in enumerate(samples):
-                    samples[num].append(f["likelihood_stats/loglr"][num])
+                    samples[num].append(float(f["likelihood_stats/loglr"][num]))
         elif isinstance(f[path_to_samples], h5py._hl.dataset.Dataset):
             parameters = f[path_to_samples].dtype.names
-            samples = [[i[parameters.index(j)] for j in parameters] for i in f[path]]
+            samples = [[float(i[parameters.index(j)]) for j in parameters] for
+                       i in f[path_to_samples]]
         f.close()
         injection = {i: float("nan") for i in parameters}
         return parameters, samples, injection

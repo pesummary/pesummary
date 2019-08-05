@@ -103,8 +103,9 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
                 self.result_files.append(self.existing)
                 self.samples.append(existing.samples[num])
                 self.parameters.append(existing.parameters[num])
-                if self.config and len(existing_config) > 1:
+                if self.config and len(existing_config) >= 1:
                     self.config.append(existing_config[num])
+                self.injection_data.append(existing.injection_parameters[num])
             self.same_parameters = list(
                 set.intersection(*[set(l) for l in self.parameters]))
         if len(self.samples) > 1:
@@ -330,6 +331,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
                     self.approximant.append(None)
                 if self.config and len(existing_config) > 1:
                     self.config.append(existing_config[num])
+                self.injection_data.append(existing.injection_parameters[num])
             key_data = self._key_data()
             maxL_list = []
             for idx, j in enumerate(self.parameters):

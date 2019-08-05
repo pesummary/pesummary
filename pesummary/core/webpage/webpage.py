@@ -249,6 +249,8 @@ class page(Base):
             self.add_content(
                 "Below are publication quality plots for the passed result "
                 "files")
+        elif key == "Logging":
+            self.add_content("Below is the output from the PESummary code")
         else:
             self.add_content(
                 "The figures below show the plots for %s" % (approximant))

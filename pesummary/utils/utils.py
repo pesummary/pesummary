@@ -143,7 +143,9 @@ def command_line_arguments():
 def gw_results_file(opts):
     """Determine if a GW results file is passed
     """
-    if opts.gw or opts.calibration or opts.gracedb or opts.approximant or opts.psd:
+    if hasattr(opts, "gw") or hasattr(opts, "calibration") or \
+            hasattr(opts, "gracedb") or hasattr(opts, "approximant") or \
+            hasattr(opts, "psd"):
         return True
     else:
         return False
@@ -194,14 +196,42 @@ def get_version_information():
 def setup_logger():
     """Set up the logger output.
     """
+    import tempfile
+
+    if not os.path.isdir(".tmp/pesummary"):
+        os.makedirs(".tmp/pesummary")
+    dirpath = tempfile.mkdtemp(dir=".tmp/pesummary")
     level = 'INFO'
     if "-v" in sys.argv or "--verbose" in sys.argv:
         level = 'DEBUG'
 
-    logger = logging.getLogger('PESummary')
-    logger.setLevel(level)
     FORMAT = '%(asctime)s %(name)s %(levelname)-8s: %(message)s'
-    logging.basicConfig(format=FORMAT, datefmt='%Y-%m-%d  %H:%M:%S')
+    logger = logging.getLogger('PESummary')
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler('%s/pesummary.log' % (dirpath), mode='w')
+    fh.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel('INFO')
+    formatter = logging.Formatter(FORMAT, datefmt='%Y-%m-%d  %H:%M:%S')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+
+def remove_tmp_directories():
+    """Remove the temporary directories created by PESummary
+    """
+    import shutil
+    from glob import glob
+
+    directories = glob(".tmp/pesummary/*")
+
+    for i in directories:
+        if os.path.isdir(i):
+            shutil.rmtree(i)
+        elif os.path.isfile(i):
+            os.remove(i)
 
 
 setup_logger()

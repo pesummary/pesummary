@@ -320,9 +320,6 @@ class GWInput(Input):
             for num, i in enumerate(p):
                 inj_values.append([float("nan")] * len(i))
 
-        injection = [{i: j for i, j in zip(j, inj_values[num])} for num, j in
-                     enumerate(p)]
-
         approximant = [f.approximant[i] for i in indicies]
         label = lambda i: f.labels[i]
 
@@ -368,7 +365,7 @@ class GWInput(Input):
         else:
             calibration = calibration_labels = calibration_envelopes = None
         labels = [labels[i] for i in indicies]
-        return p, s, injection, labels, psd, approximant, psd_labels, \
+        return p, s, inj_values, labels, psd, approximant, psd_labels, \
             psd_frequencies, psd_strains, calibration, calibration_labels, \
             calibration_envelopes, config
 
@@ -477,13 +474,20 @@ class GWInput(Input):
         if config_file:
             f.add_fixed_parameters_from_config_file(config_file)
             f.add_marginalized_parameters_from_config_file(config_file)
-        if injection_file:
-            f.add_injection_parameters_from_file(injection_file)
         f.generate_all_posterior_samples()
         parameters = f.parameters
         samples = f.samples
+        if injection_file:
+            f.add_injection_parameters_from_file(injection_file)
         if hasattr(f, "injection_parameters"):
             injection = f.injection_parameters
+            if injection is not None:
+                for i in parameters:
+                    if i not in list(injection.keys()):
+                        injection[i] = float("nan")
+            else:
+                injection = {i: j for i, j in zip(
+                    parameters, [float("nan")] * len(parameters))}
         else:
             injection = {i: j for i, j in zip(
                 parameters, [float("nan")] * len(parameters))}

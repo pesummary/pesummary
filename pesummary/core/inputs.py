@@ -295,9 +295,7 @@ class Input(object):
                 if k == "nan":
                     inj_values[idx][ind] = float("nan")
 
-        injection = [{i: j for i, j in zip(j, inj_values[num])} for num, j in
-                     enumerate(p)]
-        label = lambda i: f.existing_labels[i]
+        label = lambda i: f.labels[i]
 
         if f.config is not None:
             config = []
@@ -311,7 +309,7 @@ class Input(object):
             config = None
 
         labels = [labels[i] for i in indicies]
-        return p, s, injection, labels, config
+        return p, s, inj_values, labels, config
 
     def grab_data_from_input_files(self, samples):
         """
@@ -518,6 +516,13 @@ class Input(object):
         samples = f.samples
         if hasattr(f, "injection_parameters"):
             injection = f.injection_parameters
+            if injection is not None:
+                for i in parameters:
+                    if i not in list(injection.keys()):
+                        injection[i] = float("nan")
+            else:
+                injection = {i: j for i, j in zip(
+                    parameters, [float("nan")] * len(parameters))}
         else:
             injection = {i: j for i, j in zip(
                 parameters, [float("nan")] * len(parameters))}

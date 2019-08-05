@@ -63,6 +63,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         links = ["home", ["Approximants", approximant_links]]
         if self.publication:
             links.append("Publication")
+        links.append("logging")
         links.append("version")
         if len(self.result_files) > 1:
             links[1][1] = links[1][1] + ["Comparison"]
@@ -255,6 +256,7 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
             self.make_comparison_pages()
         self.make_error_page()
         self.make_version_page()
+        self.make_logging_page()
 
     def _setup_page(self, html_page, links, label=None, title=None,
                     approximant=None, background_colour=None,
@@ -547,6 +549,36 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
+    def make_logging_page(self):
+        """Make a page to displat the logging output from PESummary
+        """
+        from glob import glob
+
+        pages = ["logging"]
+        webpage.make_html(web_dir=self.webdir, pages=pages, stylesheets=pages)
+        html_file = webpage.open_html(
+            web_dir=self.webdir, base_url=self.baseurl, html_page="logging")
+        html_file = self._setup_page(
+            "logging", self.navbar_for_homepage, title="Logger information")
+        html_file.make_banner(approximant="Logging", key="Logging")
+        path = pesummary.__file__[:-12]
+        log_file = glob(".tmp/pesummary/*/pesummary.log")
+        if len(log_file) == 0:
+            log_file = ".tmp/pesummary/no_log_information.log"
+            with open(log_file, "w") as f:
+                f.writelines(["No log information stored"])
+        else:
+            log_file = log_file[0]
+        with open(log_file, 'r') as f:
+            contents = f.read()
+        html_file.make_container()
+        styles = html_file.make_code_block(language='shell', contents=contents)
+        with open('{0:s}/css/logging.css'.format(self.webdir), 'w') as f:
+            f.write(styles)
+        html_file.end_container()
+        html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.close()
+
     def generate_specific_javascript(self):
         """Tailor the javascript to the specific situation.
         """
@@ -593,6 +625,7 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             self.make_comparison_pages()
         self.make_error_page()
         self.make_version_page()
+        self.make_logging_page()
         if self.publication:
             self.make_publication_pages()
 
