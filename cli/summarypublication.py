@@ -97,11 +97,11 @@ def read_samples(result_files):
     samples = []
     for i in result_files:
         f = GWRead(i)
-        f.generate_all_posterior_samples()
         if isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
             parameters.append(f.parameters[0])
             samples.append(f.samples[0])
         else:
+            f.generate_all_posterior_samples()
             parameters.append(f.parameters)
             samples.append(f.samples)
     return parameters, samples
