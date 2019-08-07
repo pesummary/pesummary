@@ -173,7 +173,7 @@ def make_spin_disk_plot(opts):
 
     required_parameters = ["a_1", "a_2", "tilt_1", "tilt_2"]
     for num, i in enumerate(parameters):
-        if not all(all(j in k for k in parameters) for j in required_parameters):
+        if not all(j in i for j in required_parameters):
             logger.info("Failed to generate spin disk plots for %s because "
                         "%s are not in the result file" % (
                             opts.labels[num],
