@@ -19,7 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn
 from pesummary.gw.plots import violin
-from pesummary.gw.plots.bounded_2d_kde import Bounded_2d_kde
+from pesummary.gw.plots.bounded_2d_kde import Bounded_2d_kde, default_bounds
 from pesummary.gw.plots.cmap import colormap_with_fixed_hue
 from pesummary.gw.file.conversions import mchirp_from_m1_m2, q_from_m1_m2
 import numpy as np
@@ -117,21 +117,24 @@ def twod_contour_plots(parameters, samples, labels, latex_labels):
     fig, ax1 = plt.subplots(nrows=1, ncols=1)
     transform = xlow = xhigh = ylow = yhigh = None
     for num, i in enumerate(samples):
-        if parameters[0] == "mass_ratio":
-            xlow = 0.
-            xhigh = 1.
-        if parameters[1] == "mass_ratio":
-            ylow = 0.
-            yhigh = 1.
-        if all("mass_1" in j or "mass_2" in j for j in parameters):
-            transform = chirp_mass_and_q_from_mass1_mass2
-            yhigh = 1.
-        if parameters[0] == "theta_jn" or parameters[0] == "iota":
-            xlow = 0.
-            xhigh = np.pi
-        if parameters[1] == "theta_jn" or parameters[1] == "iota":
-            ylow = 0.
-            yhigh = np.pi
+        if parameters[0] in list(default_bounds.keys()):
+            if "low" in list(default_bounds[parameters[0]].keys()):
+                xlow = default_bounds[parameters[0]]["low"]
+            if "high" in list(default_bounds[parameters[0]].keys()):
+                if "mass_1" in default_bounds[parameters[0]]["high"]:
+                    transform = chirp_mass_and_q_from_mass1_mass2
+                    xhigh = 1.
+                else:
+                    xhigh = default_bounds[parameters[0]]["high"]
+        if parameters[1] in list(default_bounds.keys()):
+            if "low" in list(default_bounds[parameters[1]].keys()):
+                ylow = default_bounds[parameters[1]]["low"]
+            if "high" in list(default_bounds[parameters[1]].keys()):
+                if "mass_1" in default_bounds[parameters[1]]["high"]:
+                    transform = chirp_mass_and_q_from_mass1_mass2
+                    yhigh = 1.
+                else:
+                    yhigh = default_bounds[parameters[1]]["high"]
 
         contour_data = estimate_2d_posterior(
             i, transform=transform, xlow=xlow, xhigh=xhigh, ylow=ylow,
