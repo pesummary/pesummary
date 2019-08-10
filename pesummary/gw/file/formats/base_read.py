@@ -48,6 +48,10 @@ class GWRead(Read):
         self.data = list(self.translate_parameters(data[0], data[1]))
         self.data.append(data[2])
         self.injection_parameters = self.data[2]
+        if len(data) > 3:
+            self.input_version = data[3]
+        else:
+            self.input_version = "No version information found"
 
     def _grab_injection_parameters_from_file(self, injection_file):
         extension = injection_file.split(".")[-1]

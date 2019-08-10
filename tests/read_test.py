@@ -49,6 +49,14 @@ class BaseRead(object):
             drawn_samples = self.result.samples_dict[param]
             assert all(i == j for i, j in zip(drawn_samples, specific_samples))
 
+    def test_version(self, true=None):
+        """Test the version property
+        """
+        if true is None:
+            assert self.result.input_version == "No version information found"
+        else:
+            assert self.result.input_version == true
+
     def test_injection_parameters(self, true, pesummary=False):
         """Test the injection_parameters property
         """
@@ -165,6 +173,11 @@ class TestCoreJsonFile(BaseRead):
         true = [self.parameters, self.samples]
         super(TestCoreJsonFile, self).test_samples_dict(true)
 
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestCoreJsonFile, self).test_version()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -209,6 +222,11 @@ class TestCoreHDF5File(BaseRead):
         """
         true = [self.parameters, self.samples]
         super(TestCoreHDF5File, self).test_samples_dict(true)
+
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestCoreHDF5File, self).test_version()
 
     def test_injection_parameters(self):
         """Test the injection_parameters property
@@ -255,6 +273,11 @@ class TestCoreDatFile(BaseRead):
         true = [self.parameters, self.samples]
         super(TestCoreDatFile, self).test_samples_dict(true)
 
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestCoreDatFile, self).test_version()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -286,6 +309,12 @@ class BilbyFile(BaseRead):
         """
         true = [self.parameters, self.samples]
         super(BilbyFile, self).test_samples_dict(true)
+
+    def test_version(self):
+        """Test the version property of the bilby class
+        """
+        true = "bilby=0.5.3:"
+        super(BilbyFile, self).test_version(true)
 
     def test_injection_parameters(self, true):
         """Test the injection_parameters property
@@ -330,6 +359,11 @@ class TestCoreJsonBilbyFile(BilbyFile):
         """Test the samples_dict property of the bilby class
         """
         super(TestCoreJsonBilbyFile, self).test_samples_dict()
+
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestCoreJsonBilbyFile, self).test_version()
 
     def test_injection_parameters(self):
         """Test the injection_parameters property
@@ -376,6 +410,11 @@ class TestCoreHDF5BilbyFile(BilbyFile):
         """
         super(TestCoreHDF5BilbyFile, self).test_samples_dict()
 
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestCoreHDF5BilbyFile, self).test_version()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -403,6 +442,12 @@ class PESummaryFile(BaseRead):
         """
         super(PESummaryFile, self).test_samples(
             self.samples, pesummary=True)
+
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        true = ["No version information found"]
+        super(PESummaryFile, self).test_version(true)
 
     def test_samples_dict(self):
         """Test the samples_dict property
@@ -476,6 +521,11 @@ class TestCoreJsonPESummaryFile(PESummaryFile):
         """
         super(TestCoreJsonPESummaryFile, self).test_samples_dict()
 
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestCoreJsonPESummaryFile, self).test_version()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -533,6 +583,11 @@ class TestCoreHDF5PESummaryFile(PESummaryFile):
         """
         super(TestCoreHDF5PESummaryFile, self).test_samples_dict()
 
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestCoreHDF5PESummaryFile, self).test_version()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -589,6 +644,11 @@ class TestGWDatFile(GWBaseRead):
         true = [self.parameters, self.samples]
         super(TestGWDatFile, self).test_samples_dict(true)
 
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestGWDatFile, self).test_version()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -634,6 +694,11 @@ class TestGWHDF5File(GWBaseRead):
         true = [self.parameters, self.samples]
         super(TestGWHDF5File, self).test_samples_dict(true)
 
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestGWHDF5File, self).test_version()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -678,6 +743,11 @@ class TestGWJsonFile(GWBaseRead):
         """
         true = [self.parameters, self.samples]
         super(TestGWJsonFile, self).test_samples_dict(true)
+
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestGWJsonFile, self).test_version()
 
     def test_injection_parameters(self):
         """Test the injection_parameters property
@@ -725,6 +795,12 @@ class TestGWJsonBilbyFile(GWBaseRead):
         true = [self.parameters, self.samples]
         super(TestGWJsonBilbyFile, self).test_samples_dict(true)
 
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        true = "bilby=0.5.3:"
+        super(TestGWJsonBilbyFile, self).test_version(true)
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -771,6 +847,11 @@ class TestGWLALInferenceFile(GWBaseRead):
         """
         true = [self.parameters, self.samples]
         super(TestGWLALInferenceFile, self).test_samples_dict(true)
+
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestGWLALInferenceFile, self).test_version()
 
     def test_injection_parameters(self):
         """Test the injection_parameters property

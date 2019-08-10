@@ -110,6 +110,8 @@ def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
     if gw:
         insert_gwspecific_option_group(parser)
         default_args.append("--gw")
+        default_args.append("--nsamples_for_skymap")
+        default_args.append("1000")
     params, data = make_result_file(
         extension=extension, gw=gw, bilby=bilby, lalinference=lalinference)
     if not existing:
@@ -198,7 +200,8 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
         bilby_object = Result(
             search_parameter_keys=parameters, samples=data,
             posterior=posterior_data_frame, label="test",
-            injection_parameters=injection_parameters)
+            injection_parameters=injection_parameters,
+            version="bilby=0.5.3:")
         if extension == "json":
             bilby_object.save_to_file(
                 filename=outdir + "test.json", extension="json")
@@ -227,6 +230,10 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
                 {"label":
                     {"injection_values": [float("nan") for i in range(len(parameters))]
                     }
+                },
+            "version":
+                {"label": ["No version information found"],
+                 "pesummary": ["v0.1.7"]
                 }
             }
 

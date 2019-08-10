@@ -23,6 +23,7 @@ import configparser
 import pesummary
 from pesummary.utils.utils import logger, make_dir
 from pesummary.core.file.read import read as Read
+from pesummary.utils.utils import get_version_information
 
 
 def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
@@ -43,6 +44,8 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             f.create_group("config_file")
         if "injection_data" in dictionary.keys():
             f.create_group("injection_data")
+        if "version" in dictionary.keys():
+            f.create_group("version")
     except Exception:
         pass
     if current_path is None:
@@ -88,10 +91,12 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         super(MetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
         self.data = {}
+        self.existing_version = None
         self.existing_label = [None]
         self.existing_parameters = None
         self.existing_samples = None
         self.existing_injection = None
+        self.existing_version = None
         self.generate_meta_file_data()
 
         if not self.hdf5:
@@ -130,6 +135,7 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             self.existing_label = existing_file.labels
             self.existing_injection = existing_file.injection_parameters
             self.existing_config = existing_file.config
+            self.existing_version = existing_file.input_version
         self._make_dictionary()
 
     def _make_dictionary(self):
@@ -141,10 +147,12 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
                 self._add_data(i, self.existing_parameters[num],
                                self.existing_samples[num],
                                self.existing_injection[num],
+                               version=self.existing_version[num],
                                config=self.existing_config
                                )
         self._make_dictionary_structure(self.labels, config=self.config
                                         )
+        pesummary_version = get_version_information()
         for num, i in enumerate(self.labels):
             if i not in self.existing_label:
                 injection = [self.injection_data[num]["%s" % (i)] for i in
@@ -152,7 +160,8 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
                 config = self._grab_config_data_from_data_file(self.config[num]) \
                     if self.config and num < len(self.config) else None
                 self._add_data(i, self.parameters[num], self.samples[num],
-                               injection, config=config
+                               injection, version=self.file_versions[num],
+                               config=config, pesummary_version=pesummary_version
                                )
 
     def _grab_config_data_from_data_file(self, file):
@@ -179,7 +188,8 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
                     data[i][key] = config["%s" % (i)]["%s" % (key)]
         return data
 
-    def _add_data(self, label, parameters, samples, injection, config=None):
+    def _add_data(self, label, parameters, samples, injection, version,
+                  config=None, pesummary_version=None):
         """Add data to the stored dictionary
 
         Parameters
@@ -190,6 +200,8 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             list of parameters that were used in the study
         samples: list
             list of samples that wee used in th study
+        version: list
+            list of versions for each result file used in the study
         config: dict, optional
             data associated with the configuration file
         """
@@ -200,9 +212,12 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         self.data["injection_data"][label] = {
             "injection_values": list(injection)
         }
+        self.data["version"][label] = [version]
 
         if config:
             self.data["config_file"][label] = config
+        if pesummary_version:
+            self.data["version"]["pesummary"] = [pesummary_version]
 
     def _make_dictionary_structure(self, label, config=None):
         for num, i in enumerate(label):
@@ -211,6 +226,9 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             )
             self._add_label(
                 "injection_data", i,
+            )
+            self._add_label(
+                "version", i
             )
             if config:
                 self._add_label(
