@@ -21,7 +21,8 @@ def check_IERS():
     """Check that the latest IERS data can be downloaded
     """
     try:
-        iers_a = iers.IERS_A.open(iers.IERS_A_URL)
+        iers.conf.auto_download = True
+        iers_a = iers.IERS_Auto.open()
     except Exception:
         logger.warn("Unable to download latest IERS data. The bundled IERS-B "
                     "data which covers the time range from 1962 to just before "
