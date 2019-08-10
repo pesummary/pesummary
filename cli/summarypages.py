@@ -541,6 +541,9 @@ class WebpageGeneration(pesummary.core.inputs.PostProcessing):
         path = pesummary.__file__[:-12]
         with open(path + "/.version", 'r') as f:
             contents = f.read()
+        for num, i in enumerate(self.result_files):
+            contents = "# %s version information\n\n%s_version = %s\n\n" % (
+                i, i, self.file_versions[num]) + contents
         html_file.make_container()
         styles = html_file.make_code_block(language='shell', contents=contents)
         with open('{0:s}/css/version.css'.format(self.webdir), 'w') as f:

@@ -52,7 +52,8 @@ class Bilby(Read):
         posterior = posterior.select_dtypes(include=[float, int])
         parameters = list(posterior.keys())
         number = len(posterior[parameters[0]])
-        samples = [[np.real(posterior[param][i]) for param in parameters] for i in range(number)]
+        samples = [[np.real(posterior[param][i]) for param in parameters]
+                   for i in range(number)]
         injection = bilby_object.injection_parameters
         if injection is None:
             injection = {i: j for i, j in zip(
@@ -61,15 +62,24 @@ class Bilby(Read):
             for i in parameters:
                 if i not in injection.keys():
                     injection[i] = float("nan")
-        for key in (
-                bilby_object.constraint_parameter_keys
-                + bilby_object.search_parameter_keys
-                + bilby_object.fixed_parameter_keys):
-            if key not in latex_labels:
-                label = bilby_object.get_latex_labels_from_parameter_keys(
-                    [key])[0]
-                latex_labels[key] = label
-        return parameters, samples, injection
+
+        if all(i for i in (
+               bilby_object.constraint_parameter_keys,
+               bilby_object.search_parameter_keys,
+               bilby_object.fixed_parameter_keys)):
+            for key in (
+                    bilby_object.constraint_parameter_keys
+                    + bilby_object.search_parameter_keys
+                    + bilby_object.fixed_parameter_keys):
+                if key not in latex_labels:
+                    label = bilby_object.get_latex_labels_from_parameter_keys(
+                        [key])[0]
+                    latex_labels[key] = label
+        try:
+            version = bilby_object.version
+            return parameters, samples, injection, version
+        except Exception:
+            return parameters, samples, injection
 
     def add_marginalized_parameters_from_config_file(self, config_file):
         """Search the configuration file and add the marginalized parameters

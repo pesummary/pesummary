@@ -48,7 +48,7 @@ def test_recursively_save_dictionary_to_hdf5_file():
                        "parameters": ["psi", "phi"],
                        "samples": [[1.2, 0.2], [3.14, 0.1], [0.5, 0.3]]
                        }
-                   }
+                   },
                }
 
     with h5py.File("./.outdir/test.h5") as f:
@@ -150,6 +150,9 @@ class TestMetaFile(object):
         injected_data = f.create_group("injection_data")
         label = injected_data.create_group("H1_L1")
         label.create_dataset("injection_values", data=injected_samples)
+        version = f.create_group("version")
+        version.create_dataset("H1_L1", data=np.array(["0.3.6"], dtype="S"))
+        version.create_dataset("pesummary", data=np.array(["1.0"], dtype="S"))
         f.close()
         return path + "/posterior_samples.h5"
 
@@ -179,7 +182,6 @@ class TestMetaFile(object):
          assert isinstance(test_list, list)
          assert isinstance(test_list[0], list)
          assert isinstance(test_list[1], list)
-         print(test_list[0][0])
          assert all(i == j for i,j in zip(sorted(test_list[0]),sorted([1,2,3])))
          assert all(i == j for i,j in zip(sorted(test_list[1]),sorted([4,5,6])))
 
@@ -204,11 +206,12 @@ class TestMetaFile(object):
         metafile = meta_file.GWMetaFile(inputs)
         f = h5py.File(metafile.meta_file, "r")
         assert sorted(list(f.keys())) == ["approximant", "injection_data",
-                                          "posterior_samples"]
+                                          "posterior_samples", "version"]
         for i, j in zip(sorted(["grace_H1", "H1_L1"]),
                         sorted(list(f["posterior_samples"].keys()))):
             assert i in j
         assert list(f["posterior_samples/H1_L1"].keys()) == ["parameter_names", "samples"]
+        f.close()
 
     def test_generate_dat_file(self):
         parser = command_line()

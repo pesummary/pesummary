@@ -103,6 +103,7 @@ class GWInput(Input):
         self.psds = self.opts.psd
         self.gwdata = self.opts.gwdata
         self.existing_labels = []
+        self.existing_version = []
         self.existing_parameters = []
         self.existing_samples = []
         self.existing_approximant = []
@@ -365,14 +366,15 @@ class GWInput(Input):
         else:
             calibration = calibration_labels = calibration_envelopes = None
         labels = [labels[i] for i in indicies]
+        version = f.input_version
         return p, s, inj_values, labels, psd, approximant, psd_labels, \
             psd_frequencies, psd_strains, calibration, calibration_labels, \
-            calibration_envelopes, config
+            calibration_envelopes, config, version
 
     def grab_data_from_input_files(self, samples):
         """
         """
-        result_file_list = []
+        result_file_list, version_list = [], []
         parameters_list, samples_list, injection_list = [], [], []
         psd_labels, psd_frequencies, psd_strains = [], [], []
         calibration_labels, calibration_envelopes = [], []
@@ -383,7 +385,7 @@ class GWInput(Input):
             if self.config:
                 config = self.config[num]
             if self.is_pesummary_metafile(i):
-                p, s, inj, labels, psd, approx, psd_l, psd_f, psd_s, cal, cal_l, cal_env, con = \
+                p, s, inj, labels, psd, approx, psd_l, psd_f, psd_s, cal, cal_l, cal_env, con, ver = \
                     self.grab_data_from_metafile(
                         i, webdir=self.webdir, compare=self.compare_results)
                 self.opts.psd = psd
@@ -396,6 +398,7 @@ class GWInput(Input):
                     samples_list.append(s[idx])
                     injection_list.append(inj[idx])
                     result_file_list.append(i)
+                    version_list.append(ver[idx])
                     if psd is not None:
                         psd_labels.append(psd_l[idx])
                         psd_frequencies.append(psd_f[idx])
@@ -404,16 +407,18 @@ class GWInput(Input):
                         calibration_labels.append(cal_l[idx])
                         calibration_envelopes.append(cal_env[idx])
             else:
-                p, s, inj = self.convert_to_standard_format(
+                p, s, inj, version = self.convert_to_standard_format(
                     i, self.inj_file[num], config_file=config)
                 result_file_list.append(i)
                 parameters_list.append(p)
                 samples_list.append(s)
                 injection_list.append(inj)
+                version_list.append(version)
         self._result_files = result_file_list
         self._parameters = parameters_list
         self._samples = samples_list
         self._injection_data = injection_list
+        self._file_versions = version_list
 
         if psd_labels != [] and psd_frequencies != [] and psd_strains != []:
             self.psd_labels = psd_labels
@@ -491,7 +496,8 @@ class GWInput(Input):
         else:
             injection = {i: j for i, j in zip(
                 parameters, [float("nan")] * len(parameters))}
-        return parameters, samples, injection
+        version = f.input_version
+        return parameters, samples, injection, version
 
     def _default_labels(self):
         """Return the defaut labels given your detector network.
@@ -569,6 +575,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.publication = inputs.publication
         self.existing_meta_file = inputs.existing_meta_file
         self.existing_labels = inputs.existing_labels
+        self.existing_version = inputs.existing_version
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples
         self.existing_meta_file = inputs.existing_meta_file
@@ -603,6 +610,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.parameters = inputs.parameters
         self.samples = inputs.samples
         self.injection_data = inputs.injection_data
+        self.file_versions = inputs.file_versions
         self.maxL_samples = []
         self.same_parameters = []
 

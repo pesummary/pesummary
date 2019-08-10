@@ -100,7 +100,7 @@ class PESummary(Read):
             dictionary["posterior_samples"]["%s" % (i)].keys()}
         labels = list(existing_structure.keys())
 
-        parameter_list, sample_list, inj_list = [], [], []
+        parameter_list, sample_list, inj_list, ver_list = [], [], [], []
         for num, i in enumerate(labels):
             p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
@@ -119,9 +119,22 @@ class PESummary(Read):
             config = None
             if "config_file" in dictionary.keys():
                 config, = Read.load_recusively("config_file", dictionary)
+        if "version" in dictionary.keys():
+            version, = Read.load_recusively("version", dictionary)
+        else:
+            version = {i: "No version information found" for i in labels
+                       + ["pesummary"]}
+        for i in list(version.keys()):
+            if i != "pesummary" and isinstance(version[i][0], bytes):
+                ver_list.append(version[i][0].decode("utf-8"))
+            elif i != "pesummary":
+                ver_list.append(version[i][0])
+            elif isinstance(version["pesummary"], bytes):
+                version["pesummary"] = version["pesummary"].decode("utf-8")
         setattr(PESummary, "labels", labels)
         setattr(PESummary, "config", config)
-        return parameter_list, sample_list, inj_list
+        setattr(PESummary, "version", version["pesummary"])
+        return parameter_list, sample_list, inj_list, ver_list
 
     @property
     def samples_dict(self):

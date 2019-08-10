@@ -85,6 +85,7 @@ class Input(object):
         self.dump = self.opts.dump
         self.hdf5 = self.opts.save_to_hdf5
         self.existing_labels = []
+        self.existing_version = []
         self.existing_parameters = []
         self.existing_samples = []
         self.copy_files()
@@ -242,6 +243,10 @@ class Input(object):
     def injection_data(self):
         return self._injection_data
 
+    @property
+    def file_versions(self):
+        return self._file_versions
+
     @result_files.setter
     def result_files(self, samples):
         if not samples:
@@ -309,12 +314,13 @@ class Input(object):
             config = None
 
         labels = [labels[i] for i in indicies]
-        return p, s, inj_values, labels, config
+        version = f.input_version
+        return p, s, inj_values, labels, config, version
 
     def grab_data_from_input_files(self, samples):
         """
         """
-        result_file_list = []
+        result_file_list, version_list = [], []
         parameters_list, samples_list, injection_list = [], [], []
         for num, i in enumerate(samples):
             if not os.path.isfile(i):
@@ -323,7 +329,7 @@ class Input(object):
             if self.config:
                 config = self.config[num]
             if self.is_pesummary_metafile(i):
-                p, s, inj, labels, con = self.grab_data_from_metafile(
+                p, s, inj, labels, con, version = self.grab_data_from_metafile(
                     i, webdir=self.webdir, compare=self.compare_results)
                 self.opts.labels = labels
                 self.config = con
@@ -332,17 +338,20 @@ class Input(object):
                     samples_list.append(s[idx])
                     injection_list.append(inj[idx])
                     result_file_list.append(i)
+                    version_list.append(version[idx])
             else:
-                p, s, inj = self.convert_to_standard_format(
+                p, s, inj, version = self.convert_to_standard_format(
                     i, self.inj_file[num], config_file=config)
                 parameters_list.append(p)
                 samples_list.append(s)
                 injection_list.append(inj)
                 result_file_list.append(i)
+                version_list.append(version)
         self._result_files = result_file_list
         self._parameters = parameters_list
         self._samples = samples_list
         self._injection_data = injection_list
+        self._file_versions = version_list
 
     @property
     def email(self):
@@ -400,6 +409,17 @@ class Input(object):
             f = glob(self.existing + "/samples/posterior_samples*")
             existing = Read(f[0])
             self._existing_labels = existing.labels
+
+    @property
+    def existing_version(self):
+        return self._existing_version
+
+    @existing_version.setter
+    def existing_version(self, existing_version):
+        self._existing_version = None
+        if self.add_to_existing:
+            existing = Read(self.existing_meta_file)
+            self._existing_version = existing.input_version
 
     @property
     def existing_parameters(self):
@@ -526,7 +546,8 @@ class Input(object):
         else:
             injection = {i: j for i, j in zip(
                 parameters, [float("nan")] * len(parameters))}
-        return parameters, samples, injection
+        version = f.input_version
+        return parameters, samples, injection, version
 
     def _default_labels(self):
         """Return the default labels given your detector network.
@@ -597,6 +618,7 @@ class PostProcessing(object):
         self.publication = inputs.publication
         self.existing_meta_file = inputs.existing_meta_file
         self.existing_labels = inputs.existing_labels
+        self.existing_version = inputs.existing_version
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples
         self.colors = colors
@@ -607,6 +629,7 @@ class PostProcessing(object):
         self.parameters = inputs.parameters
         self.samples = inputs.samples
         self.injection_data = inputs.injection_data
+        self.file_versions = inputs.file_versions
         self.same_parameters = []
 
     @property

@@ -49,8 +49,12 @@ class Read():
         """
         self.data = self.load_from_function(
             function, self.path_to_results_file, **kwargs)
-        if len(self.data) == 3:
+        if len(self.data) > 2:
             self.injection_parameters = self.data[2]
+        if len(self.data) > 3:
+            self.input_version = self.data[3]
+        else:
+            self.input_version = "No version information found"
 
     @property
     def parameters(self):

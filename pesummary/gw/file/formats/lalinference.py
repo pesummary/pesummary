@@ -165,7 +165,11 @@ class LALInference(GWRead):
                 for num, i in enumerate(samples):
                     samples[num][ind_a1] = abs(samples[num][ind_a1])
                     samples[num][ind_a2] = abs(samples[num][ind_a2])
-        return lalinference_names, samples, None
+        try:
+            version = f[path_to_samples].attrs["VERSION"].decode("utf-8")
+            return lalinference_names, samples, None, version
+        except Exception:
+            return lalinference_names, samples, None
 
     def add_injection_parameters_from_file(self, injection_file):
         """

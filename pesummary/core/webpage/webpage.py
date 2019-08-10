@@ -243,8 +243,8 @@ class page(Base):
                 "Below are the summary comparison plots")
         elif key == "Version":
             self.add_content(
-                "Below is the PESummary version information used to generate "
-                "these pages")
+                "Below is the version information for all files passed and the "
+                "PESummary version used to generate these pages")
         elif key == "Publication":
             self.add_content(
                 "Below are publication quality plots for the passed result "

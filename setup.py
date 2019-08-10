@@ -42,7 +42,7 @@ def write_version_file(version):
     packages = PackageInformation()
 
     with open("pesummary/.version", "w") as f:
-        f.writelines(["# Generated automatically by pesummary\n\n"])
+        f.writelines(["# pesummary version information\n\n"])
         f.writelines(["last_release = %s\n" % (git_info.last_version)])
         f.writelines(["\ngit_hash = %s\n" % (git_info.hash)])
         f.writelines(["git_author = %s\n" % (git_info.author)])
