@@ -37,7 +37,7 @@ function combines(list, label) {
     } else {                                                                    
       var el = list.split(", ");                                                
     }
-    c.width = 750;
+    c.width = 1100;
     if ( el == "" ) {
         var total = document.getElementsByName("type");
         var parameters = []
@@ -55,13 +55,23 @@ function combines(list, label) {
         }
         var images2 = [];
         for ( var i=0; i<ticked.length; i++ ) {
-            var newimage = new Image();
+            var newimage1 = new Image();
+            var newimage2 = new Image();
+            var newimage3 = new Image();
+            var temp = [];
             if ( approx == "Comparison" ) {
-                newimage.src = '../plots/combined_1d_posterior_'+ticked[i]+'.png'
+                newimage1.src = '../plots/combined_1d_posterior_'+ticked[i]+'.png';
+                newimage2.src = '../plots/combined_boxplot_'+ticked[i]+'.png';
+                newimage3.src = '../plots/combined_cdf_'+ticked[i]+'.png';
             } else {
-                newimage.src = '../plots/'+label+'_1d_posterior_'+ticked[i]+'.png';
+                newimage1.src = '../plots/'+label+'_1d_posterior_'+ticked[i]+'.png';
+                newimage2.src = '../plots/'+label+'_autocorrelation_'+ticked[i]+'.png';
+                newimage3.src = '../plots/'+label+'_sample_evolution_'+ticked[i]+'.png';
             }
-            images2.push(newimage);
+            temp.push(newimage1);
+            temp.push(newimage2);
+            temp.push(newimage3);
+            images2.push(temp);
 
             promise = new Promise((resolve, reject) => {
                 onLoadImage(c, ctx, images2, reject, ticked)
@@ -73,13 +83,23 @@ function combines(list, label) {
     } else {                                                       
         var images = [];                                                                                 
         for ( var i=0; i<el.length; i++ ) { 
-            var newimage = new Image();
+            var newimage1 = new Image();
+            var newimage2 = new Image();
+            var newimage3 = new Image();
+            var temp = [];
             if ( approx == "Comparison" ) {
-                newimage.src = '../plots/combined_1d_posterior_'+el[i]+'.png'
+                newimage1.src = '../plots/combined_1d_posterior_'+el[i]+'.png'
+                newimage2.src = '../plots/combined_boxplot_'+el[i]+'.png'
+                newimage3.src = '../plots/combined_cdf_'+el[i]+'.png'
             } else {                                    
-                newimage.src = '../plots/'+label+'_1d_posterior_'+el[i]+'.png';
+                newimage1.src = '../plots/'+label+'_1d_posterior_'+el[i]+'.png';
+                newimage2.src = '../plots/'+label+'_autocorrelation_'+el[i]+'.png';
+                newimage3.src = '../plots/'+label+'_sample_evolution_'+el[i]+'.png';
             }
-            images.push(newimage);
+            temp.push(newimage1);
+            temp.push(newimage2);
+            temp.push(newimage3);
+            images.push(temp);
             
             promise = new Promise((resolve, reject) => {
                 onLoadImage(c, ctx, images, reject, el)
@@ -92,16 +112,22 @@ function combines(list, label) {
 }
 
 function onLoadImage(c, ctx, images, reject, list) {
-    images[0].onload = function() {
+    images[0][0].onload = function() {
         var width = this.naturalWidth;
         var height = this.naturalHeight;
-        var scalefactor = c.width / width
+        var scalefactor = 750 / width;
+        var scalefactor2 = 350 / width;
 
-        c.height = height*scalefactor*images.length + 20*images.length
+        c.height = 450*images.length + 70*(images.length + 1) + 100*images.length
         setTimeout(function() {
         for ( var i=0; i<images.length; i++ ) {
             try {
-                ctx.drawImage(images[i], 0, (height*scalefactor*i)+(i*20), c.width, height*scalefactor);
+                ctx.font = "35px Arial-body";
+                ctx.fillText(list[i], 0, 450*i + ((i+1)*70) + i * 100 - 20);
+                ctx.drawImage(images[i][0], 0, (450*i) + ((i+1)*70 + i * 100), 750, height * scalefactor);
+                ctx.drawImage(images[i][1], 750, (450*i) + ((i+1)*70 + i * 100 + 280), 350, height * scalefactor2);
+                ctx.drawImage(images[i][2], 750, (450*i) + ((i+1)*70 + i * 100), 350, height * scalefactor2);
+                /*ctx.drawImage(images[i][0], 0, (400*i)+((i+1)*60 + 10), 750, height*scalefactor);*/
             } catch (e) {
                 reject(list[i])
             }
