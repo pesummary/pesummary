@@ -204,6 +204,20 @@ def phi_12_from_phi1_phi2(phi1, phi2):
     return phi12
 
 
+def phi1_from_spins(spin_1x, spin_1y):
+    """Return phi_1 given samples for spin_1x and spin_1y
+    """
+    phi_1 = np.fmod(2 * np.pi + np.arctan2(spin_1y, spin_1x), 2 * np.pi)
+    return phi_1
+
+
+def phi2_from_spins(spin_2x, spin_2y):
+    """Return phi_2 given samples for spin_2x and spin_2y
+    """
+    phi_2 = np.fmod(2 * np.pi + np.arctan2(spin_2y, spin_2x), 2 * np.pi)
+    return phi_2
+
+
 def spin_angles(mass_1, mass_2, inc, spin1x, spin1y, spin1z, spin2x, spin2y,
                 spin2z, f_ref, phase):
     """Return the spin angles given samples for mass_1, mass_2, inc, spin1x,

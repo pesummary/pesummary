@@ -457,6 +457,18 @@ class GWRead(Read):
         phi_12 = con.phi_12_from_phi1_phi2(samples[0], samples[1])
         self.append_data(phi_12)
 
+    def _phi1_from_spins(self):
+        self.parameters.append("phi_1")
+        samples = self.specific_parameter_samples(["spin_1x", "spin_1y"])
+        phi_1 = con.phi1_from_spins(samples[0], samples[1])
+        self.append_data(phi_1)
+
+    def _phi2_from_spins(self):
+        self.parameters.append("phi_2")
+        samples = self.specific_parameter_samples(["spin_2x", "spin_2y"])
+        phi_2 = con.phi2_from_spins(samples[0], samples[1])
+        self.append_data(phi_2)
+
     def _spin_angles(self):
         spin_angles = ["theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12",
                        "a_1", "a_2"]
@@ -743,6 +755,12 @@ class GWRead(Read):
                         "phi_jl", "phi_12", "reference_frequency"]
                     if all(i in self.parameters for i in spin_angles):
                         self._component_spins()
+            cond1 = "spin_1x" in self.parameters and "spin_1y" in self.parameters
+            if "phi_1" not in self.parameters and cond1:
+                self._phi1_from_spins()
+            cond1 = "spin_2x" in self.parameters and "spin_2y" in self.parameters
+            if "phi_2" not in self.parameters and cond1:
+                self._phi2_from_spins()
             if "chi_p" not in self.parameters and "chi_eff" not in self.parameters:
                 if all(i in self.parameters for i in spin_components):
                     self._chi_p()

@@ -175,6 +175,12 @@ class TestConversions(object):
         rounded_data = np.round(data, 2)
         assert all(i == j for i,j in zip(rounded_data, [6.08, 0.5]))
 
+    def test_phi_from_spins(self):
+        def cart2sph(x, y):
+            return np.fmod(2 * np.pi + np.arctan2(y,x), 2 * np.pi)
+        assert phi1_from_spins(0.5, 0.2) == cart2sph(0.5, 0.2)
+        assert phi2_from_spins(0.1, 0.5) == cart2sph(0.1, 0.5)
+
     def test_spin_angles(self):
         mass1, mass2 = [10., 10.], [5., 5.]
         inc, spin1x, spin1y = self.opts.iota, self.opts.spin1x, self.opts.spin1y

@@ -93,7 +93,7 @@ class GWBaseRead(BaseRead):
             'spin_1z', 'spin_2x', 'spin_2y', 'spin_2z', 'chi_p', 'chi_eff',
             'cos_tilt_1', 'cos_tilt_2', 'redshift', 'comoving_distance',
             'mass_1_source', 'mass_2_source', 'total_mass_source',
-            'chirp_mass_source']
+            'chirp_mass_source', 'phi_1', 'phi_2']
 
         self.result.generate_all_posterior_samples()
         assert all(i in self.result.parameters for i in full_parameters)
