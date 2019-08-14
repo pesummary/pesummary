@@ -121,18 +121,20 @@ def twod_contour_plots(parameters, samples, labels, latex_labels):
             if "low" in list(default_bounds[parameters[0]].keys()):
                 xlow = default_bounds[parameters[0]]["low"]
             if "high" in list(default_bounds[parameters[0]].keys()):
-                if "mass_1" in default_bounds[parameters[0]]["high"]:
-                    transform = chirp_mass_and_q_from_mass1_mass2
-                    xhigh = 1.
+                if type(default_bounds[parameters[0]]["high"]) == str:
+                    if "mass_1" in default_bounds[parameters[0]]["high"]:
+                        transform = chirp_mass_and_q_from_mass1_mass2
+                        xhigh = 1.
                 else:
                     xhigh = default_bounds[parameters[0]]["high"]
         if parameters[1] in list(default_bounds.keys()):
             if "low" in list(default_bounds[parameters[1]].keys()):
                 ylow = default_bounds[parameters[1]]["low"]
             if "high" in list(default_bounds[parameters[1]].keys()):
-                if "mass_1" in default_bounds[parameters[1]]["high"]:
-                    transform = chirp_mass_and_q_from_mass1_mass2
-                    yhigh = 1.
+                if type(default_bounds[parameters[1]]["high"]) == str:
+                    if "mass_1" in default_bounds[parameters[1]]["high"]:
+                        transform = chirp_mass_and_q_from_mass1_mass2
+                        yhigh = 1.
                 else:
                     yhigh = default_bounds[parameters[1]]["high"]
 
