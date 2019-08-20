@@ -26,6 +26,9 @@
   a new Publication tab to the homepage to show publication plots
 - Added a `command_line` button which is displayed under the plot showing the
   command line used to generate the plot.
+- Added a `summaryclassification` executable which produces the source
+  classification probabilities
+- Added a `summaryclean` executable which cleans the input data file
 
 ## 0.1.7 [15/06/2019]
 

@@ -236,3 +236,32 @@ class Read():
             injection file
         """
         return function(injection_file)
+
+    def to_dat(self, outdir="./", label=None):
+        """Save the PESummary results file object to a dat file
+
+        Parameters
+        ----------
+        outdir: str
+            path to the directory where you would like to save the results file
+        label: str
+            the label of the result file
+        """
+        import os
+
+        if not label:
+            from time import time
+
+            label = round(time())
+
+        if os.path.isfile("%s/pesummary_%s.dat" % (outdir, label)):
+            raise Exception("The file '%s/lalinference_file_%s.hdf5' already exists.")
+
+        try:
+            np.savetxt(
+                "%s/pesummary_%s.dat" % (outdir, label), self.samples,
+                delimiter="\t", header="\t".join(self.parameters),
+                comments='')
+        except Exception:
+            raise Exception("Please make sure you have write permission in "
+                            "%s" % (outdir))

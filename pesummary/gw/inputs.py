@@ -19,11 +19,15 @@ import h5py
 
 from time import time
 import os
+import warnings
 
 import pesummary
 from pesummary.utils.utils import logger
 from pesummary.gw.file.read import read as GWRead
 from pesummary.core.inputs import Input
+from pesummary.utils.utils import customwarn
+
+warnings.showwarning = customwarn
 
 __doc__ == "Classes to handle the command line inputs"
 
@@ -613,6 +617,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.file_versions = inputs.file_versions
         self.maxL_samples = []
         self.same_parameters = []
+        self.pepredicates_probs = []
 
     @property
     def coherence_test(self):
@@ -828,3 +833,30 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
             return f
         except Exception:
             return file
+
+    @property
+    def pepredicates_probs(self):
+        return self._pepredicates_probs
+
+    @pepredicates_probs.setter
+    def pepredicates_probs(self, pepredicates_probs):
+        classifications = []
+
+        for num, i in enumerate(self.result_files):
+            mydict = {}
+            try:
+                from pesummary.gw.pepredicates import PEPredicates
+                from pesummary.utils.utils import RedirectLogger
+
+                with RedirectLogger("PEPredicates", level="DEBUG") as redirector:
+                    mydict["default"], mydict["population"] = \
+                        PEPredicates.classifications(
+                            self.samples[num], self.parameters[num])
+            except Exception as e:
+                logger.warn(
+                    "Failed to generate source classification probabilities "
+                    "for %s because of %s" % (i, e))
+                mydict["default"] = None
+                mydict["population"] = None
+            classifications.append(mydict)
+        self._pepredicates_probs = classifications

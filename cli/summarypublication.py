@@ -189,8 +189,8 @@ def make_spin_disk_plot(opts):
                 opts.webdir, opts.labels[num]))
             plt.close()
         except Exception as e:
-            logger.warn("Failed to generate a spin disk plot for %s" % (
-                        opts.labels[num]))
+            logger.warn("Failed to generate a spin disk plot for %s because %s" % (
+                        opts.labels[num], e))
             continue
 
 

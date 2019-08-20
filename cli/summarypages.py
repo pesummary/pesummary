@@ -617,6 +617,29 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         self.generate_specific_javascript()
         logger.debug("Finished Tailoring the javascript")
 
+    @property
+    def navbar_for_approximant_homepage(self):
+        return self._navbar_for_approximant_homepage
+
+    @navbar_for_approximant_homepage.setter
+    def navbar_for_approximant_homepage(self, navbar_for_approximant_homepage):
+        links = [["1d_histograms", [{"multiple": i}]] for i in self.labels]
+        for num, i in enumerate(self.parameters):
+            for j in self._categorize_parameters(i):
+                j = [j[0], [{k: self.labels[num]} for k in j[1]]]
+                links[num].append(j)
+        final_links = [[
+            "home", ["Approximants", self._approximant_navbar_links()],
+            {"corner": self.labels[num]}, {"config": self.labels[num]}, j]
+            for num, j in enumerate(links)]
+        if len(self.result_files) > 1:
+            for i in final_links:
+                i[1][1] = i[1][1] + ["Comparison"]
+        if self.pepredicates_probs[0]["default"]:
+            for num, i in enumerate(final_links):
+                final_links[num].append({"classification": self.labels[num]})
+        self._navbar_for_approximant_homepage = final_links
+
     def generate_webpages(self):
         """Generate all webpages that we need.
         """
@@ -631,6 +654,8 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         self.make_logging_page()
         if self.publication:
             self.make_publication_pages()
+        if self.pepredicates_probs[0]["default"] is not None:
+            self.make_classification_pages()
 
     def _categorize_parameters(self, parameters):
         """Categorize the parameters into common headings.
@@ -1056,6 +1081,48 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
         images = [y for x in image_contents for y in x]
         html_file.make_modal_carousel(images=images)
         html_file.close()
+
+    def make_classification_pages(self):
+        """Make the classification pages
+        """
+        pages = ["%s_%s_classification" % (i, i) for i in self.labels]
+        webpage.make_html(web_dir=self.webdir, pages=pages, stylesheets=pages)
+        for num, app in enumerate(self.labels):
+            html_file = self._setup_page(
+                "%s_classification" % (app), self.navbar_for_approximant_homepage[num],
+                app, title="%s Classification" % (app),
+                background_colour=self.colors[num], approximant=app)
+            html_file.make_banner(approximant=app, key="classification")
+
+            if self.pepredicates_probs[num]["default"]:
+                cli = "summaryclassification --samples %s" % (self.result_files[num])
+                html_file.make_container()
+                _class = "row justify-content-center"
+                html_file.make_div(4, _class=_class, _style=None)
+                keys = list(self.pepredicates_probs[num]["default"].keys())
+                table_contents = [
+                    ["%s prior" % (i)] + [
+                        self.pepredicates_probs[num]["%s" % (i)][j]
+                        for j in keys] for i in ["default", "population"]]
+                html_file.make_table(headings=[" "] + keys,
+                                     contents=table_contents, heading_span=1,
+                                     accordian=False)
+                html_file.make_cli_button(cli)
+                html_file.end_div(4)
+                html_file.end_container()
+
+            path = self.image_path["other"]
+            image_contents = [["%s/%s_default_predicates.png" % (path, app),
+                               "%s/%s_population_predicates.png" % (path, app)]]
+            command_lines = [["%s --webdir %s --labels %s --plot_with_default_prior" % (
+                              cli, self.webdir + "/plots", app),
+                              "%s --webdir %s --labels %s --plot_with_population_prior" % (
+                              cli, self.webdir + "/plots", app)]]
+            html_file.make_table_of_images(contents=image_contents, cli=command_lines)
+            images = [y for x in image_contents for y in x]
+            html_file.make_modal_carousel(images=images)
+            html_file.make_footer(user=self.user, rundir=self.webdir)
+            html_file.close()
 
 
 def main():

@@ -149,22 +149,6 @@ class LALInference(GWRead):
             for num, i in enumerate(samples):
                 samples[num].append(
                     np.arccos(i[lalinference_names.index("costheta_jn")]))
-        spin_magnitudes = ["a_1", "a_2"]
-        spin_angles = ["phi_jl", "tilt_1", "tilt_2", "phi_12"]
-        if all(i in lalinference_names for i in spin_magnitudes):
-            if all(i not in lalinference_names for i in spin_angles):
-                lalinference_names.append("tilt_1")
-                lalinference_names.append("tilt_2")
-                for num, i in enumerate(samples):
-                    samples[num].append(
-                        np.arccos(np.sign(i[lalinference_names.index("a1")])))
-                    samples[num].append(
-                        np.arccos(np.sign(i[lalinference_names.index("a2")])))
-                ind_a1 = lalinference_names.index("a_1")
-                ind_a2 = lalinference_names.index("a_2")
-                for num, i in enumerate(samples):
-                    samples[num][ind_a1] = abs(samples[num][ind_a1])
-                    samples[num][ind_a2] = abs(samples[num][ind_a2])
         try:
             version = f[path_to_samples].attrs["VERSION"].decode("utf-8")
             return lalinference_names, samples, None, version

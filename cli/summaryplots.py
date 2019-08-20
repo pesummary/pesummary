@@ -315,6 +315,7 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             self.try_to_make_a_plot("1d_histogram", num)
             if self.custom_plotting:
                 self.try_to_make_a_plot("custom", num)
+            self.try_to_make_a_plot("pepredicates", num)
         if self.sensitivity:
             self.try_to_make_a_plot("sensitivity", 0)
         if self.add_to_existing:
@@ -380,7 +381,8 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
                                 "2d_comparison_contour_plots":
                                 self._2d_comparison_contour_plots,
                                 "violin_plots": self._violin_plots,
-                                "spin_disk_plots": self._spin_disk_plots}
+                                "spin_disk_plots": self._spin_disk_plots,
+                                "pepredicates": self._pepredicates_plot}
         try:
             plot_type_dictionary[plot_type](idx)
         except Exception as e:
@@ -455,6 +457,8 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         idx: int
             The index of the results file that you wish to analyse
         """
+        from pesummary.utils.utils import RedirectLogger
+
         ind_ra = self.parameters[idx].index("ra")
         ind_dec = self.parameters[idx].index("dec")
         ra = [j[ind_ra] for j in self.samples[idx]]
@@ -469,9 +473,10 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
             logger.info("Launching subprocess to generate skymap plot with "
                         "ligo.skymap")
             try:
-                process = mp.Process(target=self._ligo_skymap_plot,
-                                     args=[ra, dec, idx])
-                process.start()
+                with RedirectLogger("ligo.skymap", level="DEBUG") as redirector:
+                    process = mp.Process(target=self._ligo_skymap_plot,
+                                         args=[ra, dec, idx])
+                    process.start()
             except Exception as e:
                 logger.warn("Failed to generate a skymap using the ligo.skymap "
                             "package because %s. Using the default PESummary "
@@ -695,6 +700,20 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
                 logger.warn("Failed to generate a spin disk plot for %s" % (
                             self.labels[num]))
                 continue
+
+    def _pepredicates_plot(self, idx):
+        """Generate plots with the PEPredicates package
+        """
+        from pesummary.gw.pepredicates import PEPredicates
+
+        fig = PEPredicates.plot(
+            self.samples[idx], self.parameters[idx], population_prior=False)
+        plt.savefig("%s/plots/%s_default_predicates.png" % (self.webdir, self.labels[idx]))
+        plt.close()
+        fig = PEPredicates.plot(
+            self.samples[idx], self.parameters[idx], population_prior=True)
+        plt.savefig("%s/plots/%s_population_predicates.png" % (self.webdir, self.labels[idx]))
+        plt.close()
 
 
 def main():
