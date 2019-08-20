@@ -251,6 +251,10 @@ class page(Base):
                 "files")
         elif key == "Logging":
             self.add_content("Below is the output from the PESummary code")
+        elif key == "classification":
+            self.add_content(
+                "Below we look at the source probabilities and plots for the "
+                "passed result file")
         else:
             self.add_content(
                 "The figures below show the plots for %s" % (approximant))
@@ -400,7 +404,8 @@ class page(Base):
         self.add_content("</nav>\n")
 
     def make_table(self, headings=None, contents=None, heading_span=1,
-                   colors=None, accordian_header="Summary Table", **kwargs):
+                   colors=None, accordian_header="Summary Table",
+                   accordian=True, **kwargs):
         """Generate a table in bootstrap format.
 
         Parameters
@@ -414,32 +419,33 @@ class page(Base):
         colors: list, optional
             list of colors for the table columns
         """
-        label = accordian_header.replace(" ", "_")
-        self.make_container(style=kwargs.get("style", None))
-        self.make_div(indent=2, _class='row justify-content-center')
-        self.make_div(
-            indent=4, _class='accordian', _style='width: 100%',
-            _id='accordian%s' % (label))
-        self.make_div(indent=6, _class='card')
-        self.make_div(
-            indent=8, _class='card-header', _style='background-color: #E0E0E0',
-            _id='table')
-        self.add_content("<h5 class='mb-0'>", indent=10)
-        self.make_div(indent=12, _class='row justify-content-center')
-        self.add_content(
-            "<button class='btn btn-link collapsed' type='button' "
-            "data-toggle='collapse' data-target='#collapsetable%s' "
-            "aria-expanded='false' aria-controls='collapsetable'>" % (label), indent=14)
-        self.add_content(accordian_header)
-        self.add_content("</button>")
-        self.end_div(indent=12)
-        self.end_div(indent=10)
-        self.add_content(
-            "<div id='collapsetable%s' class='collapse' "
-            "aria-labelledby='table' data-parent='#accordian%s'>" % (label, label),
-            indent=12)
-        self.make_div(_class='card-body', indent=14)
-        self.make_div(_class='row justify-content-center', indent=16)
+        if accordian:
+            label = accordian_header.replace(" ", "_")
+            self.make_container(style=kwargs.get("style", None))
+            self.make_div(indent=2, _class='row justify-content-center')
+            self.make_div(
+                indent=4, _class='accordian', _style='width: 100%',
+                _id='accordian%s' % (label))
+            self.make_div(indent=6, _class='card')
+            self.make_div(
+                indent=8, _class='card-header', _style='background-color: #E0E0E0',
+                _id='table')
+            self.add_content("<h5 class='mb-0'>", indent=10)
+            self.make_div(indent=12, _class='row justify-content-center')
+            self.add_content(
+                "<button class='btn btn-link collapsed' type='button' "
+                "data-toggle='collapse' data-target='#collapsetable%s' "
+                "aria-expanded='false' aria-controls='collapsetable'>" % (label), indent=14)
+            self.add_content(accordian_header)
+            self.add_content("</button>")
+            self.end_div(indent=12)
+            self.end_div(indent=10)
+            self.add_content(
+                "<div id='collapsetable%s' class='collapse' "
+                "aria-labelledby='table' data-parent='#accordian%s'>" % (label, label),
+                indent=12)
+            self.make_div(_class='card-body', indent=14)
+            self.make_div(_class='row justify-content-center', indent=16)
         self.make_div(_class='container', indent=18)
         if type(contents) == list:
             self.make_div(indent=20, _class='table-responsive')
@@ -498,15 +504,16 @@ class page(Base):
             self.end_div(indent=20)
 
         self.end_div(indent=18)
-        self.end_div(indent=16)
-        self.end_div(indent=14)
-        self.end_div(indent=12)
-        self.end_div(indent=10)
-        self.end_div(indent=8)
-        self.end_div(indent=6)
-        self.end_div(indent=4)
-        self.end_div(indent=2)
-        self.end_div()
+        if accordian:
+            self.end_div(indent=16)
+            self.end_div(indent=14)
+            self.end_div(indent=12)
+            self.end_div(indent=10)
+            self.end_div(indent=8)
+            self.end_div(indent=6)
+            self.end_div(indent=4)
+            self.end_div(indent=2)
+            self.end_div()
 
     def make_code_block(self, language=None, contents=None):
         """Generate a code block hightlighted using pigments.
@@ -732,3 +739,28 @@ class page(Base):
         self.add_content("</div>\n", indent=4)
         self.add_content("</div>\n", indent=2)
         self.add_content("</div>\n")
+
+    def make_cli_button(self, cli):
+        """Make a button showing the command line used
+
+        Parameters
+        ----------
+        cli: str
+            the command line that you wish to display in the modal
+        """
+        self.make_div(0, _class="imgButton", _style=None)
+        self.add_content("<button value='test' data-toggle='modal' "
+                         "data-target='#myModal'>Command Line<"
+                         "/button>", indent=2)
+        self.end_div(0)
+        self.add_content("<div class='modal' id='myModal'>", indent=0)
+        self.make_div(2, _class='modal-dialog',
+                      _style="max-width: 1000px; padding-top: 250px;")
+        self.make_div(4, _class='modal-content', _style=None)
+        self.make_div(6, _class='modal-body',
+                      _style="font-size: 0.75rem;")
+        self.add_content("%s" % (cli), indent=8)
+        self.end_div(6)
+        self.end_div(4)
+        self.end_div(2)
+        self.end_div(0)

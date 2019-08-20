@@ -16,6 +16,7 @@
 import os
 import sys
 import logging
+import contextlib
 
 import numpy as np
 from scipy.integrate import cumtrapz
@@ -232,6 +233,53 @@ def remove_tmp_directories():
             shutil.rmtree(i)
         elif os.path.isfile(i):
             os.remove(i)
+
+
+def customwarn(message, category, filename, lineno, file=None, line=None):
+    import sys
+    import warnings
+
+    sys.stdout.write(warnings.formatwarning("%s" % (message), category, filename, lineno))
+
+
+class RedirectLogger(object):
+    """Class to redirect the output from other codes to the `pesummary`
+    logger
+
+    Parameters
+    ----------
+    level: str, optional
+        the level to display the messages
+    """
+    def __init__(self, code, level="Debug"):
+        self.logger = logging.getLogger('PESummary')
+        self.level = getattr(logging, level)
+        self._redirector = contextlib.redirect_stdout(self)
+        self.code = code
+
+    def isatty(self):
+        pass
+
+    def write(self, msg):
+        """Write the message to stdout
+
+        Parameters
+        ----------
+        msg: str
+            the message you wish to be printed to stdout
+        """
+        if msg and not msg.isspace():
+            self.logger.log(self.level, "[from %s] %s" % (self.code, msg))
+
+    def flush(self):
+        pass
+
+    def __enter__(self):
+        self._redirector.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._redirector.__exit__(exc_type, exc_value, traceback)
 
 
 setup_logger()

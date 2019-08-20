@@ -39,7 +39,6 @@ def chirp_mass_and_q_from_mass1_mass2(pts):
 
     m1 = pts[:, 0]
     m2 = pts[:, 1]
-    assert (m1 > 0).all() and (m2 > 0).all()
     mc = mchirp_from_m1_m2(m1, m2)
     q = q_from_m1_m2(m1, m2)
     return np.column_stack([mc, q])
@@ -121,7 +120,7 @@ def twod_contour_plots(parameters, samples, labels, latex_labels):
             if "low" in list(default_bounds[parameters[0]].keys()):
                 xlow = default_bounds[parameters[0]]["low"]
             if "high" in list(default_bounds[parameters[0]].keys()):
-                if type(default_bounds[parameters[0]]["high"]) == str:
+                if isinstance(default_bounds[parameters[0]]["high"], str):
                     if "mass_1" in default_bounds[parameters[0]]["high"]:
                         transform = chirp_mass_and_q_from_mass1_mass2
                         xhigh = 1.
@@ -131,7 +130,7 @@ def twod_contour_plots(parameters, samples, labels, latex_labels):
             if "low" in list(default_bounds[parameters[1]].keys()):
                 ylow = default_bounds[parameters[1]]["low"]
             if "high" in list(default_bounds[parameters[1]].keys()):
-                if type(default_bounds[parameters[1]]["high"]) == str:
+                if isinstance(default_bounds[parameters[1]]["high"], str):
                     if "mass_1" in default_bounds[parameters[1]]["high"]:
                         transform = chirp_mass_and_q_from_mass1_mass2
                         yhigh = 1.
@@ -161,10 +160,9 @@ def twod_contour_plots(parameters, samples, labels, latex_labels):
             xx, yy, z, levels=zvalues, colors=[palette[num]], linewidths=1.5)
         cs.collections[0].set_label('%s' % (labels[num]))
     if all("mass_1" in i or "mass_2" in i for i in parameters):
-        xlim = ax1.get_xlim()
-        ylim = ax1.get_ylim()
-        y = x = np.linspace(xlim[0], ylim[1], 2)
-        ax1.fill_betweenx(y, xlim[0], x, color='gray', alpha=0.75)
+
+        reg = plt.Polygon([[0, 0], [0, 1000], [1000, 1000]], color='gray', alpha=0.75)
+        ax1.add_patch(reg)
     ax1.set_xlabel(latex_labels[parameters[0]])
     ax1.set_ylabel(latex_labels[parameters[1]])
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,

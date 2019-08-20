@@ -515,12 +515,34 @@ class GWRead(Read):
                 spin_2y = np.array([0.] * len(samples[0]))
                 spin_2z = samples[1] * np.cos(samples[4])
                 iota = np.array(samples[2])
-                data = [
+                spin_components = [
                     iota, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z]
 
-                for num, i in enumerate(spins_to_calculate):
+                for i in spins_to_calculate:
                     self.parameters.append(i)
-                    self.append_data(data[num])
+                    ind = spins.index(i)
+                    data = spin_components[ind]
+                    self.append_data(data)
+
+    def _check_parameters(self):
+        params = ["mass_1", "mass_2", "a_1", "a_2", "mass_1_source", "mass_2_source",
+                  "mass_ratio", "total_mass", "chirp_mass"]
+        for i in params:
+            if i in self.parameters:
+                samples = self.specific_parameter_samples([i])
+                if "mass" in i:
+                    cond = any(np.array(samples[0]) <= 0.)
+                else:
+                    cond = any(np.array(samples[0]) < 0.)
+                if cond:
+                    if "mass" in i:
+                        ind = np.argwhere(np.array(samples[0]) <= 0.)
+                    else:
+                        ind = np.argwhere(np.array(samples[0]) < 0.)
+                    logger.warn("Removing %s samples because they have unphysical "
+                                "values (%s < 0)" % (len(ind), i))
+                    for i in np.arange(len(ind) - 1, -1, -1):
+                        self.samples.remove(list(np.array(self.samples)[ind[i][0]]))
 
     def _component_spins(self):
         spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
@@ -700,6 +722,23 @@ class GWRead(Read):
 
     def generate_all_posterior_samples(self):
         logger.debug("Starting to generate all derived posteriors")
+        spin_magnitudes = ["a_1", "a_2"]
+        spin_angles = ["phi_jl", "tilt_1", "tilt_2", "phi_12"]
+        if all(i in self.parameters for i in spin_magnitudes):
+            if all(i not in self.parameters for i in spin_angles):
+                self.parameters.append("tilt_1")
+                self.parameters.append("tilt_2")
+                for num, i in enumerate(self.samples):
+                    self.samples[num].append(
+                        np.arccos(np.sign(i[self.parameters.index("a_1")])))
+                    self.samples[num].append(
+                        np.arccos(np.sign(i[self.parameters.index("a_2")])))
+                ind_a1 = self.parameters.index("a_1")
+                ind_a2 = self.parameters.index("a_2")
+                for num, i in enumerate(self.samples):
+                    self.samples[num][ind_a1] = abs(self.samples[num][ind_a1])
+                    self.samples[num][ind_a2] = abs(self.samples[num][ind_a2])
+        self._check_parameters()
         if "chirp_mass" not in self.parameters and "chirp_mass_source" in \
                 self.parameters and "redshift" in self.parameters:
             self._mchirp_from_mchirp_source_z()
@@ -761,10 +800,12 @@ class GWRead(Read):
             cond1 = "spin_2x" in self.parameters and "spin_2y" in self.parameters
             if "phi_2" not in self.parameters and cond1:
                 self._phi2_from_spins()
-            if "chi_p" not in self.parameters and "chi_eff" not in self.parameters:
+            if "chi_eff" not in self.parameters:
+                if all(i in self.parameters for i in spin_components):
+                    self._chi_eff()
+            if "chi_p" not in self.parameters:
                 if all(i in self.parameters for i in spin_components):
                     self._chi_p()
-                    self._chi_eff()
             if "lambda_tilde" in self.parameters and "lambda_1" not in self.parameters:
                 self._lambda1_from_lambda_tilde()
             if "lambda_2" not in self.parameters and "lambda_1" in self.parameters:
@@ -818,3 +859,38 @@ class GWRead(Read):
             self.parameters.remove(self.parameters[ind])
             for i in self.samples:
                 del i[ind]
+
+    def to_lalinference(self, outdir="./", label=None):
+        """Save the PESummary results file object to a lalinference hdf5 file
+
+        Parameters
+        ----------
+        outdir: str
+            path to the directory where you would like to save the results file
+        label: str
+            the label of the result file
+        """
+        import h5py
+        import os
+
+        if not label:
+            from time import time
+
+            label = round(time())
+
+        lalinference_samples = np.array(
+            [tuple(i) for i in self.samples],
+            dtype=[(i, '<f4') for i in self.parameters])
+
+        if os.path.isfile("%s/lalinference_file_%s.hdf5" % (outdir, label)):
+            raise Exception("The file '%s/lalinference_file_%s.hdf5' already exists.")
+        try:
+            f = h5py.File("%s/lalinference_file_%s.hdf5" % (outdir, label), "w")
+        except Exception:
+            raise Exception("Please make sure you have write permission in "
+                            "%s" % (outdir))
+        lalinference = f.create_group("lalinference")
+        sampler = lalinference.create_group("lalinference_sampler")
+        samples = sampler.create_dataset(
+            "posterior_samples", data=lalinference_samples)
+        f.close()

@@ -77,6 +77,16 @@ class BaseRead(object):
                     else:
                         assert true[i] == self.result.injection_parameters[i]
 
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        self.result.to_dat(outdir=".outdir", label="label")
+        assert os.path.isfile(os.path.join(".outdir", "pesummary_label.dat"))
+        data = np.genfromtxt(
+            os.path.join(".outdir", "pesummary_label.dat"), names=True)
+        assert all(i in self.parameters for i in list(data.dtype.names))
+        assert all(i in list(data.dtype.names) for i in self.parameters)
+
 
 class GWBaseRead(BaseRead):
     """Base class to test the GWRead specific functions
@@ -184,6 +194,11 @@ class TestCoreJsonFile(BaseRead):
         true = {par: float("nan") for par in self.parameters}
         super(TestCoreJsonFile, self).test_injection_parameters(true)
 
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestCoreJsonFile, self).test_to_dat()
+
 
 class TestCoreHDF5File(BaseRead):
     """Class to test loading in an HDF5 file with the core Read function
@@ -233,6 +248,11 @@ class TestCoreHDF5File(BaseRead):
         """
         true = {par: float("nan") for par in self.parameters}
         super(TestCoreHDF5File, self).test_injection_parameters(true)
+
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestCoreHDF5File, self).test_to_dat()
 
 
 class TestCoreDatFile(BaseRead):
@@ -284,6 +304,10 @@ class TestCoreDatFile(BaseRead):
         true = {par: float("nan") for par in self.parameters}
         super(TestCoreDatFile, self).test_injection_parameters(true)
 
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestCoreDatFile, self).test_to_dat()
 
 
 class BilbyFile(BaseRead):
@@ -371,6 +395,11 @@ class TestCoreJsonBilbyFile(BilbyFile):
         true = {par: 1. for par in self.parameters}
         super(TestCoreJsonBilbyFile, self).test_injection_parameters(true)
 
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestCoreJsonBilbyFile, self).test_to_dat()
+
 
 class TestCoreHDF5BilbyFile(BilbyFile):
     """Class to test loading in a bilby hdf5 file with the core Read function
@@ -420,6 +449,11 @@ class TestCoreHDF5BilbyFile(BilbyFile):
         """
         true = {par: 1. for par in self.parameters}
         super(TestCoreHDF5BilbyFile, self).test_injection_parameters(true)
+
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestCoreHDF5BilbyFile, self).test_to_dat()
 
 
 class PESummaryFile(BaseRead):
@@ -655,6 +689,11 @@ class TestGWDatFile(GWBaseRead):
         true = {par: float("nan") for par in self.parameters}
         super(TestGWDatFile, self).test_injection_parameters(true)
 
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestGWDatFile, self).test_to_dat()
+
 
 class TestGWHDF5File(GWBaseRead):
     """Class to test loading in an HDF5 file with the gw Read function
@@ -705,6 +744,11 @@ class TestGWHDF5File(GWBaseRead):
         true = {par: float("nan") for par in self.parameters}
         super(TestGWHDF5File, self).test_injection_parameters(true)
 
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestGWHDF5File, self).test_to_dat()
+
 
 class TestGWJsonFile(GWBaseRead):
     """Class to test loading in an json file with the gw Read function
@@ -754,6 +798,11 @@ class TestGWJsonFile(GWBaseRead):
         """
         true = {par: float("nan") for par in self.parameters}
         super(TestGWJsonFile, self).test_injection_parameters(true)
+
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestGWJsonFile, self).test_to_dat()
 
 
 class TestGWJsonBilbyFile(GWBaseRead):
@@ -807,6 +856,11 @@ class TestGWJsonBilbyFile(GWBaseRead):
         true = {par: 1. for par in self.parameters}
         super(TestGWJsonBilbyFile, self).test_injection_parameters(true)
 
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestGWJsonBilbyFile, self).test_to_dat()
+
 
 class TestGWLALInferenceFile(GWBaseRead):
     """Class to test loading in a LALInference file with the gw Read function
@@ -857,3 +911,8 @@ class TestGWLALInferenceFile(GWBaseRead):
         """Test the injection_parameters property
         """
         super(TestGWLALInferenceFile, self).test_injection_parameters(None)
+
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestGWLALInferenceFile, self).test_to_dat()
