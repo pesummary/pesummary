@@ -14,6 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.core.file.formats.base_read import Read
+from pesummary.utils.utils import logger
 
 from glob import glob
 import os
@@ -72,13 +73,27 @@ class PESummary(Read):
         return func_map[Read.extension_from_path(path)](path, **kwargs)
 
     @staticmethod
+    def _convert_hdf5_to_dict(dictionary, path="/"):
+        """
+        """
+        mydict = {}
+        for key, item in dictionary[path].items():
+            if isinstance(item, h5py._hl.dataset.Dataset):
+                mydict[key] = item.value
+            elif isinstance(item, h5py._hl.group.Group):
+                mydict[key] = PESummary._convert_hdf5_to_dict(
+                    dictionary, path=path + key + "/")
+        return mydict
+
+    @staticmethod
     def _grab_data_from_hdf5_file(path, **kwargs):
         """
         """
         function = kwargs.get(
             "grab_data_from_dictionary", PESummary._grab_data_from_dictionary)
         f = h5py.File(path)
-        existing_data = function(f)
+        data = PESummary._convert_hdf5_to_dict(f)
+        existing_data = function(data)
         f.close()
         return existing_data
 
@@ -101,6 +116,7 @@ class PESummary(Read):
         labels = list(existing_structure.keys())
 
         parameter_list, sample_list, inj_list, ver_list = [], [], [], []
+        meta_data_list = []
         for num, i in enumerate(labels):
             p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
@@ -119,6 +135,11 @@ class PESummary(Read):
             config = None
             if "config_file" in dictionary.keys():
                 config, = Read.load_recusively("config_file", dictionary)
+            if "meta_data" in dictionary.keys():
+                data, = Read.load_recusively("meta_data", dictionary)
+                meta_data_list.append(data["%s" % (i)])
+            else:
+                meta_data_list.append({"sampler": {}, "meta_data": {}})
         if "version" in dictionary.keys():
             version, = Read.load_recusively("version", dictionary)
         else:
@@ -134,7 +155,7 @@ class PESummary(Read):
         setattr(PESummary, "labels", labels)
         setattr(PESummary, "config", config)
         setattr(PESummary, "version", version["pesummary"])
-        return parameter_list, sample_list, inj_list, ver_list
+        return parameter_list, sample_list, inj_list, ver_list, meta_data_list
 
     @property
     def samples_dict(self):
@@ -168,16 +189,22 @@ class PESummary(Read):
         """Convert a PESummary metafile to a bilby results object
         """
         from bilby.core.result import Result
+        from bilby.core.prior import PriorDict
+        from bilby.core.prior import Uniform
         from pandas import DataFrame
 
         objects = {}
         for num, i in enumerate(self.labels):
             posterior_data_frame = DataFrame(
                 self.samples[num], columns=self.parameters[num])
+            priors = PriorDict()
+            logger.warn(
+                "No prior information is known so setting it to a default")
+            priors.update({i: Uniform(-10, 10, 0) for i in self.parameters[num]})
             bilby_object = Result(
                 search_parameter_keys=self.parameters[num],
                 posterior=posterior_data_frame, label="pesummary_%s" % (i),
-                samples=self.samples[num])
+                samples=self.samples[num], priors=priors)
             objects[i] = bilby_object
         return objects
 

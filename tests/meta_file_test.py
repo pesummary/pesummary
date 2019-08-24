@@ -153,6 +153,10 @@ class TestMetaFile(object):
         version = f.create_group("version")
         version.create_dataset("H1_L1", data=np.array(["0.3.6"], dtype="S"))
         version.create_dataset("pesummary", data=np.array(["1.0"], dtype="S"))
+        meta_data = f.create_group("meta_data")
+        label = meta_data.create_group("H1_L1")
+        label.create_group("sampler")
+        label.create_group("meta_data")
         f.close()
         return path + "/posterior_samples.h5"
 
@@ -206,7 +210,8 @@ class TestMetaFile(object):
         metafile = meta_file.GWMetaFile(inputs)
         f = h5py.File(metafile.meta_file, "r")
         assert sorted(list(f.keys())) == ["approximant", "injection_data",
-                                          "posterior_samples", "version"]
+                                          "meta_data", "posterior_samples",
+                                          "version"]
         for i, j in zip(sorted(["grace_H1", "H1_L1"]),
                         sorted(list(f["posterior_samples"].keys()))):
             assert i in j

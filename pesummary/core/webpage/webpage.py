@@ -48,6 +48,7 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/font.css">
+    <link rel="stylesheet" href="./css/table.css">
 """
 
 OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
@@ -63,6 +64,7 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/font.css">
+    <link rel="stylesheet" href="../css/table.css">
 """
 
 
@@ -222,10 +224,10 @@ class page(Base):
         """
         self._footer(user, rundir)
 
-    def make_banner(self, approximant=None, key="Summary"):
+    def make_banner(self, approximant=None, key="Summary", _style=None):
         """Make a banner for the document.
         """
-        self.make_div(indent=2, _class='banner')
+        self.make_div(indent=2, _class='banner', _style=_style)
         self.add_content("%s" % (approximant))
         self.end_div()
         self.make_div(indent=2, _class='paragraph')
@@ -255,6 +257,12 @@ class page(Base):
             self.add_content(
                 "Below we look at the source probabilities and plots for the "
                 "passed result file")
+        elif key == "sampler_kwargs":
+            self.add_content(
+                "Sampler information extracted from the result file")
+        elif key == "meta_data":
+            self.add_content(
+                "Meta data extracted from the result file")
         else:
             self.add_content(
                 "The figures below show the plots for %s" % (approximant))
@@ -405,7 +413,7 @@ class page(Base):
 
     def make_table(self, headings=None, contents=None, heading_span=1,
                    colors=None, accordian_header="Summary Table",
-                   accordian=True, **kwargs):
+                   accordian=True, format="table-striped table-sm", **kwargs):
         """Generate a table in bootstrap format.
 
         Parameters
@@ -452,7 +460,7 @@ class page(Base):
             if heading_span > 1:
                 self.add_content("<table class='table table-sm'>\n", indent=22)
             else:
-                self.add_content("<table class='table table-striped table-sm'>\n", indent=24)
+                self.add_content("<table class='table %s'>\n" % (format), indent=24)
             self.add_content("<thead>\n", indent=26)
             self.add_content("<tr>\n", indent=28)
             for i in headings:

@@ -778,6 +778,38 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
                 html_file.make_table_of_images(contents=image_contents)
                 images = [y for x in image_contents for y in x]
                 html_file.make_modal_carousel(images=images)
+                if self.file_kwargs[num]["sampler"] != {}:
+                    html_file.make_banner(
+                        approximant="Sampler kwargs", key="sampler_kwargs",
+                        _style="font-size: 26px;")
+                    _style = "margin-top:3em; margin-bottom:5em;"
+                    html_file.make_container(style=_style)
+                    _class = "row justify-content-center"
+                    html_file.make_div(4, _class=_class, _style=None)
+                    keys = list(self.file_kwargs[num]["sampler"].keys())
+                    table_contents = [[
+                        self.file_kwargs[num]["sampler"][key] for key in keys]]
+                    html_file.make_table(headings=keys, format="table-hover",
+                                         contents=table_contents, heading_span=1,
+                                         accordian=False)
+                    html_file.end_div(4)
+                    html_file.end_container()
+                if self.file_kwargs[num]["meta_data"] != {}:
+                    html_file.make_banner(
+                        approximant="Meta data", key="meta_data",
+                        _style="font-size: 26px; margin-top: -3em;")
+                    _style = "margin-top:3em; margin-bottom:5em;"
+                    html_file.make_container(style=_style)
+                    _class = "row justify-content-center"
+                    html_file.make_div(4, _class=_class, _style=None)
+                    keys = list(self.file_kwargs[num]["meta_data"].keys())
+                    table_contents = [[
+                        self.file_kwargs[num]["meta_data"][key] for key in keys]]
+                    html_file.make_table(headings=keys, format="table-hover",
+                                         contents=table_contents, heading_span=1,
+                                         accordian=False)
+                    html_file.end_div(4)
+                    html_file.end_container()
         else:
             if os.path.isfile(self.webdir + "/plots/%s_strain.png" % (self.labels[0])):
                 image_contents.append(path + "%s_strain.png" % (self.labels[0]))
@@ -794,6 +826,39 @@ class GWWebpageGeneration(pesummary.gw.inputs.GWPostProcessing, WebpageGeneratio
             html_file.make_table_of_images(contents=image_contents)
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images)
+
+            if self.file_kwargs[0]["sampler"] != {}:
+                html_file.make_banner(
+                    approximant="Sampler kwargs", key="sampler_kwargs",
+                    _style="font-size: 26px;")
+                _style = "margin-top:3em; margin-bottom:5em;"
+                html_file.make_container(style=_style)
+                _class = "row justify-content-center"
+                html_file.make_div(4, _class=_class, _style=None)
+                keys = list(self.file_kwargs[0]["sampler"].keys())
+                table_contents = [[
+                    self.file_kwargs[0]["sampler"][key] for key in keys]]
+                html_file.make_table(headings=keys, format="table-hover",
+                                     contents=table_contents, heading_span=1,
+                                     accordian=False)
+                html_file.end_div(4)
+                html_file.end_container()
+            if self.file_kwargs[0]["meta_data"] != {}:
+                html_file.make_banner(
+                    approximant="Meta data", key="meta_data",
+                    _style="font-size: 26px; margin-top: -3em;")
+                _style = "margin-top:3em; margin-bottom:5em;"
+                html_file.make_container(style=_style)
+                _class = "row justify-content-center"
+                html_file.make_div(4, _class=_class, _style=None)
+                keys = list(self.file_kwargs[0]["meta_data"].keys())
+                table_contents = [[
+                    self.file_kwargs[0]["meta_data"][key] for key in keys]]
+                html_file.make_table(headings=keys, format="table-hover",
+                                     contents=table_contents, heading_span=1,
+                                     accordian=False)
+                html_file.end_div(4)
+                html_file.end_container()
 
         html_file.close()
         key_data = self._key_data()

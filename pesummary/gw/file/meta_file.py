@@ -50,6 +50,8 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             f.create_group("injection_data")
         if "version" in dictionary.keys():
             f.create_group("version")
+        if "meta_data" in dictionary.keys():
+            f.create_group("meta_data")
     except Exception:
         pass
     if current_path is None:
@@ -74,6 +76,10 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             f["/".join(current_path)].create_dataset(k, data=np.array(
                 [v], dtype="S"
             ))
+        elif isinstance(v, float):
+            f["/".join(current_path)].create_dataset(k, data=np.array([v]))
+        elif v == {}:
+            f["/".join(current_path)].create_dataset(k, data=np.array("NaN"))
 
 
 class GWMetaFile(GWPostProcessing, MetaFile):
@@ -98,6 +104,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
         self.existing_calibration = None
         self.existing_config = None
         self.existing_injection = None
+        self.existing_metadata = None
 
         self.generate_meta_file_data()
 
@@ -140,17 +147,20 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             self.existing_approximant = existing_file.approximant
             self.existing_injection = existing_file.injection_parameters
             self.existing_version = existing_file.input_version
+            self.existing_metadata = existing_file.extra_kwargs
         self._make_dictionary()
 
     def _make_dictionary(self):
         if self.existing:
+            print(self.existing_metadata)
             self._make_dictionary_structure(
                 self.existing_label,
                 version=self.existing_version,
                 psd=self.existing_psd,
                 approx=self.existing_approximant,
                 calibration=self.existing_calibration,
-                config=self.existing_config
+                config=self.existing_config,
+                meta_data=self.existing_metadata
             )
             for num, i in enumerate(self.existing_label):
                 self._add_data(i,
@@ -161,7 +171,8 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                                approximant=self.existing_approximant[num],
                                psd=self.existing_psd,
                                calibration=self.existing_calibration,
-                               config=self.existing_config
+                               config=self.existing_config,
+                               meta_data=self.existing_metadata[num]
                                )
 
         self._make_dictionary_structure(self.labels,
@@ -170,7 +181,9 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                                         approx=self.approximant,
                                         calibration=self.calibration,
                                         config=self.config,
+                                        meta_data=self.file_kwargs
                                         )
+        print(self.file_kwargs)
         pesummary_version = get_version_information()
 
         for num, i in enumerate(self.labels):
@@ -197,7 +210,8 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                                version=self.file_versions[num], psd=psd,
                                calibration=calibration, config=config,
                                approximant=approximant[num],
-                               pesummary_version=pesummary_version
+                               pesummary_version=pesummary_version,
+                               meta_data=self.file_kwargs[num]
                                )
 
     def _combine_psd_frequency_strain(self, frequencies, strains, psd_labels):
@@ -257,7 +271,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
 
     def _add_data(self, label, parameters, samples, injection, version=None,
                   approximant=None, psd=None, calibration=None, config=None,
-                  pesummary_version=None):
+                  pesummary_version=None, meta_data=None):
         """Add data to the stored dictionary
 
         Parameters
@@ -285,6 +299,7 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             "injection_values": list(injection)
         }
         self.data["version"][label] = [version]
+        self.data["meta_data"][label] = meta_data
         if psd:
             for i in list(psd.keys()):
                 self.data["psds"][label][i] = psd[i]
@@ -300,7 +315,8 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             self.data["version"]["pesummary"] = [pesummary_version]
 
     def _make_dictionary_structure(self, label, version=None, psd=None,
-                                   approx=None, calibration=None, config=None):
+                                   approx=None, calibration=None, config=None,
+                                   meta_data=None):
         for num, i in enumerate(label):
             self._add_label(
                 "posterior_samples", i
@@ -310,6 +326,9 @@ class GWMetaFile(GWPostProcessing, MetaFile):
             )
             self._add_label(
                 "version", i
+            )
+            self._add_label(
+                "meta_data", i
             )
             if psd:
                 self._add_label("psds", i)

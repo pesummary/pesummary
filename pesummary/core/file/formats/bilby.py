@@ -41,6 +41,21 @@ class Bilby(Read):
         return cls(path)
 
     @staticmethod
+    def grab_extra_kwargs(self):
+        """Grab any additional information stored in the lalinference file
+        """
+        from bilby.core.result import read_in_result
+
+        f = read_in_result(filename=self.path_to_results_file)
+        kwargs = {"sampler": {
+            "log_evidence": np.round(f.log_evidence, 2),
+            "log_evidence_error": np.round(f.log_evidence_err, 2),
+            "log_bayes_factor": np.round(f.log_bayes_factor, 2),
+            "log_noise_evidence": np.round(f.log_noise_evidence, 2)},
+            "meta_data": {}}
+        return kwargs
+
+    @staticmethod
     def _grab_data_from_bilby_file(path):
         """Load the results file using the `bilby` library
         """
@@ -76,10 +91,15 @@ class Bilby(Read):
                         [key])[0]
                     latex_labels[key] = label
         try:
-            version = bilby_object.version
-            return parameters, samples, injection, version
+            extra_kwargs = Bilby.grab_extra_kwargs(path)
         except Exception:
-            return parameters, samples, injection
+            extra_kwargs = {"sampler": {}, "meta_data": {}}
+        try:
+            version = bilby_object.version
+            return parameters, samples, injection, version, extra_kwargs
+        except Exception:
+            version = "No version information found"
+            return parameters, samples, injection, version, extra_kwargs
 
     def add_marginalized_parameters_from_config_file(self, config_file):
         """Search the configuration file and add the marginalized parameters

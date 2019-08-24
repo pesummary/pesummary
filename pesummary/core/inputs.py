@@ -86,6 +86,7 @@ class Input(object):
         self.hdf5 = self.opts.save_to_hdf5
         self.existing_labels = []
         self.existing_version = []
+        self.existing_metadata = []
         self.existing_parameters = []
         self.existing_samples = []
         self.copy_files()
@@ -247,6 +248,10 @@ class Input(object):
     def file_versions(self):
         return self._file_versions
 
+    @property
+    def file_kwargs(self):
+        return self._file_kwargs
+
     @result_files.setter
     def result_files(self, samples):
         if not samples:
@@ -315,12 +320,13 @@ class Input(object):
 
         labels = [labels[i] for i in indicies]
         version = f.input_version
-        return p, s, inj_values, labels, config, version
+        meta_data = f.extra_kwargs
+        return p, s, inj_values, labels, config, version, meta_data
 
     def grab_data_from_input_files(self, samples):
         """
         """
-        result_file_list, version_list = [], []
+        result_file_list, version_list, kwarg_list = [], [], []
         parameters_list, samples_list, injection_list = [], [], []
         for num, i in enumerate(samples):
             if not os.path.isfile(i):
@@ -329,7 +335,7 @@ class Input(object):
             if self.config:
                 config = self.config[num]
             if self.is_pesummary_metafile(i):
-                p, s, inj, labels, con, version = self.grab_data_from_metafile(
+                p, s, inj, labels, con, version, md = self.grab_data_from_metafile(
                     i, webdir=self.webdir, compare=self.compare_results)
                 self.opts.labels = labels
                 self.config = con
@@ -339,19 +345,22 @@ class Input(object):
                     injection_list.append(inj[idx])
                     result_file_list.append(i)
                     version_list.append(version[idx])
+                    kwarg_list.append(md[idx])
             else:
-                p, s, inj, version = self.convert_to_standard_format(
+                p, s, inj, version, kwargs = self.convert_to_standard_format(
                     i, self.inj_file[num], config_file=config)
                 parameters_list.append(p)
                 samples_list.append(s)
                 injection_list.append(inj)
                 result_file_list.append(i)
                 version_list.append(version)
+                kwarg_list.append(kwargs)
         self._result_files = result_file_list
         self._parameters = parameters_list
         self._samples = samples_list
         self._injection_data = injection_list
         self._file_versions = version_list
+        self._file_kwargs = kwarg_list
 
     @property
     def email(self):
@@ -420,6 +429,17 @@ class Input(object):
         if self.add_to_existing:
             existing = Read(self.existing_meta_file)
             self._existing_version = existing.input_version
+
+    @property
+    def existing_metadata(self):
+        return self._existing_metadata
+
+    @existing_metadata.setter
+    def existing_metadata(self, existing_metadata):
+        self._existing_metadata = None
+        if self.add_to_existing:
+            existing = Read(self.existing_meta_file)
+            self._existing_metadata = existing.extra_kwargs
 
     @property
     def existing_parameters(self):
@@ -534,6 +554,7 @@ class Input(object):
             f.add_injection_parameters_from_file(injection_file)
         parameters = f.parameters
         samples = f.samples
+        kwargs = f.extra_kwargs
         if hasattr(f, "injection_parameters"):
             injection = f.injection_parameters
             if injection is not None:
@@ -547,7 +568,7 @@ class Input(object):
             injection = {i: j for i, j in zip(
                 parameters, [float("nan")] * len(parameters))}
         version = f.input_version
-        return parameters, samples, injection, version
+        return parameters, samples, injection, version, kwargs
 
     def _default_labels(self):
         """Return the default labels given your detector network.
@@ -619,6 +640,7 @@ class PostProcessing(object):
         self.existing_meta_file = inputs.existing_meta_file
         self.existing_labels = inputs.existing_labels
         self.existing_version = inputs.existing_version
+        self.existing_metadata = inputs.existing_metadata
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples
         self.colors = colors
@@ -630,6 +652,7 @@ class PostProcessing(object):
         self.samples = inputs.samples
         self.injection_data = inputs.injection_data
         self.file_versions = inputs.file_versions
+        self.file_kwargs = inputs.file_kwargs
         self.same_parameters = []
 
     @property
