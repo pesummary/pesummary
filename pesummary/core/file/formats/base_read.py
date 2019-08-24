@@ -55,6 +55,10 @@ class Read():
             self.input_version = self.data[3]
         else:
             self.input_version = "No version information found"
+        if len(self.data) > 4:
+            self.extra_kwargs = self.data[4]
+        else:
+            self.extra_kwargs = {"sampler": {}, "meta_data": {}}
 
     @property
     def parameters(self):
@@ -108,7 +112,7 @@ class Read():
         """
         if "/" in key:
             key = key.split("/")
-        if isinstance(key, str):
+        if isinstance(key, (str, float)):
             key = [key]
         if key[-1] in dictionary.keys():
             yield dictionary[key[-1]]

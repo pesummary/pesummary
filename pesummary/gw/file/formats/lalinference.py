@@ -52,6 +52,26 @@ class LALInference(GWRead):
         return cls(path, injection_file=injection_file)
 
     @staticmethod
+    def guess_path_to_sampler(path):
+        """Guess the path to the sampler group in a LALInference results file
+
+        Parameters
+        ----------
+        path: str
+            path to the LALInference results file
+        """
+        def _find_name(name):
+            c1 = "lalinference_nest" in name or "lalinference_mcmc" in name
+            c2 = "lalinference_nest/" not in name and "lalinference_mcmc/" not in name
+            if c1 and c2:
+                return name
+
+        f = h5py.File(path)
+        _path = f.visit(_find_name)
+        f.close()
+        return _path
+
+    @staticmethod
     def _parameters_in_lalinference_file(path):
         """Return the parameter names stored in the LALInference results file
 
@@ -93,6 +113,67 @@ class LALInference(GWRead):
         if self.check_for_calibration_data(check, self.path_to_results_file):
             return self.grab_calibration_data(grab, self.path_to_results_file)
         return None
+
+    @staticmethod
+    def grab_extra_kwargs(path):
+        """Grab any additional information stored in the lalinference file
+        """
+        kwargs = {"sampler": {}, "meta_data": {}}
+        path_to_samples = GWRead.guess_path_to_samples(path)
+        path_to_sampler = LALInference.guess_path_to_sampler(path)
+        f = h5py.File(path)
+        attributes = dict(f[path_to_samples].attrs.items())
+        if "flow" in list(attributes.keys()):
+            kwargs["sampler"]["f_low"] = attributes["flow"]
+        elif "f_low" in list(attributes.keys()):
+            kwargs["sampler"]["f_low"] = attributes["f_low"]
+        if "fref" in list(attributes.keys()):
+            kwargs["sampler"]["f_ref"] = attributes["fref"]
+        elif "f_ref" in list(attributes.keys()):
+            kwargs["sampler"]["f_ref"] = attributes["f_ref"]
+        if "LAL_APPROXIMANT" in list(attributes.keys()):
+            try:
+                from lalsimulation import GetStringFromApproximant
+
+                kwargs["meta_data"]["approximant"] = \
+                    GetStringFromApproximant(int(attributes["LAL_APPROXIMANT"]))
+            except Exception:
+                kwargs["meta_data"]["approximant"] = \
+                    int(attributes["LAL_APPROXIMANT"])
+        if "number_of_live_points" in list(attributes.keys()):
+            kwargs["meta_data"]["number_of_live_points"] = attributes["number_of_live_points"]
+        if "segmentLength" in list(attributes.keys()):
+            kwargs["meta_data"]["seglen"] = attributes["segmentLength"]
+        if "sampleRate" in list(attributes.keys()):
+            kwargs["meta_data"]["samplerate"] = attributes["sampleRate"]
+
+        attributes = dict(f[path_to_sampler].attrs.items())
+        if "log_bayes_factor" in list(attributes.keys()):
+            kwargs["sampler"]["log_bayes_factor"] = np.round(
+                attributes["log_bayes_factor"], 2)
+        elif "bayes_factor" in list(attributes.keys()):
+            kwargs["sampler"]["log_bayes_factor"] = np.round(
+                np.log(attributes["log_bayes_factor"]), 2)
+        if "log_evidence" in list(attributes.keys()):
+            kwargs["sampler"]["log_evidence"] = np.round(
+                attributes["log_evidence"], 2)
+        elif "evidence" in list(attributes.keys()):
+            kwargs["sampler"]["log_evidence"] = np.round(
+                np.log(attributes["evidence"]), 2)
+        if "log_prior_volume" in list(attributes.keys()):
+            kwargs["sampler"]["log_prior_volume"] = np.round(
+                attributes["log_prior_volume"], 2)
+        elif "prior_volume" in list(attributes.keys()):
+            kwargs["sampler"]["log_prior_volume"] = np.round(
+                np.log(attributes["prior_volume"]), 2)
+        if "number_of_live_points" in list(attributes.keys()):
+            kwargs["meta_data"]["number_of_live_points"] = attributes["number_of_live_points"]
+        if "segmentLength" in list(attributes.keys()):
+            kwargs["meta_data"]["seglen"] = attributes["segmentLength"]
+        if "sampleRate" in list(attributes.keys()):
+            kwargs["meta_data"]["samplerate"] = attributes["sampleRate"]
+        f.close()
+        return kwargs
 
     @staticmethod
     def _grab_calibration_data_from_lalinference_file(path):
@@ -149,11 +230,13 @@ class LALInference(GWRead):
             for num, i in enumerate(samples):
                 samples[num].append(
                     np.arccos(i[lalinference_names.index("costheta_jn")]))
+        extra_kwargs = LALInference.grab_extra_kwargs(path)
         try:
             version = f[path_to_samples].attrs["VERSION"].decode("utf-8")
-            return lalinference_names, samples, None, version
+            return lalinference_names, samples, None, version, extra_kwargs
         except Exception:
-            return lalinference_names, samples, None
+            version = "No version information found"
+            return lalinference_names, samples, None, version, extra_kwargs
 
     def add_injection_parameters_from_file(self, injection_file):
         """

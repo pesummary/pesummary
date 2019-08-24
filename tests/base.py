@@ -58,7 +58,8 @@ def get_list_of_files(gw=False, number=1):
         html.append("./.outdir/html/Comparison.html")
         html.append("./.outdir/html/Comparison_multiple.html")
         for j in parameters:
-            html.append("./.outdir/html/Comparison_%s.html" % (j))
+            if j != "classification":
+                html.append("./.outdir/html/Comparison_%s.html" % (j))
     return sorted(html)
 
 
@@ -193,15 +194,21 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
     if bilby:
         import bilby
         from bilby.core.result import Result
+        from bilby.core.prior import PriorDict
         from pandas import DataFrame
 
+        priors = PriorDict()
+        priors.update({"%s" % (i): bilby.core.prior.Uniform(-5, 5, 0) for i in parameters})
         posterior_data_frame = DataFrame(data, columns=parameters)
         injection_parameters = {par: 1. for par in parameters}
         bilby_object = Result(
             search_parameter_keys=parameters, samples=data,
             posterior=posterior_data_frame, label="test",
             injection_parameters=injection_parameters,
-            version="bilby=0.5.3:")
+            version="bilby=0.5.3:", priors=priors,
+            log_bayes_factor=0.5, log_evidence_err=0.1, log_noise_evidence=0.1,
+            log_evidence=0.2,
+            meta_data={"likelihood": {"time_marginalization": "True"}})
         if extension == "json":
             bilby_object.save_to_file(
                 filename=outdir + "test.json", extension="json")
@@ -234,6 +241,11 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
             "version":
                 {"label": ["No version information found"],
                  "pesummary": ["v0.1.7"]
+                },
+            "meta_data":
+                {"label":
+                    {"sampler": {"log_evidence": 0.5},
+                     "meta_data": {}}
                 }
             }
 

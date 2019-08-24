@@ -16,6 +16,7 @@
 import pesummary
 from pesummary.gw.file.formats.base_read import GWRead
 from pesummary.core.file.formats.pesummary import PESummary as CorePESummary
+from pesummary.utils.utils import logger
 
 import os
 from glob import glob
@@ -72,7 +73,7 @@ class PESummary(CorePESummary):
         labels = list(existing_structure.keys())
 
         parameter_list, sample_list, approx_list, inj_list = [], [], [], []
-        ver_list = []
+        ver_list, meta_data_list = [], []
         for num, i in enumerate(labels):
             p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
@@ -95,6 +96,11 @@ class PESummary(CorePESummary):
                 approx_list.append(dictionary["approximant"]["%s" % (i)])
             else:
                 approx_list.append(None)
+            if "meta_data" in dictionary.keys():
+                data, = GWRead.load_recusively("meta_data", dictionary)
+                meta_data_list.append(data["%s" % (i)])
+            else:
+                meta_data_list.append({"sampler": {}, "meta_data": {}})
 
         if "version" in dictionary.keys():
             version, = GWRead.load_recusively("version", dictionary)
@@ -114,7 +120,7 @@ class PESummary(CorePESummary):
         setattr(PESummary, "calibration", cal)
         setattr(PESummary, "approximant", approx_list)
         setattr(PESummary, "version", version["pesummary"])
-        return parameter_list, sample_list, inj_list, ver_list
+        return parameter_list, sample_list, inj_list, ver_list, meta_data_list
 
     @property
     def calibration_data_in_results_file(self):
@@ -142,10 +148,15 @@ class PESummary(CorePESummary):
         """Convert a PESummary metafile to a bilby results object
         """
         from bilby.gw.result import CompactBinaryCoalescenceResult
+        from bilby.core.priors import PriorDict, Uniform
         from pandas import DataFrame
 
         objects = {}
         for num, i in enumerate(self.labels):
+            priors = PriorDict()
+            logger.warn(
+                "No prior information is known so setting it to a default")
+            priors.update({i: Uniform(-10, 10, 0) for i in self.parameters[num]})
             posterior_data_frame = DataFrame(
                 self.samples[num], columns=self.parameters[num])
             meta_data = {
@@ -157,7 +168,7 @@ class PESummary(CorePESummary):
                 search_parameter_keys=self.existing_parameters[num],
                 posterior=posterior_data_frame, label="pesummary_%s" % (i),
                 samples=self.existing_samples[num],
-                meta_data=meta_data)
+                meta_data=meta_data, priors=priors)
             objects[i] = bilby_object
         return objects
 

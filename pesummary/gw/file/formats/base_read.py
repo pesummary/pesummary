@@ -52,6 +52,10 @@ class GWRead(Read):
             self.input_version = data[3]
         else:
             self.input_version = "No version information found"
+        if len(data) > 4:
+            self.extra_kwargs = data[4]
+        else:
+            self.extra_kwargs = {"sampler": {}, "meta_data": {}}
 
     def _grab_injection_parameters_from_file(self, injection_file):
         extension = injection_file.split(".")[-1]
@@ -431,7 +435,14 @@ class GWRead(Read):
     def _reference_frequency(self):
         self.parameters.append("reference_frequency")
         nsamples = len(self.samples)
-        self.append_data([20.] * nsamples)
+        extra_kwargs = self.extra_kwargs["sampler"]
+        if extra_kwargs != {} and "f_ref" in list(extra_kwargs.keys()):
+            self.append_data([float(extra_kwargs["f_ref"])] * nsamples)
+        else:
+            logger.warn(
+                "Could not find reference_frequency in input file. Using 20Hz "
+                "as default")
+            self.append_data([20.] * nsamples)
 
     def _mtotal_from_m1_m2(self):
         self.parameters.append("total_mass")

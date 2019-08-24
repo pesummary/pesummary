@@ -57,6 +57,16 @@ class BaseRead(object):
         else:
             assert self.result.input_version == true
 
+    def test_extra_kwargs(self, true=None):
+        """Test the extra_kwargs property
+        """
+        if true is None:
+            assert self.result.extra_kwargs == {"sampler": {}, "meta_data": {}}
+        else:
+            print(true)
+            print(self.result.extra_kwargs)
+            assert sorted(self.result.extra_kwargs) == sorted(true)
+
     def test_injection_parameters(self, true, pesummary=False):
         """Test the injection_parameters property
         """
@@ -188,6 +198,11 @@ class TestCoreJsonFile(BaseRead):
         """
         super(TestCoreJsonFile, self).test_version()
 
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestCoreJsonFile, self).test_extra_kwargs()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -242,6 +257,11 @@ class TestCoreHDF5File(BaseRead):
         """Test the version property of the default class
         """
         super(TestCoreHDF5File, self).test_version()
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestCoreHDF5File, self).test_extra_kwargs()
 
     def test_injection_parameters(self):
         """Test the injection_parameters property
@@ -298,6 +318,11 @@ class TestCoreDatFile(BaseRead):
         """
         super(TestCoreDatFile, self).test_version()
 
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestCoreDatFile, self).test_extra_kwargs()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -339,6 +364,17 @@ class BilbyFile(BaseRead):
         """
         true = "bilby=0.5.3:"
         super(BilbyFile, self).test_version(true)
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        true = {"sampler": {
+            "log_bayes_factor": 0.5,
+            "log_noise_evidence": 0.1,
+            "log_evidence": 0.2,
+            "log_evidence_err": 0.1},
+            "meta_data": {'time_marginalization': True}}
+        super(BilbyFile, self).test_extra_kwargs(true)
 
     def test_injection_parameters(self, true):
         """Test the injection_parameters property
@@ -388,6 +424,11 @@ class TestCoreJsonBilbyFile(BilbyFile):
         """Test the version property of the default class
         """
         super(TestCoreJsonBilbyFile, self).test_version()
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestCoreJsonBilbyFile, self).test_extra_kwargs()
 
     def test_injection_parameters(self):
         """Test the injection_parameters property
@@ -444,6 +485,11 @@ class TestCoreHDF5BilbyFile(BilbyFile):
         """
         super(TestCoreHDF5BilbyFile, self).test_version()
 
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestCoreHDF5BilbyFile, self).test_extra_kwargs()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -482,6 +528,12 @@ class PESummaryFile(BaseRead):
         """
         true = ["No version information found"]
         super(PESummaryFile, self).test_version(true)
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        true = [{"sampler": {"log_evidence": 0.5}, "meta_data": {}}]
+        super(PESummaryFile, self).test_extra_kwargs(true)
 
     def test_samples_dict(self):
         """Test the samples_dict property
@@ -560,6 +612,11 @@ class TestCoreJsonPESummaryFile(PESummaryFile):
         """
         super(TestCoreJsonPESummaryFile, self).test_version()
 
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestCoreJsonPESummaryFile, self).test_extra_kwargs()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -622,6 +679,11 @@ class TestCoreHDF5PESummaryFile(PESummaryFile):
         """
         super(TestCoreHDF5PESummaryFile, self).test_version()
 
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestCoreHDF5PESummaryFile, self).test_extra_kwargs()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -683,6 +745,11 @@ class TestGWDatFile(GWBaseRead):
         """
         super(TestGWDatFile, self).test_version()
 
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestGWDatFile, self).test_extra_kwargs()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -738,6 +805,11 @@ class TestGWHDF5File(GWBaseRead):
         """
         super(TestGWHDF5File, self).test_version()
 
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestGWHDF5File, self).test_extra_kwargs()
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -792,6 +864,11 @@ class TestGWJsonFile(GWBaseRead):
         """Test the version property of the default class
         """
         super(TestGWJsonFile, self).test_version()
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestGWJsonFile, self).test_extra_kwargs()
 
     def test_injection_parameters(self):
         """Test the injection_parameters property
@@ -850,6 +927,17 @@ class TestGWJsonBilbyFile(GWBaseRead):
         true = "bilby=0.5.3:"
         super(TestGWJsonBilbyFile, self).test_version(true)
 
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        true = {"sampler": {
+            "log_bayes_factor": 0.5,
+            "log_noise_evidence": 0.1,
+            "log_evidence": 0.2,
+            "log_evidence_err": 0.1},
+            "meta_data": {"time_marginalization": True}}
+        super(TestGWJsonBilbyFile, self).test_extra_kwargs(true)
+
     def test_injection_parameters(self):
         """Test the injection_parameters property
         """
@@ -906,6 +994,11 @@ class TestGWLALInferenceFile(GWBaseRead):
         """Test the version property of the default class
         """
         super(TestGWLALInferenceFile, self).test_version()
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestGWLALInferenceFile, self).test_extra_kwargs()
 
     def test_injection_parameters(self):
         """Test the injection_parameters property

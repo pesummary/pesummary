@@ -43,6 +43,45 @@ class Bilby(GWRead):
         return cls(path)
 
     @staticmethod
+    def grab_extra_kwargs(path):
+        """Grab any additional information stored in the lalinference file
+        """
+        from bilby.core.result import read_in_result
+
+        f = read_in_result(filename=path)
+        kwargs = {"sampler": {
+            "log_evidence": np.round(f.log_evidence, 2),
+            "log_evidence_error": np.round(f.log_evidence_err, 2),
+            "log_bayes_factor": np.round(f.log_bayes_factor, 2),
+            "log_noise_evidence": np.round(f.log_noise_evidence, 2)},
+            "meta_data": {}}
+        try:
+            kwargs["sampler"]["f_ref"] = \
+                f.meta_data["likelihood"]["waveform_arguments"]["reference_frequency"]
+        except Exception:
+            pass
+        for key, item in f.meta_data["likelihood"].items():
+            if not isinstance(item, dict):
+                try:
+                    if isinstance(item, bool):
+                        kwargs["meta_data"][key] = str(item)
+                    else:
+                        kwargs["meta_data"][key] = item
+                except Exception:
+                    pass
+        try:
+            kwargs["meta_data"]["approximant"] = \
+                f.meta_data["likelihood"]["waveform_arguments"]["waveform_approximant"]
+        except Exception:
+            pass
+        try:
+            kwargs["meta_data"]["IFOs"] = \
+                " ".join(f.meta_data["likelihood"]["interferometers"].keys())
+        except Exception:
+            pass
+        return kwargs
+
+    @staticmethod
     def _check_for_calibration_data_in_bilby_file(path):
         """
         """
@@ -167,10 +206,14 @@ class Bilby(GWRead):
                         [key])[0]
                     GWlatex_labels[key] = label
         try:
+            extra_kwargs = Bilby.grab_extra_kwargs(path)
+        except Exception:
+            extra_kwargs = {"sampler": {}, "meta_data": {}}
+        try:
             version = bilby_object.version
-            return parameters, samples, injection, version
+            return parameters, samples, injection, version, extra_kwargs
         except Exception as e:
-            return parameters, samples, injection
+            return parameters, samples, injection, None, extra_kwargs
 
     def add_injection_parameters_from_file(self, injection_file):
         """

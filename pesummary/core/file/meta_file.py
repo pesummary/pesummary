@@ -46,6 +46,8 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             f.create_group("injection_data")
         if "version" in dictionary.keys():
             f.create_group("version")
+        if "meta_data" in dictionary.keys():
+            f.create_group("meta_data")
     except Exception:
         pass
     if current_path is None:
@@ -76,6 +78,11 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             f["/".join(current_path)].create_dataset(k, data=np.array(
                 [v], dtype="S"
             ))
+        elif isinstance(v, float):
+            f["/".join(current_path)].create_dataset(k, data=np.array(
+                [v], dtype='<f4'))
+        elif v == {}:
+            f["/".join(current_path)].create_dataset(k, data=np.array("NaN"))
 
 
 class MetaFile(pesummary.core.inputs.PostProcessing):
@@ -97,6 +104,7 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         self.existing_samples = None
         self.existing_injection = None
         self.existing_version = None
+        self.existing_metadata = None
         self.generate_meta_file_data()
 
         if not self.hdf5:
@@ -136,10 +144,12 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             self.existing_injection = existing_file.injection_parameters
             self.existing_config = existing_file.config
             self.existing_version = existing_file.input_version
+            self.existing_metadata = existing_file.extra_kwargs
         self._make_dictionary()
 
     def _make_dictionary(self):
         if self.existing:
+            print(self.existing_metadata)
             self._make_dictionary_structure(
                 self.existing_label, config=self.existing_config
             )
@@ -148,7 +158,8 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
                                self.existing_samples[num],
                                self.existing_injection[num],
                                version=self.existing_version[num],
-                               config=self.existing_config
+                               config=self.existing_config,
+                               meta_data=self.existing_metadata[num]
                                )
         self._make_dictionary_structure(self.labels, config=self.config
                                         )
@@ -161,7 +172,8 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
                     if self.config and num < len(self.config) else None
                 self._add_data(i, self.parameters[num], self.samples[num],
                                injection, version=self.file_versions[num],
-                               config=config, pesummary_version=pesummary_version
+                               config=config, pesummary_version=pesummary_version,
+                               meta_data=self.file_kwargs[num]
                                )
 
     def _grab_config_data_from_data_file(self, file):
@@ -189,7 +201,7 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         return data
 
     def _add_data(self, label, parameters, samples, injection, version,
-                  config=None, pesummary_version=None):
+                  config=None, pesummary_version=None, meta_data=None):
         """Add data to the stored dictionary
 
         Parameters
@@ -213,6 +225,7 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             "injection_values": list(injection)
         }
         self.data["version"][label] = [version]
+        self.data["meta_data"][label] = meta_data
 
         if config:
             self.data["config_file"][label] = config
@@ -229,6 +242,9 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             )
             self._add_label(
                 "version", i
+            )
+            self._add_label(
+                "meta_data", i
             )
             if config:
                 self._add_label(

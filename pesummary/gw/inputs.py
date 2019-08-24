@@ -108,6 +108,7 @@ class GWInput(Input):
         self.gwdata = self.opts.gwdata
         self.existing_labels = []
         self.existing_version = []
+        self.existing_metadata = []
         self.existing_parameters = []
         self.existing_samples = []
         self.existing_approximant = []
@@ -371,14 +372,15 @@ class GWInput(Input):
             calibration = calibration_labels = calibration_envelopes = None
         labels = [labels[i] for i in indicies]
         version = f.input_version
+        meta_data = f.extra_kwargs
         return p, s, inj_values, labels, psd, approximant, psd_labels, \
             psd_frequencies, psd_strains, calibration, calibration_labels, \
-            calibration_envelopes, config, version
+            calibration_envelopes, config, version, meta_data
 
     def grab_data_from_input_files(self, samples):
         """
         """
-        result_file_list, version_list = [], []
+        result_file_list, version_list, kwarg_list = [], [], []
         parameters_list, samples_list, injection_list = [], [], []
         psd_labels, psd_frequencies, psd_strains = [], [], []
         calibration_labels, calibration_envelopes = [], []
@@ -389,7 +391,7 @@ class GWInput(Input):
             if self.config:
                 config = self.config[num]
             if self.is_pesummary_metafile(i):
-                p, s, inj, labels, psd, approx, psd_l, psd_f, psd_s, cal, cal_l, cal_env, con, ver = \
+                p, s, inj, labels, psd, approx, psd_l, psd_f, psd_s, cal, cal_l, cal_env, con, ver, md = \
                     self.grab_data_from_metafile(
                         i, webdir=self.webdir, compare=self.compare_results)
                 self.opts.psd = psd
@@ -403,6 +405,7 @@ class GWInput(Input):
                     injection_list.append(inj[idx])
                     result_file_list.append(i)
                     version_list.append(ver[idx])
+                    kwarg_list.append(md[idx])
                     if psd is not None:
                         psd_labels.append(psd_l[idx])
                         psd_frequencies.append(psd_f[idx])
@@ -411,18 +414,20 @@ class GWInput(Input):
                         calibration_labels.append(cal_l[idx])
                         calibration_envelopes.append(cal_env[idx])
             else:
-                p, s, inj, version = self.convert_to_standard_format(
+                p, s, inj, version, kwargs = self.convert_to_standard_format(
                     i, self.inj_file[num], config_file=config)
                 result_file_list.append(i)
                 parameters_list.append(p)
                 samples_list.append(s)
                 injection_list.append(inj)
                 version_list.append(version)
+                kwarg_list.append(kwargs)
         self._result_files = result_file_list
         self._parameters = parameters_list
         self._samples = samples_list
         self._injection_data = injection_list
         self._file_versions = version_list
+        self._file_kwargs = kwarg_list
 
         if psd_labels != [] and psd_frequencies != [] and psd_strains != []:
             self.psd_labels = psd_labels
@@ -486,6 +491,7 @@ class GWInput(Input):
         f.generate_all_posterior_samples()
         parameters = f.parameters
         samples = f.samples
+        extra_kwargs = f.extra_kwargs
         if injection_file:
             f.add_injection_parameters_from_file(injection_file)
         if hasattr(f, "injection_parameters"):
@@ -501,7 +507,7 @@ class GWInput(Input):
             injection = {i: j for i, j in zip(
                 parameters, [float("nan")] * len(parameters))}
         version = f.input_version
-        return parameters, samples, injection, version
+        return parameters, samples, injection, version, extra_kwargs
 
     def _default_labels(self):
         """Return the defaut labels given your detector network.
@@ -580,6 +586,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.existing_meta_file = inputs.existing_meta_file
         self.existing_labels = inputs.existing_labels
         self.existing_version = inputs.existing_version
+        self.existing_metadata = inputs.existing_metadata
         self.existing_parameters = inputs.existing_parameters
         self.existing_samples = inputs.existing_samples
         self.existing_meta_file = inputs.existing_meta_file
@@ -615,6 +622,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.samples = inputs.samples
         self.injection_data = inputs.injection_data
         self.file_versions = inputs.file_versions
+        self.file_kwargs = inputs.file_kwargs
         self.maxL_samples = []
         self.same_parameters = []
         self.pepredicates_probs = []
