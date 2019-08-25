@@ -731,6 +731,16 @@ class GWRead(Read):
         network_snr = con.network_snr(samples)
         self.append_data(network_snr)
 
+    def _cos_angle(self, theta_jn=False):
+        if theta_jn:
+            self.parameters.append("cos_theta_jn")
+            samples = self.specific_parameter_samples(["theta_jn"])
+        else:
+            self.parameters.append("cos_iota")
+            samples = self.specific_parameter_samples(["iota"])
+        cos_samples = np.cos(samples[0])
+        self.append_data(cos_samples)
+
     def generate_all_posterior_samples(self):
         logger.debug("Starting to generate all derived posteriors")
         spin_magnitudes = ["a_1", "a_2"]
@@ -859,7 +869,10 @@ class GWRead(Read):
         if any("_matched_filter_snr" in i for i in self.parameters):
             if "network_matched_filter_snr" not in self.parameters:
                 self._matched_filter_network_snr()
-
+        if "theta_jn" in self.parameters and "cos_theta_jn" not in self.parameters:
+            self._cos_angle(theta_jn=True)
+        if "iota" in self.parameters and "cos_iota" not in self.parameters:
+            self._cos_angle(theta_jn=False)
         if "reference_frequency" in self.parameters:
             ind = self.parameters.index("reference_frequency")
             self.parameters.remove(self.parameters[ind])
@@ -894,7 +907,8 @@ class GWRead(Read):
             dtype=[(i, '<f4') for i in self.parameters])
 
         if os.path.isfile("%s/lalinference_file_%s.hdf5" % (outdir, label)):
-            raise Exception("The file '%s/lalinference_file_%s.hdf5' already exists.")
+            raise Exception("The file '%s/lalinference_file_%s.hdf5' already exists." % (
+                outdir, label))
         try:
             f = h5py.File("%s/lalinference_file_%s.hdf5" % (outdir, label), "w")
         except Exception:

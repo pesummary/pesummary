@@ -259,7 +259,8 @@ class Read():
             label = round(time())
 
         if os.path.isfile("%s/pesummary_%s.dat" % (outdir, label)):
-            raise Exception("The file '%s/lalinference_file_%s.hdf5' already exists.")
+            raise Exception("The file '%s/pesummary_%s.dat' already exists." % (
+                outdir, label))
 
         try:
             np.savetxt(
