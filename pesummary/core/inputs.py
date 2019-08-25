@@ -89,8 +89,8 @@ class Input(object):
         self.existing_metadata = []
         self.existing_parameters = []
         self.existing_samples = []
-        self.copy_files()
         self.labels = self.opts.labels
+        self.copy_files()
 
     @staticmethod
     def is_pesummary_metafile(proposed_file):
@@ -527,8 +527,7 @@ class Input(object):
             for num, i in enumerate(self.config):
                 if self.webdir not in i:
                     filename = "_".join([
-                        os.path.basename(self.result_files[num]),
-                        os.path.basename(i)])
+                        self.labels[num], "config.ini"])
                     shutil.copyfile(i, os.path.join(
                         self.webdir, "config", filename))
 
