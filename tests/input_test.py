@@ -380,9 +380,8 @@ class TestInput(object):
         self.inputs.copy_files()
         assert os.path.isfile(
             "./.outdir/samples/js/combine_corner.js") == True
-        print(glob.glob("./.outdir/samples/config/*"))
         assert os.path.isfile(
-            "./.outdir/samples/config/bilby_example.h5_config_lalinference.ini") == True
+            "./.outdir/samples/config/grace_H1_config.ini") == True
 
     def test_default_labels(self):
         assert self.inputs._default_labels() == ['grace_H1']

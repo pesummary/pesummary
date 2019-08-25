@@ -112,8 +112,8 @@ class GWInput(Input):
         self.existing_parameters = []
         self.existing_samples = []
         self.existing_approximant = []
-        self.copy_files()
         self.labels = self.opts.labels
+        self.copy_files()
 
     @property
     def approximant(self):
