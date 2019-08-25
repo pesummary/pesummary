@@ -84,7 +84,8 @@ class GWInput(Input):
         self.user = self.opts.user
         self.existing = self.opts.existing
         self.webdir = self.opts.webdir
-        self.publication = opts.publication
+        self.publication = self.opts.publication
+        self.kde_plot = self.opts.kde_plot
         self.make_directories()
         self.baseurl = self.opts.baseurl
         self.inj_file = self.opts.inj_file
@@ -583,6 +584,7 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         self.labels = inputs.labels
         self.hdf5 = inputs.hdf5
         self.publication = inputs.publication
+        self.kde_plot = inputs.kde_plot
         self.existing_meta_file = inputs.existing_meta_file
         self.existing_labels = inputs.existing_labels
         self.existing_version = inputs.existing_version

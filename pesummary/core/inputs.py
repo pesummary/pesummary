@@ -73,6 +73,7 @@ class Input(object):
         self.existing = self.opts.existing
         self.webdir = self.opts.webdir
         self.publication = self.opts.publication
+        self.kde_plot = self.opts.kde_plot
         self.make_directories()
         self.baseurl = self.opts.baseurl
         self.inj_file = self.opts.inj_file
@@ -636,6 +637,7 @@ class PostProcessing(object):
         self.labels = inputs.labels
         self.hdf5 = inputs.hdf5
         self.publication = inputs.publication
+        self.kde_plot = inputs.kde_plot
         self.existing_meta_file = inputs.existing_meta_file
         self.existing_labels = inputs.existing_labels
         self.existing_version = inputs.existing_version

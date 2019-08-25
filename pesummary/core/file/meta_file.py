@@ -149,7 +149,6 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
 
     def _make_dictionary(self):
         if self.existing:
-            print(self.existing_metadata)
             self._make_dictionary_structure(
                 self.existing_label, config=self.existing_config
             )
