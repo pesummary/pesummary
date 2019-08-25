@@ -182,7 +182,8 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
                     inj_value = None
                 param_samples = [k[index] for k in self.samples[idx]]
                 fig = core._1d_histogram_plot(
-                    j, param_samples, latex_labels[j], inj_value)
+                    j, param_samples, latex_labels[j], inj_value,
+                    kde=self.kde_plot)
                 plt.savefig(self.savedir + "%s_1d_posterior_%s.png" % (
                     self.labels[idx], j))
                 plt.close()
@@ -222,7 +223,7 @@ class PlotGeneration(pesummary.core.inputs.PostProcessing):
                                  enumerate(self.samples)]
                 fig = core._1d_comparison_histogram_plot(
                     j, param_samples, self.colors,
-                    latex_labels[j], self.labels)
+                    latex_labels[j], self.labels, kde=self.kde_plot)
                 plt.savefig(self.savedir + "combined_1d_posterior_%s" % (j))
                 plt.close()
                 fig = core._1d_cdf_comparison_plot(

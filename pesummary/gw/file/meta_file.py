@@ -152,7 +152,6 @@ class GWMetaFile(GWPostProcessing, MetaFile):
 
     def _make_dictionary(self):
         if self.existing:
-            print(self.existing_metadata)
             self._make_dictionary_structure(
                 self.existing_label,
                 version=self.existing_version,
@@ -183,7 +182,6 @@ class GWMetaFile(GWPostProcessing, MetaFile):
                                         config=self.config,
                                         meta_data=self.file_kwargs
                                         )
-        print(self.file_kwargs)
         pesummary_version = get_version_information()
 
         for num, i in enumerate(self.labels):

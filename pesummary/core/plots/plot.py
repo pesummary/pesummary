@@ -14,6 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.utils.utils import logger
+from pesummary.core.plots.kde import kdeplot
 
 import matplotlib
 matplotlib.use("Agg")
@@ -147,7 +148,7 @@ def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels):
     return fig
 
 
-def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
+def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
 
@@ -161,21 +162,27 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
         latex label for param
     inj_value: float
         value that was injected
+    kde: Bool
+        if true, a kde is plotted instead of a histogram
     """
     logger.debug("Generating the 1d histogram plot for %s" % (param))
     fig = plt.figure()
     if np.ptp(samples) == 0:
         plt.axvline(samples[0], color='b')
+    elif not kde:
+        plt.hist(samples, histtype="step", bins=50, color='b', density=True,
+                 linewidth=1.75)
     else:
-        plt.hist(samples, histtype="step", bins=50, color='b', density=True)
+        kdeplot(samples, color='b', shade=True, alpha_shade=0.1,
+                clip=[np.min(samples), np.max(samples)], linewidth=1.0)
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
     upper_percentile = np.percentile(samples, 90)
     lower_percentile = np.percentile(samples, 10)
     if inj_value:
-        plt.axvline(inj_value, color='r', linestyle='--')
-    plt.axvline(upper_percentile, color='b', linestyle='--')
-    plt.axvline(lower_percentile, color='b', linestyle='--')
+        plt.axvline(inj_value, color='r', linestyle='--', linewidth=1.75)
+    plt.axvline(upper_percentile, color='b', linestyle='--', linewidth=1.75)
+    plt.axvline(lower_percentile, color='b', linestyle='--', linewidth=1.75)
     median = np.median(samples)
     upper = np.round(upper_percentile - median, 2)
     lower = np.round(median - lower_percentile, 2)
@@ -187,7 +194,7 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None):
 
 
 def _1d_comparison_histogram_plot(param, samples, colors,
-                                  latex_label, labels):
+                                  latex_label, labels, kde=False):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
 
@@ -205,19 +212,25 @@ def _1d_comparison_histogram_plot(param, samples, colors,
         latex label for param
     approximant_labels: list, optional
         label to prepend the approximant in the legend
+    kde: Bool
+        if true, a kde is plotted instead of a histogram
     """
     logger.debug("Generating the 1d comparison histogram plot for %s" % (param))
     fig = plt.figure(figsize=(8, 6))
     for num, i in enumerate(samples):
         if np.ptp(i) == 0:
             plt.axvline(i[0], color=colors[num], label=labels[num])
-        else:
+        elif not kde:
             plt.hist(i, histtype="step", bins=50, color=colors[num],
-                     label=labels[num], linewidth=2.0, density=True)
+                     label=labels[num], linewidth=2.5, density=True)
+        else:
+            kdeplot(i, color=colors[num], shade=True, alpha_shade=0.05,
+                    clip=[np.min(i), np.max(i)], linewidth=1.5,
+                    label=labels[num])
         plt.axvline(x=np.percentile(i, 90), color=colors[num], linestyle='--',
-                    linewidth=2.0)
+                    linewidth=2.5)
         plt.axvline(x=np.percentile(i, 10), color=colors[num], linestyle='--',
-                    linewidth=2.0)
+                    linewidth=2.5)
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,

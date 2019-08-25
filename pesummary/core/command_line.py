@@ -161,4 +161,7 @@ def command_line():
                               "plotting"), default=None)
     parser.add_argument("--publication", action="store_true",
                         help="generate production quality plots", default=None)
+    parser.add_argument("--kde_plot", action="store_true",
+                        help="plot a kde rather than a histogram",
+                        default=False)
     return parser
