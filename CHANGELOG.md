@@ -29,6 +29,11 @@
 - Added a `summaryclassification` executable which produces the source
   classification probabilities
 - Added a `summaryclean` executable which cleans the input data file
+- Added a `--kde_plot` option which plots kdes of the 1d histograms rather than
+  a conventional histogram
+- Added the `extra_kwargs` property to the read function. This will try and
+  scrap all extra information from the result file. This information is also
+  printed on the homepage.
 
 ## 0.1.7 [15/06/2019]
 
