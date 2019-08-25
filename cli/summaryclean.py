@@ -17,7 +17,6 @@
 
 import pesummary
 from pesummary.gw.file.read import read as GWRead
-from pesummary.utils.utils import make_dir, logger
 import argparse
 
 
