@@ -452,6 +452,10 @@ class TestGWLALInference(GWBase):
         default_args = ["--webdir", ".outdir_pesummary",
                         "--samples", ".outdir/samples/posterior_samples.json",
                         "--gw"]
+        from pesummary.gw.file.read import read
+        f = read(".outdir/samples/posterior_samples.json")
+        print(f.calibration)
+        print(f.psd)
         opts = parser.parse_args(default_args)
         inputs = func["input"](opts)
         func["PlotGeneration"](inputs)
@@ -462,6 +466,8 @@ class TestGWLALInference(GWBase):
         plots_pesummary = sorted(glob.glob("./.outdir_pesummary/plots/*.png"))
         files_pesummary = sorted(glob.glob("./.outdir_pesummary/html/*.html"))
 
+        for i, j in zip(plots,plots_pesummary):
+            print(i.split("/")[-1], j.split("/")[-1])
         assert all(i.split("/")[-1] == j.split("/")[-1] for i, j in zip(
                    plots, plots_pesummary))
         assert all(i.split("/")[-1] == j.split("/")[-1] for i, j in zip(

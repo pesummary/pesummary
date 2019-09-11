@@ -188,7 +188,7 @@ def violin_plots(parameter, samples, labels, latex_labels):
     logger.debug("Generating violin plots for %s" % (parameter))
     fig, ax1 = plt.subplots(nrows=1, ncols=1)
     ax1 = violin.violinplot(data=samples, palette="pastel", inner="line", cut=0,
-                            outer="percent: 90")
+                            outer="percent: 90", scale="width")
     ax1.set_xticklabels(labels)
     for label in ax1.get_xmajorticklabels():
         label.set_rotation(30)

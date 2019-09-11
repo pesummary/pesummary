@@ -189,6 +189,11 @@ class Read():
         samples = [list(x) for x in dat_file]
         return parameters, samples
 
+    def generate_all_posterior_samples(self):
+        """Empty function
+        """
+        pass
+
     def add_fixed_parameters_from_config_file(self, config_file):
         """Search the conifiguration file and add fixed parameters to the
         list of parameters and samples

@@ -144,9 +144,12 @@ def command_line_arguments():
 def gw_results_file(opts):
     """Determine if a GW results file is passed
     """
-    if hasattr(opts, "gw") or hasattr(opts, "calibration") or \
-            hasattr(opts, "gracedb") or hasattr(opts, "approximant") or \
-            hasattr(opts, "psd"):
+    cond1 = hasattr(opts, "gw") and opts.gw
+    cond2 = hasattr(opts, "calibration") and opts.calibration
+    cond3 = hasattr(opts, "gracedb") and opts.gracedb
+    cond4 = hasattr(opts, "approximant") and opts.approximant
+    cond5 = hasattr(opts, "psd") and opts.psd
+    if cond1 or cond2 or cond3 or cond4 or cond5:
         return True
     else:
         return False
@@ -164,6 +167,7 @@ def functions(opts):
     from pesummary.gw.file.meta_file import GWMetaFile
     from pesummary.core.finish import FinishingTouches
 
+    print(gw_results_file)
     dictionary = {}
     dictionary["input"] = GWInput if gw_results_file(opts) else Input
     dictionary["PlotGeneration"] = GWPlotGeneration if gw_results_file(opts) else PlotGeneration

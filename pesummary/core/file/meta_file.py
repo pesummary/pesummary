@@ -74,6 +74,8 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
                 f["/".join(current_path)].create_dataset(k, data=np.array(
                     ["NaN"] * len(v), dtype="S"
                 ))
+            elif isinstance(v[0], float):
+                f["/".join(current_path)].create_dataset(k, data=np.array(v))
         elif isinstance(v, (str, bytes)):
             f["/".join(current_path)].create_dataset(k, data=np.array(
                 [v], dtype="S"
@@ -85,36 +87,37 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             f["/".join(current_path)].create_dataset(k, data=np.array("NaN"))
 
 
-class MetaFile(pesummary.core.inputs.PostProcessing):
-    """This class handles the creation of a meta file storing all information
-    from the analysis
-
-    Attributes
-    ----------
-    meta_file: str
-        name of the meta file storing all information
+class _MetaFile(object):
+    """This is a base class to handle the functions to generate a meta file
     """
-    def __init__(self, inputs):
-        super(MetaFile, self).__init__(inputs)
-        logger.info("Starting to generate the meta file")
+    def __init__(self, parameters, samples, labels, config,
+                 injection_data, file_versions, file_kwargs,
+                 webdir=None, result_files=None, hdf5=False,
+                 existing_version=None, existing_label=None,
+                 existing_parameters=None, existing_samples=None,
+                 existing_injection=None, existing_metadata=None,
+                 existing_config=None):
         self.data = {}
-        self.existing_version = None
-        self.existing_label = [None]
-        self.existing_parameters = None
-        self.existing_samples = None
-        self.existing_injection = None
-        self.existing_version = None
-        self.existing_metadata = None
-        self.generate_meta_file_data()
+        self.webdir = webdir
+        self.result_files = result_files
+        self.parameters = parameters
+        self.samples = samples
+        self.labels = labels
+        self.config = config
+        self.injection_data = injection_data
+        self.file_versions = file_versions
+        self.file_kwargs = file_kwargs
+        self.hdf5 = hdf5
+        self.existing_version = existing_version
+        self.existing_label = existing_label
+        self.existing_parameters = existing_parameters
+        self.existing_samples = existing_samples
+        self.existing_injection = existing_injection
+        self.existing_metadata = existing_metadata
+        self.existing_config = existing_config
 
-        if not self.hdf5:
-            self.save_to_json()
-        else:
-            self.save_to_hdf5()
-
-        self.generate_dat_file()
-        logger.info("Finished generating the meta file. The meta file can be "
-                    "viewed here: %s" % (self.meta_file))
+        if self.existing_label is None:
+            self.existing_label = [None]
 
     @property
     def meta_file(self):
@@ -136,19 +139,12 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
     def generate_meta_file_data(self):
         """Generate dictionary of data which will go into the meta_file
         """
-        if self.existing:
-            existing_file = Read(self.existing_meta_file)
-            self.existing_parameters = existing_file.parameters
-            self.existing_samples = existing_file.samples
-            self.existing_label = existing_file.labels
-            self.existing_injection = existing_file.injection_parameters
-            self.existing_config = existing_file.config
-            self.existing_version = existing_file.input_version
-            self.existing_metadata = existing_file.extra_kwargs
         self._make_dictionary()
 
     def _make_dictionary(self):
-        if self.existing:
+        """
+        """
+        if self.existing_parameters is not None:
             self._make_dictionary_structure(
                 self.existing_label, config=self.existing_config
             )
@@ -163,12 +159,18 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         self._make_dictionary_structure(self.labels, config=self.config
                                         )
         pesummary_version = get_version_information()
+
         for num, i in enumerate(self.labels):
             if i not in self.existing_label:
                 injection = [self.injection_data[num]["%s" % (i)] for i in
                              self.parameters[num]]
-                config = self._grab_config_data_from_data_file(self.config[num]) \
-                    if self.config and num < len(self.config) else None
+                if self.config and not isinstance(self.config[num], dict):
+                    config = self._grab_config_data_from_data_file(self.config[num]) \
+                        if self.config and num < len(self.config) else None
+                elif self.config:
+                    config = self.config[num]
+                else:
+                    config = None
                 self._add_data(i, self.parameters[num], self.samples[num],
                                injection, version=self.file_versions[num],
                                config=config, pesummary_version=pesummary_version,
@@ -257,10 +259,14 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
             self.data[base_level][label] = {}
 
     def save_to_json(self):
+        if self.webdir is None:
+            raise Exception("No web directory has been provided")
         with open(self.meta_file, "w") as f:
             json.dump(self.data, f, indent=4, sort_keys=True)
 
     def save_to_hdf5(self):
+        if self.webdir is None:
+            raise Exception("No web dirctory has been provided")
         with h5py.File(self.meta_file, "w") as f:
             _recursively_save_dictionary_to_hdf5_file(f, self.data)
 
@@ -268,9 +274,14 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
         """Generate a single .dat file that contains all the samples for a
         given analysis
         """
+        if self.webdir is None:
+            raise Exception("No web directory has been provided")
         self.savedir = "%s/samples/dat" % (self.webdir)
         if not os.path.isdir(self.savedir):
             make_dir(self.savedir)
+        if not self.result_files:
+            raise Exception("Unable to generate dat files for parameters "
+                            "because no result files have been passed")
         for num, i in enumerate(self.result_files):
             if "posterior_samples.h5" not in i:
                 make_dir("%s/%s" % (
@@ -281,3 +292,51 @@ class MetaFile(pesummary.core.inputs.PostProcessing):
                         self.savedir, self.labels[num],
                         self.labels[num], self.result_files[num].split("/")[-1], j), data,
                         fmt="%s")
+
+
+class MetaFile(pesummary.core.inputs.PostProcessing):
+    """This class handles the creation of a meta file storing all information
+    from the analysis
+    """
+    def __init__(self, inputs):
+        super(MetaFile, self).__init__(inputs)
+        logger.info("starting to generate the meta file")
+        if self.add_to_existing:
+            existing_file = Read(self.existing_meta_file)
+            existing_parameters = existing_file.parameters
+            existing_samples = existing_file.samples
+            existing_labels = existing_file.labels
+            existing_config = existing_file.config
+            existing_injection = existing_file.injection_parameters
+            existing_version = existing_file.input_version
+            existing_metadata = existing_file.extra_kwargs
+        else:
+            existing_parameters = None
+            existing_samples = None
+            existing_labels = None
+            existing_config = None
+            existing_injection = None
+            existing_version = None
+            existing_metadata = None
+
+        meta_file = _MetaFile(self.parameters, self.samples, self.labels,
+                              self.config, self.injection_data,
+                              self.file_versions, self.file_kwargs, hdf5=self.hdf5,
+                              webdir=self.webdir, result_files=self.result_files,
+                              existing_version=existing_version,
+                              existing_label=existing_labels,
+                              existing_parameters=existing_parameters,
+                              existing_samples=existing_samples,
+                              existing_injection=existing_injection,
+                              existing_metadata=existing_metadata,
+                              existing_config=existing_config)
+        meta_file.generate_meta_file_data()
+
+        if not self.hdf5:
+            meta_file.save_to_json()
+        else:
+            meta_file.save_to_hdf5()
+
+        meta_file.generate_dat_file()
+        logger.info("finished generating the meta file. the meta file can be "
+                    "viewed here: %s" % (meta_file.meta_file))

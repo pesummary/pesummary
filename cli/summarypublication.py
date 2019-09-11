@@ -21,6 +21,7 @@ from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.gw.plots import publication as pub
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import make_dir, logger
+from pesummary.gw.command_line import DictionaryAction
 import argparse
 import matplotlib.pyplot as plt
 
@@ -49,6 +50,8 @@ def command_line():
     parser.add_argument("--parameters", dest="parameters", nargs="+",
                         help=("parameters of the 2d contour plot you wish to "
                               "make"), default=None)
+    parser.add_argument("--plot_kwargs", help="Optional plotting kwargs",
+                        action=DictionaryAction, nargs="+", default={})
     return parser
 
 
@@ -130,6 +133,14 @@ def make_2d_contour_plot(opts):
                     enumerate(samples)]
         twod_samples = [[j, k] for j, k in zip(samples1, samples2)]
         fig = pub.twod_contour_plots(i, twod_samples, opts.labels, latex_labels)
+        current_xlow, current_xhigh = plt.xlim()
+        keys = opts.plot_kwargs.keys()
+        if "xlow" in keys and "xhigh" in keys:
+            plt.xlim([float(opts.plot_kwargs["xlow"]), float(opts.plot_kwargs["xhigh"])])
+        elif "xhigh" in keys:
+            plt.xlim([current_xlow, float(opts.plot_kwargs["xhigh"])])
+        elif "xlow" in keys:
+            plt.xlim([float(opts.plot_kwargs["xlow"]), current_xhigh])
         fig.savefig("%s/2d_contour_plot_%s" % (opts.webdir, "_and_".join(i)))
         plt.close()
 
