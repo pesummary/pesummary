@@ -338,7 +338,7 @@ class GWInput(Input):
         else:
             config = None
 
-        if f.psd is not None:
+        if f.psd is not None and f.psd[label(indicies[0])] != {}:
             psd = ["extracted_%s.txt" % (f.psd[label(i)]) for i in indicies]
 
             psd_labels = [[i for i in list(f.psd[label(idx)].keys())]
@@ -354,7 +354,7 @@ class GWInput(Input):
         else:
             psd = psd_labels = psd_frequencies = psd_strains = None
 
-        if f.calibration is not None:
+        if f.calibration is not None and f.calibration[label(indicies[0])] != {}:
             calibration, calibration_labels, calibration_envelopes = [], [], []
             for i in indicies:
                 if label(i) in list(f.calibration.keys()):

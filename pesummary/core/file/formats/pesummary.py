@@ -25,6 +25,90 @@ import numpy as np
 import configparser
 
 
+class Array(np.ndarray):
+    """Class to add extra functions and methods to np.ndarray
+
+    Parameters
+    ----------
+    input_aray: list/array
+        input list/array
+
+    Attributes
+    ----------
+    median: float
+        median of the input array
+    mean: float
+        mean of the input array
+    """
+    def __new__(cls, input_array, likelihood=None):
+        obj = np.asarray(input_array).view(cls)
+        obj.median = cls.median(obj)
+        obj.mean = cls.mean(obj)
+        obj.maxL = cls.maxL(obj, likelihood)
+        return obj
+
+    @staticmethod
+    def median(array):
+        """Return the median of the array
+
+        Parameters
+        ----------
+        array: np.ndarray
+            input array
+        """
+        return np.median(array)
+
+    @staticmethod
+    def mean(array):
+        """Return the mean of the array
+
+        Parameters
+        ----------
+        array: np.ndarray
+            input array
+        """
+        return np.mean(array)
+
+    @staticmethod
+    def maxL(array, likelihood=None):
+        """Return the maximum likelihood value of the array
+
+        Parameters
+        ----------
+        array: np.ndarray
+            input array
+        likelihood: np.ndarray, optional
+            likelihoods associated with each sample
+        """
+        if likelihood is not None:
+            likelihood = list(likelihood)
+            ind = likelihood.index(np.max(likelihood))
+            return array[ind]
+        return None
+
+    def confidence_interval(self, percentile=None):
+        """Return the confidence interval of the array
+
+        Parameters
+        ----------
+        percentile: int/list, optional
+            Percentile or sequence of percentiles to compute, which must be
+            between 0 and 100 inclusive
+        """
+        if percentile is not None:
+            if isinstance(percentile, int):
+                return np.percentile(self, percentile)
+            return np.array([np.percentile(self, i) for i in percentile])
+        return np.array([np.percentile(self, i) for i in [10, 90]])
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+        self.median = getattr(obj, 'median', None)
+        self.mean = getattr(obj, 'mean', None)
+        self.maxL = getattr(obj, 'maxL', None)
+
+
 class PESummary(Read):
     """This class handles the existing posterior_samples.h5 file
 
@@ -48,6 +132,7 @@ class PESummary(Read):
     def __init__(self, path_to_results_file):
         super(PESummary, self).__init__(path_to_results_file)
         self.load(self._grab_data_from_pesummary_file)
+        self.samples_dict = None
 
     @classmethod
     def load_file(cls, path):
@@ -159,10 +244,28 @@ class PESummary(Read):
 
     @property
     def samples_dict(self):
-        outdict = {label: {par: [i[num] for i in self.samples[idx]] for num, par
-                   in enumerate(self.parameters[idx])} for idx, label in
-                   enumerate(self.labels)}
-        return outdict
+        return self._samples_dict
+
+    @samples_dict.setter
+    def samples_dict(self, samples_dict):
+        if all("log_likelihood" in i for i in self.parameters):
+            likelihood_inds = [self.parameters[idx].index("log_likelihood") for
+                               idx in range(len(self.labels))]
+            likelihoods = [[i[likelihood_inds[idx]] for i in self.samples[idx]]
+                           for idx, label in enumerate(self.labels)]
+        else:
+            likelihoods = [None] * len(self.labels)
+        outdict = {
+            label: {
+                par: Array(
+                    [i[num] for i in self.samples[idx]],
+                    likelihood=likelihoods[idx]
+                )
+                for num, par in enumerate(self.parameters[idx])
+            }
+            for idx, label in enumerate(self.labels)
+        }
+        self._samples_dict = outdict
 
     def write_config_to_file(self, label, outdir="./"):
         """Write the config file stored as a dictionary to file

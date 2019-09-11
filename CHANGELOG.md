@@ -34,6 +34,8 @@
 - Added the `extra_kwargs` property to the read function. This will try and
   scrap all extra information from the result file. This information is also
   printed on the homepage.
+- Added a `summarycombine_metafile` executable which will combine multiple
+  PESummary metafiles into a single file
 
 ## 0.1.7 [15/06/2019]
 
