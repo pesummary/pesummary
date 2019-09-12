@@ -14,7 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import numpy as np
-from scipy import interpolate
+from scipy.interpolate import interp1d
 from pesummary.gw.file.standard_names import standard_names
 from pesummary.core.file.formats.base_read import Read
 from pesummary.utils.utils import logger
@@ -161,13 +161,15 @@ class GWRead(Read):
         for key in log_frequencies.keys():
             f = np.exp(log_frequencies[key])
             fs = np.linspace(np.min(f), np.max(f), 100)
-            data = [interpolate.spline(log_frequencies[key], samp, np.log(fs)) for samp
+            data = [interp1d(log_frequencies[key], samp, kind="cubic",
+                             fill_value=0, bounds_error=False)(np.log(fs)) for samp
                     in np.column_stack(amp_params[key])]
             amplitude_upper = 1. - np.percentile(data, 90, axis=0)
             amplitude_lower = 1. - np.percentile(data, 10, axis=0)
             amplitude_median = 1. - np.median(data, axis=0)
 
-            data = [interpolate.spline(log_frequencies[key], samp, np.log(fs)) for samp
+            data = [interp1d(log_frequencies[key], samp, kind="cubic",
+                             fill_value=0, bounds_error=False)(np.log(fs)) for samp
                     in np.column_stack(phase_params[key])]
 
             phase_upper = np.percentile(data, 90, axis=0)
