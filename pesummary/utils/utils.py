@@ -229,6 +229,7 @@ def remove_tmp_directories():
     """
     import shutil
     from glob import glob
+    import time
 
     directories = glob(".tmp/pesummary/*")
 

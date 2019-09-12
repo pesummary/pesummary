@@ -33,7 +33,6 @@ class FinishingTouches(PostProcessing):
         self.send_email()
         logger.info("Complete. Webpages can be viewed at the following url "
                     "%s" % (self.baseurl + "/home.html"))
-        self.remove_tmp_directories()
 
     def send_email(self, message=None):
         """Send notification email.

@@ -832,7 +832,7 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
     return fig
 
 
-def _psd_plot(frequencies, strains, colors=None, labels=None):
+def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
     """Superimpose all PSD plots onto a single figure.
 
     Parameters
@@ -845,6 +845,8 @@ def _psd_plot(frequencies, strains, colors=None, labels=None):
         list of colors to be used to differentiate the different PSDs
     labels: optional, list
         list of lavels for each PSD
+    fmin: optional, float
+        starting frequency of the plot
     """
     fig = plt.figure()
     if not colors and labels in list(PSD_COLORS.keys()):
@@ -854,6 +856,12 @@ def _psd_plot(frequencies, strains, colors=None, labels=None):
         while len(colors) <= len(labels):
             colors += colors
     for num, i in enumerate(frequencies):
+        if fmin is not None:
+            ff = np.array(i)
+            ss = np.array(strains[num])
+            ind = np.argwhere(ff >= fmin)
+            i = ff[ind]
+            strains[num] = ss[ind]
         plt.loglog(i, strains[num], color=colors[num], label=labels[num])
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
     plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
