@@ -812,10 +812,9 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         file: str
             path to the psd data file
         """
-        fil = open(file)
-        fil = fil.readlines()
-        fil = [i.strip().split() for i in fil]
-        return [float(i[0]) for i in fil]
+        fil = np.genfromtxt(file, skip_footer=1)
+        frequencies = fil.T[0].tolist()
+        return frequencies
 
     def _grab_strains_from_psd_data_file(self, file):
         """Return the strains stored in the psd data files
@@ -825,10 +824,9 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
         file: str
             path to the psd data file
         """
-        fil = open(file)
-        fil = fil.readlines()
-        fil = [i.strip().split() for i in fil]
-        return [float(i[1]) for i in fil]
+        fil = np.genfromtxt(file, skip_footer=1)
+        strains = fil.T[1].tolist()
+        return strains
 
     def _grab_calibration_data_from_data_file(self, file):
         """Return the data stored in the calibration data file

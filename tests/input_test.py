@@ -321,7 +321,7 @@ class TestInput(object):
 
     def test_psd(self):
         with open("./.outdir/psd.dat", "w") as f:
-            f.writelines(["1.00 3.44"])
+            f.writelines(["1.00 3.44", "2.00 5.66"])
         assert self.inputs.psds == None
         self.add_argument(["--psd", "./.outdir/psd.dat"])
         assert self.inputs.psds == ["./.outdir/psd.dat"]
@@ -469,17 +469,13 @@ class TestPostProcessing(object):
         assert postprocessing.psd_labels == [['psd.dat'], ['psd.dat']]
 
     def test_grab_frequencies_from_psd_data_file(self):
-        assert(self.postprocessing._grab_frequencies_from_psd_data_file(
-            "./.outdir/psd.dat")) == [1.0]
         with open("./.outdir/psd_2.dat", "w") as f:
-            f.writelines(["1.0 2.0\n", "3.0 4.0"])
+            f.writelines(["1.0 2.0\n", "3.0 4.0\n", "5.0 6.0"])
         assert(self.postprocessing._grab_frequencies_from_psd_data_file(
             "./.outdir/psd_2.dat")) == [1.0, 3.0]
 
     def test_grab_strains_from_psd_data_file(self):
-        assert(self.postprocessing._grab_strains_from_psd_data_file(
-            "./.outdir/psd.dat")) == [3.44]
         with open("./.outdir/psd_2.dat", "w") as f:
-            f.writelines(["1.0 2.0\n", "3.0 4.0"])
+            f.writelines(["1.0 2.0\n", "3.0 4.0\n", "5.0 6.0"])
         assert(self.postprocessing._grab_strains_from_psd_data_file(
             "./.outdir/psd_2.dat")) == [2.0, 4.0]        

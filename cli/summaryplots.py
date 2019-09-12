@@ -410,7 +410,11 @@ class GWPlotGeneration(pesummary.gw.inputs.GWPostProcessing, PlotGeneration):
         """
         frequencies = self.psd_frequencies[idx]
         strains = self.psd_strains[idx]
-        fig = gw._psd_plot(frequencies, strains, labels=self.psd_labels[idx])
+        fmin = None
+        if "f_low" in list(self.file_kwargs[idx]["sampler"].keys()):
+            fmin = self.file_kwargs[idx]["sampler"]["f_low"]
+        fig = gw._psd_plot(
+            frequencies, strains, labels=self.psd_labels[idx], fmin=fmin)
         fig.savefig("%s/%s_psd_plot.png" % (self.savedir, self.labels[idx]))
         plt.close()
 
