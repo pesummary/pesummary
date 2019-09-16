@@ -74,6 +74,15 @@ build_examples:
   only:
     - master
 
+release:
+  stage: deploy
+  image: python:3.6
+  script:
+    - curl --request POST --form "variables[REPO]=pesummary" --form ref=master --form "token=$CI_RELEASE_TRIGGER_TOKEN" https://git.ligo.org/api/v4/projects/4737/trigger/pipeline
+  only:
+    - master
+    - web
+
 pages:
   stage: deploy
   dependencies:
