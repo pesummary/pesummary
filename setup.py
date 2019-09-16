@@ -16,7 +16,7 @@
 from setuptools import setup
 import subprocess
 
-version = "0.1.8"
+version = "0.1.9"
 
 
 def full_description():

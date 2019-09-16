@@ -1,4 +1,10 @@
-## 0.1.8 [unreleased]
+## 0.1.9 [unreleased]
+
+###Changed
+
+###Added
+
+## 0.1.8 [16/09/2019]
 
 ### Changed
 - Comparison pages: Display both the CDF and box plots on the comparison pages
