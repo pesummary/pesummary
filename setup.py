@@ -13,10 +13,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import warnings
+from distutils import log
+from pathlib import Path
+
 from setuptools import setup
-import subprocess
+from setuptools.command import (
+    build_py,
+    sdist,
+)
 
 version = "0.1.9"
+version_file = Path("pesummary") / ".version"
 
 
 def full_description():
@@ -36,12 +44,12 @@ def write_version_file(version):
     version: str
         the release version of the code that you are running
     """
-    from pesummary.utils.version_helper import GitInformation, PackageInformation
+    from version_helper import GitInformation, PackageInformation
 
     git_info = GitInformation()
     packages = PackageInformation()
 
-    with open("pesummary/.version", "w") as f:
+    with version_file.open("w") as f:
         f.writelines(["# pesummary version information\n\n"])
         f.writelines(["last_release = %s\n" % (git_info.last_version)])
         f.writelines(["\ngit_hash = %s\n" % (git_info.hash)])
@@ -53,7 +61,26 @@ def write_version_file(version):
     return ".version"
 
 
-version_file = write_version_file(version)
+class _VersionedCommand(object):
+    def run(self):
+        log.info("generating {}".format(version_file))
+        try:
+            write_version_file(version)
+        except Exception as exc:
+            if not version_file.is_file():
+                raise
+            warnings.warn("failed to generate .version file, will reuse existing copy")
+        super().run()
+
+
+class VersionedSdist(_VersionedCommand, sdist.sdist):
+    pass
+
+
+class VersionedBuildPy(_VersionedCommand, build_py.build_py):
+    pass
+
+
 readme = full_description()
 
 setup(name='pesummary',
@@ -64,6 +91,10 @@ setup(name='pesummary',
       author_email='charlie.hoy@ligo.org',
       url='https://git.ligo.org/lscsoft/pesummary',
       download_url='https://git.ligo.org/lscsoft/pesummary',
+      cmdclass={
+          "sdist": VersionedSdist,
+          "build_py": VersionedBuildPy,
+      },
       install_requires=[
           'numpy>=1.15.4',
           'h5py',
@@ -86,7 +117,7 @@ setup(name='pesummary',
                 'pesummary.gw.file', 'pesummary.gw.file.formats',
                 'pesummary.gw.plots', 'pesummary.utils', 'cli'],
       package_data={
-          'pesummary': [version_file],
+          'pesummary': [version_file.name],
           'pesummary.core': ['js/*.js', 'css/*.css'],
           'pesummary.gw.plots': ['cylon.csv'],
       },
