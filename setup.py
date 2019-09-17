@@ -13,6 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import builtins
 import warnings
 from distutils import log
 from pathlib import Path
@@ -22,6 +23,9 @@ from setuptools.command import (
     build_py,
     sdist,
 )
+
+# tell python we're in setup.py
+builtins._PESUMMARY_SETUP = True
 
 version = "0.1.9"
 version_file = Path("pesummary") / ".version"

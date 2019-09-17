@@ -119,4 +119,12 @@ def get_version_information():
         string += "%s: %s %s" % (version, status, hash)
     except IndexError:
         print("No version information found")
+    except FileNotFoundError as exc:
+        # if we're inside setup.py, then the file not existing is ok
+        try:
+            if _PESUMMARY_SETUP:
+                return
+        except NameError:
+            pass
+        raise
     return string
