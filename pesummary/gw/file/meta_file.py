@@ -17,8 +17,8 @@ import numpy as np
 import h5py
 import configparser
 
+from pesummary import __version__
 from pesummary.utils.utils import logger
-from pesummary.utils.utils import get_version_information
 from pesummary.gw.inputs import GWPostProcessing
 from pesummary.gw.file.read import read as GWRead
 from pesummary.core.file.meta_file import _MetaFile
@@ -158,7 +158,6 @@ class _GWMetaFile(_MetaFile):
                                         config=self.config,
                                         meta_data=self.file_kwargs
                                         )
-        pesummary_version = get_version_information()
 
         for num, i in enumerate(self.labels):
             if i not in self.existing_label:
@@ -178,7 +177,7 @@ class _GWMetaFile(_MetaFile):
                                version=self.file_versions[num], psd=self.psds[num],
                                calibration=self.calibration[num], config=config,
                                approximant=approximant[num],
-                               pesummary_version=pesummary_version,
+                               pesummary_version=__version__,
                                meta_data=self.file_kwargs[num]
                                )
 

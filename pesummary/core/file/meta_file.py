@@ -23,7 +23,6 @@ import configparser
 import pesummary
 from pesummary.utils.utils import logger, make_dir
 from pesummary.core.file.read import read as Read
-from pesummary.utils.utils import get_version_information
 
 
 def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
@@ -158,8 +157,6 @@ class _MetaFile(object):
                                )
         self._make_dictionary_structure(self.labels, config=self.config
                                         )
-        pesummary_version = get_version_information()
-
         for num, i in enumerate(self.labels):
             if i not in self.existing_label:
                 injection = [self.injection_data[num]["%s" % (i)] for i in
@@ -173,7 +170,7 @@ class _MetaFile(object):
                     config = None
                 self._add_data(i, self.parameters[num], self.samples[num],
                                injection, version=self.file_versions[num],
-                               config=config, pesummary_version=pesummary_version,
+                               config=config, pesummary_version=pesummary.__version__,
                                meta_data=self.file_kwargs[num]
                                )
 
