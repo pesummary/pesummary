@@ -21,7 +21,7 @@ import numpy as np
 import pesummary
 import cli
 from pesummary.utils import utils
-from version_helper import GitInformation, PackageInformation
+from pesummary._version_helper import GitInformation, PackageInformation
 
 import pytest
 from testfixtures import LogCapture

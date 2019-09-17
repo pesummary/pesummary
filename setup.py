@@ -44,7 +44,7 @@ def write_version_file(version):
     version: str
         the release version of the code that you are running
     """
-    from version_helper import GitInformation, PackageInformation
+    from pesummary._version_helper import GitInformation, PackageInformation
 
     git_info = GitInformation()
     packages = PackageInformation()
