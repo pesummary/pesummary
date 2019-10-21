@@ -1,4 +1,3 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -20,6 +19,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import corner
+import copy
 
 import numpy as np
 from scipy import signal
@@ -96,7 +96,8 @@ def _1d_cdf_plot(param, samples, latex_label):
     """
     logger.debug("Generating the 1d CDF for %s" % (param))
     fig = plt.figure()
-    samples.sort()
+    sorted_samples = copy.deepcopy(samples)
+    sorted_samples.sort()
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Cumulative Density Function", fontsize=16)
     upper_percentile = np.percentile(samples, 90)
@@ -106,7 +107,7 @@ def _1d_cdf_plot(param, samples, latex_label):
     lower = np.round(median - lower_percentile, 2)
     median = np.round(median, 2)
     plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
-    plt.plot(samples, np.linspace(0, 1, len(samples)), color='b')
+    plt.plot(sorted_samples, np.linspace(0, 1, len(sorted_samples)), color='b')
     plt.grid(b=True)
     plt.ylim([0, 1.05])
     plt.tight_layout()
@@ -135,9 +136,10 @@ def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels):
     logger.debug("Generating the 1d comparison CDF for %s" % (param))
     fig = plt.figure(figsize=(8, 6))
     for num, i in enumerate(samples):
-        i.sort()
-        plt.plot(i, np.linspace(0, 1, len(i)), color=colors[num],
-                 label=labels[num])
+        sorted_samples = copy.deepcopy(samples[num])
+        sorted_samples = sorted(sorted_samples)
+        plt.plot(sorted_samples, np.linspace(0, 1, len(sorted_samples)),
+                 color=colors[num], label=labels[num])
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Cumulative Density Function", fontsize=16)
     plt.grid(b=True)
@@ -148,7 +150,8 @@ def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels):
     return fig
 
 
-def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False):
+def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
+                       prior=None, weights=None):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
 
@@ -164,31 +167,47 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False):
         value that was injected
     kde: Bool
         if true, a kde is plotted instead of a histogram
+    prior: list
+        list of prior samples for param
+    weights: list
+        list of weights for each sample
     """
     logger.debug("Generating the 1d histogram plot for %s" % (param))
     fig = plt.figure()
     if np.ptp(samples) == 0:
         plt.axvline(samples[0], color='b')
+        xlims = plt.gca().get_xlim()
     elif not kde:
         plt.hist(samples, histtype="step", bins=50, color='b', density=True,
-                 linewidth=1.75)
+                 linewidth=1.75, weights=weights)
+        xlims = plt.gca().get_xlim()
+        if prior is not None:
+            plt.hist(prior, color="k", alpha=0.2, edgecolor="w", density=True,
+                     linewidth=1.75, histtype="bar", bins=50)
     else:
-        kdeplot(samples, color='b', shade=True, alpha_shade=0.1,
-                clip=[np.min(samples), np.max(samples)], linewidth=1.0)
+        x = kdeplot(
+            samples, color='b', shade=True, alpha_shade=0.1,
+            clip=[samples.minimum, samples.maximum], linewidth=1.0,
+            weights=weights
+        )
+        xlims = plt.gca().get_xlim()
+        if prior is not None:
+            kdeplot(prior, color='k', shade=True, alpha_shade=0.1,
+                    clip=[prior.minimum, prior.maximum], linewidth=1.0)
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
-    upper_percentile = np.percentile(samples, 90)
-    lower_percentile = np.percentile(samples, 10)
-    if inj_value:
-        plt.axvline(inj_value, color='r', linestyle='--', linewidth=1.75)
-    plt.axvline(upper_percentile, color='b', linestyle='--', linewidth=1.75)
-    plt.axvline(lower_percentile, color='b', linestyle='--', linewidth=1.75)
-    median = np.median(samples)
-    upper = np.round(upper_percentile - median, 2)
-    lower = np.round(median - lower_percentile, 2)
+    percentile = samples.confidence_interval([10, 90])
+    if inj_value is not None:
+        plt.axvline(inj_value, color='orange', linestyle='-', linewidth=2.5)
+    plt.axvline(percentile[0], color='b', linestyle='--', linewidth=1.75)
+    plt.axvline(percentile[1], color='b', linestyle='--', linewidth=1.75)
+    median = samples.average("median")
+    upper = np.round(percentile[1] - median, 2)
+    lower = np.round(median - percentile[0], 2)
     median = np.round(median, 2)
     plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
     plt.grid(b=True)
+    plt.xlim(xlims)
     plt.tight_layout()
     return fig
 
@@ -274,7 +293,7 @@ def _comparison_box_plot(param, samples, colors, latex_label, labels):
     return fig
 
 
-def _make_corner_plot(samples, params, latex_labels, **kwargs):
+def _make_corner_plot(samples, latex_labels, **kwargs):
     """Generate the corner plots for a given approximant
 
     Parameters
@@ -299,11 +318,12 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
         levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
         plot_density=False, plot_datapoints=True, fill_contours=True,
         max_n_ticks=3)
-    xs = np.zeros([len(params), len(samples)])
-    for num, i in enumerate(params):
-        xs[num] = [j[params.index("%s" % (i))] for j in samples]
-    default_kwargs['range'] = [1.0] * len(params)
-    default_kwargs["labels"] = [latex_labels[i] for i in params]
+    parameters = list(samples.keys())
+    xs = np.zeros([len(parameters), len(samples[parameters[0]])])
+    for num, i in enumerate(parameters):
+        xs[num] = samples[i]
+    default_kwargs['range'] = [1.0] * len(parameters)
+    default_kwargs["labels"] = [latex_labels[i] for i in parameters]
     figure = corner.corner(xs.T, **default_kwargs)
     # grab the axes of the subplots
     axes = figure.get_axes()
@@ -311,4 +331,4 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
     width, height = extent.width, extent.height
     width *= figure.dpi
     height *= figure.dpi
-    return figure, params
+    return figure, parameters

@@ -19,6 +19,8 @@ import copy
 
 from pesummary.gw.file import meta_file
 from pesummary.gw.file.meta_file import _GWMetaFile, GWMetaFile
+from pesummary.gw.inputs import GWInput
+from pesummary.utils.utils import SamplesDict, Array
 
 import h5py
 import numpy as np
@@ -125,51 +127,41 @@ class TestMetaFile(object):
         if not os.path.isdir(".outdir/samples"):
             os.makedirs(".outdir/samples")
 
-        self.input_data = [list(np.random.random(15)) for i in range(1000)]
+        self.samples = np.array([np.random.random(10) for i in range(15)])
         self.input_parameters = [
             "mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2", "phi_jl",
             "phi_12", "psi", "theta_jn", "ra", "dec", "luminosity_distance",
             "geocent_time", "log_likelihood"]
-        distance = np.random.random(1000) * 500
-        for num, i in enumerate(self.input_data):
-            self.input_data[num][12] = distance[num]
+        self.input_data = {"EXP1": SamplesDict(self.input_parameters, self.samples)}
+        distance = np.random.random(10) * 500
+        self.input_data["EXP1"]["luminosity_distance"] = Array(distance)
         self.input_labels = ["EXP1"]
-        self.input_file_version = ["3.0"]
+        self.input_file_version = {"EXP1": "3.0"}
         self.input_injection_data = np.random.random(15)
-        self.input_injection = {
-            i: j for i, j in zip(self.input_parameters, self.input_injection_data)}
-        self.input_file_kwargs = {
+        self.input_injection = {"EXP1": {
+            i: j for i, j in zip(self.input_parameters, self.input_injection_data)}}
+        self.input_file_kwargs = {"EXP1": {
             "sampler": {"flow": 10}, "meta_data": {"samplerate": 10}
-        }
+        }}
         self.input_config = ["./tests/files/config_lalinference.ini"]
-        psd_data = np.genfromtxt("./tests/files/psd_file.txt")
-        self.psds = [
-            GWMetaFile._combine_psd_frequency_strain(
-                [[i[0] for i in psd_data]],
-                [[i[1] for i in psd_data]],
-                ["H1"]
-            )
-        ]
-        self.calibration = [
-            GWMetaFile._combine_calibration_envelopes(
-                [np.genfromtxt("./tests/files/calibration_envelope.txt")],
-                ["H1"]
-            )
-        ]
+        psd_data = GWInput.extract_psd_data_from_file("./tests/files/psd_file.txt")
+        self.psds = {"EXP1": {"H1": psd_data}}
+        calibration_data = GWInput.extract_calibration_data_from_file(
+            "./tests/files/calibration_envelope.txt")
+        self.calibration = {"EXP1": {"H1": calibration_data}}
 
         object = _GWMetaFile(
-            [self.input_parameters], [self.input_data], self.input_labels,
-            [self.input_config], [self.input_injection], self.input_file_version,
-            [self.input_file_kwargs], webdir=".outdir", psd=self.psds,
-            calibration=self.calibration)
-        object.generate_meta_file_data()
+            self.input_data, self.input_labels, self.input_config,
+            self.input_injection, self.input_file_version, self.input_file_kwargs,
+            webdir=".outdir", psd=self.psds, calibration=self.calibration)
+        object.make_dictionary()
         object.save_to_json()
         object = _GWMetaFile(
-            [self.input_parameters], [self.input_data], self.input_labels,
-            [self.input_config], [self.input_injection], self.input_file_version,
-            [self.input_file_kwargs], webdir=".outdir", hdf5=True,
-            psd=self.psds, calibration=self.calibration)
-        object.generate_meta_file_data()
+            self.input_data, self.input_labels, self.input_config,
+            self.input_injection, self.input_file_version, self.input_file_kwargs,
+            webdir=".outdir", psd=self.psds, calibration=self.calibration,
+            hdf5=True)
+        object.make_dictionary()
         object.save_to_hdf5()
 
         with open(".outdir/samples/posterior_samples.json", "r") as f:
@@ -210,21 +202,27 @@ class TestMetaFile(object):
             assert list(
                 sorted(data["posterior_samples"]["EXP1"].keys())) == [
                     "parameter_names", "samples"]
-            assert all(
-                all(k == l for k, l in zip(i, j)) for i, j in zip(
-                    data["posterior_samples"]["EXP1"]["samples"],
-                    self.input_data))
+
+
+            parameters = data["posterior_samples"]["EXP1"]["parameter_names"]
+            samples = np.array(data["posterior_samples"]["EXP1"]["samples"]).T
+  
+            posterior_data = {"EXP1": {i: j for i, j in zip(parameters, samples)}}
+            for param, samp in posterior_data["EXP1"].items():
+                if isinstance(param, bytes):
+                    param = param.decode("utf-8")
+                for ind in np.arange(len(samp)):
+                    assert samp[ind] == self.input_data["EXP1"][param][ind]
 
     def test_file_version(self):
         """Test the file version stored in the metafile
         """
         for data in [self.json_file, self.hdf5_file]:
-            try:
-                assert all(i.decode("utf-8") == j for i, j in zip(
-                    data["version"]["EXP1"], self.input_file_version))
-            except Exception:
-                assert all(i == j for i, j in zip(
-                    data["version"]["EXP1"], self.input_file_version))
+            for i, j in zip(data["version"]["EXP1"], [self.input_file_version["EXP1"]]):
+                version = i
+                if isinstance(i, bytes):
+                    version = version.decode("utf-8")
+                assert version == j
 
     def test_meta_data(self):
         """Test the meta data stored in the metafile
@@ -236,24 +234,24 @@ class TestMetaFile(object):
             assert all(
                all(
                    k == l for k, l in zip(
-                       self.input_file_kwargs[i],
+                       self.input_file_kwargs["EXP1"][i],
                        data["meta_data"]["EXP1"][j]
                        )
                ) for i, j in zip(
-                   sorted(self.input_file_kwargs.keys()),
+                   sorted(self.input_file_kwargs["EXP1"].keys()),
                    sorted(data["meta_data"]["EXP1"].keys())
                )
             )
 
             assert all(
                all(
-                   self.input_file_kwargs[i][k] == data["meta_data"]["EXP1"][j][l]
+                   self.input_file_kwargs["EXP1"][i][k] == data["meta_data"]["EXP1"][j][l]
                    for k, l in zip(
-                       self.input_file_kwargs[i],
+                       self.input_file_kwargs["EXP1"][i],
                        data["meta_data"]["EXP1"][j]
                        )
                ) for i, j in zip(
-                   sorted(self.input_file_kwargs.keys()),
+                   sorted(self.input_file_kwargs["EXP1"].keys()),
                    sorted(data["meta_data"]["EXP1"].keys())
                )
            )
@@ -261,38 +259,24 @@ class TestMetaFile(object):
     def test_psd(self):
         """Test the psd is stored in the metafile
         """
-        psds = []
-        for i in self.psds:
-            psds.append(i["H1"])
         for data in [self.json_file, self.hdf5_file]:
             assert list(data["psds"].keys()) == self.input_labels
             assert list(
                 data["psds"]["EXP1"].keys()) == ["H1"]
-            assert all(
-                all(
-                    k == l for k, l in zip(i, j)
-                    ) for i, j in zip(
-                        psds[0], data["psds"]["EXP1"]["H1"]
-                    )
-                )
+            for i, j in zip(self.psds["EXP1"]["H1"], data["psds"]["EXP1"]["H1"]):
+                for k, l in zip(i, j):
+                    assert k == l
 
     def test_calibration(self):
         """Test the calibration envelope is stored in the metafile
         """
-        calibration_envelopes = []
-        for i in self.calibration:
-            calibration_envelopes.append(i["H1"])
         for data in [self.json_file, self.hdf5_file]:
             assert list(data["calibration_envelope"].keys()) == self.input_labels
             assert list(
                 data["calibration_envelope"]["EXP1"].keys()) == ["H1"]
-            assert all(
-                all(
-                    k == l for k, l in zip(i, j)
-                    ) for i, j in zip(
-                        calibration_envelopes[0], data["calibration_envelope"]["EXP1"]["H1"]
-                    )
-                )
+            for i, j in zip(self.calibration["EXP1"]["H1"], data["calibration_envelope"]["EXP1"]["H1"]):
+                for k, l in zip(i, j):
+                    assert k == l
 
     def test_config(self):
         """Test the configuration file is stored in the metafile
@@ -361,7 +345,5 @@ class TestMetaFile(object):
         """
         for data in [self.json_file, self.hdf5_file]:
             assert list(data["injection_data"].keys()) == self.input_labels
-            assert all(
-                i == j for i, j in zip(
-                    self.input_injection_data,
-                    data["injection_data"]["EXP1"]["injection_values"]))
+            for num, i in enumerate(list(self.input_injection["EXP1"].keys())):
+                assert self.input_injection["EXP1"][i] == data["injection_data"]["EXP1"]["injection_values"][num]

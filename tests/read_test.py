@@ -61,10 +61,8 @@ class BaseRead(object):
         """Test the extra_kwargs property
         """
         if true is None:
-            assert self.result.extra_kwargs == {"sampler": {}, "meta_data": {}}
+            assert self.result.extra_kwargs == {"sampler": {"nsamples": 1000}, "meta_data": {}}
         else:
-            print(true)
-            print(self.result.extra_kwargs)
             assert sorted(self.result.extra_kwargs) == sorted(true)
 
     def test_injection_parameters(self, true, pesummary=False):

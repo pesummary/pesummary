@@ -13,15 +13,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os
 import numpy as np
-import h5py
-import configparser
 
-from pesummary.utils.utils import logger
-from pesummary.utils.utils import get_version_information
-from pesummary.gw.inputs import GWPostProcessing
-from pesummary.gw.file.read import read as GWRead
+import pesummary
 from pesummary.core.file.meta_file import _MetaFile
+from pesummary.gw.inputs import GWPostProcessing
+from pesummary.utils.utils import get_version_information, make_dir
 
 
 def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
@@ -65,14 +63,14 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
                 pass
             path = current_path + [k]
             _recursively_save_dictionary_to_hdf5_file(f, v, path)
-        elif isinstance(v, list):
+        elif isinstance(v, (list, pesummary.utils.utils.Array, np.ndarray)):
             import math
 
             if isinstance(v[0], str):
                 f["/".join(current_path)].create_dataset(k, data=np.array(
                     v, dtype="S"
                 ))
-            elif isinstance(v[0], list):
+            elif isinstance(v[0], (list, pesummary.utils.utils.Array, np.ndarray)):
                 f["/".join(current_path)].create_dataset(k, data=np.array(v))
             elif math.isnan(v[0]):
                 f["/".join(current_path)].create_dataset(k, data=np.array(
@@ -99,227 +97,129 @@ class _GWMetaFile(_MetaFile):
     meta_file: str
         name of the meta file storing all information
     """
-    def __init__(self, parameters, samples, labels, config,
-                 injection_data, file_versions, file_kwargs,
-                 calibration_envelopes=None, calibration_labels=None,
-                 psd=None, approximant=None, calibration=None,
-                 webdir=None, result_files=None, hdf5=False,
-                 existing_version=None, existing_label=None,
-                 existing_parameters=None, existing_samples=None,
-                 existing_psd=None, existing_calibration=None,
-                 existing_approximant=None, existing_config=None,
-                 existing_injection=None, existing_metadata=None):
-        super(_GWMetaFile, self).__init__(
-            parameters, samples, labels, config,
-            injection_data, file_versions, file_kwargs,
-            webdir=webdir, result_files=result_files, hdf5=hdf5,
-            existing_version=existing_version, existing_label=existing_label,
-            existing_parameters=existing_parameters,
-            existing_samples=existing_samples,
-            existing_injection=existing_injection,
-            existing_metadata=existing_metadata,
-            existing_config=existing_config)
+    def __init__(
+        self, samples, labels, config, injection_data, file_versions,
+        file_kwargs, calibration=None, psd=None, approximant=None, webdir=None,
+        result_files=None, hdf5=False, existing_version=None,
+        existing_label=None, existing_samples=None, existing_psd=None,
+        existing_calibration=None, existing_approximant=None,
+        existing_config=None, existing_injection=None,
+        existing_metadata=None, priors={}, outdir=None, existing=None,
+        existing_priors={}, existing_metafile=None
+    ):
         self.calibration = calibration
         self.psds = psd
         self.approximant = approximant
         self.existing_psd = existing_psd
         self.existing_calibration = existing_calibration
         self.existing_approximant = existing_approximant
+        super(_GWMetaFile, self).__init__(
+            samples, labels, config, injection_data, file_versions,
+            file_kwargs, webdir=webdir, result_files=result_files, hdf5=hdf5,
+            priors=priors, existing_version=existing_version,
+            existing_label=existing_label, existing_samples=existing_samples,
+            existing_injection=existing_injection,
+            existing_metadata=existing_metadata,
+            existing_config=existing_config, existing_priors={}, outdir=outdir,
+            existing=existing, existing_metafile=existing_metafile
+        )
+        if self.existing_labels is None:
+            self.existing_labels = [None]
+        if self.existing is not None:
+            self.add_existing_data()
 
     def _make_dictionary(self):
-        if self.existing_parameters is not None:
-            self._make_dictionary_structure(
-                self.existing_label,
-                version=self.existing_version,
-                psd=self.existing_psd,
-                approx=self.existing_approximant,
-                calibration=self.existing_calibration,
-                config=self.existing_config,
-                meta_data=self.existing_metadata
-            )
-            for num, i in enumerate(self.existing_label):
-                self._add_data(i,
-                               self.existing_parameters[num],
-                               self.existing_samples[num],
-                               self.existing_injection[num],
-                               version=self.existing_version[num],
-                               approximant=self.existing_approximant[num],
-                               psd=self.existing_psd,
-                               calibration=self.existing_calibration,
-                               config=self.existing_config,
-                               meta_data=self.existing_metadata[num]
-                               )
-
-        self._make_dictionary_structure(self.labels,
-                                        version=self.file_versions,
-                                        psd=self.psds,
-                                        approx=self.approximant,
-                                        calibration=self.calibration,
-                                        config=self.config,
-                                        meta_data=self.file_kwargs
-                                        )
-        pesummary_version = get_version_information()
-
-        for num, i in enumerate(self.labels):
-            if i not in self.existing_label:
-                injection = [self.injection_data[num]["%s" % (i)] for i in
-                             self.parameters[num]]
-                if self.config and not isinstance(self.config[num], dict):
-                    config = self._grab_config_data_from_data_file(self.config[num]) \
-                        if self.config and num < len(self.config) else None
-                elif self.config:
-                    config = self.config[num]
-                else:
-                    config = None
-                approximant = self.approximant if self.approximant else \
-                    [None] * len(self.samples)
-                self._add_data(i, self.parameters[num],
-                               self.samples[num], injection,
-                               version=self.file_versions[num], psd=self.psds[num],
-                               calibration=self.calibration[num], config=config,
-                               approximant=approximant[num],
-                               pesummary_version=pesummary_version,
-                               meta_data=self.file_kwargs[num]
-                               )
-
-    def _grab_config_data_from_data_file(self, file):
-        """Return the config data as a dictionary
-
-        Parameters
-        ----------
-        file: str
-            path to the configuration file
+        """Generate a single dictionary which stores all information
         """
-        data = {}
-        config = configparser.ConfigParser()
-        try:
-            config.read(file)
-            sections = config.sections()
-        except Exception as e:
-            sections = None
-            logger.info("Unable to open %s because %s. The data will not be "
-                        "stored in the meta file" % (file, e))
-        if sections:
-            for i in sections:
-                data[i] = {}
-                for key in config["%s" % (i)]:
-                    data[i][key] = config["%s" % (i)]["%s" % (key)]
-        return data
-
-    def _add_data(self, label, parameters, samples, injection, version=None,
-                  approximant=None, psd=None, calibration=None, config=None,
-                  pesummary_version=None, meta_data=None):
-        """Add data to the stored dictionary
-
-        Parameters
-        ----------
-        label: str
-            the name of the second level in the dictionary
-        approximant: str
-            the name of the third level in the dictionary
-        parameters: list
-            list of parameters that were used in the study
-        samples: list
-            list of samples that wee used in th study
-        psd: list, optional
-            list of frequencies and strains associated with the psd
-        calibration: list, optional
-            list of data associated with the calibration envelope
-        config: dict, optional
-            data associated with the configuration file
-        """
-        self.data["posterior_samples"][label] = {
-            "parameter_names": list(parameters),
-            "samples": self.convert_to_list(samples)
+        dictionary = {
+            "posterior_samples": {},
+            "injection_data": {},
+            "version": {},
+            "meta_data": {},
+            "priors": {},
+            "config_file": {},
+            "approximant": {},
+            "psds": {},
+            "calibration_envelope": {}
         }
-        self.data["injection_data"][label] = {
-            "injection_values": list(injection)
-        }
-        self.data["version"][label] = [version]
-        self.data["meta_data"][label] = meta_data
-        if psd:
-            for i in list(psd.keys()):
-                self.data["psds"][label][i] = psd[i]
-        if calibration:
-            for i in list(calibration.keys()):
-                self.data["calibration_envelope"][label][i] = \
-                    calibration[i]
-        if config:
-            self.data["config_file"][label] = config
-        if approximant:
-            self.data["approximant"][label] = approximant
-        if pesummary_version:
-            self.data["version"]["pesummary"] = [pesummary_version]
 
-    def _make_dictionary_structure(self, label, version=None, psd=None,
-                                   approx=None, calibration=None, config=None,
-                                   meta_data=None):
-        for num, i in enumerate(label):
-            self._add_label(
-                "posterior_samples", i
-            )
-            self._add_label(
-                "injection_data", i
-            )
-            self._add_label(
-                "version", i
-            )
-            self._add_label(
-                "meta_data", i
-            )
-            if psd:
-                self._add_label("psds", i)
-            if calibration:
-                if type(calibration) == list and any(i for i in calibration):
-                    self._add_label(
-                        "calibration_envelope", i
-                    )
-                elif type(calibration) == dict:
-                    self._add_label(
-                        "calibration_envelope", i
-                    )
-            if config:
-                self._add_label(
-                    "config_file", i,
-                )
-            if approx:
-                self._add_label(
-                    "approximant", i,
-                )
+        dictionary["priors"] = self.priors
+        for num, label in enumerate(self.labels):
+            parameters = self.samples[label].keys()
+            samples = np.array([self.samples[label][i] for i in parameters]).T
+            dictionary["posterior_samples"][label] = {
+                "parameter_names": list(parameters),
+                "samples": samples
+            }
+            dictionary["injection_data"][label] = {
+                "injection_values": [
+                    self.injection_data[label][i] for i in parameters
+                ]
+            }
+            dictionary["version"][label] = [self.file_versions[label]]
+            dictionary["version"]["pesummary"] = [get_version_information()]
+            dictionary["meta_data"][label] = self.file_kwargs[label]
+
+            if self.config[num] is not None and not isinstance(self.config[num], dict):
+                config = self._grab_config_data_from_data_file(self.config[num])
+                dictionary["config_file"][label] = config
+            elif self.config[num] is not None:
+                dictionary["config_file"][label] = self.config[num]
+            if self.calibration != {} and self.calibration[label] is not None:
+                dictionary["calibration_envelope"][label] = {
+                    key: item for key, item in self.calibration[label].items()
+                    if item is not None
+                }
+            else:
+                dictionary["calibration_envelope"][label] = {}
+            if self.psds != {} and self.psds[label] is not None:
+                dictionary["psds"][label] = {
+                    key: item for key, item in self.psds[label].items() if item
+                    is not None
+                }
+            else:
+                dictionary["psds"][label] = {}
+            if self.approximant is not None and self.approximant[label] is not None:
+                dictionary["approximant"][label] = self.approximant[label]
+            else:
+                dictionary["approximant"][label] = {}
+        self.data = dictionary
 
     def save_to_hdf5(self):
-        if self.webdir is None:
-            raise Exception("No web dirctory has been provided")
+        """Save the metafile as a hdf5 file
+        """
+        import h5py
+
         with h5py.File(self.meta_file, "w") as f:
             _recursively_save_dictionary_to_hdf5_file(f, self.data)
 
 
 class GWMetaFile(GWPostProcessing):
-    """This class handles the creation of a meta file storing all information
+    """This class handles the creation of a metafile storing all information
     from the analysis
-
-    Attributes
-    ----------
-    meta_file: str
-        name of the meta file storing all information
     """
     def __init__(self, inputs):
+        from pesummary.utils.utils import logger
+
         super(GWMetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
         if self.add_to_existing:
-            existing_file = GWRead(self.existing_meta_file)
-            existing_parameters = existing_file.parameters
-            existing_samples = existing_file.samples
-            existing_labels = existing_file.labels
-            existing_psd = existing_file.psd
-            existing_calibration = existing_file.calibration
-            existing_config = existing_file.config
-            existing_approximant = existing_file.approximant
-            existing_injection = existing_file.injection_parameters
-            existing_version = existing_file.input_version
-            existing_metadata = existing_file.extra_kwargs
+            from pesummary.gw.file.read import read as GWRead
+
+            existing = self.existing
+            existing_metafile = self.existing_metafile
+            existing_samples = self.existing_samples
+            existing_labels = self.existing_labels
+            existing_psd = self.existing_psd
+            existing_calibration = self.existing_calibration
+            existing_config = self.existing_config
+            existing_approximant = self.existing_approximant
+            existing_injection = self.existing_injection_data
+            existing_version = self.existing_file_version
+            existing_metadata = self.existing_file_kwargs
+            existing_priors = self.existing_priors
         else:
-            existing_parameters = None
+            existing_metafile = None
             existing_samples = None
             existing_labels = None
             existing_psd = None
@@ -329,84 +229,31 @@ class GWMetaFile(GWPostProcessing):
             existing_injection = None
             existing_version = None
             existing_metadata = None
+            existing = None
+            existing_priors = {}
 
-        calibration_list, psd_list = [], []
-        for num, i in enumerate(self.labels):
-            cond1 = num < len(self.calibration_envelopes)
-            if self.calibration_envelopes and cond1:
-                if self.calibration_envelopes[num] is not None:
-                    calibration = self._combine_calibration_envelopes(
-                        self.calibration_envelopes[num],
-                        self.calibration_labels[num])
-                    calibration_list.append(calibration)
-                else:
-                    calibration_list.append(None)
-            else:
-                calibration_list.append(None)
-
-            if self.psds and num < len(self.psds):
-                psd_frequencies = self.psd_frequencies[num]
-                psd_strains = self.psd_strains[num]
-                psd_list.append(self._combine_psd_frequency_strain(
-                    psd_frequencies, psd_strains, self.psd_labels[num]))
-            else:
-                psd_list.append(None)
-
-        meta_file = _GWMetaFile(self.parameters, self.samples, self.labels,
-                                self.config, self.injection_data,
-                                self.file_versions, self.file_kwargs,
-                                calibration=calibration_list,
-                                psd=psd_list, hdf5=self.hdf5,
-                                webdir=self.webdir, result_files=self.result_files,
-                                existing_version=existing_version,
-                                existing_label=existing_labels,
-                                existing_parameters=existing_parameters,
-                                existing_samples=existing_samples,
-                                existing_psd=existing_psd,
-                                existing_calibration=existing_calibration,
-                                existing_approximant=existing_approximant,
-                                existing_injection=existing_injection,
-                                existing_metadata=existing_metadata,
-                                existing_config=existing_config)
-        meta_file.generate_meta_file_data()
-
+        meta_file = _GWMetaFile(
+            self.samples, self.labels, self.config, self.injection_data,
+            self.file_version, self.file_kwargs, calibration=self.calibration,
+            psd=self.psd, hdf5=self.hdf5, webdir=self.webdir,
+            result_files=self.result_files, existing_version=existing_version,
+            existing_label=existing_labels, existing_samples=existing_samples,
+            existing_psd=existing_psd, existing_calibration=existing_calibration,
+            existing_approximant=existing_approximant,
+            existing_injection=existing_injection,
+            existing_metadata=existing_metadata,
+            existing_config=existing_config, priors=self.priors,
+            existing_priors=existing_priors, existing=existing,
+            existing_metafile=existing_metafile, approximant=self.approximant
+        )
+        meta_file.make_dictionary()
         if not self.hdf5:
             meta_file.save_to_json()
         else:
             meta_file.save_to_hdf5()
-
-        meta_file.generate_dat_file()
-        logger.info("finished generating the meta file. the meta file can be "
-                    "viewed here: %s" % (meta_file.meta_file))
-
-    @staticmethod
-    def _combine_calibration_envelopes(calibration_envelopes, calibration_labels):
-        """Return the calibration data as a dictionary
-
-        Parameters
-        ----------
-        calibration_envelopes: list
-            list of calibration envelopes for the different IFOs
-        calibration_labels: list
-            list of calibration labels corresponding to the different
-            calibration envelopes
-        """
-        return {calibration_labels[num]: [
-            [j[0], j[1], j[2], j[3], j[4], j[5], j[6]] for j in i] for num, i
-            in enumerate(calibration_envelopes)}
-
-    @staticmethod
-    def _combine_psd_frequency_strain(frequencies, strains, psd_labels):
-        """Return the psd data as a dictionary
-
-        Parameters
-        ----------
-        frequencies: list
-            list of frequencies for the different IFOs
-        strains: list
-            list of strains for the different IFOs
-        psd_labels: list
-            list of psd labels corresponding to the different frequencies
-        """
-        return {psd_labels[num]: [[j, k] for j, k in zip(i, strains[num])] for
-                num, i in enumerate(frequencies)}
+        meta_file.save_to_dat()
+        meta_file.write_marginalized_posterior_to_dat()
+        logger.info(
+            "Finishing generating the meta file. The meta file can be viewed "
+            "here: {}".format(meta_file.meta_file)
+        )

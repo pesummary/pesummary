@@ -173,4 +173,6 @@ standard_names = {"logL": "log_likelihood",
                   "dLambdaT": "delta_lambda",
                   "logPrior": "log_prior",
                   "log_prior": "log_prior",
-                  "logprior": "log_prior"}
+                  "logprior": "log_prior",
+                  "weights": "weights",
+                  "weight": "weights"}

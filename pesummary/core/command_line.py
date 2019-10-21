@@ -17,6 +17,7 @@ import copy
 
 import argparse
 import configparser
+from pesummary import conf
 
 
 class ConfigAction(argparse.Action):
@@ -144,7 +145,7 @@ def command_line():
     parser.add_argument("-i", "--inj_file", dest="inj_file",
                         help="path to injetcion file", nargs='+', default=None)
     parser.add_argument("--user", dest="user", help=argparse.SUPPRESS,
-                        default="albert.einstein")
+                        default=conf.user)
     parser.add_argument("--labels", dest="labels",
                         help="labels used to distinguish runs", nargs='+',
                         default=None)
@@ -163,5 +164,14 @@ def command_line():
                         help="generate production quality plots", default=None)
     parser.add_argument("--kde_plot", action="store_true",
                         help="plot a kde rather than a histogram",
+                        default=False)
+    parser.add_argument("--palette", dest="palette",
+                        help="Color palette to use to distinguish result files",
+                        default="colorblind")
+    parser.add_argument("--burnin", dest="burnin",
+                        help="Number of samples to remove as burnin",
+                        default=None)
+    parser.add_argument("--include_prior", action="store_true",
+                        help="Plot the prior on the same plot as the posterior",
                         default=False)
     return parser

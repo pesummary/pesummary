@@ -17,6 +17,7 @@ import os
 import numpy as np
 from pesummary.gw.file.formats.base_read import GWRead
 from pesummary.gw.plots.latex_labels import GWlatex_labels
+from pesummary.utils.utils import logger
 
 
 class Bilby(GWRead):
@@ -43,12 +44,25 @@ class Bilby(GWRead):
         return cls(path)
 
     @staticmethod
-    def grab_extra_kwargs(path):
+    def grab_priors(bilby_object, nsamples=5000):
+        """Draw samples from the prior functions stored in the bilby file
+        """
+        from pesummary.utils.utils import Array
+
+        f = bilby_object
+        try:
+            samples = f.priors.sample(size=nsamples)
+            priors = {key: Array(samples[key]) for key in samples}
+        except Exception as e:
+            logger.info("Failed to draw prior samples because {}".format(e))
+            priors = {}
+        return priors
+
+    @staticmethod
+    def grab_extra_kwargs(bilby_object):
         """Grab any additional information stored in the lalinference file
         """
-        from bilby.core.result import read_in_result
-
-        f = read_in_result(filename=path)
+        f = bilby_object
         kwargs = {"sampler": {
             "log_evidence": np.round(f.log_evidence, 2),
             "log_evidence_error": np.round(f.log_evidence_err, 2),
@@ -206,14 +220,24 @@ class Bilby(GWRead):
                         [key])[0]
                     GWlatex_labels[key] = label
         try:
-            extra_kwargs = Bilby.grab_extra_kwargs(path)
+            extra_kwargs = Bilby.grab_extra_kwargs(bilby_object)
         except Exception:
             extra_kwargs = {"sampler": {}, "meta_data": {}}
+        extra_kwargs["sampler"]["nsamples"] = len(samples)
+        prior_samples = Bilby.grab_priors(bilby_object, nsamples=len(samples))
+        data = {}
         try:
             version = bilby_object.version
-            return parameters, samples, injection, version, extra_kwargs
         except Exception as e:
-            return parameters, samples, injection, None, extra_kwargs
+            version = None
+        return {
+            "parameters": parameters,
+            "samples": samples,
+            "injection": injection,
+            "version": version,
+            "kwargs": extra_kwargs,
+            "prior": prior_samples
+        }
 
     def add_injection_parameters_from_file(self, injection_file):
         """

@@ -20,6 +20,7 @@ import argparse
 
 from pesummary.core.plots import plot
 from pesummary.gw.plots import plot as gwplot
+from pesummary.utils.utils import Array
 
 import numpy as np
 import matplotlib
@@ -60,7 +61,7 @@ class TestPlot(object):
         return [float(i[1]) for i in fil]
 
     @pytest.mark.parametrize("param, samples, latex_label", [("mass1",
-        [10,20,30,40], r"$m_{1}$"),])
+        Array([10,20,30,40]), r"$m_{1}$"),])
     def test_1d_histogram_plot(self, param, samples, latex_label):
         fig = plot._1d_histogram_plot(param, samples, latex_label)
         assert isinstance(fig, matplotlib.figure.Figure) == True
@@ -151,7 +152,9 @@ class TestPlot(object):
         samples = [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]]*21
         samples = [np.random.random(21).tolist() for i in range(21)]
         params = list(latex_labels.keys())
-        fig, included_params = gwplot._make_corner_plot(samples, params, latex_labels) 
+        samples = {
+            i: samples[num] for num, i in enumerate(params)}
+        fig, included_params = gwplot._make_corner_plot(samples, latex_labels) 
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_source_corner_plot(self):
@@ -210,11 +213,11 @@ class TestPlot(object):
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_calibration_plot(self):
-        with open("./.outdir/calibration.dat", "w") as f:
-            f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0\n"])
-            f.writelines(["2000.0 2.0 3.0 4.0 5.0 6.0 7.0"])
         frequencies = np.arange(20, 100, 0.2)
-        files = [np.genfromtxt("./.outdir/calibration.dat")]
         ifos = ["H1"]
-        fig = gwplot._calibration_envelope_plot(frequencies, files, ifos)
+        calibration = [[
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
+            [2000.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+        ]]
+        fig = gwplot._calibration_envelope_plot(frequencies, calibration, ifos)
         assert isinstance(fig, matplotlib.figure.Figure) == True
