@@ -19,6 +19,7 @@ import pesummary
 from pesummary.gw.file.read import read as GWRead
 from pesummary.gw.pepredicates import PEPredicates
 from pesummary.utils.utils import make_dir, logger
+from pesummary.utils.exceptions import InputError
 import argparse
 
 
@@ -80,13 +81,17 @@ def save_classifications(savedir, classifications, labels):
     classifications: dict
         dictionary of classification probabilities
     """
+    import os
+    import json
+
+    if labels is None:
+        raise InputError("Please provide a label for each result file")
+    base_path = os.path.join(savedir, "{}_{}_prior_pe_classification.json")
     for num, i in enumerate(classifications):
-        file1 = "%s/%s_default_classification.txt" % (savedir, labels[num])
-        file2 = "%s/%s_population_classification.txt" % (savedir, labels[num])
-        with open(file1, "w") as f:
-            f.writelines(["%s" % (i["default"])])
-        with open(file2, "w") as f:
-            f.writelines(["%s" % (i["population"])])
+        with open(base_path.format(labels[num], "default"), "w") as f:
+            json.dump(i["default"], f)
+        with open(base_path.format(labels[num], "population"), "w") as f:
+            json.dump(i["population"], f)
 
 
 def make_plots(result_files, webdir=None, labels=None, prior=None):
