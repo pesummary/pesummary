@@ -20,9 +20,9 @@ from glob import glob
 from pesummary.core.command_line import command_line
 from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.gw.inputs import GWInput
-from cli.summaryplots import _GWPlotGeneration as GWPlotGeneration
+from pesummary.cli.summaryplots import _GWPlotGeneration as GWPlotGeneration
 from pesummary.gw.file.meta_file import GWMetaFile
-from cli.summarypages import _GWWebpageGeneration as GWWebpageGeneration
+from pesummary.cli.summarypages import _GWWebpageGeneration as GWWebpageGeneration
 
 import pytest
 

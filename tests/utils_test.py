@@ -19,7 +19,7 @@ import h5py
 import numpy as np
 
 import pesummary
-import cli
+import pesummary.cli as cli
 from pesummary.utils import utils
 from pesummary.utils.version_helper import GitInformation, PackageInformation
 

@@ -4,6 +4,7 @@
 - Calibration Plot: Include both the prior and posterior
 - `summaryplots` executable: Made the `summaryplots` executable more versitle
   such that individual 1d histograms/skymaps can be generated from command_line
+- Moved `cli` into `pesummary` package
 
 ###Added
 - Priors: Priors are extracted from bilby result files and stored in the

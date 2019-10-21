@@ -11,11 +11,16 @@ basic:
     - summarypages --help
     - summaryplots --help
     - summarypublication --help
+    - summaryclassification --help
+    - summaryclean --help
+    - summaryreview --help
+    - summarycombine --help
+    - summarycombine_metafiles --help
     - python -c "import pesummary"
     - python -c "import pesummary.core"
     - python -c "import pesummary.gw"
     - python -c "import pesummary.utils"
-    - python -c "import cli"
+    - python -c "import pesummary.cli"
 
 python-3.6:
   stage: test
