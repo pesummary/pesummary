@@ -24,6 +24,303 @@ from scipy.interpolate import interp1d
 import h5py
 
 
+class SamplesDict(dict):
+    """Class to store the samples from a single run
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters
+    samples: nd list
+        list of samples for each parameter
+    """
+    def __init__(self, parameters, samples):
+        super(SamplesDict, self).__init__()
+        self.parameters = parameters
+        self.samples = samples
+        lengths = [len(i) for i in samples]
+        if len(np.unique(lengths)) > 1:
+            raise Exception("Unequal number of samples for each parameter")
+        self.make_dictionary()
+
+    def __getitem__(self, key):
+        """Return an object representing the specialization of SamplesDict
+        by type arguments found in key.
+        """
+        if isinstance(key, slice):
+            return SamplesDict(
+                self.parameters,
+                [i[key.start:key.stop:key.step] for i in self.samples]
+            )
+        if isinstance(key, str):
+            if key not in self.keys():
+                raise KeyError(
+                    "{} not in dictionary. The list of available keys are "
+                    "{}".format(key, self.keys())
+                )
+        return super(SamplesDict, self).__getitem__(key)
+
+    def __str__(self):
+        """Print a summary of the information stored in the dictionary
+        """
+        def format_string(string, row):
+            """Format a list into a table
+
+            Parameters
+            ----------
+            string: str
+                existing table
+            row: list
+                the row you wish to be written to a table
+            """
+            string += "{:<8}".format(row[0])
+            for i in range(1, len(row)):
+                if isinstance(row[i], str):
+                    string += "{:<15}".format(row[i])
+                elif isinstance(row[i], (float, int, np.int64, np.int32)):
+                    string += "{:<15.6f}".format(row[i])
+            string += "\n"
+            return string
+
+        string = ""
+        string = format_string(string, ["idx"] + list(self.keys()))
+
+        if self.number_of_samples < 8:
+            for i in range(self.number_of_samples):
+                string = format_string(
+                    string, [i] + [item[i] for key, item in self.items()]
+                )
+        else:
+            for i in range(4):
+                string = format_string(
+                    string, [i] + [item[i] for key, item in self.items()]
+                )
+            for i in range(2):
+                string = format_string(string, ["."] * (len(self.keys()) + 1))
+            for i in range(self.number_of_samples - 2, self.number_of_samples):
+                string = format_string(
+                    string, [i] + [item[i] for key, item in self.items()]
+                )
+        return string
+
+    @property
+    def maxL(self):
+        return SamplesDict(
+            self.parameters, [[item.maxL] for key, item in self.items()]
+        )
+
+    @property
+    def minimum(self):
+        return SamplesDict(
+            self.parameters, [[item.minimum] for key, item in self.items()]
+        )
+
+    @property
+    def maximum(self):
+        return SamplesDict(
+            self.parameters, [[item.maximum] for key, item in self.items()]
+        )
+
+    @property
+    def median(self):
+        return SamplesDict(
+            self.parameters,
+            [[item.average(type="median")] for key, item in self.items()]
+        )
+
+    @property
+    def mean(self):
+        return SamplesDict(
+            self.parameters,
+            [[item.average(type="mean")] for key, item in self.items()]
+        )
+
+    @property
+    def number_of_samples(self):
+        return len(self[self.parameters[0]])
+
+    def discard_samples(self, number):
+        """Remove the first n samples
+
+        Parameters
+        ----------
+        number: int
+            Number of samples that you wish to remove
+        """
+        self.make_dictionary(discard_samples=number)
+        return self
+
+    def make_dictionary(self, discard_samples=None):
+        """Add the parameters and samples to the class
+        """
+        if "log_likelihood" in self.parameters:
+            likelihoods = self.samples[self.parameters.index("log_likelihood")]
+            likelihoods = likelihoods[discard_samples:]
+        else:
+            likelihoods = None
+        if any(i in self.parameters for i in ["weights", "weight"]):
+            ind = (
+                self.parameters.index("weights") if "weights" in self.parameters
+                else self.parameters.index("weight")
+            )
+            weights = self.samples[ind][discard_samples:]
+        else:
+            weights = None
+        for key, val in zip(self.parameters, self.samples):
+            self[key] = Array(
+                val[discard_samples:], likelihood=likelihoods, weights=weights
+            )
+
+
+class Array(np.ndarray):
+    """Class to add extra functions and methods to np.ndarray
+
+    Parameters
+    ----------
+    input_aray: list/array
+        input list/array
+
+    Attributes
+    ----------
+    median: float
+        median of the input array
+    mean: float
+        mean of the input array
+    """
+    def __new__(cls, input_array, likelihood=None, weights=None):
+        obj = np.asarray(input_array).view(cls)
+        obj.standard_deviation = np.std(obj)
+        obj.minimum = np.min(obj)
+        obj.maximum = np.max(obj)
+        obj.maxL = cls.maxL(obj, likelihood)
+        obj.weights = weights
+        return obj
+
+    def average(self, type="mean"):
+        """Return the average of the array
+
+        Parameters
+        ----------
+        type: str
+            the method to average the array
+        """
+        if type == "mean":
+            return self._mean(self, weights=self.weights)
+        elif type == "median":
+            return self._median(self, weights=self.weights)
+        else:
+            return None
+
+    @staticmethod
+    def _mean(array, weights=None):
+        """Compute the mean from a set of weighted samples
+
+        Parameters
+        ----------
+        array: np.ndarray
+            input array
+        weights: np.ndarray, optional
+            list of weights associated with each sample
+        """
+        if weights is None:
+            return np.mean(array)
+        weights = np.array(weights).flatten() / float(sum(weights))
+        return float(np.dot(np.array(array), weights))
+
+    @staticmethod
+    def _median(array, weights=None):
+        """Compute the median from a set of weighted samples
+
+        Parameters
+        ----------
+        array: np.ndarray
+            input array
+        weights: np.ndarray, optional
+            list of weights associated with each sample
+        """
+        if weights is None:
+            return np.median(array)
+        return Array.percentile(array, weights=weights, percentile=0.5)
+
+    @staticmethod
+    def maxL(array, likelihood=None):
+        """Return the maximum likelihood value of the array
+
+        Parameters
+        ----------
+        array: np.ndarray
+            input array
+        likelihood: np.ndarray, optional
+            likelihoods associated with each sample
+        """
+        if likelihood is not None:
+            likelihood = list(likelihood)
+            ind = likelihood.index(np.max(likelihood))
+            return array[ind]
+        return None
+
+    @staticmethod
+    def percentile(array, weights=None, percentile=None):
+        """Compute the Nth percentile of a set of weighted samples
+
+        Parameters
+        ----------
+        array: np.ndarray
+            input array
+        weights: np.ndarray, optional
+            list of weights associated with each sample
+        percentile: float, list
+            list of percentiles to compute
+        """
+        if weights is None:
+            return np.percentile(array, percentile)
+
+        array, weights = np.array(array), np.array(weights)
+        percentile_type = percentile
+        if not isinstance(percentile, (list, np.ndarray)):
+            percentile = [float(percentile)]
+        percentile = np.array([float(i) for i in percentile])
+        if not all(i < 1 for i in percentile):
+            percentile *= 0.01
+        ind_sorted = np.argsort(array)
+        sorted_data = array[ind_sorted]
+        sorted_weights = weights[ind_sorted]
+        Sn = np.cumsum(sorted_weights)
+        Pn = (Sn - 0.5 * sorted_weights) / Sn[-1]
+        data = np.interp(percentile, Pn, sorted_data)
+        if isinstance(percentile_type, (int, float, np.float64, np.float32)):
+            return float(data[0])
+        return data
+
+    def confidence_interval(self, percentile=None):
+        """Return the confidence interval of the array
+
+        Parameters
+        ----------
+        percentile: int/list, optional
+            Percentile or sequence of percentiles to compute, which must be
+            between 0 and 100 inclusive
+        """
+        if percentile is not None:
+            if isinstance(percentile, int):
+                return self.percentile(self, self.weights, percentile)
+            return np.array(
+                [self.percentile(self, self.weights, i) for i in percentile]
+            )
+        return np.array(
+            [self.percentile(self, self.weights, i) for i in [10, 90]]
+        )
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+        self.standard_deviation = getattr(obj, 'standard_deviation', None)
+        self.minimum = getattr(obj, 'minimum', None)
+        self.maximum = getattr(obj, 'maximum', None)
+        self.maxL = getattr(obj, 'maxL', None)
+        self.weights = getattr(obj, 'weights', None)
+
+
 def resample_posterior_distribution(posterior, nsamples):
     """Randomly draw nsamples from the posterior distribution
 
@@ -159,19 +456,14 @@ def functions(opts):
     """Return a dictionary of functions that are either specific to GW results
     files or core.
     """
-    from cli.summarypages import WebpageGeneration, GWWebpageGeneration
-    from cli.summaryplots import PlotGeneration, GWPlotGeneration
     from pesummary.core.inputs import Input
     from pesummary.gw.inputs import GWInput
     from pesummary.core.file.meta_file import MetaFile
     from pesummary.gw.file.meta_file import GWMetaFile
     from pesummary.core.finish import FinishingTouches
 
-    print(gw_results_file)
     dictionary = {}
     dictionary["input"] = GWInput if gw_results_file(opts) else Input
-    dictionary["PlotGeneration"] = GWPlotGeneration if gw_results_file(opts) else PlotGeneration
-    dictionary["WebpageGeneration"] = GWWebpageGeneration if gw_results_file(opts) else WebpageGeneration
     dictionary["MetaFile"] = GWMetaFile if gw_results_file(opts) else MetaFile
     dictionary["FinishingTouches"] = FinishingTouches
     return dictionary
@@ -240,11 +532,71 @@ def remove_tmp_directories():
             os.remove(i)
 
 
+def _add_existing_data(namespace):
+    """Add existing data to namespace object
+    """
+    for num, i in enumerate(namespace.existing_labels):
+        if hasattr(namespace, "labels") and i not in namespace.labels:
+            namespace.labels.append(i)
+        if hasattr(namespace, "samples") and i not in list(namespace.samples.keys()):
+            namespace.samples[i] = namespace.existing_samples[i]
+        if hasattr(namespace, "injection_data"):
+            if i not in list(namespace.injection_data.keys()):
+                namespace.injection_data[i] = namespace.existing_injection_data[i]
+        if hasattr(namespace, "file_versions"):
+            if i not in list(namespace.file_versions.keys()):
+                namespace.file_versions[i] = namespace.existing_file_version[i]
+        if hasattr(namespace, "file_kwargs"):
+            if i not in list(namespace.file_kwargs.keys()):
+                namespace.file_kwargs[i] = namespace.existing_file_kwargs[i]
+        if hasattr(namespace, "config"):
+            if namespace.existing_config[num] not in namespace.config:
+                namespace.config.append(namespace.existing_config[num])
+        if hasattr(namespace, "approximant") and namespace.approximant is not None:
+            if i not in list(namespace.approximant.keys()):
+                if i in list(namespace.existing_approximant.keys()):
+                    namespace.approximant[i] = namespace.existing_approximant[i]
+        if hasattr(namespace, "psds") and namespace.psds is not None:
+            if i not in list(namespace.psds.keys()):
+                if i in list(namespace.existing_psd.keys()):
+                    namespace.psds[i] = namespace.existing_psd[i]
+                else:
+                    namespace.psds[i] = {}
+        if hasattr(namespace, "calibration") and namespace.calibration is not None:
+            if i not in list(namespace.calibration.keys()):
+                if i in list(namespace.existing_calibration.keys()):
+                    namespace.calibration[i] = namespace.existing_calibration[i]
+                else:
+                    namespace.calibration[i] = {}
+        if hasattr(namespace, "maxL_samples"):
+            if i not in list(namespace.maxL_samples.keys()):
+                namespace.maxL_samples[i] = {
+                    key: val.maxL for key, val in namespace.samples[i].items()
+                }
+    if hasattr(namespace, "result_files"):
+        if namespace.existing_metafile not in namespace.result_files:
+            namespace.result_files.append(namespace.existing_metafile)
+    parameters = [list(namespace.samples[i].keys()) for i in namespace.labels]
+    namespace.same_parameters = list(
+        set.intersection(*[set(l) for l in parameters])
+    )
+    namespace.same_samples = {
+        param: {
+            i: namespace.samples[i][param] for i in namespace.labels
+        } for param in namespace.same_parameters
+    }
+    return namespace
+
+
 def customwarn(message, category, filename, lineno, file=None, line=None):
+    """
+    """
     import sys
     import warnings
 
-    sys.stdout.write(warnings.formatwarning("%s" % (message), category, filename, lineno))
+    sys.stdout.write(
+        warnings.formatwarning("%s" % (message), category, filename, lineno)
+    )
 
 
 class RedirectLogger(object):

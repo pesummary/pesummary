@@ -38,7 +38,7 @@ except ImportError:
 PSD_COLORS = {"H1": "#1b9e77", "L1": "#d95f02", "V1": "#7570b3"}
 
 
-def _make_corner_plot(samples, params, latex_labels, **kwargs):
+def _make_corner_plot(samples, latex_labels, **kwargs):
     """Generate the corner plots for a given approximant
 
     Parameters
@@ -63,16 +63,17 @@ def _make_corner_plot(samples, params, latex_labels, **kwargs):
         levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
         plot_density=False, plot_datapoints=True, fill_contours=True,
         max_n_ticks=3)
+    parameters = list(samples.keys())
     corner_parameters = [
         "luminosity_distance", "dec", "a_2", "a_1", "geocent_time", "phi_jl",
         "psi", "ra", "phase", "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
         "tilt_1", "chi_p", "chirp_mass", "mass_ratio", "symmetric_mass_ratio",
         "total_mass", "chi_eff", "redshift", "mass_1_source", "mass_2_source",
         "total_mass_source", "chirp_mass_source"]
-    included_parameters = [i for i in params if i in corner_parameters]
-    xs = np.zeros([len(included_parameters), len(samples)])
+    included_parameters = [i for i in parameters if i in corner_parameters]
+    xs = np.zeros([len(included_parameters), len(samples[parameters[0]])])
     for num, i in enumerate(included_parameters):
-        xs[num] = [j[params.index("%s" % (i))] for j in samples]
+        xs[num] = samples[i]
     default_kwargs['range'] = [1.0] * len(included_parameters)
     default_kwargs["labels"] = [latex_labels[i] for i in included_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
@@ -407,7 +408,7 @@ def _ligo_skymap_plot(ra, dec, savedir="./", nprocess=1, downsampled=False,
     return fig
 
 
-def _default_skymap_plot(ra, dec, **kwargs):
+def _default_skymap_plot(ra, dec, weights=None, **kwargs):
     """Plot the default sky location of the source for a given approximant
 
     Parameters
@@ -433,7 +434,10 @@ def _default_skymap_plot(ra, dec, **kwargs):
         r"$22^{h}$"])
     levels = [0.9, 0.5]
 
-    H, X, Y = np.histogram2d(ra, dec, bins=50)
+    if weights is None:
+        H, X, Y = np.histogram2d(ra, dec, bins=50)
+    else:
+        H, X, Y = np.histogram2d(ra, dec, bins=50, weights=weights)
     H = gaussian_filter(H, kwargs.get("smooth", 0.9))
     Hflat = H.flatten()
     indicies = np.argsort(Hflat)[::-1]
@@ -871,7 +875,7 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
 
 
 def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
-                               colors=None):
+                               colors=None, prior=[]):
     """Generate a plot showing the calibration envelope
 
     Parameters
@@ -885,7 +889,41 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
     colors: list, optional
         list of colors to be used to differentiate the different calibration
         envelopes
+    prior: list, optional
+        list containing the prior calibration envelope data for different IFOs
     """
+    def interpolate_calibration(data):
+        """Interpolate the calibration data using spline
+
+        Parameters
+        ----------
+        data: np.ndarray
+            array containing the calibration data
+        """
+        interp = [
+            np.interp(frequency, data[:, 0], data[:, j], left=k, right=k)
+            for j, k in zip(range(1, 7), [1, 0, 1, 0, 1, 0])
+        ]
+        amp_median = (1 - interp[0]) * 100
+        phase_median = interp[1] * 180. / np.pi
+        amp_lower_sigma = (1 - interp[2]) * 100
+        phase_lower_sigma = interp[3] * 180. / np.pi
+        amp_upper_sigma = (1 - interp[4]) * 100
+        phase_upper_sigma = interp[5] * 180. / np.pi
+        data_dict = {
+            "amplitude": {
+                "median": amp_median,
+                "lower": amp_lower_sigma,
+                "upper": amp_upper_sigma
+            },
+            "phase": {
+                "median": phase_median,
+                "lower": phase_lower_sigma,
+                "upper": phase_upper_sigma
+            }
+        }
+        return data_dict
+
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     if not colors and ifos in list(PSD_COLORS.keys()):
         colors = [PSD_COLORS[i] for i in ifos]
@@ -898,32 +936,38 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         calibration_envelopes[num] = np.array(calibration_envelopes[num])
 
     for num, i in enumerate(calibration_envelopes):
-        interp = [np.interp(
-            frequency, i[:, 0], i[:, j], left=k, right=k) for j, k in zip(
-                range(1, 7), [1, 0, 1, 0, 1, 0])]
-        amp_median = (1 - interp[0]) * 100
-        phase_median = interp[1] * 180. / np.pi
-        amp_lower_sigma = (1 - interp[2]) * 100
-        phase_lower_sigma = interp[3] * 180. / np.pi
-        amp_upper_sigma = (1 - interp[4]) * 100
-        phase_upper_sigma = interp[5] * 180. / np.pi
-        ax1.plot(frequency, amp_median, color=colors[num], label=ifos[num])
-        ax1.plot(frequency, amp_upper_sigma, color=colors[num], linestyle="--")
-        ax1.plot(frequency, amp_lower_sigma, color=colors[num], linestyle="--")
-        ax1.fill_between(
-            frequency, amp_upper_sigma, amp_lower_sigma, color=colors[num],
-            alpha=0.4)
+        calibration_data = interpolate_calibration(i)
+        if prior != []:
+            prior_data = interpolate_calibration(prior[num])
+        ax1.plot(
+            frequency, calibration_data["amplitude"]["upper"], color=colors[num],
+            linestyle="-", label=ifos[num]
+        )
+        ax1.plot(
+            frequency, calibration_data["amplitude"]["lower"], color=colors[num],
+            linestyle="-"
+        )
         ax1.set_ylabel(r"Amplitude deviation $[\%]$")
         ax1.legend(loc="best")
-        ax2.plot(frequency, phase_median, color=colors[num], label=ifos[num])
-        ax2.plot(frequency, phase_upper_sigma, color=colors[num],
-                 linestyle="--")
-        ax2.plot(frequency, phase_lower_sigma, color=colors[num],
-                 linestyle="--")
-        ax2.fill_between(
-            frequency, phase_upper_sigma, phase_lower_sigma, color=colors[num],
-            alpha=0.4)
+        ax2.plot(
+            frequency, calibration_data["phase"]["upper"], color=colors[num],
+            linestyle="-", label=ifos[num]
+        )
+        ax2.plot(
+            frequency, calibration_data["phase"]["lower"], color=colors[num],
+            linestyle="-"
+        )
         ax2.set_ylabel(r"Phase deviation $[\degree]$")
+        if prior != []:
+            ax1.fill_between(
+                frequency, prior_data["amplitude"]["upper"],
+                prior_data["amplitude"]["lower"], color=colors[num], alpha=0.2
+            )
+            ax2.fill_between(
+                frequency, prior_data["phase"]["upper"],
+                prior_data["phase"]["lower"], color=colors[num], alpha=0.2
+            )
+
     plt.xscale('log')
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
     plt.tight_layout()

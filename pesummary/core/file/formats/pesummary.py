@@ -14,7 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.core.file.formats.base_read import Read
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, SamplesDict, Array
 
 from glob import glob
 import os
@@ -23,90 +23,6 @@ import h5py
 import json
 import numpy as np
 import configparser
-
-
-class Array(np.ndarray):
-    """Class to add extra functions and methods to np.ndarray
-
-    Parameters
-    ----------
-    input_aray: list/array
-        input list/array
-
-    Attributes
-    ----------
-    median: float
-        median of the input array
-    mean: float
-        mean of the input array
-    """
-    def __new__(cls, input_array, likelihood=None):
-        obj = np.asarray(input_array).view(cls)
-        obj.median = cls.median(obj)
-        obj.mean = cls.mean(obj)
-        obj.maxL = cls.maxL(obj, likelihood)
-        return obj
-
-    @staticmethod
-    def median(array):
-        """Return the median of the array
-
-        Parameters
-        ----------
-        array: np.ndarray
-            input array
-        """
-        return np.median(array)
-
-    @staticmethod
-    def mean(array):
-        """Return the mean of the array
-
-        Parameters
-        ----------
-        array: np.ndarray
-            input array
-        """
-        return np.mean(array)
-
-    @staticmethod
-    def maxL(array, likelihood=None):
-        """Return the maximum likelihood value of the array
-
-        Parameters
-        ----------
-        array: np.ndarray
-            input array
-        likelihood: np.ndarray, optional
-            likelihoods associated with each sample
-        """
-        if likelihood is not None:
-            likelihood = list(likelihood)
-            ind = likelihood.index(np.max(likelihood))
-            return array[ind]
-        return None
-
-    def confidence_interval(self, percentile=None):
-        """Return the confidence interval of the array
-
-        Parameters
-        ----------
-        percentile: int/list, optional
-            Percentile or sequence of percentiles to compute, which must be
-            between 0 and 100 inclusive
-        """
-        if percentile is not None:
-            if isinstance(percentile, int):
-                return np.percentile(self, percentile)
-            return np.array([np.percentile(self, i) for i in percentile])
-        return np.array([np.percentile(self, i) for i in [10, 90]])
-
-    def __array_finalize__(self, obj):
-        if obj is None:
-            return
-        self.median = getattr(obj, 'median', None)
-        self.mean = getattr(obj, 'mean', None)
-        self.maxL = getattr(obj, 'maxL', None)
 
 
 class PESummary(Read):
@@ -201,7 +117,7 @@ class PESummary(Read):
         labels = list(existing_structure.keys())
 
         parameter_list, sample_list, inj_list, ver_list = [], [], [], []
-        meta_data_list = []
+        meta_data_list, weights_list = [], []
         for num, i in enumerate(labels):
             p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
@@ -225,11 +141,20 @@ class PESummary(Read):
                 meta_data_list.append(data["%s" % (i)])
             else:
                 meta_data_list.append({"sampler": {}, "meta_data": {}})
+            if "weights" in p or b"weights" in p:
+                ind = p.index("weights") if "weights" in p else p.index(b"weights")
+                weights_list.append(Array([j[ind] for j in s]))
+            else:
+                weights_list.append(None)
         if "version" in dictionary.keys():
             version, = Read.load_recusively("version", dictionary)
         else:
             version = {i: "No version information found" for i in labels
                        + ["pesummary"]}
+        if "priors" in dictionary.keys():
+            priors, = Read.load_recusively("priors", dictionary)
+        else:
+            priors = {}
         for i in list(version.keys()):
             if i != "pesummary" and isinstance(version[i][0], bytes):
                 ver_list.append(version[i][0].decode("utf-8"))
@@ -240,7 +165,15 @@ class PESummary(Read):
         setattr(PESummary, "labels", labels)
         setattr(PESummary, "config", config)
         setattr(PESummary, "version", version["pesummary"])
-        return parameter_list, sample_list, inj_list, ver_list, meta_data_list
+        setattr(PESummary, "priors", priors)
+        return {
+            "parameters": parameter_list,
+            "samples": sample_list,
+            "injection": inj_list,
+            "version": ver_list,
+            "kwargs": meta_data_list,
+            "weights": {i: j for i, j in zip(labels, weights_list)}
+        }
 
     @property
     def samples_dict(self):
@@ -255,17 +188,20 @@ class PESummary(Read):
                            for idx, label in enumerate(self.labels)]
         else:
             likelihoods = [None] * len(self.labels)
+        print(self.labels)
         outdict = {
-            label: {
-                par: Array(
-                    [i[num] for i in self.samples[idx]],
-                    likelihood=likelihoods[idx]
-                )
-                for num, par in enumerate(self.parameters[idx])
-            }
-            for idx, label in enumerate(self.labels)
+            label:
+                SamplesDict(
+                    self.parameters[idx], np.array(self.samples[idx]).T
+                ) for idx, label in enumerate(self.labels)
         }
         self._samples_dict = outdict
+
+    @property
+    def injection_dict(self):
+        return {
+            i: self.injection_parameters[num] for num, i in enumerate(self.labels)
+        }
 
     def write_config_to_file(self, label, outdir="./"):
         """Write the config file stored as a dictionary to file

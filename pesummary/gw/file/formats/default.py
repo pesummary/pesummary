@@ -64,7 +64,9 @@ class Default(GWRead):
                 samples[num].append(
                     np.exp(i[parameters.index("logdistance")]))
         injection = {i: float("nan") for i in parameters}
-        return parameters, samples, injection
+        return {
+            "parameters": parameters, "samples": samples, "injection": injection
+        }
 
     @staticmethod
     def _grab_data_from_json_file(path):
@@ -73,7 +75,9 @@ class Default(GWRead):
         parameters, samples = GWRead._grab_params_and_samples_from_json_file(
             path)
         injection = {i: float("nan") for i in parameters}
-        return parameters, samples, injection
+        return {
+            "parameters": parameters, "samples": samples, "injection": injection
+        }
 
     @staticmethod
     def _grab_data_from_hdf5_file(path):
@@ -109,7 +113,9 @@ class Default(GWRead):
             if par == "logL":
                 parameters[num] = "log_likelihood"
         injection = {i: float("nan") for i in parameters}
-        return parameters, data, injection
+        return {
+            "parameters": parameters, "samples": data, "injection": injection
+        }
 
     @staticmethod
     def _grab_data_with_h5py(path):
@@ -141,7 +147,9 @@ class Default(GWRead):
                        f[path_to_samples]]
         f.close()
         injection = {i: float("nan") for i in parameters}
-        return parameters, samples, injection
+        return {
+            "parameters": parameters, "samples": samples, "injection": injection
+        }
 
     @property
     def calibration_data_in_results_file(self):

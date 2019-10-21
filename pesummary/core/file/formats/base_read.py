@@ -15,6 +15,7 @@
 
 import numpy as np
 import h5py
+from pesummary.utils.utils import SamplesDict, Array
 
 
 class Read():
@@ -39,6 +40,26 @@ class Read():
         """
         return function(path_to_file, **kwargs)
 
+    @staticmethod
+    def check_for_weights(parameters, samples):
+        """Check to see if the samples are weighted
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters stored in the result file
+        samples: np.ndarray
+            array of samples for each parameter
+        """
+        likely_names = ["weights", "weight"]
+        if any(i in parameters for i in likely_names):
+            ind = (
+                parameters.index("weights") if "weights" in parameters else
+                parameters.index("weight")
+            )
+            return Array(np.array(samples).T[ind])
+        return None
+
     def load(self, function, **kwargs):
         """Load a results file according to a given function
 
@@ -49,30 +70,38 @@ class Read():
         """
         self.data = self.load_from_function(
             function, self.path_to_results_file, **kwargs)
-        if len(self.data) > 2:
-            self.injection_parameters = self.data[2]
-        if len(self.data) > 3:
-            self.input_version = self.data[3]
+        if "injection" in self.data.keys():
+            self.injection_parameters = self.data["injection"]
+        if "version" in self.data.keys():
+            self.input_version = self.data["version"]
         else:
             self.input_version = "No version information found"
-        if len(self.data) > 4:
-            self.extra_kwargs = self.data[4]
+        if "kwargs" in self.data.keys():
+            self.extra_kwargs = self.data["kwargs"]
         else:
             self.extra_kwargs = {"sampler": {}, "meta_data": {}}
+            self.extra_kwargs["sampler"]["nsamples"] = len(self.data["samples"])
+        if "prior" in self.data.keys():
+            self.priors = self.data["prior"]
+        if "weights" in self.data.keys():
+            self.weights = self.data["weights"]
+        else:
+            self.weights = self.check_for_weights(
+                self.data["parameters"], self.data["samples"]
+            )
 
     @property
     def parameters(self):
-        return self.data[0]
+        return self.data["parameters"]
 
     @property
     def samples(self):
-        return self.data[1]
+        return self.data["samples"]
 
     @property
     def samples_dict(self):
-        outdict = {par: [i[num] for i in self.samples] for num, par in
-                   enumerate(self.parameters)}
-        return outdict
+        print(self.parameters)
+        return SamplesDict(self.parameters, np.array(self.samples).T)
 
     @staticmethod
     def paths_to_key(key, dictionary, current_path=None):

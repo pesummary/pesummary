@@ -112,7 +112,7 @@ def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
         insert_gwspecific_option_group(parser)
         default_args.append("--gw")
         default_args.append("--nsamples_for_skymap")
-        default_args.append("1000")
+        default_args.append("10")
     params, data = make_result_file(
         extension=extension, gw=gw, bilby=bilby, lalinference=lalinference)
     if not existing:
@@ -146,6 +146,53 @@ def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
     return opts, func(opts)
 
 
+def read_result_file(outdir="./.outdir", extension="json", bilby=False,
+                     lalinference=False, pesummary=False):
+    """
+    """
+    if bilby:
+        from bilby.core.result import read_in_result
+
+        if extension == "json":
+            f = read_in_result(outdir + "/test.json")
+        elif extension == "h5" or extension == "hdf5":
+            f = read_in_result(outdir + "/test.h5")
+        posterior = f.posterior
+        posterior = posterior.select_dtypes(include=[float, int])
+        samples = {key: val for key, val in posterior.items()}
+    elif lalinference:
+        import h5py
+
+        f = h5py.File(outdir + "/test.hdf5", "r")
+
+        posterior = f["lalinference"]["lalinference_nest"]["posterior_samples"]
+        samples = {
+            i: [j[num] for j in posterior] for num, i in enumerate(
+                posterior.dtype.names
+            )
+        }
+    elif pesummary:
+        from pesummary.gw.file.read import read
+
+        if extension == "json":
+            f = read(outdir + "/test.json")
+        else:
+            f = read(outdir + "/test.h5")
+        data = f.samples_dict
+        labels = f.labels
+        samples = data[labels[0]]
+    elif extension == "dat":
+        import numpy as np
+
+        data = np.genfromtxt(outdir + "/test.dat", names=True)
+        samples = {
+            i: [j[num] for j in data] for num, i in enumerate(data.dtype.names)
+        }
+    else:
+        samples = {}
+    return samples
+
+
 def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False,
                      lalinference=False, pesummary=False):
     """Make a result file that can be read in by PESummary
@@ -159,6 +206,7 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
     gw: Bool
         if True, gw parameters will be used
     """
+    print(extension, gw, bilby, lalinference, pesummary)
     data = np.array([np.random.random(15) for i in range(1000)])
     if gw:
         parameters = ["mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2",
@@ -167,6 +215,11 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
         distance = np.random.random(1000) * 500
         for num, i in enumerate(data):
             data[num][12] = distance[num]
+        mass_1 = np.random.random(1000) * 100
+        for num, i in enumerate(data):
+            data[num][0] = mass_1[num]
+        for num, i in enumerate(data):
+            data[num][1] = mass_1[num]
     else:
         import string
 
@@ -174,7 +227,7 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
     if extension == "dat":
             np.savetxt(outdir + "test.dat", data, delimiter=" ",
                        header=" ".join(parameters), comments="")
-    elif extension == "json" and not bilby and not pesummary:
+    elif extension == "json" and not bilby and not pesummary and not lalinference:
         import json
 
         dictionary = {"NameOfCode": {"posterior_samples": {key:
@@ -182,23 +235,23 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
                       enumerate(parameters)}}}
         with open(outdir + "test.json", "w") as f:
             json.dump(dictionary, f, indent=4, sort_keys=True)
-    elif extension == "hdf5" or extension == "h5" and not bilby and not pesummary and not lalinference:
-        import h5py
+    elif (extension == "hdf5" or extension == "h5") and not bilby and not pesummary and not lalinference:
+            import h5py
 
-        h5py_data = np.array(
-            [tuple(i) for i in data], dtype=[tuple([i, 'float64']) for i in parameters])
-        f = h5py.File(outdir + "test.h5", "w")
-        name = f.create_group("NameOfCode")
-        samples = f.create_dataset("posterior_samples", data=h5py_data)
-        f.close()
-    if bilby:
+            h5py_data = np.array(
+                [tuple(i) for i in data], dtype=[tuple([i, 'float64']) for i in parameters])
+            f = h5py.File(outdir + "test.h5", "w")
+            name = f.create_group("NameOfCode")
+            samples = f.create_dataset("posterior_samples", data=h5py_data)
+            f.close()
+    elif bilby and not pesummary and not lalinference:
         import bilby
         from bilby.core.result import Result
         from bilby.core.prior import PriorDict
         from pandas import DataFrame
 
         priors = PriorDict()
-        priors.update({"%s" % (i): bilby.core.prior.Uniform(-5, 5, 0) for i in parameters})
+        priors.update({"%s" % (i): bilby.core.prior.Uniform(0.1, 0.5, 0) for i in parameters})
         posterior_data_frame = DataFrame(data, columns=parameters)
         injection_parameters = {par: 1. for par in parameters}
         bilby_object = Result(
@@ -215,7 +268,7 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
         elif extension == "hdf5" or extension == "h5":
             bilby_object.save_to_file(
                 filename=outdir + "test.h5", extension="hdf5")
-    if lalinference:
+    elif lalinference and not bilby and not pesummary:
         import h5py
 
         h5py_data = np.array(
@@ -225,7 +278,7 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
         nest = lalinference.create_group("lalinference_nest")
         samples = nest.create_dataset("posterior_samples", data=h5py_data)
         f.close()
-    if pesummary:
+    elif pesummary and not lalinference and not bilby:
         dictionary = {
             "posterior_samples":
                 {"label": 
@@ -255,6 +308,7 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
             with open(outdir + "test.json", "w") as f:
                 json.dump(dictionary, f, indent=4, sort_keys=True)
         elif extension == "hdf5" or extension == "h5":
+            import h5py
             from pesummary.core.file.meta_file import _recursively_save_dictionary_to_hdf5_file
 
             f = h5py.File(outdir + "test.h5", "w")

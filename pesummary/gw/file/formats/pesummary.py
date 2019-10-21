@@ -16,7 +16,7 @@
 import pesummary
 from pesummary.gw.file.formats.base_read import GWRead
 from pesummary.core.file.formats.pesummary import PESummary as CorePESummary
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, Array
 
 import os
 from glob import glob
@@ -47,6 +47,7 @@ class PESummary(CorePESummary):
         load_kwargs = {
             "grab_data_from_dictionary": PESummary._grab_data_from_dictionary}
         self.load(self._grab_data_from_pesummary_file, **load_kwargs)
+        self.samples_dict = None
 
     @classmethod
     def load_file(cls, path):
@@ -73,12 +74,16 @@ class PESummary(CorePESummary):
         labels = list(existing_structure.keys())
 
         parameter_list, sample_list, approx_list, inj_list = [], [], [], []
-        ver_list, meta_data_list = [], []
+        ver_list, meta_data_list, weights_list = [], [], []
         for num, i in enumerate(labels):
             p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
             s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
             if "injection_data" in dictionary.keys():
                 inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
+                for num, j in enumerate(inj):
+                    if isinstance(j, (str, bytes)):
+                        if j.decode("utf-8") == "NaN":
+                            inj[num] = float("nan")
                 inj_list.append({i: j for i, j in zip(p, inj)})
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
@@ -101,12 +106,21 @@ class PESummary(CorePESummary):
                 meta_data_list.append(data["%s" % (i)])
             else:
                 meta_data_list.append({"sampler": {}, "meta_data": {}})
+            if "weights" in p or b"weights" in p:
+                ind = p.index("weights") if "weights" in p else p.index(b"weights")
+                weights_list.append(Array([j[ind] for j in s]))
+            else:
+                weights_list.append(None)
 
         if "version" in dictionary.keys():
             version, = GWRead.load_recusively("version", dictionary)
         else:
             version = {i: "No version information found" for i in labels
                        + ["pesummary"]}
+        if "priors" in dictionary.keys():
+            priors, = GWRead.load_recusively("priors", dictionary)
+        else:
+            priors = {}
         for i in list(version.keys()):
             if i != "pesummary" and isinstance(version[i][0], bytes):
                 ver_list.append(version[i][0].decode("utf-8"))
@@ -120,7 +134,15 @@ class PESummary(CorePESummary):
         setattr(PESummary, "calibration", cal)
         setattr(PESummary, "approximant", approx_list)
         setattr(PESummary, "version", version["pesummary"])
-        return parameter_list, sample_list, inj_list, ver_list, meta_data_list
+        setattr(PESummary, "priors", priors)
+        return {
+            "parameters": parameter_list,
+            "samples": sample_list,
+            "injection": inj_list,
+            "version": ver_list,
+            "kwargs": meta_data_list,
+            "weights": {i: j for i, j in zip(labels, weights_list)}
+        }
 
     @property
     def calibration_data_in_results_file(self):

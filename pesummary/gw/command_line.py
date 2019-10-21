@@ -77,10 +77,10 @@ def insert_gwspecific_option_group(parser):
     gw_group.add_argument("--gracedb", dest="gracedb",
                           help="gracedb of the event", default=None)
     gw_group.add_argument("--psd", dest="psd", action=DictionaryAction,
-                          help="psd files used", nargs='+', default=None)
+                          help="psd files used", nargs='+', default={})
     gw_group.add_argument("--calibration", dest="calibration",
                           help="files for the calibration envelope",
-                          nargs="+", action=DictionaryAction, default=None)
+                          nargs="+", action=DictionaryAction, default={})
     gw_group.add_argument("--trigfile", dest="inj_file",
                           help="xml file containing the trigger values",
                           nargs='+', default=None)

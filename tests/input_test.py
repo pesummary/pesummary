@@ -77,8 +77,8 @@ class TestCommandLine(object):
 
     def test_gracedb(self):
         assert self.parser.get_default("gracedb") == None
-        opts = self.parser.parse_args(["--gracedb", "test"])
-        assert opts.gracedb == "test"
+        opts = self.parser.parse_args(["--gracedb", "Gtest"])
+        assert opts.gracedb == "Gtest"
 
     def test_inj_file(self):
         assert self.parser.get_default("inj_file") == None
@@ -120,7 +120,7 @@ class TestInputExceptions(object):
 
     def test_no_webdir(self):
         with pytest.raises(Exception) as info:
-            opts = self.parser.parse_args(["--webdir", None])
+            opts = self.parser.parse_args([])
             x = GWInput(opts)
         assert "Please provide a web directory" in str(info.value)
 
@@ -139,7 +139,7 @@ class TestInputExceptions(object):
             opts = self.parser.parse_args(['--existing_webdir', './.existing'])
             x = GWInput(opts)
         dir_name = os.path.abspath('./.existing')
-        assert "The directory {} does not exist".format(dir_name) in str(info.value)
+        assert "Please provide a valid existing directory" in str(info.value)
 
     def test_not_base_of_existing_directory(self):
         if os.path.isdir("./.existing2"):
@@ -151,7 +151,7 @@ class TestInputExceptions(object):
         opts = self.parser.parse_args(['--existing_webdir', './.existing2/samples'])
         with pytest.raises(Exception) as info:
             x = GWInput(opts)
-        assert "Please give the base directory" in str(info.value)
+        assert "Please provide a valid existing directory" in str(info.value)
 
     def test_add_to_existing_and_no_existing_flag(self):
         opts = self.parser.parse_args(["--add_to_existing"])
@@ -179,7 +179,7 @@ class TestInputExceptions(object):
                                        "--approximant", "IMRPhenomPv2"])
         with pytest.raises(Exception) as info:
             x = GWInput(opts)
-        assert "does not match the number of approximants" in str(info.value)
+        assert "Please pass an approximant for each" in str(info.value)
 
 
 class TestInput(object):
@@ -192,7 +192,8 @@ class TestInput(object):
             "--webdir", "./.outdir",
             "--samples", "./tests/files/bilby_example.h5",
             "--email", "albert.einstein@ligo.org",
-            "--gracedb", "grace"]
+            "--gracedb", "Grace",
+            "--label", "example"]
         self.make_input_object()
 
     @staticmethod
@@ -204,11 +205,11 @@ class TestInput(object):
 
         f = h5py.File(path + "/posterior_samples.h5", "w")
         posterior_samples = f.create_group("posterior_samples")
-        label = posterior_samples.create_group("H1_L1")
+        label = posterior_samples.create_group("example")
         label.create_dataset("parameter_names", data=parameters)
         label.create_dataset("samples", data=samples)
         injection_data = f.create_group("injection_data")
-        label = injection_data.create_group("H1_L1")
+        label = injection_data.create_group("example")
         label.create_dataset("injection_values", data=injected_samples)
         f.close()
         return path + "/posterior_samples.h5"
@@ -241,7 +242,7 @@ class TestInput(object):
         assert self.inputs.result_files == ["./tests/files/bilby_example.h5"]
 
     def test_approximant(self):
-        assert self.inputs.approximant == ["IMRPhenomPv2"]
+        assert self.inputs.approximant == {"example": "IMRPhenomPv2"}
 
     def test_existing(self):
         assert self.inputs.existing == None
@@ -250,10 +251,10 @@ class TestInput(object):
         assert self.inputs.baseurl == "https://" + os.path.abspath("./.outdir")
 
     def test_inj_file(self):
-        assert self.inputs.inj_file == [None]
+        assert self.inputs.injection_file == [None]
 
     def test_config(self):
-        assert self.inputs.config == None
+        assert self.inputs.config == [None]
 
     def test_email(self):
         assert self.inputs.email == "albert.einstein@ligo.org"
@@ -270,15 +271,15 @@ class TestInput(object):
         assert self.inputs.dump == True
 
     def test_gracedb(self):
-        assert self.inputs.gracedb == "grace"
+        assert self.inputs.gracedb == "Grace"
 
     def test_detectors(self):
-        assert self.inputs.detectors == ["H1"]
+        assert self.inputs.detectors == {"example": "H1"}
 
     def test_labels(self):
-        assert self.inputs.labels == ["grace_H1"]
-        self.add_argument(["--label", "test"])
-        assert self.inputs.labels == ["test"]
+        assert self.inputs.labels == ["example"]
+        self.add_argument(["--label", "new_example"])
+        assert self.inputs.labels == ["new_example"]
 
     def test_existing_labels(self):
         assert self.inputs.existing_labels == None
@@ -291,11 +292,10 @@ class TestInput(object):
             "--approximant", "IMRPhenomPv2",
             "--existing_webdir", "./.outdir",
             "--samples", "./tests/files/bilby_example.h5",
-            "--email", "albert.einstein@ligo.org",
-            "--gracedb", "grace"]
+            "--gracedb", "Grace"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
-        assert inputs.existing_labels == ["H1_L1"]
+        assert inputs.existing_labels == ["example"]
 
     def test_existing_samples(self):
         assert self.inputs.existing_samples == None
@@ -309,60 +309,49 @@ class TestInput(object):
             "--existing_webdir", "./.outdir",
             "--samples", "./tests/files/bilby_example.h5",
             "--email", "albert.einstein@ligo.org",
-            "--gracedb", "grace"]
+            "--gracedb", "Grace"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         assert all(
-            i == j for i,j in zip(inputs.existing_samples[0][0], [10, 5, 400]))
+            i == j for i, j in zip(inputs.existing_samples["example"]["mass_1"], [10, 40, 50]))
         assert all(
-            i == j for i,j in zip(inputs.existing_samples[0][1], [40, 20, 800]))
+            i == j for i,j in zip(inputs.existing_samples["example"]["mass_2"], [5, 20, 10]))
         assert all(
-            i == j for i,j in zip(inputs.existing_samples[0][2], [50, 10, 200]))
+            i == j for i,j in zip(inputs.existing_samples["example"]["luminosity_distance"], [400, 800, 200]))
 
     def test_psd(self):
         with open("./.outdir/psd.dat", "w") as f:
             f.writelines(["1.00 3.44", "2.00 5.66"])
-        assert self.inputs.psds == None
+        assert self.inputs.psd == {"example": {}}
         self.add_argument(["--psd", "./.outdir/psd.dat"])
-        assert self.inputs.psds == ["./.outdir/psd.dat"]
+        assert list(self.inputs.psd["example"].keys()) == ["psd.dat"]
 
     def test_calibration(self):
         with open("./.outdir/calibration.dat", "w") as f:
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0\n"])
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0"])
-        assert self.inputs.calibration == [None]
+        assert self.inputs.calibration == {"example": {None: None}}
         self.add_argument(["--calibration", "./.outdir/calibration.dat"])
-        assert self.inputs.calibration == ['./.outdir/calibration.dat']
-
-    def test_calibration_labels(self):
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
-        opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
-            "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
-            "./tests/files/bilby_example.h5", "./tests/files/lalinference_example.h5",
-            "--calibration", "./.outdir/calibration.dat"])
-        inputs = GWInput(opts)
-        postprocessing = GWPostProcessing(inputs)
-        assert postprocessing.calibration_labels == [['calibration.dat'],
-                                                     ['calibration.dat']]
+        assert self.inputs.calibration["example"] == {None: None}
+        assert list(self.inputs.priors["calibration"]["example"].keys()) == ['calibration.dat']
 
     def test_IFO_from_file_name(self):
         file_name = "IFO0.dat"
-        assert GWPostProcessing._IFO_from_file_name(file_name) == "H1"
+        assert GWInput.get_ifo_from_file_name(file_name) == "H1"
         file_name = "IFO1.dat"
-        assert GWPostProcessing._IFO_from_file_name(file_name) == "L1"
+        assert GWInput.get_ifo_from_file_name(file_name) == "L1"
         file_name = "IFO2.dat"
-        assert GWPostProcessing._IFO_from_file_name(file_name) == "V1"
+        assert GWInput.get_ifo_from_file_name(file_name) == "V1"
 
         file_name = "IFO_H1.dat"
-        assert GWPostProcessing._IFO_from_file_name(file_name) == "H1"
+        assert GWInput.get_ifo_from_file_name(file_name) == "H1"
         file_name = "IFO_L1.dat"
-        assert GWPostProcessing._IFO_from_file_name(file_name) == "L1"
+        assert GWInput.get_ifo_from_file_name(file_name) == "L1"
         file_name = "IFO_V1.dat"
-        assert GWPostProcessing._IFO_from_file_name(file_name) == "V1"
+        assert GWInput.get_ifo_from_file_name(file_name) == "V1"
         
         file_name = "example.dat"
-        assert GWPostProcessing._IFO_from_file_name(file_name) == "example.dat"
+        assert GWInput.get_ifo_from_file_name(file_name) == "example.dat"
 
     def test_make_directories(self):
         assert os.path.isdir("./.outdir/samples/samples") == False
@@ -381,12 +370,7 @@ class TestInput(object):
         assert os.path.isfile(
             "./.outdir/samples/js/combine_corner.js") == True
         assert os.path.isfile(
-            "./.outdir/samples/config/grace_H1_config.ini") == True
-
-    def test_default_labels(self):
-        assert self.inputs._default_labels() == ['grace_H1']
-        self.replace_existing_argument("--gracedb", "grace_test")
-        assert self.inputs._default_labels() == ['grace_test_H1']
+            "./.outdir/samples/config/example_config.ini") == True
 
 
 class TestPostProcessing(object):
@@ -396,43 +380,20 @@ class TestPostProcessing(object):
         insert_gwspecific_option_group(self.parser)
         self.opts = self.parser.parse_args(["--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir", "--samples", "./tests/files/bilby_example.h5",
-            "--email", "albert.einstein@ligo.org", "--gracedb", "grace"])
+            "--email", "albert.einstein@ligo.org", "--gracedb", "Grace",
+            "--labels", "example"])
         self.inputs = GWInput(self.opts)
         self.postprocessing = GWPostProcessing(self.inputs)
 
-    def test_coherence_test(self):
-        assert self.postprocessing.coherence_test == False
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
-        opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
-            "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
-            "./tests/files/bilby_example.h5", "./tests/files/lalinference_example.h5"])
-        inputs = GWInput(opts)
-        postprocessing = GWPostProcessing(inputs)
-        assert postprocessing.coherence_test == False
-
-    def test_colors(self):
-        assert self.postprocessing.colors == [
-            "#0173B2", "#DE8F05", "#029E73", "#D55E00", "#CA9161", "#FBAFE4",
-            "#949494", "#ECE133", "#56B4E9"]
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
-        opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
-            "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
-            "./tests/files/bilby_example.h5", "./tests/files/lalinference_example.h5"])
-        inputs = GWInput(opts)
-        with pytest.raises(Exception) as info:
-            postprocessing = GWPostProcessing(inputs, colors=["b"])
-
     def test_injection_data(self):
-        assert sorted(list(self.postprocessing.injection_data[0].keys())) == [
+        assert sorted(list(self.postprocessing.injection_data["example"].keys())) == [
             'H1_optimal_snr', 'log_likelihood', 'mass_1', "network_optimal_snr"]
 
     def test_maxL_samples(self):
-        assert self.postprocessing.maxL_samples[0]["mass_1"] == 20.0
-        assert self.postprocessing.maxL_samples[0]["H1_optimal_snr"] == 30.0
-        assert self.postprocessing.maxL_samples[0]["log_likelihood"] == 3.0
-        assert self.postprocessing.maxL_samples[0]["approximant"] == "IMRPhenomPv2"
+        assert self.postprocessing.maxL_samples["example"]["mass_1"] == 20.0
+        assert self.postprocessing.maxL_samples["example"]["H1_optimal_snr"] == 30.0
+        assert self.postprocessing.maxL_samples["example"]["log_likelihood"] == 3.0
+        assert self.postprocessing.maxL_samples["example"]["approximant"] == "IMRPhenomPv2"
 
     def test_same_parameters(self):
         parser = command_line()
@@ -445,37 +406,16 @@ class TestPostProcessing(object):
         assert sorted(postprocessing.same_parameters) == [
             'H1_optimal_snr', 'log_likelihood', 'mass_1', "network_optimal_snr"]
 
-    def test_label_to_prepend_approximant(self):
-        assert self.postprocessing.label_to_prepend_approximant == [None]
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
-        opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
-            "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
-            "./tests/files/bilby_example.h5", "./tests/files/lalinference_example.h5"])
-        inputs = GWInput(opts)
-        postprocessing = GWPostProcessing(inputs)
-        assert postprocessing.label_to_prepend_approximant == ['H1_0', 'H1_1']
-
     def test_psd_labels(self):
-        assert self.postprocessing.psd_labels == None
+        assert list(self.postprocessing.psd.keys()) == ["example"]
+        assert self.postprocessing.psd["example"] == {}
         parser = command_line()
         insert_gwspecific_option_group(parser)
         opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
             "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
             "./tests/files/bilby_example.h5", "./tests/files/lalinference_example.h5",
-            "--psd", "./.outdir/psd.dat"])
+            "--psd", "./.outdir/psd.dat", "--labels", "example", "example2"])
         inputs = GWInput(opts)
         postprocessing = GWPostProcessing(inputs)
-        assert postprocessing.psd_labels == [['psd.dat'], ['psd.dat']]
-
-    def test_grab_frequencies_from_psd_data_file(self):
-        with open("./.outdir/psd_2.dat", "w") as f:
-            f.writelines(["1.0 2.0\n", "3.0 4.0\n", "5.0 6.0"])
-        assert(self.postprocessing._grab_frequencies_from_psd_data_file(
-            "./.outdir/psd_2.dat")) == [1.0, 3.0]
-
-    def test_grab_strains_from_psd_data_file(self):
-        with open("./.outdir/psd_2.dat", "w") as f:
-            f.writelines(["1.0 2.0\n", "3.0 4.0\n", "5.0 6.0"])
-        assert(self.postprocessing._grab_strains_from_psd_data_file(
-            "./.outdir/psd_2.dat")) == [2.0, 4.0]        
+        assert sorted(list(postprocessing.psd["example"].keys())) == ["psd.dat"]
+        assert sorted(list(postprocessing.psd["example2"].keys())) == ["psd.dat"]

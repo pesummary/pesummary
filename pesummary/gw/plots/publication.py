@@ -97,7 +97,7 @@ def estimate_2d_posterior(samples, xlow=None, xhigh=None, ylow=None,
     return {'xx': xx, 'yy': yy, 'z': z, 'kde': den, 'kde_sel': kde_sel}
 
 
-def twod_contour_plots(parameters, samples, labels, latex_labels):
+def twod_contour_plots(parameters, samples, labels, latex_labels, colors=None):
     """Generate 2d contour plots for a set of samples for given parameters
 
     Parameters
@@ -112,7 +112,10 @@ def twod_contour_plots(parameters, samples, labels, latex_labels):
         dictionary of latex labels
     """
     logger.debug("Generating 2d contour plots for %s" % ("_and_".join(parameters)))
-    palette = seaborn.color_palette(palette="pastel", n_colors=len(samples))
+    if colors is None:
+        palette = seaborn.color_palette(palette="pastel", n_colors=len(samples))
+    else:
+        palette = colors
     fig, ax1 = plt.subplots(nrows=1, ncols=1)
     transform = xlow = xhigh = ylow = yhigh = None
     for num, i in enumerate(samples):

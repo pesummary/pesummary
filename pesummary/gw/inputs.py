@@ -1,6 +1,4 @@
-#! /usr/bin/env python
-
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org> This program is free
+# Copyright (C) 2019 Charlie Hoy <charlie.hoy@ligo.org> This program is free
 # software; you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation; either
 # version 3 of the License, or (at your option) any later version.
@@ -14,487 +12,293 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import numpy as np
-import h5py
-
-from time import time
 import os
-import warnings
 
+import numpy as np
 import pesummary
-from pesummary.utils.utils import logger
+from pesummary.core.inputs import Input, PostProcessing
 from pesummary.gw.file.read import read as GWRead
-from pesummary.core.inputs import Input
-from pesummary.utils.utils import customwarn
-
-warnings.showwarning = customwarn
-
-__doc__ == "Classes to handle the command line inputs"
+from pesummary.utils.exceptions import InputError
+from pesummary.utils.utils import logger, SamplesDict
 
 
 class GWInput(Input):
-    """Super class to handle command line arguments
+    """Super class to handle gw specific command line inputs
 
     Parameters
     ----------
-    parser: argparser
-        The parser containing the command line arguments
+    opts: argparse.Namespace
+        Namespace object containing the command line options
 
     Attributes
     ----------
-    user: str
-        The user who submitted the job
-    add_to_existing: Bool
-        Boolean to determine if you wish to add to a existing webpage
-    existing: str
-        Existing web directory
-    webdir: str
-        Directory to output all information
-    baseurl: str
-        The url path for the corresponding web directory
-    inj_file: List
-        List containing paths to the injection file
     result_files: list
-        List containing paths to the results files which are being analysed
+        list of result files passed
+    compare_results: list
+        list of labels stored in the metafile that you wish to compare
+    add_to_existing: Bool
+        True if we are adding to an existing web directory
+    existing_samples: dict
+        dictionary of samples stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_injection_data: dict
+        dictionary of injection data stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_file_version: dict
+        dictionary of file versions stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_config: list
+        list of configuration files stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_labels: list
+        list of labels stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    user: str
+        the user who submitted the job
+    webdir: str
+        the directory to store the webpages, plots and metafile produced
+    baseurl: str
+        the base url of the webpages
+    labels: list
+        list of labels used to distinguish the result files
     config: list
-        List containing paths to the configuration files used to generate each
-        results files
-    approximant: list
-        List of approximants used in the analysis to generate each results
-        files
+        list of configuration files for each result file
+    injection_file: list
+        list of injection files for each result file
+    publication: Bool
+        if true, publication quality plots are generated. Default False
+    kde_plot: Bool
+        if true, kde plots are generated instead of histograms. Default False
+    samples: dict
+        dictionary of posterior samples stored in the result files
+    priors: dict
+        dictionary of prior samples stored in the result files
+    custom_plotting: list
+        list containing the directory and name of python file which contains
+        custom plotting functions. Default None
     email: str
-        The email address to notify when the job has completed
-    sensitivity: Bool
-        Boolean to determine if you wish to plot the sky sensitivity for
-        different detector networks
-    gracedb: str
-        The gracedb of the event that produced the results files
+        the email address of the user
     dump: Bool
-        Boolean to determine if you wish to produce a dumped html page layout
+        if True, all plots will be dumped onto a single html page. Default False
+    hdf5: Bool
+        if True, the metafile is stored in hdf5 format. Default False
+    approximant: dict
+        dictionary of approximants used in the analysis
+    gracedb: str
+        the gracedb ID for the event
     detectors: list
-        List containing the detectors used to generate each results file
-    labels: str
-        A label for this summary page
-    psd: str
-        List of the psds used in the analysis
+        the detector network used for each result file
+    calibration: dict
+        dictionary containing the posterior calibration envelopes for each IFO
+        for each result file
+    psd: dict
+        dictionary containing the psd used for each IFO for each result file
+    nsamples_for_skymap: int
+        the number of samples to use for the skymap
+    sensitivity: Bool
+        if True, the sky sensitivity for HL and HLV detector networks are also
+        plotted. Default False
+    no_ligo_skymap: Bool
+        if True, a skymap will not be generated with the ligo.skymap package.
+        Default False
+    multi_threading_for_skymap: Bool
+        if True, multi-threading will be used to speed up skymap generation
+    gwdata: dict
+        dictionary containing the strain timeseries used for each result file
     """
     def __init__(self, opts):
         logger.info("Command line arguments: %s" % (opts))
         self.opts = opts
-        self.user = self.opts.user
-        self.existing = self.opts.existing
-        self.webdir = self.opts.webdir
-        self.publication = self.opts.publication
-        self.kde_plot = self.opts.kde_plot
-        self.make_directories()
-        self.baseurl = self.opts.baseurl
-        self.inj_file = self.opts.inj_file
-        self.config = self.opts.config
-        self.compare_results = self.opts.compare_results
         self.result_files = self.opts.samples
+        self.meta_file = False
+        if self.result_files is not None and len(self.result_files) == 1:
+            self.meta_file = self.is_pesummary_metafile(self.result_files[0])
+        self.existing = self.opts.existing
+        self.compare_results = self.opts.compare_results
+        self.add_to_existing = False
+        if self.existing is not None:
+            self.add_to_existing = True
+            self.existing_metafile = None
+            self.existing_data = self.grab_data_from_metafile(
+                self.existing_metafile, self.existing,
+                compare=self.compare_results
+            )
+            self.existing_samples = self.existing_data[0]
+            self.existing_injection_data = self.existing_data[1]
+            self.existing_file_version = self.existing_data[2]
+            self.existing_file_kwargs = self.existing_data[3]
+            self.existing_priors = self.existing_data[4]
+            self.existing_config = self.existing_data[5]
+            self.existing_labels = self.existing_data[6]
+            self.existing_approximant = self.existing_data[7]
+            self.existing_psd = self.existing_data[8]
+            self.existing_calibration = self.existing_data[9]
+        else:
+            self.existing_labels = None
+            self.existing_samples = None
+            self.existing_file_version = None
+            self.existing_file_kwargs = None
+            self.existing_priors = None
+            self.existing_config = None
+            self.existing_injection_data = None
+            self.existing_approximant = None
+            self.existing_psd = None
+            self.existing_calibration = None
+        self.user = self.opts.user
+        self.webdir = self.opts.webdir
+        self.baseurl = self.opts.baseurl
+        self.labels = self.opts.labels
+        self.weights = {i: None for i in self.labels}
+        self.config = self.opts.config
+        self.injection_file = self.opts.inj_file
+        self.publication = self.opts.publication
+        self.make_directories()
+        self.kde_plot = self.opts.kde_plot
+        self.priors = None
+        self.samples = self.opts.samples
+        self.burnin = self.opts.burnin
         self.custom_plotting = self.opts.custom_plotting
         self.email = self.opts.email
-        self.add_to_existing = self.opts.add_to_existing
         self.dump = self.opts.dump
-        self.hdf5 = opts.save_to_hdf5
+        self.hdf5 = self.opts.save_to_hdf5
+        self.palette = self.opts.palette
+        self.include_prior = self.opts.include_prior
+        self.colors = None
+        self.approximant = self.opts.approximant
         self.gracedb = self.opts.gracedb
         self.detectors = None
         self.calibration = self.opts.calibration
-        self.approximant = self.opts.approximant
+        self.psd = self.opts.psd
+        self.nsamples_for_skymap = self.opts.nsamples_for_skymap
         self.sensitivity = self.opts.sensitivity
         self.no_ligo_skymap = self.opts.no_ligo_skymap
         self.multi_threading_for_skymap = self.opts.multi_threading_for_skymap
-        self.nsamples_for_skymap = self.opts.nsamples_for_skymap
-        self.psds = self.opts.psd
         self.gwdata = self.opts.gwdata
-        self.existing_labels = []
-        self.existing_version = []
-        self.existing_metadata = []
-        self.existing_parameters = []
-        self.existing_samples = []
-        self.existing_approximant = []
-        self.labels = self.opts.labels
         self.copy_files()
 
-    @property
-    def approximant(self):
-        return self._approximant
-
-    @approximant.setter
-    def approximant(self, approximant):
-        approximant_list = [None] * len(self.result_files)
-        if not approximant:
-            logger.warning("No approximant given. Waveform plots will not be "
-                           "generated")
-        else:
-            approximant_list = approximant
-        if approximant_list and len(approximant_list) != len(self.result_files):
-            raise Exception("The number of results files does not match the "
-                            "number of approximants")
-        self._approximant = approximant_list
-
-    @property
-    def gracedb(self):
-        return self._gracedb
-
-    @gracedb.setter
-    def gracedb(self, gracedb):
-        self._gracedb = None
-        if gracedb:
-            self._gracedb = gracedb
-
-    @property
-    def detectors(self):
-        return self._detectors
-
-    @detectors.setter
-    def detectors(self, detectors):
-        detector_list = []
-        if not detectors:
-            for num, i in enumerate(self.result_files):
-                params = self.parameters[num]
-                individual_detectors = []
-                for j in params:
-                    if "optimal_snr" in j and j != "network_optimal_snr":
-                        det = j.split("_optimal_snr")[0]
-                        individual_detectors.append(det)
-                individual_detectors = sorted(
-                    [str(i) for i in individual_detectors])
-                if individual_detectors:
-                    detector_list.append("_".join(individual_detectors))
-                else:
-                    detector_list.append(None)
-        else:
-            detector_list = detectors
-        logger.debug("The detector network is %s" % (detector_list))
-        self._detectors = detector_list
-
-    @property
-    def psds(self):
-        return self._psds
-
-    @psds.setter
-    def psds(self, psds):
-        psd_list = []
-        if psds:
-            if isinstance(psds, dict):
-                keys = psds.keys()
-                for key in keys:
-                    if isinstance(psds[key], str):
-                        self._check_psd_extension(psds[key])
-                    else:
-                        for j in psds[key]:
-                            self._check_psd_extension(j)
-                psd_list = psds
-            else:
-                for i in psds:
-                    self._check_psd_extension(i)
-                    psd_list.append(i)
-            self._psds = psd_list
-        else:
-            self._psds = None
-
-    @property
-    def gwdata(self):
-        return self._gwdata
-
-    @gwdata.setter
-    def gwdata(self, gwdata):
-        from pesummary.gw.file.formats.base_read import GWRead as StrainFile
-        self._gwdata = None
-        if gwdata:
-            for i in gwdata.keys():
-                if not os.path.isfile(gwdata[i]):
-                    raise Exception("The file %s does not exist. Please check "
-                                    "the path to your strain file")
-            timeseries = StrainFile.load_strain_data(gwdata)
-            self._gwdata = timeseries
-
-    @property
-    def nsamples_for_skymap(self):
-        return self._nsamples_for_skymap
-
-    @nsamples_for_skymap.setter
-    def nsamples_for_skymap(self, nsamples_for_skymap):
-        self._nsamples_for_skymap = nsamples_for_skymap
-        if nsamples_for_skymap:
-            self._nsamples_for_skymap = int(nsamples_for_skymap)
-
-    def _check_psd_extension(self, file):
-        """Check that the file extension on the psd file can be read and
-        understood by PESummary.
-
-        Parameters
-        ----------
-        file: str
-            path to the file that you would like to check
-        """
-        extension = file.split(".")[-1]
-        if extension == "gz":
-            print("convert to .dat file")
-        elif extension == "dat":
-            pass
-        elif extension == "txt":
-            pass
-        else:
-            raise Exception("PSD results file not understood")
-
-    @property
-    def calibration(self):
-        return self._calibration
-
-    @calibration.setter
-    def calibration(self, calibration):
-        calibration_list = []
-        if calibration:
-            if isinstance(calibration, dict):
-                calibration_list = calibration
-            else:
-                for i in calibration:
-                    calibration_list.append(i)
-            self._calibration = calibration_list
-        else:
-            label_list, data_list = [], []
-            for i in self.result_files:
-                f = GWRead(i)
-                calib_data = f.calibration_data_in_results_file
-                if calib_data is None:
-                    data_list.append(None)
-                    label_list.append(None)
-                elif isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
-                    for num, i in enumerate(calib_data[0]):
-                        data_list.append(i)
-                        label_list.append(list(calib_data[1][num]))
-                else:
-                    data_list.append(calib_data[0])
-                    label_list.append(list(calib_data[1]))
-            calibration_list = data_list
-            self._calibration = calibration_list
-            self.calibration_envelopes = calibration_list
-            self.calibration_labels = label_list
-
-    def _check_calibration_file(self, file):
-        """Check the contents of the calibration file to ensure that it is
-        of the correct format.
-
-        Parameters
-        ----------
-        file: str
-            path to the calibration file
-        """
-        try:
-            f = np.genfromtxt(file)
-            if len(f[0]) != 7:
-                raise Exception("Calibration envelope file not understood")
-            pass
-        except Exception:
-            pass
-
     @staticmethod
-    def grab_data_from_metafile(existing_file, webdir="./", compare=None):
-        """Grab the data from a metafile
+    def grab_data_from_metafile(existing_file, webdir, compare=None):
+        """Grab data from an existing PESummary metafile
 
         Parameters
         ----------
         existing_file: str
-            path to the existing PESummary metafile
+            path to the existing metafile
         webdir: str
-            path to the web directory
-        compare: list
-            list of labels for the events that you wish to compare
+            the directory to store the existing configuration file
+        compare: list, optional
+            list of labels for events stored in an existing metafile that you
+            wish to compare
         """
         f = GWRead(existing_file)
         labels = f.labels
-        indicies = [i for i in range(len(labels))]
+        indicies = np.arange(len(labels))
 
         if compare:
+            indicies = []
             for i in compare:
                 if i not in labels:
-                    raise Exception("Label %s does not exist in the metafile. "
-                                    "Please check that the labels for the runs "
-                                    "you wish to compare are correct." % (i))
-            indicies = [labels.index(i) for i in compare]
+                    raise InputError(
+                        "Label '%s' does not exist in the metafile. The list "
+                        "of available labels are %s" % (i, labels)
+                    )
+                indicies.append(labels.index(i))
+            labels = compare
 
-        p = [f.parameters[i] for i in indicies]
-        s = [f.samples[i] for i in indicies]
-
-        if f.injection_parameters == []:
-            inj_values = []
+        DataFrame = f.samples_dict
+        if f.injection_parameters != []:
+            inj_values = f.injection_dict
         else:
-            inj_values = [f.injection_parameters[i] for i in indicies]
+            inj_values = {
+                i: [float("nan")] * len(DataFrame[i]) for i in labels
+            }
+        for i in inj_values.keys():
+            for param in inj_values[i].keys():
+                if inj_values[i][param] == "nan":
+                    inj_values[i][param] = float("nan")
 
-        if inj_values == []:
-            for num, i in enumerate(p):
-                inj_values.append([float("nan")] * len(i))
+        if hasattr(f, "priors") and f.priors != {}:
+            priors = f.priors["samples"]
+            if "calibration" in f.priors.keys():
+                priors["calibration"] = f.priors["calibration"]
+        else:
+            priors = {label: {} for label in labels}
 
-        approximant = [f.approximant[i] for i in indicies]
-        label = lambda i: f.labels[i]
-
-        if f.config is not None:
+        config = []
+        if f.config is not None and not all(i is None for i in f.config):
             config = []
-            for i in indicies:
-                f.write_config_to_file(label(i), outdir="%s/config" % (webdir))
-                config.append("%s/config/%s_config.ini" % (webdir, label(i)))
+            for i in labels:
+                config_dir = os.path.join(webdir, "config")
+                f.write_config_to_file(i, outdir=config_dir)
+                config_file = os.path.join(
+                    config_dir, "{}_config.ini".format(i)
+                )
+                config.append(config_file)
         else:
-            config = None
+            config.append(None)
 
-        if f.psd is not None and f.psd[label(indicies[0])] != {}:
-            psd = ["extracted_%s.txt" % (f.psd[label(i)]) for i in indicies]
+        psd = {}
+        if f.psd is not None and f.psd[labels[0]] != {}:
+            for i in labels:
+                psd[i] = {
+                    ifo: f.psd[i][ifo] for ifo in f.psd[i].keys()
+                }
+        calibration = {}
+        if f.calibration is not None and f.calibration[labels[0]] != {}:
+            for i in labels:
+                calibration[i] = {
+                    ifo: f.calibration[i][ifo] for ifo in f.calibration[i].keys()
+                }
 
-            psd_labels = [[i for i in list(f.psd[label(idx)].keys())]
-                          for idx in indicies]
-
-            psd_frequencies = [[[l[0] for l in f.psd[label(idx)][k]]
-                               for k in f.psd[label(idx)].keys()]
-                               for idx in indicies]
-
-            psd_strains = [[[l[1] for l in f.psd[label(idx)][k]]
-                           for k in f.psd[label(idx)].keys()]
-                           for idx in indicies]
+        if f.weights is not None:
+            weights = {i: f.weights[i] for i in labels}
         else:
-            psd = psd_labels = psd_frequencies = psd_strains = None
+            weights = {i: None for i in labels}
 
-        if f.calibration is not None and f.calibration[label(indicies[0])] != {}:
-            calibration, calibration_labels, calibration_envelopes = [], [], []
-            for i in indicies:
-                if label(i) in list(f.calibration.keys()):
-                    calibration.append("extracted_%s.txt" % (
-                        f.calibration[label(i)]))
-                    calibration_labels.append([
-                        i for i in list(f.calibration[label(i)])])
-                    calibration_envelopes.append(np.array([
-                        f.calibration[label(i)][k] for k in
-                        f.calibration[label(i)].keys()]))
-                else:
-                    calibration.append(None)
-                    calibration_labels.append(None)
-                    calibration_envelopes.append(None)
-        else:
-            calibration = calibration_labels = calibration_envelopes = None
-        labels = [labels[i] for i in indicies]
-        version = f.input_version
-        meta_data = f.extra_kwargs
-        return p, s, inj_values, labels, psd, approximant, psd_labels, \
-            psd_frequencies, psd_strains, calibration, calibration_labels, \
-            calibration_envelopes, config, version, meta_data
-
-    def grab_data_from_input_files(self, samples):
-        """
-        """
-        result_file_list, version_list, kwarg_list = [], [], []
-        parameters_list, samples_list, injection_list = [], [], []
-        psd_labels, psd_frequencies, psd_strains = [], [], []
-        calibration_labels, calibration_envelopes = [], []
-        for num, i in enumerate(samples):
-            if not os.path.isfile(i):
-                raise Exception("File %s does not exist" % (i))
-            config = None
-            if self.config:
-                config = self.config[num]
-            if self.is_pesummary_metafile(i):
-                p, s, inj, labels, psd, approx, psd_l, psd_f, psd_s, cal, cal_l, cal_env, con, ver, md = \
-                    self.grab_data_from_metafile(
-                        i, webdir=self.webdir, compare=self.compare_results)
-                self.opts.psd = psd
-                self.opts.calibration = cal
-                self.opts.labels = labels
-                self.opts.approximant = approx
-                self.config = con
-                for idx, j in enumerate(p):
-                    parameters_list.append(j)
-                    samples_list.append(s[idx])
-                    injection_list.append(inj[idx])
-                    result_file_list.append(i)
-                    version_list.append(ver[idx])
-                    kwarg_list.append(md[idx])
-                    if psd is not None:
-                        psd_labels.append(psd_l[idx])
-                        psd_frequencies.append(psd_f[idx])
-                        psd_strains.append(psd_s[idx])
-                    if cal is not None:
-                        calibration_labels.append(cal_l[idx])
-                        calibration_envelopes.append(cal_env[idx])
-            else:
-                p, s, inj, version, kwargs = self.convert_to_standard_format(
-                    i, self.inj_file[num], config_file=config)
-                result_file_list.append(i)
-                parameters_list.append(p)
-                samples_list.append(s)
-                injection_list.append(inj)
-                version_list.append(version)
-                kwarg_list.append(kwargs)
-        self._result_files = result_file_list
-        self._parameters = parameters_list
-        self._samples = samples_list
-        self._injection_data = injection_list
-        self._file_versions = version_list
-        self._file_kwargs = kwarg_list
-
-        if psd_labels != [] and psd_frequencies != [] and psd_strains != []:
-            self.psd_labels = psd_labels
-            self.psd_frequencies = psd_frequencies
-            self.psd_strains = psd_strains
-
-        if calibration_labels != [] and calibration_envelopes != []:
-            self.calibration_labels = calibration_labels
-            self.calibration_envelopes = calibration_envelopes
-
-    @property
-    def existing_approximant(self):
-        return self._existing_approximant
-
-    @existing_approximant.setter
-    def existing_approximant(self, existing_approximant):
-        self._existing_approximant = None
-        if self.add_to_existing:
-            existing = GWRead(self.existing_meta_file)
-            self._existing_approximant = existing.approximant
+        return [
+            DataFrame, inj_values,
+            {
+                i: j for i, j in zip(
+                    labels, [f.input_version[ind] for ind in indicies]
+                )
+            },
+            {
+                i: j for i, j in zip(
+                    labels, [f.extra_kwargs[ind] for ind in indicies]
+                )
+            }, priors, config, labels, weights,
+            {
+                i: j for i, j in zip(
+                    labels, [f.approximant[ind] for ind in indicies]
+                )
+            }, psd, calibration
+        ]
 
     @staticmethod
-    def _IFO_from_file_name(file):
-        """Return a guess of the IFO from the file name.
+    def grab_data_from_file(file, label, config=None, injection=None):
+        """Grab data from a result file containing posterior samples
 
         Parameters
         ----------
         file: str
-            the name of the file that you would like to make a guess for
+            path to the result file
+        label: str
+            label that you wish to use for the result file
+        config: str, optional
+            path to a configuration file used in the analysis
+        injection: str, optional
+            path to an injection file used in the analysis
         """
-        file_name = file.split("/")[-1]
-        if any(j in file_name for j in ["H1", "_0", "IFO0"]):
-            ifo = "H1"
-        elif any(j in file_name for j in ["L1", "_1", "IFO1"]):
-            ifo = "L1"
-        elif any(j in file_name for j in ["V1", "_2", "IFO2"]):
-            ifo = "V1"
-        else:
-            ifo = file_name
-        return ifo
-
-    def convert_to_standard_format(self, results_file, injection_file=None,
-                                   config_file=None):
-        """Convert a results file to standard form.
-
-        Parameters
-        ----------
-        results_file: str
-            Path to the results file that you wish to convert to standard
-            form
-        injection_file: str, optional
-            Path to the injection file that was used in the analysis to
-            produce the results_file
-        config_file: str, optional
-            Path to the configuration file that was used
-        """
-        f = GWRead(results_file)
-        if config_file:
-            f.add_fixed_parameters_from_config_file(config_file)
-            f.add_marginalized_parameters_from_config_file(config_file)
+        f = GWRead(file)
+        if config is not None:
+            f.add_fixed_parameters_from_config_file(config)
+        if injection:
+            f.add_injection_parameters_from_file(injection)
         f.generate_all_posterior_samples()
         parameters = f.parameters
-        samples = f.samples
-        extra_kwargs = f.extra_kwargs
-        if injection_file:
-            f.add_injection_parameters_from_file(injection_file)
+        samples = np.array(f.samples).T
+        DataFrame = {label: SamplesDict(parameters, samples)}
+        kwargs = f.extra_kwargs
         if hasattr(f, "injection_parameters"):
             injection = f.injection_parameters
             if injection is not None:
@@ -508,220 +312,306 @@ class GWInput(Input):
             injection = {i: j for i, j in zip(
                 parameters, [float("nan")] * len(parameters))}
         version = f.input_version
-        return parameters, samples, injection, version, extra_kwargs
+        if hasattr(f, "priors"):
+            priors = f.priors
+        else:
+            priors = []
+        if hasattr(f, "weights"):
+            weights = f.weights
+        else:
+            weights = None
+        return [
+            DataFrame, {label: injection}, {label: version}, {label: kwargs},
+            {label: priors}, {label: weights}
+        ]
 
-    def _default_labels(self):
-        """Return the defaut labels given your detector network.
-        """
-        label_list = []
-        for num, i in enumerate(self.result_files):
-            if self.gracedb and self.detectors[num]:
-                label_list.append("_".join(
-                    [self.gracedb, self.detectors[num]]))
-            elif self.gracedb:
-                label_list.append(self.gracedb)
-            elif self.detectors[num]:
-                label_list.append(self.detectors[num])
+    @property
+    def config(self):
+        return self._config
+
+    @config.setter
+    def config(self, config):
+        if config and len(config) != len(self.labels):
+            raise InputError(
+                "Please provide a configuration file for each label"
+            )
+        if config is None and not self.meta_file:
+            self._config = [None] * len(self.labels)
+        elif self.meta_file:
+            self._config = [None] * len(self.labels)
+        else:
+            self._config = config
+
+    @property
+    def samples(self):
+        return self._samples
+
+    @samples.setter
+    def samples(self, samples):
+        if not samples:
+            raise InputError("Please provide a results file")
+        if len(samples) != len(self.labels):
+            logger.info(
+                "You have passed {} result files and {} labels. Setting "
+                "labels = {}".format(
+                    len(samples), len(self.labels), self.labels[:len(samples)]
+                )
+            )
+            self.labels = self.labels[:len(samples)]
+        samples_dict, injection_data_dict, prior_dict = {}, {}, {}
+        file_version_dict, file_kwargs_dict, weights_dict = {}, {}, {}
+        approximant_dict, psd_dict, calibration_dict = {}, {}, {}
+        config, labels = None, None
+        for num, i in enumerate(samples):
+            if not os.path.isfile(i):
+                raise Exception("File %s does not exist" % (i))
+            data = self.grab_data_from_input(
+                i, self.labels[num], config=self.config[num],
+                injection=self.injection_file[num]
+            )
+            if len(data) > 6:
+                config = data[5]
+                labels = data[6]
+                weights_dict = data[7]
+                prior_dict = data[4]
+                approximant_dict = data[8]
+                psd_dict = data[9]
+                calibration_dict = data[10]
+                for j in labels:
+                    samples_dict[j] = data[0][j]
+                    injection_data_dict[j] = data[1][j]
+                    file_version_dict[j] = data[2][j]
+                    file_kwargs_dict[j] = data[3][j]
             else:
-                file_name = ".".join(i.split("/")[-1].split(".")[:-1])
-                label_list.append("%s_%s" % (round(time()), file_name))
+                samples_dict[self.labels[num]] = data[0][self.labels[num]]
+                injection_data_dict[self.labels[num]] = data[1][self.labels[num]]
+                file_version_dict[self.labels[num]] = data[2][self.labels[num]]
+                file_kwargs_dict[self.labels[num]] = data[3][self.labels[num]]
+                prior_dict[self.labels[num]] = data[4][self.labels[num]]
+                weights_dict[self.labels[num]] = data[5][self.labels[num]]
+        self._samples = samples_dict
+        self._injection_data = injection_data_dict
+        self._file_version = file_version_dict
+        self._file_kwargs = file_kwargs_dict
+        self.add_to_prior_dict("samples", prior_dict)
+        if config is not None:
+            self._config = config
+        if labels is not None:
+            self.labels = labels
+            self.result_files = self.result_files * len(labels)
+            self.weights = {i: None for i in self.labels}
+        if approximant_dict != {}:
+            self._approximant = approximant_dict
+        if psd_dict != {}:
+            self._psd = psd_dict
+        if calibration_dict != {}:
+            self._calibration = calibration_dict
+        if weights_dict != {}:
+            self.weights = weights_dict
 
-        duplicates = dict(set(
-            (x, label_list.count(x)) for x in
-            filter(lambda rec: label_list.count(rec) > 1, label_list)))
-        for i in duplicates.keys():
-            for j in range(duplicates[i]):
-                ind = label_list.index(i)
-                label_list[ind] += "_%s" % (j)
-        if self.add_to_existing:
-            for num, i in enumerate(label_list):
-                if i in self.existing_labels:
-                    ind = label_list.index(i)
-                    label_list[ind] += "_%s" % (num)
-        return label_list
+    @property
+    def approximant(self):
+        return self._approximant
 
-
-class GWPostProcessing(pesummary.core.inputs.PostProcessing):
-    """Class to extract parameters from the results files
-
-    Parameters
-    ----------
-    inputs: argparser
-        The parser containing the command line arguments
-    colors: list, optional
-        colors that you would like to use to display each results file in the
-        webpage
-
-    Attributes
-    ----------
-    parameters: list
-        list of parameters that have posterior distributions for each results
-        file
-    injection_data: list
-        list of dictionaries that contain the injection parameters and their
-        injected value for each results file
-    samples: list
-        list of posterior samples for each parameter for each results file
-    maxL_samples: list
-        list of dictionaries that contain each parameter and their
-        corresponding maximum likelihood value for each results file
-    same_parameters: list
-        List of parameters that all results files have sampled over
-    """
-    def __init__(self, inputs, colors="default"):
-        self.inputs = inputs
-        self.webdir = inputs.webdir
-        self.baseurl = inputs.baseurl
-        self.result_files = inputs.result_files
-        self.custom_plotting = inputs.custom_plotting
-        self.dump = inputs.dump
-        self.email = inputs.email
-        self.user = inputs.user
-        self.host = inputs.host
-        self.config = inputs.config
-        self.existing = inputs.existing
-        self.add_to_existing = inputs.add_to_existing
-        self.labels = inputs.labels
-        self.hdf5 = inputs.hdf5
-        self.publication = inputs.publication
-        self.kde_plot = inputs.kde_plot
-        self.existing_meta_file = inputs.existing_meta_file
-        self.existing_labels = inputs.existing_labels
-        self.existing_version = inputs.existing_version
-        self.existing_metadata = inputs.existing_metadata
-        self.existing_parameters = inputs.existing_parameters
-        self.existing_samples = inputs.existing_samples
-        self.existing_meta_file = inputs.existing_meta_file
-        self.colors = colors
-        self.approximant = inputs.approximant
-        self.detectors = inputs.detectors
-        self.gracedb = inputs.gracedb
-        self.calibration = inputs.calibration
-        self.calibration_labels = None
-        self.sensitivity = inputs.sensitivity
-        self.psds = inputs.psds
-        self.gwdata = inputs.gwdata
-        self.psd_dict = False
-        self.psd_list = False
-        if isinstance(self.psds, dict):
-            self.psd_dict = True
+    @approximant.setter
+    def approximant(self, approximant):
+        if not hasattr(self, "_approximant"):
+            approximant_list = {i: {} for i in self.labels}
+            if approximant is None:
+                logger.warn(
+                    "No approximant passed. Waveform plots will not be "
+                    "generated"
+                )
+            elif approximant is not None:
+                if len(approximant) != len(self.labels):
+                    raise InputError(
+                        "Please pass an approximant for each result file"
+                    )
+                approximant_list = {
+                    i: j for i, j in zip(self.labels, approximant)
+                }
+            self._approximant = approximant_list
         else:
-            self.psd_list = True
-        self.calibration_dict = False
-        self.calibration_list = False
-        if isinstance(self.calibration, dict):
-            self.calibration_dict = True
+            for num, i in enumerate(self._approximant.keys()):
+                if self._approximant[i] == {}:
+                    if num == 0:
+                        logger.warn(
+                            "No approximant passed. Waveform plots will not be "
+                            "generated"
+                        )
+                    self._approximant[i] = None
+                    break
+
+    @property
+    def gracedb(self):
+        return self._gracedb
+
+    @gracedb.setter
+    def gracedb(self, gracedb):
+        self._gracedb = gracedb
+        if gracedb is not None:
+            first_letter = gracedb[0]
+            if first_letter != "G" and first_letter != "g" and first_letter != "S":
+                raise InputError(
+                    "Invalid GraceDB ID passed. The GraceDB ID must be of the "
+                    "form G0000 or S0000"
+                )
+
+    @property
+    def detectors(self):
+        return self._detectors
+
+    @detectors.setter
+    def detectors(self, detectors):
+        detector = {}
+        if not detectors:
+            for i in self.labels:
+                params = list(self.samples[i].keys())
+                individual_detectors = []
+                for j in params:
+                    if "optimal_snr" in j and j != "network_optimal_snr":
+                        det = j.split("_optimal_snr")[0]
+                        individual_detectors.append(det)
+                individual_detectors = sorted(
+                    [str(i) for i in individual_detectors])
+                if individual_detectors:
+                    detector[i] = "_".join(individual_detectors)
+                else:
+                    detector[i] = None
         else:
-            self.calibration_list = True
-        self.no_ligo_skymap = inputs.no_ligo_skymap
-        self.multi_threading_for_skymap = inputs.multi_threading_for_skymap
-        self.nsamples_for_skymap = inputs.nsamples_for_skymap
-
-        self.grab_data_map = {"existing_file": self._data_from_existing_file,
-                              "standard_format": self._data_from_standard_format}
-
-        self.parameters = inputs.parameters
-        self.samples = inputs.samples
-        self.injection_data = inputs.injection_data
-        self.file_versions = inputs.file_versions
-        self.file_kwargs = inputs.file_kwargs
-        self.maxL_samples = []
-        self.same_parameters = []
-        self.pepredicates_probs = []
+            detector = detectors
+        logger.debug("The detector network is %s" % (detector))
+        self._detectors = detector
 
     @property
-    def coherence_test(self):
-        return False
+    def calibration(self):
+        return self._calibration
+
+    @calibration.setter
+    def calibration(self, calibration):
+        if not hasattr(self, "._calibration"):
+            data = {i: {} for i in self.labels}
+            if calibration is not {}:
+                prior_data = self.get_psd_or_calibration_data(
+                    calibration, self.extract_calibration_data_from_file
+                )
+                self.add_to_prior_dict("calibration", prior_data)
+            for num, i in enumerate(self.result_files):
+                f = GWRead(i)
+                calibration_data = f.calibration_data_in_results_file
+                if calibration_data is None:
+                    data[self.labels[num]] = {
+                        None: None
+                    }
+                elif isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
+                    for num in range(len(calibration_data[0])):
+                        data[self.labels[num]] = {
+                            j: k for j, k in zip(
+                                calibration_data[1][num],
+                                calibration_data[0][num]
+                            )
+                        }
+                else:
+                    data[self.labels[num]] = {
+                        j: k for j, k in zip(
+                            calibration_data[1], calibration_data[0]
+                        )
+                    }
+            self._calibration = data
 
     @property
-    def maxL_samples(self):
-        return self._maxL_samples
+    def psd(self):
+        return self._psd
 
-    @maxL_samples.setter
-    def maxL_samples(self, maxL_samples):
-        key_data = self._key_data()
-        maxL_list = []
-        for num, i in enumerate(self.parameters):
-            dictionary = {j: key_data[num][j]["maxL"] for j in i}
-            if self.approximant:
-                dictionary["approximant"] = self.approximant[num]
-            maxL_list.append(dictionary)
-        self._maxL_samples = maxL_list
-
-    @property
-    def label_to_prepend_approximant(self):
-        labels = [i[len(self.gracedb) + 1:] if self.gracedb else i for i in
-                  self.labels]
-        prepend = [None] * len(self.approximant)
-        duplicates = dict(set(
-            (x, self.approximant.count(x)) for x in filter(
-                lambda rec: self.approximant.count(rec) > 1,
-                self.approximant)))
-        if len(duplicates.keys()) > 0:
-            for num, i in enumerate(self.approximant):
-                if i in duplicates.keys():
-                    prepend[num] = labels[num]
-        return prepend
+    @psd.setter
+    def psd(self, psd):
+        if not hasattr(self, "_psd"):
+            data = {i: {} for i in self.labels}
+            if psd != {}:
+                data = self.get_psd_or_calibration_data(
+                    psd, self.extract_psd_data_from_file
+                )
+            self._psd = data
 
     @property
-    def psd_labels(self):
-        if hasattr(self.inputs, "psd_labels"):
-            return self.inputs.psd_labels
-        elif self.psds:
-            return self._labels_from_dictionary(self.psds)
-        return None
+    def nsamples_for_skymap(self):
+        return self._nsamples_for_skymap
+
+    @nsamples_for_skymap.setter
+    def nsamples_for_skymap(self, nsamples_for_skymap):
+        self._nsamples_for_skymap = nsamples_for_skymap
+        if nsamples_for_skymap is not None:
+            self._nsamples_for_skymap = int(nsamples_for_skymap)
+            number_of_samples = [
+                data.number_of_samples for label, data in self.samples.items()
+            ]
+            if not all(i > self._nsamples_for_skymap for i in number_of_samples):
+                min_arg = np.argmin(number_of_samples)
+                raise InputError(
+                    "You have specified that you would like to use {} "
+                    "samples to generate the skymap but the file {} only "
+                    "has {} samples. Please reduce the number of samples "
+                    "you wish to use for the skymap production".format(
+                        self._nsamples_for_skymap, self.result_files[min_arg],
+                        number_of_samples[min_arg]
+                    )
+                )
 
     @property
-    def calibration_labels(self):
-        return self._calibration_labels
+    def gwdata(self):
+        return self._gwdata
 
-    @calibration_labels.setter
-    def calibration_labels(self, calibration_labels):
-        if hasattr(self.inputs, "calibration_labels"):
-            self._calibration_labels = self.inputs.calibration_labels
-        elif not calibration_labels and self.calibration:
-            self._calibration_labels = self._labels_from_dictionary(
-                self.calibration)
-        elif self.calibration:
-            self._calibration_labels = calibration_labels
-        else:
-            self._calibration_labels = None
+    @gwdata.setter
+    def gwdata(self, gwdata):
+        from pesummary.gw.file.formats.base_read import GWRead as StrainFile
 
-    @property
-    def psd_frequencies(self):
-        if hasattr(self.inputs, "psd_frequencies"):
-            return self.inputs.psd_frequencies
-        return self._setup_psd_calibration(
-            self.psds, self.psd_labels,
-            self._grab_frequencies_from_psd_data_file)
-
-    @property
-    def psd_strains(self):
-        if hasattr(self.inputs, "psd_strains"):
-            return self.inputs.psd_strains
-        return self._setup_psd_calibration(
-            self.psds, self.psd_labels,
-            self._grab_strains_from_psd_data_file)
-
-    @property
-    def calibration_envelopes(self):
-        if hasattr(self.inputs, "calibration_envelopes"):
-            return self.inputs.calibration_envelopes
-        try:
-            return self._setup_psd_calibration(
-                self.calibration, self.calibration_labels,
-                self._grab_calibration_data_from_data_file)
-        except Exception:
-            raise Exception("Failed to extract data from calibration files")
+        self._gwdata = gwdata
+        if gwdata is not None:
+            for i in gwdata.keys():
+                if not os.path.isfile(gwdata[i]):
+                    raise InputError(
+                        "The file {} does not exist. Please check the path to "
+                        "your strain file".format(gwdata[i])
+                    )
+            timeseries = StrainFile.load_strain_data(gwdata)
+            self._gwdata = timeseries
 
     @staticmethod
-    def _IFO_from_file_name(file):
-        """Return a guess of the IFO from the file name.
+    def extract_psd_data_from_file(file):
+        """Return the data stored in a psd file
+
+        Parameters
+        ----------
+        file: path
+            path to a file containing the psd data
+        """
+        if not os.path.isfile(file):
+            raise InputError("The file '{}' does not exist".format(file))
+        f = np.genfromtxt(file, skip_footer=2)
+        return f
+
+    @staticmethod
+    def extract_calibration_data_from_file(file):
+        """Return the data stored in a calibration file
+
+        Parameters
+        ----------
+        file: path
+            path to a file containing the calibration data
+        """
+        if not os.path.isfile(file):
+            raise InputError("The file '{}' does not exist".format(file))
+        f = np.genfromtxt(file)
+        return f
+
+    @staticmethod
+    def get_ifo_from_file_name(file):
+        """Return the IFO from the file name
 
         Parameters
         ----------
         file: str
-            the name of the file that you would like to make a guess for
+            path to the file
         """
         file_name = file.split("/")[-1]
         if any(j in file_name for j in ["H1", "_0", "IFO0"]):
@@ -734,113 +624,226 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
             ifo = file_name
         return ifo
 
-    def _setup_psd_calibration(self, data, labels, executable):
-        """Determine which result files correspond to which calibration/psd
-        files.
-
-        Parameters
-        ----------
-        data: list/dict
-            list/dict containing paths to calibration/psd files
-        labels: list
-            list of labels corresponding to the calibration/psd files
-        executable: PESummary object
-            executable that is used to extract the data from the calibration/psd
-            files
-        """
-        output = []
-        if not isinstance(data, dict):
-            for i in labels:
-                temp = [executable(i) for i in data]
-                output.append(temp)
-        else:
-            keys = list(data.keys())
-            if isinstance(data[keys[0]], list):
-                for idx in range(len(data[keys[0]])):
-                    temp = [executable(data[i][idx]) for i in list(keys)]
-                    output.append(temp)
-            else:
-                for i in labels:
-                    temp = [executable(data[i]) for i in list(keys)]
-                    output.append(temp)
-        return output
-
-    def _labels_from_dictionary(self, input):
-        """Return the labels from either a list of a dictionary input
+    def get_psd_or_calibration_data(self, input, executable):
+        """Return a dictionary containing the psd or calibration data
 
         Parameters
         ----------
         input: list/dict
-            list/dict containing paths to files
+            list/dict containing paths to calibration/psd files
+        executable: func
+            executable that is used to extract the data from the calibration/psd
+            files
         """
+        data = {}
+        if input == {} or input == []:
+            return data
         if isinstance(input, dict):
             keys = list(input.keys())
-            if isinstance(input[keys[0]], list):
-                return [[i for i in input.keys()] for j in range(len(self.labels))]
-            else:
-                return [[i for i in input.keys()] for j in input]
-        return [[self._IFO_from_file_name(i) for i in input] for j in
-                range(len(self.labels))]
+        if isinstance(input, dict) and isinstance(input[keys[0]], list):
+            if not all(len(input[i]) != len(self.labels) for i in list(keys)):
+                raise InputError(
+                    "Please ensure the number of calibration/psd files matches "
+                    "the number of result files passed"
+                )
+            for idx in range(len(input[keys[0]])):
+                data[self.labels[idx]] = {
+                    i: executable(input[i][idx]) for i in list(keys)
+                }
+        elif isinstance(input, dict):
+            for i in self.labels:
+                data[i] = {
+                    j: executable(input[j]) for j in list(input.keys())
+                }
+        elif isinstance(input, list):
+            for i in self.labels:
+                data[i] = {
+                    self.get_ifo_from_file_name(j): executable(j) for j in input
+                }
+        else:
+            raise InputError(
+                "Did not understand the psd/calibration input. Please use the "
+                "following format 'H1:path/to/file'"
+            )
+        return data
 
-    def _key_data(self):
-        """Grab the mean, median, maximum likelihood value and the standard
-        deviation of each posteiror distribution for each results file.
-        """
-        key_data_list = []
-        for num, i in enumerate(self.samples):
-            data = {}
-            likelihood_ind = self.parameters[num].index("log_likelihood")
-            logL = [j[likelihood_ind] for j in i]
-            for ind, j in enumerate(self.parameters[num]):
-                index = self.parameters[num].index("%s" % (j))
-                subset = [k[index] for k in i]
-                data[j] = {"mean": np.mean(subset),
-                           "median": np.median(subset),
-                           "std": np.std(subset)}
-                if np.max(logL) == 0:
-                    data[j]["maxL"] = float("nan")
-                else:
-                    data[j]["maxL"] = subset[logL.index(np.max(logL))]
-            key_data_list.append(data)
-        return key_data_list
 
-    def _grab_frequencies_from_psd_data_file(self, file):
-        """Return the frequencies stored in the psd data files
+class GWPostProcessing(PostProcessing):
+    """Super class to post process the input data
 
-        Parameters
-        ----------
-        file: str
-            path to the psd data file
-        """
-        fil = np.genfromtxt(file, skip_footer=1)
-        frequencies = fil.T[0].tolist()
-        return frequencies
+    Parameters
+    ----------
+    inputs: argparse.Namespace
+        Namespace object containing the command line options
+    colors: list, optional
+        colors that you wish to use to distinguish different result files
 
-    def _grab_strains_from_psd_data_file(self, file):
-        """Return the strains stored in the psd data files
+    Attributes
+    ----------
+    result_files: list
+        list of result files passed
+    compare_results: list
+        list of labels stored in the metafile that you wish to compare
+    add_to_existing: Bool
+        True if we are adding to an existing web directory
+    existing_samples: dict
+        dictionary of samples stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_injection_data: dict
+        dictionary of injection data stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_file_version: dict
+        dictionary of file versions stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_config: list
+        list of configuration files stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_labels: list
+        list of labels stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    user: str
+        the user who submitted the job
+    webdir: str
+        the directory to store the webpages, plots and metafile produced
+    baseurl: str
+        the base url of the webpages
+    labels: list
+        list of labels used to distinguish the result files
+    config: list
+        list of configuration files for each result file
+    injection_file: list
+        list of injection files for each result file
+    publication: Bool
+        if true, publication quality plots are generated. Default False
+    kde_plot: Bool
+        if true, kde plots are generated instead of histograms. Default False
+    samples: dict
+        dictionary of posterior samples stored in the result files
+    priors: dict
+        dictionary of prior samples stored in the result files
+    custom_plotting: list
+        list containing the directory and name of python file which contains
+        custom plotting functions. Default None
+    email: str
+        the email address of the user
+    dump: Bool
+        if True, all plots will be dumped onto a single html page. Default False
+    hdf5: Bool
+        if True, the metafile is stored in hdf5 format. Default False
+    approximant: dict
+        dictionary of approximants used in the analysis
+    gracedb: str
+        the gracedb ID for the event
+    detectors: list
+        the detector network used for each result file
+    calibration: dict
+        dictionary containing the posterior calibration envelopes for each IFO
+        for each result file
+    psd: dict
+        dictionary containing the psd used for each IFO for each result file
+    nsamples_for_skymap: int
+        the number of samples to use for the skymap
+    sensitivity: Bool
+        if True, the sky sensitivity for HL and HLV detector networks are also
+        plotted. Default False
+    no_ligo_skymap: Bool
+        if True, a skymap will not be generated with the ligo.skymap package.
+        Default False
+    multi_threading_for_skymap: Bool
+        if True, multi-threading will be used to speed up skymap generation
+    gwdata: dict
+        dictionary containing the strain timeseries used for each result file
+    maxL_samples: dict
+        dictionary containing the maximum likelihood values for each parameter
+        for each result file
+    same_parameters: list
+        list of parameters that are common in all result files
+    pepredicates_probs: dict
+        dictionary containing the source classification probabilities for each
+        result file
+    """
+    def __init__(self, inputs, colors="default"):
+        self.inputs = inputs
+        self.result_files = self.inputs.result_files
+        self.existing = self.inputs.existing
+        self.compare_results = self.inputs.compare_results
+        self.add_to_existing = False
+        if self.existing is not None:
+            self.add_to_existing = True
+            self.existing_metafile = self.inputs.existing_metafile
+            self.existing_samples = self.inputs.existing_samples
+            self.existing_injection_data = self.inputs.existing_injection_data
+            self.existing_file_version = self.inputs.existing_file_version
+            self.existing_file_kwargs = self.inputs.existing_file_kwargs
+            self.existing_priors = self.inputs.existing_priors
+            self.existing_config = self.inputs.existing_config
+            self.existing_labels = self.inputs.existing_labels
+            self.existing_approximant = self.inputs.existing_approximant
+            self.existing_psd = self.inputs.existing_psd
+            self.existing_calibration = self.inputs.existing_calibration
+        else:
+            self.existing_metafile = None
+            self.existing_labels = None
+            self.existing_samples = None
+            self.existing_file_version = None
+            self.existing_file_kwargs = None
+            self.existing_priors = None
+            self.existing_config = None
+            self.existing_injection_data = None
+            self.existing_approximant = None
+            self.existing_psd = None
+            self.existing_calibration = None
+        self.user = self.inputs.user
+        self.host = self.inputs.host
+        self.webdir = self.inputs.webdir
+        self.baseurl = self.inputs.baseurl
+        self.labels = self.inputs.labels
+        self.weights = self.inputs.weights
+        self.config = self.inputs.config
+        self.injection_file = self.inputs.injection_file
+        self.injection_data = self.inputs.injection_data
+        self.publication = self.inputs.publication
+        self.kde_plot = self.inputs.kde_plot
+        self.samples = self.inputs.samples
+        self.priors = self.inputs.priors
+        self.custom_plotting = self.inputs.custom_plotting
+        self.email = self.inputs.email
+        self.dump = self.inputs.dump
+        self.hdf5 = self.inputs.hdf5
+        self.file_version = self.inputs.file_version
+        self.file_kwargs = self.inputs.file_kwargs
+        self.palette = self.inputs.palette
+        self.approximant = self.inputs.approximant
+        self.gracedb = self.inputs.gracedb
+        self.detectors = self.inputs.detectors
+        self.calibration = self.inputs.calibration
+        self.psd = self.inputs.psd
+        self.nsamples_for_skymap = self.inputs.nsamples_for_skymap
+        self.sensitivity = self.inputs.sensitivity
+        self.no_ligo_skymap = self.inputs.no_ligo_skymap
+        self.multi_threading_for_skymap = self.inputs.multi_threading_for_skymap
+        self.gwdata = self.inputs.gwdata
+        self.colors = self.inputs.colors
+        self.include_prior = self.inputs.include_prior
+        self.maxL_samples = []
+        self.same_parameters = []
+        self.pepredicates_probs = []
 
-        Parameters
-        ----------
-        file: str
-            path to the psd data file
-        """
-        fil = np.genfromtxt(file, skip_footer=1)
-        strains = fil.T[1].tolist()
-        return strains
+    @property
+    def maxL_samples(self):
+        return self._maxL_samples
 
-    def _grab_calibration_data_from_data_file(self, file):
-        """Return the data stored in the calibration data file
-
-        Parameters
-        ----------
-        file: str
-            path to the calibration data file
-        """
-        try:
-            f = np.genfromtxt(file)
-            return f
-        except Exception:
-            return file
+    @maxL_samples.setter
+    def maxL_samples(self, maxL_samples):
+        key_data = self.grab_key_data_from_result_files()
+        maxL_samples = {
+            i: {
+                j: key_data[i][j]["maxL"] for j in key_data[i].keys()
+            } for i in key_data.keys()
+        }
+        for i in self.labels:
+            maxL_samples[i]["approximant"] = self.approximant[i]
+        self._maxL_samples = maxL_samples
 
     @property
     def pepredicates_probs(self):
@@ -848,23 +851,53 @@ class GWPostProcessing(pesummary.core.inputs.PostProcessing):
 
     @pepredicates_probs.setter
     def pepredicates_probs(self, pepredicates_probs):
-        classifications = []
+        classifications = {}
+        default_error = (
+            "Failed to generate source classification probabilities because {}"
+        )
 
-        for num, i in enumerate(self.result_files):
-            mydict = {}
+        for num, i in enumerate(self.labels):
             try:
                 from pesummary.gw.pepredicates import PEPredicates
                 from pesummary.utils.utils import RedirectLogger
 
                 with RedirectLogger("PEPredicates", level="DEBUG") as redirector:
-                    mydict["default"], mydict["population"] = \
-                        PEPredicates.classifications(
-                            self.samples[num], self.parameters[num])
+                    parameters = list(self.samples[i].keys())
+                    samples = [
+                        [
+                            self.samples[i][parameter][j] for parameter in
+                            parameters
+                        ] for j in range(len(self.samples[i][parameters[0]]))
+                    ]
+                    data = PEPredicates.classifications(samples, parameters)
+                classifications[i] = {
+                    "default": data[0],
+                    "population": data[1]
+                }
+            except ImportError:
+                logger.warn(
+                    default_error.format("'PEPredicates' is not installed")
+                )
+                classifications[i] = None
             except Exception as e:
                 logger.warn(
-                    "Failed to generate source classification probabilities "
-                    "for %s because of %s" % (i, e))
-                mydict["default"] = None
-                mydict["population"] = None
-            classifications.append(mydict)
+                    default_error.format("%s" % (e))
+                )
+                classifications[i] = None
         self._pepredicates_probs = classifications
+
+    def grab_key_data_from_result_files(self):
+        """Grab the mean, median, maxL and standard deviation for all
+        parameters for all each result file
+        """
+        key_data = {
+            i: {
+                j: {
+                    "mean": self.samples[i][j].average("mean"),
+                    "median": self.samples[i][j].average("median"),
+                    "std": self.samples[i][j].standard_deviation,
+                    "maxL": self.samples[i][j].maxL
+                } for j in self.samples[i].keys()
+            } for i in self.labels
+        }
+        return key_data

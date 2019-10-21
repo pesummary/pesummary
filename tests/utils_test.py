@@ -197,15 +197,11 @@ class TestUtils(object):
         opts = namespace({"gw": True, "psd": True})
         funcs = utils.functions(opts)
         assert funcs["input"] == pesummary.gw.inputs.GWInput
-        assert funcs["PlotGeneration"] == cli.summaryplots.GWPlotGeneration
-        assert funcs["WebpageGeneration"] == cli.summarypages.GWWebpageGeneration
         assert funcs["MetaFile"] == pesummary.gw.file.meta_file.GWMetaFile
 
         opts = namespace({"webdir": ".outdir"})
         funcs = utils.functions(opts)
         assert funcs["input"] == pesummary.core.inputs.Input
-        assert funcs["PlotGeneration"] == cli.summaryplots.PlotGeneration
-        assert funcs["WebpageGeneration"] == cli.summarypages.WebpageGeneration
         assert funcs["MetaFile"] == pesummary.core.file.meta_file.MetaFile
 
     def test_get_version_information(self):

@@ -1,6 +1,4 @@
-#! /usr/bin/env python
-
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
+# Copyright (C) 2019 Charlie Hoy <charlie.hoy@ligo.org>
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -15,82 +13,128 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import socket
 import os
-import shutil
+import socket
 from glob import glob
 
-import h5py
-
-from time import time
-
+import numpy as np
 import pesummary
-from pesummary.utils.utils import guess_url, logger
-from pesummary.utils import utils
 from pesummary.core.file.read import read as Read
-
-__doc__ == "Classes to handle the command line inputs"
+from pesummary.utils.exceptions import InputError
+from pesummary.utils.utils import SamplesDict, guess_url, logger, make_dir
+from pesummary import conf
 
 
 class Input(object):
-    """Super class to handle command line arguments
+    """Super class to handle the command line arguments
 
     Parameters
     ----------
-    parser: argparser
-        The parser containing the command line arguments
+    opts: argparse.Namespace
+        Namespace object containing the command line options
 
     Attributes
     ----------
-    user: str
-        The user who submitted the job
-    add_to_existing: Bool
-        Boolean to determine if you wish to add to a existing webpage
-    existing: str
-        Existing web directory
-    webdir: str
-        Directory to output all information
-    baseurl: str
-        The url path for the corresponding web directory
-    inj_file: List
-        List containing paths to the injection file
     result_files: list
-        List containing paths to the results files which are being analysed
+        list of result files passed
+    compare_results: list
+        list of labels stored in the metafile that you wish to compare
+    add_to_existing: Bool
+        True if we are adding to an existing web directory
+    existing_samples: dict
+        dictionary of samples stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_injection_data: dict
+        dictionary of injection data stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_file_version: dict
+        dictionary of file versions stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_config: list
+        list of configuration files stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_labels: list
+        list of labels stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    user: str
+        the user who submitted the job
+    webdir: str
+        the directory to store the webpages, plots and metafile produced
+    baseurl: str
+        the base url of the webpages
+    labels: list
+        list of labels used to distinguish the result files
     config: list
-        List containing paths to the configuration files used to generate each
-        results files
+        list of configuration files for each result file
+    injection_file: list
+        list of injection files for each result file
+    publication: Bool
+        if true, publication quality plots are generated. Default False
+    kde_plot: Bool
+        if true, kde plots are generated instead of histograms. Default False
+    samples: dict
+        dictionary of posterior samples stored in the result files
+    priors: dict
+        dictionary of prior samples stored in the result files
+    custom_plotting: list
+        list containing the directory and name of python file which contains
+        custom plotting functions. Default None
     email: str
-        The email address to notify when the job has completed
+        the email address of the user
     dump: Bool
-        Boolean to determine if you wish to produce a dumped html page layout
-    labels: str
-        A label for this summary page
+        if True, all plots will be dumped onto a single html page. Default False
+    hdf5: Bool
+        if True, the metafile is stored in hdf5 format. Default False
     """
     def __init__(self, opts):
         logger.info("Command line arguments: %s" % (opts))
         self.opts = opts
-        self.user = self.opts.user
-        self.existing = self.opts.existing
-        self.webdir = self.opts.webdir
-        self.publication = self.opts.publication
-        self.kde_plot = self.opts.kde_plot
-        self.make_directories()
-        self.baseurl = self.opts.baseurl
-        self.inj_file = self.opts.inj_file
-        self.config = self.opts.config
-        self.compare_results = self.opts.compare_results
         self.result_files = self.opts.samples
+        self.existing = self.opts.existing
+        self.compare_results = self.opts.compare_results
+        self.add_to_existing = False
+        if self.existing is not None:
+            self.add_to_existing = True
+            self.existing_metafile = None
+            self.existing_data = self.grab_data_from_metafile(
+                self.existing_metafile, self.existing,
+                compare=self.compare_results
+            )
+            self.existing_samples = self.existing_data[0]
+            self.existing_injection_data = self.existing_data[1]
+            self.existing_file_version = self.existing_data[2]
+            self.existing_file_kwargs = self.existing_data[3]
+            self.existing_priors = self.existing_data[4]
+            self.existing_config = self.existing_data[5]
+            self.existing_labels = self.existing_data[6]
+        else:
+            self.existing_labels = None
+            self.existing_samples = None
+            self.existing_file_version = None
+            self.existing_file_kwargs = None
+            self.existing_priors = None
+            self.existing_config = None
+            self.existing_injection_data = None
+        self.user = self.opts.user
+        self.webdir = self.opts.webdir
+        self.baseurl = self.opts.baseurl
+        self.labels = self.opts.labels
+        self.weights = {i: None for i in self.labels}
+        self.config = self.opts.config
+        self.injection_file = self.opts.inj_file
+        self.publication = self.opts.publication
+        self.make_directories()
+        self.kde_plot = self.opts.kde_plot
+        self.priors = None
+        self.samples = self.opts.samples
+        self.burnin = self.opts.burnin
         self.custom_plotting = self.opts.custom_plotting
         self.email = self.opts.email
-        self.add_to_existing = self.opts.add_to_existing
         self.dump = self.opts.dump
         self.hdf5 = self.opts.save_to_hdf5
-        self.existing_labels = []
-        self.existing_version = []
-        self.existing_metadata = []
-        self.existing_parameters = []
-        self.existing_samples = []
-        self.labels = self.opts.labels
+        self.palette = self.opts.palette
+        self.include_prior = self.opts.include_prior
+        self.colors = None
         self.copy_files()
 
     @staticmethod
@@ -114,446 +158,107 @@ class Input(object):
         else:
             return False
 
-    @property
-    def user(self):
-        return self._user
-
-    @user.setter
-    def user(self, user):
-        try:
-            self._user = os.environ["USER"]
-            logger.debug("The following user submitted the job %s"
-                         % (self._user))
-        except Exception as e:
-            logger.info("Failed to grab user information because %s. "
-                        "Default will be used (%s)" % (e, user))
-            self._user = user
-
-    @property
-    def host(self):
-        return socket.getfqdn()
-
-    @property
-    def existing(self):
-        return self._existing
-
-    @existing.setter
-    def existing(self, existing):
-        if not existing:
-            self._existing = None
-        else:
-            self._existing = os.path.abspath(existing)
-
-    @property
-    def webdir(self):
-        return self._webdir
-
-    @webdir.setter
-    def webdir(self, webdir):
-        if not webdir and not self.existing:
-            raise Exception("Please provide a web directory to store the "
-                            "webpages. If this is an existing directory "
-                            "pass this path under the --existing_webdir "
-                            "argument. If this is a new directory then "
-                            "pass this under the --webdir argument")
-        elif not webdir and self.existing:
-            if not os.path.isdir(self.existing):
-                raise Exception("The directory %s does not "
-                                "exist" % (self.existing))
-            entries = glob(self.existing + "/*")
-            if os.path.join(self.existing, "home.html") not in entries:
-                raise Exception("Please give the base directory of an "
-                                "existing output")
-            self._webdir = self.existing
-        if webdir:
-            if not os.path.isdir(webdir):
-                logger.debug("Given web directory does not exist. "
-                             "Creating it now")
-                utils.make_dir(webdir)
-            self._webdir = os.path.abspath(webdir)
-
-    @property
-    def baseurl(self):
-        return self._baseurl
-
-    @baseurl.setter
-    def baseurl(self, baseurl):
-        self._baseurl = baseurl
-        if not baseurl:
-            self._baseurl = guess_url(self.webdir, socket.getfqdn(), self.user)
-            logger.debug("No url is provided. The url %s will be "
-                         "used" % (self._baseurl))
-
-    @property
-    def inj_file(self):
-        return self._inj_file
-
-    @inj_file.setter
-    def inj_file(self, inj_file):
-        if inj_file:
-            self._inj_file = inj_file
-        else:
-            self._inj_file = None
-        self._inj_file = inj_file
-
-    @property
-    def result_files(self):
-        return self._result_files
-
-    @property
-    def custom_plotting(self):
-        return self._custom_plotting
-
-    @custom_plotting.setter
-    def custom_plotting(self, custom_plotting):
-        self._custom_plotting = None
-        if custom_plotting:
-            import importlib
-
-            path_to_python_file = os.path.dirname(custom_plotting)
-            python_file = os.path.splitext(os.path.basename(custom_plotting))[0]
-            if path_to_python_file != "":
-                import sys
-
-                sys.path.append(path_to_python_file)
-            try:
-                mod = importlib.import_module(python_file)
-                methods = getattr(mod, '__single_plots__', list()).copy()
-                methods += getattr(mod, '__comparison_plots__', list())
-                if len(methods) > 0:
-                    self._custom_plotting = [path_to_python_file, python_file]
-                else:
-                    logger.warn(
-                        "No __single_plots__ or __comparison_plots__ in %s. "
-                        "No custom plotting will be done. "
-                        "Please specify at least one of these in %s for future "
-                        "use" % (python_file, python_file))
-            except Exception as e:
-                logger.warn(
-                    "Failed to import %s because %s. No custom plotting will "
-                    "be done" % (python_file, e))
-
-    @property
-    def parameters(self):
-        return self._parameters
-
-    @property
-    def samples(self):
-        return self._samples
-
-    @property
-    def injection_data(self):
-        return self._injection_data
-
-    @property
-    def file_versions(self):
-        return self._file_versions
-
-    @property
-    def file_kwargs(self):
-        return self._file_kwargs
-
-    @result_files.setter
-    def result_files(self, samples):
-        if not samples:
-            raise Exception("Please provide a results file")
-        if self.inj_file and len(samples) != len(self.inj_file):
-            raise Exception("The number of results files does not match the "
-                            "number of injection files")
-        if not self.inj_file:
-            self.inj_file = [None] * len(samples)
-        self.grab_data_from_input_files(samples)
-
     @staticmethod
-    def grab_data_from_metafile(existing_file, webdir="./", compare=None):
-        """Grab the data from a metafile
+    def grab_data_from_metafile(existing_file, webdir, compare=None):
+        """Grab data from an existing PESummary metafile
 
         Parameters
         ----------
         existing_file: str
-            path to the existing PESummary metafile
+            path to the existing metafile
         webdir: str
-            path to the web directory
-        compare: list
-            list of labels for the events that you wish to compare
+            the directory to store the existing configuration file
+        compare: list, optional
+            list of labels for events stored in an existing metafile that you
+            wish to compare
         """
         f = Read(existing_file)
         labels = f.labels
-        indicies = [i for i in range(len(labels))]
+        indicies = np.arange(len(labels))
 
         if compare:
+            indicies = []
             for i in compare:
                 if i not in labels:
-                    raise Exception("Label %s does not exist in the metafile. "
-                                    "Please check that the labels for the runs "
-                                    "you wish to compare are correct." % (i))
-            indicies = [labels.index(i) for i in compare]
+                    raise InputError(
+                        "Label '%s' does not exist in the metafile. The list "
+                        "of available labels are %s" % (i, labels)
+                    )
+                indicies.append(labels.index(i))
+            labels = compare
 
-        p = [f.parameters[i] for i in indicies]
-        s = [f.samples[i] for i in indicies]
-
-        if f.injection_parameters == []:
-            inj_values = []
+        DataFrame = f.samples_dict
+        if f.injection_parameters != []:
+            inj_values = f.injection_dict
         else:
-            inj_values = [f.injection_parameters[i] for i in indicies]
+            inj_values = {
+                i: [float("nan")] * len(DataFrame[i]) for i in labels
+            }
+        for i in inj_values.keys():
+            for param in inj_values[i].keys():
+                if inj_values[i][param] == "nan":
+                    inj_values[i][param] = float("nan")
 
-        if inj_values == []:
-            for num, i in enumerate(p):
-                inj_values.append([float("nan")] * len(i))
+        if hasattr(f, "priors") and f.priors != {}:
+            priors = f.priors["samples"]
+        else:
+            priors = {label: {} for label in labels}
 
-        for idx, j in enumerate(inj_values):
-            for ind, k in enumerate(j):
-                if k == "nan":
-                    inj_values[idx][ind] = float("nan")
-
-        label = lambda i: f.labels[i]
-
-        if f.config is not None:
+        config = []
+        if f.config is not None and not all(i is None for i in f.config):
             config = []
-            for i in indicies:
+            for i in labels:
                 config_dir = os.path.join(webdir, "config")
-                f.write_config_to_file(label(i), outdir=config_dir)
+                f.write_config_to_file(i, outdir=config_dir)
                 config_file = os.path.join(
-                    config_dir, "{}_config.ini".format(label(i)))
+                    config_dir, "{}_config.ini".format(i)
+                )
                 config.append(config_file)
         else:
-            config = None
+            config.append(None)
 
-        labels = [labels[i] for i in indicies]
-        version = f.input_version
-        meta_data = f.extra_kwargs
-        return p, s, inj_values, labels, config, version, meta_data
-
-    def grab_data_from_input_files(self, samples):
-        """
-        """
-        result_file_list, version_list, kwarg_list = [], [], []
-        parameters_list, samples_list, injection_list = [], [], []
-        for num, i in enumerate(samples):
-            if not os.path.isfile(i):
-                raise Exception("File %s does not exist" % (i))
-            config = None
-            if self.config:
-                config = self.config[num]
-            if self.is_pesummary_metafile(i):
-                p, s, inj, labels, con, version, md = self.grab_data_from_metafile(
-                    i, webdir=self.webdir, compare=self.compare_results)
-                self.opts.labels = labels
-                self.config = con
-                for idx, j in enumerate(p):
-                    parameters_list.append(j)
-                    samples_list.append(s[idx])
-                    injection_list.append(inj[idx])
-                    result_file_list.append(i)
-                    version_list.append(version[idx])
-                    kwarg_list.append(md[idx])
-            else:
-                p, s, inj, version, kwargs = self.convert_to_standard_format(
-                    i, self.inj_file[num], config_file=config)
-                parameters_list.append(p)
-                samples_list.append(s)
-                injection_list.append(inj)
-                result_file_list.append(i)
-                version_list.append(version)
-                kwarg_list.append(kwargs)
-        self._result_files = result_file_list
-        self._parameters = parameters_list
-        self._samples = samples_list
-        self._injection_data = injection_list
-        self._file_versions = version_list
-        self._file_kwargs = kwarg_list
-
-    @property
-    def email(self):
-        return self._email
-
-    @email.setter
-    def email(self, email):
-        if email:
-            self._email = email
+        if f.weights is not None:
+            weights = {i: f.weights[i] for i in labels}
         else:
-            self._email = None
+            weights = {i: None for i in labels}
 
-    @property
-    def add_to_existing(self):
-        return self._add_to_existing
+        return [
+            DataFrame, inj_values,
+            {
+                i: j for i, j in zip(
+                    labels, [f.input_version[ind] for ind in indicies]
+                )
+            },
+            {
+                i: j for i, j in zip(
+                    labels, [f.extra_kwargs[ind] for ind in indicies]
+                )
+            }, {}, config, labels, weights
+        ]
 
-    @add_to_existing.setter
-    def add_to_existing(self, add_to_existing):
-        self._add_to_existing = False
-        if add_to_existing and not self.existing:
-            raise Exception("Please provide a current html page that you "
-                            "wish to add content to")
-        if not add_to_existing and self.existing:
-            logger.debug("Existing html page has been given without "
-                         "specifying --add_to_existing flag. This is probably "
-                         "and error and so manually adding --add_to_existing "
-                         "flag")
-            self._add_to_existing = True
-        if add_to_existing and self.existing:
-            if self.config:
-                for i in glob(os.path.join(self.existing, "config/*")):
-                    self.config.append(i)
-            self._add_to_existing = True
-
-    @property
-    def dump(self):
-        return self._dump
-
-    @dump.setter
-    def dump(self, dump):
-        self._dump = False
-        if dump:
-            self._dump = True
-
-    @property
-    def existing_labels(self):
-        return self._existing_labels
-
-    @existing_labels.setter
-    def existing_labels(self, existing_labels):
-        self._existing_labels = None
-        if self.add_to_existing:
-            from glob import glob
-
-            f = glob(self.existing + "/samples/posterior_samples*")
-            existing = Read(f[0])
-            self._existing_labels = existing.labels
-
-    @property
-    def existing_version(self):
-        return self._existing_version
-
-    @existing_version.setter
-    def existing_version(self, existing_version):
-        self._existing_version = None
-        if self.add_to_existing:
-            existing = Read(self.existing_meta_file)
-            self._existing_version = existing.input_version
-
-    @property
-    def existing_metadata(self):
-        return self._existing_metadata
-
-    @existing_metadata.setter
-    def existing_metadata(self, existing_metadata):
-        self._existing_metadata = None
-        if self.add_to_existing:
-            existing = Read(self.existing_meta_file)
-            self._existing_metadata = existing.extra_kwargs
-
-    @property
-    def existing_parameters(self):
-        return self._existing_parameters
-
-    @existing_parameters.setter
-    def existing_parameters(self, existing_parameters):
-        self._existing_parameters = None
-        if self.add_to_existing:
-            existing = Read(self.existing_meta_file)
-            self._existing_parameters = existing.parameters
-
-    @property
-    def existing_samples(self):
-        return self._existing_samples
-
-    @existing_samples.setter
-    def existing_samples(self, existing_samples):
-        self._existing_samples = None
-        if self.add_to_existing:
-            existing = Read(self.existing_meta_file)
-            self._existing_samples = existing.samples
-
-    @property
-    def existing_meta_file(self):
-        if self.add_to_existing:
-            from glob import glob
-
-            f = glob(self.existing + "/samples/posterior_samples*")
-            return f[0]
-        return None
-
-    @property
-    def labels(self):
-        return self._labels
-
-    @labels.setter
-    def labels(self, labels):
-        if labels is not None:
-            if len(labels) != len(self.result_files):
-                raise Exception(
-                    "The number of labels does not match the number of results "
-                    "files.")
-            duplicated = dict(set(
-                (x, labels.count(x)) for x in
-                filter(lambda rec: labels.count(rec) > 1, labels)))
-            if len(duplicated.keys()) >= 1:
-                raise Exception("Please give a unique combination of labels")
-            if self.add_to_existing:
-                for i in labels:
-                    if i in self.existing_labels:
-                        raise Exception(
-                            "The label '%s' already exists in the existing "
-                            "file. Please pass another unique label")
-            self._labels = labels
-        else:
-            self._labels = self._default_labels()
-        logger.debug("The label is %s" % (self._labels))
-
-    def make_directories(self):
-        """Make the directorys in the web directory to store all information.
-        """
-        dirs = ["samples", "plots", "js", "html", "css", "plots/corner",
-                "config"]
-
-        if self.publication:
-            dirs.append("plots/publication")
-        for i in dirs:
-            utils.make_dir(os.path.join(self.webdir, i))
-
-    def copy_files(self):
-        """Copy the relevant files to the web directory.
-        """
-        logger.info("Copying the files to %s" % (self.webdir))
-        path = pesummary.__file__[:-12]
-        scripts = glob(os.path.join(path, "core/js/*.js"))
-        for i in scripts:
-            shutil.copyfile(i, os.path.join(
-                self.webdir, "js", os.path.basename(i)))
-        scripts = glob(path + "/core/css/*.css")
-        for i in scripts:
-            shutil.copyfile(i, os.path.join(
-                self.webdir, "css", os.path.basename(i)))
-        if self.config:
-            for num, i in enumerate(self.config):
-                if self.webdir not in i:
-                    filename = "_".join([
-                        self.labels[num], "config.ini"])
-                    shutil.copyfile(i, os.path.join(
-                        self.webdir, "config", filename))
-
-    def convert_to_standard_format(self, results_file, injection_file=None,
-                                   config_file=None):
-        """Convert a results file to standard form.
+    @staticmethod
+    def grab_data_from_file(file, label, config=None, injection=None):
+        """Grab data from a result file containing posterior samples
 
         Parameters
         ----------
-        results_file: str
-            Path to the results file that you wish to convert to standard
-            form
-        injection_file: str, optional
-            Path to the injection file that was used in the analysis to
-            produce the results_file
-        config_file: str, optional
-            Path to the configuration file that was used
+        file: str
+            path to the result file
+        label: str
+            label that you wish to use for the result file
+        config: str, optional
+            path to a configuration file used in the analysis
+        injection: str, optional
+            path to an injection file used in the analysis
         """
-        f = Read(results_file)
-        if config_file:
-            f.add_fixed_parameters_from_config_file(config_file)
-        if injection_file:
-            f.add_injection_parameters_from_file(injection_file)
+        f = Read(file)
+        if config is not None:
+            f.add_fixed_parameters_from_config_file(config)
+        if injection:
+            f.add_injection_parameters_from_file(injection)
         parameters = f.parameters
-        samples = f.samples
+        samples = np.array(f.samples).T
+        DataFrame = {label: SamplesDict(parameters, samples)}
         kwargs = f.extra_kwargs
         if hasattr(f, "injection_parameters"):
             injection = f.injection_parameters
@@ -568,12 +273,551 @@ class Input(object):
             injection = {i: j for i, j in zip(
                 parameters, [float("nan")] * len(parameters))}
         version = f.input_version
-        return parameters, samples, injection, version, kwargs
+        if hasattr(f, "priors"):
+            priors = f.priors
+        else:
+            priors = None
+        if hasattr(f, "weights"):
+            weights = f.weights
+        else:
+            weights = None
+        return [
+            DataFrame, {label: injection}, {label: version}, {label: kwargs},
+            {label: priors}, {label: weights}
+        ]
 
-    def _default_labels(self):
-        """Return the default labels given your detector network.
+    @property
+    def existing(self):
+        return self._existing
+
+    @existing.setter
+    def existing(self, existing):
+        self._existing = existing
+        if existing is not None:
+            self._existing = os.path.abspath(existing)
+
+    @property
+    def existing_metafile(self):
+        return self._existing_metafile
+
+    @existing_metafile.setter
+    def existing_metafile(self, existing_metafile):
+        from glob import glob
+
+        self._existing_metafile = existing_metafile
+        if not os.path.isdir(os.path.join(self.existing, "samples")):
+            raise InputError("Please provide a valid existing directory")
+        files = glob(
+            os.path.join(self.existing, "samples", "posterior_samples*")
+        )
+        if len(files) == 0:
+            raise InputError(
+                "Unable to find an existing metafile in the existing webdir"
+            )
+        if len(files) > 1:
+            raise InputError(
+                "Multiple metafiles in the existing directory. Please either "
+                "run the `summarycombine_metafile` executable to combine the "
+                "meta files or simple remove the unwanted meta file"
+            )
+        self._existing_metafile = os.path.join(
+            self.existing, "samples", files[0]
+        )
+
+    @property
+    def user(self):
+        return self._user
+
+    @user.setter
+    def user(self, user):
+        try:
+            self._user = os.environ["USER"]
+            logger.info(
+                conf.overwrite.format("user", conf.user, self._user)
+            )
+        except Exception as e:
+            logger.info(
+                "Failed to grab user information because {}. Default will be "
+                "used".format(e)
+            )
+            self._user = user
+
+    @property
+    def host(self):
+        return socket.getfqdn()
+
+    @property
+    def webdir(self):
+        return self._webdir
+
+    @webdir.setter
+    def webdir(self, webdir):
+        cond1 = webdir is None or webdir == "None" or webdir == "none"
+        cond2 = (
+            self.existing is None or self.existing == "None"
+            or self.existing == "none"
+        )
+        if cond1 and cond2:
+            raise InputError(
+                "Please provide a web directory to store the webpages. If "
+                "you wish to add to an existing webpage, then pass the "
+                "existing web directory under the '--existing_webdir' command "
+                "line argument. If this is a new set of webpages, then pass "
+                "the web directory under the '--webdir' argument"
+            )
+        elif webdir is None and self.existing is not None:
+            if not os.path.isdir(self.existing):
+                raise InputError(
+                    "The directory {} does not exist".format(self.existing)
+                )
+            entries = glob(self.existing + "/*")
+            if os.path.join(self.existing, "home.html") not in entries:
+                raise InputError(
+                    "Please give the base directory of an existing output"
+                )
+            self._webdir = self.existing
+        else:
+            if not os.path.isdir(webdir):
+                logger.debug(
+                    "Given web directory does not exist. Creating it now"
+                )
+                make_dir(webdir)
+            self._webdir = os.path.abspath(webdir)
+
+    @property
+    def baseurl(self):
+        return self._baseurl
+
+    @baseurl.setter
+    def baseurl(self, baseurl):
+        self._baseurl = baseurl
+        if baseurl is None:
+            self._baseurl = guess_url(self.webdir, self.host, self.user)
+
+    @property
+    def labels(self):
+        return self._labels
+
+    @labels.setter
+    def labels(self, labels):
+        if labels is None:
+            labels = self.default_labels()
+        elif len(np.unique(labels)) != len(labels):
+            raise InputError(
+                "Please provide unique labels for each result file"
+            )
+        if self.add_to_existing:
+            for i in labels:
+                if i in self.existing_labels:
+                    raise InputError(
+                        "The label '%s' already exists in the existing "
+                        "metafile. Please pass another unique label"
+                    )
+        self._labels = labels
+
+    @property
+    def config(self):
+        return self._config
+
+    @config.setter
+    def config(self, config):
+        if config and len(config) != len(self.labels):
+            raise InputError(
+                "Please provide a configuration file for each label"
+            )
+        if config is None:
+            config = [None] * len(self.labels)
+        self._config = config
+
+    @property
+    def injection_file(self):
+        return self._injection_file
+
+    @injection_file.setter
+    def injection_file(self, injection_file):
+        if injection_file and len(injection_file) != len(self.labels):
+            if len(injection_file) == 1:
+                logger.info(
+                    "Only one injection file passed. Assuming the same "
+                    "injection for all {} result files".format(len(self.labels))
+                )
+            else:
+                raise InputError(
+                    "You have passed {} for {} result files. Please provide an "
+                    "injection file for each result file".format(
+                        len(self.injection_file), len(self.labels)
+                    )
+                )
+        if injection_file is None:
+            injection_file = [None] * len(self.labels)
+        self._injection_file = injection_file
+
+    @property
+    def injection_data(self):
+        return self._injection_data
+
+    @property
+    def file_version(self):
+        return self._file_version
+
+    @property
+    def file_kwargs(self):
+        return self._file_kwargs
+
+    @property
+    def kde_plot(self):
+        return self._kde_plot
+
+    @kde_plot.setter
+    def kde_plot(self, kde_plot):
+        self._kde_plot = kde_plot
+        if kde_plot != conf.kde_plot:
+            logger.info(
+                conf.overwrite.format("kde_plot", conf.kde_plot, kde_plot)
+            )
+
+    @property
+    def samples(self):
+        return self._samples
+
+    @samples.setter
+    def samples(self, samples):
+        if not samples:
+            raise InputError("Please provide a results file")
+        if len(samples) != len(self.labels):
+            logger.info(
+                "You have passed {} result files and {} labels. Setting "
+                "labels = {}".format(
+                    len(samples), len(self.labels), self.labels[:len(samples)]
+                )
+            )
+            self.labels = self.labels[:len(samples)]
+        samples_dict, injection_data_dict, prior_dict = {}, {}, {}
+        file_version_dict, file_kwargs_dict, weights_dict = {}, {}, {}
+        config, labels = None, None
+        for num, i in enumerate(samples):
+            if not os.path.isfile(i):
+                raise Exception("File %s does not exist" % (i))
+            data = self.grab_data_from_input(
+                i, self.labels[num], config=self.config[num],
+                injection=self.injection_file[num]
+            )
+            if len(data) > 6:
+                config = data[5]
+                labels = data[6]
+                weights_dict = data[7]
+                prior_dict = data[4]
+                for j in labels:
+                    samples_dict[j] = data[0][j]
+                    injection_data_dict[j] = data[1][j]
+                    file_version_dict[j] = data[2][j]
+                    file_kwargs_dict[j] = data[3][j]
+            else:
+                samples_dict[self.labels[num]] = data[0][self.labels[num]]
+                injection_data_dict[self.labels[num]] = data[1][self.labels[num]]
+                file_version_dict[self.labels[num]] = data[2][self.labels[num]]
+                file_kwargs_dict[self.labels[num]] = data[3][self.labels[num]]
+                prior_dict[self.labels[num]] = data[4][self.labels[num]]
+                weights_dict[self.labels[num]] = data[5][self.labels[num]]
+        self._samples = samples_dict
+        self._injection_data = injection_data_dict
+        self._file_version = file_version_dict
+        self._file_kwargs = file_kwargs_dict
+        self.add_to_prior_dict("samples", prior_dict)
+        if config is not None:
+            self._config = config
+        if labels is not None:
+            self.labels = labels
+            self.result_files = self.result_files * len(labels)
+            self.weights = {i: None for i in self.labels}
+        if weights_dict != {}:
+            self.weights = weights_dict
+
+    @property
+    def burnin(self):
+        return self._burnin
+
+    @burnin.setter
+    def burnin(self, burnin):
+        if burnin is not None:
+            samples_lengths = [
+                self.samples[key].number_of_samples for key in
+                self.samples.keys()
+            ]
+            if not all(int(burnin) < i for i in samples_lengths):
+                raise InputError(
+                    "The chosen burnin is larger than the number of samples. "
+                    "Please choose a value less than {}".format(
+                        np.max(samples_lengths)
+                    )
+                )
+            logger.info(
+                conf.overwrite.format("burnin", conf.burnin, burnin)
+            )
+            conf.burnin = burnin
+        for label in self.samples:
+            self.samples[label] = self.samples[label].discard_samples(
+                int(conf.burnin)
+            )
+
+    @property
+    def priors(self):
+        return self._priors
+
+    @priors.setter
+    def priors(self, priors):
+        self._priors = self.grab_priors_from_inputs(priors)
+
+    @property
+    def custom_plotting(self):
+        return self._custom_plotting
+
+    @custom_plotting.setter
+    def custom_plotting(self, custom_plotting):
+        self._custom_plotting = custom_plotting
+        if custom_plotting is not None:
+            import importlib
+
+            path_to_python_file = os.path.dirname(custom_plotting)
+            python_file = os.path.splitext(os.path.basename(custom_plotting))[0]
+            if path_to_python_file != "":
+                import sys
+
+                sys.path.append(path_to_python_file)
+            try:
+                mod = importlib.import_module(python_file)
+                methods = getattr(mod, "__single_plots__", list()).copy()
+                methods += getattr(mod, "__comparion_plots__", list()).copy()
+                if len(methods) > 0:
+                    self._custom_plotting = [path_to_python_file, python_file]
+                else:
+                    logger.warn(
+                        "No __single_plots__ or __comparison_plots__ in {}. "
+                        "If you wish to use custom plotting, then please "
+                        "add the variable :__single_plots__ and/or "
+                        "__comparison_plots__ in future. No custom plotting "
+                        "will be done"
+                    )
+            except Exception as e:
+                logger.warn(
+                    "Failed to import {} because {}. No custom plotting will "
+                    "be done".format(python_file, e)
+                )
+
+    def add_to_prior_dict(self, path, data):
+        """Add priors to the prior dictionary
+
+        Parameters
+        ----------
+        path: str
+            the location where you wish to store the prior. If this is inside
+            a nested dictionary, then please pass the path as 'a/b'
+        data: np.ndarray
+            the prior samples
         """
+        from functools import reduce
+
+        def build_tree(dictionary, path):
+            """Build a dictionary tree from a list of keys
+
+            Parameters
+            ----------
+            dictionary: dict
+                existing dictionary that you wish to add to
+            path: list
+                list of keys specifying location
+
+            Examples
+            --------
+            >>> dictionary = {"label": {"mass_1": [1,2,3,4,5,6]}}
+            >>> path = ["label", "mass_2"]
+            >>> build_tree(dictionary, path)
+            {"label": {"mass_1": [1,2,3,4,5,6], "mass_2": {}}}
+            """
+            if path != [] and path[0] not in dictionary.keys():
+                dictionary[path[0]] = {}
+            if path != []:
+                build_tree(dictionary[path[0]], path[1:])
+            return dictionary
+
+        def get_nested_dictionary(dictionary, path):
+            """Return a nested dictionary from a list specifying path
+
+            Parameters
+            ----------
+            dictionary: dict
+                existing dictionary that you wish to extract information from
+            path: list
+                list of keys specifying location
+
+            Examples
+            --------
+            >>> dictionary = {"label": {"mass_1": [1,2,3,4,5,6]}}
+            >>> path = ["label", "mass_1"]
+            >>> get_nested_dictionary(dictionary, path)
+            [1,2,3,4,5,6]
+            """
+            return reduce(dict.get, path, dictionary)
+
+        if "/" in path:
+            path = path.split("/")
+        else:
+            path = [path]
+        tree = build_tree(self._priors, path)
+        nested_dictionary = get_nested_dictionary(self._priors, path[:-1])
+        nested_dictionary[path[-1]] = data
+
+    def grab_priors_from_inputs(self, priors):
+        """
+        """
+        return {}
+
+    def grab_data_from_input(self, file, label, config=None, injection=None):
+        """Wrapper function for the grab_data_from_metafile and
+        grab_data_from_file functions
+
+        Parameters
+        ----------
+        file: str
+            path to the result file
+        label: str
+            label that you wish to use for the result file
+        config: str, optional
+            path to a configuration file used in the analysis
+        injection: str, optional
+            path to an injection file used in the analysis
+        """
+        if self.is_pesummary_metafile(file):
+            existing_data = self.grab_data_from_metafile(
+                file, self.webdir, compare=self.compare_results
+            )
+            return existing_data
+        else:
+            data = self.grab_data_from_file(
+                file, label, config=config, injection=injection
+            )
+            return data
+
+    @property
+    def email(self):
+        return self._email
+
+    @email.setter
+    def email(self, email):
+        if email is not None and "@" not in email:
+            raise InputError("Please provide a valid email address")
+        self._email = email
+
+    @property
+    def dump(self):
+        return self._dump
+
+    @dump.setter
+    def dump(self, dump):
+        self._dump = dump
+
+    @property
+    def palette(self):
+        return self._palette
+
+    @palette.setter
+    def palette(self, palette):
+        self._palette = palette
+        if palette is not conf.palette:
+            import seaborn
+
+            try:
+                seaborn.color_palette(palette, n_colors=1)
+                logger.info(
+                    conf.overwrite.format("palette", conf.palette, palette)
+                )
+                conf.palette = palette
+            except Exception as e:
+                raise InputError(
+                    "Unrecognised palette. Please choose from one of the "
+                    "following {}".format(
+                        ", ".join(seaborn.palettes.SEABORN_PALETTES.keys())
+                    )
+                )
+
+    @property
+    def include_prior(self):
+        return self._include_prior
+
+    @include_prior.setter
+    def include_prior(self, include_prior):
+        self._include_prior = include_prior
+        if include_prior != conf.include_prior:
+            conf.overwrite.format("prior", conf.include_prior, include_prior)
+            conf.include_prior = include_prior
+
+    @property
+    def colors(self):
+        return self._colors
+
+    @colors.setter
+    def colors(self, colors):
+        import seaborn
+
+        number = len(self.labels)
+        if self.existing:
+            number += len(self.existing_labels)
+        self._colors = seaborn.color_palette(
+            palette=conf.palette, n_colors=number
+        ).as_hex()
+
+    def make_directories(self):
+        """Make the directories to store the information
+        """
+        dirs = [
+            "samples", "plots", "js", "html", "css", "plots/corner", "config"
+        ]
+        if self.publication:
+            dirs.append("plots/publication")
+        for i in dirs:
+            if not os.path.isdir(i):
+                make_dir(os.path.join(self.webdir, i))
+
+    def copy_files(self):
+        """Copy the relevant file to the web directory
+        """
+        import shutil
+
+        path = pesummary.__file__[:-12]
+        scripts = glob(os.path.join(path, "core/js/*.js"))
+        for i in scripts:
+            shutil.copyfile(
+                i, os.path.join(
+                    self.webdir, "js", os.path.basename(i)
+                )
+            )
+        scripts = glob(path + "/core/css/*.css")
+        for i in scripts:
+            shutil.copyfile(
+                i, os.path.join(
+                    self.webdir, "css", os.path.basename(i)
+                )
+            )
+        if not all(i is None for i in self.config):
+            for num, i in enumerate(self.config):
+                if self.webdir not in i:
+                    filename = "_".join(
+                        [self.labels[num], "config.ini"]
+                    )
+                    shutil.copyfile(
+                        i, os.path.join(
+                            self.webdir, "config", filename
+                        )
+                    )
+
+    def default_labels(self):
+        """Return a list of default labels.
+        """
+        from time import time
+
         label_list = []
+        if self.result_files is None or len(self.result_files) == 0:
+            raise InputError("Please provide a results file")
         for num, i in enumerate(self.result_files):
             file_name = os.path.splitext(os.path.basename(i))[0]
             label_list.append("%s_%s" % (round(time()), file_name))
@@ -595,124 +839,118 @@ class Input(object):
 
 
 class PostProcessing(object):
-    """Class to extract parameters from the results files
+    """Super class to post process the input data
 
     Parameters
     ----------
-    inputs: argparser
-        The parser containing the command line arguments
+    inputs: argparse.Namespace
+        Namespace object containing the command line options
     colors: list, optional
-        colors that you would like to use to display each results file in the
-        webpage
+        colors that you wish to use to distinguish different result files
 
     Attributes
     ----------
-    parameters: list
-        list of parameters that have posterior distributions for each results
-        file
-    injection_data: list
-        list of dictionaries that contain the injection parameters and their
-        injected value for each results file
-    samples: list
-        list of posterior samples for each parameter for each results file
-    maxL_samples: list
-        list of dictionaries that contain each parameter and their
-        corresponding maximum likelihood value for each results file
-    same_parameters: list
-        List of parameters that all results files have sampled over
+    result_files: list
+        list of result files passed
+    compare_results: list
+        list of labels stored in the metafile that you wish to compare
+    add_to_existing: Bool
+        True if we are adding to an existing web directory
+    existing_samples: dict
+        dictionary of samples stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_injection_data: dict
+        dictionary of injection data stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_file_version: dict
+        dictionary of file versions stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_config: list
+        list of configuration files stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_labels: list
+        list of labels stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    user: str
+        the user who submitted the job
+    webdir: str
+        the directory to store the webpages, plots and metafile produced
+    baseurl: str
+        the base url of the webpages
+    labels: list
+        list of labels used to distinguish the result files
+    config: list
+        list of configuration files for each result file
+    injection_file: list
+        list of injection files for each result file
+    publication: Bool
+        if true, publication quality plots are generated. Default False
+    kde_plot: Bool
+        if true, kde plots are generated instead of histograms. Default False
+    samples: dict
+        dictionary of posterior samples stored in the result files
+    priors: dict
+        dictionary of prior samples stored in the result files
+    custom_plotting: list
+        list containing the directory and name of python file which contains
+        custom plotting functions. Default None
+    email: str
+        the email address of the user
+    dump: Bool
+        if True, all plots will be dumped onto a single html page. Default False
+    hdf5: Bool
+        if True, the metafile is stored in hdf5 format. Default False
+    same_parameters: dict
+        list of parameters that are common in all result files
     """
     def __init__(self, inputs, colors="default"):
         self.inputs = inputs
-        self.webdir = inputs.webdir
-        self.baseurl = inputs.baseurl
-        self.result_files = inputs.result_files
-        self.custom_plotting = inputs.custom_plotting
-        self.dump = inputs.dump
-        self.email = inputs.email
-        self.user = inputs.user
-        self.host = inputs.host
-        self.config = inputs.config
-        self.existing = inputs.existing
-        self.add_to_existing = inputs.add_to_existing
-        self.labels = inputs.labels
-        self.hdf5 = inputs.hdf5
-        self.publication = inputs.publication
-        self.kde_plot = inputs.kde_plot
-        self.existing_meta_file = inputs.existing_meta_file
-        self.existing_labels = inputs.existing_labels
-        self.existing_version = inputs.existing_version
-        self.existing_metadata = inputs.existing_metadata
-        self.existing_parameters = inputs.existing_parameters
-        self.existing_samples = inputs.existing_samples
-        self.colors = colors
-
-        self.grab_data_map = {"existing_file": self._data_from_existing_file,
-                              "standard_format": self._data_from_standard_format}
-
-        self.parameters = inputs.parameters
-        self.samples = inputs.samples
-        self.injection_data = inputs.injection_data
-        self.file_versions = inputs.file_versions
-        self.file_kwargs = inputs.file_kwargs
-        self.same_parameters = []
-
-    @property
-    def colors(self):
-        return self._colors
-
-    @colors.setter
-    def colors(self, colors):
-        if colors == "default":
-            self._colors = ["#0173B2", "#DE8F05", "#029E73", "#D55E00",
-                            "#CA9161", "#FBAFE4", "#949494", "#ECE133",
-                            "#56B4E9"]
+        self.result_files = self.inputs.result_files
+        self.existing = self.inputs.existing
+        self.compare_results = self.inputs.compare_results
+        self.add_to_existing = False
+        if self.existing is not None:
+            self.add_to_existing = True
+            self.existing_metafile = self.inputs.existing_metafile
+            self.existing_samples = self.inputs.existing_samples
+            self.existing_injection_data = self.inputs.existing_injection_data
+            self.existing_file_version = self.inputs.existing_file_version
+            self.existing_file_kwargs = self.inputs.existing_file_kwargs
+            self.existing_priors = self.inputs.existing_priors
+            self.existing_config = self.inputs.existing_config
+            self.existing_labels = self.inputs.existing_labels
         else:
-            if not len(self.result_files) <= len(colors):
-                raise Exception("Please give the same number of colors as "
-                                "results files")
-            self._colors = colors
-
-    def _data_from_standard_format(self, result_file, index):
-        """Extract data from a file of standard format
-
-        Parameters
-        ----------
-        result_file: str
-            path to the results file that you would like to extrct the
-            information from
-        index: int
-            the index of the results file in self.result_files
-        """
-        f = h5py.File(result_file, "r")
-        p = [i for i in f["posterior_samples/%s/parameter_names" % (
-            self.labels[index])]]
-        p = [i.decode("utf-8") for i in p]
-        s = [i for i in f["posterior_samples/%s/samples" % (
-            self.labels[index])]]
-        inj_p = [i for i in f["posterior_samples/%s/injection_parameters" % (
-            self.labels[index])]]
-        inj_p = [i.decode("utf-8") for i in inj_p]
-        inj_value = [i for i in f["posterior_samples/%s/injection_data" % (
-            self.labels[index])]]
-        injection = {i: j for i, j in zip(inj_p, inj_value)}
-        return p, s, injection
-
-    def _data_from_existing_file(self, result_file, index):
-        """Extract data from a file in the existing format
-
-        Parameters
-        ----------
-        result_file: str
-            path to the results file that you would like to extrct the
-            information from
-        index: int
-            the index of the results file in self.result_files
-        """
-        p = self.existing_parameters
-        s = self.existing_samples
-        injection = [
-            {i: float("nan") for i in j} for j in self.existing_parameters]
-        return p, s, injection
+            self.existing_metafile = None
+            self.existing_labels = None
+            self.existing_samples = None
+            self.existing_file_version = None
+            self.existing_file_kwargs = None
+            self.existing_priors = None
+            self.existing_config = None
+            self.existing_injection_data = None
+        self.user = self.inputs.user
+        self.host = self.inputs.host
+        self.webdir = self.inputs.webdir
+        self.baseurl = self.inputs.baseurl
+        self.labels = self.inputs.labels
+        self.weights = self.inputs.weights
+        self.config = self.inputs.config
+        self.injection_file = self.inputs.injection_file
+        self.injection_data = self.inputs.injection_data
+        self.publication = self.inputs.publication
+        self.kde_plot = self.inputs.kde_plot
+        self.samples = self.inputs.samples
+        self.priors = self.inputs.priors
+        self.custom_plotting = self.inputs.custom_plotting
+        self.email = self.inputs.email
+        self.dump = self.inputs.dump
+        self.hdf5 = self.inputs.hdf5
+        self.file_version = self.inputs.file_version
+        self.file_kwargs = self.inputs.file_kwargs
+        self.palette = self.inputs.palette
+        self.colors = self.inputs.colors
+        self.include_prior = self.inputs.include_prior
+        self.same_parameters = []
 
     @property
     def same_parameters(self):
@@ -720,5 +958,6 @@ class PostProcessing(object):
 
     @same_parameters.setter
     def same_parameters(self, same_parameters):
-        params = list(set.intersection(*[set(l) for l in self.parameters]))
+        parameters = [list(self.samples[key]) for key in self.samples.keys()]
+        params = list(set.intersection(*[set(l) for l in parameters]))
         self._same_parameters = params

@@ -1,9 +1,14 @@
 import os
 import shutil
 import glob
+import numpy as np
 
 from base import make_argparse, get_list_of_plots, get_list_of_files
+from base import read_result_file
 from pesummary.utils.utils import functions
+from cli.summarypages import WebpageGeneration
+from cli.summaryplots import PlotGeneration
+from pesummary.core.file.read import read
 
 
 class Base(object):
@@ -20,8 +25,8 @@ class Base(object):
         opts, inputs = make_argparse(
             gw=False, extension=extension, bilby=bilby)
         func = functions(opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs)
+        WebpageGeneration(inputs)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
@@ -33,6 +38,21 @@ class Base(object):
         assert all(i == j for i, j in zip(files, get_list_of_files(gw=False)))
         assert all(i in files for i in get_list_of_files(gw=False))
         assert all(i in get_list_of_files(gw=False) for i in files)
+        self.check_samples(extension, bilby=bilby)
+
+    def check_samples(self, extension, bilby=False):
+        """Check that the samples in the result file are consistent with the
+        inputs
+        """
+        from pesummary.core.file.read import read
+
+        initial_samples = read_result_file(extension=extension, bilby=bilby)
+        data = read("./.outdir/samples/posterior_samples.json")
+        samples = data.samples_dict
+        label = data.labels[0]
+        for param in initial_samples.keys():
+            for i, j in zip(initial_samples[param], samples[label][param]):
+                assert np.round(i, 8) == np.round(j, 8)
         
 
 class GWBase(Base):
@@ -48,22 +68,39 @@ class GWBase(Base):
         """
         opts, inputs = make_argparse(
             gw=True, extension=extension, bilby=bilby, lalinference=lalinference)
+        print(opts)
         func = functions(opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs, gw=True)
+        WebpageGeneration(inputs, gw=True)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
         plots = sorted(glob.glob("./.outdir/plots/*.png"))
         files = sorted(glob.glob("./.outdir/html/*.html"))
-        for i, j in zip(files, get_list_of_files(gw=True)):
-            print(i, j)
         assert all(i == j for i, j in zip(plots, get_list_of_plots(gw=True)))
         assert all(i in plots for i in get_list_of_plots(gw=True))
         assert all(i in get_list_of_plots(gw=True) for i in plots)
+        for i, j in zip(files, get_list_of_files(gw=True)):
+            print(i, j)
         assert all(i == j for i, j in zip(files, get_list_of_files(gw=True)))
         assert all(i in files for i in get_list_of_files(gw=True))
         assert all(i in get_list_of_files(gw=True) for i in files)
+        self.check_samples(extension, bilby=bilby, lalinference=lalinference)
+
+    def check_samples(self, extension, bilby=False, lalinference=False):
+        """Check that the samples in the result file are consistent with the
+        inputs
+        """
+        from pesummary.core.file.read import read
+
+        initial_samples = read_result_file(
+            extension=extension, bilby=bilby, lalinference=lalinference)
+        data = read("./.outdir/samples/posterior_samples.json")
+        samples = data.samples_dict
+        label = data.labels[0]
+        for param in initial_samples.keys():
+            for i, j in zip(initial_samples[param], samples[label][param]):
+                assert np.round(i, 8) == np.round(j, 8)
 
 
 class TestCoreDat(Base):
@@ -161,8 +198,8 @@ class TestCoreBilbyJson(Base):
         opts, inputs = make_argparse(
             gw=False, extension="json", bilby=True, number=2)
         func = functions(opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs)
+        WebpageGeneration(inputs)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
@@ -183,16 +220,16 @@ class TestCoreBilbyJson(Base):
         opts, inputs = make_argparse(
             gw=False, extension="json", bilby=True)
         func = functions(opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs)
+        WebpageGeneration(inputs)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
         opts, inputs = make_argparse(
             gw=False, extension="json", bilby=True, existing=True)
         func = functions(opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs)
+        WebpageGeneration(inputs)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
@@ -214,8 +251,8 @@ class TestCoreBilbyJson(Base):
         opts, inputs = make_argparse(
             gw=False, extension="json", bilby=True, number=2)
         func = functions(opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs)
+        WebpageGeneration(inputs)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
@@ -230,8 +267,8 @@ class TestCoreBilbyJson(Base):
         opts = parser.parse_args(default_args)
         func = functions(opts)
         inputs = func["input"](opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs)
+        WebpageGeneration(inputs)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
@@ -382,8 +419,8 @@ class TestGWLALInference(GWBase):
         opts, inputs = make_argparse(
             gw=True, extension="hdf5", lalinference=True, number=2)
         func = functions(opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs, gw=True)
+        WebpageGeneration(inputs, gw=True)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
@@ -393,8 +430,6 @@ class TestGWLALInference(GWBase):
                        gw=True, number=2)))
         assert all(i in plots for i in get_list_of_plots(gw=True, number=2))
         assert all(i in get_list_of_plots(gw=True, number=2) for i in plots)
-        for i, j in zip(files, get_list_of_files(gw=True, number=2)):
-            print(i, j)
         assert all(i == j for i, j in zip(files, get_list_of_files(
                        gw=True, number=2)))
         assert all(i in files for i in get_list_of_files(gw=True, number=2))
@@ -406,16 +441,16 @@ class TestGWLALInference(GWBase):
         opts, inputs = make_argparse(
             gw=True, extension="hdf5", lalinference=True)
         func = functions(opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs, gw=True)
+        WebpageGeneration(inputs, gw=True)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
         opts, inputs = make_argparse(
             gw=True, extension="hdf5", lalinference=True, existing=True)
         func = functions(opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs, gw=True)
+        WebpageGeneration(inputs, gw=True)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
@@ -436,8 +471,8 @@ class TestGWLALInference(GWBase):
         opts, inputs = make_argparse(
             gw=True, extension="hdf5", lalinference=True, number=2)
         func = functions(opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs, gw=True)
+        WebpageGeneration(inputs, gw=True)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
@@ -454,20 +489,16 @@ class TestGWLALInference(GWBase):
                         "--gw"]
         from pesummary.gw.file.read import read
         f = read(".outdir/samples/posterior_samples.json")
-        print(f.calibration)
-        print(f.psd)
         opts = parser.parse_args(default_args)
         inputs = func["input"](opts)
-        func["PlotGeneration"](inputs)
-        func["WebpageGeneration"](inputs)
+        PlotGeneration(inputs, gw=True)
+        WebpageGeneration(inputs, gw=True)
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
         plots_pesummary = sorted(glob.glob("./.outdir_pesummary/plots/*.png"))
         files_pesummary = sorted(glob.glob("./.outdir_pesummary/html/*.html"))
 
-        for i, j in zip(plots,plots_pesummary):
-            print(i.split("/")[-1], j.split("/")[-1])
         assert all(i.split("/")[-1] == j.split("/")[-1] for i, j in zip(
                    plots, plots_pesummary))
         assert all(i.split("/")[-1] == j.split("/")[-1] for i, j in zip(

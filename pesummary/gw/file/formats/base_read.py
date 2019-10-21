@@ -45,17 +45,37 @@ class GWRead(Read):
         """
         data = self.load_from_function(
             function, self.path_to_results_file, **kwargs)
-        self.data = list(self.translate_parameters(data[0], data[1]))
-        self.data.append(data[2])
-        self.injection_parameters = self.data[2]
-        if len(data) > 3:
-            self.input_version = data[3]
+        parameters, samples = self.translate_parameters(
+            data["parameters"], data["samples"]
+        )
+        self.data = {
+            "parameters": parameters, "samples": samples
+        }
+        self.data["injection"] = data["injection"]
+        self.injection_parameters = self.data["injection"]
+        if "version" in data.keys() and data["version"] is not None:
+            self.input_version = data["version"]
         else:
             self.input_version = "No version information found"
-        if len(data) > 4:
-            self.extra_kwargs = data[4]
+        if "kwargs" in data.keys():
+            self.extra_kwargs = data["kwargs"]
         else:
             self.extra_kwargs = {"sampler": {}, "meta_data": {}}
+            self.extra_kwargs["sampler"]["nsamples"] = len(self.data["samples"])
+        if "prior" in data.keys() and data["prior"] != {}:
+            priors = data["prior"]
+            parameters = list(priors.keys())
+            samples = [
+                [priors[parameter][i] for parameter in parameters] for i in
+                range(len(priors[parameters[0]]))
+            ]
+            self.priors = con._Conversion(parameters, samples, self.extra_kwargs)
+        if "weights" in self.data.keys():
+            self.weights = self.data["weights"]
+        else:
+            self.weights = self.check_for_weights(
+                self.data["parameters"], self.data["samples"]
+            )
 
     def _grab_injection_parameters_from_file(self, injection_file):
         extension = injection_file.split(".")[-1]
@@ -164,16 +184,16 @@ class GWRead(Read):
             data = [interp1d(log_frequencies[key], samp, kind="cubic",
                              fill_value=0, bounds_error=False)(np.log(fs)) for samp
                     in np.column_stack(amp_params[key])]
-            amplitude_upper = 1. - np.percentile(data, 90, axis=0)
-            amplitude_lower = 1. - np.percentile(data, 10, axis=0)
-            amplitude_median = 1. - np.median(data, axis=0)
+            amplitude_upper = 1. - np.mean(data, axis=0) + np.std(data, axis=0)
+            amplitude_lower = 1. - np.mean(data, axis=0) - np.std(data, axis=0)
+            amplitude_median = 1 - np.median(data, axis=0)
 
             data = [interp1d(log_frequencies[key], samp, kind="cubic",
                              fill_value=0, bounds_error=False)(np.log(fs)) for samp
                     in np.column_stack(phase_params[key])]
 
-            phase_upper = np.percentile(data, 90, axis=0)
-            phase_lower = np.percentile(data, 10, axis=0)
+            phase_upper = np.mean(data, axis=0) + np.std(data, axis=0)
+            phase_lower = np.mean(data, axis=0) - np.std(data, axis=0)
             phase_median = np.median(data, axis=0)
             total.append(np.column_stack(
                 [fs, amplitude_median, phase_median, amplitude_lower,

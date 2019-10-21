@@ -56,7 +56,9 @@ class Default(Read):
         parameters, samples = Read._grab_params_and_samples_from_dat_file(
             path)
         injection = {i: float("nan") for i in parameters}
-        return parameters, samples, injection
+        return {
+            "parameters": parameters, "samples": samples, "injection": injection
+        }
 
     @staticmethod
     def _grab_data_from_json_file(path):
@@ -65,7 +67,9 @@ class Default(Read):
         parameters, samples = Read._grab_params_and_samples_from_json_file(
             path)
         injection = {i: float("nan") for i in parameters}
-        return parameters, samples, injection
+        return {
+            "parameters": parameters, "samples": samples, "injection": injection
+        }
 
     @staticmethod
     def _grab_data_from_hdf5_file(path):
@@ -98,7 +102,9 @@ class Default(Read):
             if par == "logL":
                 parameters[num] = "log_likelihood"
         injection = {i: float("nan") for i in parameters}
-        return parameters, data, injection
+        return {
+            "parameters": parameters, "samples": data, "injection": injection
+        }
 
     @staticmethod
     def _grab_data_with_h5py(path):
@@ -128,7 +134,9 @@ class Default(Read):
                        i in f[path_to_samples]]
         f.close()
         injection = {i: float("nan") for i in parameters}
-        return parameters, samples, injection
+        return {
+            "parameters": parameters, "samples": samples, "injection": injection
+        }
 
     def add_marginalized_parameters_from_config_file(self, config_file):
         """Search the configuration file and add the marginalized parameters

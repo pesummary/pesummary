@@ -231,12 +231,18 @@ class LALInference(GWRead):
                 samples[num].append(
                     np.arccos(i[lalinference_names.index("costheta_jn")]))
         extra_kwargs = LALInference.grab_extra_kwargs(path)
+        extra_kwargs["sampler"]["nsamples"] = len(samples)
         try:
             version = f[path_to_samples].attrs["VERSION"].decode("utf-8")
-            return lalinference_names, samples, None, version, extra_kwargs
-        except Exception:
-            version = "No version information found"
-            return lalinference_names, samples, None, version, extra_kwargs
+        except Exception as e:
+            version = None
+        return {
+            "parameters": lalinference_names,
+            "samples": samples,
+            "injection": None,
+            "version": version,
+            "kwargs": extra_kwargs
+        }
 
     def add_injection_parameters_from_file(self, injection_file):
         """

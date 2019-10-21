@@ -1,8 +1,21 @@
 ## 0.1.9 [unreleased]
 
 ###Changed
+- Calibration Plot: Include both the prior and posterior
+- `summaryplots` executable: Made the `summaryplots` executable more versitle
+  such that individual 1d histograms/skymaps can be generated from command_line
 
 ###Added
+- Priors: Priors are extracted from bilby result files and stored in the
+  metafile
+- Argument `--include_prior` which if passed, add priors to the 1d_histogram
+  plots
+- Conversion is now done via the `pesummary.gw.file.conversion,_Conversion`
+  class
+- Argument `--palette` flag allows the user to choose a seaborn color palette to
+  distinguish result files
+- Samples are now internally handled via the `pesummary.utils.utils.SamplesDict`
+  class
 
 ## 0.1.8 [16/09/2019]
 
