@@ -17,9 +17,10 @@ import os
 import numpy as np
 
 import pesummary
+from pesummary import __version__
+from pesummary.utils.utils import logger, make_dir
 from pesummary.core.file.meta_file import _MetaFile
 from pesummary.gw.inputs import GWPostProcessing
-from pesummary.utils.utils import get_version_information, make_dir
 
 
 def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
@@ -157,7 +158,7 @@ class _GWMetaFile(_MetaFile):
                 ]
             }
             dictionary["version"][label] = [self.file_versions[label]]
-            dictionary["version"]["pesummary"] = [get_version_information()]
+            dictionary["version"]["pesummary"] = [__version__]
             dictionary["meta_data"][label] = self.file_kwargs[label]
 
             if self.config[num] is not None and not isinstance(self.config[num], dict):

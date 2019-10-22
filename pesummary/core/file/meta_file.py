@@ -18,8 +18,9 @@ import numpy as np
 import json
 
 import pesummary
+from pesummary import __version__
 from pesummary.core.inputs import PostProcessing
-from pesummary.utils.utils import get_version_information, make_dir, logger
+from pesummary.utils.utils import make_dir, logger
 from pesummary import conf
 
 
@@ -194,7 +195,7 @@ class _MetaFile(object):
             }
 
             dictionary["version"][label] = [self.file_versions[label]]
-            dictionary["version"]["pesummary"] = [get_version_information()]
+            dictionary["version"]["pesummary"] = [__version__]
             dictionary["meta_data"][label] = self.file_kwargs[label]
 
             if self.config[num] is not None and not isinstance(self.config[num], dict):

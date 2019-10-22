@@ -21,7 +21,8 @@ import numpy as np
 import pesummary
 import pesummary.cli as cli
 from pesummary.utils import utils
-from pesummary.utils.version_helper import GitInformation, PackageInformation
+from pesummary._version_helper import GitInformation, PackageInformation
+from pesummary._version_helper import get_version_information
 
 import pytest
 from testfixtures import LogCapture
@@ -207,7 +208,7 @@ class TestUtils(object):
     def test_get_version_information(self):
         """Test the get_version_information method
         """
-        assert isinstance(utils.get_version_information(), str)
+        assert isinstance(get_version_information(), str)
 
 
 def test_logger():
