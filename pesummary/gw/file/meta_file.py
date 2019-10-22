@@ -200,8 +200,6 @@ class GWMetaFile(GWPostProcessing):
     from the analysis
     """
     def __init__(self, inputs):
-        from pesummary.utils.utils import logger
-
         super(GWMetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
         if self.add_to_existing:
