@@ -79,7 +79,7 @@ def is_lalinference_file(path):
         path to the results file
     """
     import h5py
-    f = h5py.File(path)
+    f = h5py.File(path, 'r')
     keys = list(f.keys())
     f.close()
     if "lalinference" in keys:

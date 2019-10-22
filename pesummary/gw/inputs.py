@@ -295,9 +295,9 @@ class GWInput(Input):
         f = GWRead(file)
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
+        f.generate_all_posterior_samples()
         if injection:
             f.add_injection_parameters_from_file(injection)
-        f.generate_all_posterior_samples()
         parameters = f.parameters
         samples = np.array(f.samples).T
         DataFrame = {label: SamplesDict(parameters, samples)}

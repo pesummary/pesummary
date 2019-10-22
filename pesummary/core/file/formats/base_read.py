@@ -177,7 +177,7 @@ class Read():
             if c1 and c2:
                 return name
 
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         _path = f.visit(_find_name)
         f.close()
         return _path

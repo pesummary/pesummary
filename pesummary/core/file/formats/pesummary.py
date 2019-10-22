@@ -92,7 +92,7 @@ class PESummary(Read):
         """
         function = kwargs.get(
             "grab_data_from_dictionary", PESummary._grab_data_from_dictionary)
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         data = PESummary._convert_hdf5_to_dict(f)
         existing_data = function(data)
         f.close()

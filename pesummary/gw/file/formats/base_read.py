@@ -52,7 +52,6 @@ class GWRead(Read):
             "parameters": parameters, "samples": samples
         }
         self.data["injection"] = data["injection"]
-        self.injection_parameters = self.data["injection"]
         if "version" in data.keys() and data["version"] is not None:
             self.input_version = data["version"]
         else:
@@ -62,6 +61,12 @@ class GWRead(Read):
         else:
             self.extra_kwargs = {"sampler": {}, "meta_data": {}}
             self.extra_kwargs["sampler"]["nsamples"] = len(self.data["samples"])
+        if data["injection"] is not None:
+            self.injection_parameters = self.convert_injection_parameters(
+                data["injection"]
+            )
+        else:
+            self.injection_parameters = data["injection"]
         if "prior" in data.keys() and data["prior"] != {}:
             priors = data["prior"]
             parameters = list(priors.keys())
@@ -77,12 +82,39 @@ class GWRead(Read):
                 self.data["parameters"], self.data["samples"]
             )
 
+    def convert_injection_parameters(self, data):
+        """
+        """
+        import math
+
+        if all(math.isnan(data[i]) for i in data.keys()):
+            return data
+        parameters = list(data.keys())
+        samples = [[data[i] for i in parameters]]
+        if "waveform_approximant" in parameters:
+            ind = parameters.index("waveform_approximant")
+            parameters.remove(parameters[ind])
+            samples[0].remove(samples[0][ind])
+        nan_inds = []
+        for num, i in enumerate(parameters):
+            if math.isnan(samples[0][num]):
+                nan_inds.append(num)
+        for i in nan_inds[::-1]:
+            parameters.remove(parameters[i])
+            samples[0].remove(samples[0][i])
+        inj_samples = con._Conversion(parameters, samples, self.extra_kwargs)
+        for i in self.parameters:
+            if i not in list(inj_samples.keys()):
+                inj_samples[i] = float("nan")
+        return inj_samples
+
     def _grab_injection_parameters_from_file(self, injection_file):
         extension = injection_file.split(".")[-1]
         func_map = {"xml": self._grab_injection_data_from_xml_file,
                     "hdf5": self._grab_injection_data_from_hdf5_file,
                     "h5": self._grab_injection_data_from_hdf5_file}
-        return func_map[extension](injection_file)
+        data = func_map[extension](injection_file)
+        return self.convert_injection_parameters(data)
 
     def _grab_injection_data_from_xml_file(self, injection_file):
         """Grab the data from an xml injection file
@@ -102,7 +134,7 @@ class GWRead(Read):
         return {i: j for i, j in zip(self.parameters, injection_values)}
 
     def _return_all_injection_parameters(self, parameters, table):
-        """Return the full list of injection parameters
+        """Return tlhe full list of injection parameters
 
         Parameters
         ----------
@@ -123,6 +155,8 @@ class GWRead(Read):
             "spin_2x": lambda inj: inj.spin2x,
             "spin_2y": lambda inj: inj.spin2y,
             "spin_2z": lambda inj: inj.spin2z,
+            "iota": lambda inj: inj.inclination,
+            "psi": lambda inj: inj.polarization,
             "mass_ratio": lambda inj: con.q_from_m1_m2(
                 inj.mass1, inj.mass2),
             "symmetric_mass_ratio": lambda inj: con.eta_from_m1_m2(
