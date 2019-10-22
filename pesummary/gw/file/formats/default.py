@@ -125,7 +125,7 @@ class Default(GWRead):
 
         path_to_samples = GWRead.guess_path_to_samples(path)
 
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         if isinstance(f[path_to_samples], h5py._hl.group.Group):
             original_parameters = [i for i in f[path_to_samples].keys()]
             parameters = [

@@ -114,7 +114,7 @@ class Default(Read):
 
         path_to_samples = Read.guess_path_to_samples(path)
 
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         if isinstance(f[path_to_samples], h5py._hl.group.Group):
             parameters = [i for i in f[path_to_samples].keys()]
             n_samples = len(f[path_to_samples][parameters[0]])

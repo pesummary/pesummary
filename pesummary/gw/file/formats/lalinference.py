@@ -66,7 +66,7 @@ class LALInference(GWRead):
             if c1 and c2:
                 return name
 
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         _path = f.visit(_find_name)
         f.close()
         return _path
@@ -78,7 +78,7 @@ class LALInference(GWRead):
         Parameters
         ----------
         """
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         path_to_samples = GWRead.guess_path_to_samples(path)
         parameters = list(f[path_to_samples].dtype.names)
         f.close()
@@ -88,7 +88,7 @@ class LALInference(GWRead):
     def _samples_in_lalinference_file(path):
         """
         """
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         path_to_samples = GWRead.guess_path_to_samples(path)
         samples = [list(i) for i in f[path_to_samples]]
         return samples
@@ -97,7 +97,7 @@ class LALInference(GWRead):
     def _check_for_calibration_data_in_lalinference_file(path):
         """
         """
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         path_to_samples = GWRead.guess_path_to_samples(path)
         lalinference_names = list(f[path_to_samples].dtype.names)
         if any("_spcal_amp" in i for i in lalinference_names):
@@ -121,7 +121,7 @@ class LALInference(GWRead):
         kwargs = {"sampler": {}, "meta_data": {}}
         path_to_samples = GWRead.guess_path_to_samples(path)
         path_to_sampler = LALInference.guess_path_to_sampler(path)
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         attributes = dict(f[path_to_samples].attrs.items())
         if "flow" in list(attributes.keys()):
             kwargs["sampler"]["f_low"] = attributes["flow"]
@@ -179,7 +179,7 @@ class LALInference(GWRead):
     def _grab_calibration_data_from_lalinference_file(path):
         """
         """
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         path_to_samples = GWRead.guess_path_to_samples(path)
         attributes = f[path_to_samples].attrs.items()
         lalinference_names = list(f[path_to_samples].dtype.names)
@@ -215,7 +215,7 @@ class LALInference(GWRead):
     def _grab_data_from_lalinference_file(path):
         """
         """
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         path_to_samples = GWRead.guess_path_to_samples(path)
         lalinference_names = list(f[path_to_samples].dtype.names)
         samples = [list(i) for i in f[path_to_samples]]

@@ -497,11 +497,12 @@ class _WebpageGeneration(object):
                 self.samples[i].keys()
             )
             ordered_parameters = [i for j in ordered_parameters for i in j[1]]
+            popular_options = self.popular_options
+            popular_options.append({"all": ", ".join(ordered_parameters)})
             html_file.make_search_bar(
                 sidebar=[i for i in self.samples[i].keys()],
-                popular_options=self.popular_options.append(
-                    {"all": ", ".join(ordered_parameters)}
-                ), label=self.labels[num], code="combines"
+                popular_options=popular_options,
+                label=self.labels[num], code="combines"
             )
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()

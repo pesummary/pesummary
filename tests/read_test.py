@@ -76,8 +76,6 @@ class BaseRead(object):
             assert all(i in list(true.keys()) for i in self.parameters)
             assert all(i in self.parameters for i in list(true.keys()))
 
-            print(true)
-            print(self.result.injection_parameters)
             if not pesummary:
                 for i in true.keys():
                     if math.isnan(true[i]):
@@ -127,17 +125,21 @@ class GWBaseRead(BaseRead):
         true = {
             'mass_1': 53.333333, 'mass_2': 26.666667, 'a_1': float('nan'),
             'a_2': float('nan'), 'tilt_1': float('nan'), 'tilt_2': float('nan'),
-            'phi_jl': float('nan'), 'phi_12': float('nan'), 'psi': float('nan'),
+            'phi_jl': float('nan'), 'phi_12': float('nan'), 'psi': 1.75,
             'theta_jn': float('nan'), 'ra': float('nan'), 'dec': 1.949725,
             'luminosity_distance': 139.76429, 'geocent_time': float('nan'),
-            'log_likelihood': float('nan')}
+            'log_likelihood': float('nan'), 'mass_ratio': 0.5,
+            'total_mass': 80., 'chirp_mass': 32.446098,
+            'symmetric_mass_ratio': 0.222222,
+            'redshift': 0.030857, 'comoving_distance': 135.580633,
+            'mass_1_source': 51.736872, 'mass_2_source': 25.868437,
+            'total_mass_source': 77.605309, 'chirp_mass_source': 31.474869}
         assert all(i in list(true.keys()) for i in self.parameters)
-        assert all(i in self.parameters for i in list(true.keys()))
         for i in true.keys():
             if math.isnan(true[i]):
                 assert math.isnan(self.result.injection_parameters[i])
             else:
-                assert true[i] == self.result.injection_parameters[i]
+                assert np.round(true[i], 2) == np.round(self.result.injection_parameters[i], 2)
 
     def test_calibration_data_in_results_file(self):
         """Test the calibration_data_in_results_file property

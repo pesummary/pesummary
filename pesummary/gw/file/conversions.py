@@ -464,6 +464,7 @@ class _Conversion(object):
                 "as default")
             self.append_data([20.] * nsamples)
 
+    def _mtotal_from_m1_m2(self):
         self.parameters.append("total_mass")
         samples = self.specific_parameter_samples(["mass_1", "mass_2"])
         m_total = m_total_from_m1_m2(samples[0], samples[1])
@@ -472,7 +473,7 @@ class _Conversion(object):
     def _mchirp_from_m1_m2(self):
         self.parameters.append("chirp_mass")
         samples = self.specific_parameter_samples(["mass_1", "mass_2"])
-        chirp_mass = m_total_from_m1_m2(samples[0], samples[1])
+        chirp_mass = mchirp_from_m1_m2(samples[0], samples[1])
         self.append_data(chirp_mass)
 
     def _eta_from_m1_m2(self):
@@ -500,10 +501,10 @@ class _Conversion(object):
         self.append_data(phi_2)
 
     def _spin_angles(self):
-        spin_angles = ["theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12",
-                       "a_1", "a_2"]
+        angles = ["theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12",
+                  "a_1", "a_2"]
         spin_angles_to_calculate = [
-            i for i in spin_angles if i not in self.parameters]
+            i for i in angles if i not in self.parameters]
         for i in spin_angles_to_calculate:
             self.parameters.append(i)
         spin_components = [
@@ -517,17 +518,22 @@ class _Conversion(object):
             logger.warn("Phase it not given, we will be assuming that a "
                         "reference phase of 0 to calculate all the spin angles")
             samples.append([0] * len(samples[0]))
-        spin_angles = spin_angles(
+        angles = spin_angles(
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5], samples[6], samples[7], samples[8], samples[9],
             samples[10])
 
+        for i in spin_angles_to_calculate:
+            ind = spin_angles_to_calculate.index(i)
+            data = np.array([i[ind] for i in angles])
+            self.append_data(data)
+
     def _non_precessing_component_spins(self):
         spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
                  "spin_2z"]
-        spin_angles = ["a_1", "a_2", "theta_jn", "tilt_1", "tilt_2"]
-        if all(i in self.parameters for i in spin_angles):
-            samples = self.specific_parameter_samples(spin_angles)
+        angles = ["a_1", "a_2", "theta_jn", "tilt_1", "tilt_2"]
+        if all(i in self.parameters for i in angles):
+            samples = self.specific_parameter_samples(angles)
             cond1 = all(i in [0, np.pi] for i in samples[3])
             cond2 = all(i in [0, np.pi] for i in samples[4])
             spins_to_calculate = [
@@ -556,12 +562,12 @@ class _Conversion(object):
             i for i in spins if i not in self.parameters]
         for i in spins_to_calculate:
             self.parameters.append(i)
-        spin_angles = [
+        angles = [
             "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
             "mass_1", "mass_2", "reference_frequency"]
-        samples = self.specific_parameter_samples(spin_angles)
+        samples = self.specific_parameter_samples(angles)
         if "phase" in self.parameters:
-            spin_angles.append("phase")
+            angles.append("phase")
             samples.append(self.specific_parameter_samples("phase"))
         else:
             logger.warn("Phase it not given, we will be assuming that a "
@@ -584,10 +590,10 @@ class _Conversion(object):
             i for i in spins if i not in self.parameters]
         for i in spins_to_calculate:
             self.parameters.append(i)
-        spin_angles = [
+        angles = [
             "a_1", "a_2", "a_1_azimuthal", "a_1_polar", "a_2_azimuthal",
             "a_2_polar"]
-        samples = self.specific_parameter_samples(spin_angles)
+        samples = self.specific_parameter_samples(angles)
         spin_components = spin_angles_from_azimuthal_and_polar_angles(
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5])
@@ -758,9 +764,9 @@ class _Conversion(object):
     def generate_all_posterior_samples(self):
         logger.debug("Starting to generate all derived posteriors")
         spin_magnitudes = ["a_1", "a_2"]
-        spin_angles = ["phi_jl", "tilt_1", "tilt_2", "phi_12"]
+        angles = ["phi_jl", "tilt_1", "tilt_2", "phi_12"]
         if all(i in self.parameters for i in spin_magnitudes):
-            if all(i not in self.parameters for i in spin_angles):
+            if all(i not in self.parameters for i in angles):
                 self.parameters.append("tilt_1")
                 self.parameters.append("tilt_2")
                 for num, i in enumerate(self.samples):
@@ -800,10 +806,10 @@ class _Conversion(object):
         condition2 = "phi_1" in self.parameters and "phi_2" in self.parameters
         if condition1 and condition2:
             self._phi_12_from_phi1_phi2()
-        spin_angles = [
+        angles = [
             "a_1", "a_2", "a_1_azimuthal", "a_1_polar", "a_2_azimuthal",
             "a_2_polar"]
-        if all(i in self.parameters for i in spin_angles):
+        if all(i in self.parameters for i in angles):
             self._component_spins_from_azimuthal_and_polar_angles()
         if "mass_1" in self.parameters and "mass_2" in self.parameters:
             if "total_mass" not in self.parameters:
@@ -814,19 +820,19 @@ class _Conversion(object):
                 self._eta_from_m1_m2()
             spin_components = [
                 "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
-            spin_angles = ["a_1", "a_2", "tilt_1", "tilt_2", "theta_jn"]
+            angles = ["a_1", "a_2", "tilt_1", "tilt_2", "theta_jn"]
             if all(i in self.parameters for i in spin_components):
                 self._spin_angles()
-            if all(i in self.parameters for i in spin_angles):
+            if all(i in self.parameters for i in angles):
                 samples = self.specific_parameter_samples(["tilt_1", "tilt_2"])
                 cond1 = all(i in [0, np.pi] for i in samples[0])
                 cond2 = all(i in [0, np.pi] for i in samples[1])
                 if cond1 and cond1:
                     self._non_precessing_component_spins()
                 else:
-                    spin_angles = [
+                    angles = [
                         "phi_jl", "phi_12", "reference_frequency"]
-                    if all(i in self.parameters for i in spin_angles):
+                    if all(i in self.parameters for i in angles):
                         self._component_spins()
             cond1 = "spin_1x" in self.parameters and "spin_1y" in self.parameters
             if "phi_1" not in self.parameters and cond1:

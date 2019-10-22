@@ -111,7 +111,7 @@ def is_pesummary_hdf5_file(path):
         path to the results file
     """
     import h5py
-    f = h5py.File(path)
+    f = h5py.File(path, 'r')
     outcome = _check_pesummary_file(f)
     f.close()
     return outcome
