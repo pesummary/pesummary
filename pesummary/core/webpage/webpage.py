@@ -253,6 +253,8 @@ class page(Base):
                 "files")
         elif key == "Logging":
             self.add_content("Below is the output from the PESummary code")
+        elif key == "Notes":
+            self.add_content("Below are your custom notes")
         elif key == "classification":
             self.add_content(
                 "Below we look at the source probabilities and plots for the "

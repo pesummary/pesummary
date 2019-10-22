@@ -70,6 +70,8 @@ class _WebpageGeneration(object):
         dictionary of file kwargs stored in an existing metafile
     add_to_existing: Bool
         Bool to determine if you wish to add to an existing webpage
+    notes: str
+        notes that you wish to put on the webpages
     """
     def __init__(
         self, webdir=None, samples=None, labels=None, publication=None,
@@ -77,7 +79,8 @@ class _WebpageGeneration(object):
         file_versions=None, hdf5=None, colors=None, custom_plotting=None,
         existing_labels=None, existing_config=None, existing_file_version=None,
         existing_injection_data=None, existing_samples=None,
-        existing_metafile=None, existing_file_kwargs=None, add_to_existing=False
+        existing_metafile=None, existing_file_kwargs=None,
+        add_to_existing=False, notes=None
     ):
         self.webdir = webdir
         self.samples = samples
@@ -98,6 +101,7 @@ class _WebpageGeneration(object):
         self.existing_metafile = existing_metafile
         self.existing_file_kwargs = existing_file_kwargs
         self.add_to_existing = add_to_existing
+        self.notes = notes
         self.categories = self.default_categories()
         self.popular_options = self.default_popular_options()
         self.navbar = {
@@ -228,6 +232,8 @@ class _WebpageGeneration(object):
             links[1][1] += ["Comparison"]
         if self.publication:
             links.insert(2, "Publication")
+        if self.notes is not None:
+            links.append("Notes")
         return links
 
     def make_navbar_for_result_page(self):
@@ -256,7 +262,7 @@ class _WebpageGeneration(object):
         """Make a navbar for the comparison homepage
         """
         if self.same_parameters is not None:
-            links = ["1d Histograms", ["multiple"]]
+            links = ["1d Histograms", ["Multiple"]]
             for i in self.categorize_parameters(self.same_parameters):
                 links.append(i)
             final_links = [
@@ -333,6 +339,8 @@ class _WebpageGeneration(object):
         self.make_error_page()
         self.make_version_page()
         self.make_logging_page()
+        if self.notes is not None:
+            self.make_notes_page()
         self.generate_specific_javascript()
 
     def create_blank_html_pages(self, pages, stylesheets=[]):
@@ -446,7 +454,7 @@ class _WebpageGeneration(object):
             "{}_{}_{}".format(i, i, j) for i in self.labels for j in
             self.samples[i].keys()
         ]
-        pages += ["{}_{}_multiple".format(i, i) for i in self.labels]
+        pages += ["{}_{}_Multiple".format(i, i) for i in self.labels]
         self.create_blank_html_pages(pages)
         self._make_1d_histogram_pages(pages)
 
@@ -480,7 +488,7 @@ class _WebpageGeneration(object):
                 html_file.make_footer(user=self.user, rundir=self.webdir)
                 html_file.close()
             html_file = self.setup_page(
-                "{}_multiple".format(i), self.navbar["result_page"][i],
+                "{}_Multiple".format(i), self.navbar["result_page"][i],
                 i, title="{} Posteriors for multiple".format(i),
                 approximant=i, background_colour=self.colors[num]
             )
@@ -501,7 +509,7 @@ class _WebpageGeneration(object):
     def make_corner_pages(self):
         """Wrapper function for _make_corner_pages
         """
-        pages = ["{}_{}_corner".format(i, i) for i in self.labels]
+        pages = ["{}_{}_Corner".format(i, i) for i in self.labels]
         self.create_blank_html_pages(pages)
         self._make_corner_pages(pages)
 
@@ -515,7 +523,7 @@ class _WebpageGeneration(object):
         """
         for num, i in enumerate(self.labels):
             html_file = self.setup_page(
-                "{}_corner".format(i), self.navbar["result_page"][i], i,
+                "{}_Corner".format(i), self.navbar["result_page"][i], i,
                 title="{} Corner Plots".format(i), approximant=i,
                 background_colour=self.colors[num]
             )
@@ -530,7 +538,7 @@ class _WebpageGeneration(object):
     def make_config_pages(self):
         """Wrapper function for _make_config_pages
         """
-        pages = ["{}_{}_config".format(i, i) for i in self.labels]
+        pages = ["{}_{}_Config".format(i, i) for i in self.labels]
         self.create_blank_html_pages(pages, stylesheets=pages)
         self._make_config_pages(pages)
 
@@ -544,7 +552,7 @@ class _WebpageGeneration(object):
         """
         for num, i in enumerate(self.labels):
             html_file = self.setup_page(
-                "{}_config".format(i), self.navbar["result_page"][i], i,
+                "{}_Config".format(i), self.navbar["result_page"][i], i,
                 title="{} Configuration".format(i), approximant=i,
                 background_colour=self.colors[num]
             )
@@ -558,7 +566,7 @@ class _WebpageGeneration(object):
                 )
                 html_file.end_container()
                 with open(
-                    "{0:s}/css/{1:s}_{2:s}_config.css".format(
+                    "{0:s}/css/{1:s}_{2:s}_Config.css".format(
                         self.webdir, i, i
                     ), "w"
                 ) as f:
@@ -577,7 +585,7 @@ class _WebpageGeneration(object):
         """Wrapper function for _make_comparison_pages
         """
         pages = ["Comparison_{}".format(i) for i in self.same_parameters]
-        pages += ["Comparison_multiple"]
+        pages += ["Comparison_Multiple"]
         pages += ["Comparison"]
         self.create_blank_html_pages(pages)
         self._make_comparison_pages(pages)
@@ -677,7 +685,7 @@ class _WebpageGeneration(object):
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
         html_file = self.setup_page(
-            "Comparison_multiple", self.navbar["comparison"],
+            "Comparison_Multiple", self.navbar["comparison"],
             approximant="Comparison", title="Comparison Posteriors for multiple"
         )
         html_file.make_search_bar(
@@ -729,7 +737,7 @@ class _WebpageGeneration(object):
     def make_version_page(self):
         """Wrapper function for _make_version_page
         """
-        pages = ["version"]
+        pages = ["Version"]
         self.create_blank_html_pages(pages, stylesheets=pages)
         self._make_version_page(pages)
 
@@ -742,10 +750,10 @@ class _WebpageGeneration(object):
             list of pages that you wish to create
         """
         html_file = webpage.open_html(
-            web_dir=self.webdir, base_url=self.base_url, html_page="version"
+            web_dir=self.webdir, base_url=self.base_url, html_page="Version"
         )
         html_file = self.setup_page(
-            "version", self.navbar["home"], title="Version Information"
+            "Version", self.navbar["home"], title="Version Information"
         )
         html_file.make_banner(approximant="Version", key="Version")
         path = pesummary.__file__[:-12]
@@ -762,7 +770,7 @@ class _WebpageGeneration(object):
                 i, i, self.file_versions[i]) + contents
         html_file.make_container()
         styles = html_file.make_code_block(language='shell', contents=contents)
-        with open('{0:s}/css/version.css'.format(self.webdir), 'w') as f:
+        with open('{0:s}/css/Version.css'.format(self.webdir), 'w') as f:
             f.write(styles)
         html_file.end_container()
         html_file.make_footer(user=self.user, rundir=self.webdir)
@@ -771,7 +779,7 @@ class _WebpageGeneration(object):
     def make_logging_page(self):
         """Wrapper function for _make_logging_page
         """
-        pages = ["logging"]
+        pages = ["Logging"]
         self.create_blank_html_pages(pages, stylesheets=pages)
         self._make_logging_page(pages)
 
@@ -784,10 +792,10 @@ class _WebpageGeneration(object):
             list of pages that you wish to create
         """
         html_file = webpage.open_html(
-            web_dir=self.webdir, base_url=self.base_url, html_page="logging"
+            web_dir=self.webdir, base_url=self.base_url, html_page="Logging"
         )
         html_file = self.setup_page(
-            "logging", self.navbar["home"], title="Logger Information"
+            "Logging", self.navbar["home"], title="Logger Information"
         )
         html_file.make_banner(approximant="Logging", key="Logging")
         path = pesummary.__file__[:-12]
@@ -802,7 +810,39 @@ class _WebpageGeneration(object):
             contents = f.read()
         html_file.make_container()
         styles = html_file.make_code_block(language='shell', contents=contents)
-        with open('{0:s}/css/logging.css'.format(self.webdir), 'w') as f:
+        with open('{0:s}/css/Logging.css'.format(self.webdir), 'w') as f:
+            f.write(styles)
+        html_file.end_container()
+        html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.close()
+
+    def make_notes_page(self):
+        """Wrapper function for _make_notes_page
+        """
+        pages = ["Notes"]
+        self.create_blank_html_pages(pages, stylesheets=pages)
+        self._make_notes_page(pages)
+
+    def _make_notes_page(self, pages):
+        """Make a page to display the custom notes
+
+        Parameters
+        ----------
+        pages: list
+            list of pages that you wish to create
+        """
+        html_file = webpage.open_html(
+            web_dir=self.webdir, base_url=self.base_url, html_page="Notes"
+        )
+        html_file = self.setup_page(
+            "Notes", self.navbar["home"], title="Notes"
+        )
+        html_file.make_banner(approximant="Notes", key="Notes")
+        html_file.make_container()
+        styles = html_file.make_code_block(
+            language='shell', contents=self.notes
+        )
+        with open('{0:s}/css/Notes.css'.format(self.webdir), 'w') as f:
             f.write(styles)
         html_file.end_container()
         html_file.make_footer(user=self.user, rundir=self.webdir)

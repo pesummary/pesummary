@@ -105,6 +105,8 @@ class GWInput(Input):
         if True, multi-threading will be used to speed up skymap generation
     gwdata: dict
         dictionary containing the strain timeseries used for each result file
+    notes: str
+        notes that you wish to add to the webpages
     """
     def __init__(self, opts):
         logger.info("Command line arguments: %s" % (opts))
@@ -174,6 +176,7 @@ class GWInput(Input):
         self.no_ligo_skymap = self.opts.no_ligo_skymap
         self.multi_threading_for_skymap = self.opts.multi_threading_for_skymap
         self.gwdata = self.opts.gwdata
+        self.notes = self.opts.notes
         self.copy_files()
 
     @staticmethod
@@ -825,6 +828,7 @@ class GWPostProcessing(PostProcessing):
         self.gwdata = self.inputs.gwdata
         self.colors = self.inputs.colors
         self.include_prior = self.inputs.include_prior
+        self.notes = self.inputs.notes
         self.maxL_samples = []
         self.same_parameters = []
         self.pepredicates_probs = []

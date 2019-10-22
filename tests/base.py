@@ -44,19 +44,19 @@ def get_list_of_files(gw=False, number=1):
         label = "gw"
     html = [
         "./.outdir/html/error.html",
-        "./.outdir/html/version.html",
-        "./.outdir/html/logging.html"]
+        "./.outdir/html/Version.html",
+        "./.outdir/html/Logging.html"]
     for num in range(number):
         html.append("./.outdir/html/%s%s_%s%s.html" % (label, num, label, num))
-        html.append("./.outdir/html/%s%s_%s%s_corner.html" % (label, num, label, num))
-        html.append("./.outdir/html/%s%s_%s%s_config.html" % (label, num, label, num))
-        html.append("./.outdir/html/%s%s_%s%s_multiple.html" % (label, num, label, num))
+        html.append("./.outdir/html/%s%s_%s%s_Corner.html" % (label, num, label, num))
+        html.append("./.outdir/html/%s%s_%s%s_Config.html" % (label, num, label, num))
+        html.append("./.outdir/html/%s%s_%s%s_Multiple.html" % (label, num, label, num))
         for j in parameters:
             html.append("./.outdir/html/%s%s_%s%s_%s.html" % (label, num, label, num, j))
 
     if number > 1:
         html.append("./.outdir/html/Comparison.html")
-        html.append("./.outdir/html/Comparison_multiple.html")
+        html.append("./.outdir/html/Comparison_Multiple.html")
         for j in parameters:
             if j != "classification":
                 html.append("./.outdir/html/Comparison_%s.html" % (j))

@@ -110,7 +110,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         file_kwargs=None, existing_labels=None, existing_config=None,
         existing_file_version=None, existing_injection_data=None,
         existing_samples=None, existing_metafile=None, add_to_existing=False,
-        existing_file_kwargs=None, result_files=None
+        existing_file_kwargs=None, result_files=None, notes=None
     ):
         self.pepredicates_probs = pepredicates_probs
         self.gracedb = gracedb
@@ -132,7 +132,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             existing_samples=existing_samples,
             existing_metafile=existing_metafile,
             existing_file_kwargs=existing_file_kwargs,
-            add_to_existing=add_to_existing,
+            add_to_existing=add_to_existing, notes=notes
         )
 
     def categorize_parameters(self, parameters):
@@ -218,6 +218,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.make_error_page()
         self.make_version_page()
         self.make_logging_page()
+        if self.notes is not None:
+            self.make_notes_page()
         self.generate_specific_javascript()
 
     def _make_home_pages(self, pages):
@@ -382,7 +384,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         """
         for num, i in enumerate(self.labels):
             html_file = self.setup_page(
-                "{}_corner".format(i), self.navbar["result_page"][i], i,
+                "{}_Corner".format(i), self.navbar["result_page"][i], i,
                 title="{} Corner Plots".format(i), approximant=i,
                 background_colour=self.colors[num]
             )
@@ -515,7 +517,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
         html_file = self.setup_page(
-            "Comparison_multiple", self.navbar["comparison"],
+            "Comparison_Multiple", self.navbar["comparison"],
             approximant="Comparison", title="Comparison Posteriors for multiple"
         )
         html_file.make_search_bar(
@@ -611,7 +613,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         general_cli = "%s --samples {}" % (executable)
         for num, label in enumerate(self.labels):
             html_file = self.setup_page(
-                "{}_classification".format(label),
+                "{}_Classification".format(label),
                 self.navbar["result_page"][label], label,
                 title="{} Classification".format(label),
                 background_colour=self.colors[num], approximant=label

@@ -85,6 +85,8 @@ class Input(object):
         if True, all plots will be dumped onto a single html page. Default False
     hdf5: Bool
         if True, the metafile is stored in hdf5 format. Default False
+    notes: str
+        notes that you wish to add to the webpages
     """
     def __init__(self, opts):
         logger.info("Command line arguments: %s" % (opts))
@@ -135,6 +137,7 @@ class Input(object):
         self.palette = self.opts.palette
         self.include_prior = self.opts.include_prior
         self.colors = None
+        self.notes = self.opts.notes
         self.copy_files()
 
     @staticmethod
@@ -766,6 +769,27 @@ class Input(object):
             palette=conf.palette, n_colors=number
         ).as_hex()
 
+    @property
+    def notes(self):
+        return self._notes
+
+    @notes.setter
+    def notes(self, notes):
+        self._notes = notes
+        if notes is not None:
+            if not os.path.isfile(notes):
+                raise InputError(
+                    "No such file or directory called {}".format(notes)
+                )
+            try:
+                with open(notes, "r") as f:
+                    self._notes = f.read()
+            except Exception as e:
+                logger.warn(
+                    "Failed to read {}. Unable to put notes on "
+                    "summarypages".format(notes)
+                )
+
     def make_directories(self):
         """Make the directories to store the information
         """
@@ -950,6 +974,7 @@ class PostProcessing(object):
         self.palette = self.inputs.palette
         self.colors = self.inputs.colors
         self.include_prior = self.inputs.include_prior
+        self.notes = self.inputs.notes
         self.same_parameters = []
 
     @property

@@ -174,4 +174,7 @@ def command_line():
     parser.add_argument("--include_prior", action="store_true",
                         help="Plot the prior on the same plot as the posterior",
                         default=False)
+    parser.add_argument("--notes", dest="notes",
+                        help=("Single file containing notes that you wish to "
+                              "put on summarypages"), default=None)
     return parser
