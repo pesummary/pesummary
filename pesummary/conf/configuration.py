@@ -18,3 +18,12 @@ delimiter = "\t"
 
 # Plot 1d kdes rather than 1d histograms
 kde_plot = False
+
+# color for non-comparison plots
+color = 'b'
+
+# color for injection lines
+injection_color = 'orange'
+
+# color for prior histograms
+prior_color = 'k'

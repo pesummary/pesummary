@@ -161,7 +161,7 @@ class _GWMetaFile(_MetaFile):
             dictionary["version"]["pesummary"] = [__version__]
             dictionary["meta_data"][label] = self.file_kwargs[label]
 
-            if self.config[num] is not None and not isinstance(self.config[num], dict):
+            if self.config != {} and self.config[num] is not None and not isinstance(self.config[num], dict):
                 config = self._grab_config_data_from_data_file(self.config[num])
                 dictionary["config_file"][label] = config
             elif self.config[num] is not None:

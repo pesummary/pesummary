@@ -177,4 +177,6 @@ def command_line():
     parser.add_argument("--notes", dest="notes",
                         help=("Single file containing notes that you wish to "
                               "put on summarypages"), default=None)
+    parser.add_argument("--prior_file", dest="prior_file",
+                        help="Prior samples file", nargs='+', default=None)
     return parser

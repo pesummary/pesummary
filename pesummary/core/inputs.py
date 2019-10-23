@@ -127,7 +127,7 @@ class Input(object):
         self.publication = self.opts.publication
         self.make_directories()
         self.kde_plot = self.opts.kde_plot
-        self.priors = None
+        self.priors = self.opts.prior_file
         self.samples = self.opts.samples
         self.burnin = self.opts.burnin
         self.custom_plotting = self.opts.custom_plotting
@@ -218,7 +218,8 @@ class Input(object):
                 )
                 config.append(config_file)
         else:
-            config.append(None)
+            for i in labels:
+                config.append(None)
 
         if f.weights is not None:
             weights = {i: f.weights[i] for i in labels}
@@ -526,7 +527,30 @@ class Input(object):
         self._injection_data = injection_data_dict
         self._file_version = file_version_dict
         self._file_kwargs = file_kwargs_dict
-        self.add_to_prior_dict("samples", prior_dict)
+        if labels is not None:
+            labels_iter = labels
+        else:
+            labels_iter = self.labels
+        for i in labels_iter:
+            if prior_dict != {} and prior_dict[i] != []:
+                if self.priors != {} and i in self.priors["samples"].keys():
+                    logger.warn(
+                        "Replacing the prior file for {} with the prior "
+                        "samples stored in the result file".format(i)
+                    )
+                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
+                elif self.priors != {}:
+                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
+                elif self.priors == {}:
+                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
+            elif prior_dict != {}:
+                if self.priors != {} and i not in self.priors["samples"].keys():
+                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
+                elif self.priors == {}:
+                    self.add_to_prior_dict("samples/" + i, [])
+            else:
+                if self.priors == {}:
+                    self.add_to_prior_dict("samples/" + i, [])
         if config is not None:
             self._config = config
         if labels is not None:
@@ -673,7 +697,32 @@ class Input(object):
     def grab_priors_from_inputs(self, priors):
         """
         """
-        return {}
+        from pesummary.core.file.read import read as Read
+
+        prior_dict = {}
+        if priors is not None:
+            prior_dict = {"samples": {}}
+            for i in priors:
+                if not os.path.isfile(i):
+                    raise InputError("The file {} does not exist".format(i))
+            if len(priors) != len(self.labels) and len(priors) == 1:
+                logger.warn(
+                    "You have only specified a single prior file for {} result "
+                    "files. Assuming the same prior file for all result "
+                    "files".format(len(self.labels))
+                )
+                data = Read(priors[0])
+                for i in self.labels:
+                    prior_dict["samples"][i] = data.samples_dict
+            elif len(priors) != len(self.labels):
+                raise InputError(
+                    "Please provide a prior file for each result file"
+                )
+            else:
+                for num, i in enumerate(priors):
+                    data = Read(priors[0])
+                    prior_dict["samples"][self.labels[num]] = data.samples_dict
+        return prior_dict
 
     def grab_data_from_input(self, file, label, config=None, injection=None):
         """Wrapper function for the grab_data_from_metafile and

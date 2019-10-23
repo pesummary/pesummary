@@ -14,6 +14,7 @@
 
 from pesummary.utils.utils import logger
 from pesummary.core.plots.kde import kdeplot
+from pesummary import conf
 
 import matplotlib
 matplotlib.use("Agg")
@@ -44,7 +45,8 @@ def _autocorrelation_plot(param, samples):
     N = np.array(samples).shape[0]
     acf = acf[0:N]
     fig = plt.figure()
-    plt.plot(acf / acf[0], linestyle=' ', marker='o', markersize=0.5)
+    plt.plot(acf / acf[0], linestyle=' ', marker='o', markersize=0.5,
+             color=conf.color)
     plt.ticklabel_format(axis="x", style="plain")
     plt.xlabel("lag", fontsize=16)
     plt.ylabel("ACF", fontsize=16)
@@ -72,7 +74,7 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
     fig = plt.figure()
     n_samples = len(samples)
     plt.plot(range(n_samples), samples, linestyle=' ', marker='o',
-             markersize=0.5)
+             markersize=0.5, color=conf.color)
     plt.ticklabel_format(axis="x", style="plain")
     plt.xlabel("samples", fontsize=16)
     plt.ylabel(latex_label, fontsize=16)
@@ -107,7 +109,8 @@ def _1d_cdf_plot(param, samples, latex_label):
     lower = np.round(median - lower_percentile, 2)
     median = np.round(median, 2)
     plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
-    plt.plot(sorted_samples, np.linspace(0, 1, len(sorted_samples)), color='b')
+    plt.plot(sorted_samples, np.linspace(0, 1, len(sorted_samples)),
+             color=conf.color)
     plt.grid(b=True)
     plt.ylim([0, 1.05])
     plt.tight_layout()
@@ -175,32 +178,33 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
     logger.debug("Generating the 1d histogram plot for %s" % (param))
     fig = plt.figure()
     if np.ptp(samples) == 0:
-        plt.axvline(samples[0], color='b')
+        plt.axvline(samples[0], color=conf.color)
         xlims = plt.gca().get_xlim()
     elif not kde:
-        plt.hist(samples, histtype="step", bins=50, color='b', density=True,
-                 linewidth=1.75, weights=weights)
+        plt.hist(samples, histtype="step", bins=50, color=conf.color,
+                 density=True, linewidth=1.75, weights=weights)
         xlims = plt.gca().get_xlim()
         if prior is not None:
-            plt.hist(prior, color="k", alpha=0.2, edgecolor="w", density=True,
-                     linewidth=1.75, histtype="bar", bins=50)
+            plt.hist(prior, color=conf.prior_color, alpha=0.2, edgecolor="w",
+                     density=True, linewidth=1.75, histtype="bar", bins=50)
     else:
         x = kdeplot(
-            samples, color='b', shade=True, alpha_shade=0.1,
+            samples, color=conf.color, shade=True, alpha_shade=0.1,
             clip=[samples.minimum, samples.maximum], linewidth=1.0,
             weights=weights
         )
         xlims = plt.gca().get_xlim()
         if prior is not None:
-            kdeplot(prior, color='k', shade=True, alpha_shade=0.1,
+            kdeplot(prior, color=conf.prior_color, shade=True, alpha_shade=0.1,
                     clip=[prior.minimum, prior.maximum], linewidth=1.0)
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
     percentile = samples.confidence_interval([10, 90])
     if inj_value is not None:
-        plt.axvline(inj_value, color='orange', linestyle='-', linewidth=2.5)
-    plt.axvline(percentile[0], color='b', linestyle='--', linewidth=1.75)
-    plt.axvline(percentile[1], color='b', linestyle='--', linewidth=1.75)
+        plt.axvline(inj_value, color=conf.injection_color, linestyle='-',
+                    linewidth=2.5)
+    plt.axvline(percentile[0], color=conf.color, linestyle='--', linewidth=1.75)
+    plt.axvline(percentile[1], color=conf.color, linestyle='--', linewidth=1.75)
     median = samples.average("median")
     upper = np.round(percentile[1] - median, 2)
     lower = np.round(median - percentile[0], 2)

@@ -127,6 +127,8 @@ class PESummary(Read):
                     if isinstance(j, (str, bytes)):
                         if j.decode("utf-8") == "NaN":
                             inj[num] = float("nan")
+                    elif isinstance(j, (list, np.ndarray)):
+                        inj[num] = inj[num][0]
                 inj_list.append({i: j for i, j in zip(p, inj)})
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
@@ -188,7 +190,6 @@ class PESummary(Read):
                            for idx, label in enumerate(self.labels)]
         else:
             likelihoods = [None] * len(self.labels)
-        print(self.labels)
         outdict = {
             label:
                 SamplesDict(
@@ -200,7 +201,8 @@ class PESummary(Read):
     @property
     def injection_dict(self):
         return {
-            i: self.injection_parameters[num] for num, i in enumerate(self.labels)
+            i: self.injection_parameters[num] for num, i in
+            enumerate(self.labels)
         }
 
     def write_config_to_file(self, label, outdir="./"):

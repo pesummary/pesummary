@@ -156,7 +156,7 @@ class GWInput(Input):
         self.publication = self.opts.publication
         self.make_directories()
         self.kde_plot = self.opts.kde_plot
-        self.priors = None
+        self.priors = self.opts.prior_file
         self.samples = self.opts.samples
         self.burnin = self.opts.burnin
         self.custom_plotting = self.opts.custom_plotting
@@ -238,7 +238,8 @@ class GWInput(Input):
                 )
                 config.append(config_file)
         else:
-            config.append(None)
+            for i in labels:
+                config.append(None)
 
         psd = {}
         if f.psd is not None and f.psd[labels[0]] != {}:
@@ -396,7 +397,30 @@ class GWInput(Input):
         self._injection_data = injection_data_dict
         self._file_version = file_version_dict
         self._file_kwargs = file_kwargs_dict
-        self.add_to_prior_dict("samples", prior_dict)
+        if labels is not None:
+            labels_iter = labels
+        else:
+            labels_iter = self.labels
+        for i in labels_iter:
+            if prior_dict != {} and prior_dict[i] != []:
+                if self.priors != {} and i in self.priors["samples"].keys():
+                    logger.warn(
+                        "Replacing the prior file for {} with the prior "
+                        "samples stored in the result file".format(i)
+                    )
+                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
+                elif self.priors != {}:
+                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
+                elif self.priors == {}:
+                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
+            elif prior_dict != {}:
+                if self.priors != {} and i not in self.priors["samples"].keys():
+                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
+                elif self.priors == {}:
+                    self.add_to_prior_dict("samples/" + i, [])
+            else:
+                if self.priors == {}:
+                    self.add_to_prior_dict("samples/" + i, [])
         if config is not None:
             self._config = config
         if labels is not None:
@@ -669,6 +693,38 @@ class GWInput(Input):
                 "following format 'H1:path/to/file'"
             )
         return data
+
+    def grab_priors_from_inputs(self, priors):
+        """
+        """
+        from pesummary.gw.file.read import read as GWRead
+
+        prior_dict = {}
+        if priors is not None:
+            prior_dict = {"samples": {}}
+            for i in priors:
+                if not os.path.isfile(i):
+                    raise InputError("The file {} does not exist".format(i))
+            if len(priors) != len(self.labels) and len(priors) == 1:
+                logger.warn(
+                    "You have only specified a single prior file for {} result "
+                    "files. Assuming the same prior file for all result "
+                    "files".format(len(self.labels))
+                )
+                data = GWRead(priors[0])
+                data.generate_all_posterior_samples()
+                for i in self.labels:
+                    prior_dict["samples"][i] = data.samples_dict
+            elif len(priors) != len(self.labels):
+                raise InputError(
+                    "Please provide a prior file for each result file"
+                )
+            else:
+                for num, i in enumerate(priors):
+                    data = GWRead(priors[0])
+                    data.generate_all_posterior_samples()
+                    prior_dict["samples"][self.labels[num]] = data.samples_dict
+        return prior_dict
 
 
 class GWPostProcessing(PostProcessing):
