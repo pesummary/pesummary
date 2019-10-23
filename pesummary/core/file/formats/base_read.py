@@ -100,7 +100,6 @@ class Read():
 
     @property
     def samples_dict(self):
-        print(self.parameters)
         return SamplesDict(self.parameters, np.array(self.samples).T)
 
     @staticmethod

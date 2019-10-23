@@ -20,6 +20,7 @@ from pesummary.utils.utils import logger, Array
 
 import os
 from glob import glob
+import numpy as np
 
 
 class PESummary(CorePESummary):
@@ -84,6 +85,8 @@ class PESummary(CorePESummary):
                     if isinstance(j, (str, bytes)):
                         if j.decode("utf-8") == "NaN":
                             inj[num] = float("nan")
+                    elif isinstance(j, (list, np.ndarray)):
+                        inj[num] = inj[num][0]
                 inj_list.append({i: j for i, j in zip(p, inj)})
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
