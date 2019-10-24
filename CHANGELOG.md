@@ -1,4 +1,10 @@
-## 0.2.0 [unreleased]
+## 0.2.1 [unreleased]
+
+###Changed
+
+###Added
+
+## 0.2.0 [24/10/2019]
 
 ###Changed
 - Calibration Plot: Include both the prior and posterior
