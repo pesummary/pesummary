@@ -7,3 +7,4 @@ sphinx-argparse
 sphinx_rtd_theme
 testfixtures
 ligo.skymap
+pepredicates

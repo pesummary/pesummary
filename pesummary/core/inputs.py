@@ -410,6 +410,13 @@ class Input(object):
             raise InputError(
                 "Please provide unique labels for each result file"
             )
+        for num, i in enumerate(labels):
+            if "." in i:
+                logger.warn(
+                    "Replacing the label {} by {} to make it compatible with "
+                    "the html pages".format(i, i.replace(".", "_"))
+                )
+                labels[num] = i.replace(".", "_")
         if self.add_to_existing:
             for i in labels:
                 if i in self.existing_labels:
