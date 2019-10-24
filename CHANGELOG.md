@@ -1,4 +1,4 @@
-## 0.1.9 [unreleased]
+## 0.2.0 [unreleased]
 
 ###Changed
 - Calibration Plot: Include both the prior and posterior
@@ -11,12 +11,13 @@
   metafile
 - Argument `--include_prior` which if passed, add priors to the 1d_histogram
   plots
-- Conversion is now done via the `pesummary.gw.file.conversion,_Conversion`
+- Conversion is now done via the `pesummary.gw.file.conversion._Conversion`
   class
 - Argument `--palette` flag allows the user to choose a seaborn color palette to
   distinguish result files
 - Samples are now internally handled via the `pesummary.utils.utils.SamplesDict`
   class
+- A prior file can now be passed with the `--prior_file` command line argument
 
 ## 0.1.8 [16/09/2019]
 
