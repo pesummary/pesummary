@@ -177,6 +177,7 @@ class GWInput(Input):
         self.multi_threading_for_skymap = self.opts.multi_threading_for_skymap
         self.gwdata = self.opts.gwdata
         self.notes = self.opts.notes
+        self.pepredicates_probs = []
         self.copy_files()
 
     @staticmethod
@@ -603,6 +604,19 @@ class GWInput(Input):
             timeseries = StrainFile.load_strain_data(gwdata)
             self._gwdata = timeseries
 
+    @property
+    def pepredicates_probs(self):
+        return self._pepredicates_probs
+
+    @pepredicates_probs.setter
+    def pepredicates_probs(self, pepredicates_probs):
+        from pesummary.gw.pepredicates import get_classifications
+
+        classifications = {}
+        for num, i in enumerate(self.labels):
+            classifications[i] = get_classifications(self.samples[i])
+        self._pepredicates_probs = classifications
+
     @staticmethod
     def extract_psd_data_from_file(file):
         """Return the data stored in a psd file
@@ -614,8 +628,16 @@ class GWInput(Input):
         """
         if not os.path.isfile(file):
             raise InputError("The file '{}' does not exist".format(file))
-        f = np.genfromtxt(file, skip_footer=2)
-        return f
+        try:
+            f = np.genfromtxt(file, skip_footer=2)
+            return f
+        except Exception as e:
+            logger.info(
+                "Failed to read in PSD data because {}. The PSD plot will not "
+                "be generated and the PSD data will not be added to the "
+                "metafile".format(e)
+            )
+            return {}
 
     @staticmethod
     def extract_calibration_data_from_file(file):
@@ -628,8 +650,16 @@ class GWInput(Input):
         """
         if not os.path.isfile(file):
             raise InputError("The file '{}' does not exist".format(file))
-        f = np.genfromtxt(file)
-        return f
+        try:
+            f = np.genfromtxt(file)
+            return f
+        except Exception as e:
+            logger.info(
+                "Failed to read in calibration data because {}. The "
+                "calibration plot will not be generated and the calibration "
+                "data will not be added to the metafile".format(e)
+            )
+            return {}
 
     @staticmethod
     def get_ifo_from_file_name(file):
@@ -887,7 +917,7 @@ class GWPostProcessing(PostProcessing):
         self.notes = self.inputs.notes
         self.maxL_samples = []
         self.same_parameters = []
-        self.pepredicates_probs = []
+        self.pepredicates_probs = self.inputs.pepredicates_probs
 
     @property
     def maxL_samples(self):
@@ -904,47 +934,6 @@ class GWPostProcessing(PostProcessing):
         for i in self.labels:
             maxL_samples[i]["approximant"] = self.approximant[i]
         self._maxL_samples = maxL_samples
-
-    @property
-    def pepredicates_probs(self):
-        return self._pepredicates_probs
-
-    @pepredicates_probs.setter
-    def pepredicates_probs(self, pepredicates_probs):
-        classifications = {}
-        default_error = (
-            "Failed to generate source classification probabilities because {}"
-        )
-
-        for num, i in enumerate(self.labels):
-            try:
-                from pesummary.gw.pepredicates import PEPredicates
-                from pesummary.utils.utils import RedirectLogger
-
-                with RedirectLogger("PEPredicates", level="DEBUG") as redirector:
-                    parameters = list(self.samples[i].keys())
-                    samples = [
-                        [
-                            self.samples[i][parameter][j] for parameter in
-                            parameters
-                        ] for j in range(len(self.samples[i][parameters[0]]))
-                    ]
-                    data = PEPredicates.classifications(samples, parameters)
-                classifications[i] = {
-                    "default": data[0],
-                    "population": data[1]
-                }
-            except ImportError:
-                logger.warn(
-                    default_error.format("'PEPredicates' is not installed")
-                )
-                classifications[i] = None
-            except Exception as e:
-                logger.warn(
-                    default_error.format("%s" % (e))
-                )
-                classifications[i] = None
-        self._pepredicates_probs = classifications
 
     def grab_key_data_from_result_files(self):
         """Grab the mean, median, maxL and standard deviation for all

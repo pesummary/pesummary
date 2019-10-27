@@ -86,7 +86,7 @@ def _make_corner_plot(samples, latex_labels, **kwargs):
     return figure, included_parameters
 
 
-def _make_source_corner_plot(samples, params, latex_labels, **kwargs):
+def _make_source_corner_plot(samples, latex_labels, **kwargs):
     """Generate the corner plots for a given approximant
 
     Parameters
@@ -109,20 +109,21 @@ def _make_source_corner_plot(samples, params, latex_labels, **kwargs):
         levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
         plot_density=False, plot_datapoints=True, fill_contours=True,
         max_n_ticks=3)
+    parameters = list(samples.keys())
     corner_parameters = [
         "luminosity_distance", "mass_1_source", "mass_2_source",
         "total_mass_source", "chirp_mass_source", "redshift"]
-    source_parameters = [i for i in params if i in corner_parameters]
-    xs = np.zeros([len(source_parameters), len(samples)])
+    source_parameters = [i for i in parameters if i in corner_parameters]
+    xs = np.zeros([len(source_parameters), len(samples[parameters[0]])])
     for num, i in enumerate(source_parameters):
-        xs[num] = [j[params.index("%s" % (i))] for j in samples]
+        xs[num] = samples[i]
     default_kwargs['range'] = [1.0] * len(source_parameters)
     default_kwargs["labels"] = [latex_labels[i] for i in source_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
     return figure
 
 
-def _make_extrinsic_corner_plot(samples, params, latex_labels, **kwargs):
+def _make_extrinsic_corner_plot(samples, latex_labels, **kwargs):
     """Generate the corner plots for a given approximant
 
     Parameters
@@ -145,11 +146,12 @@ def _make_extrinsic_corner_plot(samples, params, latex_labels, **kwargs):
         levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
         plot_density=False, plot_datapoints=True, fill_contours=True,
         max_n_ticks=3)
+    parameters = list(samples.keys())
     corner_parameters = ["luminosity_distance", "psi", "ra", "dec"]
-    extrinsic_parameters = [i for i in params if i in corner_parameters]
-    xs = np.zeros([len(extrinsic_parameters), len(samples)])
+    extrinsic_parameters = [i for i in parameters if i in corner_parameters]
+    xs = np.zeros([len(extrinsic_parameters), len(samples[parameters[0]])])
     for num, i in enumerate(extrinsic_parameters):
-        xs[num] = [j[params.index("%s" % (i))] for j in samples]
+        xs[num] = samples[i]
     default_kwargs['range'] = [1.0] * len(extrinsic_parameters)
     default_kwargs["labels"] = [latex_labels[i] for i in extrinsic_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
@@ -1058,4 +1060,44 @@ def _strain_plot(strain, maxL_params, **kwargs):
         plt.legend(loc="best", prop={'size': 8})
     plt.xlabel("Time $[s]$", fontsize=16)
     plt.tight_layout()
+    return fig
+
+
+def _format_prob(prob):
+    """Format the probabilities for use with _classification_plot
+    """
+    if prob >= 1:
+        return '100%'
+    elif prob <= 0:
+        return '0%'
+    elif prob > 0.99:
+        return '>99%'
+    elif prob < 0.01:
+        return '<1%'
+    else:
+        return '{}%'.format(int(np.round(100 * prob)))
+
+
+def _classification_plot(classification):
+    """Generate a bar chart showing the source classifications probabilities
+
+    Parameters
+    ----------
+    classification: dict
+        dictionary of source classifications
+    """
+    probs, names = zip(
+        *sorted(zip(classification.values(), classification.keys())))
+    with plt.style.context('seaborn-white'):
+        fig, ax = plt.subplots(figsize=(2.5, 2))
+        ax.barh(names, probs)
+        for i, prob in enumerate(probs):
+            ax.annotate(_format_prob(prob), (0, i), (4, 0),
+                        textcoords='offset points', ha='left', va='center')
+        ax.set_xlim(0, 1)
+        ax.set_xticks([])
+        ax.tick_params(left=False)
+        for side in ['top', 'bottom', 'right']:
+            ax.spines[side].set_visible(False)
+        fig.tight_layout()
     return fig

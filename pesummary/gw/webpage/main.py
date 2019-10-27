@@ -261,10 +261,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             if os.path.isfile(basic_string.format("%s_psd_plot" % (i))):
                 image_contents.append(relative_path.format("%s_psd_plot" % (i)))
             if os.path.isfile(
-                basic_string.format("%s_waveform_timedomain" % (i))
+                basic_string.format("%s_waveform_time_domain" % (i))
             ):
                 image_contents.append(
-                    relative_path.format("%s_waveform_timedomain" % (i))
+                    relative_path.format("%s_waveform_time_domain" % (i))
                 )
             if os.path.isfile(
                 basic_string.format("%s_calibration_plot" % (i))
@@ -640,16 +640,28 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 html_file.end_div(4)
                 html_file.end_container()
             path = self.image_path["other"]
-            base = os.path.join(path, "%s_{}_pepredicates.png" % (label))
+            base = os.path.join(path, "%s_{}_pepredicates{}.png" % (label))
             image_contents = [
-                [base.format("default"), base.format("population")]
+                [
+                    base.format("default", ""), base.format("default", "_bar"),
+                    base.format("population", ""),
+                    base.format("population", "_bar")
+                ]
             ]
-            base = "%s --webdir %s --labels %s --plot_with_{}_prior" % (
-                general_cli.format(self.result_files[num]),
-                os.path.join(self.webdir, "plots"), label
+            base = (
+                "%s --webdir %s --labels %s --plot {} "
+                "--plot_with_{}_prior" % (
+                    general_cli.format(self.result_files[num]),
+                    os.path.join(self.webdir, "plots"), label
+                )
             )
             command_lines = [
-                [base.format("default"), base.format("population")]
+                [
+                    base.format("mass_1_mass_2", "default"),
+                    base.format("bar", "default"),
+                    base.format("mass_1_mass_2", "population"),
+                    base.format("bar", "population")
+                ]
             ]
             html_file.make_table_of_images(contents=image_contents, cli=command_lines)
             images = [y for x in image_contents for y in x]

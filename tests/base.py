@@ -48,6 +48,8 @@ def get_list_of_files(gw=False, number=1):
         "./.outdir/html/Logging.html"]
     for num in range(number):
         html.append("./.outdir/html/%s%s_%s%s.html" % (label, num, label, num))
+        if gw:
+            html.append("./.outdir/html/%s%s_%s%s_Classification.html" % (label, num, label, num))
         html.append("./.outdir/html/%s%s_%s%s_Corner.html" % (label, num, label, num))
         html.append("./.outdir/html/%s%s_%s%s_Config.html" % (label, num, label, num))
         html.append("./.outdir/html/%s%s_%s%s_Multiple.html" % (label, num, label, num))
@@ -96,6 +98,10 @@ def get_list_of_plots(gw=False, number=1):
     if gw:
         for num in range(number):
             plots.append("./.outdir/plots/gw%s_skymap.png" % (num))
+            plots.append("./.outdir/plots/gw%s_default_pepredicates.png" % (num))
+            plots.append("./.outdir/plots/gw%s_default_pepredicates_bar.png" % (num))
+            plots.append("./.outdir/plots/gw%s_population_pepredicates.png" % (num))
+            plots.append("./.outdir/plots/gw%s_population_pepredicates_bar.png" % (num))
         if number > 1:
             plots.append("./.outdir/plots/combined_skymap.png")
         

@@ -77,6 +77,8 @@ class GWBase(Base):
 
         plots = sorted(glob.glob("./.outdir/plots/*.png"))
         files = sorted(glob.glob("./.outdir/html/*.html"))
+        for i, j in zip(plots, get_list_of_plots(gw=True)):
+            print(i, j)
         assert all(i == j for i, j in zip(plots, get_list_of_plots(gw=True)))
         assert all(i in plots for i in get_list_of_plots(gw=True))
         assert all(i in get_list_of_plots(gw=True) for i in plots)
@@ -430,6 +432,9 @@ class TestGWLALInference(GWBase):
                        gw=True, number=2)))
         assert all(i in plots for i in get_list_of_plots(gw=True, number=2))
         assert all(i in get_list_of_plots(gw=True, number=2) for i in plots)
+        for i, j in zip(files, get_list_of_files(
+                       gw=True, number=2)):
+            print(i, j)
         assert all(i == j for i, j in zip(files, get_list_of_files(
                        gw=True, number=2)))
         assert all(i in files for i in get_list_of_files(gw=True, number=2))

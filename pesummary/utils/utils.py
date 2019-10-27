@@ -552,6 +552,13 @@ def _add_existing_data(namespace):
                 namespace.maxL_samples[i] = {
                     key: val.maxL for key, val in namespace.samples[i].items()
                 }
+        if hasattr(namespace, "pepredicates_probs"):
+            if i not in list(namespace.pepredicates_probs.keys()):
+                from pesummary.gw.pepredicates import get_classifications
+
+                namespace.pepredicates_probs[i] = get_classifications(
+                    namespace.existing_samples[i]
+                )
     if hasattr(namespace, "result_files"):
         if namespace.existing_metafile not in namespace.result_files:
             namespace.result_files.append(namespace.existing_metafile)

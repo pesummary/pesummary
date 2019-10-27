@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, gw_results_file
 from pesummary.core.inputs import PostProcessing
 from pesummary.gw.inputs import GWPostProcessing
 
@@ -137,8 +137,8 @@ def main():
     opts = parser.parse_args()
     func = functions(opts)
     args = func["input"](opts)
-    PlotGeneration(args, gw=opts.gw)
-    WebpageGeneration(args, gw=opts.gw)
+    PlotGeneration(args, gw=gw_results_file(opts))
+    WebpageGeneration(args, gw=gw_results_file(opts))
     func["MetaFile"](args)
     func["FinishingTouches"](args)
 

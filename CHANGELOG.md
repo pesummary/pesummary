@@ -3,6 +3,9 @@
 ###Changed
 
 ###Added
+- Bar chart to show the classification probabilities and added them to the
+  webpages
+- Generate both source and extrinsic corner plots for gw result files
 
 ## 0.2.0 [24/10/2019]
 
