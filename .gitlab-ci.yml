@@ -1,5 +1,6 @@
 stages:
   - test
+  - workflow
   - deploy
 
 basic:
@@ -30,7 +31,7 @@ python-3.6:
     - pip install -r optional_requirements.txt
     - pip install bilby
     - python setup.py install
-    - coverage run -m pytest tests
+    - coverage run -m pytest tests --ignore tests/workflow_test.py
     - coverage report
     - coverage html
     - coverage-badge -o coverage_badge.svg -f
@@ -48,7 +49,7 @@ python-3.7:
     - pip install -r optional_requirements.txt
     - pip install bilby
     - python setup.py install
-    - pytest tests
+    - pytest tests --ignore tests/workflow_test.py
 
 style:
   stage: test
@@ -70,6 +71,62 @@ documentation:
   artifacts:
     paths:
       - docs/_build/html/
+
+python3.6-core:
+  stage: workflow
+  dependencies:
+    - python-3.6
+    - style
+    - basic
+  image: python:3.6
+  script:
+    - pip install -r requirements.txt
+    - pip install -r optional_requirements.txt
+    - pip install bilby
+    - python setup.py install
+    - pytest -k "Core or core" tests/workflow_test.py
+
+python3.7-core:
+  stage: workflow
+  dependencies:
+    - python-3.7
+    - style
+    - basic
+  image: python:3.7
+  script:
+    - pip install -r requirements.txt
+    - pip install -r optional_requirements.txt
+    - pip install bilby
+    - python setup.py install
+    - pytest -k "Core or core" tests/workflow_test.py
+
+python3.6-gw:
+  stage: workflow
+  dependencies:
+    - python-3.6
+    - style
+    - basic
+  image: python:3.6
+  script:
+    - pip install -r requirements.txt
+    - pip install -r optional_requirements.txt
+    - pip install bilby
+    - python setup.py install
+    - pytest -k "GW or gw" tests/workflow_test.py
+
+python3.7-gw:
+  stage: workflow
+  dependencies:
+    - python-3.7
+    - style
+    - basic
+  image: python:3.7
+  script:
+    - pip install -r requirements.txt
+    - pip install -r optional_requirements.txt
+    - pip install bilby
+    - python setup.py install
+    - pytest -k "GW or gw" tests/workflow_test.py
 
 build_examples:
   stage: deploy
@@ -93,6 +150,8 @@ pages:
   dependencies:
     - python-3.6
     - documentation
+    - python3.6-core
+    - python3.6-gw
   script:
     - mkdir public/
     - mv htmlcov/ public/
