@@ -178,6 +178,7 @@ class GWInput(Input):
         self.gwdata = self.opts.gwdata
         self.notes = self.opts.notes
         self.pepredicates_probs = []
+        self.pastro_probs = []
         self.copy_files()
 
     @staticmethod
@@ -617,6 +618,19 @@ class GWInput(Input):
             classifications[i] = get_classifications(self.samples[i])
         self._pepredicates_probs = classifications
 
+    @property
+    def pastro_probs(self):
+        return self._pastro_probs
+
+    @pastro_probs.setter
+    def pastro_probs(self, pastro_probs):
+        from pesummary.gw.p_astro import get_probabilities
+
+        probabilities = {}
+        for num, i in enumerate(self.labels):
+            probabilities[i] = get_probabilities(self.samples[i])
+        self._pastro_probs = probabilities
+
     @staticmethod
     def extract_psd_data_from_file(file):
         """Return the data stored in a psd file
@@ -918,6 +932,7 @@ class GWPostProcessing(PostProcessing):
         self.maxL_samples = []
         self.same_parameters = []
         self.pepredicates_probs = self.inputs.pepredicates_probs
+        self.pastro_probs = self.inputs.pastro_probs
 
     @property
     def maxL_samples(self):

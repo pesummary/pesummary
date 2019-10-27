@@ -110,9 +110,11 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         file_kwargs=None, existing_labels=None, existing_config=None,
         existing_file_version=None, existing_injection_data=None,
         existing_samples=None, existing_metafile=None, add_to_existing=False,
-        existing_file_kwargs=None, result_files=None, notes=None
+        existing_file_kwargs=None, result_files=None, notes=None,
+        pastro_probs=None
     ):
         self.pepredicates_probs = pepredicates_probs
+        self.pastro_probs = pastro_probs
         self.gracedb = gracedb
         self.approximant = approximant
         self.key_data = key_data
@@ -630,6 +632,15 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                         self.pepredicates_probs[label][i][j] for j in keys
                     ] for i in ["default", "population"]
                 ]
+                if self.pastro_probs[label] is not None:
+                    keys += ["HasNS"]
+                    keys += ["HasRemnant"]
+                    table_contents[0].append(self.pastro_probs[label]["HasNS"])
+                    table_contents[0].append(
+                        self.pastro_probs[label]["HasRemnant"]
+                    )
+                    table_contents[1].append("-")
+                    table_contents[1].append("-")
                 html_file.make_table(
                     headings=[" "] + keys, contents=table_contents,
                     heading_span=1, accordian=False
