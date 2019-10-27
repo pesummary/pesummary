@@ -559,6 +559,13 @@ def _add_existing_data(namespace):
                 namespace.pepredicates_probs[i] = get_classifications(
                     namespace.existing_samples[i]
                 )
+        if hasattr(namespace, "pastro_probs"):
+            if i not in list(namespace.pastro_probs.keys()):
+                from pesummary.gw.p_astro import get_probabilities
+
+                namespace.pastro_probs[i] = get_probabilities(
+                    namespace.existing_samples[i]
+                )
     if hasattr(namespace, "result_files"):
         if namespace.existing_metafile not in namespace.result_files:
             namespace.result_files.append(namespace.existing_metafile)

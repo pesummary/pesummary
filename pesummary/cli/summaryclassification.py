@@ -19,6 +19,7 @@ import os
 import pesummary
 from pesummary.gw.file.read import read as GWRead
 from pesummary.gw.pepredicates import PEPredicates
+from pesummary.gw.p_astro import PAstro
 from pesummary.utils.utils import make_dir, logger
 from pesummary.utils.exceptions import InputError
 import argparse
@@ -70,6 +71,9 @@ def generate_probabilities(result_files):
             f.generate_all_posterior_samples()
         mydict["default"], mydict["population"] = \
             PEPredicates.classifications(f.samples, f.parameters)
+        em_bright = PAstro.classifications(f.samples_dict)
+        mydict["default"]["HasNS"] = em_bright["HasNS"]
+        mydict["default"]["HasRemnant"] = em_bright["HasRemnant"]
         classifications.append(mydict)
     return classifications
 
