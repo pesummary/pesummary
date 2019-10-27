@@ -23,6 +23,41 @@ import pandas as pd
 from pesummary.utils.utils import logger
 
 
+def get_classifications(samples):
+    """Return the classifications from a dictionary of samples
+
+    Parameters
+    ----------
+    samples: dict
+        dictionary of samples
+    """
+    from pesummary.utils.utils import RedirectLogger
+
+    default_error = (
+        "Failed to generate source classification probabilities because {}"
+    )
+    try:
+        with RedirectLogger("PEPredicates", level="DEBUG") as redirector:
+            parameters = list(samples.keys())
+            samples = [
+                [samples[parameter][j] for parameter in parameters] for j in
+                range(len(samples[parameters[0]]))
+            ]
+            data = PEPredicates.classifications(samples, parameters)
+        classifications = {
+            "default": data[0], "population": data[1]
+        }
+    except ImportError:
+        logger.warn(
+            default_error.format("'PEPredicates' is not installed")
+        )
+        classifications = None
+    except Exception as e:
+        logger.warn(default_error.format("%s" % (e)))
+        classifications = None
+    return classifications
+
+
 class PEPredicates(object):
     """Class to handle the PEPredicates package
     """

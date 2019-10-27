@@ -386,8 +386,8 @@ class TestPostProcessing(object):
         self.postprocessing = GWPostProcessing(self.inputs)
 
     def test_injection_data(self):
-        assert sorted(list(self.postprocessing.injection_data["example"].keys())) == [
-            'H1_optimal_snr', 'log_likelihood', 'mass_1', "network_optimal_snr"]
+        assert sorted(list(self.postprocessing.injection_data["example"].keys())) == sorted([
+            'a_1', 'a_2', 'H1_optimal_snr', 'log_likelihood', 'mass_1', "network_optimal_snr"])
 
     def test_maxL_samples(self):
         assert self.postprocessing.maxL_samples["example"]["mass_1"] == 20.0
@@ -403,8 +403,9 @@ class TestPostProcessing(object):
             "./tests/files/bilby_example.h5", "./tests/files/lalinference_example.h5"])
         inputs = GWInput(opts)
         postprocessing = GWPostProcessing(inputs)
-        assert sorted(postprocessing.same_parameters) == [
-            'H1_optimal_snr', 'log_likelihood', 'mass_1', "network_optimal_snr"]
+        assert sorted(postprocessing.same_parameters) == sorted([
+            'a_1', 'a_2', 'H1_optimal_snr', 'log_likelihood', 'mass_1',
+            "network_optimal_snr"])
 
     def test_psd_labels(self):
         assert list(self.postprocessing.psd.keys()) == ["example"]

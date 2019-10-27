@@ -779,6 +779,17 @@ class _Conversion(object):
                 for num, i in enumerate(self.samples):
                     self.samples[num][ind_a1] = abs(self.samples[num][ind_a1])
                     self.samples[num][ind_a2] = abs(self.samples[num][ind_a2])
+        if not all(i in self.parameters for i in spin_magnitudes):
+            cartesian = [
+                "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
+                "spin_2z"
+            ]
+            if not all(i in self.parameters for i in cartesian):
+                self.parameters.append("a_1")
+                self.parameters.append("a_2")
+                for num, i in enumerate(self.samples):
+                    self.samples[num].append(0)
+                    self.samples[num].append(0)
         self._check_parameters()
         if "chirp_mass" not in self.parameters and "chirp_mass_source" in \
                 self.parameters and "redshift" in self.parameters:

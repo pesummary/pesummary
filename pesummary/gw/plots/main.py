@@ -198,6 +198,20 @@ class _PlotGeneration(_BasePlotGeneration):
             )
             new_file.writelines(combine_corner)
             new_file.close()
+            fig = gw._make_source_corner_plot(samples, latex_labels)
+            plt.savefig(
+                os.path.join(
+                    savedir, "corner", "{}_sourceframe.png".format(label)
+                )
+            )
+            plt.close()
+            fig = gw._make_extrinsic_corner_plot(samples, latex_labels)
+            plt.savefig(
+                os.path.join(
+                    savedir, "corner", "{}_extrinsic.png".format(label)
+                )
+            )
+            plt.close()
 
     def skymap_plot(self, label):
         """Generate a skymap plot for a given result file
@@ -710,14 +724,18 @@ class _PlotGeneration(_BasePlotGeneration):
             the label for the results file that you wish to plot
         """
         self._pepredicates_plot(
-            self.savedir, self.samples[label], label, population_prior=False
+            self.savedir, self.samples[label], label,
+            self.pepredicates_probs[label]["default"], population_prior=False
         )
         self._pepredicates_plot(
-            self.savedir, self.samples[label], label, population_prior=True
+            self.savedir, self.samples[label], label,
+            self.pepredicates_probs[label]["population"], population_prior=True
         )
 
     @staticmethod
-    def _pepredicates_plot(savedir, samples, label, population_prior=False):
+    def _pepredicates_plot(
+        savedir, samples, label, probabilities, population_prior=False
+    ):
         """Generate a plot with the PEPredicates package for a given set of
         samples
 
@@ -729,6 +747,8 @@ class _PlotGeneration(_BasePlotGeneration):
             dictionary of samples for each parameter
         label: str
             the label corresponding to the result file
+        probabilities: dict
+            dictionary of classification probabilities
         population_prior: Bool, optional
             if True, the samples will be reweighted according to a population
             prior
@@ -755,6 +775,23 @@ class _PlotGeneration(_BasePlotGeneration):
             plt.savefig(
                 os.path.join(
                     savedir, "{}_population_pepredicates.png".format(
+                        label
+                    )
+                )
+            )
+        fig = gw._classification_plot(probabilities)
+        if not population_prior:
+            plt.savefig(
+                os.path.join(
+                    savedir, "{}_default_pepredicates_bar.png".format(
+                        label
+                    )
+                )
+            )
+        else:
+            plt.savefig(
+                os.path.join(
+                    savedir, "{}_population_pepredicates_bar.png".format(
                         label
                     )
                 )
