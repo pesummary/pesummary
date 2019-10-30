@@ -438,6 +438,18 @@ def command_line_arguments():
     return sys.argv[1:]
 
 
+def command_line_dict():
+    """Return a dictionary of command line arguments
+    """
+    from pesummary.core.command_line import command_line
+    from pesummary.gw.command_line import insert_gwspecific_option_group
+
+    parser = command_line()
+    insert_gwspecific_option_group(parser)
+    opts = parser.parse_args()
+    return vars(opts)
+
+
 def gw_results_file(opts):
     """Determine if a GW results file is passed
     """
@@ -590,6 +602,22 @@ def customwarn(message, category, filename, lineno, file=None, line=None):
     sys.stdout.write(
         warnings.formatwarning("%s" % (message), category, filename, lineno)
     )
+
+
+def determine_gps_time_and_window(maxL_samples, labels):
+    """Determine the gps time and window to use in the spectrogram and
+    omegascan plots
+    """
+    times = [
+        maxL_samples[label]["geocent_time"] for label in labels
+    ]
+    gps_time = np.mean(times)
+    time_range = np.max(times) - np.min(times)
+    if time_range < 4.:
+        window = 4.
+    else:
+        window = time_range * 1.5
+    return gps_time, window
 
 
 class RedirectLogger(object):

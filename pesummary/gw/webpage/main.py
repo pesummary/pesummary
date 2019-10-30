@@ -111,7 +111,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         existing_file_version=None, existing_injection_data=None,
         existing_samples=None, existing_metafile=None, add_to_existing=False,
         existing_file_kwargs=None, result_files=None, notes=None,
-        pastro_probs=None
+        pastro_probs=None, gwdata=None
     ):
         self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
@@ -121,6 +121,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.file_kwargs = file_kwargs
         self.publication = publication
         self.result_files = result_files
+        self.gwdata = gwdata
 
         super(_WebpageGeneration, self).__init__(
             webdir=webdir, samples=samples, labels=labels,
@@ -177,6 +178,23 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 any(i not in j for i in false) else False
         return condition
 
+    def make_navbar_for_homepage(self):
+        """Make a navbar for the homepage
+        """
+        links = [
+            "home", ["Result Pages", self._result_page_links()], "Logging",
+            "Version"
+        ]
+        if len(self.samples) > 1:
+            links[1][1] += ["Comparison"]
+        if self.publication:
+            links.insert(2, "Publication")
+        if self.gwdata is not None:
+            links.append(["Detchar", [i for i in self.gwdata.keys()]])
+        if self.notes is not None:
+            links.append("Notes")
+        return links
+
     def make_navbar_for_result_page(self):
         """Make a navbar for the result page homepage
         """
@@ -215,6 +233,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             self.make_comparison_pages()
         if self.publication:
             self.make_publication_pages()
+        if self.gwdata is not None:
+            self.make_detector_pages()
         if all(val is not None for key, val in self.pepredicates_probs.items()):
             self.make_classification_pages()
         self.make_error_page()
@@ -595,6 +615,80 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         images = [y for x in image_contents for y in x]
         html_file.make_modal_carousel(images=images)
         html_file.close()
+
+    def make_detector_pages(self):
+        """Wrapper function for _make_publication_pages()
+        """
+        pages = [i for i in self.gwdata.keys()]
+        self.create_blank_html_pages(pages)
+        self._make_detector_pages(pages)
+
+    def _make_detector_pages(self, pages):
+        """Make the detector characterisation pages
+
+        Parameters
+        ----------
+        pages: list
+            list of pages that you wish to create
+        """
+        from glob import glob
+        from pesummary.utils.utils import (
+            determine_gps_time_and_window, command_line_dict
+        )
+        from astropy.time import Time
+
+        executable = self.get_executable("summarydetchar")
+        command_line = command_line_dict()
+        gwdata_command_line = [
+            "{}:{}".format(key, val) for key, val in command_line["gwdata"].items()
+        ]
+        general_cli = "%s --webdir %s --gwdata %s --plot {}{}" % (
+            executable, os.path.join(self.webdir, "plots"),
+            " ".join(gwdata_command_line)
+        )
+        path = self.image_path["other"]
+        base = os.path.join(path, "{}_{}.png")
+        maxL_samples = {
+            i: {
+                "geocent_time": self.key_data[i]["geocent_time"]["maxL"]
+            } for i in self.labels
+        }
+        gps_time, window = determine_gps_time_and_window(maxL_samples, self.labels)
+        t = Time(gps_time, format='gps')
+        t = Time(t, format='datetime')
+        link = (
+            "https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day"
+            "/{}{}{}/".format(
+                t.value.year,
+                "0{}".format(t.value.month) if t.value.month < 10 else t.value.month,
+                t.value.day
+            )
+        )
+        for det in self.gwdata.keys():
+            html_file = self.setup_page(
+                det, self.navbar["home"], title="{} Detchar".format(det)
+            )
+            html_file.make_banner(approximant=det, key="detchar", link=link)
+            image_contents = [
+                [base.format("spectrogram", det), base.format("omegascan", det)]
+            ]
+            command_lines = [
+                [
+                    general_cli.format("spectrogram", ""),
+                    general_cli.format(
+                        "omegascan", "--gps %s --vmin 0 --vmax 25 --window %s" % (
+                            gps_time, window
+                        )
+                    )
+                ]
+            ]
+            html_file.make_table_of_images(
+                contents=image_contents, cli=command_lines, autoscale=True
+            )
+            images = [y for x in image_contents for y in x]
+            html_file.make_modal_carousel(images=images)
+            html_file.make_footer(user=self.user, rundir=self.webdir)
+            html_file.close()
 
     def make_classification_pages(self):
         """Wrapper function for _make_publication_pages()

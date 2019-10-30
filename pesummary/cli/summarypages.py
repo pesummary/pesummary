@@ -116,7 +116,7 @@ class _GWWebpageGeneration(GWPostProcessing):
             add_to_existing=self.add_to_existing,
             existing_file_kwargs=self.existing_file_kwargs,
             result_files=self.result_files, notes=self.notes,
-            pastro_probs=self.pastro_probs
+            pastro_probs=self.pastro_probs, gwdata=self.gwdata,
         )
 
     def generate_webpages(self):

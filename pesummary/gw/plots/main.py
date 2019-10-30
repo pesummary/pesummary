@@ -59,7 +59,7 @@ class _PlotGeneration(_BasePlotGeneration):
             injection_data=injection_data,
             colors=colors, custom_plotting=custom_plotting,
             add_to_existing=add_to_existing, priors=priors,
-            include_prior=include_prior, weights=weights
+            include_prior=include_prior
         )
         self.file_kwargs = file_kwargs
         self.existing_file_kwargs = existing_file_kwargs
@@ -93,7 +93,7 @@ class _PlotGeneration(_BasePlotGeneration):
             "skymap": self.skymap_plot,
             "waveform_fd": self.waveform_fd_plot,
             "waveform_td": self.waveform_td_plot,
-            "data": self.strain_plot,
+            "data": self.gwdata_plots,
             "skymap_comparison": self.skymap_comparison_plot,
             "waveform_comparison_fd": self.waveform_comparison_fd_plot,
             "waveform_comparison_td": self.waveform_comparison_td_plot,
@@ -392,6 +392,22 @@ class _PlotGeneration(_BasePlotGeneration):
         )
         plt.close()
 
+    def gwdata_plots(self, label):
+        """Generate all plots associated with the gwdata
+
+        Parameters
+        ----------
+        label: str
+            the label corresponding to the results file
+        """
+        from pesummary.utils.utils import determine_gps_time_and_window
+        self.strain_plot(label)
+        gps_time, window = determine_gps_time_and_window(
+            self.maxL_samples, self.labels
+        )
+        self.spectrogram_plot()
+        self.omegascan_plot(gps_time, window)
+
     def strain_plot(self, label):
         """Generate a plot showing the comparison between the data and the
         maxL waveform gfor a given result file
@@ -430,6 +446,71 @@ class _PlotGeneration(_BasePlotGeneration):
             os.path.join(savedir, "{}_strain.png".format(label))
         )
         plt.close()
+
+    def spectrogram_plot(self):
+        """Generate a plot showing the spectrogram for all detectors
+        """
+        figs = self._spectrogram_plot(self.savedir, self.gwdata)
+
+    @staticmethod
+    def _spectrogram_plot(savedir, strain):
+        """Generate a plot showing the spectrogram for all detectors
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        strain: dict
+            dictionary of gwpy timeseries objects containing the strain data for
+            each IFO
+        """
+        from pesummary.gw.plots import detchar
+
+        figs = detchar.spectrogram(strain)
+        for det, fig in figs.items():
+            fig.savefig(
+                os.path.join(savedir, "spectrogram_{}.png".format(det))
+            )
+            plt.close()
+
+    def omegascan_plot(self, gps_time, window):
+        """Generate a plot showing the omegascan for all detectors
+
+        Parameters
+        ----------
+        gps_time: float
+            time around which to centre the omegascan
+        window: float
+            window around gps time to generate plot for
+        """
+        figs = self._omegascan_plot(
+            self.savedir, self.gwdata, gps_time, window
+        )
+
+    @staticmethod
+    def _omegascan_plot(savedir, strain, gps, window):
+        """Generate a plot showing the spectrogram for all detectors
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        strain: dict
+            dictionary of gwpy timeseries objects containing the strain data for
+            each IFO
+        gps: float
+            time around which to centre the omegascan
+        window: float
+            window around gps time to generate plot for
+        """
+        from pesummary.gw.plots import detchar
+
+        figs = detchar.omegascan(strain, gps, window=window)
+        for det, fig in figs.items():
+            fig.savefig(
+                os.path.join(savedir, "omegascan_{}.png".format(det))
+            )
+            plt.close()
 
     def skymap_comparison_plot(self, label):
         """Generate a plot to compare skymaps for all result files

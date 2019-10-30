@@ -18,7 +18,7 @@ from pesummary.core.webpage.base import Base
 
 class table_of_images(Base):
 
-    def __init__(self, content, rows, columns, html_file, code, cli):
+    def __init__(self, content, rows, columns, html_file, code, cli, autoscale=False):
         """
 
         Parameters
@@ -33,6 +33,7 @@ class table_of_images(Base):
         self.html_file = html_file
         self.code = code
         self.cli = cli
+        self.autoscale = autoscale
         self._add_scripts()
 
     def _add_scripts(self):
@@ -68,6 +69,8 @@ class table_of_images(Base):
             self.make_div(4, _class=_class, _style=None)
             self.make_div(6, _class="row", _style=None)
             for idx, i in enumerate(self.content):
+                if self.autoscale:
+                    width = str(1120 / len(i))
                 self.make_div(8, _class="column", _style="padding-left: 1em;")
                 for num, j in enumerate(i):
                     _id = j.split("/")[-1][:-4]
