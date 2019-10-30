@@ -401,12 +401,20 @@ class _PlotGeneration(_BasePlotGeneration):
             the label corresponding to the results file
         """
         from pesummary.utils.utils import determine_gps_time_and_window
-        self.strain_plot(label)
+
+        base_error = "Failed to generate a %s because {}"
         gps_time, window = determine_gps_time_and_window(
             self.maxL_samples, self.labels
         )
-        self.spectrogram_plot()
-        self.omegascan_plot(gps_time, window)
+        functions = [
+            self.strain_plot, self.spectrogram_plot, self.omegascan_plot
+        ]
+        args = [[label], [], [gps_time, window]]
+        func_names = ["strain_plot", "spectrogram plot", "omegascan plot"]
+
+        for func, args, name in zip(functions, args, func_names):
+            self._try_to_make_a_plot(args, func, base_error % (name))
+            continue
 
     def strain_plot(self, label):
         """Generate a plot showing the comparison between the data and the

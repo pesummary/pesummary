@@ -639,9 +639,13 @@ class _WebpageGeneration(_CoreWebpageGeneration):
 
         executable = self.get_executable("summarydetchar")
         command_line = command_line_dict()
-        gwdata_command_line = [
-            "{}:{}".format(key, val) for key, val in command_line["gwdata"].items()
-        ]
+        if isinstance(command_line["gwdata"], dict):
+            gwdata_command_line = [
+                "{}:{}".format(key, val) for key, val in
+                command_line["gwdata"].items()
+            ]
+        else:
+            gwdata_command_line = command_line["gwdata"]
         general_cli = "%s --webdir %s --gwdata %s --plot {}{}" % (
             executable, os.path.join(self.webdir, "plots"),
             " ".join(gwdata_command_line)
