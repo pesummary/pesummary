@@ -1,14 +1,18 @@
 ## 0.2.2 [unreleased]
 
-###Changed
+### Changed
 
-###Added
+### Added
+- Added plots which show the state of the detector at the time of the GW event if
+  the GW data is passed via the `--gwdata` command line option
+- Added a `summarydetchar` executable which allows for generation of detector
+  related plots easily
 
 ## 0.2.1 [27/10/2019]
 
-###Changed
+### Changed
 
-###Added
+### Added
 - Bar chart to show the classification probabilities and added them to the
   webpages
 - Generate both source and extrinsic corner plots for gw result files
@@ -16,13 +20,13 @@
 
 ## 0.2.0 [24/10/2019]
 
-###Changed
+### Changed
 - Calibration Plot: Include both the prior and posterior
 - `summaryplots` executable: Made the `summaryplots` executable more versitle
   such that individual 1d histograms/skymaps can be generated from command_line
 - Moved `cli` into `pesummary` package
 
-###Added
+### Added
 - Priors: Priors are extracted from bilby result files and stored in the
   metafile
 - Argument `--include_prior` which if passed, add priors to the 1d_histogram

@@ -224,7 +224,7 @@ class page(Base):
         """
         self._footer(user, rundir)
 
-    def make_banner(self, approximant=None, key="Summary", _style=None):
+    def make_banner(self, approximant=None, key="Summary", _style=None, link=None):
         """Make a banner for the document.
         """
         self.make_div(indent=2, _class='banner', _style=_style)
@@ -265,6 +265,18 @@ class page(Base):
         elif key == "meta_data":
             self.add_content(
                 "Meta data extracted from the result file")
+        elif key == "detchar":
+            base_string = "Below are summary plots for the detector %s.{}" % (
+                approximant
+            )
+            if link is not None:
+                base_string = base_string.format(
+                    " For more details see the LIGO summary pages "
+                    "<a href=%s>here</a>" % (link)
+                )
+            else:
+                base_string = base_string.format("")
+            self.add_content(base_string)
         else:
             self.add_content(
                 "The figures below show the plots for %s" % (approximant))
@@ -550,7 +562,7 @@ class page(Base):
         return styles
 
     def make_table_of_images(self, contents=None, rows=None, columns=None,
-                             code="modal", cli=None):
+                             code="modal", cli=None, autoscale=False):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -568,7 +580,7 @@ class page(Base):
             if True, the table of images is placed inside a container
         """
         table = tables.table_of_images(contents, rows, columns, self.html_file,
-                                       code=code, cli=cli)
+                                       code=code, cli=cli, autoscale=autoscale)
         table.make()
 
     def insert_image(self, path, justify="center", code=None):
