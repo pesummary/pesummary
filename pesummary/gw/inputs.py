@@ -596,12 +596,26 @@ class GWInput(Input):
 
         self._gwdata = gwdata
         if gwdata is not None:
-            for i in gwdata.keys():
-                if not os.path.isfile(gwdata[i]):
-                    raise InputError(
-                        "The file {} does not exist. Please check the path to "
-                        "your strain file".format(gwdata[i])
+            if isinstance(gwdata, dict):
+                for i in gwdata.keys():
+                    if not os.path.isfile(gwdata[i]):
+                        raise InputError(
+                            "The file {} does not exist. Please check the path "
+                            "to your strain file".format(gwdata[i])
+                        )
+            else:
+                if len(gwdata) > 1:
+                    logger.warn(
+                        "Multiple files passed. Only using {}".format(
+                            gwdata[0]
+                        )
                     )
+                if not os.path.isfile(gwdata[0]):
+                    raise InputError(
+                        "The file {} does not exist. Please check the path "
+                        "to your strain file".format(gwdata[0])
+                    )
+                gwdata = gwdata[0]
             timeseries = StrainFile.load_strain_data(gwdata)
             self._gwdata = timeseries
 

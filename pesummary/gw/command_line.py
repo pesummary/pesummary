@@ -86,7 +86,8 @@ def insert_gwspecific_option_group(parser):
                           nargs='+', default=None)
     gw_group.add_argument("--gwdata", dest="gwdata",
                           help="channels and paths to strain cache files",
-                          action=DictionaryAction, metavar="CHANNEL:CACHEFILE",
+                          action=DictionaryAction,
+                          metavar="CHANNEL:CACHEFILE or PICKLEFILE",
                           nargs="+", default=None)
     gw_group.add_argument("--multi_threading_for_skymap", action="store_true",
                           help=("use multi-threading to speed up generation of "

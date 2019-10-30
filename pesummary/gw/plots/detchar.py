@@ -42,7 +42,12 @@ def spectrogram(
     for num, key in enumerate(list(strain.keys())):
         logger.debug("Generating a spectrogram for {}".format(key))
         figs[key] = plt.figure(figsize=(12, 6))
-        specgram = strain[key].spectrogram(20, fftlength=8, overlap=4) ** (1 / 2.)
+        try:
+            specgram = strain[key].spectrogram(
+                20, fftlength=8, overlap=4
+            ) ** (1 / 2.)
+        except Exception as e:
+            specgram = strain[key].spectrogram(strain[key].duration / 2.)
         plt.pcolormesh(specgram, vmin=vmin, vmax=vmax, norm='log', cmap=cmap)
         plt.ylim(ylim)
         plt.ylabel(r'Frequency [$Hz$]')
@@ -82,10 +87,14 @@ def omegascan(
     figs = {}
     for num, key in enumerate(detectors):
         logger.debug("Generating an omegascan for {}".format(key))
-        cropped_data = strain[key].crop(gps - window, gps + window)
-        qtransform = cropped_data.q_transform(
-            gps=gps, outseg=(gps - 0.5 * window, gps + 0.5 * window), logf=True
-        )
+        try:
+            cropped_data = strain[key].crop(gps - window, gps + window)
+            qtransform = cropped_data.q_transform(
+                gps=gps, outseg=(gps - 0.5 * window, gps + 0.5 * window),
+                logf=True
+            )
+        except Exception as e:
+            qtransform = strain[key].q_transform(gps=gps, logf=True)
         figs[key] = plt.figure(figsize=(12, 6))
         plt.pcolormesh(qtransform, vmin=vmin, vmax=vmax, cmap=cmap)
         plt.ylim(ylim)

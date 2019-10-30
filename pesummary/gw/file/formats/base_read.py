@@ -244,8 +244,15 @@ class GWRead(Read):
             strain data with key equal to the channel and value the path to
             the strain data
         """
-        func_map = {"lcf": GWRead._timeseries_from_cache_file}
+        func_map = {"lcf": GWRead._timeseries_from_cache_file,
+                    "pickle": GWRead._timeseries_from_pickle_file}
         timeseries = {}
+        if isinstance(strain_data, str):
+            ext = GWRead.extension_from_path(strain_data)
+            function = func_map[ext]
+            timeseries = GWRead.load_from_function(function, strain_data)
+            return timeseries
+
         for key in list(strain_data.keys()):
             ext = GWRead.extension_from_path(strain_data[key])
             function = func_map[ext]
@@ -292,6 +299,18 @@ class GWRead(Read):
             raise Exception("Failed to read in the cached file because %s" % (
                             e))
         return strain_data
+
+    @staticmethod
+    def _timeseries_from_pickle_file(pickle_file):
+        """Return a time series from a pickle file
+        """
+        try:
+            from pesummary.gw.file.formats.bilby import Bilby
+
+            data = Bilby._timeseries_from_bilby_pickle(pickle_file)
+        except Exception as e:
+            raise Exception("Failed to read pickle file because %s" % (e))
+        return data
 
     @staticmethod
     def translate_parameters(parameters, samples):
