@@ -301,7 +301,7 @@ class _PlotGeneration(_BasePlotGeneration):
             downsampled = True
         fig = gw._ligo_skymap_plot(
             ra, dec, savedir=os.path.join(webdir, "samples"),
-            nprocess=multi_threading_for_skymap, downsamples=downsampled
+            nprocess=multi_threading_for_skymap, downsampled=downsampled
         )
         plt.savefig(
             os.path.join(savedir, "{}_skymap.png".format(label))

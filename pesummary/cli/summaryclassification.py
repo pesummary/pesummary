@@ -69,9 +69,14 @@ def generate_probabilities(result_files):
         f = GWRead(i)
         if not isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
             f.generate_all_posterior_samples()
-        mydict["default"], mydict["population"] = \
-            PEPredicates.classifications(f.samples, f.parameters)
-        em_bright = PAstro.classifications(f.samples_dict)
+            mydict["default"], mydict["population"] = \
+                PEPredicates.classifications(f.samples, f.parameters)
+            em_bright = PAstro.classifications(f.samples_dict)
+        else:
+            label = f.labels[0]
+            mydict["default"], mydict["population"] = \
+                PEPredicates.classifications(f.samples[0], f.parameters[0])
+            em_bright = PAstro.classifications(f.samples_dict[label])
         mydict["default"]["HasNS"] = em_bright["HasNS"]
         mydict["default"]["HasRemnant"] = em_bright["HasRemnant"]
         classifications.append(mydict)

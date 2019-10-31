@@ -665,7 +665,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             "/{}{}{}/".format(
                 t.value.year,
                 "0{}".format(t.value.month) if t.value.month < 10 else t.value.month,
-                t.value.day
+                "0{}".format(t.value.day) if t.value.day < 10 else t.value.day
             )
         )
         for det in self.gwdata.keys():

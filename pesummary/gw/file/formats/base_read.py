@@ -250,7 +250,11 @@ class GWRead(Read):
         if isinstance(strain_data, str):
             ext = GWRead.extension_from_path(strain_data)
             function = func_map[ext]
-            timeseries = GWRead.load_from_function(function, strain_data)
+            try:
+                timeseries = GWRead.load_from_function(function, strain_data)
+            except Exception as e:
+                logger.info("Failed to load in {} because {}".format(strain_data, e))
+                timeseries = None
             return timeseries
 
         for key in list(strain_data.keys()):
@@ -265,7 +269,12 @@ class GWRead(Read):
                 ifo = "V1"
             else:
                 ifo = key
-            timeseries[ifo] = GWRead.load_from_function(function, reduced_dict)
+            try:
+                timeseries[ifo] = GWRead.load_from_function(function, reduced_dict)
+            except Exception as e:
+                logger.info("Failed to load {} because {}".format(strain_data[key], e))
+            if timeseries == {}:
+                timeseries = None
         return timeseries
 
     @staticmethod
