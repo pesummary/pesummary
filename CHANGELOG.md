@@ -1,4 +1,10 @@
-## 0.2.2 [unreleased]
+## 0.2.3 [unreleased]
+
+### Changed
+
+### Added
+
+## 0.2.2 [31/10/2019]
 
 ### Changed
 
