@@ -7,6 +7,8 @@
   the GW data is passed via the `--gwdata` command line option
 - Added a `summarydetchar` executable which allows for generation of detector
   related plots easily
+- Allow for a `bilby` and `bilby_pipe` datadump pickle file to be passed to
+  PESummary via the `--gwdata` command line option
 
 ## 0.2.1 [27/10/2019]
 
