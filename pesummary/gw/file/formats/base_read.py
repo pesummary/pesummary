@@ -895,7 +895,9 @@ class GWRead(Read):
             if "symmetric_mass_ratio" not in self.parameters:
                 self._eta_from_m1_m2()
             spin_components = [
-                "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
+                "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z",
+                "iota"
+            ]
             spin_angles = ["a_1", "a_2", "tilt_1", "tilt_2", "theta_jn"]
             if all(i in self.parameters for i in spin_components):
                 self._spin_angles()
