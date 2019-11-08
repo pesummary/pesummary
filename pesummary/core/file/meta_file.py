@@ -13,6 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import inspect
 import os
 import numpy as np
 import json
@@ -98,6 +99,12 @@ class PESummaryJsonEncoder(json.JSONEncoder):
         """
         if isinstance(obj, np.ndarray):
             return obj.tolist()
+        if inspect.isfunction(obj):
+            return str(obj)
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
         return json.JSONEncoder.default(self, obj)
 
 
