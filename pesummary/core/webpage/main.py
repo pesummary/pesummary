@@ -72,6 +72,8 @@ class _WebpageGeneration(object):
         Bool to determine if you wish to add to an existing webpage
     notes: str
         notes that you wish to put on the webpages
+    disable_comparison: bool
+        Whether to make comparison pages
     """
     def __init__(
         self, webdir=None, samples=None, labels=None, publication=None,
@@ -80,7 +82,7 @@ class _WebpageGeneration(object):
         existing_labels=None, existing_config=None, existing_file_version=None,
         existing_injection_data=None, existing_samples=None,
         existing_metafile=None, existing_file_kwargs=None,
-        add_to_existing=False, notes=None
+        add_to_existing=False, notes=None, disable_comparison=False
     ):
         self.webdir = webdir
         self.samples = samples
@@ -102,6 +104,9 @@ class _WebpageGeneration(object):
         self.existing_file_kwargs = existing_file_kwargs
         self.add_to_existing = add_to_existing
         self.notes = notes
+        self.make_comparison = (
+            not disable_comparison and self._total_number_of_labels > 1
+        )
         self.categories = self.default_categories()
         self.popular_options = self.default_popular_options()
         self.navbar = {
@@ -116,7 +121,7 @@ class _WebpageGeneration(object):
         self.results_path = {
             "home": "./samples/", "other": "../samples/"
         }
-        if len(self.samples) > 1:
+        if self.make_comparison:
             try:
                 self.comparison_stats = self.generate_comparison_statistics()
             except Exception as e:
@@ -125,6 +130,14 @@ class _WebpageGeneration(object):
                     "Failed to generate comparison statistics because {}. As a "
                     "result they will not be added to the webpages".format(e)
                 )
+
+    @property
+    def _total_number_of_labels(self):
+        _number_of_labels = 0
+        for item in [self.labels, self.existing_labels]:
+            if isinstance(item, list):
+                _number_of_labels += len(item)
+        return _number_of_labels
 
     def generate_comparison_statistics(self):
         """Generate comparison statistics for all parameters that are common to
@@ -228,7 +241,7 @@ class _WebpageGeneration(object):
             "home", ["Result Pages", self._result_page_links()], "Logging",
             "Version"
         ]
-        if len(self.samples) > 1:
+        if self.make_comparison:
             links[1][1] += ["Comparison"]
         if self.publication:
             links.insert(2, "Publication")
@@ -253,7 +266,7 @@ class _WebpageGeneration(object):
                 {"Corner": i}, {"Config": i}, links[i]
             ] for i in self.labels
         }
-        if len(self.samples) > 1:
+        if self.make_comparison:
             for label in self.labels:
                 final_links[label][1][1] += ["Comparison"]
         return final_links
@@ -334,7 +347,7 @@ class _WebpageGeneration(object):
         self.make_1d_histogram_pages()
         self.make_corner_pages()
         self.make_config_pages()
-        if len(self.labels) > 1:
+        if self.make_comparison:
             self.make_comparison_pages()
         self.make_error_page()
         self.make_version_page()

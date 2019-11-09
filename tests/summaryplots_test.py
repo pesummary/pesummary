@@ -309,3 +309,152 @@ class TestPlotGeneration(object):
                           './.outdir_add_to_existing2/plots/combined_cdf_network_optimal_snr.png',
                           './.outdir_add_to_existing2/plots/corner']
         assert all(i == j for i, j in zip(sorted(plots), sorted(expected_plots)))
+
+    def test_plot_generation_for_multiple_without_comparison(self):
+        parser = command_line()
+        insert_gwspecific_option_group(parser)
+        default_arguments = [
+            "--approximant", "IMRPhenomPv2", "IMRPhenomP",
+            "--webdir", "./.outdir_comparison_no_comparison",
+            "--samples", "./tests/files/bilby_example.h5",
+            "./tests/files/lalinference_example.h5",
+            "--labels", "H1_0", "H1_1",
+            "--disable_comparison"
+        ]
+        opts = parser.parse_args(default_arguments)
+        inputs = GWInput(opts)
+        webpage = GWPlotGeneration(inputs)
+        webpage.generate_plots()
+        plots = sorted(glob("./.outdir_comparison/plots/*"))
+        expected_plots = ['./.outdir_comparison_no_comparison/plots/H1_0_1d_posterior_H1_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_1d_posterior_log_likelihood.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_1d_posterior_mass_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_1d_posterior_a_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_1d_posterior_a_2.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_1d_posterior_network_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_autocorrelation_H1_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_autocorrelation_log_likelihood.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_autocorrelation_mass_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_autocorrelation_a_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_autocorrelation_a_2.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_autocorrelation_network_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_cdf_H1_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_cdf_log_likelihood.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_cdf_mass_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_cdf_a_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_cdf_a_2.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_cdf_network_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_sample_evolution_H1_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_sample_evolution_log_likelihood.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_sample_evolution_mass_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_sample_evolution_a_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_sample_evolution_a_2.png',
+                          './.outdir_comparison_no_comparison/plots/H1_0_sample_evolution_network_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_1d_posterior_H1_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_1d_posterior_log_likelihood.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_1d_posterior_mass_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_1d_posterior_a_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_1d_posterior_a_2.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_1d_posterior_network_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_autocorrelation_H1_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_autocorrelation_log_likelihood.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_autocorrelation_mass_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_autocorrelation_a_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_autocorrelation_a_2.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_autocorrelation_network_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_cdf_H1_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_cdf_log_likelihood.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_cdf_mass_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_cdf_a_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_cdf_a_2.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_cdf_network_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_sample_evolution_H1_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_sample_evolution_log_likelihood.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_sample_evolution_mass_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_sample_evolution_a_1.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_sample_evolution_a_2.png',
+                          './.outdir_comparison_no_comparison/plots/H1_1_sample_evolution_network_optimal_snr.png',
+                          './.outdir_comparison_no_comparison/plots/corner']
+        for i,j in zip(sorted(plots), sorted(expected_plots)):
+            print(i, j)
+        assert all(i == j for i,j in zip(sorted(plots), sorted(expected_plots)))
+
+    def test_plot_generation_for_add_to_existing_without_comparison(self):
+        parser = command_line()
+        insert_gwspecific_option_group(parser)
+        default_arguments = [
+            "--approximant", "IMRPhenomPv2",
+            "--webdir", "./.outdir_add_to_existing_no_comparison",
+            "--samples", "./tests/files/bilby_example.h5",
+            "--labels", "H1"]
+        opts = parser.parse_args(default_arguments)
+        inputs = GWInput(opts)
+        webpage = GWPlotGeneration(inputs)
+        webpage.generate_plots()
+        webpage = GWWebpageGeneration(inputs)
+        webpage.generate_webpages()
+        meta_file = GWMetaFile(inputs)
+        parser = command_line()
+        insert_gwspecific_option_group(parser)
+        default_arguments = [
+            "--approximant", "IMRPhenomP",
+            "--existing_webdir", "./.outdir_add_to_existing_no_comparison",
+            "--samples", "./tests/files/lalinference_example.h5",
+            "--labels", "H1_0",
+            "--disable_comparison"
+        ]
+        opts = parser.parse_args(default_arguments)
+        inputs = GWInput(opts)
+        webpage = GWPlotGeneration(inputs)
+        webpage.generate_plots()
+        plots = sorted(glob("./.outdir_add_to_existing2/plots/*"))
+        expected_plots = ['./.outdir_add_to_existing_no_comparison/plots/H1_0_1d_posterior_H1_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_1d_posterior_log_likelihood.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_1d_posterior_mass_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_1d_posterior_a_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_1d_posterior_a_2.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_1d_posterior_network_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_autocorrelation_H1_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_autocorrelation_log_likelihood.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_autocorrelation_mass_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_autocorrelation_a_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_autocorrelation_a_2.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_autocorrelation_network_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_cdf_H1_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_cdf_log_likelihood.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_cdf_mass_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_cdf_a_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_cdf_a_2.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_cdf_network_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_sample_evolution_H1_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_sample_evolution_log_likelihood.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_sample_evolution_mass_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_sample_evolution_a_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_sample_evolution_a_2.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_0_sample_evolution_network_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_1d_posterior_H1_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_1d_posterior_log_likelihood.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_1d_posterior_mass_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_1d_posterior_a_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_1d_posterior_a_2.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_1d_posterior_network_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_autocorrelation_H1_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_autocorrelation_log_likelihood.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_autocorrelation_mass_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_autocorrelation_a_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_autocorrelation_a_2.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_autocorrelation_network_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_cdf_H1_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_cdf_log_likelihood.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_cdf_mass_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_cdf_a_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_cdf_a_2.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_cdf_network_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_sample_evolution_H1_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_sample_evolution_log_likelihood.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_sample_evolution_mass_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_sample_evolution_a_1.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_sample_evolution_a_2.png',
+                          './.outdir_add_to_existing_no_comparison/plots/H1_sample_evolution_network_optimal_snr.png',
+                          './.outdir_add_to_existing_no_comparison/plots/corner']
+        assert all(i == j for i, j in zip(sorted(plots), sorted(expected_plots)))

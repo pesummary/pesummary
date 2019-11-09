@@ -138,6 +138,7 @@ class Input(object):
         self.include_prior = self.opts.include_prior
         self.colors = None
         self.notes = self.opts.notes
+        self.disable_comparison = self.opts.disable_comparison
         self.copy_files()
 
     @staticmethod
@@ -982,6 +983,9 @@ class PostProcessing(object):
         if True, the metafile is stored in hdf5 format. Default False
     same_parameters: dict
         list of parameters that are common in all result files
+    disable_comparison: bool
+        whether or not to make comparison plots/pages when mutiple results
+        files are present
     """
     def __init__(self, inputs, colors="default"):
         self.inputs = inputs
@@ -1031,6 +1035,7 @@ class PostProcessing(object):
         self.colors = self.inputs.colors
         self.include_prior = self.inputs.include_prior
         self.notes = self.inputs.notes
+        self.disable_comparison = self.inputs.disable_comparison
         self.same_parameters = []
 
     @property

@@ -75,7 +75,8 @@ class _CoreWebpageGeneration(PostProcessing):
             existing_samples=self.existing_samples,
             existing_metafile=self.existing,
             existing_file_kwargs=self.existing_file_kwargs,
-            add_to_existing=self.add_to_existing, notes=self.notes
+            add_to_existing=self.add_to_existing, notes=self.notes,
+            disable_comparison=self.disable_comparison
         )
 
     def generate_webpages(self):
@@ -116,6 +117,7 @@ class _GWWebpageGeneration(GWPostProcessing):
             add_to_existing=self.add_to_existing,
             existing_file_kwargs=self.existing_file_kwargs,
             result_files=self.result_files, notes=self.notes,
+            disable_comparison=self.disable_comparison,
             pastro_probs=self.pastro_probs, gwdata=self.gwdata,
         )
 

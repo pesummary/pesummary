@@ -77,7 +77,8 @@ class _CorePlotGeneration(PostProcessing):
             injection_data=self.injection_data,
             colors=self.colors, custom_plotting=self.custom_plotting,
             add_to_existing=self.add_to_existing, priors=self.priors,
-            include_prior=self.include_prior, weights=self.weights
+            include_prior=self.include_prior, weights=self.weights,
+            disable_comparison=self.disable_comparison
         )
 
     def generate_plots(self):
@@ -124,7 +125,8 @@ class _GWPlotGeneration(GWPostProcessing):
             pepredicates_probs=self.pepredicates_probs,
             include_prior=self.include_prior, publication=self.publication,
             existing_psd=self.existing_psd,
-            existing_calibration=self.existing_calibration, weights=self.weights
+            existing_calibration=self.existing_calibration, weights=self.weights,
+            disable_comparison=self.disable_comparison
         )
 
     def generate_plots(self):
@@ -164,6 +166,9 @@ def command_line():
     parser.add_argument("--burnin", dest="burnin",
                         help="Number of samples to remove as burnin",
                         default=None)
+    parser.add_argument("--disable_comparison", action="store_true", default=False,
+                        help="Whether to make comparison plots when multiple "
+                             "results are passed.")
     return parser
 
 

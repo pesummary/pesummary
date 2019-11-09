@@ -48,7 +48,7 @@ class _PlotGeneration(_BasePlotGeneration):
         multi_threading_for_skymap=None, approximant=None,
         pepredicates_probs=None, include_prior=False, publication=False,
         existing_approximant=None, existing_psd=None, existing_calibration=None,
-        weights=None
+        weights=None, disable_comparison=True
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -59,7 +59,8 @@ class _PlotGeneration(_BasePlotGeneration):
             injection_data=injection_data,
             colors=colors, custom_plotting=custom_plotting,
             add_to_existing=add_to_existing, priors=priors,
-            include_prior=include_prior
+            include_prior=include_prior, weights=weights,
+            disable_comparison=disable_comparison
         )
         self.file_kwargs = file_kwargs
         self.existing_file_kwargs = existing_file_kwargs
@@ -78,30 +79,24 @@ class _PlotGeneration(_BasePlotGeneration):
         self.pepredicates_probs = pepredicates_probs
         self.publication = publication
 
-        self.plot_type_dictionary = {
-            "corner": self.corner_plot,
-            "oned_histogram": self.oned_histogram_plot,
-            "sample_evolution": self.sample_evolution_plot,
-            "autocorrelation": self.autocorrelation_plot,
-            "oned_cdf": self.oned_cdf_plot,
-            "oned_histogram_comparison": self.oned_histogram_comparison_plot,
-            "oned_cdf_comparison": self.oned_cdf_comparison_plot,
-            "box_plot_comparison": self.box_plot_comparison_plot,
-            "custom": self.custom_plot,
+        self.plot_type_dictionary.update({
             "psd": self.psd_plot,
             "calibration": self.calibration_plot,
             "skymap": self.skymap_plot,
             "waveform_fd": self.waveform_fd_plot,
             "waveform_td": self.waveform_td_plot,
             "data": self.gwdata_plots,
-            "skymap_comparison": self.skymap_comparison_plot,
-            "waveform_comparison_fd": self.waveform_comparison_fd_plot,
-            "waveform_comparison_td": self.waveform_comparison_td_plot,
-            "2d_comparison_contour": self.twod_comparison_contour_plot,
             "violin": self.violin_plot,
             "spin_disk": self.spin_dist_plot,
             "pepredicates": self.pepredicates_plot
-        }
+        })
+        if self.make_comparison:
+            self.plot_type_dictionary.update({
+                "skymap_comparison": self.skymap_comparison_plot,
+                "waveform_comparison_fd": self.waveform_comparison_fd_plot,
+                "waveform_comparison_td": self.waveform_comparison_td_plot,
+                "2d_comparison_contour": self.twod_comparison_contour_plot,
+            })
 
     def generate_plots(self):
         """Generate all plots for all result files
@@ -115,7 +110,7 @@ class _PlotGeneration(_BasePlotGeneration):
             self.try_to_make_a_plot("psd")
         if self.add_to_existing:
             self.add_existing_data()
-        if len(self.samples) > 1:
+        if self.make_comparison:
             logger.debug("Starting to generate comparison plots")
             self._generate_comparison_plots()
 
