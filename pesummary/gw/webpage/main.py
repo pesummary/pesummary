@@ -111,7 +111,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         existing_file_version=None, existing_injection_data=None,
         existing_samples=None, existing_metafile=None, add_to_existing=False,
         existing_file_kwargs=None, result_files=None, notes=None,
-        pastro_probs=None, gwdata=None
+        disable_comparison=False, pastro_probs=None, gwdata=None
     ):
         self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
@@ -135,7 +135,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             existing_samples=existing_samples,
             existing_metafile=existing_metafile,
             existing_file_kwargs=existing_file_kwargs,
-            add_to_existing=add_to_existing, notes=notes
+            add_to_existing=add_to_existing, notes=notes,
+            disable_comparison=disable_comparison
         )
 
     def categorize_parameters(self, parameters):
@@ -229,7 +230,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.make_1d_histogram_pages()
         self.make_corner_pages()
         self.make_config_pages()
-        if len(self.labels) > 1:
+        if self.make_comparison:
             self.make_comparison_pages()
         if self.publication:
             self.make_publication_pages()
@@ -262,7 +263,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         html_file.make_banner(approximant=banner, key="Summary")
         path = self.image_path["home"]
 
-        if len(self.labels) > 1:
+        if self.make_comparison:
             if not all(self.approximant[i] is not None for i in self.labels):
                 image_contents = []
                 image_contents.append(

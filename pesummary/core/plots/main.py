@@ -56,13 +56,17 @@ class _PlotGeneration(object):
         list of result files passed
     colors: list
         colors that you wish to use to distinguish different result files
+    disable_comparison: bool, optional
+        whether to make comparison plots, default is True.
+        if disable_comparison is False and len(labels) == 1, no comparsion plots
+        will be generated
     """
     def __init__(
         self, savedir=None, webdir=None, labels=None, samples=None,
         kde_plot=False, existing_labels=None, existing_injection_data=None,
         existing_samples=None, same_parameters=None, injection_data=None,
         colors=None, custom_plotting=None, add_to_existing=False, priors={},
-        include_prior=False, weights=None
+        include_prior=False, weights=None, disable_comparison=False
     ):
         self.webdir = webdir
         self.savedir = savedir
@@ -79,6 +83,9 @@ class _PlotGeneration(object):
         self.add_to_existing = add_to_existing
         self.priors = priors
         self.include_prior = include_prior
+        self.make_comparison = (
+            not disable_comparison and self._total_number_of_labels > 1
+        )
         self.weights = (
             weights if weights is not None else {i: None for i in self.labels}
         )
@@ -101,11 +108,22 @@ class _PlotGeneration(object):
             "sample_evolution": self.sample_evolution_plot,
             "autocorrelation": self.autocorrelation_plot,
             "oned_cdf": self.oned_cdf_plot,
-            "oned_histogram_comparison": self.oned_histogram_comparison_plot,
-            "oned_cdf_comparison": self.oned_cdf_comparison_plot,
-            "box_plot_comparison": self.box_plot_comparison_plot,
             "custom": self.custom_plot
         }
+        if self.make_comparison:
+            self.plot_type_dictionary.update(dict(
+                oned_histogram_comparison=self.oned_histogram_comparison_plot,
+                oned_cdf_comparison=self.oned_cdf_comparison_plot,
+                box_plot_comparison=self.box_plot_comparison_plot,
+            ))
+
+    @property
+    def _total_number_of_labels(self):
+        _number_of_labels = 0
+        for item in [self.labels, self.existing_labels]:
+            if isinstance(item, list):
+                _number_of_labels += len(item)
+        return _number_of_labels
 
     @staticmethod
     def check_latex_labels(parameters):
@@ -139,7 +157,7 @@ class _PlotGeneration(object):
             self._generate_plots(i)
         if self.add_to_existing:
             self.add_existing_data()
-        if len(self.samples) > 1:
+        if self.make_comparison:
             logger.debug("Starting to generate comparison plots")
             self._generate_comparison_plots()
 

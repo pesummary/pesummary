@@ -179,4 +179,7 @@ def command_line():
                               "put on summarypages"), default=None)
     parser.add_argument("--prior_file", dest="prior_file",
                         help="Prior samples file", nargs='+', default=None)
+    parser.add_argument("--disable_comparison", action="store_true", default=False,
+                        help="Whether to make a comparison webpage is multple "
+                             "results are present")
     return parser

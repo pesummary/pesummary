@@ -177,6 +177,7 @@ class GWInput(Input):
         self.multi_threading_for_skymap = self.opts.multi_threading_for_skymap
         self.gwdata = self.opts.gwdata
         self.notes = self.opts.notes
+        self.disable_comparison = self.opts.disable_comparison
         self.pepredicates_probs = []
         self.pastro_probs = []
         self.copy_files()
@@ -878,6 +879,8 @@ class GWPostProcessing(PostProcessing):
     pepredicates_probs: dict
         dictionary containing the source classification probabilities for each
         result file
+    disable_comparison: bool
+        Whether to make comparison webpage
     """
     def __init__(self, inputs, colors="default"):
         self.inputs = inputs
@@ -943,6 +946,7 @@ class GWPostProcessing(PostProcessing):
         self.colors = self.inputs.colors
         self.include_prior = self.inputs.include_prior
         self.notes = self.inputs.notes
+        self.disable_comparison = self.inputs.disable_comparison
         self.maxL_samples = []
         self.same_parameters = []
         self.pepredicates_probs = self.inputs.pepredicates_probs
