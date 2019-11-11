@@ -185,12 +185,21 @@ class Bilby(GWRead):
 
     @staticmethod
     def _grab_data_from_bilby_file(path):
-        """Load the results file using the `bilby` library
+        """
+        Load the results file using the `bilby` library
+
+        Complex matched filter SNRs are stored in the result file.
+        The amplitude and angle are extracted here.
         """
         from bilby.core.result import read_in_result
 
         bilby_object = read_in_result(filename=path)
         posterior = bilby_object.posterior
+        _original_keys = posterior.keys()
+        for key in _original_keys:
+            if "matched_filter_snr" in key and any(np.iscomplex(posterior[key])):
+                posterior[key + "_amp"] = abs(posterior[key])
+                posterior[key + "_angle"] = np.angle(posterior[key])
         # Drop all non numeric bilby data outputs
         posterior = posterior.select_dtypes(include=[float, int])
         parameters = list(posterior.keys())
