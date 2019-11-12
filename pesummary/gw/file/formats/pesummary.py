@@ -82,8 +82,11 @@ class PESummary(CorePESummary):
             if "injection_data" in dictionary.keys():
                 inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
                 for num, j in enumerate(inj):
-                    if isinstance(j, (str, bytes)):
+                    if isinstance(j, bytes):
                         if j.decode("utf-8") == "NaN":
+                            inj[num] = float("nan")
+                    elif isinstance(j, str):
+                        if j == "Nan":
                             inj[num] = float("nan")
                     elif isinstance(j, (list, np.ndarray)):
                         inj[num] = inj[num][0]
@@ -101,7 +104,10 @@ class PESummary(CorePESummary):
             if "calibration_envelope" in dictionary.keys():
                 cal, = GWRead.load_recusively("calibration_envelope", dictionary)
             if "approximant" in dictionary.keys():
-                approx_list.append(dictionary["approximant"]["%s" % (i)])
+                if "%s" % (i) in dictionary["approximant"].keys():
+                    approx_list.append(dictionary["approximant"]["%s" % (i)])
+                else:
+                    approx_list.append(None)
             else:
                 approx_list.append(None)
             if "meta_data" in dictionary.keys():
