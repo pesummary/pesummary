@@ -424,6 +424,8 @@ def guess_url(web_dir, host, user):
             url = "https://atlas1.atlas.aei.uni-hannover.de/~{}".format(user)
         elif 'iucca' in host:
             url = "https://ldas-jobs.gw.iucaa.in/~{}".format(user)
+        elif 'hawk' in host:
+            url = "https://ligo.gravity.cf.ac.uk/~{}".format(user)
         else:
             url = "https://{}/~{}".format(host, user)
         url += path

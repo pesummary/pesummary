@@ -374,25 +374,15 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             for j in self.samples[i].keys():
                 row = []
                 row.append(j)
-                for k in range(len(self.key_data[i])):
-                    row.append(np.round(self.key_data[i][j]["maxL"], 3))
-                for k in range(len(self.key_data[i])):
-                    row.append(np.round(self.key_data[i][j]["mean"], 3))
-                for k in range(len(self.key_data[i])):
-                    row.append(np.round(self.key_data[i][j]["median"], 3))
-                for k in range(len(self.key_data[i])):
-                    row.append(np.round(self.key_data[i][j]["std"], 3))
+                row.append(np.round(self.key_data[i][j]["maxL"], 3))
+                row.append(np.round(self.key_data[i][j]["mean"], 3))
+                row.append(np.round(self.key_data[i][j]["median"], 3))
+                row.append(np.round(self.key_data[i][j]["std"], 3))
                 contents.append(row)
 
-            table_contents = []
-            for j in contents:
-                one_approx_content = [j[0]] + [
-                    j[k * len(self.labels) + num + 1] for k in range(4)
-                ]
-                table_contents.append(one_approx_content)
             html_file.make_table(
                 headings=[" ", "maxL", "mean", "median", "std"],
-                contents=table_contents, heading_span=1
+                contents=contents, heading_span=1
             )
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()

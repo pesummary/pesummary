@@ -577,15 +577,16 @@ class GWInput(Input):
             ]
             if not all(i > self._nsamples_for_skymap for i in number_of_samples):
                 min_arg = np.argmin(number_of_samples)
-                raise InputError(
+                logger.warn(
                     "You have specified that you would like to use {} "
                     "samples to generate the skymap but the file {} only "
-                    "has {} samples. Please reduce the number of samples "
-                    "you wish to use for the skymap production".format(
+                    "has {} samples. Reducing the number of samples to "
+                    "generate the skymap to {}".format(
                         self._nsamples_for_skymap, self.result_files[min_arg],
-                        number_of_samples[min_arg]
+                        number_of_samples[min_arg], number_of_samples[min_arg]
                     )
                 )
+                self._nsamples_for_skymap = int(number_of_samples[min_arg])
 
     @property
     def gwdata(self):
@@ -727,7 +728,7 @@ class GWInput(Input):
         if isinstance(input, dict):
             keys = list(input.keys())
         if isinstance(input, dict) and isinstance(input[keys[0]], list):
-            if not all(len(input[i]) != len(self.labels) for i in list(keys)):
+            if not all(len(input[i]) == len(self.labels) for i in list(keys)):
                 raise InputError(
                     "Please ensure the number of calibration/psd files matches "
                     "the number of result files passed"

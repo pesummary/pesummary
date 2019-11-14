@@ -122,9 +122,20 @@ def make_2d_contour_plot(opts):
     parameters, samples = read_samples(opts.samples)
     for i in default:
         if not all(all(k in j for k in i) for j in parameters):
-            logger.info("Failed to generate plot because %s are not in both "
-                        "result files" % (" and ".join(i)))
-            continue
+            idxs = [
+                num for num, j in enumerate(parameters) if not
+                all(k in j for k in i)
+            ]
+            files = [opts.samples[j] for j in idxs]
+            logger.warn(
+                "Removing {} from 2d contour plot because the parameters {} are "
+                "not in the result file".format(
+                    " and ".join(files), " and ".join(i)
+                )
+            )
+            parameters = [j for num, j in enumerate(parameters) if num not in idxs]
+            opts.labels = [j for num, j in enumerate(opts.labels) if num not in idxs]
+            samples = [j for num, j in enumerate(samples) if num not in idxs]
         ind1 = [j.index(i[0]) for j in parameters]
         ind2 = [j.index(i[1]) for j in parameters]
         samples1 = [[k[ind1[num]] for k in l] for num, l in
@@ -158,9 +169,17 @@ def make_violin_plot(opts):
 
     for i in default:
         if not all(i in j for j in parameters):
-            logger.info("Failed to generate violin plots for %s because "
-                        "%s is not in all result files" % (i, i))
-            continue
+            idxs = [num for num, j in enumerate(parameters) if i not in j]
+            files = [opts.samples[j] for j in idxs]
+            logger.warn(
+                "Removing {} from violin plot because the parameter {} does "
+                "not exist in the result file".format(
+                    " and ".join(files), i
+                )
+            )
+            parameters = [j for num, j in enumerate(parameters) if num not in idxs]
+            opts.labels = [j for num, j in enumerate(opts.labels) if num not in idxs]
+            samples = [j for num, j in enumerate(samples) if num not in idxs]
         try:
             ind = [j.index(i) for j in parameters]
             samples = [[k[ind[num]] for k in l] for num, l in
