@@ -200,7 +200,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         """Make a navbar for the result page homepage
         """
         links = {
-            i: ["1d Histograms", [{"Multiple": i}]] for i in self.labels
+            i: ["1d Histograms", [{"Custom": i}, {"All": i}]] for i in self.labels
         }
         for num, label in enumerate(self.labels):
             for j in self.categorize_parameters(self.samples[label].keys()):
@@ -530,7 +530,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
         html_file = self.setup_page(
-            "Comparison_Multiple", self.navbar["comparison"],
+            "Comparison_Custom", self.navbar["comparison"],
             approximant="Comparison", title="Comparison Posteriors for multiple"
         )
         html_file.make_search_bar(
