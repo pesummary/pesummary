@@ -733,6 +733,25 @@ class _WebpageGeneration(object):
         )
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
+        html_file = self.setup_page(
+            "Comparison_All", self.navbar["comparison"],
+            title="All posteriors for Comparison", approximant="Comparison"
+        )
+        html_file.make_banner(approximant="Comparison", key="Comparison")
+        for j in self.same_parameters:
+            html_file.make_banner(
+                approximant=j, _style="font-size: 26px;"
+            )
+            contents = [
+                [path + "combined_1d_posterior_{}.png".format(j)],
+                [
+                    path + "combined_cdf_{}.png".format(j),
+                    path + "combined_boxplot_{}.png".format(j)
+                ]
+            ]
+            html_file.make_table_of_images(
+                contents=contents, rows=1, columns=2, code="changeimage")
+        html_file.close()
 
     def make_error_page(self):
         """Wrapper function for _make_error_page

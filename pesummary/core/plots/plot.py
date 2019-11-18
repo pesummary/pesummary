@@ -19,6 +19,7 @@ from pesummary import conf
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import corner
 import copy
 
@@ -117,7 +118,9 @@ def _1d_cdf_plot(param, samples, latex_label):
     return fig
 
 
-def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels):
+def _1d_cdf_comparison_plot(
+        param, samples, colors, latex_label, labels, linestyles=None
+):
     """Generate a plot to compare the cdfs for a given parameter for different
     approximants.
 
@@ -137,18 +140,30 @@ def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels):
         label to prepend the approximant in the legend
     """
     logger.debug("Generating the 1d comparison CDF for %s" % (param))
+    if linestyles is None:
+        linestyles = ["-"] * len(samples)
     fig = plt.figure(figsize=(8, 6))
+    handles = []
     for num, i in enumerate(samples):
         sorted_samples = copy.deepcopy(samples[num])
         sorted_samples = sorted(sorted_samples)
         plt.plot(sorted_samples, np.linspace(0, 1, len(sorted_samples)),
-                 color=colors[num], label=labels[num])
+                 color=colors[num], label=labels[num],
+                 linestyle=linestyles[num])
+        handles.append(
+            mlines.Line2D([], [], color=colors[num], label=labels[num])
+        )
+    legend = plt.legend(
+        handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+        handlelength=3, ncol=2, mode="expand", borderaxespad=0.
+    )
+    for num, legobj in enumerate(legend.legendHandles):
+        legobj.set_linewidth(1.75)
+        legobj.set_linestyle(linestyles[num])
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Cumulative Density Function", fontsize=16)
     plt.grid(b=True)
     plt.ylim([0, 1.05])
-    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-               ncol=2, mode="expand", borderaxespad=0.)
     plt.tight_layout()
     return fig
 
@@ -217,7 +232,8 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
 
 
 def _1d_comparison_histogram_plot(param, samples, colors,
-                                  latex_label, labels, kde=False):
+                                  latex_label, labels, kde=False,
+                                  linestyles=None):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
 
@@ -237,15 +253,21 @@ def _1d_comparison_histogram_plot(param, samples, colors,
         label to prepend the approximant in the legend
     kde: Bool
         if true, a kde is plotted instead of a histogram
+    linestyles: list
+        list of linestyles for each set of samples
     """
     logger.debug("Generating the 1d comparison histogram plot for %s" % (param))
+    if linestyles is None:
+        linestyles = ["-"] * len(samples)
     fig = plt.figure(figsize=(8, 6))
+    handles = []
     for num, i in enumerate(samples):
         if np.ptp(i) == 0:
             plt.axvline(i[0], color=colors[num], label=labels[num])
         elif not kde:
             plt.hist(i, histtype="step", bins=50, color=colors[num],
-                     label=labels[num], linewidth=2.5, density=True)
+                     label=labels[num], linewidth=2.5, density=True,
+                     linestyle=linestyles[num])
         else:
             kdeplot(i, color=colors[num], shade=True, alpha_shade=0.05,
                     clip=[np.min(i), np.max(i)], linewidth=1.5,
@@ -254,10 +276,18 @@ def _1d_comparison_histogram_plot(param, samples, colors,
                     linewidth=2.5)
         plt.axvline(x=np.percentile(i, 10), color=colors[num], linestyle='--',
                     linewidth=2.5)
+        handles.append(
+            mlines.Line2D([], [], color=colors[num], label=labels[num])
+        )
+    legend = plt.legend(
+        handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+        handlelength=3, ncol=2, mode="expand", borderaxespad=0.
+    )
+    for num, legobj in enumerate(legend.legendHandles):
+        legobj.set_linewidth(1.75)
+        legobj.set_linestyle(linestyles[num])
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
-    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-               ncol=2, mode="expand", borderaxespad=0.)
     plt.grid(b=True)
     plt.tight_layout()
     return fig

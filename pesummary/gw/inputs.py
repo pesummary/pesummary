@@ -165,7 +165,8 @@ class GWInput(Input):
         self.hdf5 = self.opts.save_to_hdf5
         self.palette = self.opts.palette
         self.include_prior = self.opts.include_prior
-        self.colors = None
+        self.colors = self.opts.colors
+        self.linestyles = self.opts.linestyles
         self.approximant = self.opts.approximant
         self.gracedb = self.opts.gracedb
         self.detectors = None
@@ -945,6 +946,7 @@ class GWPostProcessing(PostProcessing):
         self.multi_threading_for_skymap = self.inputs.multi_threading_for_skymap
         self.gwdata = self.inputs.gwdata
         self.colors = self.inputs.colors
+        self.linestyles = self.inputs.linestyles
         self.include_prior = self.inputs.include_prior
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison

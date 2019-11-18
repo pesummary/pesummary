@@ -17,6 +17,7 @@ from pesummary.utils.utils import logger
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import seaborn
 from pesummary.gw.plots import violin
 from pesummary.gw.plots.bounded_2d_kde import Bounded_2d_kde, default_bounds
@@ -97,7 +98,9 @@ def estimate_2d_posterior(samples, xlow=None, xhigh=None, ylow=None,
     return {'xx': xx, 'yy': yy, 'z': z, 'kde': den, 'kde_sel': kde_sel}
 
 
-def twod_contour_plots(parameters, samples, labels, latex_labels, colors=None):
+def twod_contour_plots(
+    parameters, samples, labels, latex_labels, colors=None, linestyles=None
+):
     """Generate 2d contour plots for a set of samples for given parameters
 
     Parameters
@@ -116,8 +119,11 @@ def twod_contour_plots(parameters, samples, labels, latex_labels, colors=None):
         palette = seaborn.color_palette(palette="pastel", n_colors=len(samples))
     else:
         palette = colors
+    if linestyles is None:
+        linestyles = ["-"] * len(samples)
     fig, ax1 = plt.subplots(nrows=1, ncols=1)
     transform = xlow = xhigh = ylow = yhigh = None
+    handles = []
     for num, i in enumerate(samples):
         if parameters[0] in list(default_bounds.keys()):
             if "low" in list(default_bounds[parameters[0]].keys()):
@@ -160,16 +166,26 @@ def twod_contour_plots(parameters, samples, labels, latex_labels, colors=None):
         zvalues.sort()
 
         cs = ax1.contour(
-            xx, yy, z, levels=zvalues, colors=[palette[num]], linewidths=1.5)
-        cs.collections[0].set_label('%s' % (labels[num]))
+            xx, yy, z, levels=zvalues, colors=[palette[num]], linewidths=1.5,
+            linestyles=[linestyles[num]]
+        )
+        handles.append(
+            mlines.Line2D([], [], color=palette[num], label=labels[num])
+        )
     if all("mass_1" in i or "mass_2" in i for i in parameters):
 
         reg = plt.Polygon([[0, 0], [0, 1000], [1000, 1000]], color='gray', alpha=0.75)
         ax1.add_patch(reg)
     ax1.set_xlabel(latex_labels[parameters[0]])
     ax1.set_ylabel(latex_labels[parameters[1]])
-    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-               ncol=4, mode="expand", borderaxespad=0.)
+
+    legend = plt.legend(
+        handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+        handlelength=3, ncol=4, mode="expand", borderaxespad=0.
+    )
+    for num, legobj in enumerate(legend.legendHandles):
+        legobj.set_linewidth(1.75)
+        legobj.set_linestyle(linestyles[num])
     plt.tight_layout()
     return fig
 

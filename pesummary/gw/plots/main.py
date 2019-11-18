@@ -48,7 +48,7 @@ class _PlotGeneration(_BasePlotGeneration):
         multi_threading_for_skymap=None, approximant=None,
         pepredicates_probs=None, include_prior=False, publication=False,
         existing_approximant=None, existing_psd=None, existing_calibration=None,
-        weights=None, disable_comparison=True
+        weights=None, disable_comparison=False, linestyles=None
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -60,7 +60,7 @@ class _PlotGeneration(_BasePlotGeneration):
             colors=colors, custom_plotting=custom_plotting,
             add_to_existing=add_to_existing, priors=priors,
             include_prior=include_prior, weights=weights,
-            disable_comparison=disable_comparison
+            disable_comparison=disable_comparison, linestyles=linestyles
         )
         self.file_kwargs = file_kwargs
         self.existing_file_kwargs = existing_file_kwargs
@@ -654,7 +654,8 @@ class _PlotGeneration(_BasePlotGeneration):
                 continue
             samples = [[self.samples[i][j] for j in plot] for i in self.labels]
             arguments = [
-                self.savedir, plot, samples, self.labels, latex_labels
+                self.savedir, plot, samples, self.labels, latex_labels,
+                self.colors, self.linestyles
             ]
             self._try_to_make_a_plot(
                 arguments, self._twod_comparison_contour_plot,
@@ -663,7 +664,8 @@ class _PlotGeneration(_BasePlotGeneration):
 
     @staticmethod
     def _twod_comparison_contour_plot(
-        savedir, plot_parameters, samples, labels, latex_labels
+        savedir, plot_parameters, samples, labels, latex_labels, colors,
+        linestyles
     ):
         """Generate a 2d comparison contour plot for a given set of samples
 
@@ -681,7 +683,8 @@ class _PlotGeneration(_BasePlotGeneration):
             dictionary containing the latex labels for each parameter
         """
         fig = publication.twod_contour_plots(
-            plot_parameters, samples, labels, latex_labels
+            plot_parameters, samples, labels, latex_labels, colors=colors,
+            linestyles=linestyles
         )
         plt.savefig(
             os.path.join(
