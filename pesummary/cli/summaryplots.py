@@ -78,7 +78,8 @@ class _CorePlotGeneration(PostProcessing):
             colors=self.colors, custom_plotting=self.custom_plotting,
             add_to_existing=self.add_to_existing, priors=self.priors,
             include_prior=self.include_prior, weights=self.weights,
-            disable_comparison=self.disable_comparison
+            disable_comparison=self.disable_comparison,
+            linestyles=self.linestyles
         )
 
     def generate_plots(self):
@@ -126,6 +127,7 @@ class _GWPlotGeneration(GWPostProcessing):
             include_prior=self.include_prior, publication=self.publication,
             existing_psd=self.existing_psd,
             existing_calibration=self.existing_calibration, weights=self.weights,
+            linestyles=self.linestyles,
             disable_comparison=self.disable_comparison
         )
 

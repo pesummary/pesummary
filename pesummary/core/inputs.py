@@ -136,7 +136,8 @@ class Input(object):
         self.hdf5 = self.opts.save_to_hdf5
         self.palette = self.opts.palette
         self.include_prior = self.opts.include_prior
-        self.colors = None
+        self.colors = self.opts.colors
+        self.linestyles = self.opts.linestyles
         self.notes = self.opts.notes
         self.disable_comparison = self.opts.disable_comparison
         self.copy_files()
@@ -817,14 +818,67 @@ class Input(object):
 
     @colors.setter
     def colors(self, colors):
+        if colors is not None:
+            number = len(self.labels)
+            if self.existing:
+                number += len(self.existing_labels)
+            if len(colors) != number and len(colors) > number:
+                logger.info(
+                    "You have passed {} colors for {} result files. Setting "
+                    "colors = {}".format(
+                        len(colors), number, colors[:number]
+                    )
+                )
+                self._colors = colors[:number]
+                return
+            elif len(colors) != number:
+                logger.warn(
+                    "Number of colors does not match the number of labels. "
+                    "Using default colors"
+                )
         import seaborn
 
         number = len(self.labels)
         if self.existing:
             number += len(self.existing_labels)
-        self._colors = seaborn.color_palette(
+        colors = seaborn.color_palette(
             palette=conf.palette, n_colors=number
         ).as_hex()
+        self._colors = colors
+
+    @property
+    def linestyles(self):
+        return self._linestyles
+
+    @linestyles.setter
+    def linestyles(self, linestyles):
+        if linestyles is not None:
+            if len(linestyles) != len(self.colors):
+                if len(linestyles) > len(self.colors):
+                    logger.info(
+                        "You have passed {} linestyles for {} result files. "
+                        "Setting linestyles = {}".format(
+                            len(linestyles), len(self.colors),
+                            linestyles[:len(self.colors)]
+                        )
+                    )
+                    self._linestyles = linestyles[:len(self.colors)]
+                    return
+                else:
+                    logger.warn(
+                        "Number of linestyles does not match the number of "
+                        "labels. Using default linestyles"
+                    )
+        available_linestyles = ["-", "--", ":", "-."]
+        linestyles = ["-"] * len(self.colors)
+        unique_colors = np.unique(self.colors)
+        for color in unique_colors:
+            indicies = [num for num, i in enumerate(self.colors) if i == color]
+            for idx, j in enumerate(indicies):
+                linestyles[j] = available_linestyles[
+                    np.mod(idx, len(available_linestyles))
+                ]
+        self._linestyles = linestyles
 
     @property
     def notes(self):
@@ -1033,6 +1087,7 @@ class PostProcessing(object):
         self.file_kwargs = self.inputs.file_kwargs
         self.palette = self.inputs.palette
         self.colors = self.inputs.colors
+        self.linestyles = self.inputs.linestyles
         self.include_prior = self.inputs.include_prior
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison

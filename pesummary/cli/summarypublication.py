@@ -24,6 +24,8 @@ from pesummary.utils.utils import make_dir, logger
 from pesummary.gw.command_line import DictionaryAction
 import argparse
 import matplotlib.pyplot as plt
+import seaborn
+import numpy as np
 
 
 __doc__ = """This executable is used to generate publication quality plots given
@@ -41,6 +43,7 @@ def command_line():
                         help="Posterior samples hdf5 file", nargs='+',
                         default=None)
     parser.add_argument("--labels", dest="labels",
+
                         help="labels used to distinguish runs", nargs='+',
                         default=None)
     parser.add_argument("--plot", dest="plot",
@@ -52,6 +55,16 @@ def command_line():
                               "make"), default=None)
     parser.add_argument("--plot_kwargs", help="Optional plotting kwargs",
                         action=DictionaryAction, nargs="+", default={})
+    parser.add_argument("--palette", dest="palette",
+                        help="Color palette to use to distinguish result files",
+                        default="colorblind")
+    parser.add_argument("--colors", dest="colors",
+                        help="Colors you wish to use to distinguish result files",
+                        nargs='+', default=None)
+    parser.add_argument("--linestyles", dest="linestyles",
+                        help=("Linestyles you wish to use to distinguish result "
+                              "files"),
+                        nargs='+', default=None)
     return parser
 
 
@@ -110,6 +123,30 @@ def read_samples(result_files):
     return parameters, samples
 
 
+def get_colors_and_linestyles(opts):
+    """Return a list of colors and linestyles
+    """
+    if opts.colors is not None:
+        colors = opts.colors
+    else:
+        colors = seaborn.color_palette(
+            palette=opts.palette, n_colors=len(opts.samples)
+        ).as_hex()
+    if opts.linestyles is not None:
+        linestyles = opts.linestyles
+        return colors, linestyles
+    available_linestyles = ["-", "--", ":", "-."]
+    linestyles = ["-"] * len(colors)
+    unique_colors = np.unique(colors)
+    for color in unique_colors:
+        indicies = [num for num, i in enumerate(colors) if i == color]
+        for idx, j in enumerate(indicies):
+            linestyles[j] = available_linestyles[
+                np.mod(idx, len(available_linestyles))
+            ]
+    return colors, linestyles
+
+
 def make_2d_contour_plot(opts):
     """Make a 2d contour plot
     """
@@ -119,6 +156,7 @@ def make_2d_contour_plot(opts):
         default = [opts.parameters]
     else:
         default = default_2d_contour_plot()
+    colors, linestyles = get_colors_and_linestyles(opts)
     parameters, samples = read_samples(opts.samples)
     for i in default:
         if not all(all(k in j for k in i) for j in parameters):
@@ -143,7 +181,10 @@ def make_2d_contour_plot(opts):
         samples2 = [[k[ind2[num]] for k in l] for num, l in
                     enumerate(samples)]
         twod_samples = [[j, k] for j, k in zip(samples1, samples2)]
-        fig = pub.twod_contour_plots(i, twod_samples, opts.labels, latex_labels)
+        fig = pub.twod_contour_plots(
+            i, twod_samples, opts.labels, latex_labels, colors=colors,
+            linestyles=linestyles
+        )
         current_xlow, current_xhigh = plt.xlim()
         keys = opts.plot_kwargs.keys()
         if "xlow" in keys and "xhigh" in keys:
@@ -197,8 +238,7 @@ def make_spin_disk_plot(opts):
     """
     import seaborn
 
-    palette = seaborn.color_palette(
-        palette="pastel", n_colors=len(opts.samples))
+    colors, linestyles = get_colors_and_linestyles(opts)
     parameters, samples = read_samples(opts.samples)
 
     required_parameters = ["a_1", "a_2", "tilt_1", "tilt_2"]
@@ -214,7 +254,7 @@ def make_spin_disk_plot(opts):
             spin_samples = [[k[idx] for k in samples[num]] for idx in ind]
             fig = pub.spin_distribution_plots(
                 required_parameters, spin_samples, opts.labels[num],
-                palette[num])
+                colors[num])
             fig.savefig("%s/spin_disk_plot_%s.png" % (
                 opts.webdir, opts.labels[num]))
             plt.close()

@@ -182,4 +182,11 @@ def command_line():
     parser.add_argument("--disable_comparison", action="store_true", default=False,
                         help="Whether to make a comparison webpage is multple "
                              "results are present")
+    parser.add_argument("--colors", dest="colors",
+                        help="Colors you wish to use to distinguish result files",
+                        nargs='+', default=None)
+    parser.add_argument("--linestyles", dest="linestyles",
+                        help=("Linestyles you wish to use to distinguish result "
+                              "files"),
+                        nargs='+', default=None)
     return parser

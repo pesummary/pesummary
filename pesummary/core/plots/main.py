@@ -66,7 +66,8 @@ class _PlotGeneration(object):
         kde_plot=False, existing_labels=None, existing_injection_data=None,
         existing_samples=None, same_parameters=None, injection_data=None,
         colors=None, custom_plotting=None, add_to_existing=False, priors={},
-        include_prior=False, weights=None, disable_comparison=False
+        include_prior=False, weights=None, disable_comparison=False,
+        linestyles=None
     ):
         self.webdir = webdir
         self.savedir = savedir
@@ -83,6 +84,7 @@ class _PlotGeneration(object):
         self.add_to_existing = add_to_existing
         self.priors = priors
         self.include_prior = include_prior
+        self.linestyles = linestyles
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -344,7 +346,7 @@ class _PlotGeneration(object):
         for param in self.same_parameters:
             arguments = [
                 self.savedir, param, self.same_samples[param],
-                latex_labels[param], self.colors
+                latex_labels[param], self.colors, self.kde_plot, self.linestyles
             ]
             self._try_to_make_a_plot(
                 arguments, self._oned_histogram_comparison_plot,
@@ -354,7 +356,8 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _oned_histogram_comparison_plot(
-        savedir, parameter, samples, latex_label, colors, kde=False
+        savedir, parameter, samples, latex_label, colors, kde=False,
+        linestyles=None
     ):
         """Generate a oned comparison histogram plot for a given parameter
 
@@ -375,11 +378,13 @@ class _PlotGeneration(object):
             list of colors to be used to distinguish different result files
         kde: Bool, optional
             if True, kde plots will be generated rather than 1d histograms
+        linestyles: list, optional
+            list of linestyles used to distinguish different result files
         """
         same_samples = [val for key, val in samples.items()]
         fig = core._1d_comparison_histogram_plot(
             parameter, same_samples, colors, latex_label,
-            list(samples.keys()), kde=kde
+            list(samples.keys()), kde=kde, linestyles=linestyles
         )
         plt.savefig(
             os.path.join(
@@ -587,7 +592,7 @@ class _PlotGeneration(object):
         for param in self.same_parameters:
             arguments = [
                 self.savedir, param, self.same_samples[param],
-                latex_labels[param], self.colors
+                latex_labels[param], self.colors, self.linestyles
             ]
             self._try_to_make_a_plot(
                 arguments, self._oned_cdf_comparison_plot,
@@ -597,7 +602,7 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _oned_cdf_comparison_plot(
-        savedir, parameter, samples, latex_label, colors
+        savedir, parameter, samples, latex_label, colors, linestyles=None
     ):
         """Generate a oned comparison CDF plot for a given parameter
 
@@ -616,11 +621,13 @@ class _PlotGeneration(object):
             the latex label for parameter
         colors: list
             list of colors to be used to distinguish different result files
+        linestyles: list, optional
+            list of linestyles used to distinguish different result files
         """
         keys = list(samples.keys())
         same_samples = [samples[key] for key in keys]
         fig = core._1d_cdf_comparison_plot(
-            parameter, same_samples, colors, latex_label, keys
+            parameter, same_samples, colors, latex_label, keys, linestyles
         )
         plt.savefig(
             os.path.join(
