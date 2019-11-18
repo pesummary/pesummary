@@ -18,6 +18,7 @@ basic:
     - summarycombine --help
     - summarycombine_metafiles --help
     - summarydetchar --help
+    - summaryversion --help
     - python -c "import pesummary"
     - python -c "import pesummary.core"
     - python -c "import pesummary.gw"
