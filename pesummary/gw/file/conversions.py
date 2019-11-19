@@ -362,10 +362,13 @@ class _Conversion(object):
     samples: nd list
         list of samples for each parameter
     """
-    def __new__(cls, parameters, samples, extra_kwargs):
+    def __new__(cls, parameters, samples, extra_kwargs, return_dict=True):
         obj = super(_Conversion, cls).__new__(cls)
         obj.__init__(parameters, samples, extra_kwargs)
-        return SamplesDict(obj.parameters, np.array(obj.samples).T)
+        if return_dict:
+            return SamplesDict(obj.parameters, np.array(obj.samples).T)
+        else:
+            return obj.parameters, obj.samples
 
     def __init__(self, parameters, samples, extra_kwargs):
         self.parameters = parameters
