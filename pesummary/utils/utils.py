@@ -581,7 +581,8 @@ def _add_existing_data(namespace):
                     namespace.existing_samples[i]
                 )
     if hasattr(namespace, "result_files"):
-        if namespace.existing_metafile not in namespace.result_files:
+        number = len(namespace.labels)
+        while len(namespace.result_files) < number:
             namespace.result_files.append(namespace.existing_metafile)
     parameters = [list(namespace.samples[i].keys()) for i in namespace.labels]
     namespace.same_parameters = list(
