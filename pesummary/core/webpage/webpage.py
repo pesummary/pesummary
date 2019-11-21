@@ -240,6 +240,13 @@ class page(Base):
         elif key == "corner":
             self.add_content(
                 "Below is the custom corner plotter for %s" % (approximant))
+        elif key == "interactive_corner":
+            self.add_content(
+                "Below are interative corner plots for %s. Simply use the "
+                "Box Select to select the points you wish to look at" % (
+                    approximant
+                )
+            )
         elif key == "Comparison":
             self.add_content(
                 "Below are the summary comparison plots")

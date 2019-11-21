@@ -140,6 +140,7 @@ class Input(object):
         self.linestyles = self.opts.linestyles
         self.notes = self.opts.notes
         self.disable_comparison = self.opts.disable_comparison
+        self.disable_interactive = self.opts.disable_interactive
         self.copy_files()
 
     @staticmethod
@@ -1091,6 +1092,7 @@ class PostProcessing(object):
         self.include_prior = self.inputs.include_prior
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison
+        self.disable_interactive = self.inputs.disable_interactive
         self.same_parameters = []
 
     @property

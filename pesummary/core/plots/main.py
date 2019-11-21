@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import logger
 from pesummary.core.plots import plot as core
+from pesummary.core.plots import interactive
 
 
 class _PlotGeneration(object):
@@ -60,6 +61,8 @@ class _PlotGeneration(object):
         whether to make comparison plots, default is True.
         if disable_comparison is False and len(labels) == 1, no comparsion plots
         will be generated
+    disable_interactive: bool, optional
+        whether to make interactive plots, default is False
     """
     def __init__(
         self, savedir=None, webdir=None, labels=None, samples=None,
@@ -67,7 +70,7 @@ class _PlotGeneration(object):
         existing_samples=None, same_parameters=None, injection_data=None,
         colors=None, custom_plotting=None, add_to_existing=False, priors={},
         include_prior=False, weights=None, disable_comparison=False,
-        linestyles=None
+        linestyles=None, disable_interactive=False
     ):
         self.webdir = webdir
         self.savedir = savedir
@@ -85,6 +88,7 @@ class _PlotGeneration(object):
         self.priors = priors
         self.include_prior = include_prior
         self.linestyles = linestyles
+        self.make_interactive = not disable_interactive
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -117,6 +121,10 @@ class _PlotGeneration(object):
                 oned_histogram_comparison=self.oned_histogram_comparison_plot,
                 oned_cdf_comparison=self.oned_cdf_comparison_plot,
                 box_plot_comparison=self.box_plot_comparison_plot,
+            ))
+        if self.make_interactive:
+            self.plot_type_dictionary.update(dict(
+                interactive_corner=self.interactive_corner_plot
             ))
 
     @property
@@ -157,6 +165,11 @@ class _PlotGeneration(object):
         for i in self.labels:
             logger.debug("Starting to generate plots for {}".format(i))
             self._generate_plots(i)
+            if self.make_interactive:
+                logger.debug(
+                    "Starting to generate interactive plots for {}".format(i)
+                )
+                self._generate_interactive_plots(i)
         if self.add_to_existing:
             self.add_existing_data()
         if self.make_comparison:
@@ -198,6 +211,12 @@ class _PlotGeneration(object):
         self.try_to_make_a_plot("oned_cdf", label=label)
         if self.custom_plotting:
             self.try_to_make_a_plot("custom", label=label)
+
+    def _generate_interactive_plots(self, label):
+        """Generate all interactive plots and save them to an html file ready
+        to be imported later
+        """
+        self.try_to_make_a_plot("interactive_corner", label=label)
 
     def _generate_comparison_plots(self):
         """Generate all comparison plots
@@ -576,6 +595,43 @@ class _PlotGeneration(object):
             )
         )
         plt.close()
+
+    def interactive_corner_plot(self, label):
+        """Generate an interactive corner plot for a given result file
+
+        Parameters
+        ----------
+        label: str
+            the label for the results file that you wish to plot
+        """
+        self._interactive_corner_plot(
+            self.savedir, label, self.samples[label], latex_labels
+        )
+
+    @staticmethod
+    def _interactive_corner_plot(savedir, label, samples, latex_labels):
+        """Generate an interactive corner plot for a given set of samples
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        label: str
+            the label corresponding to the results file
+        samples: dict
+            dictionary containing PESummary.utils.utils.Array objects that
+            contain samples for each parameter
+        latex_labels: str
+            latex labels for each parameter in samples
+        """
+        parameters = samples.keys()
+        data = [samples[parameter] for parameter in parameters]
+        latex_labels = [latex_labels[parameter] for parameter in parameters]
+        _ = interactive.corner(
+            data, latex_labels, write_to_html_file=os.path.join(
+                savedir, "corner", "{}_interactive.html".format(label)
+            )
+        )
 
     def oned_cdf_comparison_plot(self, label):
         """Generate oned comparison CDF plots for all parameters that are

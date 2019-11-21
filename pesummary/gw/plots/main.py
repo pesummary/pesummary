@@ -25,6 +25,7 @@ import numpy as np
 
 from pesummary.core.plots.main import _PlotGeneration as _BasePlotGeneration
 from pesummary.core.plots.latex_labels import latex_labels
+from pesummary.core.plots import interactive
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.utils import logger, resample_posterior_distribution
 from pesummary.gw.plots import publication
@@ -48,7 +49,8 @@ class _PlotGeneration(_BasePlotGeneration):
         multi_threading_for_skymap=None, approximant=None,
         pepredicates_probs=None, include_prior=False, publication=False,
         existing_approximant=None, existing_psd=None, existing_calibration=None,
-        weights=None, disable_comparison=False, linestyles=None
+        weights=None, disable_comparison=False, linestyles=None,
+        disable_interactive=False
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -60,7 +62,8 @@ class _PlotGeneration(_BasePlotGeneration):
             colors=colors, custom_plotting=custom_plotting,
             add_to_existing=add_to_existing, priors=priors,
             include_prior=include_prior, weights=weights,
-            disable_comparison=disable_comparison, linestyles=linestyles
+            disable_comparison=disable_comparison, linestyles=linestyles,
+            disable_interactive=disable_interactive
         )
         self.file_kwargs = file_kwargs
         self.existing_file_kwargs = existing_file_kwargs
@@ -104,6 +107,11 @@ class _PlotGeneration(_BasePlotGeneration):
         for i in self.labels:
             logger.debug("Starting to generate plots for {}".format(i))
             self._generate_plots(i)
+            if self.make_interactive:
+                logger.debug(
+                    "Starting to generate interactive plots for {}".format(i)
+                )
+                self._generate_interactive_plots(i)
         if self.calibration or "calibration" in list(self.priors.keys()):
             self.try_to_make_a_plot("calibration")
         if self.psd:
@@ -1009,3 +1017,41 @@ class _PlotGeneration(_BasePlotGeneration):
             os.path.join(savedir, "{}_calibration_plot.png".format(label))
         )
         plt.close()
+
+    @staticmethod
+    def _interactive_corner_plot(savedir, label, samples, latex_labels):
+        """Generate an interactive corner plot for a given set of samples
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        label: str
+            the label corresponding to the results file
+        samples: dict
+            dictionary containing PESummary.utils.utils.Array objects that
+            contain samples for each parameter
+        latex_labels: str
+            latex labels for each parameter in samples
+        """
+        source_parameters = [
+            "luminosity_distance", "mass_1_source", "mass_2_source",
+            "total_mass_source", "chirp_mass_source", "redshift"
+        ]
+        parameters = [i for i in samples.keys() if i in source_parameters]
+        data = [samples[parameter] for parameter in parameters]
+        labels = [latex_labels[parameter] for parameter in parameters]
+        _ = interactive.corner(
+            data, labels, write_to_html_file=os.path.join(
+                savedir, "corner", "{}_interactive_source.html".format(label)
+            ), dimensions={"width": 900, "height": 900}
+        )
+        extrinsic_parameters = ["luminosity_distance", "psi", "ra", "dec"]
+        parameters = [i for i in samples.keys() if i in extrinsic_parameters]
+        data = [samples[parameter] for parameter in parameters]
+        labels = [latex_labels[parameter] for parameter in parameters]
+        _ = interactive.corner(
+            data, labels, write_to_html_file=os.path.join(
+                savedir, "corner", "{}_interactive_extrinsic.html".format(label)
+            )
+        )
