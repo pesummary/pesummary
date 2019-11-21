@@ -179,6 +179,7 @@ class GWInput(Input):
         self.gwdata = self.opts.gwdata
         self.notes = self.opts.notes
         self.disable_comparison = self.opts.disable_comparison
+        self.disable_interactive = self.opts.disable_interactive
         self.pepredicates_probs = []
         self.pastro_probs = []
         self.copy_files()
@@ -950,6 +951,7 @@ class GWPostProcessing(PostProcessing):
         self.include_prior = self.inputs.include_prior
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison
+        self.disable_interactive = self.inputs.disable_interactive
         self.maxL_samples = []
         self.same_parameters = []
         self.pepredicates_probs = self.inputs.pepredicates_probs

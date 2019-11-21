@@ -82,7 +82,8 @@ class _WebpageGeneration(object):
         existing_labels=None, existing_config=None, existing_file_version=None,
         existing_injection_data=None, existing_samples=None,
         existing_metafile=None, existing_file_kwargs=None,
-        add_to_existing=False, notes=None, disable_comparison=False
+        add_to_existing=False, notes=None, disable_comparison=False,
+        disable_interactive=False
     ):
         self.webdir = webdir
         self.samples = samples
@@ -104,6 +105,7 @@ class _WebpageGeneration(object):
         self.existing_file_kwargs = existing_file_kwargs
         self.add_to_existing = add_to_existing
         self.notes = notes
+        self.make_interactive = not disable_interactive
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -270,6 +272,11 @@ class _WebpageGeneration(object):
         if self.make_comparison:
             for label in self.labels:
                 final_links[label][1][1] += ["Comparison"]
+        if self.make_interactive:
+            for label in self.labels:
+                final_links[label].append(
+                    ["Interactive", [{"Interactive_Corner": label}]]
+                )
         return final_links
 
     def make_navbar_for_comparison_page(self):
@@ -350,6 +357,8 @@ class _WebpageGeneration(object):
         self.make_config_pages()
         if self.make_comparison:
             self.make_comparison_pages()
+        if self.make_interactive:
+            self.make_interactive_pages()
         self.make_error_page()
         self.make_version_page()
         self.make_logging_page()
@@ -752,6 +761,44 @@ class _WebpageGeneration(object):
             html_file.make_table_of_images(
                 contents=contents, rows=1, columns=2, code="changeimage")
         html_file.close()
+
+    def make_interactive_pages(self):
+        """Wrapper function for _make_interactive_pages
+        """
+        pages = ["{}_{}_Interactive_Corner".format(i, i) for i in self.labels]
+        self.create_blank_html_pages(pages)
+        savedir = os.path.join(self.webdir, "plots")
+        html_files = glob(os.path.join(savedir, "*interactive*.html"))
+        html_files += glob(os.path.join(savedir, "corner", "*interactive*.html"))
+        self._make_interactive_pages(pages, html_files)
+
+    def _make_interactive_pages(self, pages, html_files):
+        """Make a page that shows all interactive plots
+
+        Parameters
+        ----------
+        pages: list
+            list of pages that you wish to create
+        """
+        for num, i in enumerate(self.labels):
+            html_file = self.setup_page(
+                "{}_Interactive_Corner".format(i),
+                self.navbar["result_page"][i], i,
+                title="{} Interactive Corner Plots".format(i), approximant=i,
+                background_colour=self.colors[num]
+            )
+            html_file.make_banner(approximant=i, key="interactive_corner")
+            html_file.make_container()
+            corner_files = [
+                figure for figure in html_files if "/corner/" in figure
+            ]
+            for plot in corner_files:
+                with open(plot, "r") as f:
+                    data = f.read()
+                    html_file.add_content(data)
+            html_file.end_container()
+            html_file.make_footer(user=self.user, rundir=self.webdir)
+            html_file.close()
 
     def make_error_page(self):
         """Wrapper function for _make_error_page

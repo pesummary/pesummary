@@ -111,7 +111,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         existing_file_version=None, existing_injection_data=None,
         existing_samples=None, existing_metafile=None, add_to_existing=False,
         existing_file_kwargs=None, result_files=None, notes=None,
-        disable_comparison=False, pastro_probs=None, gwdata=None
+        disable_comparison=False, pastro_probs=None, gwdata=None,
+        disable_interactive=False
     ):
         self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
@@ -136,7 +137,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             existing_metafile=existing_metafile,
             existing_file_kwargs=existing_file_kwargs,
             add_to_existing=add_to_existing, notes=notes,
-            disable_comparison=disable_comparison
+            disable_comparison=disable_comparison,
+            disable_interactive=disable_interactive
         )
 
     def categorize_parameters(self, parameters):
@@ -219,6 +221,11 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         for num, label in enumerate(self.labels):
             if self.pepredicates_probs[label] is not None:
                 final_links[label].append({"Classification": label})
+        if self.make_interactive:
+            for label in self.labels:
+                final_links[label].append(
+                    ["Interactive", [{"Interactive_Corner": label}]]
+                )
         return final_links
 
     def generate_webpages(self):
@@ -232,6 +239,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.make_config_pages()
         if self.make_comparison:
             self.make_comparison_pages()
+        if self.make_interactive:
+            self.make_interactive_pages()
         if self.publication:
             self.make_publication_pages()
         if self.gwdata is not None:
@@ -821,6 +830,9 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             "masses": {
                 "accept": ["mass", "q", "symmetric_mass_ratio"],
                 "reject": ["source"]
+            },
+            "source": {
+                "accept": ["source"], "reject": []
             },
             "inclination": {
                 "accept": ["theta", "iota"], "reject": []

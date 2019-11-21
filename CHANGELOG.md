@@ -1,8 +1,24 @@
 ## 0.2.3 [unreleased]
 
 ### Changed
+- Colors and linestyles: currently, a seaborn palette will duplicate colors if
+  n > 10. Therefore if a user passed more than 10 result files, you would not
+  be able to distinguish the posteriors. Now, if more than 10 result files are
+  passed, the linestyle is changed to allow for distinguishability
+- GW Conversion: remove duplicate code to handle the conversion of parameters.
+  Now only the pesummary.gw.file.conversions._Conversion class is used.
 
 ### Added
+- Added an 'interactive' module which allows for an interactive corner plot to
+  be produced with `plotly`.
+- Added an option to not produce interactive plots `--disable_interactive`
+- Added an option to not produce comparison plots `--disable_comparison`
+- Added a `summaryversion` executable which will display the version of
+  PESummary from the command line
+- Added an "all" page to display all posteriors for a given result file on
+  a single page
+- Allow the user to pass custom colors and linestyles with the `--colors` and
+  `--linestyles` command line arguments
 
 ## 0.2.2 [31/10/2019]
 

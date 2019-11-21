@@ -13,3 +13,4 @@ astropy>=3.2.3 #<=3.2.2 gives astropy.utils.iers error
 lalsuite
 configparser
 gwpy
+plotly

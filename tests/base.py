@@ -54,6 +54,9 @@ def get_list_of_files(gw=False, number=1):
         html.append("./.outdir/html/%s%s_%s%s_Config.html" % (label, num, label, num))
         html.append("./.outdir/html/%s%s_%s%s_Custom.html" % (label, num, label, num))
         html.append("./.outdir/html/%s%s_%s%s_All.html" % (label, num, label, num))
+        html.append("./.outdir/html/%s%s_%s%s_Interactive_Corner.html" % (
+            label, num, label, num
+        ))
         for j in parameters:
             html.append("./.outdir/html/%s%s_%s%s_%s.html" % (label, num, label, num, j))
 
