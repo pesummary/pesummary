@@ -5,6 +5,7 @@ beautifulsoup4
 Sphinx >= 1.2.2
 sphinx-argparse
 sphinx_rtd_theme
+sphinxcontrib-programoutput
 testfixtures
 ligo.skymap
 pepredicates
