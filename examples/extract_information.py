@@ -11,6 +11,7 @@ config_data = f.config
 samples = f.samples_dict
 parameters = f.parameters
 labels = f.labels
+priors = f.priors
 injection_values = f.injection_parameters
 injection_data = {i: j for i, j in zip(parameters, injection_values)}
 
@@ -30,6 +31,7 @@ config_data = f.config
 samples = f.samples_dict
 parameters = f.parameters
 labels = f.labels
+priors = f.priors
 injection_values = f.injection_parameters
 injection_data = {i: j for i, j in zip(parameters, injection_values)}
 
