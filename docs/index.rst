@@ -61,6 +61,7 @@ The summary pages
     summarypages/interactive
     summarypages/classification
     summarypages/comparison
+    summarypages/publication
     summarypages/notes
     summarypages/examples
 
