@@ -64,6 +64,7 @@ def get_list_of_files(gw=False, number=1):
         html.append("./.outdir/html/Comparison.html")
         html.append("./.outdir/html/Comparison_Custom.html")
         html.append("./.outdir/html/Comparison_All.html")
+        html.append("./.outdir/html/Comparison_Interactive_Ridgeline.html")
         for j in parameters:
             if j != "classification":
                 html.append("./.outdir/html/Comparison_%s.html" % (j))

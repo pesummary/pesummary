@@ -123,9 +123,17 @@ class _PlotGeneration(object):
                 box_plot_comparison=self.box_plot_comparison_plot,
             ))
         if self.make_interactive:
-            self.plot_type_dictionary.update(dict(
-                interactive_corner=self.interactive_corner_plot
-            ))
+            self.plot_type_dictionary.update(
+                dict(
+                    interactive_corner=self.interactive_corner_plot
+                )
+            )
+            if self.make_comparison:
+                self.plot_type_dictionary.update(
+                    dict(
+                        interactive_ridgeline=self.interactive_ridgeline_plot
+                    )
+                )
 
     @property
     def _total_number_of_labels(self):
@@ -217,6 +225,8 @@ class _PlotGeneration(object):
         to be imported later
         """
         self.try_to_make_a_plot("interactive_corner", label=label)
+        if self.make_comparison:
+            self.try_to_make_a_plot("interactive_ridgeline")
 
     def _generate_comparison_plots(self):
         """Generate all comparison plots
@@ -595,6 +605,38 @@ class _PlotGeneration(object):
             )
         )
         plt.close()
+
+    def interactive_ridgeline_plot(self, label):
+        """Generate an interactive ridgeline plot for all paramaters that are
+        common to all result files
+        """
+        error_message = (
+            "Failed to generate an interactive ridgeline plot for %s because {}"
+        )
+        for param in self.same_parameters:
+            arguments = [
+                self.savedir, param, self.same_samples[param],
+                latex_labels[param], self.colors
+            ]
+            self._try_to_make_a_plot(
+                arguments, self._interactive_ridgeline_plot,
+                error_message % (param)
+            )
+            continue
+
+    @staticmethod
+    def _interactive_ridgeline_plot(
+        savedir, parameter, samples, latex_label, colors
+    ):
+        """Generate an interactive ridgeline plot for
+        """
+        same_samples = [val for key, val in samples.items()]
+        _ = interactive.ridgeline(
+            same_samples, list(samples.keys()), xlabel=latex_label,
+            colors=colors, write_to_html_file=os.path.join(
+                savedir, "interactive_ridgeline_{}.html".format(parameter)
+            )
+        )
 
     def interactive_corner_plot(self, label):
         """Generate an interactive corner plot for a given result file
