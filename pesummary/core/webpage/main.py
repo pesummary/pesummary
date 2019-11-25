@@ -290,6 +290,10 @@ class _WebpageGeneration(object):
                 "home", ["Result Pages", self._result_page_links()], links
             ]
             final_links[1][1] += ["Comparison"]
+            if self.make_interactive:
+                final_links.append(
+                    ["Interactive", ["Interactive_Ridgeline"]]
+                )
             return final_links
         return None
 
@@ -766,6 +770,8 @@ class _WebpageGeneration(object):
         """Wrapper function for _make_interactive_pages
         """
         pages = ["{}_{}_Interactive_Corner".format(i, i) for i in self.labels]
+        if self.make_comparison:
+            pages += ["Comparison_Interactive_Ridgeline"]
         self.create_blank_html_pages(pages)
         savedir = os.path.join(self.webdir, "plots")
         html_files = glob(os.path.join(savedir, "*interactive*.html"))
@@ -790,8 +796,8 @@ class _WebpageGeneration(object):
             html_file.make_banner(approximant=i, key="interactive_corner")
             html_file.make_container()
             corner_files = [
-                figure for figure in html_files if "/corner/" in figure and
-                i in figure
+                figure for figure in html_files if "/corner/" in figure
+                and i in figure
             ]
             for plot in corner_files:
                 with open(plot, "r") as f:
@@ -800,6 +806,31 @@ class _WebpageGeneration(object):
             html_file.end_container()
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
+        if not self.make_comparison:
+            return
+        html_file = self.setup_page(
+            "Comparison_Interactive_Ridgeline", self.navbar["comparison"],
+            approximant="Comparison", title="Interactive Ridgeline Plots"
+        )
+        html_file.make_banner(
+            approximant="Comparison", key="interactive_ridgeline"
+        )
+        posterior_files = [
+            figure for figure in html_files if "ridgeline" in figure
+        ]
+        for plot in posterior_files:
+            with open(plot, "r") as f:
+                data = f.read()
+                parameter = \
+                    plot.split("interactive_ridgeline_")[1].split(".html")[0]
+                html_file.make_banner(
+                    approximant=parameter, _style="font-size: 26px;"
+                )
+                html_file.make_container()
+                html_file.add_content(data)
+                html_file.end_container()
+        html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.close()
 
     def make_error_page(self):
         """Wrapper function for _make_error_page

@@ -12,3 +12,4 @@ comparison_cdf.png filter=lfs diff=lfs merge=lfs -text
 contour_plot.png filter=lfs diff=lfs merge=lfs -text
 spin_disk.png filter=lfs diff=lfs merge=lfs -text
 violin_plot.png filter=lfs diff=lfs merge=lfs -text
+interactive_ridgeline_mass_1.html filter=lfs diff=lfs merge=lfs -text
