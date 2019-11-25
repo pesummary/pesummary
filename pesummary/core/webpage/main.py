@@ -790,7 +790,8 @@ class _WebpageGeneration(object):
             html_file.make_banner(approximant=i, key="interactive_corner")
             html_file.make_container()
             corner_files = [
-                figure for figure in html_files if "/corner/" in figure
+                figure for figure in html_files if "/corner/" in figure and
+                i in figure
             ]
             for plot in corner_files:
                 with open(plot, "r") as f:
