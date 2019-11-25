@@ -48,6 +48,14 @@ class GWRead(Read):
         parameters, samples = self.translate_parameters(
             data["parameters"], data["samples"]
         )
+        if "log_likelihood" not in parameters:
+            logger.warn(
+                "Failed to find 'log_likelihood' in result file. Setting "
+                "every sample to have log_likelihood 0"
+            )
+            parameters.append("log_likelihood")
+            for num, i in enumerate(samples):
+                samples[num].append(0)
         self.data = {
             "parameters": parameters, "samples": samples
         }
@@ -69,11 +77,14 @@ class GWRead(Read):
             self.injection_parameters = data["injection"]
         if "prior" in data.keys() and data["prior"] != {}:
             priors = data["prior"]
-            parameters = list(priors.keys())
-            samples = [
-                [priors[parameter][i] for parameter in parameters] for i in
-                range(len(priors[parameters[0]]))
+            default_parameters = list(priors.keys())
+            default_samples = [
+                [priors[parameter][i] for parameter in default_parameters] for i
+                in range(len(priors[default_parameters[0]]))
             ]
+            parameters, samples = self.translate_parameters(
+                default_parameters, default_samples
+            )
             self.priors = con._Conversion(parameters, samples, self.extra_kwargs)
         if "weights" in self.data.keys():
             self.weights = self.data["weights"]

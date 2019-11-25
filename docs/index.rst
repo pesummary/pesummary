@@ -98,6 +98,14 @@ for details:
     executables/summarycombine
     executables/summarycombine_metafiles
 
+Tutorials
+---------
+
+.. toctree::
+    :maxdepth: 1
+
+    tutorials/GWTC1_plots
+
 Indices and tables
 ------------------
 

@@ -734,14 +734,17 @@ class _Conversion(object):
         snr = network_snr(samples)
         self.append_data(snr)
 
-    def _cos_angle(self, theta_jn=False):
-        if theta_jn:
-            self.parameters.append("cos_theta_jn")
-            samples = self.specific_parameter_samples(["theta_jn"])
+    def _cos_angle(self, parameter_to_add, reverse=False):
+        self.parameters.append(parameter_to_add)
+        if reverse:
+            samples = self.specific_parameter_samples(
+                ["cos_" + parameter_to_add])
+            cos_samples = np.arccos(samples[0])
         else:
-            self.parameters.append("cos_iota")
-            samples = self.specific_parameter_samples(["iota"])
-        cos_samples = np.cos(samples[0])
+            samples = self.specific_parameter_samples(
+                [parameter_to_add.split("cos_")[1]]
+            )
+            cos_samples = np.cos(samples[0])
         self.append_data(cos_samples)
 
     def _check_parameters(self):
@@ -766,6 +769,14 @@ class _Conversion(object):
 
     def generate_all_posterior_samples(self):
         logger.debug("Starting to generate all derived posteriors")
+        if "cos_theta_jn" in self.parameters and "theta_jn" not in self.parameters:
+            self._cos_angle("theta_jn", reverse=True)
+        if "cos_iota" in self.parameters and "iota" not in self.parameters:
+            self._cos_angle("iota", reverse=True)
+        if "cos_tilt_1" in self.parameters and "tilt_1" not in self.parameters:
+            self._cos_angle("tilt_1", reverse=True)
+        if "cos_tilt_2" in self.parameters and "tilt_2" not in self.parameters:
+            self._cos_angle("tilt_2", reverse=True)
         spin_magnitudes = ["a_1", "a_2"]
         angles = ["phi_jl", "tilt_1", "tilt_2", "phi_12"]
         if all(i in self.parameters for i in spin_magnitudes):
@@ -794,6 +805,14 @@ class _Conversion(object):
                     self.samples[num].append(0)
                     self.samples[num].append(0)
         self._check_parameters()
+        if "cos_theta_jn" in self.parameters and "theta_jn" not in self.parameters:
+            self._cos_angle("theta_jn", reverse=True)
+        if "cos_iota" in self.parameters and "iota" not in self.parameters:
+            self._cos_angle("iota", reverse=True)
+        if "cos_tilt_1" in self.parameters and "tilt_1" not in self.parameters:
+            self._cos_angle("tilt_1", reverse=True)
+        if "cos_tilt_2" in self.parameters and "tilt_2" not in self.parameters:
+            self._cos_angle("tilt_2", reverse=True)
         if "chirp_mass" not in self.parameters and "chirp_mass_source" in \
                 self.parameters and "redshift" in self.parameters:
             self._mchirp_from_mchirp_source_z()
@@ -905,9 +924,9 @@ class _Conversion(object):
             if "network_matched_filter_snr" not in self.parameters:
                 self._matched_filter_network_snr()
         if "theta_jn" in self.parameters and "cos_theta_jn" not in self.parameters:
-            self._cos_angle(theta_jn=True)
+            self._cos_angle("cos_theta_jn")
         if "iota" in self.parameters and "cos_iota" not in self.parameters:
-            self._cos_angle(theta_jn=False)
+            self._cos_angle("cos_iota")
         if "reference_frequency" in self.parameters:
             ind = self.parameters.index("reference_frequency")
             self.parameters.remove(self.parameters[ind])
