@@ -18,6 +18,7 @@ from pesummary.gw.file.formats.lalinference import LALInference
 from pesummary.gw.file.formats.bilby import Bilby
 from pesummary.gw.file.formats.default import Default
 from pesummary.gw.file.formats.pesummary import PESummary
+from pesummary.gw.file.formats.GWTC1 import GWTC1
 from pesummary.core.file.read import is_bilby_hdf5_file, is_bilby_json_file
 from pesummary.core.file.read import is_pesummary_hdf5_file
 from pesummary.core.file.read import is_pesummary_json_file
@@ -50,7 +51,10 @@ def read(path):
             except Exception:
                 return Default.load_file(path)
         else:
-            return Default.load_file(path)
+            try:
+                return GWTC1.load_file(path)
+            except Exception:
+                return Default.load_file(path)
     elif extension == "json":
         if is_bilby_json_file(path):
             try:

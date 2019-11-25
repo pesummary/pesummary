@@ -1,0 +1,4 @@
+2d_contour_plot_luminosity_distance_and_chirp_mass.png filter=lfs diff=lfs merge=lfs -text
+2d_contour_plot_mass_1_and_mass_2.png filter=lfs diff=lfs merge=lfs -text
+2d_contour_plot_theta_jn_and_luminosity_distance.png filter=lfs diff=lfs merge=lfs -text
+violin_plot_mass_ratio.png filter=lfs diff=lfs merge=lfs -text
