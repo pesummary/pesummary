@@ -7,6 +7,11 @@
   passed, the linestyle is changed to allow for distinguishability
 - GW Conversion: remove duplicate code to handle the conversion of parameters.
   Now only the pesummary.gw.file.conversions._Conversion class is used.
+- GWTC1: Added a pesummary.gw.file.formats.GWTC1 module which acts functionality
+  to read in the GWTC1 posterior samples
+- Bounded 1d kdes: If `--kde_plot` is passed and the `--gw` module used,
+  bounded 1d kdes will be made by default
+- Docs: Updated the docs to the current version of the code
 
 ### Added
 - Added an 'interactive' module which allows for an interactive corner plot to
@@ -19,6 +24,10 @@
   a single page
 - Allow the user to pass custom colors and linestyles with the `--colors` and
   `--linestyles` command line arguments
+- Added a `pesummary.core.plots.bounded_1d_kde` module which creates
+  bounded 1d KDEs
+- Added interactive comparison plots which are made by default
+- Added a new `summaryversion` executable
 
 ## 0.2.2 [31/10/2019]
 
