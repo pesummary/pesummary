@@ -510,6 +510,7 @@ class Input(object):
         file_version_dict, file_kwargs_dict, weights_dict = {}, {}, {}
         config, labels = None, None
         for num, i in enumerate(samples):
+            logger.info("Assigning {} to {}".format(self.labels[num], i))
             if not os.path.isfile(i):
                 raise Exception("File %s does not exist" % (i))
             data = self.grab_data_from_input(
@@ -730,7 +731,10 @@ class Input(object):
                 )
             else:
                 for num, i in enumerate(priors):
-                    data = Read(priors[0])
+                    logger.info(
+                        "Assigning {} to {}".format(self.labels[num], i)
+                    )
+                    data = Read(priors[num])
                     prior_dict["samples"][self.labels[num]] = data.samples_dict
         return prior_dict
 

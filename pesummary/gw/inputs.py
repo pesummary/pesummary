@@ -372,6 +372,7 @@ class GWInput(Input):
         approximant_dict, psd_dict, calibration_dict = {}, {}, {}
         config, labels = None, None
         for num, i in enumerate(samples):
+            logger.info("Assigning {} to {}".format(self.labels[num], i))
             if not os.path.isfile(i):
                 raise Exception("File %s does not exist" % (i))
             data = self.grab_data_from_input(
@@ -783,7 +784,10 @@ class GWInput(Input):
                 )
             else:
                 for num, i in enumerate(priors):
-                    data = GWRead(priors[0])
+                    logger.info(
+                        "Assigning {} to {}".format(self.labels[num], i)
+                    )
+                    data = GWRead(priors[num])
                     data.generate_all_posterior_samples()
                     prior_dict["samples"][self.labels[num]] = data.samples_dict
         return prior_dict
