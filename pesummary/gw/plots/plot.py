@@ -14,11 +14,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.utils.utils import logger
+from pesummary.gw.plots.bounds import default_bounds
+from pesummary.core.plots.kde import kdeplot
+from pesummary import conf
 
 import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import corner
 
 import numpy as np
@@ -36,6 +40,151 @@ except ImportError:
 
 
 PSD_COLORS = {"H1": "#1b9e77", "L1": "#d95f02", "V1": "#7570b3"}
+
+
+def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
+                       prior=None, weights=None):
+    """Generate the 1d histogram plot for a given parameter for a given
+    approximant.
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: list
+        list of samples for param
+    latex_label: str
+        latex label for param
+    inj_value: float
+        value that was injected
+    kde: Bool
+        if true, a kde is plotted instead of a histogram
+    prior: list
+        list of prior samples for param
+    weights: list
+        list of weights for each sample
+    """
+    logger.debug("Generating the 1d histogram plot for %s" % (param))
+    xlow = np.min(samples)
+    xhigh = np.max(samples)
+    if param in default_bounds.keys():
+        bounds = default_bounds[param]
+        if "low" in bounds.keys():
+            xlow = bounds["low"]
+        if "high" in bounds.keys():
+            if isinstance(bounds["high"], str) and "mass_1" in bounds["high"]:
+                xhigh = np.max(samples)
+            else:
+                xhigh = bounds["high"]
+    fig = plt.figure()
+    if np.ptp(samples) == 0:
+        plt.axvline(samples[0], color=conf.color)
+        xlims = plt.gca().get_xlim()
+    elif not kde:
+        plt.hist(samples, histtype="step", bins=50, color=conf.color,
+                 density=True, linewidth=1.75, weights=weights)
+        xlims = plt.gca().get_xlim()
+        if prior is not None:
+            plt.hist(prior, color=conf.prior_color, alpha=0.2, edgecolor="w",
+                     density=True, linewidth=1.75, histtype="bar", bins=50)
+    else:
+        x = kdeplot(
+            samples, color=conf.color, shade=True, alpha_shade=0.1,
+            linewidth=1.0, xlow=xlow, xhigh=xhigh
+        )
+        xlims = plt.gca().get_xlim()
+        if prior is not None:
+            kdeplot(prior, color=conf.prior_color, shade=True, alpha_shade=0.1,
+                    linewidth=1.0, xlow=xlow, xhigh=xhigh)
+    plt.xlabel(latex_label, fontsize=16)
+    plt.ylabel("Probability Density", fontsize=16)
+    percentile = samples.confidence_interval([10, 90])
+    if inj_value is not None:
+        plt.axvline(inj_value, color=conf.injection_color, linestyle='-',
+                    linewidth=2.5)
+    plt.axvline(percentile[0], color=conf.color, linestyle='--', linewidth=1.75)
+    plt.axvline(percentile[1], color=conf.color, linestyle='--', linewidth=1.75)
+    median = samples.average("median")
+    upper = np.round(percentile[1] - median, 2)
+    lower = np.round(median - percentile[0], 2)
+    median = np.round(median, 2)
+    plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
+    plt.grid(b=True)
+    plt.xlim(xlims)
+    plt.tight_layout()
+    return fig
+
+
+def _1d_comparison_histogram_plot(param, samples, colors,
+                                  latex_label, labels, kde=False,
+                                  linestyles=None):
+    """Generate the a plot to compare the 1d_histogram plots for a given
+    parameter for different approximants.
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    approximants: list
+        list of approximant names that you would like to compare
+    samples: 2d list
+        list of samples for param for each approximant
+    colors: list
+        list of colors to be used to differentiate the different approximants
+    latex_label: str
+        latex label for param
+    approximant_labels: list, optional
+        label to prepend the approximant in the legend
+    kde: Bool
+        if true, a kde is plotted instead of a histogram
+    linestyles: list
+        list of linestyles for each set of samples
+    """
+    logger.debug("Generating the 1d comparison histogram plot for %s" % (param))
+    xlow = None
+    xhigh = None
+    if param in default_bounds.keys():
+        bounds = default_bounds[param]
+        if "low" in bounds.keys():
+            xlow = bounds["low"]
+        if "high" in bounds.keys():
+            if isinstance(bounds["high"], str) and "mass_1" in bounds["high"]:
+                xhigh = np.max(samples)
+            else:
+                xhigh = bounds["high"]
+    if linestyles is None:
+        linestyles = ["-"] * len(samples)
+    fig = plt.figure(figsize=(8, 6))
+    handles = []
+    for num, i in enumerate(samples):
+        if np.ptp(i) == 0:
+            plt.axvline(i[0], color=colors[num], label=labels[num])
+        elif not kde:
+            plt.hist(i, histtype="step", bins=50, color=colors[num],
+                     label=labels[num], linewidth=2.5, density=True,
+                     linestyle=linestyles[num])
+        else:
+            kdeplot(i, color=colors[num], shade=True, alpha_shade=0.05,
+                    linewidth=1.5, xlow=xlow, xhigh=xhigh, label=labels[num])
+        plt.axvline(x=np.percentile(i, 90), color=colors[num], linestyle='--',
+                    linewidth=2.5)
+        plt.axvline(x=np.percentile(i, 10), color=colors[num], linestyle='--',
+                    linewidth=2.5)
+        handles.append(
+            mlines.Line2D([], [], color=colors[num], label=labels[num])
+        )
+    legend = plt.legend(
+        handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+        handlelength=3, ncol=2, mode="expand", borderaxespad=0.
+    )
+    for num, legobj in enumerate(legend.legendHandles):
+        legobj.set_linewidth(1.75)
+        legobj.set_linestyle(linestyles[num])
+    plt.xlabel(latex_label, fontsize=16)
+    plt.ylabel("Probability Density", fontsize=16)
+    plt.grid(b=True)
+    plt.tight_layout()
+    return fig
 
 
 def _make_corner_plot(samples, latex_labels, **kwargs):
