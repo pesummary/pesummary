@@ -18,6 +18,20 @@ plotted. An example 1d histogram is shown below:
 
 .. image:: ./examples/1d_histogram.png
 
+If you choose to use the `--gw` module for your analysis and specify the
+`--kde_plot` command line argument, the 1d marginalized posterior will be
+represented by a bounded 1d KDE. These KDE plots will be bounded according to
+the following dictionary:
+
+.. literalinclude:: ../../pesummary/gw/plots/bounds.py
+   :language: python
+   :lines: 19-65
+   :linenos:
+
+an example bounded 1d KDE is shown below:
+
+.. image:: ./examples/1d_kde_plot.png
+
 An autocorrelation plot is a commonly-used tool for checking correlations in
 the data. If the posterior samples are randomly chosen, the autocorrelation
 length should be near zero for any and all time-lag separations. If correlated

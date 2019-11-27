@@ -216,6 +216,89 @@ class _PlotGeneration(_BasePlotGeneration):
             )
             plt.close()
 
+    @staticmethod
+    def _oned_histogram_plot(
+        savedir, label, parameter, samples, latex_label, injection, kde=False,
+        prior=None, weights=None
+    ):
+        """Generate a oned histogram plot for a given set of samples
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        label: str
+            the label corresponding to the results file
+        parameter: str
+            the name of the parameter that you wish to plot
+        samples: PESummary.utils.utils.Array
+            array containing the samples corresponding to parameter
+        latex_label: str
+            the latex label corresponding to parameter
+        injection: float
+            the injected value
+        kde: Bool, optional
+            if True, kde plots will be generated rather than 1d histograms
+        prior: PESummary.utils.utils.Array, optional
+            the prior samples for param
+        weights: PESummary.utils.utils.Array, optional
+            the weights for each samples. If None, assumed to be 1
+        """
+        import math
+
+        if math.isnan(injection):
+            injection = None
+
+        fig = gw._1d_histogram_plot(
+            parameter, samples, latex_label, injection, kde=kde, prior=prior,
+            weights=weights
+        )
+        plt.savefig(
+            os.path.join(
+                savedir, "{}_1d_posterior_{}.png".format(label, parameter)
+            )
+        )
+        plt.close()
+
+    @staticmethod
+    def _oned_histogram_comparison_plot(
+        savedir, parameter, samples, latex_label, colors, kde=False,
+        linestyles=None
+    ):
+        """Generate a oned comparison histogram plot for a given parameter
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        parameter: str
+            the name of the parameter that you wish to make a oned comparison
+            histogram for
+        samples: dict
+            dictionary of pesummary.utils.utils.Array objects containing the
+            samples that correspond to parameter for each result file. The key
+            should be the corresponding label
+        latex_label: str
+            the latex label for parameter
+        colors: list
+            list of colors to be used to distinguish different result files
+        kde: Bool, optional
+            if True, kde plots will be generated rather than 1d histograms
+        linestyles: list, optional
+            list of linestyles used to distinguish different result files
+        """
+        same_samples = [val for key, val in samples.items()]
+        fig = gw._1d_comparison_histogram_plot(
+            parameter, same_samples, colors, latex_label,
+            list(samples.keys()), kde=kde, linestyles=linestyles
+        )
+        plt.savefig(
+            os.path.join(
+                savedir, "combined_1d_posterior_{}".format(parameter)
+            )
+        )
+        plt.close()
+
     def skymap_plot(self, label):
         """Generate a skymap plot for a given result file
 

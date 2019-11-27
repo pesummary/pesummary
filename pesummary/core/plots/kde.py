@@ -15,11 +15,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import numpy as np
+from scipy import stats
 import pandas as pd
+from six import string_types
 import matplotlib.pyplot as plt
-from seaborn.distributions import _bivariate_kdeplot, _scipy_univariate_kde
+from seaborn.distributions import _bivariate_kdeplot
+from seaborn.utils import _kde_support
 from seaborn.distributions import _statsmodels_univariate_kde
 import warnings
+from pesummary.utils.utils import logger
 
 try:
     import statsmodels.nonparametric.api as smnp
@@ -28,8 +32,43 @@ except ImportError:
     _has_statsmodels = False
 
 
+def _scipy_univariate_kde(data, bw, gridsize, cut, clip, xlow=None, xhigh=None):
+    """Compute a univariate kernel density estimate using scipy."""
+    if xlow is not None or xhigh is not None:
+        from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+
+        if xlow is None:
+            xlow = np.min(data)
+        if xhigh is None:
+            xhigh = np.max(data)
+        try:
+            x_grid = np.linspace(xlow - 10e-10, xhigh + 10e-10, 10**3)
+            kde = Bounded_1d_kde(data, bw_method=bw, xlow=xlow, xhigh=xhigh)
+            post_grid = kde(np.atleast_2d(x_grid).T)
+            return x_grid, post_grid
+        except TypeError:
+            logger.warn(
+                "Failed to produce bounded 1d kde plot. Reverting to standard"
+            )
+    try:
+        kde = stats.gaussian_kde(data, bw_method=bw)
+    except TypeError:
+        kde = stats.gaussian_kde(data)
+        if bw != "scott":  # scipy default
+            msg = ("Ignoring bandwidth choice, "
+                   "please upgrade scipy to use a different bandwidth.")
+            warnings.warn(msg, UserWarning)
+    if isinstance(bw, string_types):
+        bw = "scotts" if bw == "scott" else bw
+        bw = getattr(kde, "%s_factor" % bw)() * np.std(data)
+    grid = _kde_support(data, bw, gridsize, cut, clip)
+    y = kde(grid)
+    return grid, y
+
+
 def _univariate_kdeplot(data, shade, vertical, kernel, bw, gridsize, cut,
-                        clip, legend, ax, cumulative=False, **kwargs):
+                        clip, legend, ax, cumulative=False, xlow=None,
+                        xhigh=None, **kwargs):
     """Plot a univariate kernel density estimate on one of the axes."""
 
     # Sort out the clipping
@@ -37,7 +76,7 @@ def _univariate_kdeplot(data, shade, vertical, kernel, bw, gridsize, cut,
         clip = (-np.inf, np.inf)
 
     # Calculate the KDE
-    if _has_statsmodels:
+    if _has_statsmodels and xlow is None and xhigh is None:
         # Prefer using statsmodels for kernel flexibility
         x, y = _statsmodels_univariate_kde(data, kernel, bw,
                                            gridsize, cut, clip,
@@ -52,7 +91,8 @@ def _univariate_kdeplot(data, shade, vertical, kernel, bw, gridsize, cut,
             raise ImportError("Cumulative distributions are currently "
                               "only implemented in statsmodels. "
                               "Please install statsmodels.")
-        x, y = _scipy_univariate_kde(data, bw, gridsize, cut, clip)
+        x, y = _scipy_univariate_kde(data, bw, gridsize, cut, clip, xlow=xlow,
+                                     xhigh=xhigh)
 
     # Make sure the density is nonnegative
     y = np.amax(np.c_[np.zeros_like(y), y], axis=1)
@@ -111,7 +151,7 @@ def _univariate_kdeplot(data, shade, vertical, kernel, bw, gridsize, cut,
 def kdeplot(data, data2=None, shade=False, vertical=False, kernel="gau",
             bw="scott", gridsize=100, cut=3, clip=None, legend=True,
             cumulative=False, shade_lowest=True, cbar=False, cbar_ax=None,
-            cbar_kws=None, ax=None, **kwargs):
+            cbar_kws=None, ax=None, xlow=None, xhigh=None, **kwargs):
     """Fit and plot a univariate or bivariate kernel density estimate.
     Parameters
     ----------
@@ -163,6 +203,10 @@ def kdeplot(data, data2=None, shade=False, vertical=False, kernel="gau",
         Other keyword arguments are passed to ``plt.plot()`` or
         ``plt.contour{f}`` depending on whether a univariate or bivariate
         plot is being drawn.
+    xlow: float, optional
+        Optional lower bound for the kde
+    xhigh: float, optional
+        Optional upper bound for the kde
     Returns
     -------
     ax : matplotlib Axes
@@ -271,6 +315,7 @@ def kdeplot(data, data2=None, shade=False, vertical=False, kernel="gau",
     else:
         ax = _univariate_kdeplot(data, shade, vertical, kernel, bw,
                                  gridsize, cut, clip, legend, ax,
-                                 cumulative=cumulative, **kwargs)
+                                 cumulative=cumulative, xlow=xlow,
+                                 xhigh=xhigh, **kwargs)
 
     return ax
