@@ -1,4 +1,10 @@
-## 0.2.3 [unreleased]
+## 0.2.4 [unreleased]
+
+### Changed
+
+### Added
+
+## 0.2.3 [27/11/2019]
 
 ### Changed
 - Colors and linestyles: currently, a seaborn palette will duplicate colors if
