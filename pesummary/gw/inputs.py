@@ -16,174 +16,15 @@ import os
 
 import numpy as np
 import pesummary
-from pesummary.core.inputs import Input, PostProcessing
+from pesummary.core.inputs import _Input, Input, PostProcessing
 from pesummary.gw.file.read import read as GWRead
 from pesummary.utils.exceptions import InputError
 from pesummary.utils.utils import logger, SamplesDict
 
 
-class GWInput(Input):
+class _GWInput(_Input):
     """Super class to handle gw specific command line inputs
-
-    Parameters
-    ----------
-    opts: argparse.Namespace
-        Namespace object containing the command line options
-
-    Attributes
-    ----------
-    result_files: list
-        list of result files passed
-    compare_results: list
-        list of labels stored in the metafile that you wish to compare
-    add_to_existing: Bool
-        True if we are adding to an existing web directory
-    existing_samples: dict
-        dictionary of samples stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_injection_data: dict
-        dictionary of injection data stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_file_version: dict
-        dictionary of file versions stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_config: list
-        list of configuration files stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_labels: list
-        list of labels stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    user: str
-        the user who submitted the job
-    webdir: str
-        the directory to store the webpages, plots and metafile produced
-    baseurl: str
-        the base url of the webpages
-    labels: list
-        list of labels used to distinguish the result files
-    config: list
-        list of configuration files for each result file
-    injection_file: list
-        list of injection files for each result file
-    publication: Bool
-        if true, publication quality plots are generated. Default False
-    kde_plot: Bool
-        if true, kde plots are generated instead of histograms. Default False
-    samples: dict
-        dictionary of posterior samples stored in the result files
-    priors: dict
-        dictionary of prior samples stored in the result files
-    custom_plotting: list
-        list containing the directory and name of python file which contains
-        custom plotting functions. Default None
-    email: str
-        the email address of the user
-    dump: Bool
-        if True, all plots will be dumped onto a single html page. Default False
-    hdf5: Bool
-        if True, the metafile is stored in hdf5 format. Default False
-    approximant: dict
-        dictionary of approximants used in the analysis
-    gracedb: str
-        the gracedb ID for the event
-    detectors: list
-        the detector network used for each result file
-    calibration: dict
-        dictionary containing the posterior calibration envelopes for each IFO
-        for each result file
-    psd: dict
-        dictionary containing the psd used for each IFO for each result file
-    nsamples_for_skymap: int
-        the number of samples to use for the skymap
-    sensitivity: Bool
-        if True, the sky sensitivity for HL and HLV detector networks are also
-        plotted. Default False
-    no_ligo_skymap: Bool
-        if True, a skymap will not be generated with the ligo.skymap package.
-        Default False
-    multi_threading_for_skymap: Bool
-        if True, multi-threading will be used to speed up skymap generation
-    gwdata: dict
-        dictionary containing the strain timeseries used for each result file
-    notes: str
-        notes that you wish to add to the webpages
     """
-    def __init__(self, opts):
-        logger.info("Command line arguments: %s" % (opts))
-        self.opts = opts
-        self.result_files = self.opts.samples
-        self.meta_file = False
-        if self.result_files is not None and len(self.result_files) == 1:
-            self.meta_file = self.is_pesummary_metafile(self.result_files[0])
-        self.existing = self.opts.existing
-        self.compare_results = self.opts.compare_results
-        self.add_to_existing = False
-        if self.existing is not None:
-            self.add_to_existing = True
-            self.existing_metafile = None
-            self.existing_data = self.grab_data_from_metafile(
-                self.existing_metafile, self.existing,
-                compare=self.compare_results
-            )
-            self.existing_samples = self.existing_data[0]
-            self.existing_injection_data = self.existing_data[1]
-            self.existing_file_version = self.existing_data[2]
-            self.existing_file_kwargs = self.existing_data[3]
-            self.existing_priors = self.existing_data[4]
-            self.existing_config = self.existing_data[5]
-            self.existing_labels = self.existing_data[6]
-            self.existing_approximant = self.existing_data[7]
-            self.existing_psd = self.existing_data[8]
-            self.existing_calibration = self.existing_data[9]
-        else:
-            self.existing_labels = None
-            self.existing_samples = None
-            self.existing_file_version = None
-            self.existing_file_kwargs = None
-            self.existing_priors = None
-            self.existing_config = None
-            self.existing_injection_data = None
-            self.existing_approximant = None
-            self.existing_psd = None
-            self.existing_calibration = None
-        self.user = self.opts.user
-        self.webdir = self.opts.webdir
-        self.baseurl = self.opts.baseurl
-        self.labels = self.opts.labels
-        self.weights = {i: None for i in self.labels}
-        self.config = self.opts.config
-        self.injection_file = self.opts.inj_file
-        self.publication = self.opts.publication
-        self.make_directories()
-        self.kde_plot = self.opts.kde_plot
-        self.priors = self.opts.prior_file
-        self.samples = self.opts.samples
-        self.burnin = self.opts.burnin
-        self.custom_plotting = self.opts.custom_plotting
-        self.email = self.opts.email
-        self.dump = self.opts.dump
-        self.hdf5 = self.opts.save_to_hdf5
-        self.palette = self.opts.palette
-        self.include_prior = self.opts.include_prior
-        self.colors = self.opts.colors
-        self.linestyles = self.opts.linestyles
-        self.approximant = self.opts.approximant
-        self.gracedb = self.opts.gracedb
-        self.detectors = None
-        self.calibration = self.opts.calibration
-        self.psd = self.opts.psd
-        self.nsamples_for_skymap = self.opts.nsamples_for_skymap
-        self.sensitivity = self.opts.sensitivity
-        self.no_ligo_skymap = self.opts.no_ligo_skymap
-        self.multi_threading_for_skymap = self.opts.multi_threading_for_skymap
-        self.gwdata = self.opts.gwdata
-        self.notes = self.opts.notes
-        self.disable_comparison = self.opts.disable_comparison
-        self.disable_interactive = self.opts.disable_interactive
-        self.pepredicates_probs = []
-        self.pastro_probs = []
-        self.copy_files()
-
     @staticmethod
     def grab_data_from_metafile(existing_file, webdir, compare=None):
         """Grab data from an existing PESummary metafile
@@ -374,7 +215,7 @@ class GWInput(Input):
         for num, i in enumerate(samples):
             logger.info("Assigning {} to {}".format(self.labels[num], i))
             if not os.path.isfile(i):
-                raise Exception("File %s does not exist" % (i))
+                raise FileNotFoundError("File %s does not exist" % (i))
             data = self.grab_data_from_input(
                 i, self.labels[num], config=self.config[num],
                 injection=self.injection_file[num]
@@ -659,17 +500,20 @@ class GWInput(Input):
         file: path
             path to a file containing the psd data
         """
-        if not os.path.isfile(file):
-            raise InputError("The file '{}' does not exist".format(file))
+        general = (
+            "Failed to read in PSD data because {}. The PSD plot will be "
+            "generated and the PSD data will not be added to the metafile."
+        )
         try:
             f = np.genfromtxt(file, skip_footer=2)
             return f
-        except Exception as e:
+        except FileNotFoundError:
             logger.info(
-                "Failed to read in PSD data because {}. The PSD plot will not "
-                "be generated and the PSD data will not be added to the "
-                "metafile".format(e)
+                general.format("the file {} does not exist".format(file))
             )
+            return {}
+        except ValueError as e:
+            logger.info(general.format(e))
             return {}
 
     @staticmethod
@@ -681,17 +525,21 @@ class GWInput(Input):
         file: path
             path to a file containing the calibration data
         """
-        if not os.path.isfile(file):
-            raise InputError("The file '{}' does not exist".format(file))
+        general = (
+            "Failed to read in calibration data because {}. The calibration "
+            "plot will not be generated and the calibration data will not be "
+            "added to the metafile"
+        )
         try:
             f = np.genfromtxt(file)
             return f
-        except Exception as e:
+        except FileNotFoundError:
             logger.info(
-                "Failed to read in calibration data because {}. The "
-                "calibration plot will not be generated and the calibration "
-                "data will not be added to the metafile".format(e)
+                general.format("the file {} does not exist".format(file))
             )
+            return {}
+        except ValueError as e:
+            logger.info(general.format(e))
             return {}
 
     @staticmethod
@@ -791,6 +639,125 @@ class GWInput(Input):
                     data.generate_all_posterior_samples()
                     prior_dict["samples"][self.labels[num]] = data.samples_dict
         return prior_dict
+
+
+class GWInput(_GWInput, Input):
+    """Class to handle gw specific command line inputs
+
+    Parameters
+    ----------
+    opts: argparse.Namespace
+        Namespace object containing the command line options
+
+    Attributes
+    ----------
+    result_files: list
+        list of result files passed
+    compare_results: list
+        list of labels stored in the metafile that you wish to compare
+    add_to_existing: Bool
+        True if we are adding to an existing web directory
+    existing_samples: dict
+        dictionary of samples stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_injection_data: dict
+        dictionary of injection data stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_file_version: dict
+        dictionary of file versions stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_config: list
+        list of configuration files stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    existing_labels: list
+        list of labels stored in an existing metafile. None if
+        `self.add_to_existing` is False
+    user: str
+        the user who submitted the job
+    webdir: str
+        the directory to store the webpages, plots and metafile produced
+    baseurl: str
+        the base url of the webpages
+    labels: list
+        list of labels used to distinguish the result files
+    config: list
+        list of configuration files for each result file
+    injection_file: list
+        list of injection files for each result file
+    publication: Bool
+        if true, publication quality plots are generated. Default False
+    kde_plot: Bool
+        if true, kde plots are generated instead of histograms. Default False
+    samples: dict
+        dictionary of posterior samples stored in the result files
+    priors: dict
+        dictionary of prior samples stored in the result files
+    custom_plotting: list
+        list containing the directory and name of python file which contains
+        custom plotting functions. Default None
+    email: str
+        the email address of the user
+    dump: Bool
+        if True, all plots will be dumped onto a single html page. Default False
+    hdf5: Bool
+        if True, the metafile is stored in hdf5 format. Default False
+    approximant: dict
+        dictionary of approximants used in the analysis
+    gracedb: str
+        the gracedb ID for the event
+    detectors: list
+        the detector network used for each result file
+    calibration: dict
+        dictionary containing the posterior calibration envelopes for each IFO
+        for each result file
+    psd: dict
+        dictionary containing the psd used for each IFO for each result file
+    nsamples_for_skymap: int
+        the number of samples to use for the skymap
+    sensitivity: Bool
+        if True, the sky sensitivity for HL and HLV detector networks are also
+        plotted. Default False
+    no_ligo_skymap: Bool
+        if True, a skymap will not be generated with the ligo.skymap package.
+        Default False
+    multi_threading_for_skymap: Bool
+        if True, multi-threading will be used to speed up skymap generation
+    gwdata: dict
+        dictionary containing the strain timeseries used for each result file
+    notes: str
+        notes that you wish to add to the webpages
+    disable_comparison: Bool
+        if True, comparison plots and pages are not produced
+    disable_interactive: Bool
+        if True, interactive plots are not produced
+    """
+    def __init__(self, opts):
+        super(GWInput, self).__init__(opts)
+        if self.existing is not None:
+            self.existing_data = self.grab_data_from_metafile(
+                self.existing_metafile, self.existing,
+                compare=self.compare_results
+            )
+            self.existing_approximant = self.existing_data[7]
+            self.existing_psd = self.existing_data[8]
+            self.existing_calibration = self.existing_data[9]
+        else:
+            self.existing_approximant = None
+            self.existing_psd = None
+            self.existing_calibration = None
+        self.approximant = self.opts.approximant
+        self.gracedb = self.opts.gracedb
+        self.detectors = None
+        self.calibration = self.opts.calibration
+        self.psd = self.opts.psd
+        self.nsamples_for_skymap = self.opts.nsamples_for_skymap
+        self.sensitivity = self.opts.sensitivity
+        self.no_ligo_skymap = self.opts.no_ligo_skymap
+        self.multi_threading_for_skymap = self.opts.multi_threading_for_skymap
+        self.gwdata = self.opts.gwdata
+        self.pepredicates_probs = []
+        self.pastro_probs = []
+        self.copy_files()
 
 
 class GWPostProcessing(PostProcessing):
