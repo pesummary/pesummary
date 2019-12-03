@@ -308,7 +308,7 @@ class Array(np.ndarray):
                 [self.percentile(self, self.weights, i) for i in percentile]
             )
         return np.array(
-            [self.percentile(self, self.weights, i) for i in [10, 90]]
+            [self.percentile(self, self.weights, i) for i in [5, 95]]
         )
 
     def __array_finalize__(self, obj):

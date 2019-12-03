@@ -103,8 +103,8 @@ def _1d_cdf_plot(param, samples, latex_label):
     sorted_samples.sort()
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Cumulative Density Function", fontsize=16)
-    upper_percentile = np.percentile(samples, 90)
-    lower_percentile = np.percentile(samples, 10)
+    upper_percentile = np.percentile(samples, 95)
+    lower_percentile = np.percentile(samples, 5)
     median = np.median(samples)
     upper = np.round(upper_percentile - median, 2)
     lower = np.round(median - lower_percentile, 2)
@@ -214,7 +214,7 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
                     clip=[prior.minimum, prior.maximum], linewidth=1.0)
     plt.xlabel(latex_label, fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
-    percentile = samples.confidence_interval([10, 90])
+    percentile = samples.confidence_interval([5, 95])
     if inj_value is not None:
         plt.axvline(inj_value, color=conf.injection_color, linestyle='-',
                     linewidth=2.5)
@@ -272,9 +272,9 @@ def _1d_comparison_histogram_plot(param, samples, colors,
             kdeplot(i, color=colors[num], shade=True, alpha_shade=0.05,
                     clip=[np.min(i), np.max(i)], linewidth=1.5,
                     label=labels[num])
-        plt.axvline(x=np.percentile(i, 90), color=colors[num], linestyle='--',
+        plt.axvline(x=np.percentile(i, 95), color=colors[num], linestyle='--',
                     linewidth=2.5)
-        plt.axvline(x=np.percentile(i, 10), color=colors[num], linestyle='--',
+        plt.axvline(x=np.percentile(i, 5), color=colors[num], linestyle='--',
                     linewidth=2.5)
         handles.append(
             mlines.Line2D([], [], color=colors[num], label=labels[num])
