@@ -166,14 +166,15 @@ class _GWMetaFile(_MetaFile):
                 dictionary["config_file"][label] = config
             elif self.config[num] is not None:
                 dictionary["config_file"][label] = self.config[num]
-            if self.calibration != {} and self.calibration[label] is not None:
+            cond = all(self.calibration[label] != j for j in [{}, None])
+            if self.calibration != {} and cond:
                 dictionary["calibration_envelope"][label] = {
                     key: item for key, item in self.calibration[label].items()
                     if item is not None
                 }
             else:
                 dictionary["calibration_envelope"][label] = {}
-            if self.psds != {} and self.psds[label] is not None:
+            if self.psds != {} and all(self.psds[label] != j for j in [{}, None]):
                 dictionary["psds"][label] = {
                     key: item for key, item in self.psds[label].items() if item
                     is not None

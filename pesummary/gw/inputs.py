@@ -100,7 +100,7 @@ class _GWInput(_Input):
                     ifo: f.calibration[i][ifo] for ifo in f.calibration[i].keys()
                 }
 
-        if f.weights is not None:
+        if f.weights is not None and f.weights != {}:
             weights = {i: f.weights[i] for i in labels}
         else:
             weights = {i: None for i in labels}
@@ -872,12 +872,14 @@ class GWPostProcessing(PostProcessing):
             self.existing_priors = self.inputs.existing_priors
             self.existing_config = self.inputs.existing_config
             self.existing_labels = self.inputs.existing_labels
+            self.existing_weights = self.inputs.existing_weights
             self.existing_approximant = self.inputs.existing_approximant
             self.existing_psd = self.inputs.existing_psd
             self.existing_calibration = self.inputs.existing_calibration
         else:
             self.existing_metafile = None
             self.existing_labels = None
+            self.existing_weights = None
             self.existing_samples = None
             self.existing_file_version = None
             self.existing_file_kwargs = None

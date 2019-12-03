@@ -82,8 +82,8 @@ class _WebpageGeneration(object):
         existing_labels=None, existing_config=None, existing_file_version=None,
         existing_injection_data=None, existing_samples=None,
         existing_metafile=None, existing_file_kwargs=None,
-        add_to_existing=False, notes=None, disable_comparison=False,
-        disable_interactive=False
+        existing_weights=None, add_to_existing=False, notes=None,
+        disable_comparison=False, disable_interactive=False
     ):
         self.webdir = webdir
         self.samples = samples
