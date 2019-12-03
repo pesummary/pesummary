@@ -533,6 +533,11 @@ def _add_existing_data(namespace):
             namespace.labels.append(i)
         if hasattr(namespace, "samples") and i not in list(namespace.samples.keys()):
             namespace.samples[i] = namespace.existing_samples[i]
+        if hasattr(namespace, "weights") and i not in list(namespace.weights.keys()):
+            if namespace.existing_weights is None:
+                namespace.weights[i] = None
+            else:
+                namespace.weights[i] = namespace.existing_weights[i]
         if hasattr(namespace, "injection_data"):
             if i not in list(namespace.injection_data.keys()):
                 namespace.injection_data[i] = namespace.existing_injection_data[i]

@@ -959,8 +959,10 @@ class Input(_Input):
             self.existing_priors = self.existing_data[4]
             self.existing_config = self.existing_data[5]
             self.existing_labels = self.existing_data[6]
+            self.existing_weights = self.existing_data[7]
         else:
             self.existing_labels = None
+            self.existing_weights = None
             self.existing_samples = None
             self.existing_file_version = None
             self.existing_file_kwargs = None
@@ -1078,9 +1080,11 @@ class PostProcessing(object):
             self.existing_priors = self.inputs.existing_priors
             self.existing_config = self.inputs.existing_config
             self.existing_labels = self.inputs.existing_labels
+            self.existing_weights = self.inputs.existing_weights
         else:
             self.existing_metafile = None
             self.existing_labels = None
+            self.existing_weights = None
             self.existing_samples = None
             self.existing_file_version = None
             self.existing_file_kwargs = None

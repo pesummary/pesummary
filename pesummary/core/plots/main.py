@@ -67,10 +67,10 @@ class _PlotGeneration(object):
     def __init__(
         self, savedir=None, webdir=None, labels=None, samples=None,
         kde_plot=False, existing_labels=None, existing_injection_data=None,
-        existing_samples=None, same_parameters=None, injection_data=None,
-        colors=None, custom_plotting=None, add_to_existing=False, priors={},
-        include_prior=False, weights=None, disable_comparison=False,
-        linestyles=None, disable_interactive=False
+        existing_samples=None, existing_weights=None, same_parameters=None,
+        injection_data=None, colors=None, custom_plotting=None,
+        add_to_existing=False, priors={}, include_prior=False, weights=None,
+        disable_comparison=False, linestyles=None, disable_interactive=False
     ):
         self.webdir = webdir
         self.savedir = savedir
@@ -80,6 +80,7 @@ class _PlotGeneration(object):
         self.existing_labels = existing_labels
         self.existing_injection_data = existing_injection_data
         self.existing_samples = existing_samples
+        self.existing_weights = existing_weights
         self.same_parameters = same_parameters
         self.injection_data = injection_data
         self.colors = colors

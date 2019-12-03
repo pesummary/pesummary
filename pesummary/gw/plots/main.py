@@ -49,14 +49,15 @@ class _PlotGeneration(_BasePlotGeneration):
         multi_threading_for_skymap=None, approximant=None,
         pepredicates_probs=None, include_prior=False, publication=False,
         existing_approximant=None, existing_psd=None, existing_calibration=None,
-        weights=None, disable_comparison=False, linestyles=None,
-        disable_interactive=False
+        existing_weights=None, weights=None, disable_comparison=False,
+        linestyles=None, disable_interactive=False
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
             samples=samples, kde_plot=kde_plot, existing_labels=existing_labels,
             existing_injection_data=existing_injection_data,
             existing_samples=existing_samples,
+            existing_weights=existing_weights,
             same_parameters=same_parameters,
             injection_data=injection_data,
             colors=colors, custom_plotting=custom_plotting,

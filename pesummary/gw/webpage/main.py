@@ -110,8 +110,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         file_kwargs=None, existing_labels=None, existing_config=None,
         existing_file_version=None, existing_injection_data=None,
         existing_samples=None, existing_metafile=None, add_to_existing=False,
-        existing_file_kwargs=None, result_files=None, notes=None,
-        disable_comparison=False, pastro_probs=None, gwdata=None,
+        existing_file_kwargs=None, existing_weights=None, result_files=None,
+        notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
         disable_interactive=False
     ):
         self.pepredicates_probs = pepredicates_probs
@@ -136,6 +136,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             existing_samples=existing_samples,
             existing_metafile=existing_metafile,
             existing_file_kwargs=existing_file_kwargs,
+            existing_weights=existing_weights,
             add_to_existing=add_to_existing, notes=notes,
             disable_comparison=disable_comparison,
             disable_interactive=disable_interactive
