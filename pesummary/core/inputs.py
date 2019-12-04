@@ -484,6 +484,34 @@ class _Input(object):
             )
 
     @property
+    def nsamples(self):
+        return self._nsamples
+
+    @nsamples.setter
+    def nsamples(self, nsamples):
+        if nsamples is not None:
+            samples_lengths = [
+                self.samples[key].number_of_samples for key in
+                self.samples.keys()
+            ]
+            for num, label in enumerate(self.samples):
+                if int(nsamples) < samples_lengths[num]:
+                    self.samples[label] = self.samples[label].downsample(
+                        int(nsamples)
+                    )
+                    self.file_kwargs[label]["sampler"]["nsamples"] = int(
+                        nsamples
+                    )
+                else:
+                    logger.warn(
+                        "Failed to downsample {} to {} because {} is greater "
+                        "than the number of samples in the file. Igorning and "
+                        "and using all available samples".format(
+                            self.result_files[num], int(nsamples), int(nsamples)
+                        )
+                    )
+
+    @property
     def priors(self):
         return self._priors
 
@@ -982,6 +1010,7 @@ class Input(_Input):
         self.priors = self.opts.prior_file
         self.samples = self.opts.samples
         self.burnin = self.opts.burnin
+        self.nsamples = self.opts.nsamples
         self.custom_plotting = self.opts.custom_plotting
         self.email = self.opts.email
         self.dump = self.opts.dump

@@ -191,4 +191,9 @@ def command_line():
                         help=("Linestyles you wish to use to distinguish result "
                               "files"),
                         nargs='+', default=None)
+    parser.add_argument("--nsamples", dest="nsamples",
+                        help=("The number of samples to use and store in the "
+                              "PESummary metafile. These samples will be "
+                              "randomly drawn from the posterior distributions"),
+                        default=None)
     return parser
