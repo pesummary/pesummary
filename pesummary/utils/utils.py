@@ -139,6 +139,18 @@ class SamplesDict(dict):
     def number_of_samples(self):
         return len(self[self.parameters[0]])
 
+    def downsample(self, number):
+        """Downsample the samples stored in the SamplesDict class
+
+        Parameters
+        ----------
+        number: int
+            Number of samples you wish to downsample to
+        """
+        self.samples = resample_posterior_distribution(self.samples, number)
+        self.make_dictionary()
+        return self
+
     def discard_samples(self, number):
         """Remove the first n samples
 
