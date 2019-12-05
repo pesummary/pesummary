@@ -2,7 +2,18 @@
 
 ### Changed
 
+- Input classes: reduce duplicate code by making pesummary.gw.inputs.GWInput
+  inherit from pesummary.core.inputs.Input
+- JSON encoder: modify the pesummary.core.file.meta_file.PESummaryJsonEncoder
+  to work with `bilby==0.6.1`
+
 ### Added
+
+- Modified CI to add a `consequences` job to run a `bilby` and a `lalinference`
+  job and ensure that the output files are compatible with PESummary
+- Added a `--nsamples` arguments to `summarypages` which allows the user
+  to downsample their result file
+- Add a scheduled CI job to run the `bilby` and `lalinference` jobs every night
 
 ## 0.2.3 [27/11/2019]
 
