@@ -167,17 +167,16 @@ class PESummary(Read):
                 ver_list.append(version[i][0])
             elif isinstance(version["pesummary"], bytes):
                 version["pesummary"] = version["pesummary"].decode("utf-8")
-        setattr(PESummary, "labels", labels)
-        setattr(PESummary, "config", config)
-        setattr(PESummary, "version", version["pesummary"])
-        setattr(PESummary, "priors", priors)
         return {
             "parameters": parameter_list,
             "samples": sample_list,
             "injection": inj_list,
             "version": ver_list,
             "kwargs": meta_data_list,
-            "weights": {i: j for i, j in zip(labels, weights_list)}
+            "weights": {i: j for i, j in zip(labels, weights_list)},
+            "labels": labels,
+            "config": config,
+            "prior": priors
         }
 
     @property

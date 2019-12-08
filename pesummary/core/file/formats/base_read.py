@@ -83,6 +83,10 @@ class Read():
             self.extra_kwargs["sampler"]["nsamples"] = len(self.data["samples"])
         if "prior" in self.data.keys():
             self.priors = self.data["prior"]
+        if "labels" in self.data.keys():
+            self.labels = self.data["labels"]
+        if "config" in self.data.keys():
+            self.config = self.data["config"]
         if "weights" in self.data.keys():
             self.weights = self.data["weights"]
         else:
