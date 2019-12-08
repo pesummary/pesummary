@@ -23,7 +23,7 @@ from glob import glob
 import numpy as np
 
 
-class PESummary(CorePESummary):
+class PESummary(GWRead, CorePESummary):
     """This class handles the existing posterior_samples.h5 file
 
     Parameters
@@ -44,7 +44,8 @@ class PESummary(CorePESummary):
         analysis
     """
     def __init__(self, path_to_results_file, **kwargs):
-        super(PESummary, self).__init__(path_to_results_file)
+        self.path_to_results_file = path_to_results_file
+        self.extension = self.extension_from_path(self.path_to_results_file)
         load_kwargs = {
             "grab_data_from_dictionary": PESummary._grab_data_from_dictionary}
         self.load(self._grab_data_from_pesummary_file, **load_kwargs)
@@ -63,6 +64,43 @@ class PESummary(CorePESummary):
         if not os.path.isfile(path):
             raise Exception("%s does not exist" % (path))
         return cls(path)
+
+    def load(self, function, **kwargs):
+        """Load a results file according to a given function
+
+        Parameters
+        ----------
+        function: func
+            callable function that will load in your results file
+        """
+        data = self.load_from_function(
+            function, self.path_to_results_file, **kwargs)
+        self.data = data
+        if "version" in data.keys() and data["version"] is not None:
+            self.input_version = data["version"]
+        else:
+            self.input_version = "No version information found"
+        if "kwargs" in data.keys():
+            self.extra_kwargs = data["kwargs"]
+        else:
+            self.extra_kwargs = {"sampler": {}, "meta_data": {}}
+            self.extra_kwargs["sampler"]["nsamples"] = len(self.data["samples"])
+        if data["injection"] is not None:
+            self.injection_parameters = data["injection"]
+        if "prior" in data.keys() and data["prior"] != {}:
+            self.priors = data["prior"]
+        if "weights" in self.data.keys():
+            self.weights = self.data["weights"]
+        if "approximant" in self.data.keys():
+            self.approximant = self.data["approximant"]
+        if "labels" in self.data.keys():
+            self.labels = self.data["labels"]
+        if "config" in self.data.keys():
+            self.config = self.data["config"]
+        if "psd" in self.data.keys():
+            self.psd = self.data["psd"]
+        if "calibration" in self.data.keys():
+            self.calibration = self.data["calibration"]
 
     @staticmethod
     def _grab_data_from_dictionary(dictionary):
@@ -137,20 +175,19 @@ class PESummary(CorePESummary):
                 ver_list.append(version[i][0])
             elif isinstance(version["pesummary"], bytes):
                 version["pesummary"] = version["pesummary"].decode("utf-8")
-        setattr(PESummary, "labels", labels)
-        setattr(PESummary, "config", config)
-        setattr(PESummary, "psd", psd)
-        setattr(PESummary, "calibration", cal)
-        setattr(PESummary, "approximant", approx_list)
-        setattr(PESummary, "version", version["pesummary"])
-        setattr(PESummary, "priors", priors)
         return {
             "parameters": parameter_list,
             "samples": sample_list,
             "injection": inj_list,
             "version": ver_list,
             "kwargs": meta_data_list,
-            "weights": {i: j for i, j in zip(labels, weights_list)}
+            "weights": {i: j for i, j in zip(labels, weights_list)},
+            "labels": labels,
+            "config": config,
+            "psd": psd,
+            "calibration": cal,
+            "approximant": approx_list,
+            "prior": priors
         }
 
     @property
