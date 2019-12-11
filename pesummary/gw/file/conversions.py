@@ -728,7 +728,15 @@ class _Conversion(object):
         self.append_data(snr)
 
     def _matched_filter_network_snr(self):
-        snrs = [i for i in self.parameters if "_matched_filter_snr" in i]
+        snrs = [
+            i for i in self.parameters if "_matched_filter_snr" in i
+            and "_angle" not in i and "_abs" not in i
+        ]
+        if len(snrs) == 0:
+            snrs = [
+                i for i in self.parameters if "_matched_filter_snr_abs" in i
+                and "_angle" not in i
+            ]
         samples = self.specific_parameter_samples(snrs)
         self.parameters.append("network_matched_filter_snr")
         snr = network_snr(samples)
