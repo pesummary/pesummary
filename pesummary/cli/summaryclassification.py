@@ -42,25 +42,26 @@ def command_line():
     parser.add_argument("--labels", dest="labels",
                         help="labels used to distinguish runs", nargs='+',
                         default=None)
-    parser.add_argument("--plot_with_population_prior", action="store_true",
-                        help=("generate PEPredicates plots for samples reweighted "
-                              "to a population prior"), default=False)
-    parser.add_argument("--plot_with_default_prior", action="store_true",
-                        help="generate PEPredicates plots for samples",
-                        default=False)
+    parser.add_argument("--prior", dest="prior",
+                        choices=["population", "default", "both"],
+                        default="both",
+                        help=("Prior to use when calculating source "
+                              "classification probabilities"))
     parser.add_argument("--plot", dest="plot",
                         help="name of the plot you wish to make",
                         default="bar", choices=["bar", "mass_1_mass_2"])
     return parser
 
 
-def generate_probabilities(result_files):
+def generate_probabilities(result_files, prior="both"):
     """Generate the classification probabilities
 
     Parameters
     ----------
     result_files: list
         list of result files
+    prior: str
+        prior you wish to reweight your samples too
     """
     classifications = []
 
@@ -80,7 +81,9 @@ def generate_probabilities(result_files):
         mydict["default"]["HasNS"] = em_bright["HasNS"]
         mydict["default"]["HasRemnant"] = em_bright["HasRemnant"]
         classifications.append(mydict)
-    return classifications
+    if prior == "both":
+        return classifications
+    return [{prior: i[prior]} for i in classifications]
 
 
 def save_classifications(savedir, classifications, labels):
@@ -101,10 +104,9 @@ def save_classifications(savedir, classifications, labels):
         raise InputError("Please provide a label for each result file")
     base_path = os.path.join(savedir, "{}_{}_prior_pe_classification.json")
     for num, i in enumerate(classifications):
-        with open(base_path.format(labels[num], "default"), "w") as f:
-            json.dump(i["default"], f)
-        with open(base_path.format(labels[num], "population"), "w") as f:
-            json.dump(i["population"], f)
+        for prior in i.keys():
+            with open(base_path.format(labels[num], prior), "w") as f:
+                json.dump(i[prior], f)
 
 
 def make_plots(
@@ -145,7 +147,7 @@ def make_plots(
         if plot_type == "bar":
             from pesummary.gw.plots.plot import _classification_plot
 
-            if prior == "default":
+            if prior == "default" or prior == "both":
                 fig = _classification_plot(probs[num]["default"])
                 plt.savefig(
                     os.path.join(
@@ -153,7 +155,7 @@ def make_plots(
                         "{}_default_pepredicates_bar.png".format(label)
                     )
                 )
-            else:
+            if prior == "population" or prior == "both":
                 fig = _classification_plot(probs[num]["population"])
                 plt.savefig(
                     os.path.join(
@@ -162,7 +164,7 @@ def make_plots(
                     )
                 )
         elif plot_type == "mass_1_mass_2":
-            if prior == "default":
+            if prior == "default" or prior == "both":
                 fig = PEPredicates.plot(
                     f.samples, f.parameters, population_prior=False
                 )
@@ -171,7 +173,7 @@ def make_plots(
                         webdir, "{}_default_pepredicates.png".format(label)
                     )
                 )
-            else:
+            if prior == "population" or prior == "both":
                 fig = PEPredicates.plot(f.samples, f.parameters)
                 plt.savefig(
                     os.path.join(
@@ -187,20 +189,23 @@ def main():
     opts = parser.parse_args()
     if opts.webdir:
         make_dir(opts.webdir)
-    classifications = generate_probabilities(
-        opts.samples)
+    else:
+        logger.warn(
+            "No webdir given so plots will not be generated and "
+            "classifications will be shown in stdout rather than saved to file"
+        )
+    classifications = generate_probabilities(opts.samples, prior=opts.prior)
     if opts.webdir:
         save_classifications(opts.webdir, classifications, opts.labels)
-    if opts.plot_with_default_prior:
-        prior = "default"
     else:
-        prior = "population"
+        print(classifications)
+        return
     if opts.plot == "bar":
         probs = classifications
     else:
         probs = None
     make_plots(
-        opts.samples, webdir=opts.webdir, labels=opts.labels, prior=prior,
+        opts.samples, webdir=opts.webdir, labels=opts.labels, prior=opts.prior,
         plot_type=opts.plot, probs=probs
     )
 
