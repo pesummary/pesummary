@@ -139,6 +139,32 @@ class SamplesDict(dict):
     def number_of_samples(self):
         return len(self[self.parameters[0]])
 
+    def pop(self, parameter):
+        """Delete a parameter from the SamplesDict
+
+        Parameters
+        ----------
+        parameter: str
+            name of the parameter you wish to remove from the SamplesDict
+        """
+        if parameter not in self.parameters:
+            logger.info(
+                "{} not in SamplesDict. Unable to remove {}".format(
+                    parameter, parameter
+                )
+            )
+            return
+        ind = self.parameters.index(parameter)
+        self.parameters.remove(parameter)
+        remove = self.samples[ind]
+        if isinstance(self.samples, np.ndarray):
+            samples = self.samples.tolist()
+            remove = self.samples[ind].tolist()
+        samples.remove(remove)
+        if isinstance(self.samples, np.ndarray):
+            self.samples = np.array(samples)
+        super(SamplesDict, self).pop(parameter)
+
     def downsample(self, number):
         """Downsample the samples stored in the SamplesDict class
 

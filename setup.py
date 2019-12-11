@@ -132,6 +132,7 @@ setup(name='pesummary',
           'console_scripts': [
               'summaryconvert=pesummary.gw.file.one_format:main',
               'summarypages=pesummary.cli.summarypages:main',
+              'summarypageslw=pesummary.cli.summarypageslw:main',
               'summaryplots=pesummary.cli.summaryplots:main',
               'summarypublication=pesummary.cli.summarypublication:main',
               'summaryclassification=pesummary.cli.summaryclassification:main',
