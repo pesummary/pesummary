@@ -759,8 +759,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 ]
             ]
             base = (
-                "%s --webdir %s --labels %s --plot {} "
-                "--plot_with_{}_prior" % (
+                "%s --webdir %s --labels %s --plot {} --prior {}" % (
                     general_cli.format(self.result_files[num]),
                     os.path.join(self.webdir, "plots"), label
                 )
