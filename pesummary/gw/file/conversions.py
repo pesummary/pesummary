@@ -357,15 +357,50 @@ class _Conversion(object):
 
     Parameters
     ----------
-    parameters: list
-        list of parameters
-    samples: nd list
-        list of samples for each parameter
+    data: dict, list
+        either a dictionary or samples or a list of parameters and a list of
+        samples. See the examples below for details
+
+    Examples
+    --------
+    There are two ways of passing arguments to this conversion class, either
+    a dictionary of samples or a list of parameters and a list of samples. See
+    the examples below:
+
+    >>> samples = {"mass_1": 10, "mass_2": 5}
+    >>> converted_samples = _Conversion(samples)
+
+    >>> parameters = ["mass_1", "mass_2"]
+    >>> samples = [10, 5]
+    >>> converted_samples = _Conversion(parameters, samples)
+
+    >>> samples = {"mass_1": [10, 20], "mass_2": [5, 8]}
+    >>> converted_samples = _Conversion(samples)
+
+    >>> parameters = ["mass_1", "mass_2"]
+    >>> samples = [[10, 5], [20, 8]]
     """
-    def __new__(cls, parameters, samples, extra_kwargs, return_dict=True):
+    def __new__(cls, *args, **kwargs):
         obj = super(_Conversion, cls).__new__(cls)
+        if len(args) > 2:
+            raise ValueError(
+                "The _Conversion module only takes as arguments a dictionary "
+                "of samples or a list of parameters and a list of samples"
+            )
+        elif isinstance(args[0], dict):
+            parameters = list(args[0].keys())
+            samples = np.atleast_2d(
+                np.array([args[0][i] for i in parameters]).T
+            ).tolist()
+        else:
+            parameters, samples = args
+            samples = np.atleast_2d(samples).tolist()
+        extra_kwargs = kwargs.get("extra_kwargs", {"sampler": {}, "meta_data": {}})
+        f_ref = kwargs.get("f_ref", None)
+        if f_ref is not None:
+            extra_kwargs["sampler"]["f_ref"] = f_ref
         obj.__init__(parameters, samples, extra_kwargs)
-        if return_dict:
+        if kwargs.get("return_dict", True):
             return SamplesDict(obj.parameters, np.array(obj.samples).T)
         else:
             return obj.parameters, obj.samples

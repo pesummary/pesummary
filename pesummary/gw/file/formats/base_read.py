@@ -85,7 +85,9 @@ class GWRead(Read):
             parameters, samples = self.translate_parameters(
                 default_parameters, default_samples
             )
-            self.priors = con._Conversion(parameters, samples, self.extra_kwargs)
+            self.priors = con._Conversion(
+                parameters, samples, extra_kwargs=self.extra_kwargs
+            )
         if "weights" in self.data.keys():
             self.weights = self.data["weights"]
         else:
@@ -113,7 +115,9 @@ class GWRead(Read):
         for i in nan_inds[::-1]:
             parameters.remove(parameters[i])
             samples[0].remove(samples[0][i])
-        inj_samples = con._Conversion(parameters, samples, self.extra_kwargs)
+        inj_samples = con._Conversion(
+            parameters, samples, extra_kwargs=self.extra_kwargs
+        )
         for i in self.parameters:
             if i not in list(inj_samples.keys()):
                 inj_samples[i] = float("nan")
@@ -501,7 +505,8 @@ class GWRead(Read):
         from pesummary.gw.file.conversions import _Conversion
 
         parameters, samples = _Conversion(
-            self.parameters, self.samples, self.extra_kwargs, return_dict=False
+            self.parameters, self.samples, extra_kwargs=self.extra_kwargs,
+            return_dict=False
         )
         self.data["parameters"] = parameters
         self.data["samples"] = samples
