@@ -60,8 +60,9 @@ def write_version_file(version):
         f.writelines(["git_author = %s\n" % (git_info.author)])
         f.writelines(["git_status = %s\n" % (git_info.status)])
         f.writelines(["git_builder = %s\n" % (git_info.builder)])
-        f.writelines(["git_build_date = %s\n" % (git_info.build_date)])
-        f.writelines(['git_build_packages = """%s"""' % (packages.package_info)])
+        f.writelines(["git_build_date = %s\n\n" % (git_info.build_date)])
+        f.writelines(["# Install information\n\n"])
+        f.writelines(["install_path = %s\n" % (packages.package_dir)])
     return ".version"
 
 

@@ -79,3 +79,9 @@ GWlatex_labels = {"luminosity_distance": r"$d_{L} [Mpc]$",
                   "lambda_tilde": r"$\tilde{\lambda}$",
                   "delta_lambda": r"$\delta\lambda$",
                   }
+
+public_GWlatex_labels = {"mass_1": r"$m_{1}^{det} [M_{\odot}]$",
+                         "mass_2": r"$m_{2}^{det} [M_{\odot}]$",
+                         "mass_1_source": r"$m_{1} [M_{\odot}]$",
+                         "mass_2_source": r"$m_{2} [M_{\odot}]$"
+                         }

@@ -113,7 +113,7 @@ class TestPage(object):
         with open("./.outdir/home.html") as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         all_links = soup.find_all("a", class_="nav-link")
-        assert len(all_links) == 2
+        assert len(all_links) == 4
         assert all_links[0].text == "other"
         assert all_links[1].text == "example"
 

@@ -25,6 +25,24 @@ from pygments.formatters import HtmlFormatter
 import time
 
 BOOTSTRAP = """<!DOCTYPE html>
+
+<!--
+                                    Made by
+            ____  ___________
+           / __ \/ ____/ ___/__  ______ ___  ____ ___  ____ ________  __
+          / /_/ / __/  \__ \/ / / / __ `__ \/ __ `__ \/ __ `/ ___/ / / /
+         / ____/ /___ ___/ / /_/ / / / / / / / / / / / /_/ / /  / /_/ /
+        /_/   /_____//____/\__,_/_/ /_/ /_/_/ /_/ /_/\__,_/_/   \__, /
+                                                               /____/
+
+                                   MIT License
+
+       PESummary was developed by Hoy et al. and source code can be seen
+       here: git.ligo.org/lscsoft/pesummary. If you wish to use PESummary
+       for your own work, please cite PESummary. The following page gives
+      details https://lscsoft.docs.ligo.org/pesummary/citing_pesummary.html.
+                                     Thanks!
+  -->
 <html lang='en'>
     <title>title</title>
     <meta charset='utf-8'>
@@ -32,7 +50,7 @@ BOOTSTRAP = """<!DOCTYPE html>
     <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css'>
     stylesheet elements
 </head>
-<body style='background-color:#F8F8F8; margin-top:5em'>
+<body style='background-color:#F8F8F8; margin-top:5em; min-height: 100%'>
 """
 
 HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
@@ -49,6 +67,7 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/font.css">
     <link rel="stylesheet" href="./css/table.css">
+    <link rel="stylesheet" href="./css/image_styles.css">
 """
 
 OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
@@ -65,6 +84,7 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/font.css">
     <link rel="stylesheet" href="../css/table.css">
+    <link rel="stylesheet" href="../css/image_styles.css">
 """
 
 
@@ -156,40 +176,39 @@ class page(Base):
     def _footer(self, user, rundir):
         """
         """
-        command = ""
-        for i in sys.argv:
-            command += " "
-            if i[0] == "-":
-                command += "\n"
-            command += "{}".format(i)
         self.make_div(
             _class='jumbotron', _style='margin-bottom:0; line-height: 0.5;'
-            + 'background-color:#E0E0E0')
-        self.add_content(
-            "<p style='font-family:Arial-body'>This page was produced by {} at "
-            "{} on {} on behalf of the Parameter Estimation group\n".format(
-                user, time.strftime("%H:%M"), time.strftime("%B %d %Y")), indent=2)
-        self.add_content("<p style='font-family:Arial-body'>Run directories "
-                         "found at {}</p>\n".format(rundir), indent=2)
-        self.add_content("<p style='font-family:Arial-body'>This code was "
-                         "generated with the following command line call:</p>", indent=2)
-        self.add_content("<p> </p>", indent=2)
-        self.make_div(
-            _class='container', _style='background-color:#FFFFFF; '
-            'box-shadow: 0 0 5px grey; line-height: 1.5')
-        styles = self.make_code_block(language='shell', contents=command)
-        with open('{0:s}/css/command_line.css'.format(self.web_dir), 'w') as g:
-            g.write(styles)
-        self.end_div()
-        self.make_div(_style="text-align:center")
+            + 'background-color:#989898; bottom:0; position:bottom;'
+            + 'width:100%')
+        self.add_content("<div class='container'>")
+        self.add_content("<div class='row'>", indent=2)
+        self.add_content("<div class='col-sm-3 icon-bar'>", indent=4)
+        self.add_content("<div class='icon'>", indent=6)
         self.add_content(
             "<a href='https://git.ligo.org/lscsoft/pesummary'>"
-            "View PESummary v%s on git.ligo.org</a> | "
+            "<i class='fa fa-code' style='font-size: 30px; color: #E8E8E8; "
+            "font-weight: 900; padding-right:10px'></i><span>View PESummary-v{}"
+            "</span></a>".format(pesummary.__short_version__)
+        )
+        self.add_content(
             "<a href='https://git.ligo.org/lscsoft/pesummary/issues'>"
-            "Report an issue</a> | <a href='https://docs.ligo.org/lscsoft/"
-            "pesummary/summarypage.html'> Help on using this webpage</a>" % (
-                pesummary.__version__), indent=2)
-        self.end_div()
+            "<i class='fa fa-ticket' style='font-size: 30px; color: #E8E8E8; "
+            "font-weight: 900; padding-right:10px'></i><span>"
+            "Open an issue ticket</span></a>"
+        )
+        self.add_content("</div>", indent=6)
+        self.add_content("</div>", indent=4)
+        self.add_content("<div class='col-sm-6'>", indent=4)
+        self.add_content(
+            "<p style='color: #E8E8E8; font-weight: bold; "
+            "font-family: arial-body; margin-top:14px'>This page was produced "
+            "by {} at {} on {}</p>".format(
+                user, time.strftime("%H:%M"), time.strftime("%B %d %Y")
+            )
+        )
+        self.add_content("</div>", indent=4)
+        self.add_content("</div>", indent=2)
+        self.add_content("</div>")
         self.end_div()
 
     def _setup_navbar(self, background_colour):
@@ -272,6 +291,17 @@ class page(Base):
         elif key == "meta_data":
             self.add_content(
                 "Meta data extracted from the result file")
+        elif key == "command_line":
+            if link is not None:
+                self.add_content(
+                    "This page was generated with the following command-line "
+                    "call from the directory %s" % (link)
+                )
+            else:
+                self.add_content(
+                    "This page was generated with the following command-line "
+                    "call:"
+                )
         elif key == "detchar":
             base_string = "Below are summary plots for the detector %s.{}" % (
                 approximant
@@ -284,6 +314,14 @@ class page(Base):
             else:
                 base_string = base_string.format("")
             self.add_content(base_string)
+        elif key == "Downloads":
+            self.add_content(
+                "Below are links to download all relevant information"
+            )
+        elif key == "About":
+            self.add_content(
+                "Below is information about how these pages were generated"
+            )
         else:
             self.add_content(
                 "The figures below show the plots for %s" % (approximant))
@@ -292,7 +330,7 @@ class page(Base):
     def make_navbar(self, links=None, samples_path="./samples", search=True,
                     histogram_download=None,
                     background_color="navbar-dark",
-                    hdf5=False):
+                    hdf5=False, about=True):
         """Make a navigation bar in boostrap format.
 
         Parameters
@@ -418,15 +456,22 @@ class page(Base):
                 "<button type='submit' style='margin-right: 15px; cursor:pointer'> "
                 "<i class='fa fa-download'></i> Histogram Data</button>", indent=6)
             self.add_content("</a>", indent=4)
-        if hdf5:
-            path = '%s/posterior_samples.h5' % (samples_path)
-        else:
-            path = '%s/posterior_samples.json' % (samples_path)
-        self.add_content("<a href='%s' download>" % (path), indent=4)
+
+        self.add_content("<div class='collapse navbar-collapse' id='collapsibleNavbar'>\n", indent=4)
         self.add_content(
-            "<button type='submit' style='margin-right: 15px; cursor:pointer'> "
-            "<i class='fa fa-download'></i> Results File</button>", indent=6)
-        self.add_content("</a>", indent=4)
+            "<ul class='navbar-nav flex-row ml-md-auto d-none d-md-flex'"
+            "style='margin-right:1em;'>\n", indent=6)
+        self.add_content(
+            "<a class='nav-link' href='#', onclick='grab_html(\"{}\")'"
+            ">{}</a>\n".format("Downloads", "Downloads"), indent=2
+        )
+        if about:
+            self.add_content(
+                "<a class='nav-link' href='#', onclick='grab_html(\"{}\")'"
+                ">{}</a>\n".format("About", "About"), indent=2
+            )
+        self.add_content("</ul>\n", indent=6)
+        self.add_content("</div>\n", indent=4)
         if search:
             self.add_content("<input type='text' placeholder='search' id='search'>\n", indent=4)
             self.add_content("<button type='submit' onclick='myFunction()'>Search</button>\n", indent=4)
@@ -475,13 +520,19 @@ class page(Base):
                 indent=12)
             self.make_div(_class='card-body', indent=14)
             self.make_div(_class='row justify-content-center', indent=16)
-        self.make_div(_class='container', indent=18)
+        self.make_div(_class='container', _style='max-width:1400px', indent=18)
         if type(contents) == list:
             self.make_div(indent=20, _class='table-responsive')
             if heading_span > 1:
-                self.add_content("<table class='table table-sm'>\n", indent=22)
+                self.add_content(
+                    "<table class='table table-sm' style='max-width:1400px'>\n",
+                    indent=22
+                )
             else:
-                self.add_content("<table class='table %s'>\n" % (format), indent=24)
+                self.add_content(
+                    "<table class='table %s' style='max-width:1400px'>\n" % (format),
+                    indent=24
+                )
             self.add_content("<thead>\n", indent=26)
             self.add_content("<tr>\n", indent=28)
             for i in headings:
@@ -707,14 +758,13 @@ class page(Base):
                                      "margin-top: 1.0em; cursor: pointer'>{}</button>\n".format(
                                          code, i, label, i), indent=2)
         self.add_content("</div>")
-        self.add_content("<div class='container' style='margin-top:5em; margin-bottom:5em;"
-                         "background-color:#FFFFFF; box-shadow: 0 0 5px grey;'>\n")
+        self.make_container()
         self.add_content("<div class='row justify-content-center' id='corner_plot'>\n", indent=2)
-        self.add_content("<canvas id='{}' width='600' height='600'></canvas>\n".format(ids), indent=4)
+        self.add_content("<canvas id='{}' width='1000' height='1000'></canvas>\n".format(ids), indent=4)
         if code == "combine":
             self.add_content("<img src='' id='mirror'/>", indent=4)
         self.add_content("</div>\n", indent=2)
-        self.add_content("</div>\n")
+        self.end_container()
 
     def make_modal_carousel(self, images=None):
         """Make a pop up window that appears on top of the home page showing

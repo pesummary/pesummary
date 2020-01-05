@@ -112,7 +112,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         existing_samples=None, existing_metafile=None, add_to_existing=False,
         existing_file_kwargs=None, existing_weights=None, result_files=None,
         notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
-        disable_interactive=False
+        disable_interactive=False, publication_kwargs={}
     ):
         self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
@@ -121,6 +121,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.key_data = key_data
         self.file_kwargs = file_kwargs
         self.publication = publication
+        self.publication_kwargs = publication_kwargs
         self.result_files = result_files
         self.gwdata = gwdata
 
@@ -265,6 +266,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.make_logging_page()
         if self.notes is not None:
             self.make_notes_page()
+        self.make_downloads_page()
+        self.make_about_page()
         self.generate_specific_javascript()
 
     def _make_home_pages(self, pages):
@@ -431,14 +434,18 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 "tilt_1", "chi_p", "chirp_mass", "mass_ratio",
                 "symmetric_mass_ratio", "total_mass", "chi_eff",
                 "redshift", "mass_1_source", "mass_2_source",
-                "total_mass_source", "chirp_mass_source"
+                "total_mass_source", "chirp_mass_source",
+                "lambda_1", "lambda_2", "delta_lambda",
+                "lambda_tilde"
             ]
             included_parameters = [
                 i for i in list(self.samples[i].keys()) if i in params
             ]
             html_file.make_search_bar(
                 sidebar=included_parameters,
-                popular_options=self.popular_options, label=i
+                popular_options=self.popular_options + [{
+                    "all": ", ".join(included_parameters)
+                }], label=i
             )
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
@@ -557,11 +564,30 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         )
         html_file.make_search_bar(
             sidebar=self.same_parameters, label="None", code="combines",
-            popular_options=self.popular_options.append(
-                {"all": ", ".join(self.same_parameters)}
-            )
+            popular_options=self.popular_options + [{
+                "all": ", ".join(self.same_parameters)
+            }]
         )
         html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.close()
+        html_file = self.setup_page(
+            "Comparison_All", self.navbar["comparison"],
+            title="All posteriors for Comparison", approximant="Comparison"
+        )
+        html_file.make_banner(approximant="Comparison", key="Comparison")
+        for j in self.same_parameters:
+            html_file.make_banner(
+                approximant=j, _style="font-size: 26px;"
+            )
+            contents = [
+                [path + "combined_1d_posterior_{}.png".format(j)],
+                [
+                    path + "combined_cdf_{}.png".format(j),
+                    path + "combined_boxplot_{}.png".format(j)
+                ]
+            ]
+            html_file.make_table_of_images(
+                contents=contents, rows=1, columns=2, code="changeimage")
         html_file.close()
 
     def make_publication_pages(self):
@@ -586,6 +612,15 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             executable, os.path.join(self.webdir, "plots", "publication"),
             " ".join(self.result_files), " ".join(self.labels)
         )
+        if self.publication_kwargs != {}:
+            general_cli += "--publication_kwargs %s" % (
+                " ".join(
+                    [
+                        "{}:{}".format(key, value) for key, value in
+                        self.publication_kwargs.items()
+                    ]
+                )
+            )
         html_file = self.setup_page(
             "Publication", self.navbar["home"], title="Publication Plots"
         )
@@ -617,10 +652,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     )
                 )
         image_contents = [
-            pub_plots[i:4 + i] for i in range(0, len(pub_plots), 4)
+            pub_plots[i:3 + i] for i in range(0, len(pub_plots), 3)
         ]
         command_lines = [
-            cli[i:4 + i] for i in range(0, len(cli), 4)
+            cli[i:3 + i] for i in range(0, len(cli), 3)
         ]
         html_file.make_table_of_images(
             contents=image_contents, cli=command_lines
@@ -784,7 +819,9 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     base.format("bar", "population")
                 ]
             ]
-            html_file.make_table_of_images(contents=image_contents, cli=command_lines)
+            html_file.make_table_of_images(
+                contents=image_contents, cli=command_lines, autoscale=True
+            )
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images)
             html_file.make_footer(user=self.user, rundir=self.webdir)
@@ -800,13 +837,14 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 base_string.format("1d_posterior_mass_1"),
                 base_string.format("1d_posterior_mass_2"),
                 base_string.format("1d_posterior_a_1"),
-                base_string.format("1d_posterior_a_2")
-            ],
-            [
+            ], [
+                base_string.format("1d_posterior_a_2"),
                 base_string.format("skymap"),
                 base_string.format("waveform"),
+            ], [
                 base_string.format("1d_posterior_iota"),
-                base_string.format("1d_posterior_luminosity_distance")
+                base_string.format("1d_posterior_luminosity_distance"),
+                base_string.format("1d_posterior_chi_eff")
             ]
         ]
         executable = self.get_executable("summaryplots")
@@ -822,15 +860,16 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 general_cli.format("1d_histogram", "--parameter mass_1"),
                 general_cli.format("1d_histgram", "--parameter mass_2"),
                 general_cli.format("1d_histogram", "--parameter a_1"),
+            ], [
                 general_cli.format("1d_histogram", "--parameter a_2"),
-            ],
-            [
                 general_cli.format("skymap", ""),
                 general_cli.format("waveform", ""),
+            ], [
                 general_cli.format("1d_histogram", "--parameter iota"),
                 general_cli.format(
                     "1d_histogram", "--parameter luminosity_distance"
-                )
+                ),
+                general_cli.format("1d_histogram", "--parameter chi_eff")
             ]
         ]
         return image_contents, cli

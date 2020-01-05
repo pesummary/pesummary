@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, number_of_columns_for_legend
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.core.plots.kde import kdeplot
 from pesummary import conf
@@ -173,9 +173,10 @@ def _1d_comparison_histogram_plot(param, samples, colors,
         handles.append(
             mlines.Line2D([], [], color=colors[num], label=labels[num])
         )
+    ncols = number_of_columns_for_legend(labels)
     legend = plt.legend(
         handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-        handlelength=3, ncol=2, mode="expand", borderaxespad=0.
+        handlelength=3, ncol=ncols, mode="expand", borderaxespad=0.
     )
     for num, legobj in enumerate(legend.legendHandles):
         legobj.set_linewidth(1.75)
@@ -218,7 +219,8 @@ def _make_corner_plot(samples, latex_labels, **kwargs):
         "psi", "ra", "phase", "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
         "tilt_1", "chi_p", "chirp_mass", "mass_ratio", "symmetric_mass_ratio",
         "total_mass", "chi_eff", "redshift", "mass_1_source", "mass_2_source",
-        "total_mass_source", "chirp_mass_source"]
+        "total_mass_source", "chirp_mass_source", "lambda_1", "lambda_2",
+        "delta_lambda", "lambda_tilde"]
     included_parameters = [i for i in parameters if i in corner_parameters]
     xs = np.zeros([len(included_parameters), len(samples[parameters[0]])])
     for num, i in enumerate(included_parameters):
@@ -228,11 +230,22 @@ def _make_corner_plot(samples, latex_labels, **kwargs):
     figure = corner.corner(xs.T, **default_kwargs)
     # grab the axes of the subplots
     axes = figure.get_axes()
-    extent = axes[0].get_window_extent().transformed(figure.dpi_scale_trans.inverted())
+    axes_of_interest = axes[:2]
+    location = []
+    for i in axes_of_interest:
+        extent = i.get_window_extent().transformed(
+            figure.dpi_scale_trans.inverted()
+        )
+        location.append([extent.x0 * figure.dpi, extent.y0 * figure.dpi])
     width, height = extent.width, extent.height
     width *= figure.dpi
     height *= figure.dpi
-    return figure, included_parameters
+    seperation = abs(location[0][0] - location[1][0]) - width
+    data = {
+        "width": width, "height": height, "seperation": seperation,
+        "x0": location[0][0], "y0": location[0][0]
+    }
+    return figure, included_parameters, data
 
 
 def _make_source_corner_plot(samples, latex_labels, **kwargs):
@@ -410,7 +423,7 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
-    plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
+    plt.ylabel(r"Strain", fontsize=16)
     plt.grid(b=True)
     plt.legend(loc="best")
     plt.tight_layout()
@@ -481,7 +494,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
     plt.grid(b=True)
     plt.legend(loc="best")
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
-    plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
+    plt.ylabel(r"Strain", fontsize=16)
     plt.tight_layout()
     return fig
 
@@ -723,8 +736,9 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
                              Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]), ])
         CS = plt.contour(X2, Y2, H2.T, V, colors=colors[num], linewidths=2.0)
         CS.collections[0].set_label(labels[num])
+    ncols = number_of_columns_for_legend(labels)
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
-               mode="expand", ncol=2)
+               mode="expand", ncol=ncols)
     xticks = np.arange(-np.pi, np.pi + np.pi / 6, np.pi / 4)
     ax.set_xticks(xticks)
     ax.set_yticks([-np.pi / 3, -np.pi / 6, 0, np.pi / 6, np.pi / 3])
@@ -910,7 +924,7 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
                  color=colors[num], linewidth=1.0, label=i)
         plt.xlim([t_start - 3, t_start + 0.5])
     plt.xlabel(r"Time $[s]$", fontsize=16)
-    plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
+    plt.ylabel(r"Strain", fontsize=16)
     plt.grid(b=True)
     plt.legend(loc="best")
     plt.tight_layout()
@@ -979,7 +993,7 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
         plt.plot(h_t.times, h_t,
                  color=colors[num], label=labels[num], linewidth=2.0)
     plt.xlabel(r"Time $[s]$", fontsize=16)
-    plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
+    plt.ylabel(r"Strain", fontsize=16)
     plt.xlim([t_start - 3, t_start + 0.5])
     plt.grid(b=True)
     plt.legend(loc="best")
@@ -1019,7 +1033,7 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
             strains[num] = ss[ind]
         plt.loglog(i, strains[num], color=colors[num], label=labels[num])
     plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
-    plt.ylabel(r"Strain $[1/\sqrt{Hz}]$", fontsize=16)
+    plt.ylabel(r"Strain Noise $[1/\sqrt{Hz}]$", fontsize=16)
     plt.legend(loc="best")
     plt.tight_layout()
     return fig

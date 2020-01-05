@@ -21,7 +21,7 @@ from pesummary.gw.inputs import GWPostProcessing
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.gw.plots.main import _PlotGeneration
-from pesummary.gw.command_line import DictionaryAction
+from pesummary.core.command_line import DictionaryAction
 from pesummary.gw.file.read import read
 
 
@@ -45,7 +45,9 @@ class PlotGeneration(object):
         """Generate all plots for all result files passed
         """
         logger.info("Starting to generate plots")
-        if self.gw:
+        if self.gw and self.inputs.public:
+            object = _PublicGWPlotGeneration(self.inputs, colors=self.colors)
+        elif self.gw:
             object = _GWPlotGeneration(self.inputs, colors=self.colors)
         else:
             object = _CorePlotGeneration(self.inputs, colors=self.colors)
@@ -130,7 +132,59 @@ class _GWPlotGeneration(GWPostProcessing):
             existing_calibration=self.existing_calibration, weights=self.weights,
             linestyles=self.linestyles,
             disable_comparison=self.disable_comparison,
-            disable_interactive=self.disable_interactive
+            disable_interactive=self.disable_interactive,
+            publication_kwargs=self.publication_kwargs
+        )
+
+    def generate_plots(self):
+        """Generate all plots within the GW module
+        """
+        self.plotting_object.generate_plots()
+
+
+class _PublicGWPlotGeneration(GWPostProcessing):
+    """Class to generate all plots associated with the GW module
+
+    Parameters
+    ----------
+    inputs: argparse.Namespace
+        Namespace object containing the command line options
+    colors: list, optional
+        colors that you wish to use to distinguish different result files
+    """
+    def __init__(self, inputs, colors="default"):
+        from pesummary.gw.plots.public import _PlotGeneration
+
+        super(_PublicGWPlotGeneration, self).__init__(inputs, colors)
+        self.plotting_object = _PlotGeneration(
+            webdir=self.webdir, labels=self.labels,
+            samples=self.samples, kde_plot=self.kde_plot,
+            existing_labels=self.existing_labels,
+            existing_injection_data=self.existing_injection_data,
+            existing_samples=self.existing_samples,
+            existing_file_kwargs=self.existing_file_kwargs,
+            existing_approximant=self.existing_approximant,
+            existing_metafile=self.existing_metafile,
+            same_parameters=self.same_parameters,
+            injection_data=self.injection_data,
+            result_files=self.result_files,
+            file_kwargs=self.file_kwargs,
+            colors=self.colors, custom_plotting=self.custom_plotting,
+            add_to_existing=self.add_to_existing, priors=self.priors,
+            no_ligo_skymap=self.no_ligo_skymap,
+            nsamples_for_skymap=self.nsamples_for_skymap,
+            detectors=self.detectors, maxL_samples=self.maxL_samples,
+            gwdata=self.gwdata, calibration=self.calibration,
+            psd=self.psd, approximant=self.approximant,
+            multi_threading_for_skymap=self.multi_threading_for_skymap,
+            pepredicates_probs=self.pepredicates_probs,
+            include_prior=self.include_prior, publication=self.publication,
+            existing_psd=self.existing_psd,
+            existing_calibration=self.existing_calibration, weights=self.weights,
+            linestyles=self.linestyles,
+            disable_comparison=self.disable_comparison,
+            disable_interactive=self.disable_interactive,
+            publication_kwargs=self.publication_kwargs
         )
 
     def generate_plots(self):

@@ -27,3 +27,6 @@ injection_color = 'orange'
 
 # color for prior histograms
 prior_color = 'k'
+
+# Produce public facing summarypages
+public = False

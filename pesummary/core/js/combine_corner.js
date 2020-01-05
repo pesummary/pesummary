@@ -22,7 +22,7 @@ function combine(list, label="None") {
       var approx = el.innerHTML
       var c=document.getElementById("canvas")
       var ctx=c.getContext("2d")
-      c.width=700
+      c.width=1000
       ctx.clearRect(0, 0, c.width, c.height);
       var el= document.getElementById("corner_search").value.split(", ");
       if ( typeof list === 'undefined' ) {
@@ -89,9 +89,9 @@ function getImagePortion(c, imgObj, array, label){
     // set up canvas for thumbnail
     var tnCanvas = document.createElement('canvas');
     var tnCanvasContext = tnCanvas.getContext('2d');
-    tnCanvas.width = 600; tnCanvas.height = 600;
+    tnCanvas.width = 900; tnCanvas.height = 900;
     tnCanvasContext.fillStyle = "white";
-    tnCanvasContext.fillRect(0, 0, 600, 600);
+    tnCanvasContext.fillRect(0, 0, 900, 900);
    
     /* use the sourceCanvas to duplicate the entire image. This step was crucial for iOS4 and under devices. Follow the link at the end of this post to see what happens when you don't do this */
     var bufferCanvas = document.createElement('canvas');
@@ -101,9 +101,10 @@ function getImagePortion(c, imgObj, array, label){
     bufferContext.drawImage(imgObj, 0, 0);
 
     var list = {}
+    list['one'] = ['phase', 'phi_12', 'phi_jl', 'mass_ratio', 'geocent_time', 'ra', 'dec', 'luminosity_distance', 'psi', 'chirp_mass', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'mass_1', 'mass_2', 'total_mass', 'symmetric_mass_ratio', 'iota', 'chi_eff', 'chi_p', 'redshift', 'mass_1_source', 'mass_2_source', 'total_mass_source', 'chirp_mass_source'];
     var indices = []
     
-    var ratio = (157.5*3) / (array.length*210)
+    var ratio = (240*3) / (array.length*210)
 
     for ( var i=0; i<array.length; i++) {
         if ( list[label].indexOf(array[i]) == -1 ) {
@@ -116,13 +117,37 @@ function getImagePortion(c, imgObj, array, label){
     }
     indices.sort((a,b) => a-b)
 
-    for ( var i=0; i<array.length; i++) {
-
-        tnCanvasContext.drawImage(bufferCanvas, 100+208*indices[i]+2*(indices[i]-1), 34+208*list[label].length+2*(list[label].length-1), 208, 80, 210*i*ratio+120, 210*array.length*ratio, 208*ratio, 80*ratio)
-        tnCanvasContext.drawImage(bufferCanvas, 10, 36+208*indices[i]+2*(indices[i]-1), 80, 208, 100-74*ratio, 210*i*ratio, 74*ratio, 208*ratio)
-        for ( var j=i; j<array.length; j++) {
-            tnCanvasContext.drawImage(bufferCanvas, 100+208*indices[i]+2*(indices[i]-1), 36+208*indices[j]+2*(indices[j]-1), 208, 208, 210*i*ratio+120, 210*j*ratio, 208*ratio, 208*ratio)
+    var data = {}
+    data['one'] = {'width': 200.00000000000006, 'height': 200.0, 'seperation': 9.999999999999943, 'x0': 100.0, 'y0': 100.0};
+    var imagewidth = data[label]["width"];
+    var imageheight = data[label]["height"];
+    var x0 = data[label]["x0"];
+    var y0 = data[label]["y0"];
+    var seperation = data[label]["seperation"];
+    var offset = 30;
+    for (var i=0; i<array.length; i++) {
+        tnCanvasContext.drawImage(
+            bufferCanvas, x0+(imagewidth+seperation)*indices[i],
+            (y0 - 60) + (imageheight+seperation)*list[label].length,
+            imagewidth, 80, imagewidth*i*ratio+160 + i*5,
+            imageheight*array.length*ratio+offset + array.length*5,
+            imagewidth*ratio, 80*ratio
+        )
+        for (var j=i; j<array.length; j++) {
+           tnCanvasContext.drawImage(
+                bufferCanvas, x0+(imagewidth+seperation)*indices[i],
+                (y0 - 60) + (imageheight+seperation)*indices[j],
+                imagewidth, imageheight, imagewidth*i*ratio+160 + i*5,
+                imageheight*j*ratio+offset + j*5,
+                imagewidth*ratio, imageheight*ratio)
         }
     }
-    return tnCanvas.toDataURL(); 
+    for (var i=1; i<array.length; i++) {
+        tnCanvasContext.drawImage(
+            bufferCanvas, 0, (y0 - 60) + (imageheight+seperation)*indices[i],
+            x0, imageheight, 160 - x0*ratio, imageheight*i*ratio+i*5+offset,
+            x0*ratio, imageheight*ratio
+        )
+    }
+    return tnCanvas.toDataURL();
 }

@@ -15,46 +15,7 @@
 
 import argparse
 import copy
-
-
-class DictionaryAction(argparse.Action):
-    """Class to extend the argparse.Action to handle dictionaries as input
-    """
-    def __init__(self, option_strings, dest, nargs=None, const=None,
-                 default=None, type=None, choices=None, required=False,
-                 help=None, metavar=None):
-        super(DictionaryAction, self).__init__(
-            option_strings=option_strings, dest=dest, nargs=nargs,
-            const=const, default=default, type=str, choices=choices,
-            required=required, help=help, metavar=metavar)
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        bool = [True if ':' in value else False for value in values]
-        if all(i is True for i in bool):
-            setattr(namespace, self.dest, {})
-        elif all(i is False for i in bool):
-            setattr(namespace, self.dest, [])
-        else:
-            raise ValueError("Did not understand input")
-
-        items = getattr(namespace, self.dest)
-        items = copy.copy(items)
-        for value in values:
-            value = value.split(':')
-            if len(value) > 2:
-                value = [":".join(value[:-1]), value[-1]]
-            if len(value) == 2:
-                if value[0] in items.keys():
-                    if not isinstance(items[value[0]], list):
-                        items[value[0]] = [items[value[0]]]
-                    items[value[0]].append(value[1])
-                else:
-                    items[value[0]] = value[1]
-            elif len(value) == 1:
-                items.append(value[0])
-            else:
-                raise ValueError("Did not understand input")
-        setattr(namespace, self.dest, items)
+from pesummary.core.command_line import DictionaryAction
 
 
 def insert_gwspecific_option_group(parser):
@@ -102,5 +63,8 @@ def insert_gwspecific_option_group(parser):
                           default=False)
     gw_group.add_argument("--gw", action="store_true",
                           help="run with the gravitational wave pipeline",
+                          default=False)
+    gw_group.add_argument("--public", action="store_true",
+                          help="generate public facing summary pages",
                           default=False)
     return gw_group

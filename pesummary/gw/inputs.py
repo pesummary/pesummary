@@ -730,6 +730,8 @@ class GWInput(_GWInput, Input):
         if True, comparison plots and pages are not produced
     disable_interactive: Bool
         if True, interactive plots are not produced
+    public: Bool
+        if True, public facing summarypages are produced
     """
     def __init__(self, opts):
         super(GWInput, self).__init__(opts)
@@ -755,6 +757,7 @@ class GWInput(_GWInput, Input):
         self.no_ligo_skymap = self.opts.no_ligo_skymap
         self.multi_threading_for_skymap = self.opts.multi_threading_for_skymap
         self.gwdata = self.opts.gwdata
+        self.public = self.opts.public
         self.pepredicates_probs = []
         self.pastro_probs = []
         self.copy_files()
@@ -855,6 +858,8 @@ class GWPostProcessing(PostProcessing):
         result file
     disable_comparison: bool
         Whether to make comparison webpage
+    public: Bool
+        if True, public facing summarypages are produced
     """
     def __init__(self, inputs, colors="default"):
         self.inputs = inputs
@@ -899,6 +904,7 @@ class GWPostProcessing(PostProcessing):
         self.injection_file = self.inputs.injection_file
         self.injection_data = self.inputs.injection_data
         self.publication = self.inputs.publication
+        self.publication_kwargs = self.inputs.publication_kwargs
         self.kde_plot = self.inputs.kde_plot
         self.samples = self.inputs.samples
         self.priors = self.inputs.priors
@@ -929,6 +935,7 @@ class GWPostProcessing(PostProcessing):
         self.same_parameters = []
         self.pepredicates_probs = self.inputs.pepredicates_probs
         self.pastro_probs = self.inputs.pastro_probs
+        self.public = self.inputs.public
 
     @property
     def maxL_samples(self):

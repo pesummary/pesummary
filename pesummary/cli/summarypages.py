@@ -40,7 +40,9 @@ class WebpageGeneration(object):
         """Generate all plots for all result files passed
         """
         logger.info("Starting to generate webpages")
-        if self.gw:
+        if self.gw and self.inputs.public:
+            object = _PublicGWWebpageGeneration(self.inputs, colors=self.colors)
+        elif self.gw:
             object = _GWWebpageGeneration(self.inputs, colors=self.colors)
         else:
             object = _CoreWebpageGeneration(self.inputs, colors=self.colors)
@@ -77,7 +79,8 @@ class _CoreWebpageGeneration(PostProcessing):
             existing_file_kwargs=self.existing_file_kwargs,
             existing_weights=self.existing_weights,
             add_to_existing=self.add_to_existing, notes=self.notes,
-            disable_comparison=self.disable_comparison
+            disable_comparison=self.disable_comparison,
+            disable_interactive=self.disable_interactive
         )
 
     def generate_webpages(self):
@@ -120,7 +123,54 @@ class _GWWebpageGeneration(GWPostProcessing):
             existing_weights=self.existing_weights,
             result_files=self.result_files, notes=self.notes,
             disable_comparison=self.disable_comparison,
+            disable_interactive=self.disable_interactive,
             pastro_probs=self.pastro_probs, gwdata=self.gwdata,
+            publication_kwargs=self.publication_kwargs
+        )
+
+    def generate_webpages(self):
+        """Generate all webpages within the Core module
+        """
+        self.webpage_object.generate_webpages()
+
+
+class _PublicGWWebpageGeneration(GWPostProcessing):
+    """Class to generate all webpages for all result files with the GW module
+
+    Parameters
+    ----------
+    inputs: argparse.Namespace
+        Namespace object containing the command line options
+    colors: list, optional
+        colors that you wish to use to distinguish different result files
+    """
+    def __init__(self, inputs, colors="default"):
+        from pesummary.gw.webpage.public import _PublicWebpageGeneration
+
+        super(_PublicGWWebpageGeneration, self).__init__(inputs, colors)
+        key_data = self.grab_key_data_from_result_files()
+        self.webpage_object = _PublicWebpageGeneration(
+            webdir=self.webdir, samples=self.samples, labels=self.labels,
+            publication=self.publication, user=self.user, config=self.config,
+            same_parameters=self.same_parameters, base_url=self.baseurl,
+            file_versions=self.file_version, hdf5=self.hdf5, colors=self.colors,
+            custom_plotting=self.custom_plotting, gracedb=self.gracedb,
+            pepredicates_probs=self.pepredicates_probs,
+            approximant=self.approximant, key_data=key_data,
+            file_kwargs=self.file_kwargs, existing_labels=self.existing_labels,
+            existing_config=self.existing_config,
+            existing_file_version=self.existing_file_version,
+            existing_injection_data=self.existing_injection_data,
+            existing_samples=self.existing_samples,
+            existing_metafile=self.existing,
+            add_to_existing=self.add_to_existing,
+            existing_file_kwargs=self.existing_file_kwargs,
+            existing_weights=self.existing_weights,
+            result_files=self.result_files, notes=self.notes,
+            disable_comparison=self.disable_comparison,
+            disable_interactive=self.disable_interactive,
+            pastro_probs=self.pastro_probs, gwdata=self.gwdata,
+            publication_kwargs=self.publication_kwargs
         )
 
     def generate_webpages(self):

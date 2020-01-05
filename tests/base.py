@@ -45,7 +45,9 @@ def get_list_of_files(gw=False, number=1):
     html = [
         "./.outdir/html/error.html",
         "./.outdir/html/Version.html",
-        "./.outdir/html/Logging.html"]
+        "./.outdir/html/Logging.html",
+        "./.outdir/html/About.html",
+        "./.outdir/html/Downloads.html"]
     for num in range(number):
         html.append("./.outdir/html/%s%s_%s%s.html" % (label, num, label, num))
         if gw:

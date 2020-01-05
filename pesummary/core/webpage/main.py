@@ -14,6 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import sys
 from glob import glob
 from scipy import stats
 import numpy as np
@@ -122,6 +123,9 @@ class _WebpageGeneration(object):
         }
         self.results_path = {
             "home": "./samples/", "other": "../samples/"
+        }
+        self.config_path = {
+            "home": "./config/", "other": "../config/"
         }
         if self.make_comparison:
             try:
@@ -380,6 +384,8 @@ class _WebpageGeneration(object):
         self.make_logging_page()
         if self.notes is not None:
             self.make_notes_page()
+        self.make_downloads_page()
+        self.make_about_page()
         self.generate_specific_javascript()
 
     def create_blank_html_pages(self, pages, stylesheets=[]):
@@ -538,10 +544,11 @@ class _WebpageGeneration(object):
             )
             ordered_parameters = [i for j in ordered_parameters for i in j[1]]
             popular_options = self.popular_options
-            popular_options.append({"all": ", ".join(ordered_parameters)})
             html_file.make_search_bar(
                 sidebar=[i for i in self.samples[i].keys()],
-                popular_options=popular_options,
+                popular_options=popular_options + [{
+                    "all": ", ".join(ordered_parameters)
+                }],
                 label=self.labels[num], code="combines"
             )
             html_file.make_footer(user=self.user, rundir=self.webdir)
@@ -896,6 +903,8 @@ class _WebpageGeneration(object):
         pages: list
             list of pages that you wish to create
         """
+        from pesummary._version_helper import PackageInformation
+
         html_file = webpage.open_html(
             web_dir=self.webdir, base_url=self.base_url, html_page="Version"
         )
@@ -912,14 +921,19 @@ class _WebpageGeneration(object):
                     i, i, self.file_versions[i]
                 )
             ) + contents
-        for i in self.labels:
-            contents = "# %s version information\n\n%s_version = %s\n\n" % (
-                i, i, self.file_versions[i]) + contents
         html_file.make_container()
         styles = html_file.make_code_block(language='shell', contents=contents)
         with open('{0:s}/css/Version.css'.format(self.webdir), 'w') as f:
             f.write(styles)
         html_file.end_container()
+        packages = PackageInformation()
+        package_info = packages.package_info
+        style = "margin-top:{}; margin-bottom:{};"
+        html_file.make_table(
+            headings=["name", "version", " "],
+            contents=[i.split("==") + [" "] for i in package_info.split("\n")],
+            accordian=False, style=style.format("1em", "1em")
+        )
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
@@ -959,6 +973,117 @@ class _WebpageGeneration(object):
         styles = html_file.make_code_block(language='shell', contents=contents)
         with open('{0:s}/css/Logging.css'.format(self.webdir), 'w') as f:
             f.write(styles)
+        html_file.end_container()
+        html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.close()
+
+    def make_about_page(self):
+        """Wrapper function for _make_about_page
+        """
+        pages = ["About"]
+        self.create_blank_html_pages(pages, stylesheets=pages)
+        self._make_about_page(pages)
+
+    def _make_about_page(self, pages):
+        """Make a page informing the user of the run directory, user that ran
+        the job etc
+
+        Parameters
+        ----------
+        pages: list
+            list of pages you wish to create
+        """
+        html_file = webpage.open_html(
+            web_dir=self.webdir, base_url=self.base_url, html_page="About"
+        )
+        html_file = self.setup_page(
+            "About", self.navbar["home"], title="About"
+        )
+        html_file.make_banner(approximant="About", key="About")
+        html_file.make_banner(
+            approximant="On the command-line", key="command_line",
+            _style="font-size: 26px;", link=os.getcwd()
+        )
+        command = ""
+        for i in sys.argv:
+            command += " "
+            if i[0] == "-":
+                command += "\n"
+            command += "{}".format(i)
+        html_file.make_container()
+        styles = html_file.make_code_block(language="shell", contents=command)
+        with open('{0:s}/css/About.css'.format(self.webdir), 'w') as g:
+            g.write(styles)
+        html_file.end_container()
+        html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.close()
+
+    def make_downloads_page(self):
+        """Wrapper function for _make_downloads_page
+        """
+        pages = ["Downloads"]
+        self.create_blank_html_pages(pages)
+        self._make_downloads_page(pages)
+
+    def _make_downloads_page(self, pages):
+        """Make a page with links to files which can be downloaded
+
+        Parameters
+        ----------
+        pages: list
+            list of pages you wish to create
+        """
+        html_file = webpage.open_html(
+            web_dir=self.webdir, base_url=self.base_url, html_page="Downloads"
+        )
+        html_file = self.setup_page(
+            "Downloads", self.navbar["home"], title="Downloads"
+        )
+        html_file.make_banner(approximant="Downloads", key="Downloads")
+        html_file.make_container()
+        base_string = "{} can be downloaded <a href={} download>here</a>"
+        style = "margin-top:{}; margin-bottom:{};"
+        headings = ["Description"]
+        metafile = (
+            "posterior_samples.json" if not self.hdf5 else "posterior_samples.h5"
+        )
+        html_file.make_table(
+            headings=headings,
+            contents=[
+                [
+                    base_string.format(
+                        "The complete metafile containing all information "
+                        "about the analysis",
+                        self.results_path["other"] + metafile
+                    )
+                ]
+            ],
+            accordian=False, style=style.format("1em", "1em")
+        )
+        for num, i in enumerate(self.labels):
+            html_file.add_content(
+                "<div class='banner', style='margin-left:-4em'>{}</div>".format(i)
+            )
+            table_contents = [
+                [
+                    base_string.format(
+                        "Dat file containing posterior samples",
+                        self.results_path["other"] + "%s_pesummary.dat" % (i)
+                    )
+                ]
+            ]
+            if self.config is not None and self.config[num] is not None:
+                table_contents.append(
+                    [
+                        base_string.format(
+                            "Config file used for this analysis",
+                            self.config_path["other"] + "%s_config.ini" % (i)
+                        )
+                    ]
+                )
+            html_file.make_table(
+                headings=headings, contents=table_contents, accordian=False
+            )
         html_file.end_container()
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
