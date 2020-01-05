@@ -314,6 +314,18 @@ class _WebpageGeneration(object):
                 params.append(
                     [heading, self._partition(cond, parameters)]
                 )
+        used_headings = [i[0] for i in params]
+        other_index = \
+            used_headings.index("others") if "others" in used_headings else None
+        other_params = []
+        for pp in parameters:
+            if not any(pp in j[1] for j in params):
+                if other_index is not None:
+                    params[other_index][1].append(pp)
+                else:
+                    other_params.append(pp)
+        if other_index is None:
+            params.append(["others", other_params])
         return params
 
     def _condition(self, true, false):

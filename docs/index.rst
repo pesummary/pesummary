@@ -89,6 +89,7 @@ for details:
     :maxdepth: 1
 
     executables/summarypages
+    executables/summarypageslw
     executables/summaryclassification
     executables/summarydetchar
     executables/summaryreview

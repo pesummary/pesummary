@@ -14,6 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import re
 import socket
 from glob import glob
 
@@ -824,6 +825,37 @@ class _Input(object):
                     "summarypages".format(notes)
                 )
 
+    @property
+    def ignore_parameters(self):
+        return self._ignore_parameters
+
+    @ignore_parameters.setter
+    def ignore_parameters(self, ignore_parameters):
+        self._ignore_parameters = ignore_parameters
+        if ignore_parameters is not None:
+            for num, label in enumerate(self.labels):
+                removed_parameters = [
+                    param for param in list(self.samples[label].keys()) for
+                    ignore in ignore_parameters if re.match(
+                        re.compile(ignore), param
+                    )
+                ]
+                if removed_parameters == []:
+                    logger.warn(
+                        "Failed to remove any parameters from {}".format(
+                            self.result_files[num]
+                        )
+                    )
+                else:
+                    logger.warn(
+                        "Removing parameters: {} from {}".format(
+                            ", ".join(removed_parameters),
+                            self.result_files[num]
+                        )
+                    )
+                    for ignore in removed_parameters:
+                        self.samples[label].pop(ignore)
+
     def make_directories(self):
         """Make the directories to store the information
         """
@@ -1009,6 +1041,7 @@ class Input(_Input):
         self.kde_plot = self.opts.kde_plot
         self.priors = self.opts.prior_file
         self.samples = self.opts.samples
+        self.ignore_parameters = self.opts.ignore_parameters
         self.burnin = self.opts.burnin
         self.nsamples = self.opts.nsamples
         self.custom_plotting = self.opts.custom_plotting

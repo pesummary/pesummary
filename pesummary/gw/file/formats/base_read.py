@@ -345,15 +345,26 @@ class GWRead(Read):
         """
         path = ("https://git.ligo.org/lscsoft/pesummary/blob/master/pesummary/"
                 "gw/file/standard_names.py")
-        standard_params = [i for i in parameters if i in standard_names.keys()]
         parameters_not_included = [
-            i for i in parameters if i not in standard_params]
-        standard_samples = []
-        for i in samples:
-            standard_samples.append(
-                [i[parameters.index(j)] for j in standard_params])
-        standard_params = [standard_names[i] for i in standard_params]
-        return standard_params, standard_samples
+            i for i in parameters if i not in standard_names.keys()
+        ]
+        if len(parameters_not_included) > 0:
+            logger.debug(
+                "PESummary does not have a 'standard name' for the following "
+                "parameters: {}. This means that comparison plots between "
+                "different codes may not show these parameters. If you want to "
+                "assign a standard name for these parameters, please add an MR "
+                "which edits the following file: {}. These parameters will be "
+                "added to the result pages and meta file as is.".format(
+                    ", ".join(parameters_not_included), path
+                )
+            )
+        standard_params = [i for i in parameters if i in standard_names.keys()]
+        converted_params = [
+            standard_names[i] if i in standard_params else i for i in
+            parameters
+        ]
+        return converted_params, samples
 
     @staticmethod
     def _check_definition_of_inclination(parameters):

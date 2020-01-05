@@ -196,4 +196,9 @@ def command_line():
                               "PESummary metafile. These samples will be "
                               "randomly drawn from the posterior distributions"),
                         default=None)
+    parser.add_argument("--ignore_parameters", dest="ignore_parameters",
+                        help=("Parameters that you wish to not include in the "
+                              "summarypages. You may list them or use "
+                              "wildcards ('recalib*')"),
+                        nargs='+', default=None)
     return parser
