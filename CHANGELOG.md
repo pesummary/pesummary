@@ -1,8 +1,55 @@
-## 0.2.5 [unreleased]
+## 0.3.1 [unreleased]
 
 ### Changed
 
 ### Added
+
+## 0.3.0 [05/01/2020]
+
+### Changed
+
+- Documentation: improve the documentation to explain how to extract information
+  from the PESummary metafile
+- `bilby` matched filter SNR: fix a bug where the `bilby` matched filter
+  SNRs were not being extracted correctly
+- Pass all parameters: allow all parameters stored in the result file to be
+  plotted when the `gw` module is used (not just those with a 'standard name').
+- Corner plot: Fixed a bug where there were multiple `all` buttons when more
+  than one result file was passed.
+- Webpage footer: Changed the layout of the webpage footer to make it look more
+  professional
+- Width of container and images: Changed the width of the container on the
+  html pages to make it easier to inspect the plots
+- `summaryclassification` command line arguments: Changed the command line
+  arguments of the `summaryclassification` executable to try and make it more
+  intuitive.
+- Bug from Will Farr: Fix a bug found by Will Farr which prevented certain
+  PESummary metafile from being able to be read in with PESummary
+- `--disable_interactive` bug: Fix a bug where the `--disable_interactive`
+  command line argument did not actually disable the interactive plots.
+- `_Conversion` class: Change how the user interacts with the
+  `pesummary.gw.file.conversions._Conversion` class to make it more intuitive.
+
+
+### Added
+
+- Added a new `summarypageslw` executable to produce what the user asked for
+  and no more. It is designed to be a lightweight version of the
+  `summarypages` executable
+- Added a new `ignore_parameters` command line argument to the `summarypages`
+  executable to allow for user to ignore certain parameters in their result
+  file if they wish to.
+- Added a new `downloads` and `about` page to contain links to all the
+  documents that you can download and information about how to pages were
+  produced respectively
+- Added a new `--public` command line argument for the `summarypages` executable
+  which produces the public facing summary pages
+- Added a new `--publication_kwargs` command line argument which allows the user
+  to modify the publication quality plots.
+- Added a new function to control how many columns to use when generating
+  comparison plots. This will prevent the labels from overlapping.
+- Added tidal parameters to the `gw` corner plots if they are in the result
+  file.
 
 ## 0.2.4 [05/12/2019]
 
