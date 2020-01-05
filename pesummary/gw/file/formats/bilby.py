@@ -200,6 +200,7 @@ class Bilby(GWRead):
             if "matched_filter_snr" in key and any(np.iscomplex(posterior[key])):
                 posterior[key + "_amp"] = abs(posterior[key])
                 posterior[key + "_angle"] = np.angle(posterior[key])
+                posterior[key] = np.real(posterior[key])
         # Drop all non numeric bilby data outputs
         posterior = posterior.select_dtypes(include=[float, int])
         parameters = list(posterior.keys())
