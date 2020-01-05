@@ -8,7 +8,9 @@ of the bigger and smaller black holes, then the chirp mass, mass ratio,
 total mass and symmetric mass ratio can all be derived.
 
 PESummary boasts a user friendly conversion module that handles all this for
-you. It is run with the following,
+you. The user simply passes the parameters and samples either as a dictionary
+or a list and the conversion class will calculate all possible derived quantities.
+An example where the user passes a list of parameters and samples is shown below:
 
 .. code-block:: python
 
@@ -16,7 +18,7 @@ you. It is run with the following,
     >>> parameters = ["mass_1", "mass_2"]
     >>> samples = [[10, 5], [2, 1], [40, 20]]
     >>> extra_kwargs = {"sampler": {"f_ref": 20}}
-    >>> data = _Conversion(parameters, samples, extra_kwargs)
+    >>> data = _Conversion(parameters, samples, extra_kwargs=extra_kwargs)
     >>> print(data.keys())
     dict_keys(['mass_1', 'mass_2', 'a_1', 'a_2', 'mass_ratio', 'total_mass', 'chirp_mass', 'symmetric_mass_ratio'])
     >>> print(data)
