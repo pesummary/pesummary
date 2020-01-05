@@ -12,8 +12,8 @@ $(document).ready(function () {
             } else {                                                            
                 $parent.parent().find('.show').removeClass('show');             
                 $parent.addClass('show');                                       
-                $el.next().addClass('show');                                    
-                $el.next().css({"top": $el[0].offsetTop, "left": $parent.outerWidth() - 4});
+                $el.next().addClass('show');                      
+                $el.next().css({"max-height": "400px", "overflow": "auto", "top": $el[0].offsetTop, "left": $parent.outerWidth() - 4});
             }                                                                   
             e.preventDefault();                                                 
             e.stopPropagation();                                                
