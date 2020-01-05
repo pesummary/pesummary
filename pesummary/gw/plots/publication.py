@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, number_of_columns_for_legend
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -61,7 +61,7 @@ def estimate_2d_posterior(samples, xlow=None, xhigh=None, ylow=None,
     ylow: float
         bound the KDE to not take y values below ylow
     yhigh: float
-        bound the KDE to not take y values above ylow
+        bound the KDE to not take y valuesabove ylow
     transform: func
         function to transform the parameters
     gridsize: int
@@ -100,7 +100,8 @@ def estimate_2d_posterior(samples, xlow=None, xhigh=None, ylow=None,
 
 
 def twod_contour_plots(
-    parameters, samples, labels, latex_labels, colors=None, linestyles=None
+    parameters, samples, labels, latex_labels, colors=None, linestyles=None,
+    gridsize=100
 ):
     """Generate 2d contour plots for a set of samples for given parameters
 
@@ -149,7 +150,7 @@ def twod_contour_plots(
 
         contour_data = estimate_2d_posterior(
             i, transform=transform, xlow=xlow, xhigh=xhigh, ylow=ylow,
-            yhigh=yhigh)
+            yhigh=yhigh, gridsize=gridsize)
         xx = contour_data['xx']
         yy = contour_data['yy']
         z = contour_data['z']
@@ -180,9 +181,10 @@ def twod_contour_plots(
     ax1.set_xlabel(latex_labels[parameters[0]])
     ax1.set_ylabel(latex_labels[parameters[1]])
 
+    ncols = number_of_columns_for_legend(labels)
     legend = plt.legend(
         handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-        handlelength=3, ncol=4, mode="expand", borderaxespad=0.
+        handlelength=3, ncol=ncols, mode="expand", borderaxespad=0.
     )
     for num, legobj in enumerate(legend.legendHandles):
         legobj.set_linewidth(1.75)

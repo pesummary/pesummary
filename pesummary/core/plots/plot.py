@@ -12,7 +12,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, number_of_columns_for_legend
 from pesummary.core.plots.kde import kdeplot
 from pesummary import conf
 
@@ -153,9 +153,10 @@ def _1d_cdf_comparison_plot(
         handles.append(
             mlines.Line2D([], [], color=colors[num], label=labels[num])
         )
+    ncols = number_of_columns_for_legend(labels)
     legend = plt.legend(
         handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-        handlelength=3, ncol=2, mode="expand", borderaxespad=0.
+        handlelength=3, ncol=ncols, mode="expand", borderaxespad=0.
     )
     for num, legobj in enumerate(legend.legendHandles):
         legobj.set_linewidth(1.75)
@@ -279,9 +280,10 @@ def _1d_comparison_histogram_plot(param, samples, colors,
         handles.append(
             mlines.Line2D([], [], color=colors[num], label=labels[num])
         )
+    ncols = number_of_columns_for_legend(labels)
     legend = plt.legend(
         handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-        handlelength=3, ncol=2, mode="expand", borderaxespad=0.
+        handlelength=3, ncol=ncols, mode="expand", borderaxespad=0.
     )
     for num, legobj in enumerate(legend.legendHandles):
         legobj.set_linewidth(1.75)
@@ -361,8 +363,19 @@ def _make_corner_plot(samples, latex_labels, **kwargs):
     figure = corner.corner(xs.T, **default_kwargs)
     # grab the axes of the subplots
     axes = figure.get_axes()
-    extent = axes[0].get_window_extent().transformed(figure.dpi_scale_trans.inverted())
+    axes_of_interest = axes[:2]
+    location = []
+    for i in axes_of_interest:
+        extent = i.get_window_extent().transformed(
+            figure.dpi_scale_trans.inverted()
+        )
+        location.append([extent.x0 * figure.dpi, extent.y0 * figure.dpi])
     width, height = extent.width, extent.height
     width *= figure.dpi
     height *= figure.dpi
-    return figure, parameters
+    seperation = abs(location[0][0] - location[1][0]) - width
+    data = {
+        "width": width, "height": height, "seperation": seperation,
+        "x0": location[0][0], "y0": location[0][0]
+    }
+    return figure, parameters, data

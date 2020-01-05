@@ -97,7 +97,7 @@ class Base(object):
         """
         if not style:
             style = "margin-top:3em; margin-bottom:5em; background-color:#FFFFFF; " + \
-                    "box-shadow: 0 0 5px grey;"
+                    "box-shadow: 0 0 5px grey; max-width: 1400px"
         self.make_div(indent, _class="container", _style=style)
 
     def end_container(self, indent=0):

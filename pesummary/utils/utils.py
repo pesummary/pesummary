@@ -666,6 +666,21 @@ def determine_gps_time_and_window(maxL_samples, labels):
     return gps_time, window
 
 
+def number_of_columns_for_legend(labels):
+    """Determine the number of columns to use in a legend
+
+    Parameters
+    ----------
+    labels: list
+        list of labels in the legend
+    """
+    max_length = np.max([len(i) for i in labels])
+    if max_length > 50.:
+        return 1
+    else:
+        return int(50. / max_length)
+
+
 class RedirectLogger(object):
     """Class to redirect the output from other codes to the `pesummary`
     logger

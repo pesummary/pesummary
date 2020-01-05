@@ -64,6 +64,7 @@ The summary pages
     summarypages/comparison_interactive
     summarypages/publication
     summarypages/notes
+    summarypages/downloads
     summarypages/examples
 
 Customisation
@@ -106,6 +107,7 @@ Tutorials
     :maxdepth: 1
 
     tutorials/GWTC1_plots
+    tutorials/public_pages
 
 Indices and tables
 ------------------

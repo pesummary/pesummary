@@ -305,7 +305,7 @@ class _PlotGeneration(object):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            fig, params = core._make_corner_plot(samples, latex_labels)
+            fig, params, data = core._make_corner_plot(samples, latex_labels)
             plt.savefig(
                 os.path.join(
                     savedir, "corner", "{}_all_density_plots.png".format(
@@ -325,6 +325,23 @@ class _PlotGeneration(object):
             ][0]
             combine_corner.insert(
                 ind + 1, "    list['{}'] = {};\n".format(label, params)
+            )
+            new_file = open(
+                os.path.join(webdir, "js", "combine_corner.js"), "w"
+            )
+            new_file.writelines(combine_corner)
+            new_file.close()
+            combine_corner = open(
+                os.path.join(webdir, "js", "combine_corner.js")
+            )
+            combine_corner = combine_corner.readlines()
+            params = [str(i) for i in params]
+            ind = [
+                linenumber for linenumber, line in enumerate(combine_corner)
+                if "var data = {}" in line
+            ][0]
+            combine_corner.insert(
+                ind + 1, "    data['{}'] = {};\n".format(label, data)
             )
             new_file = open(
                 os.path.join(webdir, "js", "combine_corner.js"), "w"

@@ -21,7 +21,7 @@ from pesummary.core.file.read import read as Read
 from pesummary.gw.file.meta_file import _GWMetaFile
 from pesummary.core.file.meta_file import _MetaFile
 from pesummary.gw.inputs import GWPostProcessing
-from pesummary.gw.command_line import DictionaryAction
+from pesummary.core.command_line import DictionaryAction
 from pesummary.utils.utils import make_dir
 
 import numpy as np

@@ -50,7 +50,7 @@ class _PlotGeneration(_BasePlotGeneration):
         pepredicates_probs=None, include_prior=False, publication=False,
         existing_approximant=None, existing_psd=None, existing_calibration=None,
         existing_weights=None, weights=None, disable_comparison=False,
-        linestyles=None, disable_interactive=False
+        linestyles=None, disable_interactive=False, publication_kwargs={}
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -82,6 +82,7 @@ class _PlotGeneration(_BasePlotGeneration):
         self.existing_approximant = existing_approximant
         self.pepredicates_probs = pepredicates_probs
         self.publication = publication
+        self.publication_kwargs = publication_kwargs
 
         self.plot_type_dictionary.update({
             "psd": self.psd_plot,
@@ -176,7 +177,7 @@ class _PlotGeneration(_BasePlotGeneration):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            fig, params = gw._make_corner_plot(samples, latex_labels)
+            fig, params, data = gw._make_corner_plot(samples, latex_labels)
             plt.savefig(
                 os.path.join(
                     savedir, "corner", "{}_all_density_plots.png".format(
@@ -196,6 +197,23 @@ class _PlotGeneration(_BasePlotGeneration):
             ][0]
             combine_corner.insert(
                 ind + 1, "    list['{}'] = {};\n".format(label, params)
+            )
+            new_file = open(
+                os.path.join(webdir, "js", "combine_corner.js"), "w"
+            )
+            new_file.writelines(combine_corner)
+            new_file.close()
+            combine_corner = open(
+                os.path.join(webdir, "js", "combine_corner.js")
+            )
+            combine_corner = combine_corner.readlines()
+            params = [str(i) for i in params]
+            ind = [
+                linenumber for linenumber, line in enumerate(combine_corner)
+                if "var data = {}" in line
+            ][0]
+            combine_corner.insert(
+                ind + 1, "    data['{}'] = {};\n".format(label, data)
             )
             new_file = open(
                 os.path.join(webdir, "js", "combine_corner.js"), "w"
@@ -731,6 +749,10 @@ class _PlotGeneration(_BasePlotGeneration):
             ["theta_jn", "luminosity_distance"],
             ["network_optimal_snr", "chirp_mass_source"]
         ]
+        gridsize = (
+            int(self.publication_kwargs["gridsize"]) if "gridsize" in
+            self.publication_kwargs.keys() else 100
+        )
         for plot in twod_plots:
             if not all(
                 all(
@@ -747,7 +769,7 @@ class _PlotGeneration(_BasePlotGeneration):
             samples = [[self.samples[i][j] for j in plot] for i in self.labels]
             arguments = [
                 self.savedir, plot, samples, self.labels, latex_labels,
-                self.colors, self.linestyles
+                self.colors, self.linestyles, gridsize
             ]
             self._try_to_make_a_plot(
                 arguments, self._twod_comparison_contour_plot,
@@ -757,7 +779,7 @@ class _PlotGeneration(_BasePlotGeneration):
     @staticmethod
     def _twod_comparison_contour_plot(
         savedir, plot_parameters, samples, labels, latex_labels, colors,
-        linestyles
+        linestyles, gridsize
     ):
         """Generate a 2d comparison contour plot for a given set of samples
 
@@ -773,10 +795,12 @@ class _PlotGeneration(_BasePlotGeneration):
             list of labels used to distinguish each result file
         latex_labels: dict
             dictionary containing the latex labels for each parameter
+        gridsize: int
+            the number of points to use when estimating the KDE
         """
         fig = publication.twod_contour_plots(
             plot_parameters, samples, labels, latex_labels, colors=colors,
-            linestyles=linestyles
+            linestyles=linestyles, gridsize=gridsize
         )
         plt.savefig(
             os.path.join(

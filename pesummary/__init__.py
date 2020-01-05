@@ -16,5 +16,6 @@
 from ._version_helper import get_version_information
 
 __version__ = get_version_information()
+__short_version__ = get_version_information(short=True)
 
 __bilby_compatibility__ = "0.3.6"

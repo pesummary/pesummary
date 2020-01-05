@@ -101,6 +101,20 @@ function grab_html(param, label="None") {
             window.location = "../home.html"
         }
     }
+    else if ( param == "Downloads" ) {
+        if ( filename == "home.html" ) {
+            window.location = "./html/Downloads.html"
+        } else {
+            window.location = "../html/Downloads.html"
+        }
+    }
+    else if (param == "About") {
+        if ( filename == "home.html" ) {
+            window.location = "./html/About.html"
+        } else {
+            window.location = "../html/About.html"
+        }
+    }
     else if ( param == "Comparison" ) {
         if ( filename == "home.html" ) {
             window.location = "./html/Comparison.html"

@@ -94,6 +94,7 @@ class PackageInformation(GitInformation):
     """
     def __init__(self):
         self.package_info = self.get_package_info()
+        self.package_dir = self.get_package_dir()
 
     def get_package_info(self):
         """Return the package information
@@ -101,9 +102,20 @@ class PackageInformation(GitInformation):
         packages = self.call(["pip", "freeze"]).decode("utf-8")
         return packages
 
+    def get_package_dir(self):
+        """Return the package directory
+        """
+        directory = Path(self.call(["which", "python"]).decode("utf-8"))
+        return str(directory.parent.parent)
 
-def get_version_information():
+
+def get_version_information(short=False):
     """Grab the version from the .version file
+
+    Parameters
+    ----------
+    short: Bool
+        If True, only return the version. If False, return git hash
     """
     version_file = Path(__file__).parent / ".version"
 
@@ -116,7 +128,10 @@ def get_version_information():
         version = [i.split("= ")[1] for i in f if "last_release" in i][0]
         hash = [i.split("= ")[1] for i in f if "git_hash" in i][0]
         status = [i.split("= ")[1] for i in f if "git_status" in i][0]
-        string += "%s: %s %s" % (version, status, hash)
+        if short:
+            string += "%s" % (version)
+        else:
+            string += "%s: %s %s" % (version, status, hash)
     except IndexError:
         print("No version information found")
     except FileNotFoundError as exc:

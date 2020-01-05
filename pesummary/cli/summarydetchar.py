@@ -21,7 +21,7 @@ from pesummary.gw.file.read import read
 from pesummary.gw.plots import detchar
 from pesummary.utils.exceptions import InputError
 from pesummary.utils.utils import make_dir, logger
-from pesummary.gw.command_line import DictionaryAction
+from pesummary.core.command_line import DictionaryAction
 import matplotlib.pyplot as plt
 import argparse
 

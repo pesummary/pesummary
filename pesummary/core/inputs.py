@@ -826,6 +826,48 @@ class _Input(object):
                 )
 
     @property
+    def public(self):
+        return self._public
+
+    @public.setter
+    def public(self, public):
+        self._public = public
+        if public != conf.public:
+            logger.info(
+                conf.overwrite.format("public", conf.public, public)
+            )
+
+    @property
+    def multi_process(self):
+        return self._multi_process
+
+    @multi_process.setter
+    def multi_process(self, multi_process):
+        self._multi_process = multi_process
+        if multi_process is not None:
+            logger.warn(
+                "Multiprocessing is not currently implemented. Ignoring input "
+                "and Using a single core."
+            )
+
+    @property
+    def publication_kwargs(self):
+        return self._publication_kwargs
+
+    @publication_kwargs.setter
+    def publication_kwargs(self, publication_kwargs):
+        self._publication_kwargs = publication_kwargs
+        if publication_kwargs != {}:
+            allowed_kwargs = ["gridsize"]
+            if not any(i in publication_kwargs.keys() for i in allowed_kwargs):
+                logger.warn(
+                    "Currently the only allowed publication kwargs are {}. "
+                    "Ignoring other inputs.".format(
+                        ", ".join(allowed_kwargs)
+                    )
+                )
+
+    @property
     def ignore_parameters(self):
         return self._ignore_parameters
 
@@ -1037,6 +1079,7 @@ class Input(_Input):
         self.config = self.opts.config
         self.injection_file = self.opts.inj_file
         self.publication = self.opts.publication
+        self.publication_kwargs = self.opts.publication_kwargs
         self.make_directories()
         self.kde_plot = self.opts.kde_plot
         self.priors = self.opts.prior_file
@@ -1055,6 +1098,7 @@ class Input(_Input):
         self.notes = self.opts.notes
         self.disable_comparison = self.opts.disable_comparison
         self.disable_interactive = self.opts.disable_interactive
+        self.multi_process = self.opts.multi_process
         self.copy_files()
 
 

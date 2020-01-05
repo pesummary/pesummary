@@ -37,7 +37,7 @@ function combines(list, label) {
     } else {                                                                    
       var el = list.split(", ");                                                
     }
-    c.width = 1100;
+    c.width = 1350;
     if ( el == "" ) {
         var total = document.getElementsByName("type");
         var parameters = []
@@ -115,19 +115,19 @@ function onLoadImage(c, ctx, images, reject, list) {
     images[0][0].onload = function() {
         var width = this.naturalWidth;
         var height = this.naturalHeight;
-        var scalefactor = 750 / width;
-        var scalefactor2 = 350 / width;
+        var scalefactor = 900 / width;
+        var scalefactor2 = 450 / width;
 
-        c.height = 450*images.length + 70*(images.length + 1) + 100*images.length
+        c.height = 580*images.length + 70*(images.length + 1) + 100*images.length
         setTimeout(function() {
         for ( var i=0; i<images.length; i++ ) {
             try {
                 ctx.font = "35px Arial-body";
-                ctx.fillText(list[i], 0, 450*i + ((i+1)*70) + i * 100 - 20);
-                ctx.drawImage(images[i][0], 0, (450*i) + ((i+1)*70 + i * 100), 750, height * scalefactor);
-                ctx.drawImage(images[i][1], 750, (450*i) + ((i+1)*70 + i * 100 + 280), 350, height * scalefactor2);
-                ctx.drawImage(images[i][2], 750, (450*i) + ((i+1)*70 + i * 100), 350, height * scalefactor2);
-                /*ctx.drawImage(images[i][0], 0, (400*i)+((i+1)*60 + 10), 750, height*scalefactor);*/
+                ctx.fillText(list[i], 0, 580*i + ((i+1)*70) + i * 100 - 20);
+                ctx.drawImage(images[i][0], 0, (580*i) + ((i+1)*70 + i * 100), 900, height * scalefactor);
+                ctx.drawImage(images[i][1], 900, (580*i) + ((i+1)*70 + i * 100 + 350), 450, height * scalefactor2);
+                ctx.drawImage(images[i][2], 900, (580*i) + ((i+1)*70 + i * 100), 450, height * scalefactor2);
+                /*ctx.drawImage(images[i][0], 0, (400*i)+((i+1)*60 + 10), 900, height*scalefactor);*/
             } catch (e) {
                 reject(list[i])
             }

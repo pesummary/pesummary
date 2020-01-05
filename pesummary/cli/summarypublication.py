@@ -21,7 +21,7 @@ from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.gw.plots import publication as pub
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import make_dir, logger
-from pesummary.gw.command_line import DictionaryAction
+from pesummary.core.command_line import DictionaryAction
 import argparse
 import matplotlib.pyplot as plt
 import seaborn
@@ -53,7 +53,8 @@ def command_line():
     parser.add_argument("--parameters", dest="parameters", nargs="+",
                         help=("parameters of the 2d contour plot you wish to "
                               "make"), default=None)
-    parser.add_argument("--plot_kwargs", help="Optional plotting kwargs",
+    parser.add_argument("--publication_kwargs",
+                        help="Optional kwargs for publication plots",
                         action=DictionaryAction, nargs="+", default={})
     parser.add_argument("--palette", dest="palette",
                         help="Color palette to use to distinguish result files",
@@ -181,18 +182,27 @@ def make_2d_contour_plot(opts):
         samples2 = [[k[ind2[num]] for k in l] for num, l in
                     enumerate(samples)]
         twod_samples = [[j, k] for j, k in zip(samples1, samples2)]
+        gridsize = (
+            opts.publication_kwargs["gridsize"] if "gridsize" in
+            opts.publication_kwargs.keys() else 100
+        )
         fig = pub.twod_contour_plots(
             i, twod_samples, opts.labels, latex_labels, colors=colors,
-            linestyles=linestyles
+            linestyles=linestyles, gridsize=gridsize
         )
         current_xlow, current_xhigh = plt.xlim()
-        keys = opts.plot_kwargs.keys()
+        keys = opts.publication_kwargs.keys()
         if "xlow" in keys and "xhigh" in keys:
-            plt.xlim([float(opts.plot_kwargs["xlow"]), float(opts.plot_kwargs["xhigh"])])
+            plt.xlim(
+                [
+                    float(opts.publication_kwargs["xlow"]),
+                    float(opts.publication_kwargs["xhigh"])
+                ]
+            )
         elif "xhigh" in keys:
-            plt.xlim([current_xlow, float(opts.plot_kwargs["xhigh"])])
+            plt.xlim([current_xlow, float(opts.publication_kwargs["xhigh"])])
         elif "xlow" in keys:
-            plt.xlim([float(opts.plot_kwargs["xlow"]), current_xhigh])
+            plt.xlim([float(opts.publication_kwargs["xlow"]), current_xhigh])
         fig.savefig("%s/2d_contour_plot_%s" % (opts.webdir, "_and_".join(i)))
         plt.close()
 

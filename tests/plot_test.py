@@ -154,7 +154,7 @@ class TestPlot(object):
         params = list(latex_labels.keys())
         samples = {
             i: samples[num] for num, i in enumerate(params)}
-        fig, included_params = gwplot._make_corner_plot(samples, latex_labels) 
+        fig, included_params, data = gwplot._make_corner_plot(samples, latex_labels) 
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_source_corner_plot(self):
