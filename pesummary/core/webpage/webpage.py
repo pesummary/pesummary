@@ -182,7 +182,7 @@ class page(Base):
             + 'width:100%')
         self.add_content("<div class='container'>")
         self.add_content("<div class='row'>", indent=2)
-        self.add_content("<div class='col-sm-3 icon-bar'>", indent=4)
+        self.add_content("<div class='col-sm-4 icon-bar'>", indent=4)
         self.add_content("<div class='icon'>", indent=6)
         self.add_content(
             "<a href='https://git.ligo.org/lscsoft/pesummary'>"
@@ -196,9 +196,25 @@ class page(Base):
             "font-weight: 900; padding-right:10px'></i><span>"
             "Open an issue ticket</span></a>"
         )
+        self.add_content(
+            "<a href='https://lscsoft.docs.ligo.org/pesummary/'>"
+            "<i class='fa fa-book' style='font-size: 30px; color: #E8E8E8; "
+            "font-weight: 900; padding-right:10px'></i><span>"
+            "View the docs!</span></a>"
+        )
+        link = (
+            "https://lscsoft.docs.ligo.org/pesummary/tutorials/"
+            "make_your_own_page_from_metafile.html"
+        )
+        self.add_content(
+            "<a href='{}'>"
+            "<i class='fa fa-window-restore' style='font-size: 30px; "
+            "color: #E8E8E8; font-weight: 900; padding-right:10px'></i><span>"
+            "Make your own page</span></a>".format(link)
+        )
         self.add_content("</div>", indent=6)
         self.add_content("</div>", indent=4)
-        self.add_content("<div class='col-sm-6'>", indent=4)
+        self.add_content("<div class='col-sm-7'>", indent=4)
         self.add_content(
             "<p style='color: #E8E8E8; font-weight: bold; "
             "font-family: arial-body; margin-top:14px'>This page was produced "

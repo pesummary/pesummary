@@ -362,6 +362,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 )
                 html_file.end_div(4)
                 html_file.end_container()
+        html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
         for num, i in enumerate(self.labels):
@@ -662,6 +663,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         )
         images = [y for x in image_contents for y in x]
         html_file.make_modal_carousel(images=images)
+        html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
     def make_detector_pages(self):
