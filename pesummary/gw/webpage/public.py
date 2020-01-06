@@ -124,6 +124,33 @@ class _PublicWebpageGeneration(_GWWebpageGeneration):
             links.append("Notes")
         return links
 
+    def make_navbar_for_result_page(self):
+        """Make a navbar for the result page homepage
+        """
+        links = {
+            i: ["1d Histograms", [{"Custom": i}, {"All": i}]] for i in self.labels
+        }
+        for num, label in enumerate(self.labels):
+            for j in self.categorize_parameters(self.samples[label].keys()):
+                j = [j[0], [{k: label} for k in j[1]]]
+                links[label].append(j)
+
+        final_links = {
+            i: [
+                "home", ["Result Pages", self._result_page_links()],
+                {"Corner": i}, {"Config": i}, links[i]
+            ] for i in self.labels
+        }
+        if len(self.samples) > 1:
+            for i in self.labels:
+                final_links[i][1][1] += ["Comparison"]
+        if self.make_interactive:
+            for label in self.labels:
+                final_links[label].append(
+                    ["Interactive", [{"Interactive_Corner": label}]]
+                )
+        return final_links
+
     def generate_webpages(self):
         """Generate all webpages for all result files passed
         """
@@ -141,8 +168,6 @@ class _PublicWebpageGeneration(_GWWebpageGeneration):
             self.make_publication_pages()
         if self.gwdata is not None:
             self.make_detector_pages()
-        if all(val is not None for key, val in self.pepredicates_probs.items()):
-            self.make_classification_pages()
         self.make_error_page()
         self.make_version_page()
         if self.notes is not None:

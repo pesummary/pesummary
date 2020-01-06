@@ -1056,6 +1056,14 @@ class _WebpageGeneration(object):
                         "about the analysis",
                         self.results_path["other"] + metafile
                     )
+                ], [
+                    (
+                        "Information about reading this metafile can be seen "
+                        " <a href={}>here</a>".format(
+                            "https://lscsoft.docs.ligo.org/pesummary/data/"
+                            "reading_the_metafile.html"
+                        )
+                    )
                 ]
             ],
             accordian=False, style=style.format("1em", "1em")
