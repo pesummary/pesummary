@@ -636,7 +636,8 @@ class page(Base):
         return styles
 
     def make_table_of_images(self, contents=None, rows=None, columns=None,
-                             code="modal", cli=None, autoscale=False):
+                             code="modal", cli=None, autoscale=False,
+                             unique_id=None):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -654,7 +655,8 @@ class page(Base):
             if True, the table of images is placed inside a container
         """
         table = tables.table_of_images(contents, rows, columns, self.html_file,
-                                       code=code, cli=cli, autoscale=autoscale)
+                                       code=code, cli=cli, autoscale=autoscale,
+                                       unique_id=unique_id)
         table.make()
 
     def insert_image(self, path, justify="center", code=None):
@@ -782,7 +784,7 @@ class page(Base):
         self.add_content("</div>\n", indent=2)
         self.end_container()
 
-    def make_modal_carousel(self, images=None):
+    def make_modal_carousel(self, images=None, unique_id=None):
         """Make a pop up window that appears on top of the home page showing
         images in a carousel.
 
@@ -792,24 +794,37 @@ class page(Base):
             list of image locations that you would like included in the
             carousel
         """
+        if unique_id is not None:
+            modal_id = "Modal_{}".format(unique_id)
+            demo_id = "demo_{}".format(unique_id)
+        else:
+            modal_id = "MyModal"
+            demo_id = "demo"
         self.add_content("<div class='modal fade bs-example-modal-lg' tabindex='-1' "
                          "role='dialog' aria-labelledby='myLargeModalLabel' "
-                         "aria-hidden='true' id='myModel' style='margin-top: 200px;'>\n")
+                         "aria-hidden='true' id='{}' style='margin-top: 200px;'>"
+                         "\n".format(modal_id))
         self.add_content("<div class='modal-dialog modal-lg' style='width:90%'>\n", indent=2)
         self.add_content("<div class='modal-content'>\n", indent=4)
-        self.add_content("<div id='demo' class='carousel slide' data-ride='carousel'"
-                         " data-interval='false'>\n", indent=6)
+        self.add_content("<div id='{}' class='carousel slide' data-ride='carousel'"
+                         " data-interval='false'>\n".format(demo_id), indent=6)
         self.add_content("<ul class='carousel-indicators'>\n", indent=8)
         for num, i in enumerate(images):
             if num == 0:
-                self.add_content("<li data-target='#demo' data-slide-to-'%s' "
-                                 "class='active'></li>\n" % (num), indent=10)
-            self.add_content("<li data-target='#demo' data-slide-to-'%s'>"
-                             "</li>\n" % (num), indent=10)
-        self.add_content("<li data-target='#demo' data-slide-to='0' "
-                         "class='active'></li>\n", indent=10)
-        self.add_content("<li data-target='#demo' data-slide-to='1'></li>\n", indent=10)
-        self.add_content("<li data-target='#demo' data-slide-to='2'></li>\n", indent=10)
+                self.add_content("<li data-target='#%s' data-slide-to-'%s' "
+                                 "class='active'></li>\n" % (demo_id, num), indent=10)
+            self.add_content("<li data-target='#%s' data-slide-to-'%s'>"
+                             "</li>\n" % (demo_id, num), indent=10)
+        self.add_content("<li data-target='#{}' data-slide-to='0' "
+                         "class='active'></li>\n".format(demo_id), indent=10)
+        self.add_content(
+            "<li data-target='#{}' data-slide-to='1'></li>\n".format(demo_id),
+            indent=10
+        )
+        self.add_content(
+            "<li data-target='#{}' data-slide-to='2'></li>\n".format(demo_id),
+            indent=10
+        )
         self.add_content("</ul>\n", indent=8)
         self.add_content("<div class='carousel-inner'>\n", indent=8)
         for num, i in enumerate(images):
@@ -822,12 +837,12 @@ class page(Base):
             self.add_content("</div>\n", indent=10)
 
         self.add_content("</div>\n", indent=8)
-        self.add_content("<a class='carousel-control-prev' href='#demo' "
-                         "data-slide='prev'>\n", indent=8)
+        self.add_content("<a class='carousel-control-prev' href='#{}' "
+                         "data-slide='prev'>\n".format(demo_id), indent=8)
         self.add_content("<span class='carousel-control-prev-icon'></span>\n", indent=10)
         self.add_content("</a>\n", indent=8)
-        self.add_content("<a class='carousel-control-next' href='#demo' "
-                         "data-slide='next'>\n", indent=8)
+        self.add_content("<a class='carousel-control-next' href='#{}' "
+                         "data-slide='next'>\n".format(demo_id), indent=8)
         self.add_content("<span class='carousel-control-next-icon'></span>\n", indent=10)
         self.add_content("</a>\n", indent=8)
         self.add_content("</div>\n", indent=6)

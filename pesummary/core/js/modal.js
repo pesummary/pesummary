@@ -1,7 +1,7 @@
 // Get the image and insert it inside the modal - use its "alt" text as a caption
 
-function _onclick(img) {
-    $(document).on('click', '#'+img, function(){$('#myModel').modal('show')});
+function _onclick(img, modal) {
+    $(document).on('click', '#'+img, function(){$('#'+modal).modal('show')});
     $(document).keydown(function(e) {
       if (e.keyCode === 37) {
         $(".carousel-control-prev").click();
@@ -14,7 +14,7 @@ function _onclick(img) {
     });
 }
 
-function modal(id) {
+function modal(id, modal) {
     /* Show the modal when the image is clicked
 
     Parameters
@@ -24,7 +24,7 @@ function modal(id) {
     */
     var img = document.getElementById(id);
     /*img.onclick = _onclick(id);*/
-    _onclick(id)
+    _onclick(id, modal)
 }
 
 function changeimage(id) {
