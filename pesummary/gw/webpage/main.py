@@ -14,6 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import uuid
 import numpy as np
 
 import pesummary
@@ -295,9 +296,12 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     os.path.join(path, "compare_time_domain_waveforms.png")
                 )
                 image_contents = [image_contents]
-                html_file.make_table_of_images(contents=image_contents)
+                unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
+                html_file.make_table_of_images(
+                    contents=image_contents, unique_id=unique_id
+                )
                 images = [y for x in image_contents for y in x]
-                html_file.make_modal_carousel(images=images)
+                html_file.make_modal_carousel(images=images, unique_id=unique_id)
 
         for i in self.labels:
             html_file.make_banner(approximant=i, key=i)
@@ -321,9 +325,12 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     relative_path.format("%s_calibration_plot" % (i))
                 )
             image_contents = [image_contents]
-            html_file.make_table_of_images(contents=image_contents)
+            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
+            html_file.make_table_of_images(
+                contents=image_contents, unique_id=unique_id
+            )
             images = [y for x in image_contents for y in x]
-            html_file.make_modal_carousel(images=images)
+            html_file.make_modal_carousel(images=images, unique_id=unique_id)
             if self.file_kwargs[i]["sampler"] != {}:
                 html_file.make_banner(
                     approximant="Sampler kwargs", key="sampler_kwargs",
@@ -373,9 +380,12 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             )
             html_file.make_banner(approximant=i, key=i)
             images, cli = self.default_images_for_result_page(i)
-            html_file.make_table_of_images(contents=images, cli=cli)
+            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
+            html_file.make_table_of_images(
+                contents=images, cli=cli, unique_id=unique_id
+            )
             images = [y for x in images for y in x]
-            html_file.make_modal_carousel(images=images)
+            html_file.make_modal_carousel(images=images, unique_id=unique_id)
 
             if self.custom_plotting:
                 from glob import glob
@@ -391,9 +401,12 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                         0, len(custom_plots), 4
                     )
                 ]
-                html_file.make_table_of_images(contents=image_contents)
+                unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
+                html_file.make_table_of_images(
+                    contents=image_contents, unique_id=unique_id
+                )
                 images = [y for x in image_contents for y in x]
-                html_file.make_modal_carousel(images=images)
+                html_file.make_modal_carousel(images=images, unique_id=unique_id)
 
             key_data = self.key_data
             contents = []
@@ -469,9 +482,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         contents = [
             [base.format("combined_skymap"), base.format("compare_waveforms")]
         ]
-        html_file.make_table_of_images(contents=contents)
+        unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
+        html_file.make_table_of_images(contents=contents, unique_id=unique_id)
         images = [y for x in contents for y in x]
-        html_file.make_modal_carousel(images=images)
+        html_file.make_modal_carousel(images=images, unique_id=unique_id)
         if self.custom_plotting:
             from glob import glob
 
@@ -485,9 +499,12 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             image_contents = [
                 custom_plots[i:4 + i] for i in range(0, len(custom_plots), 4)
             ]
-            html_file.make_table_of_images(contents=image_contents)
+            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
+            html_file.make_table_of_images(
+                contents=image_contents, unique_id=unique_id
+            )
             images = [y for x in image_contents for y in x]
-            html_file.make_modal_carousel(images=images)
+            html_file.make_modal_carousel(images=images, unique_id=unique_id)
 
         if self.comparison_stats is not None:
             rows = range(len(self.labels))

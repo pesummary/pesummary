@@ -18,7 +18,8 @@ from pesummary.core.webpage.base import Base
 
 class table_of_images(Base):
 
-    def __init__(self, content, rows, columns, html_file, code, cli, autoscale=False):
+    def __init__(self, content, rows, columns, html_file, code, cli,
+                 autoscale=False, unique_id=None):
         """
 
         Parameters
@@ -34,6 +35,13 @@ class table_of_images(Base):
         self.code = code
         self.cli = cli
         self.autoscale = autoscale
+        self.unique_id = unique_id
+        if self.unique_id is not None:
+            self.modal_id = "Modal_{}".format(self.unique_id)
+            self.demo_id = "demo_{}".format(self.unique_id)
+        else:
+            self.modal_id = "MyModal"
+            self.demo_id = "demo"
         self._add_scripts()
 
     def _add_scripts(self):
@@ -41,8 +49,10 @@ class table_of_images(Base):
 
     def _insert_image(self, path, width, indent, _id, justify="center"):
         string = "<img src='{}' alt='No image available' ".format(path) + \
-                 "style='align-items:center; width:{}px;'".format(width) + \
-                 "id={} onclick='{}(\"{}\")'>\n".format(_id, self.code, _id)
+                 "style='align-items:center; width:{}px;'".format(width)
+        string += "id={} onclick='{}(\"{}\", \"{}\")'>\n".format(
+            _id, self.code, _id, self.modal_id
+        )
         self.add_content(string, indent=indent)
 
     def make(self):
@@ -78,7 +88,9 @@ class table_of_images(Base):
                                   _style=("display: inline-block; width: auto; "
                                           "padding: 0;"))
                     self.add_content(
-                        "<a href='#demo' data-slide-to='%s'>\n" % (ind), indent=6)
+                        "<a href='#%s' data-slide-to='%s'>\n" % (
+                            ind, self.demo_id
+                        ), indent=6)
                     self._insert_image(j, width, 8, _id, justify=None)
                     self.add_content("</a>\n", indent=6)
                     if self.cli:
