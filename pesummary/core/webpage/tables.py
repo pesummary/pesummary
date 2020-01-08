@@ -89,7 +89,7 @@ class table_of_images(Base):
                                           "padding: 0;"))
                     self.add_content(
                         "<a href='#%s' data-slide-to='%s'>\n" % (
-                            ind, self.demo_id
+                            self.demo_id, ind
                         ), indent=6)
                     self._insert_image(j, width, 8, _id, justify=None)
                     self.add_content("</a>\n", indent=6)
