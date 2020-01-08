@@ -899,7 +899,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         categories = self.categories = {
             "masses": {
                 "accept": ["mass", "q", "symmetric_mass_ratio"],
-                "reject": ["source", "recalib"]
+                "reject": ["source"]
             },
             "source": {
                 "accept": ["source"], "reject": []
@@ -935,7 +935,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             },
             "others": {
                 "accept": ["phase", "likelihood", "prior"],
-                "reject": ["spcal", "recalib"]
+                "reject": ["spcal"]
             }
         }
         return categories
