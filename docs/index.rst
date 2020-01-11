@@ -48,6 +48,7 @@ Reading a result file
     data/reading_a_result_file
     data/reading_the_metafile
     data/conversion
+    data/latex_table
 
 The summary pages
 +++++++++++++++++
