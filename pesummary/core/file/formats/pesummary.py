@@ -275,3 +275,44 @@ class PESummary(Read):
                 "%s/pesummary_%s.dat" % (outdir, i), self.samples[ind],
                 delimiter="\t", header="\t".join(self.parameters[ind]),
                 comments='')
+
+    def to_latex_table(self, labels="all", parameter_dict=None, save_to_file=None):
+        """Make a latex table displaying the data in the result file.
+
+        Parameters
+        ----------
+        labels: list, optional
+            list of labels that you want to include in the table
+        parameter_dict: dict, optional
+            dictionary of parameters that you wish to include in the latex
+            table. The keys are the name of the parameters and the items are
+            the descriptive text. If None, all parameters are included
+        save_to_file: str, optional
+            name of the file you wish to save the latex table to. If None, print
+            to stdout
+        """
+        import os
+
+        if save_to_file is not None and os.path.isfile("{}".format(save_to_file)):
+            raise Exception("The file {} already exists.".format(save_to_file))
+        if labels != "all" and labels not in list(self.labels):
+            raise Exception("The label %s does not exist." % (labels))
+        elif labels == "all":
+            labels = list(self.labels)
+        elif isinstance(labels, str):
+            labels = [labels]
+
+        table = self.latex_table(
+            [self.samples_dict[i] for i in labels], parameter_dict,
+            labels=labels
+        )
+        if save_to_file is None:
+            print(table)
+        elif os.path.isfile("{}".format(save_to_file)):
+            logger.warn(
+                "File {} already exists. Printing to stdout".format(save_to_file)
+            )
+            print(table)
+        else:
+            with open(save_to_file, "w") as f:
+                f.writelines([table])

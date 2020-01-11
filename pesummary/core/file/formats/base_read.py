@@ -15,7 +15,7 @@
 
 import numpy as np
 import h5py
-from pesummary.utils.utils import SamplesDict, Array
+from pesummary.utils.utils import SamplesDict, Array, logger
 
 
 class Read():
@@ -307,3 +307,86 @@ class Read():
         except Exception:
             raise Exception("Please make sure you have write permission in "
                             "%s" % (outdir))
+
+    @staticmethod
+    def latex_table(samples, parameter_dict=None, labels=None):
+        """Return a latex table displaying the passed data.
+
+        Parameters
+        ----------
+        samples_dict: list
+            list of pesummary.utils.utils.SamplesDict objects
+        parameter_dict: dict, optional
+            dictionary of parameters that you wish to include in the latex
+            table. The keys are the name of the parameters and the items are
+            the descriptive text. If None, all parameters are included
+        """
+        table = (
+            "\\begin{table}[hptb]\n\\begin{ruledtabular}\n\\begin{tabular}"
+            "{l %s}\n" % ("c " * len(samples))
+        )
+        if labels:
+            table += (
+                " & " + " & ".join(labels)
+            )
+            table += "\\\ \n\\hline \\\ \n"
+        data = {i: i for i in samples[0].keys()}
+        if parameter_dict is not None:
+            import copy
+
+            data = copy.deepcopy(parameter_dict)
+            for param in parameter_dict.keys():
+                if not all(param in samples_dict.keys() for samples_dict in samples):
+                    logger.warn(
+                        "{} not in list of parameters. Not adding to "
+                        "table".format(param)
+                    )
+                    data.pop(param)
+
+        for param, desc in data.items():
+            table += "{}".format(desc)
+            for samples_dict in samples:
+                median = samples_dict[param].average(type="median")
+                confidence = samples_dict[param].confidence_interval()
+                table += (
+                    " & $%s^{+%s}_{-%s}$" % (
+                        np.round(median, 2),
+                        np.round(confidence[1] - median, 2),
+                        np.round(median - confidence[0], 2)
+                    )
+                )
+            table += "\\\ \n"
+        table += (
+            "\\end{tabular}\n\\end{ruledtabular}\n\\caption{}\n\\end{table}"
+        )
+        return table
+
+    def to_latex_table(self, parameter_dict=None, save_to_file=None):
+        """Make a latex table displaying the data in the result file.
+
+        Parameters
+        ----------
+        parameter_dict: dict, optional
+            dictionary of parameters that you wish to include in the latex
+            table. The keys are the name of the parameters and the items are
+            the descriptive text. If None, all parameters are included
+        save_to_file: str, optional
+            name of the file you wish to save the latex table to. If None, print
+            to stdout
+        """
+        import os
+
+        if save_to_file is not None and os.path.isfile("{}".format(save_to_file)):
+            raise Exception("The file {} already exists.".format(save_to_file))
+
+        table = self.latex_table([self.samples_dict], parameter_dict)
+        if save_to_file is None:
+            print(table)
+        elif os.path.isfile("{}".format(save_to_file)):
+            logger.warn(
+                "File {} already exists. Printing to stdout".format(save_to_file)
+            )
+            print(table)
+        else:
+            with open(save_to_file, "w") as f:
+                f.writelines([table])
