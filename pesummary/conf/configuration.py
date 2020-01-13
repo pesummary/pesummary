@@ -30,3 +30,6 @@ prior_color = 'k'
 
 # Produce public facing summarypages
 public = False
+
+# Number of cores to run on
+multi_process = 1

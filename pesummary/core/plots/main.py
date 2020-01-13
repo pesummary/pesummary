@@ -70,7 +70,8 @@ class _PlotGeneration(object):
         existing_samples=None, existing_weights=None, same_parameters=None,
         injection_data=None, colors=None, custom_plotting=None,
         add_to_existing=False, priors={}, include_prior=False, weights=None,
-        disable_comparison=False, linestyles=None, disable_interactive=False
+        disable_comparison=False, linestyles=None, disable_interactive=False,
+        multi_process=1
     ):
         self.webdir = webdir
         self.savedir = savedir
@@ -90,6 +91,8 @@ class _PlotGeneration(object):
         self.include_prior = include_prior
         self.linestyles = linestyles
         self.make_interactive = not disable_interactive
+        self.multi_process = multi_process
+        self.pool = self.setup_pool()
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -167,6 +170,14 @@ class _PlotGeneration(object):
         self._savedir = savedir
         if savedir is None:
             self._savedir = self.webdir + "/plots/"
+
+    def setup_pool(self):
+        """Setup a pool of processes to speed up plot generation
+        """
+        from multiprocessing import Pool
+
+        pool = Pool(processes=self.multi_process)
+        return pool
 
     def generate_plots(self):
         """Generate all plots for all result files
@@ -362,21 +373,29 @@ class _PlotGeneration(object):
         error_message = (
             "Failed to generate oned_histogram plot for %s because {}"
         )
-        for param, samples in self.samples[label].items():
-            if self.include_prior:
-                prior = self.check_prior_samples_in_dict(label, param)
-            else:
-                prior = None
+
+        if self.include_prior:
             arguments = [
-                self.savedir, label, param, samples, latex_labels[param],
-                self.injection_data[label][param], self.kde_plot, prior,
-                self.weights[label]
+                (
+                    [
+                        self.savedir, label, param, samples, latex_labels[param],
+                        self.injection_data[label][param], self.kde_plot,
+                        self.check_prior_samples_in_dict(label, param),
+                        self.weights[label],
+                    ], self._oned_histogram_plot, error_message % (param)
+                ) for param, samples in self.samples[label].items()
             ]
-            self._try_to_make_a_plot(
-                arguments, self._oned_histogram_plot,
-                error_message % (param)
-            )
-            continue
+        else:
+            arguments = [
+                (
+                    [
+                        self.savedir, label, param, samples, latex_labels[param],
+                        self.injection_data[label][param], self.kde_plot,
+                        None, self.weights[label],
+                    ], self._oned_histogram_plot, error_message % (param)
+                ) for param, samples in self.samples[label].items()
+            ]
+        self.pool.starmap(self._try_to_make_a_plot, arguments)
 
     def oned_histogram_comparison_plot(self, label):
         """Generate oned comparison histogram plots for all parameters that are
@@ -495,15 +514,15 @@ class _PlotGeneration(object):
         error_message = (
             "Failed to generate a sample evolution plot for %s because {}"
         )
-        for param, samples in self.samples[label].items():
-            arguments = [
-                self.savedir, label, param, samples, latex_labels[param],
-                self.injection_data[label][param]
-            ]
-            self._try_to_make_a_plot(
-                arguments, self._sample_evolution_plot, error_message % (param)
-            )
-            continue
+        arguments = [
+            (
+                [
+                    self.savedir, label, param, samples, latex_labels[param],
+                    self.injection_data[label][param]
+                ], self._sample_evolution_plot, error_message % (param)
+            ) for param, samples in self.samples[label].items()
+        ]
+        self.pool.starmap(self._try_to_make_a_plot, arguments)
 
     @staticmethod
     def _sample_evolution_plot(
@@ -547,12 +566,13 @@ class _PlotGeneration(object):
         error_message = (
             "Failed to generate an autocorrelation plot for %s because {}"
         )
-        for param, samples in self.samples[label].items():
-            arguments = [self.savedir, label, param, samples]
-            self._try_to_make_a_plot(
-                arguments, self._autocorrelation_plot, error_message % (param)
-            )
-            continue
+        arguments = [
+            (
+                [self.savedir, label, param, samples],
+                self._autocorrelation_plot, error_message % (param)
+            ) for param, samples in self.samples[label].items()
+        ]
+        self.pool.starmap(self._try_to_make_a_plot, arguments)
 
     @staticmethod
     def _autocorrelation_plot(savedir, label, parameter, samples):
