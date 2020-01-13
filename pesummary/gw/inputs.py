@@ -931,6 +931,7 @@ class GWPostProcessing(PostProcessing):
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison
         self.disable_interactive = self.inputs.disable_interactive
+        self.multi_process = self.inputs.multi_process
         self.maxL_samples = []
         self.same_parameters = []
         self.pepredicates_probs = self.inputs.pepredicates_probs

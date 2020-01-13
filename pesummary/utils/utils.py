@@ -225,14 +225,31 @@ class Array(np.ndarray):
     mean: float
         mean of the input array
     """
+    __slots__ = ["standard_deviation", "minimum", "maximum", "maxL", "weights"]
+
     def __new__(cls, input_array, likelihood=None, weights=None):
         obj = np.asarray(input_array).view(cls)
         obj.standard_deviation = np.std(obj)
         obj.minimum = np.min(obj)
         obj.maximum = np.max(obj)
-        obj.maxL = cls.maxL(obj, likelihood)
+        obj.maxL = cls._maxL(obj, likelihood)
         obj.weights = weights
         return obj
+
+    def __reduce__(self):
+        pickled_state = super(Array, self).__reduce__()
+        new_state = pickled_state[2] + tuple(
+            [getattr(self, i) for i in self.__slots__]
+        )
+        return (pickled_state[0], pickled_state[1], new_state)
+
+    def __setstate__(self, state):
+        self.standard_deviation = state[-5]
+        self.minimum = state[-4]
+        self.maximum = state[-3]
+        self.maxL = state[-2]
+        self.weights = state[-1]
+        super(Array, self).__setstate__(state[0:-5])
 
     def average(self, type="mean"):
         """Return the average of the array
@@ -281,7 +298,7 @@ class Array(np.ndarray):
         return Array.percentile(array, weights=weights, percentile=0.5)
 
     @staticmethod
-    def maxL(array, likelihood=None):
+    def _maxL(array, likelihood=None):
         """Return the maximum likelihood value of the array
 
         Parameters

@@ -843,11 +843,12 @@ class _Input(object):
 
     @multi_process.setter
     def multi_process(self, multi_process):
-        self._multi_process = multi_process
-        if multi_process is not None:
-            logger.warn(
-                "Multiprocessing is not currently implemented. Ignoring input "
-                "and Using a single core."
+        self._multi_process = int(multi_process)
+        if multi_process is not None and int(multi_process) != int(conf.multi_process):
+            logger.info(
+                conf.overwrite.format(
+                    "multi_process", conf.multi_process, multi_process
+                )
             )
 
     @property
@@ -1223,6 +1224,7 @@ class PostProcessing(object):
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison
         self.disable_interactive = self.inputs.disable_interactive
+        self.multi_process = self.inputs.multi_process
         self.same_parameters = []
 
     @property
