@@ -75,7 +75,13 @@ class TestPackageInformation(object):
     def test_package_info(self):
         """Test the package_info property
         """
-        assert isinstance(self.package.package_info, str)
+        pi = self.package.package_info
+        assert isinstance(pi, list)
+        pkg = pi[0]
+        assert "name" in pkg
+        assert "version" in pkg
+        if "build_string" in pkg:  # conda only
+            assert "channel" in pkg
 
 
 class TestUtils(object):

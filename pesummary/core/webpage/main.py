@@ -16,6 +16,7 @@
 import os
 import sys
 from glob import glob
+from operator import itemgetter
 from scipy import stats
 import numpy as np
 
@@ -926,12 +927,19 @@ class _WebpageGeneration(object):
         with open('{0:s}/css/Version.css'.format(self.webdir), 'w') as f:
             f.write(styles)
         html_file.end_container()
-        packages = PackageInformation()
-        package_info = packages.package_info
+        package_info = PackageInformation().package_info
+        if "build_string" in package_info[0]:  # conda list
+            headings = ("name", "version", "channel", "build_string")
+        else:  # pip list installed
+            headings = ("name", "version")
+        packages = [
+            tuple(pkg[col.lower()] for col in headings) for
+            pkg in sorted(package_info, key=itemgetter("name"))
+        ]
         style = "margin-top:{}; margin-bottom:{};"
         html_file.make_table(
-            headings=["name", "version", " "],
-            contents=[i.split("==") + [" "] for i in package_info.split("\n")],
+            headings=[x.title().replace('_', ' ') for x in headings],
+            contents=packages,
             accordian=False, style=style.format("1em", "1em")
         )
         html_file.make_footer(user=self.user, rundir=self.webdir)

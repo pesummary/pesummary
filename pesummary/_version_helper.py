@@ -13,7 +13,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import json
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -99,14 +101,26 @@ class PackageInformation(GitInformation):
     def get_package_info(self):
         """Return the package information
         """
-        packages = self.call(["pip", "freeze"]).decode("utf-8")
-        return packages
+        if (Path(sys.prefix) / "conda-meta").is_dir():
+            raw = self.call([
+                "conda",
+                "list",
+                "--json",
+                "--prefix", sys.prefix,
+            ])
+        else:
+            raw = self.call([
+                sys.executable,
+                "-m", "pip",
+                "list", "installed",
+                "--format", "json",
+            ])
+        return json.loads(raw.decode('utf-8'))
 
     def get_package_dir(self):
         """Return the package directory
         """
-        directory = Path(self.call(["which", "python"]).decode("utf-8"))
-        return str(directory.parent.parent)
+        return sys.prefix
 
 
 def get_version_information(short=False):
