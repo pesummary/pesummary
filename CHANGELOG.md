@@ -1,8 +1,27 @@
-## 0.3.1 [unreleased]
+## 0.3.2 [unreleased]
 
 ### Changed
 
 ### Added
+
+## 0.3.1 [14/01/2020]
+
+### Changed
+
+- Thumbnails on homepage - Fix the javascript so now when a thumbnail is
+  clicked you are presented with that image and not always the very first
+  image
+- Package information - Use `conda list` to get a complete list of packages
+  falling back to pypi if the current environment is not a conda environment
+
+### Added
+
+- Allow the user to generate a latex table of the results file when read in
+  with PESummary. Both for a single result file or a PESummary metafile
+- Added an extra command line argument `--multi_process` to the `summarypages`
+  executable which allows the user to specify the number of cores they wish to
+  run on when generating plots.
+- 
 
 ## 0.3.0 [05/01/2020]
 
