@@ -38,7 +38,8 @@ class _PlotGeneration(_GWPlotGeneration):
         pepredicates_probs=None, include_prior=False, publication=False,
         existing_approximant=None, existing_psd=None, existing_calibration=None,
         existing_weights=None, weights=None, disable_comparison=False,
-        linestyles=None, disable_interactive=False, publication_kwargs={}
+        linestyles=None, disable_interactive=False, publication_kwargs={},
+        multi_process=1
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -64,5 +65,6 @@ class _PlotGeneration(_GWPlotGeneration):
             existing_weights=existing_weights, weights=weights,
             disable_comparison=disable_comparison, linestyles=linestyles,
             disable_interactive=disable_interactive,
-            publication_kwargs=publication_kwargs
+            publication_kwargs=publication_kwargs,
+            multi_process=multi_process
         )

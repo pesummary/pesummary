@@ -51,6 +51,8 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
             f.create_group("version")
         if "meta_data" in dictionary.keys():
             f.create_group("meta_data")
+        if "priors" in dictionary.keys():
+            f.create_group("priors")
     except Exception:
         pass
     if current_path is None:
