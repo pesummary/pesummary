@@ -125,7 +125,8 @@ class _GWWebpageGeneration(GWPostProcessing):
             disable_comparison=self.disable_comparison,
             disable_interactive=self.disable_interactive,
             pastro_probs=self.pastro_probs, gwdata=self.gwdata,
-            publication_kwargs=self.publication_kwargs
+            publication_kwargs=self.publication_kwargs,
+            no_ligo_skymap=self.no_ligo_skymap
         )
 
     def generate_webpages(self):
@@ -170,7 +171,8 @@ class _PublicGWWebpageGeneration(GWPostProcessing):
             disable_comparison=self.disable_comparison,
             disable_interactive=self.disable_interactive,
             pastro_probs=self.pastro_probs, gwdata=self.gwdata,
-            publication_kwargs=self.publication_kwargs
+            publication_kwargs=self.publication_kwargs,
+            no_ligo_skymap=self.no_ligo_skymap
         )
 
     def generate_webpages(self):

@@ -755,7 +755,20 @@ class GWInput(_GWInput, Input):
         self.nsamples_for_skymap = self.opts.nsamples_for_skymap
         self.sensitivity = self.opts.sensitivity
         self.no_ligo_skymap = self.opts.no_ligo_skymap
-        self.multi_threading_for_skymap = self.opts.multi_threading_for_skymap
+        self.multi_threading_for_skymap = self.multi_process
+        if not self.no_ligo_skymap and self.multi_process > 1:
+            total = self.multi_process
+            self.multi_threading_for_plots = int(total / 2.)
+            self.multi_threading_for_skymap = total - self.multi_threading_for_plots
+            logger.info(
+                "Assigning {} process{}to skymap generation and {} process{}to "
+                "other plots".format(
+                    self.multi_threading_for_skymap,
+                    "es " if self.multi_threading_for_skymap > 1 else " ",
+                    self.multi_threading_for_plots,
+                    "es " if self.multi_threading_for_plots > 1 else " "
+                )
+            )
         self.gwdata = self.opts.gwdata
         self.public = self.opts.public
         self.pepredicates_probs = []
@@ -931,7 +944,7 @@ class GWPostProcessing(PostProcessing):
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison
         self.disable_interactive = self.inputs.disable_interactive
-        self.multi_process = self.inputs.multi_process
+        self.multi_process = self.inputs.multi_threading_for_plots
         self.maxL_samples = []
         self.same_parameters = []
         self.pepredicates_probs = self.inputs.pepredicates_probs

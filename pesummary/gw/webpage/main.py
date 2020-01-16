@@ -18,6 +18,7 @@ import uuid
 import numpy as np
 
 import pesummary
+from pesummary.core.webpage import webpage
 from pesummary.core.webpage.main import _WebpageGeneration as _CoreWebpageGeneration
 from pesummary import conf
 
@@ -113,7 +114,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         existing_samples=None, existing_metafile=None, add_to_existing=False,
         existing_file_kwargs=None, existing_weights=None, result_files=None,
         notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
-        disable_interactive=False, publication_kwargs={}
+        disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False
     ):
         self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
@@ -125,6 +126,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.publication_kwargs = publication_kwargs
         self.result_files = result_files
         self.gwdata = gwdata
+        self.no_ligo_skymap = no_ligo_skymap
 
         super(_WebpageGeneration, self).__init__(
             webdir=webdir, samples=samples, labels=labels,
@@ -845,6 +847,86 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             html_file.make_modal_carousel(images=images)
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
+
+    def _make_downloads_page(self, pages):
+        """Make a page with links to files which can be downloaded
+
+        Parameters
+        ----------
+        pages: list
+            list of pages you wish to create
+        """
+        html_file = webpage.open_html(
+            web_dir=self.webdir, base_url=self.base_url, html_page="Downloads"
+        )
+        html_file = self.setup_page(
+            "Downloads", self.navbar["home"], title="Downloads"
+        )
+        html_file.make_banner(approximant="Downloads", key="Downloads")
+        html_file.make_container()
+        base_string = "{} can be downloaded <a href={} download>here</a>"
+        style = "margin-top:{}; margin-bottom:{};"
+        headings = ["Description"]
+        metafile = (
+            "posterior_samples.json" if not self.hdf5 else "posterior_samples.h5"
+        )
+        html_file.make_table(
+            headings=headings,
+            contents=[
+                [
+                    base_string.format(
+                        "The complete metafile containing all information "
+                        "about the analysis",
+                        self.results_path["other"] + metafile
+                    )
+                ], [
+                    (
+                        "Information about reading this metafile can be seen "
+                        " <a href={}>here</a>".format(
+                            "https://lscsoft.docs.ligo.org/pesummary/data/"
+                            "reading_the_metafile.html"
+                        )
+                    )
+                ]
+            ],
+            accordian=False, style=style.format("1em", "1em")
+        )
+        for num, i in enumerate(self.labels):
+            html_file.add_content(
+                "<div class='banner', style='margin-left:-4em'>{}</div>".format(i)
+            )
+            table_contents = [
+                [
+                    base_string.format(
+                        "Dat file containing posterior samples",
+                        self.results_path["other"] + "%s_pesummary.dat" % (i)
+                    )
+                ]
+            ]
+            if self.config is not None and self.config[num] is not None:
+                table_contents.append(
+                    [
+                        base_string.format(
+                            "Config file used for this analysis",
+                            self.config_path["other"] + "%s_config.ini" % (i)
+                        )
+                    ]
+                )
+            if not self.no_ligo_skymap:
+                table_contents.append(
+                    [
+                        base_string.format(
+                            "Fits file containing skymap for this analysis",
+                            self.results_path["other"] + "%s_skymap.fits" % (i)
+                        )
+                    ]
+                )
+            html_file.make_table(
+                headings=headings, contents=table_contents, accordian=False
+            )
+        html_file.end_container()
+        html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.close()
 
     def default_images_for_result_page(self, label):
         """Return the default images that will be displayed on the result page
