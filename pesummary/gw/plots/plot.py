@@ -500,7 +500,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
 
 
 def _ligo_skymap_plot(ra, dec, savedir="./", nprocess=1, downsampled=False,
-                      **kwargs):
+                      label="pesummary", **kwargs):
     """Plot the sky location of the source for a given approximant using the
     ligo.skymap package
 
@@ -520,30 +520,23 @@ def _ligo_skymap_plot(ra, dec, savedir="./", nprocess=1, downsampled=False,
         optional keyword arguments
     """
     import healpy as hp
-    import astropy
-    from ligo.skymap.io import fits
-    from ligo.skymap import plot
-    from ligo.skymap import postprocess
-    from astropy.coordinates import SkyCoord
-    from ligo.skymap.bayestar import rasterize
+    from ligo.skymap import plot, postprocess, io
     from ligo.skymap.kde import Clustered2DSkyKDE
-    from ligo.skymap import io
+    from astropy.time import Time
 
     fig = plt.figure()
     pts = np.column_stack((ra, dec))
-    skypost = Clustered2DSkyKDE(pts, trials=5, multiprocess=nprocess)
-
+    skypost = Clustered2DSkyKDE(pts, trials=5, jobs=nprocess)
     hpmap = skypost.as_healpix()
-    io.write_sky_map("./skymap.fits", hpmap, nest=True)
-    hdus = astropy.io.fits.open("skymap.fits")
-    os.remove("./skymap.fits")
-
-    table = io.read_sky_map(hdus, moc=True)
-    io.write_sky_map("%s/lalinference.fits" % (savedir),
-                     rasterize(table, order=None), nest=True)
-
-    skymap, metadata = fits.read_sky_map("%s/lalinference.fits" % (savedir),
-                                         nest=None)
+    hpmap.meta['creator'] = "pesummary"
+    hpmap.meta['origin'] = 'LIGO/Virgo'
+    hpmap.meta['gps_creation_time'] = Time.now().gps
+    io.write_sky_map(
+        os.path.join(savedir, "%s_skymap.fits" % (label)), hpmap, nest=True
+    )
+    skymap, metadata = io.fits.read_sky_map(
+        os.path.join(savedir, "%s_skymap.fits" % (label)), nest=None
+    )
     nside = hp.npix2nside(len(skymap))
     deg2perpix = hp.nside2pixarea(nside, degrees=True)
     probperdeg2 = skymap / deg2perpix

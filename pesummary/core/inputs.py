@@ -1100,6 +1100,7 @@ class Input(_Input):
         self.disable_comparison = self.opts.disable_comparison
         self.disable_interactive = self.opts.disable_interactive
         self.multi_process = self.opts.multi_process
+        self.multi_threading_for_plots = self.multi_process
         self.copy_files()
 
 
@@ -1224,7 +1225,7 @@ class PostProcessing(object):
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison
         self.disable_interactive = self.inputs.disable_interactive
-        self.multi_process = self.inputs.multi_process
+        self.multi_process = self.inputs.multi_threading_for_plots
         self.same_parameters = []
 
     @property
