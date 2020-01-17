@@ -34,8 +34,7 @@ tables==3.4.4 \
 deepdish \
 pandas \
 pygments \
-pluggy==0.8.0 \
-astropy==2.0.9 \
+astropy>=3.2.3 \
 lalsuite \
 configparser \
 pytest \
