@@ -2,7 +2,13 @@
 
 ### Changed
 
+- Save format - Change the default to always save the metafile to HDF5 format
+  unless the `--save_to_json` flag is passed
+- ligo.skymap - Update the code to work with ligo.skymap >= 0.1.12
+
 ### Added
+
+-
 
 ## 0.3.1 [14/01/2020]
 

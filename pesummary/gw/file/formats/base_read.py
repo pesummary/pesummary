@@ -75,6 +75,18 @@ class GWRead(Read):
             )
         else:
             self.injection_parameters = data["injection"]
+        if isinstance(self.injection_parameters, dict):
+            self.injection_parameters = {
+                key.decode("utf-8") if isinstance(key, bytes) else key: val
+                for key, val in self.injection_parameters.items()
+            }
+        elif isinstance(self.injection_parameters, list):
+            self.injection_parameters = [
+                {
+                    key.decode("utf-8") if isinstance(key, bytes) else
+                    key: val for key, val in i.items()
+                } for i in self.injection_parameters
+            ]
         if "prior" in data.keys() and data["prior"] != {}:
             priors = data["prior"]
             default_parameters = list(priors.keys())

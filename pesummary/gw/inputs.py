@@ -65,6 +65,8 @@ class _GWInput(_Input):
             for param in inj_values[i].keys():
                 if inj_values[i][param] == "nan":
                     inj_values[i][param] = float("nan")
+                if isinstance(inj_values[i][param], bytes):
+                    inj_values[i][param] = inj_values[i][param].decode("utf-8")
 
         if hasattr(f, "priors") and f.priors != {}:
             priors = f.priors["samples"]

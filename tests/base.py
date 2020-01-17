@@ -207,7 +207,7 @@ def read_result_file(outdir="./.outdir", extension="json", bilby=False,
     return samples
 
 
-def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False,
+def make_result_file(outdir="./.outdir/", extension="hdf5", gw=True, bilby=False,
                      lalinference=False, pesummary=False):
     """Make a result file that can be read in by PESummary
 

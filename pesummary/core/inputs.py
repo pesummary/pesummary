@@ -90,6 +90,8 @@ class _Input(object):
             for param in inj_values[i].keys():
                 if inj_values[i][param] == "nan":
                     inj_values[i][param] = float("nan")
+                if isinstance(inj_values[i][param], bytes):
+                    inj_values[i][param] = inj_values[i][param].decode("utf-8")
 
         if hasattr(f, "priors") and f.priors != {}:
             priors = f.priors["samples"]
@@ -1091,7 +1093,7 @@ class Input(_Input):
         self.custom_plotting = self.opts.custom_plotting
         self.email = self.opts.email
         self.dump = self.opts.dump
-        self.hdf5 = self.opts.save_to_hdf5
+        self.hdf5 = not self.opts.save_to_json
         self.palette = self.opts.palette
         self.include_prior = self.opts.include_prior
         self.colors = self.opts.colors

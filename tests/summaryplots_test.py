@@ -31,7 +31,9 @@ class TestPlotGeneration(object):
 
     def setup(self):
         directories = ["./.outdir_bilby", "./.outdir_lalinference",
-                       "./.outdir_comparison", "./.outdir_add_to_existing2"]
+                       "./.outdir_comparison", "./.outdir_add_to_existing2",
+                       ".outdir_comparison_no_comparison",
+                       ".outdir_add_to_existing_no_comparison"]
         for i in directories:
             if os.path.isdir(i):
                 shutil.rmtree(i)
