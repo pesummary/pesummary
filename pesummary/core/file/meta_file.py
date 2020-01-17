@@ -63,12 +63,15 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
         elif isinstance(v, (list, pesummary.utils.utils.Array, np.ndarray)):
             import math
 
-            if isinstance(v[0], str):
+            if v == []:
+                f["/".join(current_path)].create_dataset(k, data=np.array([]))
+            elif isinstance(v[0], (str, bytes)):
                 f["/".join(current_path)].create_dataset(k, data=np.array(
                     v, dtype="S"
                 ))
             elif isinstance(v[0], (list, pesummary.utils.utils.Array, np.ndarray)):
-                f["/".join(current_path)].create_dataset(k, data=np.array(v))
+                data = [np.array(l) for l in v]
+                f["/".join(current_path)].create_dataset(k, data=np.array(data))
             elif math.isnan(v[0]):
                 f["/".join(current_path)].create_dataset(k, data=np.array(
                     ["NaN"] * len(v), dtype="S"
@@ -201,7 +204,8 @@ class _MetaFile(object):
 
             dictionary["injection_data"][label] = {
                 "injection_values": [
-                    self.injection_data[label][i] for i in parameters
+                    self.injection_data[label][i] for i in
+                    parameters
                 ]
             }
 

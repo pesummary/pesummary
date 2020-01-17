@@ -127,6 +127,8 @@ class PESummary(Read):
                     if isinstance(j, bytes):
                         if j.decode("utf-8") == "NaN":
                             inj[num] = float("nan")
+                        else:
+                            inj[num] = j.decode("utf-8")
                     elif isinstance(j, str):
                         if j == "Nan":
                             inj[num] = float("nan")

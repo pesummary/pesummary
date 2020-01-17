@@ -185,10 +185,12 @@ class page(Base):
         self.add_content("<div class='col-sm-4 icon-bar'>", indent=4)
         self.add_content("<div class='icon'>", indent=6)
         self.add_content(
-            "<a href='https://git.ligo.org/lscsoft/pesummary'>"
+            "<a href='https://git.ligo.org/lscsoft/pesummary/tree/v{}'>"
             "<i class='fa fa-code' style='font-size: 30px; color: #E8E8E8; "
             "font-weight: 900; padding-right:10px'></i><span>View PESummary-v{}"
-            "</span></a>".format(pesummary.__short_version__)
+            "</span></a>".format(
+                pesummary.__short_version__, pesummary.__short_version__
+            )
         )
         self.add_content(
             "<a href='https://git.ligo.org/lscsoft/pesummary/issues'>"

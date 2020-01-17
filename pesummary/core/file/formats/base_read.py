@@ -71,7 +71,20 @@ class Read():
         self.data = self.load_from_function(
             function, self.path_to_results_file, **kwargs)
         if "injection" in self.data.keys():
-            self.injection_parameters = self.data["injection"]
+            if isinstance(self.data["injection"], dict):
+                self.injection_parameters = {
+                    key.decode("utf-8") if isinstance(key, bytes) else key: val
+                    for key, val in self.data["injection"].items()
+                }
+            elif isinstance(self.data["injection"], list):
+                self.injection_parameters = [
+                    {
+                        key.decode("utf-8") if isinstance(key, bytes) else
+                        key: val for key, val in i.items()
+                    } for i in self.data["injection"]
+                ]
+            else:
+                self.injection_parameters = self.data["injection"]
         if "version" in self.data.keys():
             self.input_version = self.data["version"]
         else:

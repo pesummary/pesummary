@@ -123,12 +123,19 @@ class PESummary(GWRead, CorePESummary):
                     if isinstance(j, bytes):
                         if j.decode("utf-8") == "NaN":
                             inj[num] = float("nan")
+                        else:
+                            inj[num] = j.decode("utf-8")
                     elif isinstance(j, str):
                         if j == "Nan":
                             inj[num] = float("nan")
                     elif isinstance(j, (list, np.ndarray)):
                         inj[num] = inj[num][0]
-                inj_list.append({i: j for i, j in zip(p, inj)})
+                inj_list.append(
+                    {
+                        i.decode("utf-8") if isinstance(i, bytes) else i: j for
+                        i, j in zip(p, inj)
+                    }
+                )
             if isinstance(p[0], bytes):
                 parameter_list.append([j.decode("utf-8") for j in p])
             else:

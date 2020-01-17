@@ -47,7 +47,7 @@ class Base(object):
         from pesummary.core.file.read import read
 
         initial_samples = read_result_file(extension=extension, bilby=bilby)
-        data = read("./.outdir/samples/posterior_samples.json")
+        data = read("./.outdir/samples/posterior_samples.h5")
         samples = data.samples_dict
         label = data.labels[0]
         for param in initial_samples.keys():
@@ -97,7 +97,7 @@ class GWBase(Base):
 
         initial_samples = read_result_file(
             extension=extension, bilby=bilby, lalinference=lalinference)
-        data = read("./.outdir/samples/posterior_samples.json")
+        data = read("./.outdir/samples/posterior_samples.h5")
         samples = data.samples_dict
         label = data.labels[0]
         for param in initial_samples.keys():
@@ -265,7 +265,7 @@ class TestCoreBilbyJson(Base):
 
         parser = command_line()
         default_args = ["--webdir", ".outdir_pesummary",
-                        "--samples", ".outdir/samples/posterior_samples.json"]
+                        "--samples", ".outdir/samples/posterior_samples.h5"]
         opts = parser.parse_args(default_args)
         func = functions(opts)
         inputs = func["input"](opts)
@@ -490,10 +490,10 @@ class TestGWLALInference(GWBase):
         parser = command_line()
         insert_gwspecific_option_group(parser)
         default_args = ["--webdir", ".outdir_pesummary",
-                        "--samples", ".outdir/samples/posterior_samples.json",
+                        "--samples", ".outdir/samples/posterior_samples.h5",
                         "--gw"]
         from pesummary.gw.file.read import read
-        f = read(".outdir/samples/posterior_samples.json")
+        f = read(".outdir/samples/posterior_samples.h5")
         opts = parser.parse_args(default_args)
         inputs = func["input"](opts)
         PlotGeneration(inputs, gw=True)

@@ -69,12 +69,15 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
         elif isinstance(v, (list, pesummary.utils.utils.Array, np.ndarray)):
             import math
 
-            if isinstance(v[0], str):
+            if not len(v):
+                f["/".join(current_path)].create_dataset(k, data=np.array([]))
+            elif isinstance(v[0], (str, bytes)):
                 f["/".join(current_path)].create_dataset(k, data=np.array(
                     v, dtype="S"
                 ))
             elif isinstance(v[0], (list, pesummary.utils.utils.Array, np.ndarray)):
-                f["/".join(current_path)].create_dataset(k, data=np.array(v))
+                data = np.vstack(v)
+                f["/".join(current_path)].create_dataset(k, data=np.array(data))
             elif math.isnan(v[0]):
                 f["/".join(current_path)].create_dataset(k, data=np.array(
                     ["NaN"] * len(v), dtype="S"
@@ -156,7 +159,9 @@ class _GWMetaFile(_MetaFile):
             }
             dictionary["injection_data"][label] = {
                 "injection_values": [
-                    self.injection_data[label][i] for i in parameters
+                    self.injection_data[label][i.decode("utf-8")] if
+                    isinstance(i, bytes) else self.injection_data[label][i]
+                    for i in parameters
                 ]
             }
             dictionary["version"][label] = [self.file_versions[label]]
