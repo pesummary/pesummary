@@ -433,6 +433,9 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 headings=[" ", "maxL", "mean", "median", "std"],
                 contents=contents, heading_span=1
             )
+            html_file.download_to_csv(
+                "summary_information_{}.csv".format(i)
+            )
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
