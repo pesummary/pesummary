@@ -63,6 +63,7 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <script src='./js/multiple_posteriors.js'></script>
     <script src='./js/search.js'></script>
     <script src='./js/side_bar.js'></script>
+    <script src='./js/html_to_csv.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/font.css">
@@ -80,6 +81,7 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <script src='../js/multiple_posteriors.js'></script>
     <script src='../js/search.js'></script>
     <script src='../js/side_bar.js'></script>
+    <script src='../js/html_to_csv.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/font.css">
@@ -880,4 +882,23 @@ class page(Base):
         self.end_div(6)
         self.end_div(4)
         self.end_div(2)
+        self.end_div(0)
+
+    def download_to_csv(self, filename, margin_top="-4em"):
+        """Make a button which to export a html table to csv
+
+        Parameters
+        ----------
+        filename: str
+            the name of the file you wish to save the data too
+        """
+        self.add_content(
+            "<div class='container' style='margin-top:{}; margin-bottom:5em; "
+            "max-width: 1400px'>".format(margin_top)
+        )
+        self.add_content(
+            "<button type='button' onclick='export_table_to_csv(\"{}\")' "
+            "class='btn btn-outline-secondary btn-table'>Export to CSV"
+            "</button>".format(filename)
+        )
         self.end_div(0)
