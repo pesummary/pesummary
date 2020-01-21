@@ -39,6 +39,13 @@ calibration_envelopes = f.calibration
 psds = f.psd
 approximants = f.approximants
 
+# If you would prefer to have the psds and calibration envelopes stored
+# as dat/txt files, you can easily convert them back to their original form
+# by using the `save_to_file` function
+
+psds[labels[0]]["H1"].save_to_file("IFO0_psd.dat")
+calibration_envelopes[labels[0]]["H1"].save_to_file("calibration_H1.txt")
+
 # As GWread is inherited from read, all the same functions
 # can be used for the GWread. For instance, you are able to save the
 # config_data as a valid configuration file by running

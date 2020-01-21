@@ -321,7 +321,7 @@ class TestInput(object):
 
     def test_psd(self):
         with open("./.outdir/psd.dat", "w") as f:
-            f.writelines(["1.00 3.44", "2.00 5.66"])
+            f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
         assert self.inputs.psd == {"example": {}}
         self.add_argument(["--psd", "./.outdir/psd.dat"])
         assert list(self.inputs.psd["example"].keys()) == ["psd.dat"]
@@ -415,8 +415,9 @@ class TestPostProcessing(object):
         opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
             "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
             "./tests/files/bilby_example.h5", "./tests/files/lalinference_example.h5",
-            "--psd", "./.outdir/psd.dat", "--labels", "example", "example2"])
+            "--psd", "L1:./.outdir/psd.dat", "L1:./.outdir/psd.dat",
+            "--labels", "example", "example2"])
         inputs = GWInput(opts)
         postprocessing = GWPostProcessing(inputs)
-        assert sorted(list(postprocessing.psd["example"].keys())) == ["psd.dat"]
-        assert sorted(list(postprocessing.psd["example2"].keys())) == ["psd.dat"]
+        assert sorted(list(postprocessing.psd["example"].keys())) == ["L1"]
+        assert sorted(list(postprocessing.psd["example2"].keys())) == ["L1"]

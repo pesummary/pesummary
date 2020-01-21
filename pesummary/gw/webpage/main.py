@@ -116,7 +116,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         existing_samples=None, existing_metafile=None, add_to_existing=False,
         existing_file_kwargs=None, existing_weights=None, result_files=None,
         notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
-        disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False
+        disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False,
+        psd=None, priors=None
     ):
         self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
@@ -129,6 +130,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.result_files = result_files
         self.gwdata = gwdata
         self.no_ligo_skymap = no_ligo_skymap
+        self.psd = psd
+        self.priors = priors
 
         super(_WebpageGeneration, self).__init__(
             webdir=webdir, samples=samples, labels=labels,
@@ -147,6 +150,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             disable_comparison=disable_comparison,
             disable_interactive=disable_interactive
         )
+        self.psd_path = {"other": os.path.join(self.webdir, "psds")}
+        self.calibration_path = {"other": os.path.join(self.webdir, "calibration")}
 
     def categorize_parameters(self, parameters):
         """Categorize the parameters into common headings
@@ -924,6 +929,34 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                         )
                     ]
                 )
+            if self.psd is not None and self.psd != {} and i in self.psd.keys():
+                for ifo in self.psd[i].keys():
+                    if len(self.psd[i][ifo]):
+                        table_contents.append(
+                            [
+                                base_string.format(
+                                    "%s psd file used for this analysis" % (ifo),
+                                    os.path.join(
+                                        self.psd_path["other"],
+                                        "%s_%s_psd.dat" % (i, ifo)
+                                    )
+                                )
+                            ]
+                        )
+            if "calibration" in self.priors.keys():
+                if i in self.priors["calibration"].keys():
+                    for ifo in self.priors["calibration"][i].keys():
+                        table_contents.append(
+                            [
+                                base_string.format(
+                                    "%s calibration envelope file used for this "
+                                    "analysis" % (ifo), os.path.join(
+                                        self.calibration_path["other"],
+                                        "%s_%s_cal.txt" % (i, ifo)
+                                    )
+                                )
+                            ]
+                        )
             html_file.make_table(
                 headings=headings, contents=table_contents, accordian=False
             )
