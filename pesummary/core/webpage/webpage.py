@@ -176,6 +176,11 @@ class page(Base):
     def _footer(self, user, rundir):
         """
         """
+        self.add_content("<script>")
+        self.add_content("$(document).ready(function(){", indent=2)
+        self.add_content("$('[data-toggle=\"tooltip\"]').tooltip();", indent=4)
+        self.add_content("});", indent=2)
+        self.add_content("</script>")
         self.make_div(
             _class='jumbotron', _style='margin-bottom:0; line-height: 0.5;'
             + 'background-color:#989898; bottom:0; position:bottom;'
@@ -185,34 +190,34 @@ class page(Base):
         self.add_content("<div class='col-sm-4 icon-bar'>", indent=4)
         self.add_content("<div class='icon'>", indent=6)
         self.add_content(
-            "<a href='https://git.ligo.org/lscsoft/pesummary/tree/v{}'>"
+            "<a href='https://git.ligo.org/lscsoft/pesummary/tree/v{}' "
+            "data-toggle='tooltip' title='View PESummary-v{}'>"
             "<i class='fa fa-code' style='font-size: 30px; color: #E8E8E8; "
-            "font-weight: 900; padding-right:10px'></i><span>View PESummary-v{}"
-            "</span></a>".format(
+            "font-weight: 900; padding-right:10px'></i></a>".format(
                 pesummary.__short_version__, pesummary.__short_version__
             )
         )
         self.add_content(
-            "<a href='https://git.ligo.org/lscsoft/pesummary/issues'>"
+            "<a href='https://git.ligo.org/lscsoft/pesummary/issues' "
+            "data-toggle='tooltip' title='Open an issue ticket'>"
             "<i class='fa fa-ticket' style='font-size: 30px; color: #E8E8E8; "
-            "font-weight: 900; padding-right:10px'></i><span>"
-            "Open an issue ticket</span></a>"
+            "font-weight: 900; padding-right:10px'></i></a>"
         )
         self.add_content(
-            "<a href='https://lscsoft.docs.ligo.org/pesummary/'>"
+            "<a href='https://lscsoft.docs.ligo.org/pesummary/' "
+            "data-toggle='tooltip' title='View the docs!'>"
             "<i class='fa fa-book' style='font-size: 30px; color: #E8E8E8; "
-            "font-weight: 900; padding-right:10px'></i><span>"
-            "View the docs!</span></a>"
+            "font-weight: 900; padding-right:10px'></i></a>"
         )
         link = (
             "https://lscsoft.docs.ligo.org/pesummary/tutorials/"
             "make_your_own_page_from_metafile.html"
         )
         self.add_content(
-            "<a href='{}'>"
+            "<a href='{}' data-toggle='tooltip' title='Make your own page'>"
             "<i class='fa fa-window-restore' style='font-size: 30px; "
-            "color: #E8E8E8; font-weight: 900; padding-right:10px'></i><span>"
-            "Make your own page</span></a>".format(link)
+            "color: #E8E8E8; font-weight: 900; padding-right:10px'></i>"
+            "</a>".format(link)
         )
         self.add_content("</div>", indent=6)
         self.add_content("</div>", indent=4)
