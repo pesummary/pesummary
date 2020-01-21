@@ -60,29 +60,33 @@ def grab_information_from_file(samples, read_function, required_parameters):
         list of attributes that you would like to return from the
         PESummary metafile
     """
+    files = [read_function(i) for i in samples]
+    labels = [i.labels for i in files]
+    combined = [i for subset in labels for i in subset]
+    duplicated = set(
+        [x for x in combined if combined.count(x) > 1]
+    )
+    if len(duplicated) > 0:
+        raise Exception(
+            "Unable to combine result files because there are duplicated labels"
+        )
     full_list = {j: [] for j in required_parameters}
-    for idx, i in enumerate(samples):
-        mydict = {}
-        f = read_function(i)
-        mydict = {j: getattr(f, j) for j in required_parameters}
-        nsamples = len(mydict["parameters"])
+    full_list["labels"] = combined
+    for idx, i in enumerate(files):
+        mydict = {j: getattr(i, j) for j in required_parameters}
         for j in required_parameters:
             if isinstance(mydict[j], dict):
-                full_list[j].append(mydict[j][full_list["labels"][idx]])
-            else:
-                for num in range(nsamples):
-                    if mydict[j] is not None:
-                        full_list[j].append(mydict[j][num])
-                    else:
-                        full_list[j].append(None)
-
-        duplicated = dict(set(
-            (x, full_list["labels"].count(x)) for x in
-            filter(lambda rec: full_list["labels"].count(rec) > 1,
-                   full_list["labels"])))
-        if len(duplicated.keys()) >= 1:
-            raise Exception("Unable to combine result files because there are "
-                            "duplicated labels")
+                if idx == 0:
+                    full_list[j] = {}
+                full_list[j].update(mydict[j])
+            elif isinstance(mydict[j], list):
+                if idx == 0:
+                    full_list[j] = {}
+                for num, k in enumerate(mydict[j]):
+                    full_list[j][labels[idx][num]] = mydict[j][num]
+            elif mydict[j] is None:
+                for k in combined:
+                    full_list[j].append(None)
     return full_list
 
 
@@ -98,17 +102,16 @@ def gw_meta_file(opts):
     read_function = GWRead
     metafile_function = _GWMetaFile
     required_parameters = [
-        "parameters", "samples", "labels", "config", "injection_parameters",
+        "samples_dict", "parameters", "config", "injection_parameters",
         "input_version", "extra_kwargs", "calibration", "psd", "approximant"]
 
     data = grab_information_from_file(
         opts.samples, read_function, required_parameters)
-
-    if data["psd"] is None:
-        data["psd"] = [None for i in range(data["labels"])]
-    if data["calibration"] is None:
-        data["calibration"] = [None for i in range(data["labels"])]
-    meta_file = _GWMetaFile(data["parameters"], data["samples"],
+    if data["psd"] is None or all(i is None for i in data["psd"]):
+        data["psd"] = {i: None for i in data["labels"]}
+    if data["calibration"] is None or all(i is None for i in data["calibration"]):
+        data["calibration"] = {i: None for i in data["labels"]}
+    meta_file = _GWMetaFile(data["samples_dict"],
                             data["labels"], data["config"],
                             data["injection_parameters"],
                             data["input_version"], data["extra_kwargs"],
@@ -129,13 +132,13 @@ def core_meta_file(opts):
     read_function = Read
     metafile_function = _MetaFile
     required_parameters = [
-        "parameters", "samples", "labels", "config", "injection_parameters",
+        "samples_dict", "parameters", "config", "injection_parameters",
         "input_version", "extra_kwargs"]
 
     data = grab_information_from_file(
         opts.samples, read_function, required_parameters)
 
-    meta_file = _MetaFile(data["parameters"], data["samples"], data["labels"],
+    meta_file = _MetaFile(data["samples_dict"], data["labels"],
                           data["config"], data["injection_parameters"],
                           data["input_version"], data["extra_kwargs"],
                           webdir=opts.webdir)
@@ -156,7 +159,7 @@ def main():
     else:
         meta_file = core_meta_file(opts)
 
-    meta_file.generate_meta_file_data()
+    meta_file.make_dictionary()
     if not opts.save_to_hdf5:
         meta_file.save_to_json()
     else:

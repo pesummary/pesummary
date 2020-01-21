@@ -26,14 +26,14 @@ class BaseRead(object):
         """
         if pesummary:
             assert len(self.result.samples[0]) == 1000
-            assert len(self.result.samples[0][0]) == 15
+            assert len(self.result.samples[0][0]) == 18
             true_flat = [item for sublist in true for item in sublist]
             flat = [item for sublist in self.result.samples[0] for item in sublist]
             assert all(i in true_flat for i in flat)
             assert all(i in flat for i in true_flat)
         else:
             assert len(self.result.samples) == 1000
-            assert len(self.result.samples[0]) == 15
+            assert len(self.result.samples[0]) == 18
             true_flat = [item for sublist in true for item in sublist]
             flat = [item for sublist in self.result.samples for item in sublist]
             assert all(i in true_flat for i in flat)
