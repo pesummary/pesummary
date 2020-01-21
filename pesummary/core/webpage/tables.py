@@ -56,6 +56,17 @@ class table_of_images(Base):
         self.add_content(string, indent=indent)
 
     def make(self):
+        self.add_content("<script>")
+        self.add_content("$(document).ready(function(){", indent=2)
+        self.add_content("$('[data-toggle=\"popover\"]').popover();", indent=4)
+        self.add_content("});", indent=2)
+        self.add_content("</script>")
+        self.add_content("<style>")
+        self.add_content(".popover {", indent=2)
+        self.add_content("max-width: 550px;", indent=4)
+        self.add_content("width: 550px;", indent=4)
+        self.add_content("}", indent=2)
+        self.add_content("</style>")
         self.make_container()
         self.make_div(2, _class="mx-auto d-block", _style=None)
         if self.rows == 1:
@@ -95,21 +106,10 @@ class table_of_images(Base):
                     self.add_content("</a>\n", indent=6)
                     if self.cli:
                         self.make_div(10, _class="imgButton", _style=None)
-                        self.add_content("<button value='test' data-toggle='modal' "
-                                         "data-target='#my%s%sModal'>Command Line<"
-                                         "/button>" % (idx, num), indent=12)
-                        self.end_div(10)
-                        self.add_content("<div class='modal' id='my%s%sModal'>" % (
-                            idx, num), indent=10)
-                        self.make_div(12, _class='modal-dialog',
-                                      _style="max-width: 1000px; padding-top: 250px;")
-                        self.make_div(14, _class='modal-content', _style=None)
-                        self.make_div(16, _class='modal-body',
-                                      _style="font-size: 0.75rem;")
-                        self.add_content("%s" % (self.cli[idx][num]), indent=18)
-                        self.end_div(16)
-                        self.end_div(14)
-                        self.end_div(12)
+                        self.add_content("<button value='test' data-toggle='popover' "
+                                         "data-placement='top' data-content='%s'>"
+                                         "Command Line</button>" % (self.cli[idx][num]),
+                                         indent=12)
                         self.end_div(10)
                     self.end_div(10)
                     ind += 1
