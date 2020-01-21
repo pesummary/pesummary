@@ -98,9 +98,29 @@ class PESummary(GWRead, CorePESummary):
         if "config" in self.data.keys():
             self.config = self.data["config"]
         if "psd" in self.data.keys():
-            self.psd = self.data["psd"]
+            from pesummary.gw.file.psd import PSD
+
+            try:
+                self.psd = {
+                    label: {
+                        ifo: PSD(value) for ifo, value in psd_data.items()
+                    } for label, psd_data in self.data["psd"].items()
+                }
+            except (KeyError, AttributeError):
+                self.psd = self.data["psd"]
         if "calibration" in self.data.keys():
-            self.calibration = self.data["calibration"]
+            from pesummary.gw.file.calibration import Calibration
+
+            try:
+                self.calibration = {
+                    label: {
+                        ifo: Calibration(value) for ifo, value in
+                        calibration_data.items()
+                    } for label, calibration_data in
+                    self.data["calibration"].items()
+                }
+            except (KeyError, AttributeError):
+                self.calibration = self.data["calibration"]
 
     @staticmethod
     def _grab_data_from_dictionary(dictionary):

@@ -16,6 +16,7 @@
 import os
 import re
 import socket
+import pkg_resources
 from glob import glob
 
 import numpy as np
@@ -901,49 +902,74 @@ class _Input(object):
                     for ignore in removed_parameters:
                         self.samples[label].pop(ignore)
 
-    def make_directories(self):
-        """Make the directories to store the information
-        """
-        dirs = [
-            "samples", "plots", "js", "html", "css", "plots/corner", "config"
-        ]
-        if self.publication:
-            dirs.append("plots/publication")
-        for i in dirs:
-            if not os.path.isdir(i):
-                make_dir(os.path.join(self.webdir, i))
-
-    def copy_files(self):
-        """Copy the relevant file to the web directory
-        """
-        import shutil
-
-        path = pesummary.__file__[:-12]
-        scripts = glob(os.path.join(path, "core/js/*.js"))
+    @property
+    def default_files_to_copy(self):
+        files_to_copy = []
+        path = pkg_resources.resource_filename("pesummary", "core")
+        scripts = glob(os.path.join(path, "js", "*.js"))
         for i in scripts:
-            shutil.copyfile(
-                i, os.path.join(
-                    self.webdir, "js", os.path.basename(i)
-                )
+            files_to_copy.append(
+                [i, os.path.join(self.webdir, "js", os.path.basename(i))]
             )
-        scripts = glob(path + "/core/css/*.css")
+        scripts = glob(os.path.join(path, "css", "*.css"))
         for i in scripts:
-            shutil.copyfile(
-                i, os.path.join(
-                    self.webdir, "css", os.path.basename(i)
-                )
+            files_to_copy.append(
+                [i, os.path.join(self.webdir, "css", os.path.basename(i))]
             )
+
         if not all(i is None for i in self.config):
             for num, i in enumerate(self.config):
                 if self.webdir not in i:
                     filename = "_".join(
                         [self.labels[num], "config.ini"]
                     )
-                    shutil.copyfile(
-                        i, os.path.join(
-                            self.webdir, "config", filename
-                        )
+                    files_to_copy.append(
+                        [i, os.path.join(self.webdir, "config", filename)]
                     )
+        return files_to_copy
+
+    @staticmethod
+    def _make_directories(webdir, dirs):
+        """Make the directories to store the information
+        """
+        for i in dirs:
+            if not os.path.isdir(i):
+                make_dir(os.path.join(webdir, i))
+
+    def make_directories(self):
+        """Make the directories to store the information
+        """
+        if self.publication:
+            self.default_directories.append("plots/publication")
+        self._make_directories(self.webdir, self.default_directories)
+
+    @staticmethod
+    def _copy_files(paths):
+        """Copy the relevant file to the web directory
+
+        Parameters
+        ----------
+        paths: nd list
+            list of files you wish to copy. First element is the path of the
+            file to copy and second element is the location of where you
+            wish the file to be put
+
+        Examples
+        --------
+        >>> paths = [
+        ...    ["config/config.ini", "webdir/config.ini"],
+        ...    ["samples/samples.h5", "webdir/samples.h5"]
+        ... ]
+        """
+        import shutil
+
+        for ff in paths:
+            shutil.copyfile(ff[0], ff[1])
+
+    def copy_files(self):
+        """Copy the relevant file to the web directory
+        """
+        self._copy_files(self.default_files_to_copy)
 
     def default_labels(self):
         """Return a list of default labels.
@@ -1040,7 +1066,7 @@ class Input(_Input):
     disable_interactive: Bool
         if True, interactive plots are not produced
     """
-    def __init__(self, opts):
+    def __init__(self, opts, ignore_copy=False):
         logger.info("Command line arguments: %s" % (opts))
         self.opts = opts
         self.result_files = self.opts.samples
@@ -1083,6 +1109,9 @@ class Input(_Input):
         self.injection_file = self.opts.inj_file
         self.publication = self.opts.publication
         self.publication_kwargs = self.opts.publication_kwargs
+        self.default_directories = [
+            "samples", "plots", "js", "html", "css", "plots/corner", "config"
+        ]
         self.make_directories()
         self.kde_plot = self.opts.kde_plot
         self.priors = self.opts.prior_file
@@ -1103,7 +1132,8 @@ class Input(_Input):
         self.disable_interactive = self.opts.disable_interactive
         self.multi_process = self.opts.multi_process
         self.multi_threading_for_plots = self.multi_process
-        self.copy_files()
+        if not ignore_copy:
+            self.copy_files()
 
 
 class PostProcessing(object):

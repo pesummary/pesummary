@@ -18,6 +18,8 @@ import numpy as np
 import pesummary
 from pesummary.core.inputs import _Input, Input, PostProcessing
 from pesummary.gw.file.read import read as GWRead
+from pesummary.gw.file.psd import PSD
+from pesummary.gw.file.calibration import Calibration
 from pesummary.utils.exceptions import InputError
 from pesummary.utils.utils import logger, SamplesDict
 
@@ -93,13 +95,14 @@ class _GWInput(_Input):
         if f.psd is not None and f.psd[labels[0]] != {}:
             for i in labels:
                 psd[i] = {
-                    ifo: f.psd[i][ifo] for ifo in f.psd[i].keys()
+                    ifo: PSD(f.psd[i][ifo]) for ifo in f.psd[i].keys()
                 }
         calibration = {}
         if f.calibration is not None and f.calibration[labels[0]] != {}:
             for i in labels:
                 calibration[i] = {
-                    ifo: f.calibration[i][ifo] for ifo in f.calibration[i].keys()
+                    ifo: Calibration(f.calibration[i][ifo]) for ifo in
+                    f.calibration[i].keys()
                 }
 
         if f.weights is not None and f.weights != {}:
@@ -502,13 +505,15 @@ class _GWInput(_Input):
         file: path
             path to a file containing the psd data
         """
+        from pesummary.gw.file.psd import PSD
+
         general = (
             "Failed to read in PSD data because {}. The PSD plot will be "
             "generated and the PSD data will not be added to the metafile."
         )
         try:
             f = np.genfromtxt(file, skip_footer=2)
-            return f
+            return PSD(f)
         except FileNotFoundError:
             logger.info(
                 general.format("the file {} does not exist".format(file))
@@ -532,9 +537,11 @@ class _GWInput(_Input):
             "plot will not be generated and the calibration data will not be "
             "added to the metafile"
         )
+        from pesummary.gw.file.calibration import Calibration
+
         try:
             f = np.genfromtxt(file)
-            return f
+            return Calibration(f)
         except FileNotFoundError:
             logger.info(
                 general.format("the file {} does not exist".format(file))
@@ -736,7 +743,7 @@ class GWInput(_GWInput, Input):
         if True, public facing summarypages are produced
     """
     def __init__(self, opts):
-        super(GWInput, self).__init__(opts)
+        super(GWInput, self).__init__(opts, ignore_copy=True)
         if self.existing is not None:
             self.existing_data = self.grab_data_from_metafile(
                 self.existing_metafile, self.existing,
@@ -776,6 +783,36 @@ class GWInput(_GWInput, Input):
         self.pepredicates_probs = []
         self.pastro_probs = []
         self.copy_files()
+
+    def copy_files(self):
+        """Copy the relevant file to the web directory
+        """
+        for label in self.labels:
+            if self.psd[label] != {}:
+                for ifo in self.psd[label].keys():
+                    self.psd[label][ifo].save_to_file(
+                        os.path.join(self.webdir, "psds", "{}_{}_psd.dat".format(
+                            label, ifo
+                        ))
+                    )
+            if label in self.priors["calibration"].keys():
+                if self.priors["calibration"][label] != {}:
+                    for ifo in self.priors["calibration"][label].keys():
+                        self.priors["calibration"][label][ifo].save_to_file(
+                            os.path.join(self.webdir, "calibration", "{}_{}_cal.txt".format(
+                                label, ifo
+                            ))
+                        )
+        self._copy_files(self.default_files_to_copy)
+
+    def make_directories(self):
+        """Make the directories to store the information
+        """
+        for dirs in ["psds", "calibration"]:
+            self.default_directories.append(dirs)
+        if self.publication:
+            self.default_directories.append("plots/publication")
+        self._make_directories(self.webdir, self.default_directories)
 
 
 class GWPostProcessing(PostProcessing):

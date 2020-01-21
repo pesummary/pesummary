@@ -43,7 +43,8 @@ class TestPlotGeneration(object):
         with open("./.outdir_bilby/psd.dat", "w") as f:
             f.writelines(["1.00 3.44\n"])
             f.writelines(["100.00 4.00\n"])
-            f.writelines(["1000.00 5.00"])
+            f.writelines(["1000.00 5.00\n"])
+            f.writelines(["2000.00 6.00\n"])
         with open("./.outdir_bilby/calibration.dat", "w") as f:
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0\n"])
             f.writelines(["2000.0 2.0 3.0 4.0 5.0 6.0 7.0"])
