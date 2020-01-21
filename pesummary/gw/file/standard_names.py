@@ -199,3 +199,107 @@ standard_names = {"logL": "log_likelihood",
                   "logprior": "log_prior",
                   "weights": "weights",
                   "weight": "weights"}
+
+descriptive_names = {
+    "log_likelihood": "Log Likelihood",
+    "tilt_1": (
+        "the angle between the total orbital angular momentum, L, and the "
+        "primary spin, S1"
+    ),
+    "tilt_2": (
+        "the angle between the total orbital angular momentum, L, and the "
+        "secondary spin, S2"
+    ),
+    "cos_tilt_1": (
+        "the cosine of the angle between the total orbital angular momentum, "
+        "L, and the primary spin, S1"
+    ),
+    "cos_tilt_2": (
+        "the cosine of the angle between the total orbital angular momentum, "
+        "L, and the primary spin, S2"
+    ),
+    "redshift": "the redshift",
+    "L1_optimal_snr": "",
+    "H1_optimal_snr": "",
+    "V1_optimal_snr": "",
+    "E1_optimal_snr": "",
+    "network_optimal_snr": "",
+    "L1_matched_filter_snr": "",
+    "H1_matched_filter_snr": "",
+    "V1_matched_filter_snr": "",
+    "E1_matched_filter_snr": "",
+    "network_matched_filter_snr": "",
+    "H1_matched_filter_abs_snr": "",
+    "H1_matched_filter_snr_abs": "",
+    "L1_matched_filter_abs_snr": "",
+    "L1_matched_filter_snr_abs": "",
+    "V1_matched_filter_abs_snr": "",
+    "V1_matched_filter_snr_abs": "",
+    "E1_matched_filter_abs_snr": "",
+    "E1_matched_filter_snr_abs": "",
+    "H1_matched_filter_snr_angle": "",
+    "L1_matched_filter_snr_angle": "",
+    "V1_matched_filter_snr_angle": "",
+    "E1_matched_filter_snr_angle": "",
+    "chirp_mass_source": "",
+    "symmetric_mass_ratio": "",
+    "mass_1": "the mass of the heavier object in the binary",
+    "mass_2": "the mass of the lighter object in the binary",
+    "ra": "the right ascension of the source",
+    "dec": "the declination of the source",
+    "iota": (
+        "the angle between the total orbital angular momentum, L, and the "
+        "line of sight, N"
+    ),
+    "cos_iota": (
+        "the cosine of the angle between the total orbital angular momentum, L "
+        ", and the line of sight, N"
+    ),
+    "mass_2_source": "the source mass of the lighter object in the binary",
+    "mass_1_source": "the source mass of the heavier object in the binary",
+    "phi_1": "",
+    "phi_2": "",
+    "psi": "",
+    "phi_12": "",
+    "phi_jl": "",
+    "a_1": "",
+    "spin_1x": "",
+    "spin_1y": "",
+    "spin_1z": "",
+    "a_2": "",
+    "spin_2x": "",
+    "spin_2y": "",
+    "spin_2z": "",
+    "chi_p": "",
+    "phase": "",
+    "luminosity_distance": "the luminosity distance of the source",
+    "chirp_mass": "",
+    "chi_eff": "",
+    "total_mass_source": "the total mass of the binary in the source frame",
+    "total_mass": "the total mass of the binary",
+    "mass_ratio": (
+        "the ratio of the binary component masses. We use the convention that "
+        "the mass ratio is always less than 1"
+    ),
+    "geocent_time": "",
+    "theta_jn": (
+        "the angle between the total angular momentum, J, and the line of "
+        "sight, N"
+    ),
+    "cos_theta_jn": (
+        "the cosine of the angle between the total angular momentum, J, and "
+        "the line of sight, N"
+    ),
+    "reference_frequency": "",
+    "H1_time": "",
+    "L1_time": "",
+    "V1_time": "",
+    "a_1_azimuthal": "",
+    "a_1_polar": "",
+    "a_2_azimuthal": "",
+    "a_2_polar": "",
+    "lambda_1": "",
+    "lambda_2": "",
+    "lambda_tilde": "",
+    "delta_lambda": "",
+}

@@ -20,6 +20,8 @@ import numpy as np
 import pesummary
 from pesummary.core.webpage import webpage
 from pesummary.core.webpage.main import _WebpageGeneration as _CoreWebpageGeneration
+from pesummary.core.webpage.main import PlotCaption
+from pesummary.gw.file.standard_names import descriptive_names
 from pesummary import conf
 
 
@@ -381,10 +383,11 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 background_colour=self.colors[num]
             )
             html_file.make_banner(approximant=i, key=i)
-            images, cli = self.default_images_for_result_page(i)
+            images, cli, captions = self.default_images_for_result_page(i)
             unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
             html_file.make_table_of_images(
-                contents=images, cli=cli, unique_id=unique_id
+                contents=images, cli=cli, unique_id=unique_id,
+                captions=captions
             )
             images = [y for x in images for y in x]
             html_file.make_modal_carousel(images=images, unique_id=unique_id)
@@ -973,7 +976,26 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 general_cli.format("1d_histogram", "--parameter chi_eff")
             ]
         ]
-        return image_contents, cli
+
+        caption_1d_histogram = PlotCaption("1d_histogram")
+        posterior_name = \
+            lambda i: "{} ({})".format(i, descriptive_names[i]) if i in \
+            descriptive_names.keys() and descriptive_names[i] != "" else i
+        captions = [
+            [
+                caption_1d_histogram.format(posterior_name("mass_1")),
+                caption_1d_histogram.format(posterior_name("mass_2")),
+                caption_1d_histogram.format(posterior_name("a_1")),
+            ], [
+                caption_1d_histogram.format(posterior_name("a_2")),
+                PlotCaption("skymap"), PlotCaption("frequency_waveform"),
+            ], [
+                caption_1d_histogram.format(posterior_name("iota")),
+                caption_1d_histogram.format(posterior_name("luminosity_distance")),
+                caption_1d_histogram.format(posterior_name("chi_eff"))
+            ]
+        ]
+        return image_contents, cli, captions
 
     def default_categories(self):
         """Return the default categories
