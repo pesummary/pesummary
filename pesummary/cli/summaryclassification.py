@@ -100,8 +100,6 @@ def save_classifications(savedir, classifications, labels):
     import os
     import json
 
-    if labels is None:
-        raise InputError("Please provide a label for each result file")
     base_path = os.path.join(savedir, "{}_{}_prior_pe_classification.json")
     for num, i in enumerate(classifications):
         for prior in i.keys():
@@ -195,6 +193,14 @@ def main():
             "classifications will be shown in stdout rather than saved to file"
         )
     classifications = generate_probabilities(opts.samples, prior=opts.prior)
+    if opts.labels is None:
+        opts.labels = []
+        for i in opts.samples:
+            f = GWRead(i)
+            if hasattr(f, "labels"):
+                opts.labels.append(f.labels[0])
+            else:
+                raise InputError("Please provide a label for each result file")
     if opts.webdir:
         save_classifications(opts.webdir, classifications, opts.labels)
     else:

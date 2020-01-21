@@ -29,7 +29,7 @@ def get_list_of_files(gw=False, number=1):
     if not gw:
         import string
 
-        parameters = list(string.ascii_lowercase)[:14] + ["log_likelihood"]
+        parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
         label = "core"
     else:
         parameters = [
@@ -79,7 +79,7 @@ def get_list_of_plots(gw=False, number=1):
     if not gw:
         import string
 
-        parameters = list(string.ascii_lowercase)[:14] + ["log_likelihood"]
+        parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
         label = "core"
     else:
         parameters = [
@@ -207,8 +207,8 @@ def read_result_file(outdir="./.outdir", extension="json", bilby=False,
     return samples
 
 
-def make_result_file(outdir="./.outdir/", extension="hdf5", gw=True, bilby=False,
-                     lalinference=False, pesummary=False):
+def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False,
+                     lalinference=False, pesummary=False, pesummary_label="label"):
     """Make a result file that can be read in by PESummary
 
     Parameters
@@ -221,11 +221,12 @@ def make_result_file(outdir="./.outdir/", extension="hdf5", gw=True, bilby=False
         if True, gw parameters will be used
     """
     print(extension, gw, bilby, lalinference, pesummary)
-    data = np.array([np.random.random(15) for i in range(1000)])
+    data = np.array([np.random.random(18) for i in range(1000)])
     if gw:
         parameters = ["mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2",
                       "phi_jl", "phi_12", "psi", "theta_jn", "ra", "dec",
-                      "luminosity_distance", "geocent_time", "log_likelihood"]
+                      "luminosity_distance", "geocent_time", "redshift",
+                      "mass_1_source", "mass_2_source", "log_likelihood"]
         distance = np.random.random(1000) * 500
         for num, i in enumerate(data):
             data[num][12] = distance[num]
@@ -237,7 +238,7 @@ def make_result_file(outdir="./.outdir/", extension="hdf5", gw=True, bilby=False
     else:
         import string
 
-        parameters = list(string.ascii_lowercase)[:14] + ["log_likelihood"]
+        parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
     if extension == "dat":
             np.savetxt(outdir + "test.dat", data, delimiter=" ",
                        header=" ".join(parameters), comments="")
@@ -295,22 +296,22 @@ def make_result_file(outdir="./.outdir/", extension="hdf5", gw=True, bilby=False
     elif pesummary and not lalinference and not bilby:
         dictionary = {
             "posterior_samples":
-                {"label": 
+                {pesummary_label: 
                     {"parameter_names": parameters,
                      "samples": [list(i) for i in data]
                     }
                 },
             "injection_data":
-                {"label":
+                {pesummary_label:
                     {"injection_values": [float("nan") for i in range(len(parameters))]
                     }
                 },
             "version":
-                {"label": ["No version information found"],
+                {pesummary_label: ["No version information found"],
                  "pesummary": ["v0.1.7"]
                 },
             "meta_data":
-                {"label":
+                {pesummary_label:
                     {"sampler": {"log_evidence": 0.5},
                      "meta_data": {}}
                 }
