@@ -21,8 +21,32 @@ from scipy import stats
 import numpy as np
 
 import pesummary
+from pesummary import conf
 from pesummary.utils.utils import logger
 from pesummary.core.webpage import webpage
+
+
+class PlotCaption(object):
+    """Class to handle the generation of a plot caption
+
+    Parameters
+    ----------
+    plot: str
+        name of the plot you wish to generate a caption for
+    """
+    def __new__(cls, plot="1d_histogram"):
+        super(PlotCaption, cls).__init__(cls)
+        obj = cls.caption(plot)
+        return obj
+
+    def __init__(self, plot="1d_histogram"):
+        self.plot = plot
+
+    @staticmethod
+    def caption(plot):
+        if hasattr(conf, "caption_{}".format(plot)):
+            return getattr(conf, "caption_{}".format(plot))
+        return "No caption found for {}".format(plot)
 
 
 class _WebpageGeneration(object):

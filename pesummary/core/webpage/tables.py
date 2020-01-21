@@ -19,7 +19,7 @@ from pesummary.core.webpage.base import Base
 class table_of_images(Base):
 
     def __init__(self, content, rows, columns, html_file, code, cli,
-                 autoscale=False, unique_id=None):
+                 autoscale=False, unique_id=None, captions=None):
         """
 
         Parameters
@@ -34,6 +34,7 @@ class table_of_images(Base):
         self.html_file = html_file
         self.code = code
         self.cli = cli
+        self.captions = captions
         self.autoscale = autoscale
         self.unique_id = unique_id
         if self.unique_id is not None:
@@ -104,14 +105,35 @@ class table_of_images(Base):
                         ), indent=6)
                     self._insert_image(j, width, 8, _id, justify=None)
                     self.add_content("</a>\n", indent=6)
+                    if self.cli or self.captions:
+                        self.add_content("<div class='row justify-content-center'>", indent=6)
+                        self.add_content("<div class='col-sm-4'>", indent=6)
                     if self.cli:
                         self.make_div(10, _class="imgButton", _style=None)
-                        self.add_content("<button value='test' data-toggle='popover' "
-                                         "data-placement='top' data-content='%s'>"
+                        self.add_content("<button value='test' style='cursor: pointer' "
+                                         "data-toggle='popover' data-placement='top' "
+                                         "data-content='%s'>"
                                          "Command Line</button>" % (self.cli[idx][num]),
                                          indent=12)
                         self.end_div(10)
+                        self.end_div(10)
+                    if self.captions:
+                        if self.cli:
+                            _style = "margin-left: -70px;"
+                        else:
+                            _style = None
+                        self.make_div(6, _class="col-sm-4", _style=_style)
+                        self.make_div(10, _class="imgButton", _style=None)
+                        self.add_content("<button value='test' style='cursor: pointer' "
+                                         "data-toggle='popover' "
+                                         "data-placement='top' data-content='%s'>"
+                                         "Caption</button>" % (self.captions[idx][num]),
+                                         indent=12)
+                        self.end_div(10)
+                        self.end_div(10)
                     self.end_div(10)
+                    if self.cli or self.captions:
+                        self.end_div(10)
                     ind += 1
                 self.end_div(8)
             self.end_div(6)
