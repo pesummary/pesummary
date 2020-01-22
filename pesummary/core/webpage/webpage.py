@@ -64,6 +64,7 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <script src='./js/search.js'></script>
     <script src='./js/side_bar.js'></script>
     <script src='./js/html_to_csv.js'></script>
+    <script src='./js/html_to_json.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/font.css">
@@ -82,6 +83,7 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <script src='../js/search.js'></script>
     <script src='../js/side_bar.js'></script>
     <script src='../js/html_to_csv.js'></script>
+    <script src='../js/html_to_json.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/font.css">
@@ -880,7 +882,10 @@ class page(Base):
                          indent=12)
         self.end_div(0)
 
-    def download_to_csv(self, filename, margin_top="-4em", margin_bottom="5em"):
+    def export_table(
+        self, filename, csv=True, json=False, margin_top="-4em",
+        margin_bottom="5em"
+    ):
         """Make a button which to export a html table to csv
 
         Parameters
@@ -888,13 +893,32 @@ class page(Base):
         filename: str
             the name of the file you wish to save the data too
         """
+        if ".csv" or ".json" in filename:
+            basename = ".".join(filename.split(".")[:-1]) + ".{}"
+        else:
+            basename = filename + ".{}"
         self.add_content(
             "<div class='container' style='margin-top:{}; margin-bottom:{}; "
             "max-width: 1400px'>".format(margin_top, margin_bottom)
         )
-        self.add_content(
-            "<button type='button' onclick='export_table_to_csv(\"{}\")' "
-            "class='btn btn-outline-secondary btn-table'>Export to CSV"
-            "</button>".format(filename)
-        )
+        json_margin = "0em"
+        if csv and json:
+            json_margin = "0.5em"
+            self.add_content("<div class='row' style='margin-left: 0.2em'>")
+        if csv:
+            self.add_content(
+                "<button type='button' onclick='export_table_to_csv(\"{}\")' "
+                "class='btn btn-outline-secondary btn-table'>Export to CSV"
+                "</button>".format(basename.format("csv"))
+            )
+        if json:
+            self.add_content(
+                "<button type='button' onclick='export_table_to_json(\"{}\")' "
+                "style='margin-left: {}' class='btn btn-outline-secondary "
+                "btn-table'>Export to JSON</button>".format(
+                    basename.format("json"), json_margin
+                )
+            )
+        if csv and json:
+            self.end_div()
         self.end_div(0)
