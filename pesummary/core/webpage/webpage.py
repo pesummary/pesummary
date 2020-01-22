@@ -867,24 +867,20 @@ class page(Base):
         cli: str
             the command line that you wish to display in the modal
         """
-        self.make_div(0, _class="imgButton", _style=None)
-        self.add_content("<button value='test' data-toggle='modal' "
-                         "data-target='#myModal'>Command Line<"
-                         "/button>", indent=2)
-        self.end_div(0)
-        self.add_content("<div class='modal' id='myModal'>", indent=0)
-        self.make_div(2, _class='modal-dialog',
-                      _style="max-width: 1000px; padding-top: 250px;")
-        self.make_div(4, _class='modal-content', _style=None)
-        self.make_div(6, _class='modal-body',
-                      _style="font-size: 0.75rem;")
-        self.add_content("%s" % (cli), indent=8)
-        self.end_div(6)
-        self.end_div(4)
-        self.end_div(2)
+        self.add_content("<style>")
+        self.add_content(".popover {", indent=2)
+        self.add_content("max-width: 550px;", indent=4)
+        self.add_content("width: 550px;", indent=4)
+        self.add_content("}", indent=2)
+        self.add_content("</style>")
+        self.make_div(2, _class="imgButton", _style=None)
+        self.add_content("<button value='test' style='cursor: pointer' "
+                         "data-toggle='popover' data-placement='top' "
+                         "data-content='%s'>Command Line</button>" % (cli),
+                         indent=12)
         self.end_div(0)
 
-    def download_to_csv(self, filename, margin_top="-4em"):
+    def download_to_csv(self, filename, margin_top="-4em", margin_bottom="5em"):
         """Make a button which to export a html table to csv
 
         Parameters
@@ -893,8 +889,8 @@ class page(Base):
             the name of the file you wish to save the data too
         """
         self.add_content(
-            "<div class='container' style='margin-top:{}; margin-bottom:5em; "
-            "max-width: 1400px'>".format(margin_top)
+            "<div class='container' style='margin-top:{}; margin-bottom:{}; "
+            "max-width: 1400px'>".format(margin_top, margin_bottom)
         )
         self.add_content(
             "<button type='button' onclick='export_table_to_csv(\"{}\")' "
