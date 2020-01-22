@@ -826,6 +826,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 html_file.make_cli_button(
                     general_cli.format(self.result_files[num])
                 )
+                html_file.download_to_csv(
+                    "classification_{}.csv".format(label),
+                    margin_top="-1.5em", margin_bottom="0.5em"
+                )
                 html_file.end_div(4)
                 html_file.end_container()
             path = self.image_path["other"]
