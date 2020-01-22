@@ -2,7 +2,21 @@
 
 ### Changed
 
+- Command line buttons - All command lines are contained within the Bootstrap
+  `popover` object.
+
 ### Added
+
+- Add captions below some of the images to explain the key features
+- Allow the user to download psds and calibration envelopes from the
+  `Downloads` page
+- Add a `pesummary.gw.file.psd.PSD` and a
+  `pesummary.gw.file.calibration.Calibration` class to handle the psds and
+  calibration envelopes.
+- Add an extra test to check the `summarycombine_metafiles`,
+  `summaryclassification` and `summaryclean` executables are working as expected
+- Allow html tables to be exported to CSV files from the webpages
+- Allow html tables to be exported to JSON files from the webpages
 
 ## 0.3.2 [17/01/2020]
 
