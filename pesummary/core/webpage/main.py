@@ -966,8 +966,8 @@ class _WebpageGeneration(object):
             contents=packages,
             accordian=False, style=style.format("1em", "1em")
         )
-        html_file.download_to_csv(
-            "version_information.csv", margin_top="1em"
+        html_file.export_table(
+            "version_information.csv", margin_top="1em", json=True
         )
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()

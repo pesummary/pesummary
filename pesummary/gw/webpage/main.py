@@ -433,7 +433,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 headings=[" ", "maxL", "mean", "median", "std"],
                 contents=contents, heading_span=1
             )
-            html_file.download_to_csv(
+            html_file.export_table(
                 "summary_information_{}.csv".format(i)
             )
             html_file.make_footer(user=self.user, rundir=self.webdir)
@@ -841,9 +841,9 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 html_file.make_cli_button(
                     general_cli.format(self.result_files[num])
                 )
-                html_file.download_to_csv(
+                html_file.export_table(
                     "classification_{}.csv".format(label),
-                    margin_top="-1.5em", margin_bottom="0.5em"
+                    margin_top="-1.5em", margin_bottom="0.5em", json=True
                 )
                 html_file.end_div(4)
                 html_file.end_container()
