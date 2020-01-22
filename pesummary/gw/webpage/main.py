@@ -664,6 +664,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             shortened_path = i.split("/plots/")[-1]
             pub_plots[num] = path + shortened_path
         cli = []
+        cap = []
+        posterior_name = \
+            lambda i: "{} ({})".format(i, descriptive_names[i]) if i in \
+            descriptive_names.keys() and descriptive_names[i] != "" else i
         for i in pub_plots:
             filename = i.split("/")[-1]
             if "violin_plot" in filename:
@@ -673,13 +677,23 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                         parameter
                     )
                 )
+                cap.append(
+                    PlotCaption("violin").format(posterior_name(parameter))
+                )
             elif "spin_disk" in filename:
                 cli.append(general_cli.format("spin_disk"))
+                cap.append(PlotCaption("spin_disk"))
             elif "2d_contour" in filename:
                 parameters = filename.split("2d_contour_plot_")[-1].split(".png")[0]
                 cli.append(
                     general_cli.format("2d_contour") + " --parameters %s" % (
                         parameters.replace("_and_", " ")
+                    )
+                )
+                pp = parameters.split("_and_")
+                cap.append(
+                    PlotCaption("2d_contour").format(
+                        posterior_name(pp[0]), posterior_name(pp[1])
                     )
                 )
         image_contents = [
@@ -688,8 +702,9 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         command_lines = [
             cli[i:3 + i] for i in range(0, len(cli), 3)
         ]
+        captions = [cap[i:3 + i] for i in range(0, len(cap), 3)]
         html_file.make_table_of_images(
-            contents=image_contents, cli=command_lines
+            contents=image_contents, cli=command_lines, captions=captions
         )
         images = [y for x in image_contents for y in x]
         html_file.make_modal_carousel(images=images)

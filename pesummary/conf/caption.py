@@ -28,3 +28,24 @@ caption_frequency_waveform = (
     "Plot showing the frequency domain waveform generated from the maximum "
     "likelihood samples."
 )
+
+# Caption for 2d contour plots
+caption_2d_contour = (
+    "2d contour plot showing the bounded posterior distributions for {} and "
+    "{}. Each contour shows the 90% credible interval and the posterior "
+    "distributions are normalized."
+)
+
+# Caption for violin plots
+caption_violin = (
+    "Violin plot showing the posterior distributions for {}. The horizontal "
+    "black lines show the 90% credible intervals."
+)
+
+# Caption for spin disk plots
+caption_spin_disk = (
+    "Posterior probability distributions for the dimensionless component spins "
+    "relative to the normal to the orbital plane, L, marginalized over the  "
+    "azimuthal angles. The bins are constructed linearly in spin magnitude and "
+    "the cosine of the tilt angles and are assigned equal prior probability."
+)
