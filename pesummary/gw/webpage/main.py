@@ -870,8 +870,17 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     base.format("bar", "population")
                 ]
             ]
+            captions = [
+                [
+                    PlotCaption("default_classification_mass_1_mass_2"),
+                    PlotCaption("default_classification_bar"),
+                    PlotCaption("population_classification_mass_1_mass_2"),
+                    PlotCaption("population_classification_bar")
+                ]
+            ]
             html_file.make_table_of_images(
-                contents=image_contents, cli=command_lines, autoscale=True
+                contents=image_contents, cli=command_lines, autoscale=True,
+                captions=captions
             )
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images)

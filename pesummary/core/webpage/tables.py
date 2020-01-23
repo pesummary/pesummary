@@ -87,12 +87,14 @@ class table_of_images(Base):
         else:
             ind = 0
             width = "450"
+            captions_margin_left = "-70"
             _class = "row justify-content-center"
             self.make_div(4, _class=_class, _style=None)
             self.make_div(6, _class="row", _style=None)
             for idx, i in enumerate(self.content):
                 if self.autoscale:
                     width = str(1400 / len(i))
+                    captions_margin_left = str(-1400. / (8 * len(i)))
                 self.make_div(8, _class="column", _style="padding-left: 1em;")
                 for num, j in enumerate(i):
                     _id = j.split("/")[-1][:-4]
@@ -119,7 +121,9 @@ class table_of_images(Base):
                         self.end_div(10)
                     if self.captions:
                         if self.cli:
-                            _style = "margin-left: -70px;"
+                            _style = "margin-left: {}px;".format(
+                                captions_margin_left
+                            )
                         else:
                             _style = None
                         self.make_div(6, _class="col-sm-4", _style=_style)
