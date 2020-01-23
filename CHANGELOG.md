@@ -17,6 +17,8 @@
   `summaryclassification` and `summaryclean` executables are working as expected
 - Allow html tables to be exported to CSV files from the webpages
 - Allow html tables to be exported to JSON files from the webpages
+- Allow the bash command that was used to generate the webpages to be downloaded
+  from the webpages
 
 ## 0.3.2 [17/01/2020]
 
