@@ -65,6 +65,7 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <script src='./js/side_bar.js'></script>
     <script src='./js/html_to_csv.js'></script>
     <script src='./js/html_to_json.js'></script>
+    <script src='./js/html_to_shell.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/font.css">
@@ -84,6 +85,7 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <script src='../js/side_bar.js'></script>
     <script src='../js/html_to_csv.js'></script>
     <script src='../js/html_to_json.js'></script>
+    <script src='../js/html_to_shell.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/font.css">
@@ -882,8 +884,8 @@ class page(Base):
                          indent=12)
         self.end_div(0)
 
-    def export_table(
-        self, filename, csv=True, json=False, margin_top="-4em",
+    def export(
+        self, filename, csv=True, json=False, shell=False, margin_top="-4em",
         margin_bottom="5em"
     ):
         """Make a button which to export a html table to csv
@@ -893,7 +895,7 @@ class page(Base):
         filename: str
             the name of the file you wish to save the data too
         """
-        if ".csv" or ".json" in filename:
+        if ".csv" in filename or ".json" in filename or ".sh" in filename:
             basename = ".".join(filename.split(".")[:-1]) + ".{}"
         else:
             basename = filename + ".{}"
@@ -902,8 +904,10 @@ class page(Base):
             "max-width: 1400px'>".format(margin_top, margin_bottom)
         )
         json_margin = "0em"
+        bash_margin = "0.5em"
         if csv and json:
             json_margin = "0.5em"
+            bash_margin = "0em"
             self.add_content("<div class='row' style='margin-left: 0.2em'>")
         if csv:
             self.add_content(
@@ -917,6 +921,15 @@ class page(Base):
                 "style='margin-left: {}' class='btn btn-outline-secondary "
                 "btn-table'>Export to JSON</button>".format(
                     basename.format("json"), json_margin
+                )
+            )
+        if shell:
+            self.add_content(
+                "<button type='button' onclick='export_table_to_shell(\"{}\")' "
+                "style='margin-left: {}; margin-bottom: {}' "
+                "class='btn btn-outline-secondary btn-table'>Export to bash"
+                "</button>".format(
+                    basename.format("sh"), json_margin, bash_margin
                 )
             )
         if csv and json:

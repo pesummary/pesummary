@@ -966,7 +966,7 @@ class _WebpageGeneration(object):
             contents=packages,
             accordian=False, style=style.format("1em", "1em")
         )
-        html_file.export_table(
+        html_file.export(
             "version_information.csv", margin_top="1em", json=True
         )
         html_file.make_footer(user=self.user, rundir=self.webdir)
@@ -1050,6 +1050,10 @@ class _WebpageGeneration(object):
         with open('{0:s}/css/About.css'.format(self.webdir), 'w') as g:
             g.write(styles)
         html_file.end_container()
+        html_file.export(
+            "pesummary.sh", csv=False, json=False, shell=True,
+            margin_top="-4em"
+        )
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
