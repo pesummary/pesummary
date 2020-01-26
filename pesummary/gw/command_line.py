@@ -15,6 +15,10 @@
 
 import argparse
 import copy
+import collections
+import sys
+import fnmatch
+from pesummary.utils.utils import command_line_arguments
 from pesummary.core.command_line import DictionaryAction
 
 
@@ -39,9 +43,21 @@ def insert_gwspecific_option_group(parser):
                           help="gracedb of the event", default=None)
     gw_group.add_argument("--psd", dest="psd", action=DictionaryAction,
                           help="psd files used", nargs='+', default={})
+    gw_group.add_argument("--{}_psd", dest="example_psd",
+                          help=("psd files used for a specific label. '{}' "
+                                "should be replaced with the label of "
+                                "interest. For example "
+                                "--IMRPhenomPv3_psd H1:IF0_psd.dat"),
+                          default=None, metavar="IFO:PATH_to_PSD.dat")
     gw_group.add_argument("--calibration", dest="calibration",
                           help="files for the calibration envelope",
                           nargs="+", action=DictionaryAction, default={})
+    gw_group.add_argument("--{}_calibration", dest="example_calibration",
+                          help=("calibration files used for a specific label. "
+                                "'{}' should be replaced with the label of "
+                                "interest. For example "
+                                "--IMRPhenomPv3_calibration H1:IF0_cal.dat"),
+                          default=None, metavar="IFO:PATH_to_CAL.txt")
     gw_group.add_argument("--trigfile", dest="inj_file",
                           help="xml file containing the trigger values",
                           nargs='+', default=None)
@@ -68,3 +84,72 @@ def insert_gwspecific_option_group(parser):
                           help="generate public facing summary pages",
                           default=False)
     return gw_group
+
+
+def add_dynamic_argparse(
+        existing_namespace, pattern, example="--{}_psd", default={},
+        nargs='+', action=DictionaryAction
+):
+    """Add a dynamic argparse argument and add it to an existing
+    argparse.Namespace object
+
+    Parameters
+    ----------
+    existing_namespace: argparse.Namespace
+        existing namespace you wish to add the dynamic arguments too
+    pattern: str
+        generic pattern for customg argparse. For example '--*_psd'
+    example: str, optional
+        example string to demonstrate usage
+    default: obj, optional
+        the default argument for the dynamic argparse object
+    nargs: str
+    action: argparse.Action
+        argparse action to use for the dynamic argparse
+    """
+    command_line = command_line_arguments()
+    commands = fnmatch.filter(command_line, pattern)
+    duplicates = [
+        item for item, count in collections.Counter(commands).items() if
+        count > 1
+    ]
+    if example in commands:
+        commands.remove(example)
+    if len(duplicates) > 0:
+        raise Exception(
+            "'{}' has been repeated. Please give a unique argument".format(
+                duplicates[0]
+            )
+        )
+    parser = argparse.ArgumentParser()
+    for i in commands:
+        parser.add_argument(
+            i, help=argparse.SUPPRESS, action=action, nargs=nargs,
+            default=default
+        )
+    args, unknown = parser.parse_known_args()
+    existing_namespace.__dict__.update(vars(args))
+
+
+def add_dynamic_PSD_to_namespace(existing_namespace):
+    """Add a dynamic PSD argument to the argparse namespace
+
+    Parameters
+    ----------
+    existing_namespace: argparse.Namespace
+        existing namespace you wish to add the dynamic arguments too
+    """
+    add_dynamic_argparse(existing_namespace, "--*_psd")
+
+
+def add_dynamic_calibration_to_namespace(existing_namespace):
+    """Add a dynamic calibration argument to the argparse namespace
+
+    Parameters
+    ----------
+    existing_namespace: argparse.Namespace
+        existing namespace you wish to add the dynamic arguments too
+    """
+    add_dynamic_argparse(
+        existing_namespace, "--*_calibration", example="--{}_calibration"
+    )

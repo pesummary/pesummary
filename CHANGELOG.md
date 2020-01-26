@@ -19,6 +19,10 @@
 - Allow html tables to be exported to JSON files from the webpages
 - Allow the bash command that was used to generate the webpages to be downloaded
   from the webpages
+- Allow the user to pass custom PSD command line arguments for a specific
+  label `--{label}_psd`.
+- Allow the user to pass custom calibration command line arguments for a
+  specific label `--{label}_calibration`.
 
 ## 0.3.2 [17/01/2020]
 
