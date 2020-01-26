@@ -186,13 +186,18 @@ def main():
     """Top level interface for `summarypages`
     """
     from pesummary.core.command_line import command_line
-    from pesummary.gw.command_line import insert_gwspecific_option_group
+    from pesummary.gw.command_line import (
+        insert_gwspecific_option_group, add_dynamic_PSD_to_namespace,
+        add_dynamic_calibration_to_namespace
+    )
     from pesummary.utils import functions
     from .summaryplots import PlotGeneration
 
     parser = command_line()
     insert_gwspecific_option_group(parser)
-    opts = parser.parse_args()
+    opts, unknown = parser.parse_known_args()
+    add_dynamic_PSD_to_namespace(opts)
+    add_dynamic_calibration_to_namespace(opts)
     func = functions(opts)
     args = func["input"](opts)
     PlotGeneration(args, gw=gw_results_file(opts))

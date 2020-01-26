@@ -375,6 +375,19 @@ class _GWInput(_Input):
                     calibration, self.extract_calibration_data_from_file
                 )
                 self.add_to_prior_dict("calibration", prior_data)
+            else:
+                prior_data = {i: {} for i in self.labels}
+                for label in self.labels:
+                    if hasattr(self.opts, "{}_calibration".format(label)):
+                        cal_data = getattr(self.opts, "{}_calibration".format(label))
+                        if cal_data != {} and cal_data is not None:
+                            prior_data[label] = {
+                                ifo: self.extract_calibration_data_from_file(
+                                    cal_data[ifo]
+                                ) for ifo in cal_data.keys()
+                            }
+                if not all(prior_data[i] == {} for i in self.labels):
+                    self.add_to_prior_dict("calibration", prior_data)
             for num, i in enumerate(self.result_files):
                 f = GWRead(i)
                 calibration_data = f.calibration_data_in_results_file
@@ -410,6 +423,16 @@ class _GWInput(_Input):
                 data = self.get_psd_or_calibration_data(
                     psd, self.extract_psd_data_from_file
                 )
+            else:
+                for label in self.labels:
+                    if hasattr(self.opts, "{}_psd".format(label)):
+                        psd_data = getattr(self.opts, "{}_psd".format(label))
+                        if psd_data != {} and psd_data is not None:
+                            data[label] = {
+                                ifo: self.extract_psd_data_from_file(
+                                    psd_data[ifo]
+                                ) for ifo in psd_data.keys()
+                            }
             self._psd = data
 
     @property
