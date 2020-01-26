@@ -543,7 +543,7 @@ class _WebpageGeneration(object):
                     "{}_{}".format(i, j), self.navbar["result_page"][i],
                     i, title="{} Posterior PDF for {}".format(i, j),
                     approximant=i, background_colour=self.colors[num],
-                    histogram_download=True
+                    histogram_download=False
                 )
                 html_file.make_banner(approximant=i, key=i)
                 path = self.image_path["other"]
@@ -556,6 +556,12 @@ class _WebpageGeneration(object):
                 ]
                 html_file.make_table_of_images(
                     contents=contents, rows=1, columns=2, code="changeimage")
+                html_file.export(
+                    "", csv=False, json=False, shell=False, margin_bottom="1em",
+                    histogram_dat=os.path.join(
+                        self.results_path["other"], i, "{}_{}.dat".format(i, j)
+                    )
+                )
                 html_file.make_footer(user=self.user, rundir=self.webdir)
                 html_file.close()
             html_file = self.setup_page(

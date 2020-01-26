@@ -885,8 +885,8 @@ class page(Base):
         self.end_div(0)
 
     def export(
-        self, filename, csv=True, json=False, shell=False, margin_top="-4em",
-        margin_bottom="5em"
+        self, filename, csv=True, json=False, shell=False, histogram_dat=None,
+        margin_top="-4em", margin_bottom="5em",
     ):
         """Make a button which to export a html table to csv
 
@@ -932,6 +932,14 @@ class page(Base):
                     basename.format("sh"), json_margin, bash_margin
                 )
             )
+        if histogram_dat is not None:
+            self.add_content("<a href='%s' download>" % (histogram_dat))
+            self.add_content(
+                "<button type='button' style='margin-left: {}; margin-bottom: "
+                "{}' class='btn btn-outline-secondary btn-table'>Export to dat"
+                "</button>".format(json_margin, margin_bottom)
+            )
+            self.add_content("</a>")
         if csv and json:
             self.end_div()
         self.end_div(0)
