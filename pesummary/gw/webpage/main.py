@@ -341,9 +341,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
             html_file.make_table_of_images(
                 contents=image_contents, unique_id=unique_id,
-                captions=[captions]
+                captions=[captions], extra_div=True
             )
-            html_file.end_div(10)
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images, unique_id=unique_id)
             if self.file_kwargs[i]["sampler"] != {}:
@@ -1072,7 +1071,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         """
         categories = self.categories = {
             "masses": {
-                "accept": ["mass", "q", "symmetric_mass_ratio"],
+                "accept": ["mass", "symmetric_mass_ratio"],
                 "reject": ["source"]
             },
             "source": {

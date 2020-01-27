@@ -19,7 +19,7 @@ from pesummary.core.webpage.base import Base
 class table_of_images(Base):
 
     def __init__(self, content, rows, columns, html_file, code, cli,
-                 autoscale=False, unique_id=None, captions=None):
+                 autoscale=False, unique_id=None, captions=None, extra_div=False):
         """
 
         Parameters
@@ -37,6 +37,7 @@ class table_of_images(Base):
         self.captions = captions
         self.autoscale = autoscale
         self.unique_id = unique_id
+        self.extra_div = extra_div
         if self.unique_id is not None:
             self.modal_id = "Modal_{}".format(self.unique_id)
             self.demo_id = "demo_{}".format(self.unique_id)
@@ -145,6 +146,8 @@ class table_of_images(Base):
                                          indent=10)
                         self.end_div(10)
                     self.end_div(10)
+                    if self.extra_div:
+                        self.end_div(10)
                     if self.cli or self.captions:
                         self.end_div(10)
                     ind += 1
