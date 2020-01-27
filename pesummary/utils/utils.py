@@ -691,7 +691,7 @@ def number_of_columns_for_legend(labels):
     labels: list
         list of labels in the legend
     """
-    max_length = np.max([len(i) for i in labels])
+    max_length = np.max([len(i) for i in labels]) + 5.
     if max_length > 50.:
         return 1
     else:

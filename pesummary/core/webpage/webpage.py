@@ -650,7 +650,7 @@ class page(Base):
 
     def make_table_of_images(self, contents=None, rows=None, columns=None,
                              code="modal", cli=None, autoscale=False,
-                             unique_id=None, captions=None):
+                             unique_id=None, captions=None, extra_div=False):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -669,7 +669,8 @@ class page(Base):
         """
         table = tables.table_of_images(contents, rows, columns, self.html_file,
                                        code=code, cli=cli, autoscale=autoscale,
-                                       unique_id=unique_id, captions=captions)
+                                       unique_id=unique_id, captions=captions,
+                                       extra_div=extra_div)
         table.make()
 
     def insert_image(self, path, justify="center", code=None):
