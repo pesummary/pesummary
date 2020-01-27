@@ -23,6 +23,8 @@
   label `--{label}_psd`.
 - Allow the user to pass custom calibration command line arguments for a
   specific label `--{label}_calibration`.
+- Add a new `summarypipe` executable which will generate a `summarypages`
+  command line for you provided that you have passed a valid run directory.
 
 ## 0.3.2 [17/01/2020]
 

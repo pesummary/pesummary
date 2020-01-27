@@ -21,6 +21,7 @@ basic:
     - summarydetchar --help
     - summaryversion --help
     - summarypageslw --help
+    - summarypipe --help
     - python -c "import pesummary"
     - python -c "import pesummary.core"
     - python -c "import pesummary.gw"

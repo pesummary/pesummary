@@ -100,6 +100,7 @@ for details:
     executables/summaryclean
     executables/summarycombine
     executables/summarycombine_metafiles
+    executables/summarypipe
 
 Tutorials
 ---------
