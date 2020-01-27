@@ -11,6 +11,13 @@ img:hover {opacity: 0.5;}
     width: 550px;
 }
 
+.btn-xs {
+  font-size: 9px;
+  border-radius: 6px;
+  padding: 0px 4px;
+  margin-left: 50px;
+}
+
 .imgButton {                                                                    
   border: none;                                                                 
   color: white;                                                                 
