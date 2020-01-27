@@ -554,8 +554,17 @@ class _WebpageGeneration(object):
                         path + "{}_autocorrelation_{}.png".format(i, j)
                     ]
                 ]
+                captions = [
+                    [PlotCaption("1d_histogram").format(j)],
+                    [
+                        PlotCaption("sample_evolution").format(j),
+                        PlotCaption("autocorrelation").format(j)
+                    ]
+                ]
                 html_file.make_table_of_images(
-                    contents=contents, rows=1, columns=2, code="changeimage")
+                    contents=contents, rows=1, columns=2, code="changeimage",
+                    captions=captions
+                )
                 html_file.export(
                     "", csv=False, json=False, shell=False, margin_bottom="1em",
                     histogram_dat=os.path.join(

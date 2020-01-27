@@ -5,6 +5,20 @@ caption_1d_histogram = (
     "and 90% confidence interval."
 )
 
+# Caption for autocorrelation plot
+caption_autocorrelation = (
+    "Plot showing the autocorrelation function for {}. This plot is commonly "
+    "used to check for randomness in the data. An autocorrelation of 1/-1 "
+    "means that the samples are correlated and 0 means no correlation. The "
+    "autocorrelation function at a lag of N gives the correlation between "
+    "the 0th sample and the Nth sample."
+)
+
+# Caption for sample evolution plot
+caption_sample_evolution = (
+    "Scatter plot showing the evolution of the collected samples for {}."
+)
+
 # Caption for preliminary skymap
 caption_skymap_preliminary = (
     "Plot showing the most likely position of the source. This map has been "
@@ -20,13 +34,40 @@ caption_skymap = (
     "Plot showing the most likely position of the source that generated the "
     "gravitational wave. We give the 50% and 90% credible intervals. The "
     "black region corresponds to the most likely position and light orange "
-    "least likely"
+    "least likely."
+)
+
+# Caption for strain plot
+caption_strain = (
+    "Plot showing the comparison between the gravitational wave strain "
+    "measured at the detectors (grey) and the maximum likelihood waveform "
+    "(orange) for all available detectors. A 30Hz high and 300Hz low pass "
+    "filter have been applied to the gravitational wave strain."
 )
 
 # Caption for frequency domain waveform
 caption_frequency_waveform = (
     "Plot showing the frequency domain waveform generated from the maximum "
     "likelihood samples."
+)
+
+# Caption for comparison time domain waveform plot
+caption_time_waveform = (
+    "Plot showing the time domain waveform generated from the maximum "
+    "likelihood samples."
+)
+
+# Caption for psd plot
+caption_psd = (
+    "Plot showing the instrument noise for each detector near the time of "
+    "detection; the power spectral density is expressed in terms of "
+    "equivalent gravitational-wave strain amplitude."
+)
+
+# Caption for calibration plot
+caption_calibration = (
+    "Plot showing the calibration posteriors (solid lines) and calibration "
+    "priors (solid band) for amplitude (top) and phase (bottom)."
 )
 
 # Caption for default mass1 mass2 classification plot

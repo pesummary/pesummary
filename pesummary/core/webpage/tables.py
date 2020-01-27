@@ -74,13 +74,24 @@ class table_of_images(Base):
             _id = self.content[0][0].split("/")[-1][:-4]
             self._insert_image(self.content[0][0], 900, 4, _id, justify="left")
             self.make_div(2, _class=None, _style="float: right;")
-            for i in self.content[1]:
+            for num, i in enumerate(self.content[1]):
                 _id = i.split("/")[-1][:-4]
                 self.make_div(2, _class="row")
                 self.make_div(4, _class="column")
                 self.add_content("<a>", 6)
-                self._insert_image(i, 450, 8, _id, justify=None)
+                self._insert_image(i, 415, 8, _id, justify=None)
                 self.add_content("</a>", 6)
+                if self.captions:
+                    self.add_content("<div class='row justify-content-center'>", indent=6)
+                    self.make_div(6, _class="col-sm-4", _style=None)
+                    self.add_content("<button value='test' class='btn btn-info "
+                                     "btn-xs' style='cursor: pointer' "
+                                     "data-toggle='popover' "
+                                     "data-placement='top' data-content='%s'>"
+                                     "Caption</button>" % (self.captions[1][num]),
+                                     indent=8)
+                    self.end_div(6)
+                    self.end_div(6)
                 self.end_div(4)
                 self.end_div(2)
             self.end_div(2)
@@ -111,13 +122,12 @@ class table_of_images(Base):
                         self.add_content("<div class='row justify-content-center'>", indent=6)
                         self.add_content("<div class='col-sm-4'>", indent=6)
                     if self.cli:
-                        self.make_div(10, _class="imgButton", _style=None)
-                        self.add_content("<button value='test' style='cursor: pointer' "
+                        self.add_content("<button value='test' class='btn "
+                                         "btn-info btn-xs' style='cursor: pointer' "
                                          "data-toggle='popover' data-placement='top' "
                                          "data-content='%s'>"
                                          "Command Line</button>" % (self.cli[idx][num]),
-                                         indent=12)
-                        self.end_div(10)
+                                         indent=10)
                         self.end_div(10)
                     if self.captions:
                         if self.cli:
@@ -127,13 +137,12 @@ class table_of_images(Base):
                         else:
                             _style = None
                         self.make_div(6, _class="col-sm-4", _style=_style)
-                        self.make_div(10, _class="imgButton", _style=None)
-                        self.add_content("<button value='test' style='cursor: pointer' "
+                        self.add_content("<button value='test' class='btn "
+                                         "btn-info btn-xs' style='cursor: pointer' "
                                          "data-toggle='popover' "
                                          "data-placement='top' data-content='%s'>"
                                          "Caption</button>" % (self.captions[idx][num]),
-                                         indent=12)
-                        self.end_div(10)
+                                         indent=10)
                         self.end_div(10)
                     self.end_div(10)
                     if self.cli or self.captions:

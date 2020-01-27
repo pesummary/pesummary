@@ -314,30 +314,36 @@ class _WebpageGeneration(_CoreWebpageGeneration):
 
         for i in self.labels:
             html_file.make_banner(approximant=i, key=i)
-            image_contents = []
+            image_contents, captions = [], []
             basic_string = os.path.join(self.webdir, "plots", "{}.png")
             relative_path = os.path.join(path, "{}.png")
             if os.path.isfile(basic_string.format("%s_strain" % (i))):
                 image_contents.append(relative_path.format("%s_strain" % (i)))
+                captions.append(PlotCaption("strain"))
             if os.path.isfile(basic_string.format("%s_psd_plot" % (i))):
                 image_contents.append(relative_path.format("%s_psd_plot" % (i)))
+                captions.append(PlotCaption("psd"))
             if os.path.isfile(
                 basic_string.format("%s_waveform_time_domain" % (i))
             ):
                 image_contents.append(
                     relative_path.format("%s_waveform_time_domain" % (i))
                 )
+                captions.append(PlotCaption("time_waveform"))
             if os.path.isfile(
                 basic_string.format("%s_calibration_plot" % (i))
             ):
                 image_contents.append(
                     relative_path.format("%s_calibration_plot" % (i))
                 )
+                captions.append(PlotCaption("calibration"))
             image_contents = [image_contents]
             unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
             html_file.make_table_of_images(
-                contents=image_contents, unique_id=unique_id
+                contents=image_contents, unique_id=unique_id,
+                captions=[captions]
             )
+            html_file.end_div(10)
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images, unique_id=unique_id)
             if self.file_kwargs[i]["sampler"] != {}:

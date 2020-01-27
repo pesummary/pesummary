@@ -878,7 +878,8 @@ class page(Base):
         self.add_content("}", indent=2)
         self.add_content("</style>")
         self.make_div(2, _class="imgButton", _style=None)
-        self.add_content("<button value='test' style='cursor: pointer' "
+        self.add_content("<button value='test' class='btn btn-info btn-xs' "
+                         "style='cursor: pointer' "
                          "data-toggle='popover' data-placement='top' "
                          "data-content='%s'>Command Line</button>" % (cli),
                          indent=12)
