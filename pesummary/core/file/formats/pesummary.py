@@ -265,9 +265,9 @@ class PESummary(Read):
             path indicating where you would like to configuration file to be
             saved. Default is current working directory
         """
-        if label != "all" and label not in list(self.labels):
+        if label != "all" and label not in list(self.labels) and label is not None:
             raise Exception("The label %s does not exist." % (label))
-        if label == "all":
+        if label == "all" or label is None:
             label = list(self.labels)
         else:
             label = [label]

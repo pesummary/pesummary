@@ -239,6 +239,21 @@ class PESummary(GWRead, CorePESummary):
             det_list.append(detectors)
         return det_list
 
+    def generate_all_posterior_samples(self):
+        from pesummary.gw.file.conversions import _Conversion
+
+        converted_params, converted_samples = [], []
+        for param, samples, kwargs in zip(
+                self.parameters, self.samples, self.extra_kwargs
+        ):
+            parameters, samples = _Conversion(
+                param, samples, extra_kwargs=kwargs, return_dict=False
+            )
+            converted_params.append(parameters)
+            converted_samples.append(samples)
+        self.data["parameters"] = converted_params
+        self.data["samples"] = converted_samples
+
     def to_bilby(self):
         """Convert a PESummary metafile to a bilby results object
         """
