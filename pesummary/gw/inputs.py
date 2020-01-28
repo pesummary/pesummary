@@ -370,7 +370,7 @@ class _GWInput(_Input):
     def calibration(self, calibration):
         if not hasattr(self, "._calibration"):
             data = {i: {} for i in self.labels}
-            if calibration is not {}:
+            if calibration != {}:
                 prior_data = self.get_psd_or_calibration_data(
                     calibration, self.extract_calibration_data_from_file
                 )
