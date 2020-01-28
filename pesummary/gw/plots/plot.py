@@ -149,7 +149,7 @@ def _1d_comparison_histogram_plot(param, samples, colors,
             xlow = bounds["low"]
         if "high" in bounds.keys():
             if isinstance(bounds["high"], str) and "mass_1" in bounds["high"]:
-                xhigh = np.max(samples)
+                xhigh = np.max([np.max(i) for i in samples])
             else:
                 xhigh = bounds["high"]
     if linestyles is None:
