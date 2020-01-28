@@ -173,7 +173,8 @@ class _PublicGWWebpageGeneration(GWPostProcessing):
             disable_interactive=self.disable_interactive,
             pastro_probs=self.pastro_probs, gwdata=self.gwdata,
             publication_kwargs=self.publication_kwargs,
-            no_ligo_skymap=self.no_ligo_skymap
+            no_ligo_skymap=self.no_ligo_skymap,
+            psd=self.psd, priors=self.priors
         )
 
     def generate_webpages(self):
