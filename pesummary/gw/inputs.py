@@ -388,6 +388,8 @@ class _GWInput(_Input):
                             }
                 if not all(prior_data[i] == {} for i in self.labels):
                     self.add_to_prior_dict("calibration", prior_data)
+                else:
+                    self.add_to_prior_dict("calibration", {})
             for num, i in enumerate(self.result_files):
                 f = GWRead(i)
                 calibration_data = f.calibration_data_in_results_file
