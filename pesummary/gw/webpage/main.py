@@ -150,8 +150,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             disable_comparison=disable_comparison,
             disable_interactive=disable_interactive
         )
-        self.psd_path = {"other": os.path.join(self.webdir, "psds")}
-        self.calibration_path = {"other": os.path.join(self.webdir, "calibration")}
+        self.psd_path = {"other": os.path.join("..", "psds")}
+        self.calibration_path = {"other": os.path.join("..", "calibration")}
 
     def categorize_parameters(self, parameters):
         """Categorize the parameters into common headings
