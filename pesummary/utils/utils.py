@@ -738,5 +738,80 @@ class RedirectLogger(object):
         self._redirector.__exit__(exc_type, exc_value, traceback)
 
 
+def draw_conditioned_prior_samples(
+    samples_dict, prior_samples_dict, conditioned, xlow, xhigh, N
+):
+    """Return a prior_dict that is conditioned on certain parameters
+
+    Parameters
+    ----------
+    samples_dict: pesummary.utils.utils.SamplesDict
+        SamplesDict containing the posterior samples
+    prior_samples_dict: pesummary.utils.utils.SamplesDict
+        SamplesDict containing the prior samples
+    conditioned: list
+        list of parameters that you wish to condition your prior on
+    xlow: dict
+        dictionary of lower bounds for each parameter
+    xhigh: dict
+        dictionary of upper bounds for each parameter
+    N: int
+        number of points to use within the grid
+    """
+    for param in conditioned:
+        indices = _draw_conditioned_prior_samples(
+            prior_samples_dict[param], samples_dict[param], xlow[param],
+            xhigh[param], N
+        )
+        for key, val in prior_samples_dict.items():
+            prior_samples_dict[key] = val[indices]
+
+    return prior_samples_dict
+
+
+def _draw_conditioned_prior_samples(
+    prior_samples, posterior_samples, xlow, xhigh, xN=1000, N=1000
+):
+    """Return a list of indices for the conditioned prior via rejection
+    sampling. The conditioned prior will then be `prior_samples[indicies]`.
+    Code from Michael Puerrer.
+
+    Parameters
+    ----------
+    prior_samples: np.ndarray
+        array of prior samples that you wish to condition
+    posterior_samples: np.ndarray
+        array of posterior samples that you wish to condition on
+    xlow: float
+        lower bound for grid to be used
+    xhigh: float
+        upper bound for grid to be used
+    xN: int, optional
+        Number of points to use within the grid
+    N: int, optional
+        Number of samples to generate
+    """
+    from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+
+    prior_KDE = Bounded_1d_kde(prior_samples)
+    posterior_KDE = Bounded_1d_kde(posterior_samples)
+
+    x = np.linspace(xlow, xhigh, xN)
+    idx_nz = np.nonzero(posterior_KDE(x))
+    pdf_ratio = prior_KDE(x)[idx_nz] / posterior_KDE(x)[idx_nz]
+    M = 1.1 / min(pdf_ratio[np.where(pdf_ratio < 1)])
+
+    indicies = []
+    i = 0
+    while i < N:
+        x_i = np.random.choice(prior_samples)
+        idx_i = np.argmin(np.abs(prior_samples - x_i))
+        u = np.random.uniform()
+        if u < posterior_KDE(x_i) / (M * prior_KDE(x_i)):
+            indicies.append(idx_i)
+            i += 1
+    return indicies
+
+
 setup_logger()
 logger = logging.getLogger('PESummary')
