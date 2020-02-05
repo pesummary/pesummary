@@ -34,7 +34,7 @@ class Bounded_1d_kde(kde):
     """
     def __init__(self, pts, xlow=None, xhigh=None, *args, **kwargs):
         pts = np.atleast_1d(pts)
-        if pts.ndim == 2:
+        if pts.ndim != 1:
             raise TypeError("Bounded_1d_kde can only be one-dimensional")
         super(Bounded_1d_kde, self).__init__(pts.T, *args, **kwargs)
         self._xlow = xlow
@@ -57,7 +57,7 @@ class Bounded_1d_kde(kde):
         points
         """
         pts = np.atleast_1d(pts)
-        assert pts.ndim == 2, 'points must be one-dimensional'
+        assert pts.ndim == 1, 'points must be one-dimensional'
 
         x = pts.T
         pdf = super(Bounded_1d_kde, self).evaluate(pts.T)
