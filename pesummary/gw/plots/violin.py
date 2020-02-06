@@ -14,7 +14,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from __future__ import division
 from seaborn.categorical import _ViolinPlotter
 import matplotlib as mpl
 from textwrap import dedent
@@ -26,9 +25,6 @@ from matplotlib.collections import PatchCollection
 import matplotlib.patches as Patches
 import matplotlib.pyplot as plt
 import warnings
-
-from seaborn.external.six import string_types
-from seaborn.external.six.moves import range
 
 from seaborn import utils
 from seaborn.utils import iqr, categorical_order, remove_na
