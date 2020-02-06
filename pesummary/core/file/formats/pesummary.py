@@ -296,13 +296,19 @@ class PESummary(Read):
         import os
 
         if save_to_file is not None and os.path.isfile("{}".format(save_to_file)):
-            raise Exception("The file {} already exists.".format(save_to_file))
-        if labels != "all" and labels not in list(self.labels):
-            raise Exception("The label %s does not exist." % (labels))
+            raise FileExistsError(
+                "The file {} already exists.".format(save_to_file)
+            )
+        if labels != "all" and isinstance(labels, str) and labels not in self.labels:
+            raise ValueError("The label %s does not exist." % (labels))
         elif labels == "all":
             labels = list(self.labels)
         elif isinstance(labels, str):
             labels = [labels]
+        elif isinstance(labels, list):
+            for ll in labels:
+                if ll not in list(self.labels):
+                    raise ValueError("The label %s does not exist." % (ll))
 
         table = self.latex_table(
             [self.samples_dict[i] for i in labels], parameter_dict,
@@ -318,3 +324,48 @@ class PESummary(Read):
         else:
             with open(save_to_file, "w") as f:
                 f.writelines([table])
+
+    def generate_latex_macros(
+        self, labels="all", parameter_dict=None, save_to_file=None
+    ):
+        """Generate a list of latex macros for each parameter in the result
+        file
+
+        Parameters
+        ----------
+        labels: list, optional
+            list of labels that you want to include in the table
+        parameter_dict: dict, optional
+            dictionary of parameters that you wish to generate macros for. The
+            keys are the name of the parameters and the items are the latex
+            macros name you wish to use. If None, all parameters are included.
+        save_to_file: str, optional
+            name of the file you wish to save the latex table to. If None, print
+            to stdout
+        """
+        import os
+
+        if save_to_file is not None and os.path.isfile("{}".format(save_to_file)):
+            raise FileExistsError(
+                "The file {} already exists.".format(save_to_file)
+            )
+        if labels != "all" and isinstance(labels, str) and labels not in self.labels:
+            raise ValueError("The label %s does not exist." % (labels))
+        elif labels == "all":
+            labels = list(self.labels)
+        elif isinstance(labels, str):
+            labels = [labels]
+        elif isinstance(labels, list):
+            for ll in labels:
+                if ll not in list(self.labels):
+                    raise ValueError("The label %s does not exist." % (ll))
+
+        macros = self.latex_macros(
+            [self.samples_dict[i] for i in labels], parameter_dict,
+            labels=labels
+        )
+        if save_to_file is None:
+            print(macros)
+        else:
+            with open(save_to_file, "w") as f:
+                f.writelines([macros])
