@@ -25,6 +25,10 @@
   specific label `--{label}_calibration`.
 - Add a new `summarypipe` executable which will generate a `summarypages`
   command line for you provided that you have passed a valid run directory.
+- Added a function to allow the user to convert the data stored in a result
+  file to a latex table via the `to_latex_table` function
+- Added a function to allow the user to convert the data stored in a result
+  file to a list of latex macros via the `generate_latex_macros` function
 
 ## 0.3.2 [17/01/2020]
 

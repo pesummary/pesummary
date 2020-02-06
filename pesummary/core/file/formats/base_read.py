@@ -374,6 +374,49 @@ class Read():
         )
         return table
 
+    @staticmethod
+    def latex_macros(samples, parameter_dict=None, labels=None):
+        """Return a latex table displaying the passed data.
+
+        Parameters
+        ----------
+        samples_dict: list
+            list of pesummary.utils.utils.SamplesDict objects
+        parameter_dict: dict, optional
+            dictionary of parameters that you wish to generate macros for. The
+            keys are the name of the parameters and the items are the latex
+            macros name you wish to use. If None, all parameters are included.
+        """
+        macros = ""
+        data = {i: i for i in samples[0].keys()}
+        if parameter_dict is not None:
+            import copy
+
+            data = copy.deepcopy(parameter_dict)
+            for param in parameter_dict.keys():
+                if not all(param in samples_dict.keys() for samples_dict in samples):
+                    logger.warn(
+                        "{} not in list of parameters. Not generating "
+                        "macro".format(param)
+                    )
+                    data.pop(param)
+        for param, desc in data.items():
+            for num, samples_dict in enumerate(samples):
+                if labels:
+                    description = "{}_{}".format(desc, labels[num])
+                else:
+                    description = desc
+                median = np.round(samples_dict[param].average(type="median"), 2)
+                confidence = samples_dict[param].confidence_interval()
+                low = np.round(median - confidence[0], 2)
+                upper = np.round(confidence[1] - median, 2)
+                macros += (
+                    "\\def\\%s{$%s_{-%s}^{+%s}$}\n" % (
+                        description, median, low, upper
+                    )
+                )
+        return macros
+
     def to_latex_table(self, parameter_dict=None, save_to_file=None):
         """Make a latex table displaying the data in the result file.
 
@@ -390,7 +433,9 @@ class Read():
         import os
 
         if save_to_file is not None and os.path.isfile("{}".format(save_to_file)):
-            raise Exception("The file {} already exists.".format(save_to_file))
+            raise FileExistsError(
+                "The file {} already exists.".format(save_to_file)
+            )
 
         table = self.latex_table([self.samples_dict], parameter_dict)
         if save_to_file is None:
@@ -403,3 +448,33 @@ class Read():
         else:
             with open(save_to_file, "w") as f:
                 f.writelines([table])
+
+    def generate_latex_macros(self, parameter_dict=None, save_to_file=None):
+        """Generate a list of latex macros for each parameter in the result
+        file
+
+        Parameters
+        ----------
+        labels: list, optional
+            list of labels that you want to include in the table
+        parameter_dict: dict, optional
+            dictionary of parameters that you wish to generate macros for. The
+            keys are the name of the parameters and the items are the latex
+            macros name you wish to use. If None, all parameters are included.
+        save_to_file: str, optional
+            name of the file you wish to save the latex table to. If None, print
+            to stdout
+        """
+        import os
+
+        if save_to_file is not None and os.path.isfile("{}".format(save_to_file)):
+            raise FileExistsError(
+                "The file {} already exists.".format(save_to_file)
+            )
+
+        macros = self.latex_macros([self.samples_dict], parameter_dict)
+        if save_to_file is None:
+            print(macros)
+        else:
+            with open(save_to_file, "w") as f:
+                f.writelines([macros])

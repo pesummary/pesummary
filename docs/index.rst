@@ -111,6 +111,7 @@ Tutorials
     tutorials/GWTC1_plots
     tutorials/public_pages
     tutorials/make_your_own_page_from_metafile
+    tutorials/latex
 
 Indices and tables
 ------------------
