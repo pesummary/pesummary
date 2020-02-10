@@ -326,7 +326,8 @@ class PESummary(Read):
                 f.writelines([table])
 
     def generate_latex_macros(
-        self, labels="all", parameter_dict=None, save_to_file=None
+        self, labels="all", parameter_dict=None, save_to_file=None,
+        rounding=2
     ):
         """Generate a list of latex macros for each parameter in the result
         file
@@ -342,6 +343,8 @@ class PESummary(Read):
         save_to_file: str, optional
             name of the file you wish to save the latex table to. If None, print
             to stdout
+        rounding: int, optional
+            number of decimal points to round the latex macros
         """
         import os
 
@@ -362,7 +365,7 @@ class PESummary(Read):
 
         macros = self.latex_macros(
             [self.samples_dict[i] for i in labels], parameter_dict,
-            labels=labels
+            labels=labels, rounding=rounding
         )
         if save_to_file is None:
             print(macros)
