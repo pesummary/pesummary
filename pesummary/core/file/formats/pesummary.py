@@ -80,7 +80,7 @@ class PESummary(Read):
         mydict = {}
         for key, item in dictionary[path].items():
             if isinstance(item, h5py._hl.dataset.Dataset):
-                mydict[key] = item.value
+                mydict[key] = np.array(item)
             elif isinstance(item, h5py._hl.group.Group):
                 mydict[key] = PESummary._convert_hdf5_to_dict(
                     dictionary, path=path + key + "/")
