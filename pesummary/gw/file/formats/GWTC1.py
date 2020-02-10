@@ -78,7 +78,7 @@ class GWTC1(GWRead):
     def _grab_data_from_GWTC1_file(path):
         """
         """
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         keys = list(f.keys())
         if "Overall_posterior" in keys or "overall_posterior" in keys:
             data = \
