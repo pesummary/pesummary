@@ -375,7 +375,7 @@ class Read():
         return table
 
     @staticmethod
-    def latex_macros(samples, parameter_dict=None, labels=None):
+    def latex_macros(samples, parameter_dict=None, labels=None, rounding=2):
         """Return a latex table displaying the passed data.
 
         Parameters
@@ -406,14 +406,25 @@ class Read():
                     description = "{}_{}".format(desc, labels[num])
                 else:
                     description = desc
-                median = np.round(samples_dict[param].average(type="median"), 2)
+                median = np.round(
+                    samples_dict[param].average(type="median"), rounding
+                )
                 confidence = samples_dict[param].confidence_interval()
-                low = np.round(median - confidence[0], 2)
-                upper = np.round(confidence[1] - median, 2)
+                low = np.round(median - confidence[0], rounding)
+                upper = np.round(confidence[1] - median, rounding)
                 macros += (
                     "\\def\\%s{$%s_{-%s}^{+%s}$}\n" % (
                         description, median, low, upper
                     )
+                )
+                macros += (
+                    "\\def\\%s_median{$%s$}\n" % (description, median)
+                )
+                macros += (
+                    "\\def\\%s_upper{%s$}\n" % (description, upper)
+                )
+                macros += (
+                    "\\def\\%s_lower{%s$}\n" % (description, low)
                 )
         return macros
 
@@ -449,7 +460,9 @@ class Read():
             with open(save_to_file, "w") as f:
                 f.writelines([table])
 
-    def generate_latex_macros(self, parameter_dict=None, save_to_file=None):
+    def generate_latex_macros(
+        self, parameter_dict=None, save_to_file=None, rounding=2
+    ):
         """Generate a list of latex macros for each parameter in the result
         file
 
@@ -464,6 +477,8 @@ class Read():
         save_to_file: str, optional
             name of the file you wish to save the latex table to. If None, print
             to stdout
+        rounding: int, optional
+            number of decimal points to round the latex macros
         """
         import os
 
@@ -472,7 +487,9 @@ class Read():
                 "The file {} already exists.".format(save_to_file)
             )
 
-        macros = self.latex_macros([self.samples_dict], parameter_dict)
+        macros = self.latex_macros(
+            [self.samples_dict], parameter_dict, rounding=rounding
+        )
         if save_to_file is None:
             print(macros)
         else:
