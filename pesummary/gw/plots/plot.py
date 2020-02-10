@@ -30,6 +30,7 @@ import math
 from scipy.ndimage import gaussian_filter
 from astropy.time import Time
 from gwpy.timeseries import TimeSeries
+from gwpy.plot.colors import GW_OBSERVATORY_COLORS
 
 from lal import MSUN_SI, PC_SI
 try:
@@ -37,9 +38,6 @@ try:
     LALSIMULATION = True
 except ImportError:
     LALSIMULATION = None
-
-
-PSD_COLORS = {"H1": "#1b9e77", "L1": "#d95f02", "V1": "#7570b3"}
 
 
 def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
@@ -414,7 +412,7 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     h_plus = h_plus[:len(frequency_array)]
     h_cross = h_cross[:len(frequency_array)]
     fig = plt.figure()
-    colors = [PSD_COLORS[i] for i in detectors]
+    colors = [GW_OBSERVATORY_COLORS[i] for i in detectors]
     for num, i in enumerate(detectors):
         ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
                                 maxL_params["psi"], maxL_params["geocent_time"])
@@ -906,7 +904,7 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
         kwargs.get("f_ref", 10.), None, approx)
 
     fig = plt.figure()
-    colors = [PSD_COLORS[i] for i in detectors]
+    colors = [GW_OBSERVATORY_COLORS[i] for i in detectors]
     for num, i in enumerate(detectors):
         ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
                                 maxL_params["psi"], maxL_params["geocent_time"])
@@ -1011,8 +1009,8 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
         starting frequency of the plot
     """
     fig = plt.figure()
-    if not colors and labels in list(PSD_COLORS.keys()):
-        colors = [PSD_COLORS[i] for i in labels]
+    if not colors and labels in list(GW_OBSERVATORY_COLORS.keys()):
+        colors = [GW_OBSERVATORY_COLORS[i] for i in labels]
     elif not colors:
         colors = ['r', 'b', 'orange', 'c', 'g', 'purple']
         while len(colors) <= len(labels):
@@ -1083,8 +1081,8 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         return data_dict
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    if not colors and ifos in list(PSD_COLORS.keys()):
-        colors = [PSD_COLORS[i] for i in ifos]
+    if not colors and ifos in list(GW_OBSERVATORY_COLORS.keys()):
+        colors = [GW_OBSERVATORY_COLORS[i] for i in ifos]
     elif not colors:
         colors = ['r', 'b', 'orange', 'c', 'g', 'purple']
         while len(colors) <= len(ifos):
