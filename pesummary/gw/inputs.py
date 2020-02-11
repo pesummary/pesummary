@@ -333,7 +333,13 @@ class _GWInput(_Input):
 
         probabilities = {}
         for num, i in enumerate(self.labels):
-            probabilities[i] = get_probabilities(self.samples[i])
+            em_bright = get_probabilities(self.samples[i])
+            if em_bright is not None:
+                probabilities[i] = {
+                    "default": em_bright[0], "population": em_bright[1]
+                }
+            else:
+                probabilities[i] = None
         self._pastro_probs = probabilities
 
     @staticmethod
