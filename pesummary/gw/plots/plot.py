@@ -1008,7 +1008,7 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
     fmin: optional, float
         starting frequency of the plot
     """
-    fig = plt.figure()
+    fig, ax = plt.subplots(1, 1)
     if not colors and labels in list(GW_OBSERVATORY_COLORS.keys()):
         colors = [GW_OBSERVATORY_COLORS[i] for i in labels]
     elif not colors:
@@ -1023,8 +1023,9 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
             i = ff[ind]
             strains[num] = ss[ind]
         plt.loglog(i, strains[num], color=colors[num], label=labels[num])
-    plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
-    plt.ylabel(r"Strain Noise $[1/\sqrt{Hz}]$", fontsize=16)
+    ax.tick_params(which="both", bottom=True, length=3, width=1)
+    ax.set_xlabel(r"Frequency $[Hz]$", fontsize=16)
+    ax.set_ylabel(r"Strain Noise $[1/\sqrt{Hz}]$", fontsize=16)
     plt.legend(loc="best")
     plt.tight_layout()
     return fig
