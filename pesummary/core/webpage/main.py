@@ -368,14 +368,15 @@ class _WebpageGeneration(object):
             list of strings that you would like to neglect
         """
         if len(true) != 0 and len(false) == 0:
-            condition = lambda j: True if any(i in j[0] for i in true) else \
+            condition = lambda j: True if any(i in j for i in true) else \
                 False
         elif len(true) == 0 and len(false) != 0:
-            condition = lambda j: True if any(i not in j[0] for i in false) \
+            condition = lambda j: True if any(i not in j for i in false) \
                 else False
         elif len(true) and len(false) != 0:
-            condition = lambda j: True if any(i in j[0] for i in true) and \
-                any(i not in j[0] for i in false) else False
+            condition = lambda j: True if any(
+                i in j and all(k not in j for k in false) for i in true
+            ) else False
         return condition
 
     def _partition(self, condition, array):

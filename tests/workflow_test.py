@@ -77,8 +77,6 @@ class GWBase(Base):
 
         plots = sorted(glob.glob("./.outdir/plots/*.png"))
         files = sorted(glob.glob("./.outdir/html/*.html"))
-        for i, j in zip(plots, get_list_of_plots(gw=True)):
-            print(i, j)
         assert all(i == j for i, j in zip(plots, get_list_of_plots(gw=True)))
         assert all(i in plots for i in get_list_of_plots(gw=True))
         assert all(i in get_list_of_plots(gw=True) for i in plots)

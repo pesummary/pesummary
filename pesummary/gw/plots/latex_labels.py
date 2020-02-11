@@ -78,6 +78,9 @@ GWlatex_labels = {"luminosity_distance": r"$d_{L} [Mpc]$",
                   "lambda_2": r"$\lambda_{2}$",
                   "lambda_tilde": r"$\tilde{\lambda}$",
                   "delta_lambda": r"$\delta\lambda$",
+                  "peak_luminosity": r"$L_{peak} [10^{56} ergss^{-1})$",
+                  "final_mass": r"$m_{final} [M_{\odot}]$",
+                  "final_spin": r"$a_{final}$"
                   }
 
 public_GWlatex_labels = {"mass_1": r"$m_{1}^{det} [M_{\odot}]$",

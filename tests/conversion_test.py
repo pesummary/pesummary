@@ -23,7 +23,7 @@ import h5py
 import deepdish
 
 from pesummary.gw.file.conversions import *
-
+from pesummary.gw.file.nrutils import *
 import pytest
 
 
@@ -244,3 +244,95 @@ class TestConversions(object):
         print(network)
         assert network[0] == np.sqrt(3) * 2
         assert network[1] == np.sqrt(3) * 3
+
+
+class TestNRutils(object):
+
+    def setup(self):
+        self.mass_1 = 100
+        self.mass_2 = 5
+        self.total_mass =  m_total_from_m1_m2(self.mass_1, self.mass_2)
+        self.eta = eta_from_m1_m2(self.mass_1, self.mass_2)
+        self.spin_1z = 0.3
+        self.spin_2z = 0.5
+        self.chi_eff = chi_eff(
+            self.mass_1, self.mass_2, self.spin_1z, self.spin_2z
+        )
+        self.final_spin = bbh_final_spin_non_precessing_Healyetal(
+            self.mass_1, self.mass_2, self.total_mass, self.eta, self.spin_1z,
+            self.spin_2z
+        )
+
+    def test_bbh_peak_luminosity_non_precessing_Healyetal(self):
+        from lalinference.imrtgr.nrutils import \
+            bbh_peak_luminosity_non_precessing_Healyetal as lal_Healyetal
+
+        assert np.round(
+            bbh_peak_luminosity_non_precessing_Healyetal(
+                self.mass_1, self.mass_2, self.total_mass, self.eta,
+                self.spin_1z, self.spin_2z
+            ), 8
+        ) == np.round(
+            lal_Healyetal(
+                self.mass_1, self.mass_2, self.spin_1z, self.spin_2z
+            ), 8
+        )
+
+    def test_bbh_peak_luminosity_non_precessing_T1600018(self):
+        from lalinference.imrtgr.nrutils import \
+            bbh_peak_luminosity_non_precessing_T1600018 as lal_T1600018
+
+        assert np.round(
+            bbh_peak_luminosity_non_precessing_T1600018(
+                self.mass_1, self.mass_2, self.total_mass, self.eta,
+                self.chi_eff, self.spin_1z, self.spin_2z
+            ), 8
+        ) == np.round(
+            lal_T1600018(
+                self.mass_1, self.mass_2, self.spin_1z, self.spin_2z
+            ), 8
+        )
+
+    def test_bbh_peak_luminosity_non_precessing_UIB2016(self):
+        from lalinference.imrtgr.nrutils import \
+            bbh_peak_luminosity_non_precessing_UIB2016 as lal_UIB2016
+
+        assert np.round(
+            bbh_peak_luminosity_non_precessing_UIB2016(
+                self.mass_1, self.mass_2, self.total_mass, self.eta,
+                self.spin_1z, self.spin_2z
+            ), 8
+        ) == np.round(
+            lal_UIB2016(
+                self.mass_1, self.mass_2, self.spin_1z, self.spin_2z
+            ), 8
+        )
+
+    def test_bbh_final_spin_non_precessing_Healyetal(self):
+        from lalinference.imrtgr.nrutils import \
+            bbh_final_spin_non_precessing_Healyetal as lal_Healyetal
+
+      
+
+        assert np.round(self.final_spin, 8) == np.round(
+            lal_Healyetal(
+                self.mass_1, self.mass_2, self.spin_1z, self.spin_2z,
+                version="2016"
+            ), 8
+        )
+
+    def test_bbh_final_mass_non_precessing_Healyetal(self):
+        from lalinference.imrtgr.nrutils import \
+            bbh_final_mass_non_precessing_Healyetal as lal_Healyetal
+
+        assert np.round(
+            bbh_final_mass_non_precessing_Healyetal(
+                self.mass_1, self.mass_2, self.total_mass, self.eta,
+                self.spin_1z, self.spin_2z, self.final_spin
+            ), 8
+        ) == np.round(
+            lal_Healyetal(
+                self.mass_1, self.mass_2, self.spin_1z, self.spin_2z,
+                chif=self.final_spin, version="2016"
+            ), 8
+        )
