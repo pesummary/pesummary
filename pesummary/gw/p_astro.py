@@ -62,16 +62,10 @@ class PAstro(object):
             )
 
     @staticmethod
-    def classifications(samples):
-        """Calculate the `HasNS` and `HasRemnant` probabilities
-
-        Parameters
-        ----------
-        samples: dict
-            dictionary of samples
+    def _classifications(samples):
         """
-        PAstro.check_for_install()
-        required_params = ["mass_1", "mass_2", "a_1", "a_2"]
+        """
+        required_params = ["mass_1_source", "mass_2_source", "a_1", "a_2"]
         parameters = list(samples.keys())
 
         if not all(i in parameters for i in required_params):
@@ -80,10 +74,67 @@ class PAstro(object):
                 "because not all required parameters have been provided."
             )
         M_rem = computeDiskMass(
-            samples["mass_1"], samples["mass_2"], samples["a_1"], samples["a_2"]
+            samples["mass_1_source"], samples["mass_2_source"], samples["a_1"],
+            samples["a_2"]
         )
         prediction_ns = float(
-            np.sum(samples["mass_2"] <= 3.0) / len(samples["mass_2"])
+            np.sum(samples["mass_2_source"] <= 3.0) / len(samples["mass_2_source"])
         )
         prediction_em = float(np.sum(M_rem > 0) / len(M_rem))
-        return {"HasNS": prediction_ns, "HasRemnant": prediction_em}
+        return {
+            "HasNS": np.round(prediction_ns, 5),
+            "HasRemnant": np.round(prediction_em, 5)
+        }
+
+    @staticmethod
+    def default_classification(samples):
+        """
+        """
+        return PAstro._classifications(samples)
+
+    @staticmethod
+    def population_classification(samples):
+        """
+        """
+        import pandas as pd
+        import copy
+        from pepredicates import rewt_approx_massdist_redshift
+
+        p_astro_samples = copy.deepcopy(samples)
+        mapping = {"mass_1_source": "m1_source",
+                   "mass_2_source": "m2_source",
+                   "luminosity_distance": "dist",
+                   "redshift": "redshift",
+                   "a_1": "a1",
+                   "a_2": "a2"}
+        reverse_mapping = dict((value, key) for key, value in mapping.items())
+
+        keys = list(p_astro_samples.keys())
+        for key in keys:
+            if key in list(mapping.keys()):
+                p_astro_samples[mapping[key]] = p_astro_samples[key]
+
+        p_astro_samples = rewt_approx_massdist_redshift(pd.DataFrame.from_dict(
+            p_astro_samples
+        ))
+        for key, item in p_astro_samples.items():
+            if key in list(reverse_mapping.keys()):
+                p_astro_samples[reverse_mapping[key]] = item
+        try:
+            return PAstro._classifications(p_astro_samples)
+        except KeyError:
+            logger.warn(
+                "Failed to generate 'em_bright' probabilities after "
+                "reweighting to a population prior because there were no "
+                "samples after reweighting"
+            )
+            return {"HasNS": "-", "HasRemnant": "-"}
+
+    @staticmethod
+    def classifications(samples):
+        """Return the source classification probabilities using both the default
+        prior used in the analysis and the population prior
+        """
+        pop = PAstro.population_classification(samples)
+        default = PAstro.default_classification(samples)
+        return default, pop

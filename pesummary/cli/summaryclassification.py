@@ -78,8 +78,8 @@ def generate_probabilities(result_files, prior="both"):
             mydict["default"], mydict["population"] = \
                 PEPredicates.classifications(f.samples[0], f.parameters[0])
             em_bright = PAstro.classifications(f.samples_dict[label])
-        mydict["default"]["HasNS"] = em_bright["HasNS"]
-        mydict["default"]["HasRemnant"] = em_bright["HasRemnant"]
+        mydict["default"].update(em_bright[0])
+        mydict["population"].update(em_bright[1])
         classifications.append(mydict)
     if prior == "both":
         return classifications

@@ -637,9 +637,11 @@ def _add_existing_data(namespace):
             if i not in list(namespace.pastro_probs.keys()):
                 from pesummary.gw.p_astro import get_probabilities
 
-                namespace.pastro_probs[i] = get_probabilities(
-                    namespace.existing_samples[i]
-                )
+                em_bright = get_probabilities(namespace.existing_samples[i])
+                namespace.pastro_probs[i] = {
+                    "default": em_bright[0],
+                    "population": em_bright[1]
+                }
     if hasattr(namespace, "result_files"):
         number = len(namespace.labels)
         while len(namespace.result_files) < number:

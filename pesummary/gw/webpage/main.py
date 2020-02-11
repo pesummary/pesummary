@@ -22,6 +22,7 @@ from pesummary.core.webpage import webpage
 from pesummary.core.webpage.main import _WebpageGeneration as _CoreWebpageGeneration
 from pesummary.core.webpage.main import PlotCaption
 from pesummary.gw.file.standard_names import descriptive_names
+from pesummary.utils.utils import logger
 from pesummary import conf
 
 
@@ -833,12 +834,24 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 if self.pastro_probs[label] is not None:
                     keys += ["HasNS"]
                     keys += ["HasRemnant"]
-                    table_contents[0].append(self.pastro_probs[label]["HasNS"])
+                    table_contents[0].append(self.pastro_probs[label]["default"]["HasNS"])
                     table_contents[0].append(
-                        self.pastro_probs[label]["HasRemnant"]
+                        self.pastro_probs[label]["default"]["HasRemnant"]
                     )
-                    table_contents[1].append("-")
-                    table_contents[1].append("-")
+                    try:
+                        table_contents[1].append(
+                            self.pastro_probs[label]["population"]["HasNS"]
+                        )
+                        table_contents[1].append(
+                            self.pastro_probs[label]["population"]["HasRemnant"]
+                        )
+                    except KeyError:
+                        table_contents[1].append("-")
+                        table_contents[1].append("-")
+                        logger.warn(
+                            "Failed to add 'em_bright' probabilities for population "
+                            "reweighted prior"
+                        )
                 html_file.make_table(
                     headings=[" "] + keys, contents=table_contents,
                     heading_span=1, accordian=False
