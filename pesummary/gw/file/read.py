@@ -19,59 +19,31 @@ from pesummary.gw.file.formats.bilby import Bilby
 from pesummary.gw.file.formats.default import Default
 from pesummary.gw.file.formats.pesummary import PESummary
 from pesummary.gw.file.formats.GWTC1 import GWTC1
-from pesummary.core.file.read import is_bilby_hdf5_file, is_bilby_json_file
-from pesummary.core.file.read import is_pesummary_hdf5_file
-from pesummary.core.file.read import is_pesummary_json_file
+from pesummary.core.file.read import (
+    is_bilby_hdf5_file, is_bilby_json_file, is_pesummary_hdf5_file,
+    is_pesummary_json_file
+)
+from pesummary.core.file.read import read as CoreRead
 from pesummary.utils.utils import logger
 
 
-def read(path):
-    """Read in a results file.
+def is_GWTC1_file(path):
+    """Determine if the results file is one released as part of the GWTC1
+    catalog
 
     Parameters
     ----------
     path: str
         path to the results file
     """
-    extension = Read.extension_from_path(path)
+    import h5py
 
-    if extension in ["hdf5", "h5", "hdf"]:
-        if is_lalinference_file(path):
-            return LALInference.load_file(path)
-        elif is_bilby_hdf5_file(path):
-            try:
-                return Bilby.load_file(path)
-            except ImportError:
-                logger.warn(
-                    "Failed to import `bilby`. Using default load")
-                return Default.laad_file(path)
-        elif is_pesummary_hdf5_file(path):
-            try:
-                return PESummary.load_file(path)
-            except Exception:
-                return Default.load_file(path)
-        else:
-            try:
-                return GWTC1.load_file(path)
-            except Exception:
-                return Default.load_file(path)
-    elif extension == "json":
-        if is_bilby_json_file(path):
-            try:
-                return Bilby.load_file(path)
-            except ImportError:
-                logger.warn(
-                    "Failed to import `bilby`. Using default load")
-                return Default.load_file(path)
-        elif is_pesummary_json_file(path):
-            try:
-                return PESummary.load_file(path)
-            except Exception:
-                return Default.load_file(path)
-        else:
-            return Default.load_file(path)
-    else:
-        return Default.load_file(path)
+    f = h5py.File(path, 'r')
+    keys = list(f.keys())
+    f.close()
+    if "Overall_posterior" in keys or "overall_posterior" in keys:
+        return True
+    return False
 
 
 def is_lalinference_file(path):
@@ -89,3 +61,31 @@ def is_lalinference_file(path):
     if "lalinference" in keys:
         return True
     return False
+
+
+GW_HDF5_LOAD = {
+    is_lalinference_file: LALInference.load_file,
+    is_bilby_hdf5_file: Bilby.load_file,
+    is_pesummary_hdf5_file: PESummary.load_file,
+    is_GWTC1_file: GWTC1.load_file
+}
+
+GW_JSON_LOAD = {
+    is_bilby_json_file: Bilby.load_file,
+    is_pesummary_json_file: PESummary.load_file
+}
+
+GW_DEFAULT = {"default": Default.load_file}
+
+
+def read(path):
+    """Read in a results file.
+
+    Parameters
+    ----------
+    path: str
+        path to results file
+    """
+    return CoreRead(
+        path, HDF5_LOAD=GW_HDF5_LOAD, JSON_LOAD=GW_JSON_LOAD, DEFAULT=GW_DEFAULT
+    )

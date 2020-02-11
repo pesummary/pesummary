@@ -67,6 +67,7 @@ class _PlotGeneration(_BasePlotGeneration):
             disable_comparison=disable_comparison, linestyles=linestyles,
             disable_interactive=disable_interactive, multi_process=multi_process
         )
+        self.package = "gw"
         self.file_kwargs = file_kwargs
         self.existing_file_kwargs = existing_file_kwargs
         self.no_ligo_skymap = no_ligo_skymap
@@ -181,7 +182,7 @@ class _PlotGeneration(_BasePlotGeneration):
             fig, params, data = gw._make_corner_plot(samples, latex_labels)
             plt.savefig(
                 os.path.join(
-                    savedir, "corner", "{}_all_density_plots.png".format(
+                    savedir, "corner", "{}_all_density_plot.png".format(
                         label
                     )
                 )
@@ -235,89 +236,6 @@ class _PlotGeneration(_BasePlotGeneration):
                 )
             )
             plt.close()
-
-    @staticmethod
-    def _oned_histogram_plot(
-        savedir, label, parameter, samples, latex_label, injection, kde=False,
-        prior=None, weights=None
-    ):
-        """Generate a oned histogram plot for a given set of samples
-
-        Parameters
-        ----------
-        savedir: str
-            the directory you wish to save the plot in
-        label: str
-            the label corresponding to the results file
-        parameter: str
-            the name of the parameter that you wish to plot
-        samples: PESummary.utils.utils.Array
-            array containing the samples corresponding to parameter
-        latex_label: str
-            the latex label corresponding to parameter
-        injection: float
-            the injected value
-        kde: Bool, optional
-            if True, kde plots will be generated rather than 1d histograms
-        prior: PESummary.utils.utils.Array, optional
-            the prior samples for param
-        weights: PESummary.utils.utils.Array, optional
-            the weights for each samples. If None, assumed to be 1
-        """
-        import math
-
-        if math.isnan(injection):
-            injection = None
-
-        fig = gw._1d_histogram_plot(
-            parameter, samples, latex_label, injection, kde=kde, prior=prior,
-            weights=weights
-        )
-        plt.savefig(
-            os.path.join(
-                savedir, "{}_1d_posterior_{}.png".format(label, parameter)
-            )
-        )
-        plt.close()
-
-    @staticmethod
-    def _oned_histogram_comparison_plot(
-        savedir, parameter, samples, latex_label, colors, kde=False,
-        linestyles=None
-    ):
-        """Generate a oned comparison histogram plot for a given parameter
-
-        Parameters
-        ----------
-        savedir: str
-            the directory you wish to save the plot in
-        parameter: str
-            the name of the parameter that you wish to make a oned comparison
-            histogram for
-        samples: dict
-            dictionary of pesummary.utils.utils.Array objects containing the
-            samples that correspond to parameter for each result file. The key
-            should be the corresponding label
-        latex_label: str
-            the latex label for parameter
-        colors: list
-            list of colors to be used to distinguish different result files
-        kde: Bool, optional
-            if True, kde plots will be generated rather than 1d histograms
-        linestyles: list, optional
-            list of linestyles used to distinguish different result files
-        """
-        same_samples = [val for key, val in samples.items()]
-        fig = gw._1d_comparison_histogram_plot(
-            parameter, same_samples, colors, latex_label,
-            list(samples.keys()), kde=kde, linestyles=linestyles
-        )
-        plt.savefig(
-            os.path.join(
-                savedir, "combined_1d_posterior_{}".format(parameter)
-            )
-        )
-        plt.close()
 
     def skymap_plot(self, label):
         """Generate a skymap plot for a given result file
@@ -373,10 +291,9 @@ class _PlotGeneration(_BasePlotGeneration):
             list of weights for the samples
         """
         fig = gw._default_skymap_plot(ra, dec, weights)
-        plt.savefig(
-            os.path.join(savedir, "{}_skymap.png".format(label))
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "{}_skymap".format(label))
         )
-        plt.close()
 
     @staticmethod
     def _ligo_skymap_plot(savedir, ra, dec, label, nsamples_for_skymap,
@@ -410,10 +327,9 @@ class _PlotGeneration(_BasePlotGeneration):
             nprocess=multi_threading_for_skymap, downsampled=downsampled,
             label=label
         )
-        plt.savefig(
-            os.path.join(savedir, "{}_skymap.png".format(label))
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "{}_skymap".format(label))
         )
-        plt.close()
 
     def waveform_fd_plot(self, label):
         """Generate a frequency domain waveform plot for a given result file
@@ -451,10 +367,9 @@ class _PlotGeneration(_BasePlotGeneration):
             detectors = detectors.split("_")
 
         fig = gw._waveform_plot(detectors, maxL_samples)
-        plt.savefig(
-            os.path.join(savedir, "{}_waveform.png".format(label))
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "{}_waveform".format(label))
         )
-        plt.close()
 
     def waveform_td_plot(self, label):
         """Generate a time domain waveform plot for a given result file
@@ -492,12 +407,11 @@ class _PlotGeneration(_BasePlotGeneration):
             detectors = detectors.split("_")
 
         fig = gw._time_domain_waveform(detectors, maxL_samples)
-        plt.savefig(
-            os.path.join(
-                savedir, "{}_waveform_time_domain.png".format(label)
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "{}_waveform_time_domain".format(label)
             )
         )
-        plt.close()
 
     def gwdata_plots(self, label):
         """Generate all plots associated with the gwdata
@@ -557,10 +471,9 @@ class _PlotGeneration(_BasePlotGeneration):
             the label corresponding to the results file
         """
         fig = gw._strain_plot(gwdata, maxL_samples)
-        plt.savefig(
-            os.path.join(savedir, "{}_strain.png".format(label))
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "{}_straing".format(label))
         )
-        plt.close()
 
     def spectrogram_plot(self):
         """Generate a plot showing the spectrogram for all detectors
@@ -583,10 +496,9 @@ class _PlotGeneration(_BasePlotGeneration):
 
         figs = detchar.spectrogram(strain)
         for det, fig in figs.items():
-            fig.savefig(
-                os.path.join(savedir, "spectrogram_{}.png".format(det))
+            _PlotGeneration.save(
+                fig, os.path.join(savedir, "spectrogram_{}".format(det))
             )
-            plt.close()
 
     def omegascan_plot(self, gps_time, window):
         """Generate a plot showing the omegascan for all detectors
@@ -622,10 +534,9 @@ class _PlotGeneration(_BasePlotGeneration):
 
         figs = detchar.omegascan(strain, gps, window=window)
         for det, fig in figs.items():
-            fig.savefig(
-                os.path.join(savedir, "omegascan_{}.png".format(det))
+            _PlotGeneration.save(
+                fig, os.path.join(savedir, "omegascan_{}".format(det))
             )
-            plt.close()
 
     def skymap_comparison_plot(self, label):
         """Generate a plot to compare skymaps for all result files
@@ -660,8 +571,7 @@ class _PlotGeneration(_BasePlotGeneration):
         ra_list = [ra[key] for key in labels]
         dec_list = [dec[key] for key in labels]
         fig = gw._sky_map_comparison_plot(ra_list, dec_list, labels, colors)
-        plt.savefig(os.path.join(savedir, "combined_skymap.png"))
-        plt.close()
+        _PlotGeneration.save(fig, os.path.join(savedir, "combined_skymap"))
 
     def waveform_comparison_fd_plot(self, label):
         """Generate a plot to compare the frequency domain waveform
@@ -695,8 +605,9 @@ class _PlotGeneration(_BasePlotGeneration):
         """
         samples = [maxL_samples[i] for i in labels]
         fig = gw._waveform_comparison_plot(samples, colors, labels)
-        plt.savefig(os.path.join(savedir, "compare_waveforms.png"))
-        plt.close()
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "compare_waveforms")
+        )
 
     def waveform_comparison_td_plot(self, label):
         """Generate a plot to compare the time domain waveform
@@ -730,8 +641,9 @@ class _PlotGeneration(_BasePlotGeneration):
         """
         samples = [maxL_samples[i] for i in labels]
         fig = gw._time_domainwaveform_comparison_plot(samples, colors, labels)
-        plt.savefig(os.path.join(savedir, "compare_time_domain_waveforms.png"))
-        plt.close()
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "compare_time_domain_waveforms")
+        )
 
     def twod_comparison_contour_plot(self, label):
         """Generate 2d comparison contour plots
@@ -804,14 +716,13 @@ class _PlotGeneration(_BasePlotGeneration):
             plot_parameters, samples, labels, latex_labels, colors=colors,
             linestyles=linestyles, gridsize=gridsize
         )
-        plt.savefig(
-            os.path.join(
-                savedir, "publication", "2d_contour_plot_{}.png".format(
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "publication", "2d_contour_plot_{}".format(
                     "_and_".join(plot_parameters)
                 )
             )
         )
-        plt.close()
 
     def violin_plot(self, label):
         """Generate violin plot to compare certain parameters in all result
@@ -861,14 +772,13 @@ class _PlotGeneration(_BasePlotGeneration):
         fig = publication.violin_plots(
             plot_parameter, samples, labels, latex_labels
         )
-        plt.savefig(
-            os.path.join(
-                savedir, "publication", "violin_plot_{}.png".format(
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "publication", "violin_plot_{}".format(
                     plot_parameter
                 )
             )
         )
-        plt.close()
 
     def spin_dist_plot(self, label):
         """Generate a spin disk plot to compare spins in all result
@@ -911,14 +821,13 @@ class _PlotGeneration(_BasePlotGeneration):
         fig = publication.spin_distribution_plots(
             parameters, samples, label, color
         )
-        plt.savefig(
-            os.path.join(
-                savedir, "publication", "spin_disk_plot_{}.png".format(
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "publication", "spin_disk_plot_{}".format(
                     label
                 )
             )
         )
-        plt.close()
 
     def pepredicates_plot(self, label):
         """Generate plots with the PEPredicates package
@@ -969,39 +878,38 @@ class _PlotGeneration(_BasePlotGeneration):
             samples, parameters, population_prior=population_prior
         )
         if not population_prior:
-            plt.savefig(
-                os.path.join(
-                    savedir, "{}_default_pepredicates.png".format(
+            _PlotGeneration.save(
+                fig, os.path.join(
+                    savedir, "{}_default_pepredicates".format(
                         label
                     )
                 )
             )
         else:
-            plt.savefig(
-                os.path.join(
-                    savedir, "{}_population_pepredicates.png".format(
+            _PlotGeneration.save(
+                fig, os.path.join(
+                    savedir, "{}_population_pepredicates".format(
                         label
                     )
                 )
             )
         fig = gw._classification_plot(probabilities)
         if not population_prior:
-            plt.savefig(
-                os.path.join(
-                    savedir, "{}_default_pepredicates_bar.png".format(
+            _PlotGeneration.save(
+                fig, os.path.join(
+                    savedir, "{}_default_pepredicates_bar".format(
                         label
                     )
                 )
             )
         else:
-            plt.savefig(
-                os.path.join(
-                    savedir, "{}_population_pepredicates_bar.png".format(
+            _PlotGeneration.save(
+                fig, os.path.join(
+                    savedir, "{}_population_pepredicates_bar".format(
                         label
                     )
                 )
             )
-        plt.close()
 
     def psd_plot(self, label):
         """Generate a psd plot for a given result file
@@ -1057,10 +965,9 @@ class _PlotGeneration(_BasePlotGeneration):
         fig = gw._psd_plot(
             frequencies, strains, labels=psd_labels, fmin=fmin
         )
-        plt.savefig(
-            os.path.join(savedir, "{}_psd_plot.png".format(label))
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "{}_psd_plot".format(label))
         )
-        plt.close()
 
     def calibration_plot(self, label):
         """Generate a calibration plot for a given result file
@@ -1123,10 +1030,9 @@ class _PlotGeneration(_BasePlotGeneration):
         fig = gw._calibration_envelope_plot(
             frequencies, calibration_data, calibration_labels, prior=prior
         )
-        plt.savefig(
-            os.path.join(savedir, "{}_calibration_plot.png".format(label))
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "{}_calibration_plot".format(label))
         )
-        plt.close()
 
     @staticmethod
     def _interactive_corner_plot(savedir, label, samples, latex_labels):

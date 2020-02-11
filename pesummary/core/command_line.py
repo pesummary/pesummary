@@ -151,101 +151,262 @@ class DictionaryAction(argparse.Action):
         setattr(namespace, self.dest, items)
 
 
+def _core_command_line_arguments(parser):
+    """Add core command line options to the Argument Parser
+
+    Parameters
+    ----------
+    parser: object
+        OptionParser instance
+    """
+    core_group = parser.add_argument_group(
+        "Core command line options\n"
+        "-------------------------"
+    )
+    core_group.add_argument(
+        "pesummary", nargs='?', action=ConfigAction,
+        help="configuration file containing the command line arguments"
+    )
+    core_group.add_argument(
+        "-w", "--webdir", dest="webdir", default=None, metavar="DIR",
+        help="make page and plots in DIR"
+    )
+    core_group.add_argument(
+        "-b", "--baseurl", dest="baseurl", metavar="DIR", default=None,
+        help="make the page at this url"
+    )
+    core_group.add_argument(
+        "--labels", dest="labels", help="labels used to distinguish runs",
+        nargs='+', default=None
+    )
+    core_group.add_argument(
+        "-s", "--samples", dest="samples", default=None, nargs='+',
+        help="Posterior samples hdf5 file"
+    )
+    core_group.add_argument(
+        "-c", "--config", dest="config", nargs='+', default=None,
+        help="configuration file associcated with each samples file."
+    )
+    core_group.add_argument(
+        "--email", action="store", default=None,
+        help=(
+            "send an e-mail to the given address with a link to the finished "
+            "page."
+        )
+    )
+    core_group.add_argument(
+        "-i", "--inj_file", dest="inj_file", nargs='+', default=None,
+        help="path to injetcion file"
+    )
+    core_group.add_argument(
+        "--user", dest="user", help=argparse.SUPPRESS, default=conf.user
+    )
+    core_group.add_argument(
+        "--add_to_existing", action="store_true", default=False,
+        help="add new results to an existing html page"
+    )
+    core_group.add_argument(
+        "-e", "--existing_webdir", dest="existing", default=None,
+        help="web directory of existing output"
+    )
+    core_group.add_argument(
+        "-v", "--verbose", action="store_true",
+        help="print useful information for debugging purposes"
+    )
+    return core_group
+
+
+def _samples_command_line_arguments(parser):
+    """Add sample specific command line options to the Argument Parser
+
+    Parameters
+    ----------
+    parser: object
+        OptionParser instance
+    """
+    sample_group = parser.add_argument_group(
+        "Options specific to the samples you wish to input\n"
+        "-------------------------------------------------"
+    )
+    sample_group.add_argument(
+        "--ignore_parameters", dest="ignore_parameters", nargs='+', default=None,
+        help=(
+            "Parameters that you wish to not include in the summarypages. You "
+            "may list them or use wildcards ('recalib*')"
+        )
+    )
+    sample_group.add_argument(
+        "--nsamples", dest="nsamples", default=None, help=(
+            "The number of samples to use and store in the PESummary metafile. "
+            "These samples will be randomly drawn from the posterior "
+            "distributions"
+        )
+    )
+    sample_group.add_argument(
+        "--burnin", dest="burnin", default=None, help=(
+            "Number of samples to remove as burnin"
+        )
+    )
+    return sample_group
+
+
+def _plotting_command_line_arguments(parser):
+    """Add specific command line options for plotting options
+
+    Parameters
+    ----------
+    parser: object
+        OptionParser instance
+    """
+    plot_group = parser.add_argument_group(
+        "Options specific to the plots you wish to make\n"
+        "----------------------------------------------"
+    )
+    plot_group.add_argument(
+        "--custom_plotting", dest="custom_plotting", default=None,
+        help="Python file containing functions for custom plotting"
+    )
+    plot_group.add_argument(
+        "--publication", action="store_true", default=None, help=(
+            "generate production quality plots"
+        )
+    )
+    plot_group.add_argument(
+        "--publication_kwargs", action=DictionaryAction, nargs="+", default={},
+        help="Optional kwargs for publication plots",
+    )
+    plot_group.add_argument(
+        "--kde_plot", action="store_true", default=False, help=(
+            "plot a kde rather than a histogram"
+        )
+    )
+    plot_group.add_argument(
+        "--colors", dest="colors", nargs='+', default=None,
+        help="Colors you wish to use to distinguish result files",
+    )
+    plot_group.add_argument(
+        "--palette", dest="palette", default="colorblind",
+        help="Color palette to use to distinguish result files",
+    )
+    plot_group.add_argument(
+        "--linestyles", dest="linestyles", nargs='+', default=None,
+        help="Linestyles you wish to use to distinguish result files"
+    )
+    plot_group.add_argument(
+        "--include_prior", action="store_true", default=False,
+        help="Plot the prior on the same plot as the posterior",
+    )
+    return plot_group
+
+
+def _webpage_command_line_arguments(parser):
+    """Add specific command line options for the webpage generation
+
+    Parameters
+    ----------
+    parser: object
+        OptionParser instance
+    """
+    webpage_group = parser.add_argument_group(
+        "Options specific to the webpages you wish to produce\n"
+        "----------------------------------------------------"
+    )
+    webpage_group.add_argument(
+        "--dump", action="store_true", default=False,
+        help="dump all information onto a single html page",
+    )
+    webpage_group.add_argument(
+        "--notes", dest="notes", default=None,
+        help="Single file containing notes that you wish to put on summarypages"
+    )
+    return webpage_group
+
+
+def _prior_command_line_arguments(parser):
+    """Add specific command line options for prior files
+
+    Parameters
+    ----------
+    parser: object
+        OptionParser instance
+    """
+    prior_group = parser.add_argument_group(
+        "Options specific for passing prior files\n"
+        "----------------------------------------"
+    )
+    prior_group.add_argument(
+        "--prior_file", dest="prior_file", nargs='+', default=None,
+        help="File containing for the prior samples for a given label"
+    )
+    return prior_group
+
+
+def _performance_command_line_options(parser):
+    """Add command line options which enhance the performance of the code
+
+    Parameters
+    ----------
+    parser: object
+        OptionParser instance
+    """
+    performance_group = parser.add_argument_group(
+        "Options specific for enhancing the performance of the code\n"
+        "----------------------------------------------------------"
+    )
+    performance_group.add_argument(
+        "--disable_comparison", action="store_true", default=False,
+        help=(
+            "Whether to make a comparison webpage if multple results are "
+            "present"
+        )
+    )
+    performance_group.add_argument(
+        "--disable_interactive", action="store_true", default=False,
+        help="Whether to make interactive plots or not"
+    )
+    performance_group.add_argument(
+        "--multi_process", dest="multi_process", default=1,
+        help="The number of cores to use when generating plots"
+    )
+    return performance_group
+
+
+def _pesummary_metafile_command_line_options(parser):
+    """Add command line options which are specific for reading and
+    manipulating pesummary metafiles
+
+    Parameters
+    ----------
+    parser: object
+        OptionParser instance
+    """
+    pesummary_group = parser.add_argument_group(
+        "Options specific for reading and manipulating pesummary metafiles\n"
+        "-----------------------------------------------------------------"
+    )
+    pesummary_group.add_argument(
+        "--compare_results", dest="compare_results", nargs='+', default=None,
+        help=(
+            "labels for events stored in the posterior_samples.json that you "
+            "wish to compare"
+        )
+    )
+    pesummary_group.add_argument(
+        "--save_to_json", action="store_true", default=False,
+        help="save the meta file in json format"
+    )
+    return pesummary_group
+
+
 def command_line():
     """Generate an Argument Parser object to control the command line options
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("pesummary", nargs='?', help=(
-                        "configuration file containing the command line "
-                        "arguments"), action=ConfigAction)
-    parser.add_argument("-w", "--webdir", dest="webdir",
-                        help="make page and plots in DIR", metavar="DIR",
-                        default=None)
-    parser.add_argument("-b", "--baseurl", dest="baseurl",
-                        help="make the page at this url", metavar="DIR",
-                        default=None)
-    parser.add_argument("-s", "--samples", dest="samples",
-                        help="Posterior samples hdf5 file", nargs='+',
-                        default=None)
-    parser.add_argument("-c", "--config", dest="config",
-                        help=("configuration file associcated with "
-                              "each samples file."),
-                        nargs='+', default=None)
-    parser.add_argument("--email", action="store",
-                        help=("send an e-mail to the given address with a link "
-                              "to the finished page."), default=None)
-    parser.add_argument("--dump", action="store_true",
-                        help="dump all information onto a single html page",
-                        default=False)
-    parser.add_argument("--add_to_existing", action="store_true",
-                        help="add new results to an existing html page",
-                        default=False)
-    parser.add_argument("-e", "--existing_webdir", dest="existing",
-                        help="web directory of existing output", default=None)
-    parser.add_argument("-i", "--inj_file", dest="inj_file",
-                        help="path to injetcion file", nargs='+', default=None)
-    parser.add_argument("--user", dest="user", help=argparse.SUPPRESS,
-                        default=conf.user)
-    parser.add_argument("--labels", dest="labels",
-                        help="labels used to distinguish runs", nargs='+',
-                        default=None)
-    parser.add_argument("--compare_results", dest="compare_results",
-                        help="labels for events stored in the "
-                             "posterior_samples.json that you wish to compare",
-                        nargs='+', default=None)
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="print useful information for debugging purposes")
-    parser.add_argument("--save_to_json", action="store_true",
-                        help="save the meta file in json format", default=False)
-    parser.add_argument("--custom_plotting", dest="custom_plotting",
-                        help=("python file containing functions for custom "
-                              "plotting"), default=None)
-    parser.add_argument("--publication", action="store_true",
-                        help="generate production quality plots", default=None)
-    parser.add_argument("--kde_plot", action="store_true",
-                        help="plot a kde rather than a histogram",
-                        default=False)
-    parser.add_argument("--palette", dest="palette",
-                        help="Color palette to use to distinguish result files",
-                        default="colorblind")
-    parser.add_argument("--burnin", dest="burnin",
-                        help="Number of samples to remove as burnin",
-                        default=None)
-    parser.add_argument("--include_prior", action="store_true",
-                        help="Plot the prior on the same plot as the posterior",
-                        default=False)
-    parser.add_argument("--notes", dest="notes",
-                        help=("Single file containing notes that you wish to "
-                              "put on summarypages"), default=None)
-    parser.add_argument("--prior_file", dest="prior_file",
-                        help="Prior samples file", nargs='+', default=None)
-    parser.add_argument("--disable_comparison", action="store_true", default=False,
-                        help="Whether to make a comparison webpage is multple "
-                             "results are present")
-    parser.add_argument("--disable_interactive", action="store_true", default=False,
-                        help="Whether to make interactive plots or not")
-    parser.add_argument("--colors", dest="colors",
-                        help="Colors you wish to use to distinguish result files",
-                        nargs='+', default=None)
-    parser.add_argument("--linestyles", dest="linestyles",
-                        help=("Linestyles you wish to use to distinguish result "
-                              "files"),
-                        nargs='+', default=None)
-    parser.add_argument("--nsamples", dest="nsamples",
-                        help=("The number of samples to use and store in the "
-                              "PESummary metafile. These samples will be "
-                              "randomly drawn from the posterior distributions"),
-                        default=None)
-    parser.add_argument("--multi_process", dest="multi_process",
-                        help=("The number of cores to use when generating "
-                              "plots"),
-                        default=1)
-    parser.add_argument("--publication_kwargs",
-                        help="Optional kwargs for publication plots",
-                        action=DictionaryAction, nargs="+", default={})
-    parser.add_argument("--ignore_parameters", dest="ignore_parameters",
-                        help=("Parameters that you wish to not include in the "
-                              "summarypages. You may list them or use "
-                              "wildcards ('recalib*')"),
-                        nargs='+', default=None)
+    core_group = _core_command_line_arguments(parser)
+    sample_group = _samples_command_line_arguments(parser)
+    plot_group = _plotting_command_line_arguments(parser)
+    webpage_group = _webpage_command_line_arguments(parser)
+    prior_group = _prior_command_line_arguments(parser)
+    performance_group = _performance_command_line_options(parser)
+    pesummary_group = _pesummary_metafile_command_line_options(parser)
     return parser
