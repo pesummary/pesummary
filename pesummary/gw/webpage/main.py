@@ -185,27 +185,6 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             params.append(["others", other_params])
         return params
 
-    def _condition(self, true, false):
-        """Setup a condition
-
-        Parameters
-        ----------
-        true: list
-            list of strings that you would like to include
-        false: list
-            list of strings that you would like to neglect
-        """
-        if len(true) != 0 and len(false) == 0:
-            condition = lambda j: True if any(i in j for i in true) else \
-                False
-        elif len(true) == 0 and len(false) != 0:
-            condition = lambda j: True if any(i not in j for i in false) \
-                else False
-        elif len(true) and len(false) != 0:
-            condition = lambda j: True if any(i in j for i in true) and \
-                any(i not in j for i in false) else False
-        return condition
-
     def make_navbar_for_homepage(self):
         """Make a navbar for the homepage
         """
@@ -1085,17 +1064,20 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         categories = self.categories = {
             "masses": {
                 "accept": ["mass", "symmetric_mass_ratio"],
-                "reject": ["source"]
+                "reject": ["source", "final"]
             },
             "source": {
                 "accept": ["source"], "reject": []
+            },
+            "final_object": {
+                "accept": ["final", "peak_luminosity"], "reject": []
             },
             "inclination": {
                 "accept": ["theta", "iota"], "reject": []
             },
             "spins": {
                 "accept": ["spin", "chi_p", "chi_eff", "a_1", "a_2"],
-                "reject": ["lambda"]
+                "reject": ["lambda", "final"]
             },
             "spin_angles": {
                 "accept": ["phi", "tilt"], "reject": []
@@ -1117,11 +1099,12 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 "accept": ["snr"], "reject": []
             },
             "calibration": {
-                "accept": ["spcal", "recalib"], "reject": []
+                "accept": ["spcal", "recalib", "frequency"],
+                "reject": ["minimum"]
             },
             "others": {
                 "accept": ["phase", "likelihood", "prior"],
-                "reject": ["spcal"]
+                "reject": ["spcal", "recalib"]
             }
         }
         return categories

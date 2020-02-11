@@ -18,6 +18,7 @@ import numpy as np
 from pesummary.utils.utils import logger, SamplesDict
 
 try:
+    import lalsimulation
     from lalsimulation import SimInspiralTransformPrecessingNewInitialConditions
     from lalsimulation import SimInspiralTransformPrecessingWvf2PE
     from lalsimulation import DetectorPrefixToLALDetector
@@ -350,6 +351,163 @@ def network_snr(snrs):
     squares = [i**2 for i in snrs]
     network_snr = np.sqrt(np.sum(squares, axis=0))
     return network_snr
+
+
+def _final_from_initial(
+    mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+    approximant="SEOBNRv4"
+):
+    """Calculate the final mass and final spin given the initial parameters
+    of the binary
+    """
+    from lalsimulation import SimIMREOBFinalMassSpin
+
+    return_float = False
+    if isinstance(mass_1, (int, float)):
+        return_float = True
+        mass_1 = [mass_1]
+        mass_2 = [mass_2]
+        spin_1x = [spin_1x]
+        spin_1y = [spin_1y]
+        spin_1z = [spin_1z]
+        spin_2x = [spin_2x]
+        spin_2y = [spin_2y]
+        spin_2z = [spin_2z]
+
+    final_mass = []
+    final_spin = []
+    for i in range(len(mass_1)):
+        m1 = mass_1[i] * MSUN_SI
+        m2 = mass_2[i] * MSUN_SI
+        spin1 = [spin_1x[i], spin_1y[i], spin_1z[i]]
+        spin2 = [spin_2x[i], spin_2y[i], spin_2z[i]]
+        _, fm, fs = SimIMREOBFinalMassSpin(
+            m1, m2, spin1, spin2, getattr(lalsimulation, approximant)
+        )
+        final_mass.append((fm * (m1 + m2)) / MSUN_SI)
+        final_spin.append(fs)
+    if return_float:
+        return final_mass[0], final_spin[0]
+    return final_mass, final_spin
+
+
+def final_mass_of_merger_from_NR(
+    mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+    NRfit="Healyetal", final_spin=None
+):
+    from pesummary.gw.file import nrutils
+
+    func = getattr(nrutils, "bbh_final_mass_non_precessing_{}".format(NRfit))
+    if final_spin is None:
+        spin_func = getattr(
+            nrutils, "bbh_final_spin_non_precessing_{}".format(NRfit)
+        )
+        final_spin = spin_func(
+            mass_1, mass_2, m_total_from_m1_m2(mass_1, mass_2),
+            eta_from_m1_m2(mass_1, mass_2), spin_1z, spin_2z
+        )
+    final_mass = func(
+        mass_1, mass_2, m_total_from_m1_m2(mass_1, mass_2),
+        eta_from_m1_m2(mass_1, mass_2), spin_1z, spin_2z, final_spin
+    )
+    return final_mass
+
+
+def final_mass_of_merger_from_waveform(
+    mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+    approximant="SEOBNRv4"
+):
+    """Return the final mass resulting from a BBH merger using a given
+    approximant
+    """
+    return _final_from_initial(
+        mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+        approximant="SEOBNRv4"
+    )[0]
+
+
+def final_spin_of_merger_from_NR(
+    mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+    NRfit="Healyetal"
+):
+    from pesummary.gw.file import nrutils
+
+    func = getattr(nrutils, "bbh_final_spin_non_precessing_{}".format(NRfit))
+    final_spin = func(
+        mass_1, mass_2, m_total_from_m1_m2(mass_1, mass_2),
+        eta_from_m1_m2(mass_1, mass_2), spin_1z, spin_2z
+    )
+    return final_spin
+
+
+def final_spin_of_merger_from_waveform(
+    mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+    approximant="SEOBNRv4"
+):
+    """Return the final spin resulting from a BBH merger using a given
+    approximant
+    """
+    return _final_from_initial(
+        mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+        approximant="SEOBNRv4"
+    )[1]
+
+
+def final_mass_of_merger(
+    mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+    method="NR", approximant="SEOBNRv4", NRfit="Healyetal", final_spin=None
+):
+    """Return the final mass resulting from a BBH merger
+    """
+    if method == "NR":
+        mass_func = final_mass_of_merger_from_NR
+        kwargs = {"NRfit": NRfit, "final_spin": final_spin}
+    else:
+        mass_func = final_mass_of_merger_from_waveform
+        kwargs = {"approximant": "SEOBNRv4"}
+
+    final_mass = mass_func(
+        mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+        **kwargs
+    )
+    return final_mass
+
+
+def final_spin_of_merger(
+    mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+    method="NR", approximant="SEOBNRv4", NRfit="Healyetal"
+):
+    """Return the final mass resulting from a BBH merger
+    """
+    if method == "NR":
+        spin_func = final_spin_of_merger_from_NR
+        kwargs = {"NRfit": NRfit}
+    else:
+        spin_func = final_spin_of_merger_from_waveform
+        kwargs = {"approximant": "SEOBNRv4"}
+
+    final_spin = spin_func(
+        mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+        **kwargs
+    )
+    return final_spin
+
+
+def peak_luminosity_of_merger(
+    mass_1, mass_2, total_mass, symmetric_mass_ratio, spin_1z, spin_2z,
+    NRfit="Healyetal"
+):
+    """Return the peak luminosity of an aligned-spin BBH using NR fits
+    """
+    from pesummary.gw.file import nrutils
+
+    func = getattr(
+        nrutils, "bbh_peak_luminosity_non_precessing_{}".format(NRfit)
+    )
+    peak_luminosity = func(
+        mass_1, mass_2, total_mass, symmetric_mass_ratio, spin_1z, spin_2z
+    )
+    return peak_luminosity
 
 
 class _Conversion(object):
@@ -777,6 +935,42 @@ class _Conversion(object):
         snr = network_snr(samples)
         self.append_data(snr)
 
+    def _peak_luminosity_of_merger(self):
+        self.parameters.append("peak_luminosity")
+        samples = self.specific_parameter_samples([
+            "mass_1", "mass_2", "total_mass", "symmetric_mass_ratio", "spin_1z",
+            "spin_2z"
+        ])
+        peak_luminosity = peak_luminosity_of_merger(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5]
+        )
+        self.append_data(peak_luminosity)
+
+    def _final_mass_of_merger(self):
+        self.parameters.append("final_mass")
+        samples = self.specific_parameter_samples([
+            "mass_1", "mass_2", "spin_1x", "spin_1y", "spin_1z", "spin_2x",
+            "spin_2y", "spin_2z"
+        ])
+        final_mass = final_mass_of_merger(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5], samples[6], samples[7]
+        )
+        self.append_data(final_mass)
+
+    def _final_spin_of_merger(self):
+        self.parameters.append("final_spin")
+        samples = self.specific_parameter_samples([
+            "mass_1", "mass_2", "spin_1x", "spin_1y", "spin_1z", "spin_2x",
+            "spin_2y", "spin_2z"
+        ])
+        final_spin = final_spin_of_merger(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5], samples[6], samples[7]
+        )
+        self.append_data(final_spin)
+
     def _cos_angle(self, parameter_to_add, reverse=False):
         self.parameters.append(parameter_to_add)
         if reverse:
@@ -933,6 +1127,17 @@ class _Conversion(object):
                     self._lambda_tilde_from_lambda1_lambda2()
                 if "delta_lambda" not in self.parameters:
                     self._delta_lambda_from_lambda1_lambda2()
+            luminosity_params = [
+                "total_mass", "symmetric_mass_ratio", "spin_1z", "spin_2z"
+            ]
+            if all(i in self.parameters for i in luminosity_params):
+                self._peak_luminosity_of_merger()
+            final_params = [
+                "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"
+            ]
+            if all(i in self.parameters for i in final_params):
+                self._final_mass_of_merger()
+                self._final_spin_of_merger()
         if "cos_tilt_1" not in self.parameters and "tilt_1" in self.parameters:
             self._cos_tilt_1_from_tilt_1()
         if "cos_tilt_2" not in self.parameters and "tilt_2" in self.parameters:
