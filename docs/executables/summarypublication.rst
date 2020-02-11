@@ -15,6 +15,20 @@ To see help for this executable please run:
 
 .. program-output:: summarypublication --help
 
+Generating a population plot
+----------------------------
+
+PESummary has the ability to generate a scatter plot showing a population of
+runs. If requested, 90% confidence regions can be added. An example command line
+is below:
+
+.. code-block:: console
+
+    $ summarypublication --webdir ./ \
+                         --samples GW150914_result.json GW151012_result.hdf5 \
+                         --labels GW150914 GW151012 --parameters mass_1 mass_2 \
+                         --plot population_scatter_error
+
 Generating a 2d contour plot
 ----------------------------
 
@@ -62,6 +76,12 @@ PESummary has the ability to generate a spin disk plot for a given result file
 
     $ summarypublication --webdir ./ --samples GW150914_result.json \
                          --labels GW150914 --plot spin_disk
+
+`pesummary.core.plots.population`
+---------------------------------
+
+.. automodule:: pesummary.core.plots.population
+    :members:
 
 `pesummary.gw.plots.publication`
 --------------------------------

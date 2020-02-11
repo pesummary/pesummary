@@ -19,6 +19,7 @@ import pesummary
 from pesummary.gw.file.read import read as GWRead
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.gw.plots import publication as pub
+from pesummary.core.plots import population as pop
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import make_dir, logger
 from pesummary.core.command_line import DictionaryAction
@@ -49,7 +50,10 @@ def command_line():
     parser.add_argument("--plot", dest="plot",
                         help=("name of the publication plot you wish to "
                               "produce"), default="2d_contour",
-                        choices=["2d_contour", "violin", "spin_disk"])
+                        choices=[
+                            "2d_contour", "violin", "spin_disk",
+                            "population_scatter", "population_scatter_error"
+                        ])
     parser.add_argument("--parameters", dest="parameters", nargs="+",
                         help=("parameters of the 2d contour plot you wish to "
                               "make"), default=None)
@@ -113,14 +117,22 @@ def read_samples(result_files):
     parameters = []
     samples = []
     for i in result_files:
-        f = GWRead(i)
-        if isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
-            parameters.append(f.parameters[0])
-            samples.append(f.samples[0])
-        else:
-            f.generate_all_posterior_samples()
-            parameters.append(f.parameters)
-            samples.append(f.samples)
+        try:
+            f = GWRead(i)
+            if isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
+                parameters.append(f.parameters[0])
+                samples.append(f.samples[0])
+            else:
+                f.generate_all_posterior_samples()
+                parameters.append(f.parameters)
+                samples.append(f.samples)
+        except Exception:
+            logger.warn(
+                "Failed to read '{}'. Data will not be added to the "
+                "plots".format(i)
+            )
+            parameters.append([None])
+            samples.append([None])
     return parameters, samples
 
 
@@ -274,6 +286,56 @@ def make_spin_disk_plot(opts):
             continue
 
 
+def make_population_scatter_plot(opts):
+    """Make a scatter plot showing a population of runs
+    """
+    if len(opts.samples) > 1:
+        parameters, samples = read_samples(opts.samples)
+        plotting_data = {}
+        xerr, yerr = None, None
+        if "error" in opts.plot:
+            xerr, yerr = {}, {}
+        for num, label in enumerate(opts.labels):
+            if not all(i in parameters[num] for i in opts.parameters):
+                logger.warn(
+                    "'{}' does not include samples for '{}' and/or '{}'. This "
+                    "analysis will not be added to the plot".format(
+                        label, opts.parameters[0], opts.parameters[1]
+                    )
+                )
+                continue
+            plotting_data[label] = {}
+            if xerr is not None:
+                xerr[label] = {}
+                yerr[label] = {}
+            for param in opts.parameters:
+                ind = parameters[num].index(param)
+                plotting_data[label][param] = np.median(
+                    [i[ind] for i in samples[num]]
+                )
+            if xerr is not None:
+                ind = parameters[num].index(opts.parameters[0])
+                xerr[label][opts.parameters[0]] = [
+                    np.abs(plotting_data[label][opts.parameters[0]] - np.percentile(
+                        [i[ind] for i in samples[num]], j
+                    )) for j in [5, 95]
+                ]
+            if yerr is not None:
+                ind = parameters[num].index(opts.parameters[1])
+                yerr[label][opts.parameters[1]] = [
+                    np.abs(plotting_data[label][opts.parameters[1]] - np.percentile(
+                        [i[ind] for i in samples[num]], j
+                    )) for j in [5, 95]
+                ]
+        fig = pop.scatter_plot(
+            opts.parameters, plotting_data, latex_labels, xerr=xerr, yerr=yerr
+        )
+        fig.savefig("{}/event_scatter_plot_{}.png".format(
+            opts.webdir, "_and_".join(opts.parameters)
+        ))
+        plt.close()
+
+
 def main():
     """Top level interface for `summarypublication`
     """
@@ -283,7 +345,9 @@ def main():
     make_dir(opts.webdir)
     func_map = {"2d_contour": make_2d_contour_plot,
                 "violin": make_violin_plot,
-                "spin_disk": make_spin_disk_plot}
+                "spin_disk": make_spin_disk_plot,
+                "population_scatter": make_population_scatter_plot,
+                "population_scatter_error": make_population_scatter_plot}
     func_map[opts.plot](opts)
 
 
