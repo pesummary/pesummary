@@ -52,7 +52,9 @@ class _Input(object):
             return False
 
     @staticmethod
-    def grab_data_from_metafile(existing_file, webdir, compare=None):
+    def grab_data_from_metafile(
+        existing_file, webdir, compare=None, read_function=Read
+    ):
         """Grab data from an existing PESummary metafile
 
         Parameters
@@ -64,8 +66,10 @@ class _Input(object):
         compare: list, optional
             list of labels for events stored in an existing metafile that you
             wish to compare
+        read_function: func, optional
+            PESummary function to use to read in the existing file
         """
-        f = Read(existing_file)
+        f = read_function(existing_file)
         labels = f.labels
         indicies = np.arange(len(labels))
 
@@ -118,22 +122,30 @@ class _Input(object):
         else:
             weights = {i: None for i in labels}
 
-        return [
-            DataFrame, inj_values,
-            {
+        return {
+            "samples": DataFrame,
+            "injection_data": inj_values,
+            "file_version": {
                 i: j for i, j in zip(
                     labels, [f.input_version[ind] for ind in indicies]
                 )
             },
-            {
+            "file_kwargs": {
                 i: j for i, j in zip(
                     labels, [f.extra_kwargs[ind] for ind in indicies]
                 )
-            }, {}, config, labels, weights
-        ]
+            },
+            "prior": {},
+            "config": config,
+            "labels": labels,
+            "weights": weights,
+            "indicies": indicies
+        }
 
     @staticmethod
-    def grab_data_from_file(file, label, config=None, injection=None):
+    def grab_data_from_file(
+        file, label, config=None, injection=None, read_function=Read
+    ):
         """Grab data from a result file containing posterior samples
 
         Parameters
@@ -146,10 +158,13 @@ class _Input(object):
             path to a configuration file used in the analysis
         injection: str, optional
             path to an injection file used in the analysis
+        read_function: func, optional
+            PESummary function to use to read in the file
         """
-        f = Read(file)
+        f = read_function(file)
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
+        f.generate_all_posterior_samples()
         if injection:
             f.add_injection_parameters_from_file(injection)
         parameters = f.parameters
@@ -172,15 +187,19 @@ class _Input(object):
         if hasattr(f, "priors"):
             priors = f.priors
         else:
-            priors = None
+            priors = []
         if hasattr(f, "weights"):
             weights = f.weights
         else:
             weights = None
-        return [
-            DataFrame, {label: injection}, {label: version}, {label: kwargs},
-            {label: priors}, {label: weights}
-        ]
+        return {
+            "samples": DataFrame,
+            "injection_data": {label: injection},
+            "file_version": {label: version},
+            "file_kwargs": {label: kwargs},
+            "prior": {label: priors},
+            "weights": {label: weights}
+        }
 
     @property
     def existing(self):
@@ -328,9 +347,12 @@ class _Input(object):
             raise InputError(
                 "Please provide a configuration file for each label"
             )
-        if config is None:
-            config = [None] * len(self.labels)
-        self._config = config
+        if config is None and not self.meta_file:
+            self._config = [None] * len(self.labels)
+        elif self.meta_file:
+            self._config = [None] * len(self.labels)
+        else:
+            self._config = config
 
     @property
     def injection_file(self):
@@ -385,6 +407,11 @@ class _Input(object):
 
     @samples.setter
     def samples(self, samples):
+        self._set_samples(samples)
+
+    def _set_samples(
+        self, samples, ignore_keys=["prior", "weights", "labels", "indicies"]
+    ):
         if not samples:
             raise InputError("Please provide a results file")
         if len(samples) != len(self.labels):
@@ -395,9 +422,8 @@ class _Input(object):
                 )
             )
             self.labels = self.labels[:len(samples)]
-        samples_dict, injection_data_dict, prior_dict = {}, {}, {}
-        file_version_dict, file_kwargs_dict, weights_dict = {}, {}, {}
-        config, labels = None, None
+        labels = None
+        weights_dict = {}
         for num, i in enumerate(samples):
             logger.info("Assigning {} to {}".format(self.labels[num], i))
             if not os.path.isfile(i):
@@ -406,53 +432,45 @@ class _Input(object):
                 i, self.labels[num], config=self.config[num],
                 injection=self.injection_file[num]
             )
-            if len(data) > 6:
-                config = data[5]
-                labels = data[6]
-                weights_dict = data[7]
-                prior_dict = data[4]
-                for j in labels:
-                    samples_dict[j] = data[0][j]
-                    injection_data_dict[j] = data[1][j]
-                    file_version_dict[j] = data[2][j]
-                    file_kwargs_dict[j] = data[3][j]
+            for key, item in data.items():
+                if key not in ignore_keys:
+                    if num == 0:
+                        setattr(self, "_{}".format(key), item)
+                    else:
+                        x = getattr(self, "_{}".format(key))
+                        x.update(item)
+                        setattr(self, "_{}".format(key), x)
+            if "labels" in data.keys():
+                labels = data["labels"]
             else:
-                samples_dict[self.labels[num]] = data[0][self.labels[num]]
-                injection_data_dict[self.labels[num]] = data[1][self.labels[num]]
-                file_version_dict[self.labels[num]] = data[2][self.labels[num]]
-                file_kwargs_dict[self.labels[num]] = data[3][self.labels[num]]
-                prior_dict[self.labels[num]] = data[4][self.labels[num]]
-                weights_dict[self.labels[num]] = data[5][self.labels[num]]
-        self._samples = samples_dict
-        self._injection_data = injection_data_dict
-        self._file_version = file_version_dict
-        self._file_kwargs = file_kwargs_dict
-        if labels is not None:
-            labels_iter = labels
-        else:
-            labels_iter = self.labels
-        for i in labels_iter:
-            if prior_dict != {} and prior_dict[i] != []:
-                if self.priors != {} and i in self.priors["samples"].keys():
-                    logger.warn(
-                        "Replacing the prior file for {} with the prior "
-                        "samples stored in the result file".format(i)
-                    )
-                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
-                elif self.priors != {}:
-                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
-                elif self.priors == {}:
-                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
-            elif prior_dict != {}:
-                if self.priors != {} and i not in self.priors["samples"].keys():
-                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
-                elif self.priors == {}:
-                    self.add_to_prior_dict("samples/" + i, [])
-            else:
-                if self.priors == {}:
-                    self.add_to_prior_dict("samples/" + i, [])
-        if config is not None:
-            self._config = config
+                labels = [self.labels[num]]
+            if "weights" in data.items():
+                weights_dict = data["weights"]
+            if "prior" in data.keys():
+                for label in labels:
+                    if data["prior"] != {} and data["prior"][label] != []:
+                        if self.priors != {} and label in self.priors["samples"].keys():
+                            logger.warn(
+                                "Replacing the prior file for {} with the prior "
+                                "samples stored in the result file".format(label)
+                            )
+                            self.add_to_prior_dict("samples/" + label, data["prior"][label])
+                        elif self.priors != {}:
+                            self.add_to_prior_dict("samples/" + label, data["prior"][label])
+                        elif self.priors == {}:
+                            self.add_to_prior_dict("samples/" + label, data["prior"][label])
+                    elif data["prior"] != {}:
+                        if self.priors != {} and label not in self.priors["samples"].keys():
+                            self.add_to_prior_dict("samples/" + label, data["prior"][label])
+                        elif self.priors == {}:
+                            self.add_to_prior_dict("samples/" + label, [])
+                    else:
+                        if self.priors == {}:
+                            self.add_to_prior_dict("samples/" + label, [])
+
+            labels = None
+            if "labels" in data.keys():
+                labels = data["labels"]
         if labels is not None:
             self.labels = labels
             self.result_files = self.result_files * len(labels)
@@ -1083,14 +1101,14 @@ class Input(_Input):
                 self.existing_metafile, self.existing,
                 compare=self.compare_results
             )
-            self.existing_samples = self.existing_data[0]
-            self.existing_injection_data = self.existing_data[1]
-            self.existing_file_version = self.existing_data[2]
-            self.existing_file_kwargs = self.existing_data[3]
-            self.existing_priors = self.existing_data[4]
-            self.existing_config = self.existing_data[5]
-            self.existing_labels = self.existing_data[6]
-            self.existing_weights = self.existing_data[7]
+            self.existing_samples = self.existing_data["samples"]
+            self.existing_injection_data = self.existing_data["injection_data"]
+            self.existing_file_version = self.existing_data["file_version"]
+            self.existing_file_kwargs = self.existing_data["file_kwargs"]
+            self.existing_priors = self.existing_data["prior"]
+            self.existing_config = self.existing_data["config"]
+            self.existing_labels = self.existing_data["labels"]
+            self.existing_weights = self.existing_data["weights"]
         else:
             self.existing_labels = None
             self.existing_weights = None

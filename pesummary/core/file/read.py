@@ -20,50 +20,6 @@ from pesummary.core.file.formats.pesummary import PESummary
 from pesummary.utils.utils import logger
 
 
-def read(path):
-    """Read in a results file.
-
-    Parameters
-    ----------
-    path: str
-        path to results file
-    """
-    extension = Read.extension_from_path(path)
-
-    if extension in ["hdf5", "h5", "hdf"]:
-        if is_bilby_hdf5_file(path):
-            try:
-                return Bilby.load_file(path)
-            except ImportError:
-                logger.warn(
-                    "Failed to import `bilby`. Using default load")
-                return Default.load_file(path)
-        elif is_pesummary_hdf5_file(path):
-            try:
-                return PESummary.load_file(path)
-            except Exception:
-                return Default.load_file(path)
-        else:
-            return Default.load_file(path)
-    elif extension == "json":
-        if is_bilby_json_file(path):
-            try:
-                return Bilby.load_file(path)
-            except ImportError:
-                logger.warn(
-                    "Failed to import `bilby`. Using default load")
-                return Default.load_file(path)
-        elif is_pesummary_json_file(path):
-            try:
-                return PESummary.load_file(path)
-            except Exception:
-                return Default.load_file(path)
-        else:
-            return Default.load_file(path)
-    else:
-        return Default.load_file(path)
-
-
 def is_bilby_hdf5_file(path):
     """Determine if the results file is a bilby hdf5 results file
 
@@ -150,3 +106,65 @@ def _check_pesummary_file(f):
             return False
     else:
         return False
+
+
+CORE_HDF5_LOAD = {
+    is_bilby_hdf5_file: Bilby.load_file,
+    is_pesummary_hdf5_file: PESummary.load_file
+}
+
+CORE_JSON_LOAD = {
+    is_bilby_json_file: Bilby.load_file,
+    is_pesummary_json_file: PESummary.load_file
+}
+
+CORE_DEFAULT_LOAD = {
+    "default": Default.load_file
+}
+
+
+def _read(path, load_options, default=CORE_DEFAULT_LOAD):
+    """Try and load a result file according to multiple options
+
+    Parameters
+    ----------
+    path: str
+        path to results file
+    load_options: dict
+        dictionary of checks and loading functions
+    """
+    for check, load in load_options.items():
+        if check(path):
+            try:
+                return load(path)
+            except ImportError as e:
+                logger.warn(
+                    "Failed due to import error: {}. Using default load".format(
+                        e
+                    )
+                )
+                return default["default"](path)
+            except Exception:
+                continue
+    return default["default"](path)
+
+
+def read(
+    path, HDF5_LOAD=CORE_HDF5_LOAD, JSON_LOAD=CORE_JSON_LOAD,
+    DEFAULT=CORE_DEFAULT_LOAD
+):
+    """Read in a results file.
+
+    Parameters
+    ----------
+    path: str
+        path to results file
+    """
+    extension = Read.extension_from_path(path)
+
+    if extension in ["hdf5", "h5", "hdf"]:
+        return _read(path, HDF5_LOAD, default=DEFAULT)
+    elif extension == "json":
+        return _read(path, JSON_LOAD, default=DEFAULT)
+    else:
+        return DEFAULT["default"](path)

@@ -16,6 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import importlib
 
 import matplotlib
 matplotlib.use("Agg")
@@ -73,6 +74,7 @@ class _PlotGeneration(object):
         disable_comparison=False, linestyles=None, disable_interactive=False,
         multi_process=1
     ):
+        self.package = "core"
         self.webdir = webdir
         self.savedir = savedir
         self.labels = labels
@@ -138,6 +140,28 @@ class _PlotGeneration(object):
                         interactive_ridgeline=self.interactive_ridgeline_plot
                     )
                 )
+
+    @staticmethod
+    def save(fig, name, close=True, format="png"):
+        """Save a figure to disk.
+
+        Parameters
+        ----------
+        fig: matplotlib.pyplot.figure
+            Matplotlib figure that you wish to save
+        name: str
+            Name of the file that you wish to write it too
+        close: Bool, optional
+            Close the figure after it has been saved
+        format: str, optional
+            Format used to save the image
+        """
+        n = len(format)
+        if ".%s" % (format) != name[-n - 1:]:
+            name += ".%s" % (format)
+        fig.savefig(name, format=format)
+        if close:
+            plt.close()
 
     @property
     def _total_number_of_labels(self):
@@ -317,14 +341,13 @@ class _PlotGeneration(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             fig, params, data = core._make_corner_plot(samples, latex_labels)
-            plt.savefig(
-                os.path.join(
-                    savedir, "corner", "{}_all_density_plots.png".format(
+            _PlotGeneration.save(
+                fig, os.path.join(
+                    savedir, "corner", "{}_all_density_plots".format(
                         label
                     )
                 )
             )
-            plt.close()
             combine_corner = open(
                 os.path.join(webdir, "js", "combine_corner.js")
             )
@@ -381,7 +404,7 @@ class _PlotGeneration(object):
                         self.savedir, label, param, samples, latex_labels[param],
                         self.injection_data[label][param], self.kde_plot,
                         self.check_prior_samples_in_dict(label, param),
-                        self.weights[label],
+                        self.weights[label], self.package
                     ], self._oned_histogram_plot, error_message % (param)
                 ) for param, samples in self.samples[label].items()
             ]
@@ -391,7 +414,7 @@ class _PlotGeneration(object):
                     [
                         self.savedir, label, param, samples, latex_labels[param],
                         self.injection_data[label][param], self.kde_plot,
-                        None, self.weights[label],
+                        None, self.weights[label], self.package
                     ], self._oned_histogram_plot, error_message % (param)
                 ) for param, samples in self.samples[label].items()
             ]
@@ -412,7 +435,8 @@ class _PlotGeneration(object):
         for param in self.same_parameters:
             arguments = [
                 self.savedir, param, self.same_samples[param],
-                latex_labels[param], self.colors, self.kde_plot, self.linestyles
+                latex_labels[param], self.colors, self.kde_plot,
+                self.linestyles, self.package
             ]
             self._try_to_make_a_plot(
                 arguments, self._oned_histogram_comparison_plot,
@@ -423,7 +447,7 @@ class _PlotGeneration(object):
     @staticmethod
     def _oned_histogram_comparison_plot(
         savedir, parameter, samples, latex_label, colors, kde=False,
-        linestyles=None
+        linestyles=None, package="core"
     ):
         """Generate a oned comparison histogram plot for a given parameter
 
@@ -447,22 +471,24 @@ class _PlotGeneration(object):
         linestyles: list, optional
             list of linestyles used to distinguish different result files
         """
+        module = importlib.import_module(
+            "pesummary.{}.plots.plot".format(package)
+        )
         same_samples = [val for key, val in samples.items()]
-        fig = core._1d_comparison_histogram_plot(
+        fig = module._1d_comparison_histogram_plot(
             parameter, same_samples, colors, latex_label,
             list(samples.keys()), kde=kde, linestyles=linestyles
         )
-        plt.savefig(
-            os.path.join(
+        _PlotGeneration.save(
+            fig, os.path.join(
                 savedir, "combined_1d_posterior_{}".format(parameter)
             )
         )
-        plt.close()
 
     @staticmethod
     def _oned_histogram_plot(
         savedir, label, parameter, samples, latex_label, injection, kde=False,
-        prior=None, weights=None
+        prior=None, weights=None, package="core"
     ):
         """Generate a oned histogram plot for a given set of samples
 
@@ -488,20 +514,22 @@ class _PlotGeneration(object):
             the weights for each samples. If None, assumed to be 1
         """
         import math
+        module = importlib.import_module(
+            "pesummary.{}.plots.plot".format(package)
+        )
 
         if math.isnan(injection):
             injection = None
 
-        fig = core._1d_histogram_plot(
+        fig = module._1d_histogram_plot(
             parameter, samples, latex_label, injection, kde=kde, prior=prior,
             weights=weights
         )
-        plt.savefig(
-            os.path.join(
-                savedir, "{}_1d_posterior_{}.png".format(label, parameter)
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "{}_1d_posterior_{}".format(label, parameter)
             )
         )
-        plt.close()
 
     def sample_evolution_plot(self, label):
         """Generate sample evolution plots for all parameters in the result file
@@ -548,12 +576,11 @@ class _PlotGeneration(object):
         fig = core._sample_evolution_plot(
             parameter, samples, latex_label, injection
         )
-        plt.savefig(
-            os.path.join(
+        _PlotGeneration.save(
+            fig, os.path.join(
                 savedir, "{}_sample_evolution_{}".format(label, parameter)
             )
         )
-        plt.close()
 
     def autocorrelation_plot(self, label):
         """Generate autocorrelation plots for all parameters in the result file
@@ -590,14 +617,13 @@ class _PlotGeneration(object):
             array containing the samples corresponding to parameter
         """
         fig = core._autocorrelation_plot(parameter, samples)
-        plt.savefig(
-            os.path.join(
-                savedir, "{}_autocorrelation_{}.png".format(
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "{}_autocorrelation_{}".format(
                     label, parameter
                 )
             )
         )
-        plt.close()
 
     def oned_cdf_plot(self, label):
         """Generate oned CDF plots for all parameters in the result file
@@ -637,12 +663,11 @@ class _PlotGeneration(object):
             the latex label corresponding to parameter
         """
         fig = core._1d_cdf_plot(parameter, samples, latex_label)
-        plt.savefig(
-            os.path.join(
-                savedir + "{}_cdf_{}.png".format(label, parameter)
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir + "{}_cdf_{}".format(label, parameter)
             )
         )
-        plt.close()
 
     def interactive_ridgeline_plot(self, label):
         """Generate an interactive ridgeline plot for all paramaters that are
@@ -765,12 +790,11 @@ class _PlotGeneration(object):
         fig = core._1d_cdf_comparison_plot(
             parameter, same_samples, colors, latex_label, keys, linestyles
         )
-        plt.savefig(
-            os.path.join(
+        _PlotGeneration.save(
+            fig, os.path.join(
                 savedir, "combined_cdf_{}".format(parameter)
             )
         )
-        plt.close()
 
     def box_plot_comparison_plot(self, label):
         """Generate comparison box plots for all parameters that are
@@ -822,10 +846,9 @@ class _PlotGeneration(object):
             parameter, same_samples, colors, latex_label,
             list(samples.keys())
         )
-        plt.savefig(
-            os.path.join(savedir, "combined_boxplot_{}".format(parameter))
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "combined_boxplot_{}".format(parameter))
         )
-        plt.close()
 
     def custom_plot(self, label):
         """Generate custom plots according to the passed python file
@@ -848,9 +871,8 @@ class _PlotGeneration(object):
             fig = i(
                 list(self.samples[label].keys()), self.samples[label]
             )
-            plt.savefig(
-                os.path.join(
+            _PlotGeneration.save(
+                fig, os.path.join(
                     self.savedir, "{}_custom_plotting_{}".format(label, num)
                 )
             )
-            plt.close()

@@ -41,35 +41,12 @@ class _GWInput(_Input):
             list of labels for events stored in an existing metafile that you
             wish to compare
         """
+        data = _Input.grab_data_from_metafile(
+            existing_file, webdir, compare=compare, read_function=GWRead
+        )
         f = GWRead(existing_file)
-        labels = f.labels
-        indicies = np.arange(len(labels))
 
-        if compare:
-            indicies = []
-            for i in compare:
-                if i not in labels:
-                    raise InputError(
-                        "Label '%s' does not exist in the metafile. The list "
-                        "of available labels are %s" % (i, labels)
-                    )
-                indicies.append(labels.index(i))
-            labels = compare
-
-        DataFrame = f.samples_dict
-        if f.injection_parameters != []:
-            inj_values = f.injection_dict
-        else:
-            inj_values = {
-                i: [float("nan")] * len(DataFrame[i]) for i in labels
-            }
-        for i in inj_values.keys():
-            for param in inj_values[i].keys():
-                if inj_values[i][param] == "nan":
-                    inj_values[i][param] = float("nan")
-                if isinstance(inj_values[i][param], bytes):
-                    inj_values[i][param] = inj_values[i][param].decode("utf-8")
-
+        labels = data["labels"]
         if hasattr(f, "priors") and f.priors != {}:
             priors = f.priors["samples"]
             if "calibration" in f.priors.keys():
@@ -77,27 +54,13 @@ class _GWInput(_Input):
         else:
             priors = {label: {} for label in labels}
 
-        config = []
-        if f.config is not None and not all(i is None for i in f.config):
-            config = []
-            for i in labels:
-                config_dir = os.path.join(webdir, "config")
-                f.write_config_to_file(i, outdir=config_dir)
-                config_file = os.path.join(
-                    config_dir, "{}_config.ini".format(i)
-                )
-                config.append(config_file)
-        else:
-            for i in labels:
-                config.append(None)
-
-        psd = {}
+        psd = {i: {} for i in labels}
         if f.psd is not None and f.psd[labels[0]] != {}:
             for i in labels:
                 psd[i] = {
                     ifo: PSD(f.psd[i][ifo]) for ifo in f.psd[i].keys()
                 }
-        calibration = {}
+        calibration = {i: {} for i in labels}
         if f.calibration is not None and f.calibration[labels[0]] != {}:
             for i in labels:
                 calibration[i] = {
@@ -105,29 +68,19 @@ class _GWInput(_Input):
                     f.calibration[i].keys()
                 }
 
-        if f.weights is not None and f.weights != {}:
-            weights = {i: f.weights[i] for i in labels}
-        else:
-            weights = {i: None for i in labels}
-
-        return [
-            DataFrame, inj_values,
+        data.update(
             {
-                i: j for i, j in zip(
-                    labels, [f.input_version[ind] for ind in indicies]
-                )
-            },
-            {
-                i: j for i, j in zip(
-                    labels, [f.extra_kwargs[ind] for ind in indicies]
-                )
-            }, priors, config, labels, weights,
-            {
-                i: j for i, j in zip(
-                    labels, [f.approximant[ind] for ind in indicies]
-                )
-            }, psd, calibration
-        ]
+                "prior": priors,
+                "approximant": {
+                    i: j for i, j in zip(
+                        labels, [f.approximant[ind] for ind in data["indicies"]]
+                    )
+                },
+                "psd": psd,
+                "calibration": calibration
+            }
+        )
+        return data
 
     @staticmethod
     def grab_data_from_file(file, label, config=None, injection=None):
@@ -144,149 +97,11 @@ class _GWInput(_Input):
         injection: str, optional
             path to an injection file used in the analysis
         """
-        f = GWRead(file)
-        if config is not None:
-            f.add_fixed_parameters_from_config_file(config)
-        f.generate_all_posterior_samples()
-        if injection:
-            f.add_injection_parameters_from_file(injection)
-        parameters = f.parameters
-        samples = np.array(f.samples).T
-        DataFrame = {label: SamplesDict(parameters, samples)}
-        kwargs = f.extra_kwargs
-        if hasattr(f, "injection_parameters"):
-            injection = f.injection_parameters
-            if injection is not None:
-                for i in parameters:
-                    if i not in list(injection.keys()):
-                        injection[i] = float("nan")
-            else:
-                injection = {i: j for i, j in zip(
-                    parameters, [float("nan")] * len(parameters))}
-        else:
-            injection = {i: j for i, j in zip(
-                parameters, [float("nan")] * len(parameters))}
-        version = f.input_version
-        if hasattr(f, "priors"):
-            priors = f.priors
-        else:
-            priors = []
-        if hasattr(f, "weights"):
-            weights = f.weights
-        else:
-            weights = None
-        return [
-            DataFrame, {label: injection}, {label: version}, {label: kwargs},
-            {label: priors}, {label: weights}
-        ]
-
-    @property
-    def config(self):
-        return self._config
-
-    @config.setter
-    def config(self, config):
-        if config and len(config) != len(self.labels):
-            raise InputError(
-                "Please provide a configuration file for each label"
-            )
-        if config is None and not self.meta_file:
-            self._config = [None] * len(self.labels)
-        elif self.meta_file:
-            self._config = [None] * len(self.labels)
-        else:
-            self._config = config
-
-    @property
-    def samples(self):
-        return self._samples
-
-    @samples.setter
-    def samples(self, samples):
-        if not samples:
-            raise InputError("Please provide a results file")
-        if len(samples) != len(self.labels):
-            logger.info(
-                "You have passed {} result files and {} labels. Setting "
-                "labels = {}".format(
-                    len(samples), len(self.labels), self.labels[:len(samples)]
-                )
-            )
-            self.labels = self.labels[:len(samples)]
-        samples_dict, injection_data_dict, prior_dict = {}, {}, {}
-        file_version_dict, file_kwargs_dict, weights_dict = {}, {}, {}
-        approximant_dict, psd_dict, calibration_dict = {}, {}, {}
-        config, labels = None, None
-        for num, i in enumerate(samples):
-            logger.info("Assigning {} to {}".format(self.labels[num], i))
-            if not os.path.isfile(i):
-                raise FileNotFoundError("File %s does not exist" % (i))
-            data = self.grab_data_from_input(
-                i, self.labels[num], config=self.config[num],
-                injection=self.injection_file[num]
-            )
-            if len(data) > 6:
-                config = data[5]
-                labels = data[6]
-                weights_dict = data[7]
-                prior_dict = data[4]
-                approximant_dict = data[8]
-                psd_dict = data[9]
-                calibration_dict = data[10]
-                for j in labels:
-                    samples_dict[j] = data[0][j]
-                    injection_data_dict[j] = data[1][j]
-                    file_version_dict[j] = data[2][j]
-                    file_kwargs_dict[j] = data[3][j]
-            else:
-                samples_dict[self.labels[num]] = data[0][self.labels[num]]
-                injection_data_dict[self.labels[num]] = data[1][self.labels[num]]
-                file_version_dict[self.labels[num]] = data[2][self.labels[num]]
-                file_kwargs_dict[self.labels[num]] = data[3][self.labels[num]]
-                prior_dict[self.labels[num]] = data[4][self.labels[num]]
-                weights_dict[self.labels[num]] = data[5][self.labels[num]]
-        self._samples = samples_dict
-        self._injection_data = injection_data_dict
-        self._file_version = file_version_dict
-        self._file_kwargs = file_kwargs_dict
-        if labels is not None:
-            labels_iter = labels
-        else:
-            labels_iter = self.labels
-        for i in labels_iter:
-            if prior_dict != {} and prior_dict[i] != []:
-                if self.priors != {} and i in self.priors["samples"].keys():
-                    logger.warn(
-                        "Replacing the prior file for {} with the prior "
-                        "samples stored in the result file".format(i)
-                    )
-                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
-                elif self.priors != {}:
-                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
-                elif self.priors == {}:
-                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
-            elif prior_dict != {}:
-                if self.priors != {} and i not in self.priors["samples"].keys():
-                    self.add_to_prior_dict("samples/" + i, prior_dict[i])
-                elif self.priors == {}:
-                    self.add_to_prior_dict("samples/" + i, [])
-            else:
-                if self.priors == {}:
-                    self.add_to_prior_dict("samples/" + i, [])
-        if config is not None:
-            self._config = config
-        if labels is not None:
-            self.labels = labels
-            self.result_files = self.result_files * len(labels)
-            self.weights = {i: None for i in self.labels}
-        if approximant_dict != {}:
-            self._approximant = approximant_dict
-        if psd_dict != {}:
-            self._psd = psd_dict
-        if calibration_dict != {}:
-            self._calibration = calibration_dict
-        if weights_dict != {}:
-            self.weights = weights_dict
+        data = _Input.grab_data_from_file(
+            file, label, config=config, injection=injection,
+            read_function=GWRead
+        )
+        return data
 
     @property
     def approximant(self):
@@ -774,9 +589,9 @@ class GWInput(_GWInput, Input):
                 self.existing_metafile, self.existing,
                 compare=self.compare_results
             )
-            self.existing_approximant = self.existing_data[7]
-            self.existing_psd = self.existing_data[8]
-            self.existing_calibration = self.existing_data[9]
+            self.existing_approximant = self.existing_data["approximant"]
+            self.existing_psd = self.existing_data["psd"]
+            self.existing_calibration = self.existing_data["calibration"]
         else:
             self.existing_approximant = None
             self.existing_psd = None
@@ -939,59 +754,16 @@ class GWPostProcessing(PostProcessing):
         if True, public facing summarypages are produced
     """
     def __init__(self, inputs, colors="default"):
-        self.inputs = inputs
-        self.result_files = self.inputs.result_files
-        self.existing = self.inputs.existing
-        self.compare_results = self.inputs.compare_results
-        self.add_to_existing = False
+        super(GWPostProcessing, self).__init__(inputs, colors=colors)
         if self.existing is not None:
-            self.add_to_existing = True
-            self.existing_metafile = self.inputs.existing_metafile
-            self.existing_samples = self.inputs.existing_samples
-            self.existing_injection_data = self.inputs.existing_injection_data
-            self.existing_file_version = self.inputs.existing_file_version
-            self.existing_file_kwargs = self.inputs.existing_file_kwargs
-            self.existing_priors = self.inputs.existing_priors
-            self.existing_config = self.inputs.existing_config
-            self.existing_labels = self.inputs.existing_labels
-            self.existing_weights = self.inputs.existing_weights
             self.existing_approximant = self.inputs.existing_approximant
             self.existing_psd = self.inputs.existing_psd
             self.existing_calibration = self.inputs.existing_calibration
         else:
-            self.existing_metafile = None
-            self.existing_labels = None
-            self.existing_weights = None
-            self.existing_samples = None
-            self.existing_file_version = None
-            self.existing_file_kwargs = None
-            self.existing_priors = None
-            self.existing_config = None
-            self.existing_injection_data = None
             self.existing_approximant = None
             self.existing_psd = None
             self.existing_calibration = None
-        self.user = self.inputs.user
-        self.host = self.inputs.host
-        self.webdir = self.inputs.webdir
-        self.baseurl = self.inputs.baseurl
-        self.labels = self.inputs.labels
-        self.weights = self.inputs.weights
-        self.config = self.inputs.config
-        self.injection_file = self.inputs.injection_file
-        self.injection_data = self.inputs.injection_data
-        self.publication = self.inputs.publication
         self.publication_kwargs = self.inputs.publication_kwargs
-        self.kde_plot = self.inputs.kde_plot
-        self.samples = self.inputs.samples
-        self.priors = self.inputs.priors
-        self.custom_plotting = self.inputs.custom_plotting
-        self.email = self.inputs.email
-        self.dump = self.inputs.dump
-        self.hdf5 = self.inputs.hdf5
-        self.file_version = self.inputs.file_version
-        self.file_kwargs = self.inputs.file_kwargs
-        self.palette = self.inputs.palette
         self.approximant = self.inputs.approximant
         self.gracedb = self.inputs.gracedb
         self.detectors = self.inputs.detectors
@@ -1002,13 +774,6 @@ class GWPostProcessing(PostProcessing):
         self.no_ligo_skymap = self.inputs.no_ligo_skymap
         self.multi_threading_for_skymap = self.inputs.multi_threading_for_skymap
         self.gwdata = self.inputs.gwdata
-        self.colors = self.inputs.colors
-        self.linestyles = self.inputs.linestyles
-        self.include_prior = self.inputs.include_prior
-        self.notes = self.inputs.notes
-        self.disable_comparison = self.inputs.disable_comparison
-        self.disable_interactive = self.inputs.disable_interactive
-        self.multi_process = self.inputs.multi_threading_for_plots
         self.maxL_samples = []
         self.same_parameters = []
         self.pepredicates_probs = self.inputs.pepredicates_probs
