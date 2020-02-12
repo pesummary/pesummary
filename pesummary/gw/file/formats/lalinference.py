@@ -192,10 +192,12 @@ class LALInference(GWRead):
         log_frequencies = {
             key.split("_")[0]: [] for key, value in attributes if
             "_spcal_logfreq" in key or "_spcal_freq" in key}
+        attribute_keys = [key for key, value in attributes]
         for key, value in attributes:
             if "_spcal_logfreq" in key:
-                log_frequencies[key.split("_")[0]].append(float(value))
-            if "_spcal_freq" in key:
+                if key.replace("logfreq", "freq") not in attribute_keys:
+                    log_frequencies[key.split("_")[0]].append(float(value))
+            elif "_spcal_freq" in key:
                 log_frequencies[key.split("_")[0]].append(np.log(float(value)))
 
         amp_params = {ifo: [] for ifo in log_frequencies.keys()}
