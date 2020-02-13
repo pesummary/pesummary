@@ -315,27 +315,28 @@ class _Input(object):
 
     @labels.setter
     def labels(self, labels):
-        if labels is None:
-            labels = self.default_labels()
-        elif len(np.unique(labels)) != len(labels):
-            raise InputError(
-                "Please provide unique labels for each result file"
-            )
-        for num, i in enumerate(labels):
-            if "." in i:
-                logger.warn(
-                    "Replacing the label {} by {} to make it compatible with "
-                    "the html pages".format(i, i.replace(".", "_"))
+        if not hasattr(self, "._labels"):
+            if labels is None:
+                labels = self.default_labels()
+            elif len(np.unique(labels)) != len(labels):
+                raise InputError(
+                    "Please provide unique labels for each result file"
                 )
-                labels[num] = i.replace(".", "_")
-        if self.add_to_existing:
-            for i in labels:
-                if i in self.existing_labels:
-                    raise InputError(
-                        "The label '%s' already exists in the existing "
-                        "metafile. Please pass another unique label"
+            for num, i in enumerate(labels):
+                if "." in i:
+                    logger.warn(
+                        "Replacing the label {} by {} to make it compatible "
+                        "with the html pages".format(i, i.replace(".", "_"))
                     )
-        self._labels = labels
+                    labels[num] = i.replace(".", "_")
+            if self.add_to_existing:
+                for i in labels:
+                    if i in self.existing_labels:
+                        raise InputError(
+                            "The label '%s' already exists in the existing "
+                            "metafile. Please pass another unique label"
+                        )
+            self._labels = labels
 
     @property
     def config(self):
@@ -428,26 +429,35 @@ class _Input(object):
             logger.info("Assigning {} to {}".format(self.labels[num], i))
             if not os.path.isfile(i):
                 raise InputError("File %s does not exist" % (i))
-            data = self.grab_data_from_input(
-                i, self.labels[num], config=self.config[num],
-                injection=self.injection_file[num]
-            )
+            if self.is_pesummary_metafile(samples[num]):
+                data = self.grab_data_from_input(
+                    i, self.labels[num], config=None, injection=None
+
+                )
+            else:
+                data = self.grab_data_from_input(
+                    i, self.labels[num], config=self.config[num],
+                    injection=self.injection_file[num]
+                )
             for key, item in data.items():
                 if key not in ignore_keys:
                     if num == 0:
                         setattr(self, "_{}".format(key), item)
                     else:
                         x = getattr(self, "_{}".format(key))
-                        x.update(item)
+                        if isinstance(x, dict):
+                            x.update(item)
+                        elif isinstance(x, list):
+                            x += item
                         setattr(self, "_{}".format(key), x)
             if "labels" in data.keys():
-                labels = data["labels"]
+                stored_labels = data["labels"]
             else:
-                labels = [self.labels[num]]
+                stored_labels = [self.labels[num]]
             if "weights" in data.items():
                 weights_dict = data["weights"]
             if "prior" in data.keys():
-                for label in labels:
+                for label in stored_labels:
                     if data["prior"] != {} and data["prior"][label] != []:
                         if self.priors != {} and label in self.priors["samples"].keys():
                             logger.warn(
@@ -467,12 +477,13 @@ class _Input(object):
                     else:
                         if self.priors == {}:
                             self.add_to_prior_dict("samples/" + label, [])
-
-            labels = None
             if "labels" in data.keys():
-                labels = data["labels"]
+                if num == 0:
+                    labels = data["labels"]
+                else:
+                    labels += data["labels"]
         if labels is not None:
-            self.labels = labels
+            self._labels = labels
             self.result_files = self.result_files * len(labels)
             self.weights = {i: None for i in self.labels}
         if weights_dict != {}:

@@ -1009,7 +1009,7 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
         starting frequency of the plot
     """
     fig, ax = plt.subplots(1, 1)
-    if not colors and labels in list(GW_OBSERVATORY_COLORS.keys()):
+    if not colors and all(i in GW_OBSERVATORY_COLORS.keys() for i in labels):
         colors = [GW_OBSERVATORY_COLORS[i] for i in labels]
     elif not colors:
         colors = ['r', 'b', 'orange', 'c', 'g', 'purple']
@@ -1082,7 +1082,7 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         return data_dict
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    if not colors and ifos in list(GW_OBSERVATORY_COLORS.keys()):
+    if not colors and all(i in GW_OBSERVATORY_COLORS.keys() for i in ifos):
         colors = [GW_OBSERVATORY_COLORS[i] for i in ifos]
     elif not colors:
         colors = ['r', 'b', 'orange', 'c', 'g', 'purple']
