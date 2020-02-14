@@ -17,7 +17,6 @@
 import numpy as np
 from scipy import stats
 import pandas as pd
-from six import string_types
 import matplotlib.pyplot as plt
 from seaborn.distributions import _bivariate_kdeplot
 from seaborn.utils import _kde_support
@@ -58,7 +57,7 @@ def _scipy_univariate_kde(data, bw, gridsize, cut, clip, xlow=None, xhigh=None):
             msg = ("Ignoring bandwidth choice, "
                    "please upgrade scipy to use a different bandwidth.")
             warnings.warn(msg, UserWarning)
-    if isinstance(bw, string_types):
+    if isinstance(bw, str):
         bw = "scotts" if bw == "scott" else bw
         bw = getattr(kde, "%s_factor" % bw)() * np.std(data)
     grid = _kde_support(data, bw, gridsize, cut, clip)
