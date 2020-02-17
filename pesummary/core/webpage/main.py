@@ -17,6 +17,9 @@ import os
 import sys
 from glob import glob
 from operator import itemgetter
+from pathlib import Path
+from shutil import which
+
 from scipy import stats
 import numpy as np
 
@@ -222,10 +225,13 @@ class _WebpageGeneration(object):
         executable: str
             the name of the executable you wish to find
         """
-        from subprocess import check_output
-
-        path = check_output(["which", executable]).decode("utf-8").strip()
-        return path
+        return which(
+            executable,
+            path=os.pathsep.join((
+                os.getenv("PATH", ""),
+                str(Path(sys.executable).parent),
+            )),
+        )
 
     @staticmethod
     def kolmogorov_smirnov_test(a, b):
