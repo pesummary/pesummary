@@ -13,21 +13,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import json
 import os
 import shutil
-import copy
 
-from pesummary.gw.file import meta_file
-from pesummary.gw.file.meta_file import _GWMetaFile, GWMetaFile
-from pesummary.gw.inputs import GWInput
-from pesummary.utils.utils import SamplesDict, Array
-
+import deepdish as dd
 import h5py
 import numpy as np
-import math
-import json
 
-import pytest
+from pesummary.gw.file import meta_file
+from pesummary.gw.file.meta_file import _GWMetaFile
+from pesummary.gw.inputs import GWInput
+from pesummary.utils.utils import SamplesDict, Array
 
 
 def test_recursively_save_dictionary_to_hdf5_file():
@@ -53,7 +50,7 @@ def test_recursively_save_dictionary_to_hdf5_file():
                }
 
     with h5py.File("./.outdir/test.h5") as f:
-        meta_file._recursively_save_dictionary_to_hdf5_file(f, data)
+        meta_file.recursively_save_dictionary_to_hdf5_file(f, data)
 
     f = h5py.File("./.outdir/test.h5", "r")
     assert sorted(list(f.keys())) == sorted(["posterior_samples"])
@@ -166,12 +163,11 @@ class TestMetaFile(object):
 
         with open(".outdir/samples/posterior_samples.json", "r") as f:
             self.json_file = json.load(f)
-        self.hdf5_file = h5py.File(".outdir/samples/posterior_samples.h5", "r")
+        self.hdf5_file = dd.io.load(".outdir/samples/posterior_samples.h5")
 
     def teardown(self):
         """Remove all files and directories created from this class
         """
-        self.hdf5_file.close()
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 

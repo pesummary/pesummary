@@ -1,13 +1,14 @@
 import numpy as np
-import os
 from pesummary.core.command_line import command_line
 from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.gw.inputs import GWInput
 from pesummary.core.inputs import Input
 
+
 class Namespace(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
+
 
 def namespace(args):
     """Generate a namespace for testing purposes
@@ -326,9 +327,9 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
                 json.dump(dictionary, f, indent=4, sort_keys=True)
         elif extension == "hdf5" or extension == "h5":
             import h5py
-            from pesummary.core.file.meta_file import _recursively_save_dictionary_to_hdf5_file
+            from pesummary.core.file.meta_file import recursively_save_dictionary_to_hdf5_file
 
             f = h5py.File(outdir + "test.h5", "w")
-            _recursively_save_dictionary_to_hdf5_file(f, dictionary)
+            recursively_save_dictionary_to_hdf5_file(f, dictionary)
             f.close()
     return parameters, data
