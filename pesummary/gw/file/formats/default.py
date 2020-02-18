@@ -99,7 +99,7 @@ class Default(GWRead):
         if path_to_results[0] == []:
             path_to_results, = GWRead.paths_to_key("posterior_samples", f)
         path_to_results = path_to_results[0]
-        reduced_f, = GWRead.load_recusively(path_to_results, f)
+        reduced_f, = GWRead.load_recursively(path_to_results, f)
         parameters = [i for i in reduced_f.keys()]
         if "waveform_approximant" in parameters:
             approx = reduced_f["waveform_approximant"][0]

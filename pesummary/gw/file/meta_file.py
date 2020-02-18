@@ -13,85 +13,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os
-import numpy as np
-
-import pesummary
-from pesummary import __version__
-from pesummary.utils.utils import logger, make_dir
-from pesummary.core.file.meta_file import _MetaFile
+from pesummary.utils.utils import logger
+from pesummary.core.file.meta_file import (
+    _MetaFile, recursively_save_dictionary_to_hdf5_file,
+    DEFAULT_HDF5_KEYS as CORE_HDF5_KEYS,
+)
 from pesummary.gw.inputs import GWPostProcessing
 
-
-def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
-    """Recursively save a dictionary to a hdf5 file
-
-    Parameters
-    ----------
-    f: h5py._hl.files.File
-        the open hdf5 file that you would like the data to be saved to
-    dictionary: dict
-        dictionary of data
-    current_path: optional, str
-        string to indicate the level to save the data in the hdf5 file
-    """
-    try:
-        f.create_group("posterior_samples")
-        if "psds" in dictionary.keys():
-            f.create_group("psds")
-        if "calibration_envelope" in dictionary.keys():
-            f.create_group("calibration_envelope")
-        if "config_file" in dictionary.keys():
-            f.create_group("config_file")
-        if "approximant" in dictionary.keys():
-            f.create_group("approximant")
-        if "injection_data" in dictionary.keys():
-            f.create_group("injection_data")
-        if "version" in dictionary.keys():
-            f.create_group("version")
-        if "meta_data" in dictionary.keys():
-            f.create_group("meta_data")
-        if "priors" in dictionary.keys():
-            f.create_group("priors")
-    except Exception:
-        pass
-    if current_path is None:
-        current_path = []
-
-    for k, v in dictionary.items():
-        if isinstance(v, dict):
-            try:
-                f["/".join(current_path)].create_group(k)
-            except Exception:
-                pass
-            path = current_path + [k]
-            _recursively_save_dictionary_to_hdf5_file(f, v, path)
-        elif isinstance(v, (list, pesummary.utils.utils.Array, np.ndarray)):
-            import math
-
-            if not len(v):
-                f["/".join(current_path)].create_dataset(k, data=np.array([]))
-            elif isinstance(v[0], (str, bytes)):
-                f["/".join(current_path)].create_dataset(k, data=np.array(
-                    v, dtype="S"
-                ))
-            elif isinstance(v[0], (list, pesummary.utils.utils.Array, np.ndarray)):
-                data = np.vstack(v)
-                f["/".join(current_path)].create_dataset(k, data=np.array(data))
-            elif math.isnan(v[0]):
-                f["/".join(current_path)].create_dataset(k, data=np.array(
-                    ["NaN"] * len(v), dtype="S"
-                ))
-            elif isinstance(v[0], float):
-                f["/".join(current_path)].create_dataset(k, data=np.array(v))
-        elif isinstance(v, (str, bytes)):
-            f["/".join(current_path)].create_dataset(k, data=np.array(
-                [v], dtype="S"
-            ))
-        elif isinstance(v, float):
-            f["/".join(current_path)].create_dataset(k, data=np.array([v]))
-        elif v == {}:
-            f["/".join(current_path)].create_dataset(k, data=np.array("NaN"))
+DEFAULT_HDF5_KEYS = CORE_HDF5_KEYS + ["psds", "calibration_envelope", "approximant"]
 
 
 class _GWMetaFile(_MetaFile):
@@ -126,53 +55,22 @@ class _GWMetaFile(_MetaFile):
             existing_label=existing_label, existing_samples=existing_samples,
             existing_injection=existing_injection,
             existing_metadata=existing_metadata,
-            existing_config=existing_config, existing_priors={}, outdir=outdir,
-            existing=existing, existing_metafile=existing_metafile
+            existing_config=existing_config, existing_priors=existing_priors,
+            outdir=outdir,
+            existing=existing, existing_metafile=existing_metafile,
         )
-        if self.existing_labels is None:
-            self.existing_labels = [None]
-        if self.existing is not None:
-            self.add_existing_data()
 
     def _make_dictionary(self):
         """Generate a single dictionary which stores all information
         """
+        super(_GWMetaFile, self)._make_dictionary()
         dictionary = {
-            "posterior_samples": {},
-            "injection_data": {},
-            "version": {},
-            "meta_data": {},
-            "priors": {},
-            "config_file": {},
             "approximant": {},
             "psds": {},
             "calibration_envelope": {}
         }
 
-        dictionary["priors"] = self.priors
         for num, label in enumerate(self.labels):
-            parameters = self.samples[label].keys()
-            samples = np.array([self.samples[label][i] for i in parameters]).T
-            dictionary["posterior_samples"][label] = {
-                "parameter_names": list(parameters),
-                "samples": samples
-            }
-            dictionary["injection_data"][label] = {
-                "injection_values": [
-                    self.injection_data[label][i.decode("utf-8")] if
-                    isinstance(i, bytes) else self.injection_data[label][i]
-                    for i in parameters
-                ]
-            }
-            dictionary["version"][label] = [self.file_versions[label]]
-            dictionary["version"]["pesummary"] = [__version__]
-            dictionary["meta_data"][label] = self.file_kwargs[label]
-
-            if self.config != {} and self.config[num] is not None and not isinstance(self.config[num], dict):
-                config = self._grab_config_data_from_data_file(self.config[num])
-                dictionary["config_file"][label] = config
-            elif self.config[num] is not None:
-                dictionary["config_file"][label] = self.config[num]
             cond = all(self.calibration[label] != j for j in [{}, None])
             if self.calibration != {} and cond:
                 dictionary["calibration_envelope"][label] = {
@@ -192,7 +90,7 @@ class _GWMetaFile(_MetaFile):
                 dictionary["approximant"][label] = self.approximant[label]
             else:
                 dictionary["approximant"][label] = {}
-        self.data = dictionary
+        self.data.update(dictionary)
 
     def save_to_hdf5(self):
         """Save the metafile as a hdf5 file
@@ -200,7 +98,9 @@ class _GWMetaFile(_MetaFile):
         import h5py
 
         with h5py.File(self.meta_file, "w") as f:
-            _recursively_save_dictionary_to_hdf5_file(f, self.data)
+            recursively_save_dictionary_to_hdf5_file(
+                f=f, dictionary=self.data, extra_keys=DEFAULT_HDF5_KEYS
+            )
 
 
 class GWMetaFile(GWPostProcessing):
@@ -211,8 +111,6 @@ class GWMetaFile(GWPostProcessing):
         super(GWMetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
         if self.add_to_existing:
-            from pesummary.gw.file.read import read as GWRead
-
             existing = self.existing
             existing_metafile = self.existing_metafile
             existing_samples = self.existing_samples

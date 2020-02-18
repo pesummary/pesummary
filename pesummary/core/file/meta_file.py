@@ -24,8 +24,12 @@ from pesummary.core.inputs import PostProcessing
 from pesummary.utils.utils import make_dir, logger
 from pesummary import conf
 
+DEFAULT_HDF5_KEYS = ["config_file", "injection_data", "version", "meta_data", "priors"]
 
-def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
+
+def recursively_save_dictionary_to_hdf5_file(
+        f, dictionary, current_path=None, extra_keys=None
+):
     """Recursively save a dictionary to a hdf5 file
 
     Parameters
@@ -37,56 +41,79 @@ def _recursively_save_dictionary_to_hdf5_file(f, dictionary, current_path=None):
     current_path: optional, str
         string to indicate the level to save the data in the hdf5 file
     """
-    try:
-        f.create_group("posterior_samples")
-        if "config_file" in dictionary.keys():
-            f.create_group("config_file")
-        if "injection_data" in dictionary.keys():
-            f.create_group("injection_data")
-        if "version" in dictionary.keys():
-            f.create_group("version")
-        if "meta_data" in dictionary.keys():
-            f.create_group("meta_data")
-    except Exception:
-        pass
+    def _safe_create_hdf5_group(hdf5_file, key):
+        if key not in hdf5_file.keys():
+            hdf5_file.create_group(key)
+        else:
+            logger.debug("{} already present in hdf5 file.".format(key))
+    if extra_keys is None:
+        extra_keys = DEFAULT_HDF5_KEYS
+    _safe_create_hdf5_group(hdf5_file=f, key="posterior_samples")
+    for key in extra_keys:
+        if key in dictionary:
+            _safe_create_hdf5_group(hdf5_file=f, key=key)
     if current_path is None:
         current_path = []
 
     for k, v in dictionary.items():
         if isinstance(v, dict):
-            try:
+            if k not in f["/" + "/".join(current_path)].keys():
                 f["/".join(current_path)].create_group(k)
-            except Exception:
-                pass
+            else:
+                logger.debug("{} already present in hdf5 file.".format(k))
             path = current_path + [k]
-            _recursively_save_dictionary_to_hdf5_file(f, v, path)
-        elif isinstance(v, (list, pesummary.utils.utils.Array, np.ndarray)):
-            import math
+            recursively_save_dictionary_to_hdf5_file(f, v, path, extra_keys=extra_keys)
+        else:
+            create_hdf5_dataset(key=k, value=v, hdf5_file=f, current_path=current_path)
 
-            if v == []:
-                f["/".join(current_path)].create_dataset(k, data=np.array([]))
-            elif isinstance(v[0], (str, bytes)):
-                f["/".join(current_path)].create_dataset(k, data=np.array(
-                    v, dtype="S"
-                ))
-            elif isinstance(v[0], (list, pesummary.utils.utils.Array, np.ndarray)):
-                data = [np.array(l) for l in v]
-                f["/".join(current_path)].create_dataset(k, data=np.array(data))
-            elif math.isnan(v[0]):
-                f["/".join(current_path)].create_dataset(k, data=np.array(
-                    ["NaN"] * len(v), dtype="S"
-                ))
-            elif isinstance(v[0], float):
-                f["/".join(current_path)].create_dataset(k, data=np.array(v))
-        elif isinstance(v, (str, bytes)):
-            f["/".join(current_path)].create_dataset(k, data=np.array(
-                [v], dtype="S"
-            ))
-        elif isinstance(v, float):
-            f["/".join(current_path)].create_dataset(k, data=np.array(
-                [v], dtype='<f4'))
-        elif v == {}:
-            f["/".join(current_path)].create_dataset(k, data=np.array("NaN"))
+
+def create_hdf5_dataset(key, value, hdf5_file, current_path):
+    """
+    Create a hdf5 dataset in place
+
+    Parameters
+    ----------
+    key: str
+        Key for the new dataset
+    value: array-like
+        Data to store
+    hdf5_file: h5py.File
+        hdf5 file object
+    current_path: str
+        Current string withing the hdf5 file
+    """
+    error_message = "Cannot process {}={} from list with type {} for hdf5"
+    array_types = (list, pesummary.utils.utils.Array, np.ndarray)
+    numeric_types = (float, int, np.number)
+    string_types = (str, bytes)
+    if isinstance(value, array_types):
+        import math
+
+        if len(value) == 0:
+            data = np.array([])
+        elif isinstance(value[0], string_types):
+            data = np.array(value, dtype="S")
+        elif isinstance(value[0], array_types):
+            data = np.array([np.squeeze(l) for l in value])
+        elif math.isnan(value[0]):
+            data = np.array(["NaN"] * len(value), dtype="S")
+        elif isinstance(value[0], numeric_types):
+            data = np.array(value, dtype=type(value[0]))
+        else:
+            raise TypeError(error_message.format(key, value, type(value[0])))
+    elif isinstance(value, numeric_types) or isinstance(value, bool):
+        data = value
+    elif isinstance(value, string_types):
+        data = np.array([value], dtype="S")
+    elif value == {}:
+        data = np.array(np.nan)
+    elif inspect.isclass(value) or inspect.isfunction(value):
+        data = np.array([value.__module__ + value.__name__], dtype="S")
+    elif inspect.ismodule(value):
+        data = np.array([value.__name__], dtype="S")
+    else:
+        raise TypeError(error_message.format(key, value, type(value)))
+    hdf5_file["/".join(current_path)].create_dataset(key, data=data)
 
 
 class PESummaryJsonEncoder(json.JSONEncoder):
@@ -292,7 +319,9 @@ class _MetaFile(object):
         import h5py
 
         with h5py.File(self.meta_file, "w") as f:
-            _recursively_save_dictionary_to_hdf5_file(f, self.data)
+            recursively_save_dictionary_to_hdf5_file(
+                f, self.data, extra_keys=DEFAULT_HDF5_KEYS
+            )
 
     def save_to_dat(self):
         """Save the samples to a .dat file

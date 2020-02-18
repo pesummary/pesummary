@@ -13,14 +13,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import pesummary
 from pesummary.gw.file.formats.base_read import GWRead
 from pesummary.core.file.formats.pesummary import PESummary as CorePESummary
-from pesummary.utils.utils import logger, Array
-
-import os
-from glob import glob
-import numpy as np
+from pesummary.utils.utils import logger
 
 
 class PESummary(GWRead, CorePESummary):
@@ -44,26 +39,13 @@ class PESummary(GWRead, CorePESummary):
         analysis
     """
     def __init__(self, path_to_results_file, **kwargs):
-        self.path_to_results_file = path_to_results_file
-        self.extension = self.extension_from_path(self.path_to_results_file)
-        load_kwargs = {
-            "grab_data_from_dictionary": PESummary._grab_data_from_dictionary}
-        self.load(self._grab_data_from_pesummary_file, **load_kwargs)
-        self.samples_dict = None
+        super(PESummary, self).__init__(
+            path_to_results_file=path_to_results_file
+        )
 
-    @classmethod
-    def load_file(cls, path):
-        if os.path.isdir(path):
-            files = glob(path + "/*")
-            if "home.html" in files:
-                path = glob(path + "/samples/posterior_samples*")[0]
-            else:
-                raise Exception(
-                    "Unable to find a file called 'posterior_samples' in "
-                    "the directory %s" % (path + "/samples"))
-        if not os.path.isfile(path):
-            raise Exception("%s does not exist" % (path))
-        return cls(path)
+    @property
+    def load_kwargs(self):
+        return dict(grab_data_from_dictionary=self._grab_data_from_dictionary)
 
     def load(self, function, **kwargs):
         """Load a results file according to a given function
@@ -126,96 +108,27 @@ class PESummary(GWRead, CorePESummary):
     def _grab_data_from_dictionary(dictionary):
         """
         """
-        labels = list(dictionary["posterior_samples"].keys())
-        existing_structure = {
-            i: j for i in labels for j in
-            dictionary["posterior_samples"]["%s" % (i)].keys()}
-        labels = list(existing_structure.keys())
+        data = CorePESummary._grab_data_from_dictionary(dictionary=dictionary)
 
-        parameter_list, sample_list, approx_list, inj_list = [], [], [], []
-        ver_list, meta_data_list, weights_list = [], [], []
-        for num, i in enumerate(labels):
-            p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
-            s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
-            if "injection_data" in dictionary.keys():
-                inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
-                for num, j in enumerate(inj):
-                    if isinstance(j, bytes):
-                        if j.decode("utf-8") == "NaN":
-                            inj[num] = float("nan")
-                        else:
-                            inj[num] = j.decode("utf-8")
-                    elif isinstance(j, str):
-                        if j == "Nan":
-                            inj[num] = float("nan")
-                    elif isinstance(j, (list, np.ndarray)):
-                        inj[num] = inj[num][0]
-                inj_list.append(
-                    {
-                        i.decode("utf-8") if isinstance(i, bytes) else i: j for
-                        i, j in zip(p, inj)
-                    }
-                )
-            if isinstance(p[0], bytes):
-                parameter_list.append([j.decode("utf-8") for j in p])
-            else:
-                parameter_list.append([j for j in p])
-            sample_list.append(s)
-            psd, cal, config = None, None, None
-            if "config_file" in dictionary.keys():
-                config, = GWRead.load_recusively("config_file", dictionary)
+        approx_list = list()
+        psd, cal = None, None
+        for num, key in enumerate(data["labels"]):
             if "psds" in dictionary.keys():
-                psd, = GWRead.load_recusively("psds", dictionary)
+                psd, = GWRead.load_recursively("psds", dictionary)
             if "calibration_envelope" in dictionary.keys():
-                cal, = GWRead.load_recusively("calibration_envelope", dictionary)
+                cal, = GWRead.load_recursively("calibration_envelope", dictionary)
             if "approximant" in dictionary.keys():
-                if "%s" % (i) in dictionary["approximant"].keys():
-                    approx_list.append(dictionary["approximant"]["%s" % (i)])
+                if key in dictionary["approximant"].keys():
+                    approx_list.append(dictionary["approximant"][key])
                 else:
                     approx_list.append(None)
             else:
                 approx_list.append(None)
-            if "meta_data" in dictionary.keys():
-                data, = GWRead.load_recusively("meta_data", dictionary)
-                meta_data_list.append(data["%s" % (i)])
-            else:
-                meta_data_list.append({"sampler": {}, "meta_data": {}})
-            if "weights" in p or b"weights" in p:
-                ind = p.index("weights") if "weights" in p else p.index(b"weights")
-                weights_list.append(Array([j[ind] for j in s]))
-            else:
-                weights_list.append(None)
+        data["approximant"] = approx_list
+        data["calibration"] = cal
+        data["psd"] = psd
 
-        if "version" in dictionary.keys():
-            version, = GWRead.load_recusively("version", dictionary)
-        else:
-            version = {i: "No version information found" for i in labels
-                       + ["pesummary"]}
-        if "priors" in dictionary.keys():
-            priors, = GWRead.load_recusively("priors", dictionary)
-        else:
-            priors = {}
-        for i in list(version.keys()):
-            if i != "pesummary" and isinstance(version[i][0], bytes):
-                ver_list.append(version[i][0].decode("utf-8"))
-            elif i != "pesummary":
-                ver_list.append(version[i][0])
-            elif isinstance(version["pesummary"], bytes):
-                version["pesummary"] = version["pesummary"].decode("utf-8")
-        return {
-            "parameters": parameter_list,
-            "samples": sample_list,
-            "injection": inj_list,
-            "version": ver_list,
-            "kwargs": meta_data_list,
-            "weights": {i: j for i, j in zip(labels, weights_list)},
-            "labels": labels,
-            "config": config,
-            "psd": psd,
-            "calibration": cal,
-            "approximant": approx_list,
-            "prior": priors
-        }
+        return data
 
     @property
     def calibration_data_in_results_file(self):
@@ -228,13 +141,13 @@ class PESummary(GWRead, CorePESummary):
 
     @property
     def detectors(self):
-        det_list = []
-        for i in self.parameters:
-            detectors = []
-            for param in i:
+        det_list = list()
+        for parameters in self.parameters:
+            detectors = list()
+            for param in parameters:
                 if "_optimal_snr" in param and param != "network_optimal_snr":
                     detectors.append(param.split("_optimal_snr")[0])
-            if detectors == []:
+            if not detectors:
                 detectors.append(None)
             det_list.append(detectors)
         return det_list
@@ -258,15 +171,15 @@ class PESummary(GWRead, CorePESummary):
         """Convert a PESummary metafile to a bilby results object
         """
         from bilby.gw.result import CompactBinaryCoalescenceResult
-        from bilby.core.priors import PriorDict, Uniform
+        from bilby.core.prior import Prior, PriorDict
         from pandas import DataFrame
 
-        objects = {}
-        for num, i in enumerate(self.labels):
+        objects = dict()
+        for num, label in enumerate(self.labels):
             priors = PriorDict()
             logger.warn(
                 "No prior information is known so setting it to a default")
-            priors.update({i: Uniform(-10, 10, 0) for i in self.parameters[num]})
+            priors.update({parameter: Prior() for parameter in self.parameters[num]})
             posterior_data_frame = DataFrame(
                 self.samples[num], columns=self.parameters[num])
             meta_data = {
@@ -275,11 +188,10 @@ class PESummary(GWRead, CorePESummary):
                         "waveform_approximant": self.approximant[num]},
                     "interferometers": self.detectors[num]}}
             bilby_object = CompactBinaryCoalescenceResult(
-                search_parameter_keys=self.existing_parameters[num],
-                posterior=posterior_data_frame, label="pesummary_%s" % (i),
-                samples=self.existing_samples[num],
-                meta_data=meta_data, priors=priors)
-            objects[i] = bilby_object
+                search_parameter_keys=self.parameters[num],
+                posterior=posterior_data_frame, label="pesummary_%s" % label,
+                samples=self.samples[num], priors=priors, meta_data=meta_data)
+            objects[label] = bilby_object
         return objects
 
     def to_lalinference(self, outdir="./"):
@@ -288,18 +200,18 @@ class PESummary(GWRead, CorePESummary):
         import numpy as np
         import h5py
 
-        for num, i in enumerate(self.existing_labels):
+        for num, label in enumerate(self.labels):
             lalinference_samples = np.array(
-                [tuple(i) for i in self.existing_samples[num]],
-                dtype=[(i, '<f4') for i in self.existing_parameters[num]])
+                [tuple(samples) for samples in self.samples[num]],
+                dtype=[(parameter, '<f4') for parameter in self.parameters[num]])
 
             try:
-                f = h5py.File("%s/lalinference_file_%s.hdf5" % (outdir, i), "w")
+                f = h5py.File("%s/lalinference_file_%s.hdf5" % (outdir, label), "w")
             except Exception:
-                raise Exception("Please make sure you have write permission in "
-                                "%s" % (outdir))
+                logger.warning("Cannot write to {}.".format(outdir))
+                raise
             lalinference = f.create_group("lalinference")
             sampler = lalinference.create_group("lalinference_sampler")
-            samples = sampler.create_dataset(
+            sampler.create_dataset(
                 "posterior_samples", data=lalinference_samples)
             f.close()

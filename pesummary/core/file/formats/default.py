@@ -91,7 +91,7 @@ class Default(Read):
         if path_to_results[0] == []:
             path_to_results, = Read.paths_to_key("posterior_samples", f)
         path_to_results = path_to_results[0]
-        reduced_f, = Read.load_recusively(path_to_results, f)
+        reduced_f, = Read.load_recursively(path_to_results, f)
         parameters = [i for i in reduced_f.keys()]
         data = np.zeros([len(reduced_f[parameters[0]]), len(parameters)])
         for num, par in enumerate(parameters):

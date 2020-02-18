@@ -18,7 +18,7 @@ import h5py
 from pesummary.utils.utils import SamplesDict, Array, logger
 
 
-class Read():
+class Read(object):
     """Base class to read in a results file
     """
     def __init__(self, path_to_results_file):
@@ -145,7 +145,7 @@ class Read():
                         yield z
 
     @staticmethod
-    def load_recusively(key, dictionary):
+    def load_recursively(key, dictionary):
         """Return the entry for a key of format 'a/b/c/d'
 
         Parameters
@@ -163,7 +163,7 @@ class Read():
             yield dictionary[key[-1]]
         else:
             old, new = key[0], key[1:]
-            for z in Read.load_recusively(new, dictionary[old]):
+            for z in Read.load_recursively(new, dictionary[old]):
                 yield z
 
     @staticmethod
@@ -214,7 +214,7 @@ class Read():
             path, = Read.paths_to_key("posterior_samples", data)
             path = path[0]
             path += "/posterior_samples"
-        reduced_data, = Read.load_recusively(path, data)
+        reduced_data, = Read.load_recursively(path, data)
         if "content" in list(reduced_data.keys()):
             reduced_data = reduced_data["content"]
         parameters = list(reduced_data.keys())

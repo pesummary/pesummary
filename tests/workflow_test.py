@@ -8,7 +8,6 @@ from base import read_result_file
 from pesummary.utils.utils import functions
 from pesummary.cli.summarypages import WebpageGeneration
 from pesummary.cli.summaryplots import PlotGeneration
-from pesummary.core.file.read import read
 
 
 class Base(object):

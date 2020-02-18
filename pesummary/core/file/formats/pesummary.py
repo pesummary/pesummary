@@ -13,9 +13,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.core.file.formats.base_read import Read
-from pesummary.utils.utils import logger, SamplesDict, Array
-
 from glob import glob
 import os
 
@@ -23,6 +20,9 @@ import h5py
 import json
 import numpy as np
 import configparser
+
+from pesummary.core.file.formats.base_read import Read
+from pesummary.utils.utils import logger, SamplesDict, Array
 
 
 class PESummary(Read):
@@ -47,8 +47,12 @@ class PESummary(Read):
     """
     def __init__(self, path_to_results_file):
         super(PESummary, self).__init__(path_to_results_file)
-        self.load(self._grab_data_from_pesummary_file)
+        self.load(self._grab_data_from_pesummary_file, **self.load_kwargs)
         self.samples_dict = None
+
+    @property
+    def load_kwargs(self):
+        return dict()
 
     @classmethod
     def load_file(cls, path):
@@ -57,11 +61,11 @@ class PESummary(Read):
             if "home.html" in files:
                 path = glob(path + "/samples/posterior_samples*")[0]
             else:
-                raise Exception(
+                raise FileNotFoundError(
                     "Unable to find a file called 'posterior_samples' in "
                     "the directory %s" % (path + "/samples"))
         if not os.path.isfile(path):
-            raise Exception("%s does not exist" % (path))
+            raise FileNotFoundError("%s does not exist" % path)
         return cls(path)
 
     @staticmethod
@@ -112,61 +116,64 @@ class PESummary(Read):
         """
         labels = list(dictionary["posterior_samples"].keys())
         existing_structure = {
-            i: j for i in labels for j in
-            dictionary["posterior_samples"]["%s" % (i)].keys()}
+            label: key for label in labels for key in
+            dictionary["posterior_samples"][label].keys()}
         labels = list(existing_structure.keys())
 
         parameter_list, sample_list, inj_list, ver_list = [], [], [], []
         meta_data_list, weights_list = [], []
-        for num, i in enumerate(labels):
-            p = [j for j in dictionary["posterior_samples"]["%s" % (i)]["parameter_names"]]
-            s = [j for j in dictionary["posterior_samples"]["%s" % (i)]["samples"]]
+        config = None
+        for num, label in enumerate(labels):
+            parameters = dictionary["posterior_samples"][label]["parameter_names"].copy()
+            if isinstance(parameters[0], bytes):
+                parameters = [parameter.decode("utf-8") for parameter in parameters]
+            parameter_list.append(parameters)
+            samples = dictionary["posterior_samples"][label]["samples"].copy()
             if "injection_data" in dictionary.keys():
-                inj = [j for j in dictionary["injection_data"]["%s" % (i)]["injection_values"]]
-                for num, j in enumerate(inj):
-                    if isinstance(j, bytes):
-                        if j.decode("utf-8") == "NaN":
-                            inj[num] = float("nan")
-                        else:
-                            inj[num] = j.decode("utf-8")
-                    elif isinstance(j, str):
-                        if j == "Nan":
-                            inj[num] = float("nan")
-                    elif isinstance(j, (list, np.ndarray)):
-                        inj[num] = inj[num][0]
-                inj_list.append({i: j for i, j in zip(p, inj)})
-            if isinstance(p[0], bytes):
-                parameter_list.append([j.decode("utf-8") for j in p])
-            else:
-                parameter_list.append([j for j in p])
-            sample_list.append(s)
-            config = None
+                inj = dictionary["injection_data"][label]["injection_values"].copy()
+
+                def parse_injection_value(_value):
+                    if isinstance(_value, (list, np.ndarray)):
+                        _value = _value[0]
+                    if isinstance(_value, bytes):
+                        _value = _value.decode("utf-8")
+                    if isinstance(_value, str):
+                        if _value.lower() == "nan":
+                            _value = np.nan
+                        elif _value.lower() == "none":
+                            _value = None
+                    return _value
+                inj_list.append({
+                    parameter: parse_injection_value(value)
+                    for parameter, value in zip(parameters, inj)
+                })
+            sample_list.append(samples)
             if "config_file" in dictionary.keys():
-                config, = Read.load_recusively("config_file", dictionary)
+                config, = Read.load_recursively("config_file", dictionary)
             if "meta_data" in dictionary.keys():
-                data, = Read.load_recusively("meta_data", dictionary)
-                meta_data_list.append(data["%s" % (i)])
+                data, = Read.load_recursively("meta_data", dictionary)
+                meta_data_list.append(data[label])
             else:
                 meta_data_list.append({"sampler": {}, "meta_data": {}})
-            if "weights" in p or b"weights" in p:
-                ind = p.index("weights") if "weights" in p else p.index(b"weights")
-                weights_list.append(Array([j[ind] for j in s]))
+            if "weights" in parameters or b"weights" in parameters:
+                ind = parameters.index("weights") if "weights" in parameters else parameters.index(b"weights")
+                weights_list.append(Array([sample[ind] for sample in samples]))
             else:
                 weights_list.append(None)
         if "version" in dictionary.keys():
-            version, = Read.load_recusively("version", dictionary)
+            version, = Read.load_recursively("version", dictionary)
         else:
-            version = {i: "No version information found" for i in labels
+            version = {label: "No version information found" for label in labels
                        + ["pesummary"]}
         if "priors" in dictionary.keys():
-            priors, = Read.load_recusively("priors", dictionary)
+            priors, = Read.load_recursively("priors", dictionary)
         else:
-            priors = {}
-        for i in list(version.keys()):
-            if i != "pesummary" and isinstance(version[i][0], bytes):
-                ver_list.append(version[i][0].decode("utf-8"))
-            elif i != "pesummary":
-                ver_list.append(version[i][0])
+            priors = dict()
+        for label in list(version.keys()):
+            if label != "pesummary" and isinstance(version[label][0], bytes):
+                ver_list.append(version[label][0].decode("utf-8"))
+            elif label != "pesummary":
+                ver_list.append(version[label][0])
             elif isinstance(version["pesummary"], bytes):
                 version["pesummary"] = version["pesummary"].decode("utf-8")
         return {
@@ -187,25 +194,17 @@ class PESummary(Read):
 
     @samples_dict.setter
     def samples_dict(self, samples_dict):
-        if all("log_likelihood" in i for i in self.parameters):
-            likelihood_inds = [self.parameters[idx].index("log_likelihood") for
-                               idx in range(len(self.labels))]
-            likelihoods = [[i[likelihood_inds[idx]] for i in self.samples[idx]]
-                           for idx, label in enumerate(self.labels)]
-        else:
-            likelihoods = [None] * len(self.labels)
-        outdict = {
+        self._samples_dict = {
             label:
                 SamplesDict(
                     self.parameters[idx], np.array(self.samples[idx]).T
                 ) for idx, label in enumerate(self.labels)
         }
-        self._samples_dict = outdict
 
     @property
     def injection_dict(self):
         return {
-            i: self.injection_parameters[num] for num, i in
+            label: self.injection_parameters[num] for num, label in
             enumerate(self.labels)
         }
 
@@ -221,11 +220,11 @@ class PESummary(Read):
             saved. Default is current working directory
         """
         if label not in list(self.config.keys()):
-            raise Exception("The label %s does not exist." % (label))
+            raise ValueError("The label %s does not exist." % label)
         config_dict = self.config[label]
         config = configparser.ConfigParser()
-        for i in config_dict.keys():
-            config[i] = config_dict[i]
+        for key in config_dict.keys():
+            config[key] = config_dict[key]
 
         with open("%s/%s_config.ini" % (outdir, label), "w") as configfile:
             config.write(configfile)
@@ -234,23 +233,22 @@ class PESummary(Read):
         """Convert a PESummary metafile to a bilby results object
         """
         from bilby.core.result import Result
-        from bilby.core.prior import PriorDict
-        from bilby.core.prior import Uniform
+        from bilby.core.prior import Prior, PriorDict
         from pandas import DataFrame
 
-        objects = {}
-        for num, i in enumerate(self.labels):
-            posterior_data_frame = DataFrame(
-                self.samples[num], columns=self.parameters[num])
+        objects = dict()
+        for num, label in enumerate(self.labels):
             priors = PriorDict()
             logger.warn(
                 "No prior information is known so setting it to a default")
-            priors.update({i: Uniform(-10, 10, 0) for i in self.parameters[num]})
+            priors.update({parameter: Prior() for parameter in self.parameters[num]})
+            posterior_data_frame = DataFrame(
+                self.samples[num], columns=self.parameters[num])
             bilby_object = Result(
                 search_parameter_keys=self.parameters[num],
-                posterior=posterior_data_frame, label="pesummary_%s" % (i),
+                posterior=posterior_data_frame, label="pesummary_%s" % label,
                 samples=self.samples[num], priors=priors)
-            objects[i] = bilby_object
+            objects[label] = bilby_object
         return objects
 
     def to_dat(self, label="all", outdir="./"):
@@ -266,15 +264,15 @@ class PESummary(Read):
             saved. Default is current working directory
         """
         if label != "all" and label not in list(self.labels) and label is not None:
-            raise Exception("The label %s does not exist." % (label))
+            raise ValueError("The label %s does not exist." % label)
         if label == "all" or label is None:
-            label = list(self.labels)
+            labels = list(self.labels)
         else:
-            label = [label]
-        for num, i in enumerate(label):
-            ind = self.labels.index(i)
+            labels = [label]
+        for num, label in enumerate(labels):
+            ind = self.labels.index(label)
             np.savetxt(
-                "%s/pesummary_%s.dat" % (outdir, i), self.samples[ind],
+                "%s/pesummary_%s.dat" % (outdir, label), self.samples[ind],
                 delimiter="\t", header="\t".join(self.parameters[ind]),
                 comments='')
 
@@ -311,7 +309,7 @@ class PESummary(Read):
                     raise ValueError("The label %s does not exist." % (ll))
 
         table = self.latex_table(
-            [self.samples_dict[i] for i in labels], parameter_dict,
+            [self.samples_dict[label] for label in labels], parameter_dict,
             labels=labels
         )
         if save_to_file is None:
