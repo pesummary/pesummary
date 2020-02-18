@@ -16,6 +16,7 @@
 from pesummary.gw.file.formats.base_read import GWRead
 from pesummary.core.file.formats.pesummary import PESummary as CorePESummary
 from pesummary.utils.utils import logger
+import numpy as np
 
 
 class PESummary(GWRead, CorePESummary):
@@ -197,7 +198,6 @@ class PESummary(GWRead, CorePESummary):
     def to_lalinference(self, outdir="./"):
         """Save a PESummary metafile as a lalinference hdf5 file
         """
-        import numpy as np
         import h5py
 
         for num, label in enumerate(self.labels):

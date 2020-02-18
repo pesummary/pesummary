@@ -115,20 +115,25 @@ class PESummary(Read):
         """
         """
         labels = list(dictionary["posterior_samples"].keys())
-        existing_structure = {
-            label: key for label in labels for key in
-            dictionary["posterior_samples"][label].keys()}
-        labels = list(existing_structure.keys())
 
         parameter_list, sample_list, inj_list, ver_list = [], [], [], []
         meta_data_list, weights_list = [], []
-        config = None
         for num, label in enumerate(labels):
-            parameters = dictionary["posterior_samples"][label]["parameter_names"].copy()
-            if isinstance(parameters[0], bytes):
-                parameters = [parameter.decode("utf-8") for parameter in parameters]
+            posterior_samples = dictionary["posterior_samples"][label]
+            if isinstance(posterior_samples, (h5py._hl.dataset.Dataset, np.ndarray)):
+                parameters = [j for j in posterior_samples.dtype.names]
+                samples = [np.array(j.tolist()) for j in posterior_samples]
+            else:
+                parameters = \
+                    dictionary["posterior_samples"][label]["parameter_names"].copy()
+                samples = [
+                    j for j in dictionary["posterior_samples"][label]["samples"]
+                ].copy()
+                if isinstance(parameters[0], bytes):
+                    parameters = [
+                        parameter.decode("utf-8") for parameter in parameters
+                    ]
             parameter_list.append(parameters)
-            samples = dictionary["posterior_samples"][label]["samples"].copy()
             if "injection_data" in dictionary.keys():
                 inj = dictionary["injection_data"][label]["injection_values"].copy()
 
@@ -148,6 +153,7 @@ class PESummary(Read):
                     for parameter, value in zip(parameters, inj)
                 })
             sample_list.append(samples)
+            config = None
             if "config_file" in dictionary.keys():
                 config, = Read.load_recursively("config_file", dictionary)
             if "meta_data" in dictionary.keys():
@@ -170,10 +176,10 @@ class PESummary(Read):
         else:
             priors = dict()
         for label in list(version.keys()):
-            if label != "pesummary" and isinstance(version[label][0], bytes):
-                ver_list.append(version[label][0].decode("utf-8"))
+            if label != "pesummary" and isinstance(version[label], bytes):
+                ver_list.append(version[label].decode("utf-8"))
             elif label != "pesummary":
-                ver_list.append(version[label][0])
+                ver_list.append(version[label])
             elif isinstance(version["pesummary"], bytes):
                 version["pesummary"] = version["pesummary"].decode("utf-8")
         return {
@@ -194,12 +200,20 @@ class PESummary(Read):
 
     @samples_dict.setter
     def samples_dict(self, samples_dict):
-        self._samples_dict = {
+        if all("log_likelihood" in i for i in self.parameters):
+            likelihood_inds = [self.parameters[idx].index("log_likelihood") for
+                               idx in range(len(self.labels))]
+            likelihoods = [[i[likelihood_inds[idx]] for i in self.samples[idx]]
+                           for idx, label in enumerate(self.labels)]
+        else:
+            likelihoods = [None] * len(self.labels)
+        outdict = {
             label:
                 SamplesDict(
                     self.parameters[idx], np.array(self.samples[idx]).T
                 ) for idx, label in enumerate(self.labels)
         }
+        self._samples_dict = outdict
 
     @property
     def injection_dict(self):

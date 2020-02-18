@@ -178,6 +178,19 @@ bilby:
     - schedule
     - pushes
 
+released_samples:
+  stage: consequences
+  image: python:3.6
+  script:
+    - pip install -r requirements.txt
+    - pip install -r optional_requirements.txt
+    - python setup.py install
+    - curl https://dcc.ligo.org/public/0165/P2000026/001/GW190425_posterior_samples.h5 -o GW190425_posterior_samples.h5
+    - python tests/existing_file.py -f GW190425_posterior_samples.h5
+  only:
+    - schedule
+    - pushes
+
 build_examples:
   stage: deploy
   image: python:3.6

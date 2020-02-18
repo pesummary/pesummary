@@ -97,6 +97,10 @@ class _GWMetaFile(_MetaFile):
         """
         import h5py
 
+        key = "posterior_samples"
+        self.data[key] = self._convert_posterior_samples_to_numpy(
+            self.samples
+        )
         with h5py.File(self.meta_file, "w") as f:
             recursively_save_dictionary_to_hdf5_file(
                 f=f, dictionary=self.data, extra_keys=DEFAULT_HDF5_KEYS

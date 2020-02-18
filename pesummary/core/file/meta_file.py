@@ -17,6 +17,7 @@ import inspect
 import os
 import numpy as np
 import json
+import copy
 
 import pesummary
 from pesummary import __version__
@@ -44,8 +45,6 @@ def recursively_save_dictionary_to_hdf5_file(
     def _safe_create_hdf5_group(hdf5_file, key):
         if key not in hdf5_file.keys():
             hdf5_file.create_group(key)
-        else:
-            logger.debug("{} already present in hdf5 file.".format(key))
     if extra_keys is None:
         extra_keys = DEFAULT_HDF5_KEYS
     _safe_create_hdf5_group(hdf5_file=f, key="posterior_samples")
@@ -59,8 +58,6 @@ def recursively_save_dictionary_to_hdf5_file(
         if isinstance(v, dict):
             if k not in f["/" + "/".join(current_path)].keys():
                 f["/".join(current_path)].create_group(k)
-            else:
-                logger.debug("{} already present in hdf5 file.".format(k))
             path = current_path + [k]
             recursively_save_dictionary_to_hdf5_file(f, v, path, extra_keys=extra_keys)
         else:
@@ -89,24 +86,26 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
     if isinstance(value, array_types):
         import math
 
-        if len(value) == 0:
+        if not len(value):
             data = np.array([])
         elif isinstance(value[0], string_types):
             data = np.array(value, dtype="S")
         elif isinstance(value[0], array_types):
-            data = np.array([np.squeeze(l) for l in value])
+            data = np.array(np.vstack(value))
+        elif isinstance(value[0], (tuple, np.record)):
+            data = value
         elif math.isnan(value[0]):
             data = np.array(["NaN"] * len(value), dtype="S")
         elif isinstance(value[0], numeric_types):
-            data = np.array(value, dtype=type(value[0]))
+            data = np.array(value)
         else:
             raise TypeError(error_message.format(key, value, type(value[0])))
-    elif isinstance(value, numeric_types) or isinstance(value, bool):
-        data = value
     elif isinstance(value, string_types):
         data = np.array([value], dtype="S")
+    elif isinstance(value, numeric_types):
+        data = np.array([value])
     elif value == {}:
-        data = np.array(np.nan)
+        data = np.array(np.array("NaN"))
     elif inspect.isclass(value) or inspect.isfunction(value):
         data = np.array([value.__module__ + value.__name__], dtype="S")
     elif inspect.ismodule(value):
@@ -294,6 +293,35 @@ class _MetaFile(object):
             header=conf.delimiter.join(header), comments=""
         )
 
+    @staticmethod
+    def _convert_posterior_samples_to_numpy(dictionary):
+        """Convert the posterior samples from a column-major dictionary
+        to a row-major numpy array
+
+        Parameters
+        ----------
+        dictionary: dict
+            nested dictionary of posterior samples to convert to a numpy array.
+            Each set of column-major posterior samples should be an item for
+            a given label
+
+        Examples
+        --------
+        >>> dictionary = {"label": {"mass_1": [1,2,3], "mass_2": [1,2,3]}}
+        >>> dictionry = _Metafile._convert_posterior_samples_to_numpy(
+        ...     dictionary
+        ... )
+        >>> print(dictionary)
+        ... {'label': rec.array([(1., 1.), (2., 2.), (3., 3.)],
+        ...           dtype=[('mass_1', '<f4'), ('mass_2', '<f4')])}
+        """
+        from pandas import DataFrame
+
+        samples = copy.deepcopy(dictionary)
+        for label, item in samples.items():
+            samples[label] = item.to_structured_array()
+        return samples
+
     def write_marginalized_posterior_to_dat(self):
         """Write the marginalized posterior for each parameter to a .dat file
         """
@@ -311,13 +339,20 @@ class _MetaFile(object):
         """Save the metafile as a json file
         """
         with open(self.meta_file, "w") as f:
-            json.dump(self.data, f, indent=4, sort_keys=True, cls=PESummaryJsonEncoder)
+            json.dump(
+                self.data, f, indent=4, sort_keys=True,
+                cls=PESummaryJsonEncoder
+            )
 
     def save_to_hdf5(self):
         """Save the metafile as a hdf5 file
         """
         import h5py
 
+        key = "posterior_samples"
+        self.data[key] = self._convert_posterior_samples_to_numpy(
+            self.samples
+        )
         with h5py.File(self.meta_file, "w") as f:
             recursively_save_dictionary_to_hdf5_file(
                 f, self.data, extra_keys=DEFAULT_HDF5_KEYS
