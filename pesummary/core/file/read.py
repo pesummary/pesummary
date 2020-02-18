@@ -144,7 +144,12 @@ def _read(path, load_options, default=CORE_DEFAULT_LOAD):
                     )
                 )
                 return default["default"](path)
-            except Exception:
+            except Exception as e:
+                logger.debug(
+                    "Failed to read in {} with the {} class because {}".format(
+                        path, load, e
+                    )
+                )
                 continue
     return default["default"](path)
 

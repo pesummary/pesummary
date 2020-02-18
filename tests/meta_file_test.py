@@ -17,7 +17,6 @@ import json
 import os
 import shutil
 
-import deepdish as dd
 import h5py
 import numpy as np
 
@@ -163,52 +162,65 @@ class TestMetaFile(object):
 
         with open(".outdir/samples/posterior_samples.json", "r") as f:
             self.json_file = json.load(f)
-        self.hdf5_file = dd.io.load(".outdir/samples/posterior_samples.h5")
+        self.hdf5_file = h5py.File(".outdir/samples/posterior_samples.h5", "r")
 
     def teardown(self):
         """Remove all files and directories created from this class
         """
+        self.hdf5_file.close()
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
     def test_parameters(self):
         """Test the parameters stored in the metafile
         """
-        for data in [self.json_file, self.hdf5_file]:
+        for num, data in enumerate([self.json_file, self.hdf5_file]):
             assert list(data["posterior_samples"].keys()) == self.input_labels
-            assert list(
-                sorted(data["posterior_samples"]["EXP1"].keys())) == [
-                    "parameter_names", "samples"]
-            try:
-                assert all(
-                    i.decode("utf-8") == j for i, j in zip(
-                        sorted(data["posterior_samples"]["EXP1"]["parameter_names"]),
-                        sorted(self.input_parameters)))
-            except Exception:
-                assert all(
-                    i == j for i, j in zip(
-                        sorted(data["posterior_samples"]["EXP1"]["parameter_names"]),
-                        sorted(self.input_parameters)))
+            if num == 0:
+                assert list(
+                    sorted(data["posterior_samples"]["EXP1"].keys())) == [
+                        "parameter_names", "samples"]
+            if num == 0:
+                try:
+                    assert all(
+                        i.decode("utf-8") == j for i, j in zip(
+                            sorted(data["posterior_samples"]["EXP1"]["parameter_names"]),
+                            sorted(self.input_parameters)))
+                except AttributeError:
+                    assert all(
+                        i == j for i, j in zip(
+                            sorted(data["posterior_samples"]["EXP1"]["parameter_names"]),
+                            sorted(self.input_parameters)))
+            else:
+                try:
+                    assert all(
+                        i.decode("utf-8") == j for i, j in zip(
+                            sorted(data["posterior_samples"]["EXP1"].dtype.names),
+                            sorted(self.input_parameters)))
+                except AttributeError:
+                    assert all(
+                        i == j for i, j in zip(
+                            sorted(data["posterior_samples"]["EXP1"].dtype.names),
+                            sorted(self.input_parameters)))
 
     def test_samples(self):
         """Test the samples stored in the metafile
         """
-        for data in [self.json_file, self.hdf5_file]:
-            assert list(data["posterior_samples"].keys()) == self.input_labels
-            assert list(
-                sorted(data["posterior_samples"]["EXP1"].keys())) == [
-                    "parameter_names", "samples"]
-
-
-            parameters = data["posterior_samples"]["EXP1"]["parameter_names"]
-            samples = np.array(data["posterior_samples"]["EXP1"]["samples"]).T
-  
+        for num, data in enumerate([self.json_file, self.hdf5_file]):
+            if num == 0:
+                parameters = data["posterior_samples"]["EXP1"]["parameter_names"]
+                samples = np.array(data["posterior_samples"]["EXP1"]["samples"]).T
+            else:
+                parameters = [j for j in data["posterior_samples"]["EXP1"].dtype.names]
+                samples = np.array([j.tolist() for j in data["posterior_samples"]["EXP1"]]).T
             posterior_data = {"EXP1": {i: j for i, j in zip(parameters, samples)}}
             for param, samp in posterior_data["EXP1"].items():
                 if isinstance(param, bytes):
                     param = param.decode("utf-8")
                 for ind in np.arange(len(samp)):
-                    assert samp[ind] == self.input_data["EXP1"][param][ind]
+                    np.testing.assert_almost_equal(
+                        samp[ind], self.input_data["EXP1"][param][ind]
+                    )
 
     def test_file_version(self):
         """Test the file version stored in the metafile
@@ -239,18 +251,32 @@ class TestMetaFile(object):
                )
             )
 
-            assert all(
-               all(
-                   self.input_file_kwargs["EXP1"][i][k] == data["meta_data"]["EXP1"][j][l]
-                   for k, l in zip(
-                       self.input_file_kwargs["EXP1"][i],
-                       data["meta_data"]["EXP1"][j]
-                       )
-               ) for i, j in zip(
-                   sorted(self.input_file_kwargs["EXP1"].keys()),
-                   sorted(data["meta_data"]["EXP1"].keys())
-               )
-           )
+            try:
+                assert all(
+                    all(
+                        self.input_file_kwargs["EXP1"][i][k] == data["meta_data"]["EXP1"][j][l]
+                        for k, l in zip(
+                            self.input_file_kwargs["EXP1"][i],
+                            data["meta_data"]["EXP1"][j]
+                            )
+                    ) for i, j in zip(
+                        sorted(self.input_file_kwargs["EXP1"].keys()),
+                        sorted(data["meta_data"]["EXP1"].keys())
+                    )
+                )
+            except Exception:
+                assert all(
+                    all(
+                        self.input_file_kwargs["EXP1"][i][k] == data["meta_data"]["EXP1"][j][l][0]
+                        for k, l in zip(
+                            self.input_file_kwargs["EXP1"][i],
+                            data["meta_data"]["EXP1"][j]
+                            )
+                    ) for i, j in zip(
+                        sorted(self.input_file_kwargs["EXP1"].keys()),
+                        sorted(data["meta_data"]["EXP1"].keys())
+                    )
+                )
 
     def test_psd(self):
         """Test the psd is stored in the metafile

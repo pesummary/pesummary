@@ -145,6 +145,21 @@ class Read(object):
                         yield z
 
     @staticmethod
+    def convert_list_to_item(dictionary):
+        """
+        """
+        for key, value in dictionary.items():
+            if isinstance(value, dict):
+                Read.convert_list_to_item(value)
+            else:
+                if isinstance(value, (list, np.ndarray, Array)):
+                    if len(value) == 1 and isinstance(value[0], bytes):
+                        dictionary.update({key: value[0].decode("utf-8")})
+                    elif len(value) == 1:
+                        dictionary.update({key: value[0]})
+        return dictionary
+
+    @staticmethod
     def load_recursively(key, dictionary):
         """Return the entry for a key of format 'a/b/c/d'
 
@@ -160,7 +175,8 @@ class Read(object):
         if isinstance(key, (str, float)):
             key = [key]
         if key[-1] in dictionary.keys():
-            yield dictionary[key[-1]]
+            converted_dictionary = Read.convert_list_to_item(dictionary[key[-1]])
+            yield converted_dictionary
         else:
             old, new = key[0], key[1:]
             for z in Read.load_recursively(new, dictionary[old]):
