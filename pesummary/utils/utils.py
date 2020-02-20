@@ -170,7 +170,7 @@ class SamplesDict(dict):
         samples.remove(remove)
         if isinstance(self.samples, np.ndarray):
             self.samples = np.array(samples)
-        super(SamplesDict, self).pop(parameter)
+        return super(SamplesDict, self).pop(parameter)
 
     def downsample(self, number):
         """Downsample the samples stored in the SamplesDict class

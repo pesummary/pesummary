@@ -401,3 +401,62 @@ class LALInference(GWRead):
             return parameters, samples
         except Exception:
             return parameters, samples
+
+
+def write_to_file(
+    samples, outdir="./", label=None, filename=None, overwrite=False,
+    sampler="lalinference_nest"
+):
+    """Write a set of samples in LALInference file format
+
+    Parameters
+    ----------
+    samples: pesummary.utils.utils.SamplesDict
+        Dictionary containing the posterior samples
+    outdir: str
+        The directory where you would like to write the lalinference file
+    label: str
+        The label of the analysis. This is used in the filename if a filename
+        if not specified
+    filename: str
+        The name of the file that you wish to write
+    overwrite: Bool
+        If True, an existing file of the same name will be overwritten
+    sampler: str
+        The sampler which you wish to store in the result file. This may either
+        be 'lalinference_nest' or 'lalinference_mcmc'
+    """
+    from pesummary.gw.file.standard_names import lalinference_map
+
+    if not filename and not label:
+        from time import time
+
+        label = round(time())
+    if not filename:
+        filename = "lalinference_file_{}.hdf5".format(label)
+
+    if os.path.isfile(os.path.join(outdir, filename)) and not overwrite:
+        raise FileExistsError(
+            "The file '{}' already exists in the directory {}".format(
+                filename, outdir
+            )
+        )
+    reverse_map = {item: key for key, item in lalinference_map.items()}
+    no_key = []
+    for param in samples.keys():
+        if param in reverse_map.keys():
+            samples[reverse_map[param]] = samples.pop(param)
+        elif param not in lalinference_map.keys():
+            no_key.append(param)
+    if len(no_key):
+        logger.info(
+            "Unable to find a LALInference name for the parameters: {}. "
+            "Keeping the PESummary name.".format(", ".join(no_key))
+        )
+    lalinference_samples = samples.to_structured_array()
+    with h5py.File(filename, "w") as f:
+        lalinference = f.create_group("lalinference")
+        sampler = lalinference.create_group(sampler)
+        samples = sampler.create_dataset(
+            "posterior_samples", data=lalinference_samples
+        )
