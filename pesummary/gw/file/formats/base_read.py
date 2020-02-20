@@ -523,7 +523,10 @@ class GWRead(Read):
         self.data["parameters"] = parameters
         self.data["samples"] = samples
 
-    def to_lalinference(self, outdir="./", label=None):
+    def to_lalinference(
+        self, outdir="./", label=None, filename=None, overwrite=False,
+        sampler="lalinference_nest"
+    ):
         """Save the PESummary results file object to a lalinference hdf5 file
 
         Parameters
@@ -533,28 +536,9 @@ class GWRead(Read):
         label: str
             the label of the result file
         """
-        import h5py
-        import os
+        from pesummary.gw.file.formats.lalinference import write_to_file
 
-        if not label:
-            from time import time
-
-            label = round(time())
-
-        lalinference_samples = np.array(
-            [tuple(i) for i in self.samples],
-            dtype=[(i, '<f4') for i in self.parameters])
-
-        if os.path.isfile("%s/lalinference_file_%s.hdf5" % (outdir, label)):
-            raise Exception("The file '%s/lalinference_file_%s.hdf5' already exists." % (
-                outdir, label))
-        try:
-            f = h5py.File("%s/lalinference_file_%s.hdf5" % (outdir, label), "w")
-        except Exception:
-            raise Exception("Please make sure you have write permission in "
-                            "%s" % (outdir))
-        lalinference = f.create_group("lalinference")
-        sampler = lalinference.create_group("lalinference_sampler")
-        samples = sampler.create_dataset(
-            "posterior_samples", data=lalinference_samples)
-        f.close()
+        write_to_file(
+            self.samples_dict, outdir=outdir, label=label, filename=filename,
+            overwrite=overwrite, sampler=sampler
+        )

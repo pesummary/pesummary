@@ -195,23 +195,40 @@ class PESummary(GWRead, CorePESummary):
             objects[label] = bilby_object
         return objects
 
-    def to_lalinference(self, outdir="./"):
+    def to_lalinference(
+        self, outdir="./", labels=None, overwrite=False,
+        sampler="lalinference_nest"
+    ):
         """Save a PESummary metafile as a lalinference hdf5 file
+
+        Parameters
+        ----------
+        outdir: str
+            The directory where you would like to write the lalinference file
+        labels: list
+            The labels for the runs that you wish to write to file
+        overwrite: Bool
+            If True, an existing file of the same name will be overwritten
+        sampler: str
+            The sampler which you wish to store in the result file. This may
+            either be 'lalinference_nest' or 'lalinference_mcmc'
         """
+        from pesummary.gw.file.formats.lalinference import write_to_file
         import h5py
 
-        for num, label in enumerate(self.labels):
-            lalinference_samples = np.array(
-                [tuple(samples) for samples in self.samples[num]],
-                dtype=[(parameter, '<f4') for parameter in self.parameters[num]])
+        if labels is not None:
+            for label in labels:
+                if label not in self.labels:
+                    raise ValueError(
+                        "The label '{}' does not exist in the metafile".format(
+                            label
+                        )
+                    )
+        else:
+            labels = self.labels
 
-            try:
-                f = h5py.File("%s/lalinference_file_%s.hdf5" % (outdir, label), "w")
-            except Exception:
-                logger.warning("Cannot write to {}.".format(outdir))
-                raise
-            lalinference = f.create_group("lalinference")
-            sampler = lalinference.create_group("lalinference_sampler")
-            sampler.create_dataset(
-                "posterior_samples", data=lalinference_samples)
-            f.close()
+        for num, label in enumerate(labels):
+            write_to_file(
+                self.samples_dict[label], outdir=outdir, label=label,
+                overwrite=overwrite, sampler=sampler
+            )
