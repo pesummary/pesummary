@@ -114,6 +114,120 @@ def test_recursively_save_dictionary_to_hdf5_file():
     )
 
 
+def test_softlinks():
+    """
+    """
+    if os.path.isdir("./.outdir"):
+        shutil.rmtree("./.outdir")
+    os.makedirs("./.outdir")
+
+    data = {
+        "psds": {
+            "label1": {
+                "H1": [[10, 20], [30, 40]],
+                "L1": [[10, 20], [30, 40]]
+            },
+            "label2": {
+                "H1": [[10, 22], [30, 40]],
+                "L1": [[10, 20], [30, 45]]
+            },
+        },
+        "config_file": {
+            "label1": {
+                "paths": {
+                    "webdir": "example/webdir"
+                },
+                "condor": {
+                    "lalsuite-install": "/example/install",
+                    "executable": "%(lalsuite-install)s/executable",
+                    "memory": 1000
+                },
+            },
+            "label2": {
+                "paths": {
+                    "webdir": "example/webdir2"
+                },
+                "condor": {
+                    "lalsuite-install": "/example/install2",
+                    "executable": "%(lalsuite-install)s/executable",
+                    "memory": 1000.0
+                }
+            }
+        }
+    }
+
+    simlinked_dict = _GWMetaFile._create_softlinks(data)
+    repeated_entries = [
+        {
+            "psds/label1/H1": [
+                data["psds"]["label1"]["H1"],
+                simlinked_dict["psds"]["label1"]["H1"]
+            ],
+            "psds/label1/L1": [
+                data["psds"]["label1"]["L1"],
+                simlinked_dict["psds"]["label1"]["L1"]
+            ]
+        },
+        {
+            "config_file/label1/condor/executable": [
+                data["config_file"]["label1"]["condor"]["executable"],
+                simlinked_dict["config_file"]["label1"]["condor"]["executable"]
+            ],
+            "config_file/label2/condor/executable": [
+                data["config_file"]["label2"]["condor"]["executable"],
+                simlinked_dict["config_file"]["label2"]["condor"]["executable"]
+            ]
+        },
+        {
+            "config_file/label1/condor/memory": [
+                data["config_file"]["label1"]["condor"]["memory"],
+                simlinked_dict["config_file"]["label1"]["condor"]["memory"]
+            ],
+            "config_file/label2/condor/memory": [
+                data["config_file"]["label2"]["condor"]["memory"],
+                simlinked_dict["config_file"]["label2"]["condor"]["memory"]
+            ]
+        }
+    ]
+    for repeat in repeated_entries:
+        keys = list(repeat.keys())
+        assert \
+            repeat[keys[0]][1] == "softlink:/{}".format(keys[1]) and \
+            repeat[keys[1]][1] == repeat[keys[1]][0] or \
+            repeat[keys[1]][1] == "softlink:/{}".format(keys[0]) and \
+            repeat[keys[0]][1] == repeat[keys[0]][0]
+
+    print(simlinked_dict)
+    with h5py.File("./.outdir/test.h5") as f:
+        meta_file.recursively_save_dictionary_to_hdf5_file(
+            f, simlinked_dict, extra_keys=meta_file.DEFAULT_HDF5_KEYS)
+
+    with h5py.File("./.outdir/no_softlink.h5") as f:
+        meta_file.recursively_save_dictionary_to_hdf5_file(
+            f, data, extra_keys=meta_file.DEFAULT_HDF5_KEYS)
+
+    softlink_size = os.stat("./.outdir/test.h5").st_size
+    no_softlink_size = os.stat('./.outdir/no_softlink.h5').st_size
+    assert softlink_size < no_softlink_size
+
+    with h5py.File("./.outdir/test.h5", "r") as f:
+        assert \
+            f["config_file"]["label2"]["condor"]["executable"][0] == \
+            f["config_file"]["label1"]["condor"]["executable"][0]
+        assert \
+            all(
+                i == j for i, j in zip(
+                    f["psds"]["label1"]["H1"][0], f["psds"]["label1"]["L1"][0]
+                )
+            )
+        assert \
+            all(
+                i == j for i, j in zip(
+                    f["psds"]["label1"]["H1"][1], f["psds"]["label1"]["L1"][1]
+                )
+            )
+     
+
 class TestMetaFile(object):
     """Class the test the pesummary.gw.file.meta_file._GWMetaFile class
     """
