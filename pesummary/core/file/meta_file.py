@@ -72,8 +72,11 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
     ----------
     key: str
         Key for the new dataset
-    value: array-like
-        Data to store
+    value: array-like, str
+        Data to store. If you wish to create a softlink to another dataset
+        then value should be a string in the form `softlink:/path/to/dataset`
+        where `/path/to/dataset/` is the path to the dataset which you wish to
+        create a softlink to
     hdf5_file: h5py.File
         hdf5 file object
     current_path: str
@@ -83,6 +86,7 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
     array_types = (list, pesummary.utils.utils.Array, np.ndarray)
     numeric_types = (float, int, np.number)
     string_types = (str, bytes)
+    SOFTLINK = False
     if isinstance(value, array_types):
         import math
 
@@ -100,6 +104,13 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
             data = np.array(value)
         else:
             raise TypeError(error_message.format(key, value, type(value[0])))
+    elif isinstance(value, string_types) and "softlink:" in value:
+        import h5py
+
+        SOFTLINK = True
+        hdf5_file["/".join(current_path + [key])] = h5py.SoftLink(
+            value.split("softlink:")[1]
+        )
     elif isinstance(value, string_types):
         data = np.array([value], dtype="S")
     elif isinstance(value, numeric_types):
@@ -112,7 +123,8 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
         data = np.array([value.__name__], dtype="S")
     else:
         raise TypeError(error_message.format(key, value, type(value)))
-    hdf5_file["/".join(current_path)].create_dataset(key, data=data)
+    if not SOFTLINK:
+        hdf5_file["/".join(current_path)].create_dataset(key, data=data)
 
 
 class PESummaryJsonEncoder(json.JSONEncoder):
@@ -321,6 +333,49 @@ class _MetaFile(object):
         for label, item in samples.items():
             samples[label] = item.to_structured_array()
         return samples
+
+    @staticmethod
+    def _create_softlinks(dictionary):
+        """Identify duplicated entries in a dictionary and replace them with
+        `softlink:/path/to/existing_dataset`. This is required for creating
+        softlinks when saved in hdf5 format
+
+        Parameters
+        ----------
+        dictionary: dict
+            nested dictionary of data
+        """
+        try:
+            from pandas.io.json._normalize import nested_to_record
+        except ImportError:
+            from pandas.io.json.normalize import nested_to_record
+
+        def modify_dict(key, dictionary, replace):
+            """
+            """
+            from functools import reduce
+            from operator import getitem
+
+            mod = copy.deepcopy(dictionary)
+            key_list = key.split("/")
+            reduce(getitem, key_list[:-1], mod)[key_list[-1]] = replace
+            return mod
+
+        data = copy.deepcopy(dictionary)
+        flat_dictionary = nested_to_record(data, sep='/')
+        rev_dictionary = {}
+        for key, value in flat_dictionary.items():
+            try:
+                rev_dictionary.setdefault(value, set()).add(key)
+            except TypeError:
+                rev_dictionary.setdefault(str(value), set()).add(key)
+
+        for key, values in rev_dictionary.items():
+            if len(values) > 1:
+                tmp = list(values)
+                for val in tmp[1:]:
+                    data = modify_dict(val, data, "softlink:/{}".format(tmp[0]))
+        return data
 
     def write_marginalized_posterior_to_dat(self):
         """Write the marginalized posterior for each parameter to a .dat file
