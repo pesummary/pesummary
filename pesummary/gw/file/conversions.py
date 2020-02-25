@@ -158,6 +158,20 @@ def q_from_m1_m2(mass1, mass2):
     return mass2 / mass1
 
 
+def invq_from_m1_m2(mass1, mass2):
+    """Return the inverted mass ratio (mass1/mass2 for mass1 > mass2)
+    given the samples for mass1 and mass2
+    """
+    return 1. / q_from_m1_m2(mass1, mass2)
+
+
+def invq_from_q(mass_ratio):
+    """Return the inverted mass ratio (mass1/mass2 for mass1 > mass2)
+    given the samples for mass ratio (mass2/mass1)
+    """
+    return 1. / mass_ratio
+
+
 def q_from_eta(symmetric_mass_ratio):
     """Return the mass ratio given samples for symmetric mass ratio
     """
@@ -630,6 +644,12 @@ class _Conversion(object):
         for num, i in enumerate(self.samples):
             self.samples[num][ind] = 1. / self.samples[num][ind]
 
+    def _invq_from_q(self):
+        self.parameters.append("inverted_mass_ratio")
+        samples = self.specific_parameter_samples("mass_ratio")
+        inverted_mass_ratio = invq_from_q(samples)
+        self.append_data(inverted_mass_ratio)
+
     def _mchirp_from_mtotal_q(self):
         self.parameters.append("chirp_mass")
         samples = self.specific_parameter_samples(["total_mass", "mass_ratio"])
@@ -1064,6 +1084,9 @@ class _Conversion(object):
             median = np.median([i[ind] for i in self.samples])
             if median > 1.:
                 self._invert_q()
+        if "inverted_mass_ratio" not in self.parameters and "mass_ratio" in \
+                self.parameters:
+            self._invq_from_q()
         if "chirp_mass" not in self.parameters and "total_mass" in self.parameters:
             self._mchirp_from_mtotal_q()
         if "mass_1" not in self.parameters and "chirp_mass" in self.parameters:
