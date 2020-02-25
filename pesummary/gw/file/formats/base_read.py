@@ -139,9 +139,19 @@ class GWRead(Read):
         extension = injection_file.split(".")[-1]
         func_map = {"xml": self._grab_injection_data_from_xml_file,
                     "hdf5": self._grab_injection_data_from_hdf5_file,
-                    "h5": self._grab_injection_data_from_hdf5_file}
+                    "h5": self._grab_injection_data_from_hdf5_file,
+                    "gz": self._unzip_injection_file}
         data = func_map[extension](injection_file)
         return self.convert_injection_parameters(data)
+
+    def _unzip_injection_file(self, injection_file):
+        """Unzip the injection file and extract injection parameters from
+        the file.
+        """
+        from pesummary.utils.utils import unzip
+
+        out_file = unzip(injection_file)
+        return self._grab_injection_parameters_from_file(out_file)
 
     def _grab_injection_data_from_xml_file(self, injection_file):
         """Grab the data from an xml injection file
