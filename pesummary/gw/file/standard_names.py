@@ -228,6 +228,7 @@ other_map = {
     "final_mass": "final_mass",
     "final_spin": "final_spin",
     "weights": "weights",
+    "inverted_mass_ratio": "inverted_mass_ratio"
 }
 
 
@@ -317,6 +318,11 @@ descriptive_names = {
     "mass_ratio": (
         "the ratio of the binary component masses. We use the convention that "
         "the mass ratio is always less than 1"
+    ),
+    "inverted_mass_ratio": (
+        "The inverted ratio of the binary component masses. Note that normal "
+        "convention is mass ratio less than 1, but here the inverted mass ratio "
+        "is always bigger than 1"
     ),
     "geocent_time": "",
     "theta_jn": (

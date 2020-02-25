@@ -1063,7 +1063,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         """
         categories = self.categories = {
             "masses": {
-                "accept": ["mass", "symmetric_mass_ratio"],
+                "accept": ["mass"],
                 "reject": ["source", "final"]
             },
             "source": {

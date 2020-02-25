@@ -110,7 +110,7 @@ class GWBaseRead(BaseRead):
             'cos_tilt_1', 'cos_tilt_2', 'redshift', 'comoving_distance',
             'mass_1_source', 'mass_2_source', 'total_mass_source',
             'chirp_mass_source', 'phi_1', 'phi_2', 'cos_theta_jn', 'cos_iota',
-            'peak_luminosity', 'final_mass', 'final_spin']
+            'peak_luminosity', 'final_mass', 'final_spin','inverted_mass_ratio']
 
         self.result.generate_all_posterior_samples()
         assert all(i in self.result.parameters for i in full_parameters)

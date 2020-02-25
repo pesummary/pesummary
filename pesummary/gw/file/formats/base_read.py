@@ -188,6 +188,8 @@ class GWRead(Read):
                 inj.mass1, inj.mass2),
             "symmetric_mass_ratio": lambda inj: con.eta_from_m1_m2(
                 inj.mass1, inj.mass2),
+            "inversed_mass_ratio": lambda inj: con.invq_from_m1_m2(
+                inj.mass1, inj.mass2),
             "total_mass": lambda inj: inj.mass1 + inj.mass2,
             "chi_p": lambda inj: con._chi_p(
                 inj.mass1, inj.mass2, inj.spin1x, inj.spin1y, inj.spin2x,
