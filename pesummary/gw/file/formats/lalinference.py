@@ -30,6 +30,30 @@ from pesummary.gw.file import conversions as con
 from pesummary.utils.utils import logger
 
 
+SAMPLER_KWARGS = {
+    "flow": "f_low",
+    "f_low": "f_low",
+    "fref": "f_ref",
+    "f_ref": "f_ref",
+    "log_bayes_factor": "log_bayes_factor",
+    "bayes_factor": "bayes_factor",
+    "log_evidence": "log_evidence",
+    "evidence": "evidence",
+    "log_prior_volume": "log_prior_volume",
+    "sampleRate": "sample_rate",
+    "segmentLength": "segment_length"
+}
+
+META_DATA = {
+    "LAL_PNORDER": "pn_order",
+    "LAL_APPROXIMANT": "approximant",
+    "number_of_live_points": "number_of_live_points",
+    "segmentLength": "segment_length",
+    "segmentStart": "segment_start",
+    "sampleRate": "sample_rate",
+}
+
+
 class LALInference(GWRead):
     """PESummary wrapper of `lalinference`
     (https://git.ligo.org/lscsoft/lalsuite/lalinference).
@@ -118,60 +142,41 @@ class LALInference(GWRead):
     def grab_extra_kwargs(path):
         """Grab any additional information stored in the lalinference file
         """
-        kwargs = {"sampler": {}, "meta_data": {}}
+        kwargs = {"sampler": {}, "meta_data": {}, "other": {}}
         path_to_samples = GWRead.guess_path_to_samples(path)
         path_to_sampler = LALInference.guess_path_to_sampler(path)
         f = h5py.File(path, 'r')
-        attributes = dict(f[path_to_samples].attrs.items())
-        if "flow" in list(attributes.keys()):
-            kwargs["sampler"]["f_low"] = attributes["flow"]
-        elif "f_low" in list(attributes.keys()):
-            kwargs["sampler"]["f_low"] = attributes["f_low"]
-        if "fref" in list(attributes.keys()):
-            kwargs["sampler"]["f_ref"] = attributes["fref"]
-        elif "f_ref" in list(attributes.keys()):
-            kwargs["sampler"]["f_ref"] = attributes["f_ref"]
-        if "LAL_APPROXIMANT" in list(attributes.keys()):
-            try:
-                from lalsimulation import GetStringFromApproximant
-
-                kwargs["meta_data"]["approximant"] = \
-                    GetStringFromApproximant(int(attributes["LAL_APPROXIMANT"]))
-            except Exception:
-                kwargs["meta_data"]["approximant"] = \
-                    int(attributes["LAL_APPROXIMANT"])
-        if "number_of_live_points" in list(attributes.keys()):
-            kwargs["meta_data"]["number_of_live_points"] = attributes["number_of_live_points"]
-        if "segmentLength" in list(attributes.keys()):
-            kwargs["meta_data"]["seglen"] = attributes["segmentLength"]
-        if "sampleRate" in list(attributes.keys()):
-            kwargs["meta_data"]["samplerate"] = attributes["sampleRate"]
 
         attributes = dict(f[path_to_sampler].attrs.items())
-        if "log_bayes_factor" in list(attributes.keys()):
-            kwargs["sampler"]["log_bayes_factor"] = np.round(
-                attributes["log_bayes_factor"], 2)
-        elif "bayes_factor" in list(attributes.keys()):
-            kwargs["sampler"]["log_bayes_factor"] = np.round(
-                np.log(attributes["log_bayes_factor"]), 2)
-        if "log_evidence" in list(attributes.keys()):
-            kwargs["sampler"]["log_evidence"] = np.round(
-                attributes["log_evidence"], 2)
-        elif "evidence" in list(attributes.keys()):
-            kwargs["sampler"]["log_evidence"] = np.round(
-                np.log(attributes["evidence"]), 2)
-        if "log_prior_volume" in list(attributes.keys()):
-            kwargs["sampler"]["log_prior_volume"] = np.round(
-                attributes["log_prior_volume"], 2)
-        elif "prior_volume" in list(attributes.keys()):
-            kwargs["sampler"]["log_prior_volume"] = np.round(
-                np.log(attributes["prior_volume"]), 2)
-        if "number_of_live_points" in list(attributes.keys()):
-            kwargs["meta_data"]["number_of_live_points"] = attributes["number_of_live_points"]
-        if "segmentLength" in list(attributes.keys()):
-            kwargs["meta_data"]["seglen"] = attributes["segmentLength"]
-        if "sampleRate" in list(attributes.keys()):
-            kwargs["meta_data"]["samplerate"] = attributes["sampleRate"]
+        for kwarg, item in attributes.items():
+            if kwarg in list(SAMPLER_KWARGS.keys()) and kwarg == "evidence":
+                kwargs["sampler"]["log_evidence"] = np.round(np.log(item), 2)
+            elif kwarg in list(SAMPLER_KWARGS.keys()) and kwarg == "bayes_factor":
+                kwargs["sampler"]["log_bayes_factor"] = np.round(
+                    np.log(item), 2
+                )
+            elif kwarg in list(SAMPLER_KWARGS.keys()):
+                kwargs["sampler"][SAMPLER_KWARGS[kwarg]] = np.round(item, 2)
+            else:
+                kwargs["other"][kwarg] = item
+
+        attributes = dict(f[path_to_samples].attrs.items())
+        for kwarg, item in attributes.items():
+            if kwarg in list(META_DATA.keys()) and kwarg == "LAL_APPROXIMANT":
+                try:
+                    from lalsimulation import GetStringFromApproximant
+
+                    kwargs["meta_data"]["approximant"] = \
+                        GetStringFromApproximant(
+                            int(attributes["LAL_APPROXIMANT"])
+                    )
+                except Exception:
+                    kwargs["meta_data"]["approximant"] = \
+                        int(attributes["LAL_APPROXIMANT"])
+            elif kwarg in list(META_DATA.keys()):
+                kwargs["meta_data"][META_DATA[kwarg]] = item
+            else:
+                kwargs["other"][kwarg] = item
         f.close()
         return kwargs
 

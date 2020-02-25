@@ -104,7 +104,7 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
             data = np.array(value)
         else:
             raise TypeError(error_message.format(key, value, type(value[0])))
-    elif isinstance(value, string_types) and "softlink:" in value:
+    elif isinstance(value, string_types[0]) and "softlink:" in value:
         import h5py
 
         SOFTLINK = True
