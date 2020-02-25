@@ -822,5 +822,34 @@ def _draw_conditioned_prior_samples(
     return indicies
 
 
+def unzip(zip_file, outdir=".", overwrite=False):
+    """Extract the data from a zipped file and save in outdir.
+
+    Parameters
+    ----------
+    zip_file: str
+        path to the file you wish to unzip
+    outdir: str, optional
+        path to the directory where you wish to save the unzipped file.
+    overwrite: Bool, optional
+        If True, overwrite a file that has the same name
+    """
+    import gzip
+    import shutil
+    from pathlib import Path
+
+    f = Path(zip_file)
+    file_name = f.stem
+    out_file = os.path.join(outdir, file_name)
+    if os.path.isfile(out_file) and not overwrite:
+        raise FileExistsError(
+            "The file '{}' already exists. Not overwriting".format(out_file)
+        )
+    with gzip.open(zip_file, 'rb') as input:
+        with open(out_file, 'wb') as output:
+            shutil.copyfileobj(input, output)
+    return out_file
+
+
 setup_logger()
 logger = logging.getLogger('PESummary')
