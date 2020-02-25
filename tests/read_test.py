@@ -999,7 +999,8 @@ class TestGWLALInferenceFile(GWBaseRead):
     def test_extra_kwargs(self):
         """Test the extra_kwargs property of the default class
         """
-        super(TestGWLALInferenceFile, self).test_extra_kwargs()
+        true = {"sampler": {"nsamples": 1000}, "meta_data": {}, "other": {}}
+        super(TestGWLALInferenceFile, self).test_extra_kwargs(true=true)
 
     def test_injection_parameters(self):
         """Test the injection_parameters property
