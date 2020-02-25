@@ -353,6 +353,13 @@ def lambda2_from_lambda1(lambda1, mass1, mass2):
     return lambda2
 
 
+def _ifo_snr(IFO_abs_snr, IFO_snr_angle):
+    """Return the matched filter SNR for a given IFO given samples for the
+    absolute SNR and the angle
+    """
+    return IFO_abs_snr * np.cos(IFO_snr_angle)
+
+
 def network_snr(snrs):
     """Return the network SNR for N IFOs
 
@@ -933,6 +940,24 @@ class _Conversion(object):
             samples[0], samples[1], samples[2], samples[3])
         self.append_data(delta_lambda)
 
+    def _ifo_snr(self):
+        abs_snrs = [
+            i for i in self.parameters if "_matched_filter_abs_snr" in i
+        ]
+        angle_snrs = [
+            i for i in self.parameters if "_matched_filter_snr_angle" in i
+        ]
+        for ifo in [snr.split("_matched_filter_abs_snr")[0] for snr in abs_snrs]:
+            self.parameters.append("{}_matched_filter_snr".format(ifo))
+            samples = self.specific_parameter_samples(
+                [
+                    "{}_matched_filter_abs_snr".format(ifo),
+                    "{}_matched_filter_snr_angle".format(ifo)
+                ]
+            )
+            snr = _ifo_snr(samples[0], samples[1])
+            self.append_data(snr)
+
     def _optimal_network_snr(self):
         snrs = [i for i in self.parameters if "_optimal_snr" in i]
         samples = self.specific_parameter_samples(snrs)
@@ -1188,6 +1213,9 @@ class _Conversion(object):
             except Exception as e:
                 logger.warn("Failed to generate posterior samples for the time in each "
                             "detector because %s" % (e))
+        if any("_matched_filter_snr_angle" in i for i in self.parameters):
+            if any("_matched_filter_abs_snr" in i for i in self.parameters):
+                self._ifo_snr()
         if any("_optimal_snr" in i for i in self.parameters):
             if "network_optimal_snr" not in self.parameters:
                 self._optimal_network_snr()

@@ -332,3 +332,25 @@ def bbh_final_mass_non_precessing_Healyetal(
         ]
     ) + (1 + symmetric_mass_ratio * (E_isco + 11.)) * delta_m6
     return final_mass * total_mass
+
+
+def bbh_final_mass_non_spinning_Panetal(total_mass, symmetric_mass_ratio):
+    """Return the final mass of the BH resulting from the merger of a non
+    spinning BBH using the fit from Pan et al: Phys Rev D 84, 124052 (2011).
+    """
+    return total_mass * (
+        1. + (np.sqrt(8. / 9.) - 1.) * symmetric_mass_ratio
+        - 0.4333 * (symmetric_mass_ratio**2.) - (
+            0.4392 * (symmetric_mass_ratio**3)
+        )
+    )
+
+
+def bbh_final_spin_non_spinning_Panetal(symmetric_mass_ratio):
+    """Return the final spin of the BH resulting from the merger of a non
+    spinning BBH using the fit from Pan et al: Phys Rev D 84, 124052 (2011)
+    """
+    return (
+        np.sqrt(12.) * symmetric_mass_ratio - 3.871 * (symmetric_mass_ratio**2.)
+        + 4.028 * (symmetric_mass_ratio**3)
+    )
