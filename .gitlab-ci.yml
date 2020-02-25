@@ -17,7 +17,6 @@ basic:
     - summaryclean --help
     - summaryreview --help
     - summarycombine --help
-    - summarycombine_metafiles --help
     - summarydetchar --help
     - summaryversion --help
     - summarypageslw --help

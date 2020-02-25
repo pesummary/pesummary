@@ -132,8 +132,9 @@ class _SummaryCombine_Metafiles(Base):
         os.rename(".outdir/test.json", ".outdir/test2.json")
         make_result_file(pesummary=True)
         command_line = (
-            "summarycombine_metafiles --webdir .outdir "
-            "--samples .outdir/test.json .outdir/test2.json"
+            "summarycombine --webdir .outdir "
+            "--samples .outdir/test.json .outdir/test2.json "
+            "--save_to_json"
         )
         if gw:
             command_line += " --gw"

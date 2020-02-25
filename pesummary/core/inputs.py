@@ -423,7 +423,7 @@ class _Input(object):
                 )
             )
             self.labels = self.labels[:len(samples)]
-        labels = None
+        labels, labels_dict = None, {}
         weights_dict = {}
         for num, i in enumerate(samples):
             logger.info("Assigning {} to {}".format(self.labels[num], i))
@@ -482,9 +482,15 @@ class _Input(object):
                     labels = data["labels"]
                 else:
                     labels += data["labels"]
+                labels_dict[num] = data["labels"]
         if labels is not None:
             self._labels = labels
-            self.result_files = self.result_files * len(labels)
+            if len(labels) != len(self.result_files):
+                result_files = []
+                for num, f in enumerate(samples):
+                    for ii in np.arange(len(labels_dict[num])):
+                        result_files.append(self.result_files[num])
+                self.result_files = result_files
             self.weights = {i: None for i in self.labels}
         if weights_dict != {}:
             self.weights = weights_dict
@@ -948,7 +954,7 @@ class _Input(object):
 
         if not all(i is None for i in self.config):
             for num, i in enumerate(self.config):
-                if self.webdir not in i:
+                if i is not None and self.webdir not in i:
                     filename = "_".join(
                         [self.labels[num], "config.ini"]
                     )
