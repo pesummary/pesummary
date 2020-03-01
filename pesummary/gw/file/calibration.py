@@ -16,6 +16,7 @@
 import os
 import numpy as np
 from pesummary import conf
+from pesummary.utils.utils import logger, check_file_exists_and_rename
 
 
 class Calibration(np.ndarray):
@@ -37,8 +38,7 @@ class Calibration(np.ndarray):
         file_name: str
             name of the file name that you wish to use
         """
-        if os.path.isfile(file_name):
-            raise FileExistsError("File already exists")
+        check_file_exists_and_rename(file_name)
         header = [
             "Frequency", "Median Mag", "Phase (Rad)", "-1 Sigma Mag",
             "-1 Sigma Phase", "+1 Sigma Mag", "+1 Sigma Phase"

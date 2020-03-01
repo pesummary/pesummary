@@ -17,11 +17,12 @@ from pesummary.core.file.formats.base_read import Read
 from pesummary.gw.file.formats.lalinference import LALInference
 from pesummary.gw.file.formats.bilby import Bilby
 from pesummary.gw.file.formats.default import Default
-from pesummary.gw.file.formats.pesummary import PESummary
+from pesummary.gw.file.formats.pesummary import PESummary, PESummaryDeprecated
 from pesummary.gw.file.formats.GWTC1 import GWTC1
 from pesummary.core.file.read import (
     is_bilby_hdf5_file, is_bilby_json_file, is_pesummary_hdf5_file,
-    is_pesummary_json_file
+    is_pesummary_json_file, is_pesummary_hdf5_file_deprecated,
+    is_pesummary_json_file_deprecated
 )
 from pesummary.core.file.read import read as CoreRead
 from pesummary.utils.utils import logger
@@ -67,12 +68,14 @@ GW_HDF5_LOAD = {
     is_lalinference_file: LALInference.load_file,
     is_bilby_hdf5_file: Bilby.load_file,
     is_pesummary_hdf5_file: PESummary.load_file,
+    is_pesummary_hdf5_file_deprecated: PESummaryDeprecated.load_file,
     is_GWTC1_file: GWTC1.load_file
 }
 
 GW_JSON_LOAD = {
     is_bilby_json_file: Bilby.load_file,
-    is_pesummary_json_file: PESummary.load_file
+    is_pesummary_json_file: PESummary.load_file,
+    is_pesummary_json_file_deprecated: PESummaryDeprecated.load_file
 }
 
 GW_DEFAULT = {"default": Default.load_file}

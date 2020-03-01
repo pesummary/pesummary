@@ -16,7 +16,7 @@
 from pesummary.core.file.formats.base_read import Read
 from pesummary.core.file.formats.bilby import Bilby
 from pesummary.core.file.formats.default import Default
-from pesummary.core.file.formats.pesummary import PESummary
+from pesummary.core.file.formats.pesummary import PESummary, PESummaryDeprecated
 from pesummary.utils.utils import logger
 
 
@@ -58,6 +58,34 @@ def is_bilby_json_file(path):
         return False
 
 
+def _is_pesummary_hdf5_file(path, check_function):
+    """Determine if the results file is a pesummary hdf5 file
+
+    Parameters
+    ----------
+    path: str
+        path to the results file
+    check_function: func
+        function used to check the result file
+    """
+    import h5py
+    f = h5py.File(path, 'r')
+    outcome = check_function(f)
+    f.close()
+    return outcome
+
+
+def is_pesummary_hdf5_file_deprecated(path):
+    """Determine if the results file is a deprecated pesummary hdf5 file
+
+    Parameters
+    ----------
+    path: str
+        path to the results file
+    """
+    return _is_pesummary_hdf5_file(path, _check_pesummary_file_deprecated)
+
+
 def is_pesummary_hdf5_file(path):
     """Determine if the results file is a pesummary hdf5 file
 
@@ -66,11 +94,23 @@ def is_pesummary_hdf5_file(path):
     path: str
         path to the results file
     """
-    import h5py
-    f = h5py.File(path, 'r')
-    outcome = _check_pesummary_file(f)
-    f.close()
-    return outcome
+    return _is_pesummary_hdf5_file(path, _check_pesummary_file)
+
+
+def _is_pesummary_json_file(path, check_function):
+    """Determine if the result file is a pesummary json file
+
+    Parameters
+    ----------
+    path: str
+        path to the results file
+    check_function: func
+        function used to check the result file
+    """
+    import json
+    with open(path, "r") as f:
+        data = json.load(f)
+    return check_function(data)
 
 
 def is_pesummary_json_file(path):
@@ -81,15 +121,26 @@ def is_pesummary_json_file(path):
     path: str
         path to results file
     """
-    import json
-    with open(path, "r") as f:
-        data = json.load(f)
-    return _check_pesummary_file(data)
+    return _is_pesummary_json_file(path, _check_pesummary_file)
 
 
-def _check_pesummary_file(f):
-    """Check the contents of a dictionary to see if it is a pesummary dictionary
+def is_pesummary_json_file_deprecated(path):
+    """Determine if the results file is a deprecated pesummary json file
 
+    Parameters
+    ----------
+    path: str
+        path to results file
+    """
+    return _is_pesummary_json_file(path, _check_pesummary_file_deprecated)
+
+
+def _check_pesummary_file_deprecated(f):
+    """Check the contents of a dictionary to see if it is a deprecated pesummary
+    dictionary
+
+    Parameters
+    ----------
     f: dict
         dictionary of the contents of the file
     """
@@ -108,14 +159,39 @@ def _check_pesummary_file(f):
         return False
 
 
+def _check_pesummary_file(f):
+    """Check the contents of a dictionary to see if it is a pesummary dictionary
+
+    Parameters
+    ----------
+    f: dict
+        dictionary of the contents of the file
+    """
+    labels = f.keys()
+    if "version" not in labels:
+        return False
+    try:
+        if all(
+                "posterior_samples" in f[label].keys() for label in labels if
+                label != "version"
+        ):
+            return True
+        else:
+            return False
+    except Exception:
+        return False
+
+
 CORE_HDF5_LOAD = {
     is_bilby_hdf5_file: Bilby.load_file,
-    is_pesummary_hdf5_file: PESummary.load_file
+    is_pesummary_hdf5_file: PESummary.load_file,
+    is_pesummary_hdf5_file_deprecated: PESummaryDeprecated.load_file
 }
 
 CORE_JSON_LOAD = {
     is_bilby_json_file: Bilby.load_file,
-    is_pesummary_json_file: PESummary.load_file
+    is_pesummary_json_file: PESummary.load_file,
+    is_pesummary_json_file_deprecated: PESummaryDeprecated.load_file
 }
 
 CORE_DEFAULT_LOAD = {
@@ -145,7 +221,7 @@ def _read(path, load_options, default=CORE_DEFAULT_LOAD):
                 )
                 return default["default"](path)
             except Exception as e:
-                logger.debug(
+                logger.info(
                     "Failed to read in {} with the {} class because {}".format(
                         path, load, e
                     )

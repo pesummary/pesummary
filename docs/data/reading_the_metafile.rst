@@ -34,7 +34,9 @@ analysis, this can be done with the following:
 
 This will return a `pesummary.utils.utils.SamplesDict` object. To see some of
 the functions and properties of this object see the
-`Reading result files <reading_a_result_file.html>`_ tutorial.
+`Reading result files <reading_a_result_file.html>`_ tutorial. Of course, you
+may choose to use `astropy` or `pandas` to read in your posterior samples. For
+details about this see below.
 
 Loading the configuration file for a specific run
 -------------------------------------------------
@@ -128,7 +130,29 @@ is shown below:
     :language: python
     :linenos:
 
-Loading the data for a specific run without PESummary
+Extract posterior samples using `astropy` or `pandas`
+-----------------------------------------------------
+
+Of course, you may want to read in the posterior samples into an `astropy`
+Table or a `pandas` dataframe. The PESummary metafile stores the data such that
+both can be done with ease. To load the posterior samples into an `astropy`
+Table, you may use the following:
+
+.. code-block:: python
+
+    >>> from astropy.table import Table
+    >>> data = Table.read("posterior_samples.h5", path="EXP1/posterior_samples")
+
+To load in the posterior samples into a pandas dataframe, you may use the
+following:
+
+.. code-block:: python
+
+    >>> import pandas as pd
+    >>> data = pd.read_hdf("posterior_samples.h5", key="EXP1/posterior_samples")
+
+
+Loading all data for a specific run without PESummary
 -----------------------------------------------------
 
 Of course, you do not have to use PESummary to load in the data from a

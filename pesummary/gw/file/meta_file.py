@@ -16,11 +16,11 @@
 from pesummary.utils.utils import logger
 from pesummary.core.file.meta_file import (
     _MetaFile, recursively_save_dictionary_to_hdf5_file,
-    DEFAULT_HDF5_KEYS as CORE_HDF5_KEYS,
+    DEFAULT_HDF5_KEYS as CORE_HDF5_KEYS
 )
 from pesummary.gw.inputs import GWPostProcessing
 
-DEFAULT_HDF5_KEYS = CORE_HDF5_KEYS + ["psds", "calibration_envelope", "approximant"]
+DEFAULT_HDF5_KEYS = CORE_HDF5_KEYS
 
 
 class _GWMetaFile(_MetaFile):
@@ -64,33 +64,26 @@ class _GWMetaFile(_MetaFile):
         """Generate a single dictionary which stores all information
         """
         super(_GWMetaFile, self)._make_dictionary()
-        dictionary = {
-            "approximant": {},
-            "psds": {},
-            "calibration_envelope": {}
-        }
-
         for num, label in enumerate(self.labels):
             cond = all(self.calibration[label] != j for j in [{}, None])
             if self.calibration != {} and cond:
-                dictionary["calibration_envelope"][label] = {
+                self.data[label]["calibration_envelope"] = {
                     key: item for key, item in self.calibration[label].items()
                     if item is not None
                 }
             else:
-                dictionary["calibration_envelope"][label] = {}
+                self.data[label]["calibration_envelope"] = {}
             if self.psds != {} and all(self.psds[label] != j for j in [{}, None]):
-                dictionary["psds"][label] = {
+                self.data[label]["psds"] = {
                     key: item for key, item in self.psds[label].items() if item
                     is not None
                 }
             else:
-                dictionary["psds"][label] = {}
+                self.data[label]["psds"] = {}
             if self.approximant is not None and self.approximant[label] is not None:
-                dictionary["approximant"][label] = self.approximant[label]
+                self.data[label]["approximant"] = self.approximant[label]
             else:
-                dictionary["approximant"][label] = {}
-        self.data.update(dictionary)
+                self.data[label]["approximant"] = {}
 
     def save_to_hdf5(self):
         """Save the metafile as a hdf5 file
@@ -98,12 +91,14 @@ class _GWMetaFile(_MetaFile):
         import h5py
 
         key = "posterior_samples"
-        self.data[key] = self._convert_posterior_samples_to_numpy(
-            self.samples
-        )
+        for label in self.labels:
+            self.data[label][key] = self._convert_posterior_samples_to_numpy(
+                self.samples[label]
+            )
         with h5py.File(self.meta_file, "w") as f:
             recursively_save_dictionary_to_hdf5_file(
-                f=f, dictionary=self.data, extra_keys=DEFAULT_HDF5_KEYS
+                f=f, dictionary=self.data,
+                extra_keys=CORE_HDF5_KEYS + self.labels
             )
 
 

@@ -20,9 +20,16 @@ import h5py
 import json
 import numpy as np
 import configparser
+import warnings
 
 from pesummary.core.file.formats.base_read import Read
 from pesummary.utils.utils import logger, SamplesDict, Array
+
+
+deprecation_warning = (
+    "This file format is out-of-date and may not be supported in future "
+    "releases."
+)
 
 
 class PESummary(Read):
@@ -114,28 +121,34 @@ class PESummary(Read):
     def _grab_data_from_dictionary(dictionary):
         """
         """
-        labels = list(dictionary["posterior_samples"].keys())
+        labels = list(dictionary.keys())
+        if "version" in labels:
+            labels.remove("version")
 
         parameter_list, sample_list, inj_list, ver_list = [], [], [], []
         meta_data_list, weights_list = [], []
+        prior_dict, config_dict = {}, {}
         for num, label in enumerate(labels):
-            posterior_samples = dictionary["posterior_samples"][label]
+            if label == "version":
+                continue
+            data, = Read.load_recursively(label, dictionary)
+            posterior_samples = data["posterior_samples"]
             if isinstance(posterior_samples, (h5py._hl.dataset.Dataset, np.ndarray)):
                 parameters = [j for j in posterior_samples.dtype.names]
                 samples = [np.array(j.tolist()) for j in posterior_samples]
             else:
                 parameters = \
-                    dictionary["posterior_samples"][label]["parameter_names"].copy()
+                    posterior_samples["parameter_names"].copy()
                 samples = [
-                    j for j in dictionary["posterior_samples"][label]["samples"]
+                    j for j in posterior_samples["samples"]
                 ].copy()
                 if isinstance(parameters[0], bytes):
                     parameters = [
                         parameter.decode("utf-8") for parameter in parameters
                     ]
             parameter_list.append(parameters)
-            if "injection_data" in dictionary.keys():
-                inj = dictionary["injection_data"][label]["injection_values"].copy()
+            if "injection_data" in data.keys():
+                inj = data["injection_data"]["injection_values"].copy()
 
                 def parse_injection_value(_value):
                     if isinstance(_value, (list, np.ndarray)):
@@ -154,34 +167,38 @@ class PESummary(Read):
                 })
             sample_list.append(samples)
             config = None
-            if "config_file" in dictionary.keys():
-                config, = Read.load_recursively("config_file", dictionary)
-            if "meta_data" in dictionary.keys():
-                data, = Read.load_recursively("meta_data", dictionary)
-                meta_data_list.append(data[label])
+            if "config_file" in data.keys():
+                config = data["config_file"]
+            config_dict[label] = config
+            if "meta_data" in data.keys():
+                meta_data_list.append(data["meta_data"])
             else:
                 meta_data_list.append({"sampler": {}, "meta_data": {}})
             if "weights" in parameters or b"weights" in parameters:
-                ind = parameters.index("weights") if "weights" in parameters else parameters.index(b"weights")
+                ind = (
+                    parameters.index("weights") if "weights" in parameters
+                    else parameters.index(b"weights")
+                )
                 weights_list.append(Array([sample[ind] for sample in samples]))
             else:
                 weights_list.append(None)
-        if "version" in dictionary.keys():
-            version, = Read.load_recursively("version", dictionary)
-        else:
-            version = {label: "No version information found" for label in labels
-                       + ["pesummary"]}
-        if "priors" in dictionary.keys():
-            priors, = Read.load_recursively("priors", dictionary)
-        else:
-            priors = dict()
-        for label in list(version.keys()):
-            if label != "pesummary" and isinstance(version[label], bytes):
-                ver_list.append(version[label].decode("utf-8"))
-            elif label != "pesummary":
-                ver_list.append(version[label])
-            elif isinstance(version["pesummary"], bytes):
-                version["pesummary"] = version["pesummary"].decode("utf-8")
+            if "version" in data.keys():
+                version = data["version"]
+            else:
+                version = "No version information found"
+            ver_list.append(version)
+            if "priors" in data.keys():
+                priors = data["priors"]
+            else:
+                priors = dict()
+            prior_dict[label] = priors
+        reversed_prior_dict = {}
+        for label in labels:
+            for key, item in prior_dict[label].items():
+                if key in reversed_prior_dict.keys():
+                    reversed_prior_dict[key][label] = item
+                else:
+                    reversed_prior_dict.update({key: {label: item}})
         return {
             "parameters": parameter_list,
             "samples": sample_list,
@@ -190,8 +207,8 @@ class PESummary(Read):
             "kwargs": meta_data_list,
             "weights": {i: j for i, j in zip(labels, weights_list)},
             "labels": labels,
-            "config": config,
-            "prior": priors
+            "config": config_dict,
+            "prior": reversed_prior_dict
         }
 
     @property
@@ -384,3 +401,104 @@ class PESummary(Read):
         else:
             with open(save_to_file, "w") as f:
                 f.writelines([macros])
+
+
+class PESummaryDeprecated(PESummary):
+    """
+    """
+    def __init__(self, path_to_results_file):
+        warnings.warn(deprecation_warning)
+        super(PESummaryDeprecated, self).__init__(path_to_results_file)
+
+    @property
+    def load_kwargs(self):
+        return {
+            "grab_data_from_dictionary": PESummaryDeprecated._grab_data_from_dictionary
+        }
+
+    @staticmethod
+    def _grab_data_from_dictionary(dictionary):
+        """
+        """
+        labels = list(dictionary["posterior_samples"].keys())
+
+        parameter_list, sample_list, inj_list, ver_list = [], [], [], []
+        meta_data_list, weights_list = [], []
+        for num, label in enumerate(labels):
+            posterior_samples = dictionary["posterior_samples"][label]
+            if isinstance(posterior_samples, (h5py._hl.dataset.Dataset, np.ndarray)):
+                parameters = [j for j in posterior_samples.dtype.names]
+                samples = [np.array(j.tolist()) for j in posterior_samples]
+            else:
+                parameters = \
+                    dictionary["posterior_samples"][label]["parameter_names"].copy()
+                samples = [
+                    j for j in dictionary["posterior_samples"][label]["samples"]
+                ].copy()
+                if isinstance(parameters[0], bytes):
+                    parameters = [
+                        parameter.decode("utf-8") for parameter in parameters
+                    ]
+            parameter_list.append(parameters)
+            if "injection_data" in dictionary.keys():
+                inj = dictionary["injection_data"][label]["injection_values"].copy()
+
+                def parse_injection_value(_value):
+                    if isinstance(_value, (list, np.ndarray)):
+                        _value = _value[0]
+                    if isinstance(_value, bytes):
+                        _value = _value.decode("utf-8")
+                    if isinstance(_value, str):
+                        if _value.lower() == "nan":
+                            _value = np.nan
+                        elif _value.lower() == "none":
+                            _value = None
+                    return _value
+                inj_list.append({
+                    parameter: parse_injection_value(value)
+                    for parameter, value in zip(parameters, inj)
+                })
+            sample_list.append(samples)
+            config = None
+            if "config_file" in dictionary.keys():
+                config, = Read.load_recursively("config_file", dictionary)
+            if "meta_data" in dictionary.keys():
+                data, = Read.load_recursively("meta_data", dictionary)
+                meta_data_list.append(data[label])
+            else:
+                meta_data_list.append({"sampler": {}, "meta_data": {}})
+            if "weights" in parameters or b"weights" in parameters:
+                ind = (
+                    parameters.index("weights") if "weights" in parameters
+                    else parameters.index(b"weights")
+                )
+                weights_list.append(Array([sample[ind] for sample in samples]))
+            else:
+                weights_list.append(None)
+        if "version" in dictionary.keys():
+            version, = Read.load_recursively("version", dictionary)
+        else:
+            version = {label: "No version information found" for label in labels
+                       + ["pesummary"]}
+        if "priors" in dictionary.keys():
+            priors, = Read.load_recursively("priors", dictionary)
+        else:
+            priors = dict()
+        for label in list(version.keys()):
+            if label != "pesummary" and isinstance(version[label], bytes):
+                ver_list.append(version[label].decode("utf-8"))
+            elif label != "pesummary":
+                ver_list.append(version[label])
+            elif isinstance(version["pesummary"], bytes):
+                version["pesummary"] = version["pesummary"].decode("utf-8")
+        return {
+            "parameters": parameter_list,
+            "samples": sample_list,
+            "injection": inj_list,
+            "version": ver_list,
+            "kwargs": meta_data_list,
+            "weights": {i: j for i, j in zip(labels, weights_list)},
+            "labels": labels,
+            "config": config,
+            "prior": priors
+        }

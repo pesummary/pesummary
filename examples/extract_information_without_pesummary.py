@@ -14,18 +14,20 @@ with open("posterior_samples.json", "r") as f:
 
 labels = list(data["posterior_samples"].keys())
 
+# Let us assume that you wish to extract the data for the first label in the
+# list
+
+label = labels[0]
+dictionary = data[label]
+
 # Now let us assume that you wish to extract the posterior samples for the
 # first label in the list
-parameters = data["posterior_samples"][labels[0]]["parameter_names"]
-samples = data["posterior_samples"][labels[0]]["samples"]
-
-posterior = {
-    i: np.array([j[parameters.index(i)] for j in samples]) for i in
-    parameters
-}
+posterior_samples = dictionary["posterior_samples"]
+parameters = posterior_samples.dtype.names
+samples = posterior_samples
 
 # Now lets show how to extract the configuration file used in the analysis
-config = data["config_file"][labels[0]]
+config = dictionary["config_file"]
 if config == {}:
     print("No configuration file has been stored for {}".format(labels[0]))
 
@@ -36,7 +38,7 @@ for i in config.keys():
     print("\n")
 
 # Now lets show how to extract the calibration envelope used in the analysis
-calibration_envelope = data["priors"]["calibration"][labels[0]]
+calibration_envelope = dictionary["priors"]["calibration"]
 if calibration_envelope == {}:
     print("No calibration envelope has been stored for {}".format(labels[0]))
 
@@ -56,7 +58,7 @@ calibration_envelope_data = {
 }
 
 # Now lets show how to extract the psd used in the analysis
-psd = data["psds"][labels[0]]
+psd = dictionary["psds"]
 if psd == {}:
     print("No psd data has been stored for {}".format(labels[0]))
 

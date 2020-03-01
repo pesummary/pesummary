@@ -298,27 +298,25 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
         f.close()
     elif pesummary and not lalinference and not bilby:
         dictionary = {
-            "posterior_samples":
-                {pesummary_label: 
-                    {"parameter_names": parameters,
-                     "samples": [list(i) for i in data]
-                    }
+            pesummary_label: {
+                "posterior_samples": {
+                    "parameter_names": parameters,
+                    "samples": [list(i) for i in data]
                 },
-            "injection_data":
-                {pesummary_label:
-                    {"injection_values": [float("nan") for i in range(len(parameters))]
-                    }
+                "injection_data": {
+                    "injection_values": [float("nan") for i in range(len(parameters))]
                 },
-            "version":
-                {pesummary_label: ["No version information found"],
-                 "pesummary": ["v0.1.7"]
-                },
-            "meta_data":
-                {pesummary_label:
-                    {"sampler": {"log_evidence": 0.5},
-                     "meta_data": {}}
+                "version": ["No version information found"],
+                "meta_data": {
+                    "sampler": {"log_evidence": 0.5},
+                    "meta_data": {}
                 }
+            },
+            "version": {
+                "pesummary": ["v0.1.7"]
             }
+        }
+            
 
         if extension == "json":
             import json
@@ -330,6 +328,8 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
             from pesummary.core.file.meta_file import recursively_save_dictionary_to_hdf5_file
 
             f = h5py.File(outdir + "test.h5", "w")
-            recursively_save_dictionary_to_hdf5_file(f, dictionary)
+            recursively_save_dictionary_to_hdf5_file(
+                f, dictionary, extra_keys=list(dictionary.keys())
+            )
             f.close()
     return parameters, data

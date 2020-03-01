@@ -32,83 +32,85 @@ def test_recursively_save_dictionary_to_hdf5_file():
     os.makedirs("./.outdir")
 
     data = {
-               "posterior_samples": {
-                   "H1_L1_IMRPhenomPv2": {
+               "H1_L1_IMRPhenomPv2": {
+                   "posterior_samples": {
                        "parameters": ["mass_1", "mass_2"],
                        "samples": [[10, 2], [50, 5], [100, 90]]
                        },
-                   "H1_L1_IMRPhenomP": {
+               },
+               "H1_L1_IMRPhenomP": {
+                   "posterior_samples": {
                        "parameters": ["ra", "dec"],
                        "samples": [[0.5, 0.8], [1.2, 0.4], [0.9, 1.5]]
                        },
-                   "H1_SEOBNRv4": {
+               },
+               "H1_SEOBNRv4": {
+                   "posterior_samples": {
                        "parameters": ["psi", "phi"],
                        "samples": [[1.2, 0.2], [3.14, 0.1], [0.5, 0.3]]
-                       }
-                   },
-               }
+                   }
+               },
+          }
 
     with h5py.File("./.outdir/test.h5") as f:
-        meta_file.recursively_save_dictionary_to_hdf5_file(f, data)
+        meta_file.recursively_save_dictionary_to_hdf5_file(
+            f, data, extra_keys=list(data.keys()))
 
     f = h5py.File("./.outdir/test.h5", "r")
-    assert sorted(list(f.keys())) == sorted(["posterior_samples"])
-    assert sorted(list(f["posterior_samples"].keys())) == sorted(
-        ["H1_L1_IMRPhenomPv2", "H1_L1_IMRPhenomP", "H1_SEOBNRv4"]
-    )
+    assert sorted(list(f.keys())) == sorted(list(data.keys()))
     assert sorted(
-        list(f["posterior_samples/H1_L1_IMRPhenomPv2"].keys())) == sorted(
+        list(f["H1_L1_IMRPhenomPv2/posterior_samples"].keys())) == sorted(
             ["parameters", "samples"]
     )
-    assert f["posterior_samples/H1_L1_IMRPhenomPv2/parameters"][0].decode("utf-8") == "mass_1"
-    assert f["posterior_samples/H1_L1_IMRPhenomPv2/parameters"][1].decode("utf-8") == "mass_2"
-    assert f["posterior_samples/H1_L1_IMRPhenomP/parameters"][0].decode("utf-8") == "ra"
-    assert f["posterior_samples/H1_L1_IMRPhenomP/parameters"][1].decode("utf-8") == "dec"
-    assert f["posterior_samples/H1_SEOBNRv4/parameters"][0].decode("utf-8") == "psi"
-    assert f["posterior_samples/H1_SEOBNRv4/parameters"][1].decode("utf-8") == "phi"
+    assert f["H1_L1_IMRPhenomPv2/posterior_samples/parameters"][0].decode("utf-8") == "mass_1"
+    assert f["H1_L1_IMRPhenomPv2/posterior_samples/parameters"][1].decode("utf-8") == "mass_2"
+    assert f["H1_L1_IMRPhenomP/posterior_samples/parameters"][0].decode("utf-8") == "ra"
+    assert f["H1_L1_IMRPhenomP/posterior_samples/parameters"][1].decode("utf-8") == "dec"
+    assert f["H1_SEOBNRv4/posterior_samples/parameters"][0].decode("utf-8") == "psi"
+    assert f["H1_SEOBNRv4/posterior_samples/parameters"][1].decode("utf-8") == "phi"
 
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomPv2/samples"][0],
+        i == j for i,j in zip(f["H1_L1_IMRPhenomPv2/posterior_samples/samples"][0],
             [10, 2]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomPv2/samples"][1],
+        i == j for i,j in zip(f["H1_L1_IMRPhenomPv2/posterior_samples/samples"][1],
             [50, 5]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomPv2/samples"][2],
+        i == j for i,j in zip(f["H1_L1_IMRPhenomPv2/posterior_samples/samples"][2],
             [100, 90]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomP/samples"][0],
+        i == j for i,j in zip(f["H1_L1_IMRPhenomP/posterior_samples/samples"][0],
             [0.5, 0.8]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomP/samples"][1],
+        i == j for i,j in zip(f["H1_L1_IMRPhenomP/posterior_samples/samples"][1],
             [1.2, 0.4]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_L1_IMRPhenomP/samples"][2],
+        i == j for i,j in zip(f["H1_L1_IMRPhenomP/posterior_samples/samples"][2],
             [0.9, 1.5]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_SEOBNRv4/samples"][0],
+        i == j for i,j in zip(f["H1_SEOBNRv4/posterior_samples/samples"][0],
             [1.2, 0.2]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_SEOBNRv4/samples"][1],
+        i == j for i,j in zip(f["H1_SEOBNRv4/posterior_samples/samples"][1],
             [3.14, 0.1]
         )
     )
     assert all(
-        i == j for i,j in zip(f["posterior_samples/H1_SEOBNRv4/samples"][2],
+        i == j for i,j in zip(f["H1_SEOBNRv4/posterior_samples/samples"][2],
             [0.5, 0.3]
         )
     )
@@ -122,18 +124,12 @@ def test_softlinks():
     os.makedirs("./.outdir")
 
     data = {
-        "psds": {
-            "label1": {
+        "label1": {
+            "psds": {
                 "H1": [[10, 20], [30, 40]],
                 "L1": [[10, 20], [30, 40]]
             },
-            "label2": {
-                "H1": [[10, 22], [30, 40]],
-                "L1": [[10, 20], [30, 45]]
-            },
-        },
-        "config_file": {
-            "label1": {
+            "config_file": {
                 "paths": {
                     "webdir": "example/webdir"
                 },
@@ -143,7 +139,13 @@ def test_softlinks():
                     "memory": 1000
                 },
             },
-            "label2": {
+        },
+        "label2": {
+            "psds": {
+                "H1": [[10, 22], [30, 40]],
+                "L1": [[10, 20], [30, 45]]
+            },
+            "config_file": {
                 "paths": {
                     "webdir": "example/webdir2"
                 },
@@ -159,33 +161,33 @@ def test_softlinks():
     simlinked_dict = _GWMetaFile._create_softlinks(data)
     repeated_entries = [
         {
-            "psds/label1/H1": [
-                data["psds"]["label1"]["H1"],
-                simlinked_dict["psds"]["label1"]["H1"]
+            "label1/psds/H1": [
+                data["label1"]["psds"]["H1"],
+                simlinked_dict["label1"]["psds"]["H1"]
             ],
-            "psds/label1/L1": [
-                data["psds"]["label1"]["L1"],
-                simlinked_dict["psds"]["label1"]["L1"]
+            "label1/psds/L1": [
+                data["label1"]["psds"]["L1"],
+                simlinked_dict["label1"]["psds"]["L1"]
             ]
         },
         {
-            "config_file/label1/condor/executable": [
-                data["config_file"]["label1"]["condor"]["executable"],
-                simlinked_dict["config_file"]["label1"]["condor"]["executable"]
+            "label1/config_file/condor/executable": [
+                data["label1"]["config_file"]["condor"]["executable"],
+                simlinked_dict["label1"]["config_file"]["condor"]["executable"]
             ],
-            "config_file/label2/condor/executable": [
-                data["config_file"]["label2"]["condor"]["executable"],
-                simlinked_dict["config_file"]["label2"]["condor"]["executable"]
+            "label2/config_file/condor/executable": [
+                data["label2"]["config_file"]["condor"]["executable"],
+                simlinked_dict["label2"]["config_file"]["condor"]["executable"]
             ]
         },
         {
-            "config_file/label1/condor/memory": [
-                data["config_file"]["label1"]["condor"]["memory"],
-                simlinked_dict["config_file"]["label1"]["condor"]["memory"]
+            "label1/config_file/condor/memory": [
+                data["label1"]["config_file"]["condor"]["memory"],
+                simlinked_dict["label1"]["config_file"]["condor"]["memory"]
             ],
-            "config_file/label2/condor/memory": [
-                data["config_file"]["label2"]["condor"]["memory"],
-                simlinked_dict["config_file"]["label2"]["condor"]["memory"]
+            "label2/config_file/condor/memory": [
+                data["label2"]["config_file"]["condor"]["memory"],
+                simlinked_dict["label2"]["config_file"]["condor"]["memory"]
             ]
         }
     ]
@@ -200,11 +202,11 @@ def test_softlinks():
     print(simlinked_dict)
     with h5py.File("./.outdir/test.h5") as f:
         meta_file.recursively_save_dictionary_to_hdf5_file(
-            f, simlinked_dict, extra_keys=meta_file.DEFAULT_HDF5_KEYS)
+            f, simlinked_dict, extra_keys=meta_file.DEFAULT_HDF5_KEYS + ["label1", "label2"])
 
     with h5py.File("./.outdir/no_softlink.h5") as f:
         meta_file.recursively_save_dictionary_to_hdf5_file(
-            f, data, extra_keys=meta_file.DEFAULT_HDF5_KEYS)
+            f, data, extra_keys=meta_file.DEFAULT_HDF5_KEYS + ["label1", "label2"])
 
     softlink_size = os.stat("./.outdir/test.h5").st_size
     no_softlink_size = os.stat('./.outdir/no_softlink.h5').st_size
@@ -212,18 +214,18 @@ def test_softlinks():
 
     with h5py.File("./.outdir/test.h5", "r") as f:
         assert \
-            f["config_file"]["label2"]["condor"]["executable"][0] == \
-            f["config_file"]["label1"]["condor"]["executable"][0]
+            f["label2"]["config_file"]["condor"]["executable"][0] == \
+            f["label1"]["config_file"]["condor"]["executable"][0]
         assert \
             all(
                 i == j for i, j in zip(
-                    f["psds"]["label1"]["H1"][0], f["psds"]["label1"]["L1"][0]
+                    f["label1"]["psds"]["H1"][0], f["label1"]["psds"]["L1"][0]
                 )
             )
         assert \
             all(
                 i == j for i, j in zip(
-                    f["psds"]["label1"]["H1"][1], f["psds"]["label1"]["L1"][1]
+                    f["label1"]["psds"]["H1"][1], f["label1"]["psds"]["L1"][1]
                 )
             )
      
@@ -289,32 +291,32 @@ class TestMetaFile(object):
         """Test the parameters stored in the metafile
         """
         for num, data in enumerate([self.json_file, self.hdf5_file]):
-            assert list(data["posterior_samples"].keys()) == self.input_labels
+            assert list(data.keys()) == self.input_labels + ["version"]
             if num == 0:
                 assert list(
-                    sorted(data["posterior_samples"]["EXP1"].keys())) == [
+                    sorted(data["EXP1"]["posterior_samples"].keys())) == [
                         "parameter_names", "samples"]
             if num == 0:
                 try:
                     assert all(
                         i.decode("utf-8") == j for i, j in zip(
-                            sorted(data["posterior_samples"]["EXP1"]["parameter_names"]),
+                            sorted(data["EXP1"]["posterior_samples"]["parameter_names"]),
                             sorted(self.input_parameters)))
                 except AttributeError:
                     assert all(
                         i == j for i, j in zip(
-                            sorted(data["posterior_samples"]["EXP1"]["parameter_names"]),
+                            sorted(data["EXP1"]["posterior_samples"]["parameter_names"]),
                             sorted(self.input_parameters)))
             else:
                 try:
                     assert all(
                         i.decode("utf-8") == j for i, j in zip(
-                            sorted(data["posterior_samples"]["EXP1"].dtype.names),
+                            sorted(data["EXP1"]["posterior_samples"].dtype.names),
                             sorted(self.input_parameters)))
                 except AttributeError:
                     assert all(
                         i == j for i, j in zip(
-                            sorted(data["posterior_samples"]["EXP1"].dtype.names),
+                            sorted(data["EXP1"]["posterior_samples"].dtype.names),
                             sorted(self.input_parameters)))
 
     def test_samples(self):
@@ -322,11 +324,11 @@ class TestMetaFile(object):
         """
         for num, data in enumerate([self.json_file, self.hdf5_file]):
             if num == 0:
-                parameters = data["posterior_samples"]["EXP1"]["parameter_names"]
-                samples = np.array(data["posterior_samples"]["EXP1"]["samples"]).T
+                parameters = data["EXP1"]["posterior_samples"]["parameter_names"]
+                samples = np.array(data["EXP1"]["posterior_samples"]["samples"]).T
             else:
-                parameters = [j for j in data["posterior_samples"]["EXP1"].dtype.names]
-                samples = np.array([j.tolist() for j in data["posterior_samples"]["EXP1"]]).T
+                parameters = [j for j in data["EXP1"]["posterior_samples"].dtype.names]
+                samples = np.array([j.tolist() for j in data["EXP1"]["posterior_samples"]]).T
             posterior_data = {"EXP1": {i: j for i, j in zip(parameters, samples)}}
             for param, samp in posterior_data["EXP1"].items():
                 if isinstance(param, bytes):
@@ -340,7 +342,7 @@ class TestMetaFile(object):
         """Test the file version stored in the metafile
         """
         for data in [self.json_file, self.hdf5_file]:
-            for i, j in zip(data["version"]["EXP1"], [self.input_file_version["EXP1"]]):
+            for i, j in zip(data["EXP1"]["version"], [self.input_file_version["EXP1"]]):
                 version = i
                 if isinstance(i, bytes):
                     version = version.decode("utf-8")
@@ -350,45 +352,45 @@ class TestMetaFile(object):
         """Test the meta data stored in the metafile
         """
         for num, data in enumerate([self.json_file, self.hdf5_file]):
-            assert list(data["meta_data"].keys()) == self.input_labels
+            assert list(data.keys()) == self.input_labels + ["version"]
             assert sorted(
-                list(data["meta_data"]["EXP1"].keys())) == ["meta_data", "sampler"]
+                list(data["EXP1"]["meta_data"].keys())) == ["meta_data", "sampler"]
             assert all(
                all(
                    k == l for k, l in zip(
                        self.input_file_kwargs["EXP1"][i],
-                       data["meta_data"]["EXP1"][j]
+                       data["EXP1"]["meta_data"][j]
                        )
                ) for i, j in zip(
                    sorted(self.input_file_kwargs["EXP1"].keys()),
-                   sorted(data["meta_data"]["EXP1"].keys())
+                   sorted(data["EXP1"]["meta_data"].keys())
                )
             )
 
             try:
                 assert all(
                     all(
-                        self.input_file_kwargs["EXP1"][i][k] == data["meta_data"]["EXP1"][j][l]
+                        self.input_file_kwargs["EXP1"][i][k] == data["EXP1"]["meta_data"][j][l]
                         for k, l in zip(
                             self.input_file_kwargs["EXP1"][i],
-                            data["meta_data"]["EXP1"][j]
+                            data["EXP1"]["meta_data"][j]
                             )
                     ) for i, j in zip(
                         sorted(self.input_file_kwargs["EXP1"].keys()),
-                        sorted(data["meta_data"]["EXP1"].keys())
+                        sorted(data["EXP1"]["meta_data"].keys())
                     )
                 )
             except Exception:
                 assert all(
                     all(
-                        self.input_file_kwargs["EXP1"][i][k] == data["meta_data"]["EXP1"][j][l][0]
+                        self.input_file_kwargs["EXP1"][i][k] == data["EXP1"]["meta_data"][j][l][0]
                         for k, l in zip(
                             self.input_file_kwargs["EXP1"][i],
-                            data["meta_data"]["EXP1"][j]
+                            data["EXP1"]["meta_data"][j]
                             )
                     ) for i, j in zip(
                         sorted(self.input_file_kwargs["EXP1"].keys()),
-                        sorted(data["meta_data"]["EXP1"].keys())
+                        sorted(data["EXP1"]["meta_data"].keys())
                     )
                 )
 
@@ -396,10 +398,10 @@ class TestMetaFile(object):
         """Test the psd is stored in the metafile
         """
         for data in [self.json_file, self.hdf5_file]:
-            assert list(data["psds"].keys()) == self.input_labels
+            assert list(data.keys()) == self.input_labels + ["version"]
             assert list(
-                data["psds"]["EXP1"].keys()) == ["H1"]
-            for i, j in zip(self.psds["EXP1"]["H1"], data["psds"]["EXP1"]["H1"]):
+                data["EXP1"]["psds"].keys()) == ["H1"]
+            for i, j in zip(self.psds["EXP1"]["H1"], data["EXP1"]["psds"]["H1"]):
                 for k, l in zip(i, j):
                     assert k == l
 
@@ -407,10 +409,10 @@ class TestMetaFile(object):
         """Test the calibration envelope is stored in the metafile
         """
         for data in [self.json_file, self.hdf5_file]:
-            assert list(data["calibration_envelope"].keys()) == self.input_labels
+            assert list(data.keys()) == self.input_labels + ["version"]
             assert list(
-                data["calibration_envelope"]["EXP1"].keys()) == ["H1"]
-            for i, j in zip(self.calibration["EXP1"]["H1"], data["calibration_envelope"]["EXP1"]["H1"]):
+                data["EXP1"]["calibration_envelope"].keys()) == ["H1"]
+            for i, j in zip(self.calibration["EXP1"]["H1"], data["EXP1"]["calibration_envelope"]["H1"]):
                 for k, l in zip(i, j):
                     assert k == l
 
@@ -426,11 +428,11 @@ class TestMetaFile(object):
             config_data.append(config)
 
         for num, data in enumerate([self.json_file, self.hdf5_file]):
-            assert list(data["config_file"].keys()) == self.input_labels
+            assert list(data.keys()) == self.input_labels + ["version"]
             assert all(
                 i == j for i, j in zip(
                     sorted(list(config_data[0].sections())),
-                    sorted(list(data["config_file"]["EXP1"].keys()))))
+                    sorted(list(data["EXP1"]["config_file"].keys()))))
             all_options = {
                 i: {
                     j: k for j, k in config_data[0][i].items()
@@ -441,38 +443,38 @@ class TestMetaFile(object):
                 all(
                     k == l for k, l in zip(
                         sorted(all_options[i]),
-                        sorted(data["config_file"]["EXP1"][j])
+                        sorted(data["EXP1"]["config_file"][j])
                     )
                 ) for i, j in zip(
                     sorted(list(all_options.keys())),
-                    sorted(list(data["config_file"]["EXP1"].keys()))
+                    sorted(list(data["EXP1"]["config_file"].keys()))
                 )
             )
 
             if num == 0:
                 assert all(
                     all(
-                        all_options[i][k] == data["config_file"]["EXP1"][j][l]
+                        all_options[i][k] == data["EXP1"]["config_file"][j][l]
                         for k, l in zip(
                             sorted(all_options[i]),
-                            sorted(data["config_file"]["EXP1"][j])
+                            sorted(data["EXP1"]["config_file"][j])
                         )
                     ) for i, j in zip(
                         sorted(list(all_options.keys())),
-                        sorted(list(data["config_file"]["EXP1"].keys()))
+                        sorted(list(data["EXP1"]["config_file"].keys()))
                     )
                 )
             if num == 1:
                 assert all(
                     all(
-                        all_options[i][k] == data["config_file"]["EXP1"][j][l][0].decode("utf-8")
+                        all_options[i][k] == data["EXP1"]["config_file"][j][l][0].decode("utf-8")
                         for k, l in zip(
                             sorted(all_options[i]),
-                            sorted(data["config_file"]["EXP1"][j])
+                            sorted(data["EXP1"]["config_file"][j])
                         )
                     ) for i, j in zip(
                         sorted(list(all_options.keys())),
-                        sorted(list(data["config_file"]["EXP1"].keys()))
+                        sorted(list(data["EXP1"]["config_file"].keys()))
                     )
                 )
 
@@ -480,6 +482,6 @@ class TestMetaFile(object):
         """Test the injection data stored in the metafile
         """
         for data in [self.json_file, self.hdf5_file]:
-            assert list(data["injection_data"].keys()) == self.input_labels
+            assert list(data.keys()) == self.input_labels + ["version"]
             for num, i in enumerate(list(self.input_injection["EXP1"].keys())):
-                assert self.input_injection["EXP1"][i] == data["injection_data"]["EXP1"]["injection_values"][num]
+                assert self.input_injection["EXP1"][i] == data["EXP1"]["injection_data"]["injection_values"][num]
