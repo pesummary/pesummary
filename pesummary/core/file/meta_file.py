@@ -25,11 +25,12 @@ from pesummary.core.inputs import PostProcessing
 from pesummary.utils.utils import make_dir, logger
 from pesummary import conf
 
-DEFAULT_HDF5_KEYS = ["config_file", "injection_data", "version", "meta_data", "priors"]
+
+DEFAULT_HDF5_KEYS = ["version"]
 
 
 def recursively_save_dictionary_to_hdf5_file(
-        f, dictionary, current_path=None, extra_keys=None
+        f, dictionary, current_path=None, extra_keys=DEFAULT_HDF5_KEYS
 ):
     """Recursively save a dictionary to a hdf5 file
 
@@ -45,9 +46,6 @@ def recursively_save_dictionary_to_hdf5_file(
     def _safe_create_hdf5_group(hdf5_file, key):
         if key not in hdf5_file.keys():
             hdf5_file.create_group(key)
-    if extra_keys is None:
-        extra_keys = DEFAULT_HDF5_KEYS
-    _safe_create_hdf5_group(hdf5_file=f, key="posterior_samples")
     for key in extra_keys:
         if key in dictionary:
             _safe_create_hdf5_group(hdf5_file=f, key=key)
@@ -223,39 +221,34 @@ class _MetaFile(object):
         """Generate a single dictionary which stores all information
         """
         dictionary = {
-            "posterior_samples": {},
-            "injection_data": {},
-            "version": {},
-            "meta_data": {},
-            "priors": {},
-            "config_file": {}
+            label: {
+                "posterior_samples": {}, "injection_data": {}, "version": {},
+                "meta_data": {}, "priors": {}, "config_file": {}
+            } for label in self.labels
         }
-
-        dictionary["priors"] = self.priors
+        dictionary["version"] = {"pesummary": [__version__]}
         for num, label in enumerate(self.labels):
             parameters = self.samples[label].keys()
             samples = np.array([self.samples[label][i] for i in parameters]).T
-            dictionary["posterior_samples"][label] = {
-                "parameter_names": list(parameters),
-                "samples": samples.tolist()
+            dictionary[label]["posterior_samples"] = {
+                "parameter_names": list(parameters), "samples": samples.tolist()
             }
-
-            dictionary["injection_data"][label] = {
+            dictionary[label]["injection_data"] = {
                 "injection_values": [
-                    self.injection_data[label][i] for i in
-                    parameters
+                    self.injection_data[label][i] for i in parameters
                 ]
             }
-
-            dictionary["version"][label] = [self.file_versions[label]]
-            dictionary["version"]["pesummary"] = [__version__]
-            dictionary["meta_data"][label] = self.file_kwargs[label]
-
-            if self.config != {} and self.config[num] is not None and not isinstance(self.config[num], dict):
+            dictionary[label]["version"] = [self.file_versions[label]]
+            dictionary[label]["meta_data"] = self.file_kwargs[label]
+            if self.config != {} and self.config[num] is not None and \
+                    not isinstance(self.config[num], dict):
                 config = self._grab_config_data_from_data_file(self.config[num])
-                dictionary["config_file"][label] = config
+                dictionary[label]["config_file"] = config
             elif self.config[num] is not None:
-                dictionary["config_file"][label] = self.config[num]
+                dictionary[label]["config_file"] = self.config[num]
+            for key in self.priors.keys():
+                if label in self.priors[key].keys():
+                    dictionary[label]["priors"][key] = self.priors[key][label]
         self.data = dictionary
 
     @staticmethod
@@ -313,26 +306,20 @@ class _MetaFile(object):
         Parameters
         ----------
         dictionary: dict
-            nested dictionary of posterior samples to convert to a numpy array.
-            Each set of column-major posterior samples should be an item for
-            a given label
+            dictionary of posterior samples to convert to a numpy array.
 
         Examples
         --------
-        >>> dictionary = {"label": {"mass_1": [1,2,3], "mass_2": [1,2,3]}}
+        >>> dictionary = {"mass_1": [1,2,3], "mass_2": [1,2,3]}
         >>> dictionry = _Metafile._convert_posterior_samples_to_numpy(
         ...     dictionary
         ... )
         >>> print(dictionary)
-        ... {'label': rec.array([(1., 1.), (2., 2.), (3., 3.)],
-        ...           dtype=[('mass_1', '<f4'), ('mass_2', '<f4')])}
+        ... rec.array([(1., 1.), (2., 2.), (3., 3.)],
+        ...           dtype=[('mass_1', '<f4'), ('mass_2', '<f4')])
         """
-        from pandas import DataFrame
-
         samples = copy.deepcopy(dictionary)
-        for label, item in samples.items():
-            samples[label] = item.to_structured_array()
-        return samples
+        return samples.to_structured_array()
 
     @staticmethod
     def _create_softlinks(dictionary):
@@ -405,12 +392,13 @@ class _MetaFile(object):
         import h5py
 
         key = "posterior_samples"
-        self.data[key] = self._convert_posterior_samples_to_numpy(
-            self.samples
-        )
+        for label in self.labels:
+            self.data[label][key] = self._convert_posterior_samples_to_numpy(
+                self.samples[label]
+            )
         with h5py.File(self.meta_file, "w") as f:
             recursively_save_dictionary_to_hdf5_file(
-                f, self.data, extra_keys=DEFAULT_HDF5_KEYS
+                f, self.data, extra_keys=DEFAULT_HDF5_KEYS + self.labels
             )
 
     def save_to_dat(self):

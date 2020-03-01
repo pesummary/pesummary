@@ -14,9 +14,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.gw.file.formats.base_read import GWRead
-from pesummary.core.file.formats.pesummary import PESummary as CorePESummary
+from pesummary.core.file.formats.pesummary import (
+    PESummary as CorePESummary, PESummaryDeprecated as CorePESummaryDeprecated,
+    deprecation_warning
+)
 from pesummary.utils.utils import logger
 import numpy as np
+import warnings
 
 
 class PESummary(GWRead, CorePESummary):
@@ -109,27 +113,27 @@ class PESummary(GWRead, CorePESummary):
     def _grab_data_from_dictionary(dictionary):
         """
         """
-        data = CorePESummary._grab_data_from_dictionary(dictionary=dictionary)
+        stored_data = CorePESummary._grab_data_from_dictionary(
+            dictionary=dictionary
+        )
 
         approx_list = list()
+        psd_dict, cal_dict = {}, {}
         psd, cal = None, None
-        for num, key in enumerate(data["labels"]):
-            if "psds" in dictionary.keys():
-                psd, = GWRead.load_recursively("psds", dictionary)
-            if "calibration_envelope" in dictionary.keys():
-                cal, = GWRead.load_recursively("calibration_envelope", dictionary)
-            if "approximant" in dictionary.keys():
-                if key in dictionary["approximant"].keys():
-                    approx_list.append(dictionary["approximant"][key])
-                else:
-                    approx_list.append(None)
+        for num, label in enumerate(stored_data["labels"]):
+            data, = GWRead.load_recursively(label, dictionary)
+            if "psds" in data.keys():
+                psd_dict[label] = data["psds"]
+            if "calibration_envelope" in data.keys():
+                cal_dict[label] = data["calibration_envelope"]
+            if "approximant" in data.keys():
+                approx_list.append(data["approximant"])
             else:
                 approx_list.append(None)
-        data["approximant"] = approx_list
-        data["calibration"] = cal
-        data["psd"] = psd
-
-        return data
+        stored_data["approximant"] = approx_list
+        stored_data["calibration"] = cal_dict
+        stored_data["psd"] = psd_dict
+        return stored_data
 
     @property
     def calibration_data_in_results_file(self):
@@ -232,3 +236,45 @@ class PESummary(GWRead, CorePESummary):
                 self.samples_dict[label], outdir=outdir, label=label,
                 overwrite=overwrite, sampler=sampler
             )
+
+
+class PESummaryDeprecated(PESummary):
+    """
+    """
+    def __init__(self, path_to_results_file):
+        warnings.warn(deprecation_warning)
+        super(PESummaryDeprecated, self).__init__(path_to_results_file)
+
+    @property
+    def load_kwargs(self):
+        return {
+            "grab_data_from_dictionary": PESummaryDeprecated._grab_data_from_dictionary
+        }
+
+    @staticmethod
+    def _grab_data_from_dictionary(dictionary):
+        """
+        """
+        data = CorePESummaryDeprecated._grab_data_from_dictionary(
+            dictionary=dictionary
+        )
+
+        approx_list = list()
+        psd, cal = None, None
+        for num, key in enumerate(data["labels"]):
+            if "psds" in dictionary.keys():
+                psd, = GWRead.load_recursively("psds", dictionary)
+            if "calibration_envelope" in dictionary.keys():
+                cal, = GWRead.load_recursively("calibration_envelope", dictionary)
+            if "approximant" in dictionary.keys():
+                if key in dictionary["approximant"].keys():
+                    approx_list.append(dictionary["approximant"][key])
+                else:
+                    approx_list.append(None)
+            else:
+                approx_list.append(None)
+        data["approximant"] = approx_list
+        data["calibration"] = cal
+        data["psd"] = psd
+
+        return data

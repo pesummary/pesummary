@@ -15,6 +15,7 @@
 
 import os
 import numpy as np
+from pesummary.core.file.formats.bilby import Bilby as CoreBilby
 from pesummary.gw.file.formats.base_read import GWRead
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.utils import logger
@@ -63,12 +64,7 @@ class Bilby(GWRead):
         """Grab any additional information stored in the lalinference file
         """
         f = bilby_object
-        kwargs = {"sampler": {
-            "log_evidence": np.round(f.log_evidence, 2),
-            "log_evidence_error": np.round(f.log_evidence_err, 2),
-            "log_bayes_factor": np.round(f.log_bayes_factor, 2),
-            "log_noise_evidence": np.round(f.log_noise_evidence, 2)},
-            "meta_data": {}}
+        kwargs = CoreBilby.grab_extra_kwargs(bilby_object)
         try:
             kwargs["sampler"]["f_ref"] = \
                 f.meta_data["likelihood"]["waveform_arguments"]["reference_frequency"]

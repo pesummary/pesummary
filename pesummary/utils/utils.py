@@ -410,6 +410,29 @@ def resample_posterior_distribution(posterior, nsamples):
     return samples
 
 
+def check_file_exists_and_rename(file_name):
+    """Check to see if a file exists and if it does then rename the file
+
+    Parameters
+    ----------
+    file_name: str
+        proposed file name to store data
+    """
+    if os.path.isfile(file_name):
+        import shutil
+
+        old_file = "{}_old".format(file_name)
+        while os.path.isfile(old_file):
+            old_file += "_old"
+        logger.warn(
+            "The file '{}' already exists. Renaming the existing file to "
+            "{} and saving the data to the requested file name".format(
+                file_name, old_file
+            )
+        )
+        shutil.move(file_name, old_file)
+
+
 def check_condition(condition, error_message):
     """Raise an exception if the condition is not satisfied
     """
