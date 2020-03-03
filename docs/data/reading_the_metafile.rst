@@ -110,14 +110,15 @@ Converting file format
 ----------------------
 
 You are able to convert the posterior samples stored in the PESummary metafile
-into either a `.dat`, a `bilby .json` or a `lalinference .hdf5` file. This can
-be done by using the following:
+into either a `.dat`, a `bilby .json` or `lalinference .hdf5` or a
+`lalinference .dat` file. This can be done by using the following:
 
 .. code-block:: python
 
     >>> data.to_dat(label="EXP1", outdir="./")
     >>> bilby_objects = data.to_bilby()
     >>> data.to_lalinference(outdir="./")
+    >>> data.to_lalinference(outdir="./", dat=True)
 
 
 Example script to extract all information from a PESummary metafile

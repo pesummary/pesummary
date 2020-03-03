@@ -537,7 +537,7 @@ class GWRead(Read):
 
     def to_lalinference(
         self, outdir="./", label=None, filename=None, overwrite=False,
-        sampler="lalinference_nest"
+        sampler="lalinference_nest", dat=False
     ):
         """Save the PESummary results file object to a lalinference hdf5 file
 
@@ -547,10 +547,12 @@ class GWRead(Read):
             path to the directory where you would like to save the results file
         label: str
             the label of the result file
+        dat: Bool
+            if True, a LALInference posterior_samples.dat file is created
         """
         from pesummary.gw.file.formats.lalinference import write_to_file
 
         write_to_file(
             self.samples_dict, outdir=outdir, label=label, filename=filename,
-            overwrite=overwrite, sampler=sampler
+            overwrite=overwrite, sampler=sampler, dat=dat
         )
