@@ -410,7 +410,7 @@ class LALInference(GWRead):
 
 def write_to_file(
     samples, outdir="./", label=None, filename=None, overwrite=False,
-    sampler="lalinference_nest"
+    sampler="lalinference_nest", dat=False
 ):
     """Write a set of samples in LALInference file format
 
@@ -430,6 +430,8 @@ def write_to_file(
     sampler: str
         The sampler which you wish to store in the result file. This may either
         be 'lalinference_nest' or 'lalinference_mcmc'
+    dat: Bool
+        If True, a LALInference dat file is produced
     """
     from pesummary.gw.file.standard_names import lalinference_map
 
@@ -438,7 +440,8 @@ def write_to_file(
 
         label = round(time())
     if not filename:
-        filename = "lalinference_file_{}.hdf5".format(label)
+        extension = "dat" if dat else "hdf5"
+        filename = "lalinference_{}.{}".format(label, extension)
 
     if os.path.isfile(os.path.join(outdir, filename)) and not overwrite:
         raise FileExistsError(
@@ -459,9 +462,15 @@ def write_to_file(
             "Keeping the PESummary name.".format(", ".join(no_key))
         )
     lalinference_samples = samples.to_structured_array()
-    with h5py.File(filename, "w") as f:
-        lalinference = f.create_group("lalinference")
-        sampler = lalinference.create_group(sampler)
-        samples = sampler.create_dataset(
-            "posterior_samples", data=lalinference_samples
+    if dat:
+        np.savetxt(
+            filename, lalinference_samples, delimiter="\t", comments="",
+            header="\t".join(lalinference_samples.dtype.names)
         )
+    else:
+        with h5py.File(filename, "w") as f:
+            lalinference = f.create_group("lalinference")
+            sampler = lalinference.create_group(sampler)
+            samples = sampler.create_dataset(
+                "posterior_samples", data=lalinference_samples
+            )
