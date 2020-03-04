@@ -497,8 +497,9 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
     return fig
 
 
-def _ligo_skymap_plot(ra, dec, savedir="./", nprocess=1, downsampled=False,
-                      label="pesummary", **kwargs):
+def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
+                      downsampled=False, label="pesummary",
+                      distance_map=True, multi_resolution=True, **kwargs):
     """Plot the sky location of the source for a given approximant using the
     ligo.skymap package
 
@@ -508,27 +509,44 @@ def _ligo_skymap_plot(ra, dec, savedir="./", nprocess=1, downsampled=False,
         list of samples for right ascension
     dec: list
         list of samples for declination
+    dist: list
+        list of samples for the luminosity distance
     savedir: str
         path to the directory where you would like to save the output files
     nprocess: Bool
         Boolean for whether to use multithreading or not
     downsampled: Bool
         Boolean for whether the samples have been downsampled or not
+    distance_map: Bool
+        Boolean for whether or not to produce a distance map
+    multi_resolution: Bool
+        Boolean for whether or not to generate a multiresolution HEALPix map
     kwargs: dict
         optional keyword arguments
     """
     import healpy as hp
     from ligo.skymap import plot, postprocess, io
-    from ligo.skymap.kde import Clustered2DSkyKDE
+    from ligo.skymap.bayestar import rasterize
+    from ligo.skymap.kde import Clustered2DSkyKDE, Clustered2Plus1DSkyKDE
     from astropy.time import Time
 
     fig = plt.figure()
-    pts = np.column_stack((ra, dec))
-    skypost = Clustered2DSkyKDE(pts, trials=5, jobs=nprocess)
+    if dist is not None and distance_map:
+        pts = np.column_stack((ra, dec, dist))
+        cls = Clustered2Plus1DSkyKDE
+    else:
+        pts = np.column_stack((ra, dec))
+        cls = Clustered2DSkyKDE
+    skypost = cls(pts, trials=5, jobs=nprocess)
     hpmap = skypost.as_healpix()
+    if not multi_resolution:
+        hpmap = rasterize(hpmap)
     hpmap.meta['creator'] = "pesummary"
     hpmap.meta['origin'] = 'LIGO/Virgo'
     hpmap.meta['gps_creation_time'] = Time.now().gps
+    if dist is not None:
+        hpmap.meta["distmean"] = np.mean(dist)
+        hpmap.meta["diststd"] = np.std(dist)
     io.write_sky_map(
         os.path.join(savedir, "%s_skymap.fits" % (label)), hpmap, nest=True
     )

@@ -266,7 +266,8 @@ class _PlotGeneration(_BasePlotGeneration):
                     target=self._ligo_skymap_plot,
                     args=[
                         self.savedir, self.samples[label]["ra"],
-                        self.samples[label]["dec"], label,
+                        self.samples[label]["dec"],
+                        self.samples[label]["luminosity_distance"], label,
                         self.nsamples_for_skymap, self.webdir,
                         self.multi_threading_for_skymap
                     ]
@@ -296,7 +297,7 @@ class _PlotGeneration(_BasePlotGeneration):
         )
 
     @staticmethod
-    def _ligo_skymap_plot(savedir, ra, dec, label, nsamples_for_skymap,
+    def _ligo_skymap_plot(savedir, ra, dec, dist, label, nsamples_for_skymap,
                           webdir, multi_threading_for_skymap):
         """Generate a skymap plot for a given set of samples using the
         ligo.skymap package
@@ -309,6 +310,8 @@ class _PlotGeneration(_BasePlotGeneration):
             array containing the samples for right ascension
         dec: pesummary.utils.utils.Array
             array containing the samples for declination
+        dist: pesummary.utils.utils.Array
+            array containing the samples for luminosity distance
         label: str
             the label corresponding to the results file
         nsamples_for_skymap: int
@@ -318,12 +321,12 @@ class _PlotGeneration(_BasePlotGeneration):
         """
         downsampled = False
         if nsamples_for_skymap is not None:
-            ra, dec = resample_posterior_distribution(
-                [ra, dec], nsamples_for_skymap
+            ra, dec, dist = resample_posterior_distribution(
+                [ra, dec, dist], nsamples_for_skymap
             )
             downsampled = True
         fig = gw._ligo_skymap_plot(
-            ra, dec, savedir=os.path.join(webdir, "samples"),
+            ra, dec, dist=dist, savedir=os.path.join(webdir, "samples"),
             nprocess=multi_threading_for_skymap, downsampled=downsampled,
             label=label
         )
