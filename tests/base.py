@@ -24,6 +24,23 @@ def namespace(args):
     return base
 
 
+def gw_parameters():
+    parameters = [
+        'mass_1', 'mass_2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_jl',
+        'phi_12', 'psi', 'theta_jn', 'ra', 'dec', 'luminosity_distance',
+        'geocent_time', 'log_likelihood', 'mass_ratio', 'total_mass',
+        'chirp_mass', 'symmetric_mass_ratio', 'iota', 'spin_1x', 'spin_1y',
+        'spin_1z', 'spin_2x', 'spin_2y', 'spin_2z', 'chi_p', 'chi_eff',
+        'cos_tilt_1', 'cos_tilt_2', 'redshift', 'comoving_distance',
+        'mass_1_source', 'mass_2_source', 'total_mass_source',
+        'chirp_mass_source', 'phi_1', 'phi_2', 'cos_theta_jn', 'cos_iota',
+        'non_evolved_peak_luminosity', 'non_evolved_final_spin',
+        'non_evolved_final_mass', 'non_evolved_final_mass_source',
+        'non_evolved_radiated_energy', 'inverted_mass_ratio'
+    ]
+    return parameters
+
+
 def get_list_of_files(gw=False, number=1):
     """Return a list of files that should be generated from a typical workflow
     """
@@ -33,16 +50,7 @@ def get_list_of_files(gw=False, number=1):
         parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
         label = "core"
     else:
-        parameters = [
-            'mass_1', 'mass_2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_jl',
-            'phi_12', 'psi', 'theta_jn', 'ra', 'dec', 'luminosity_distance',
-            'geocent_time', 'log_likelihood', 'mass_ratio', 'total_mass',
-            'chirp_mass', 'symmetric_mass_ratio', 'iota', 'spin_1x', 'spin_1y',
-            'spin_1z', 'spin_2x', 'spin_2y', 'spin_2z', 'chi_p', 'chi_eff',
-            'cos_tilt_1', 'cos_tilt_2', 'redshift', 'comoving_distance',
-            'mass_1_source', 'mass_2_source', 'total_mass_source',
-            'chirp_mass_source', 'phi_1', 'phi_2', 'cos_theta_jn', 'cos_iota',
-            'peak_luminosity', 'final_spin', 'final_mass','inverted_mass_ratio']
+        parameters = gw_parameters()
         label = "gw"
     html = [
         "./.outdir/html/error.html",
@@ -84,16 +92,7 @@ def get_list_of_plots(gw=False, number=1):
         parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
         label = "core"
     else:
-        parameters = [
-            'mass_1', 'mass_2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_jl',
-            'phi_12', 'psi', 'theta_jn', 'ra', 'dec', 'luminosity_distance',
-            'geocent_time', 'log_likelihood', 'mass_ratio', 'total_mass',
-            'chirp_mass', 'symmetric_mass_ratio', 'iota', 'spin_1x', 'spin_1y',
-            'spin_1z', 'spin_2x', 'spin_2y', 'spin_2z', 'chi_p', 'chi_eff',
-            'cos_tilt_1', 'cos_tilt_2', 'redshift', 'comoving_distance',
-            'mass_1_source', 'mass_2_source', 'total_mass_source',
-            'chirp_mass_source', 'phi_1', 'phi_2', 'cos_theta_jn', 'cos_iota',
-            'peak_luminosity', 'final_spin', 'final_mass','inverted_mass_ratio']
+        parameters = gw_parameters()
         label = "gw"
 
     plots = []

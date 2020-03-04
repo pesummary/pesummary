@@ -101,16 +101,8 @@ class GWBaseRead(BaseRead):
         """Test the parameter property
         """
         super(GWBaseRead, self).test_parameters(true, pesummary=pesummary)
-        full_parameters = [
-            'mass_1', 'mass_2', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_jl',
-            'phi_12', 'psi', 'theta_jn', 'ra', 'dec', 'luminosity_distance',
-            'geocent_time', 'log_likelihood', 'mass_ratio', 'total_mass',
-            'chirp_mass', 'symmetric_mass_ratio', 'iota', 'spin_1x', 'spin_1y',
-            'spin_1z', 'spin_2x', 'spin_2y', 'spin_2z', 'chi_p', 'chi_eff',
-            'cos_tilt_1', 'cos_tilt_2', 'redshift', 'comoving_distance',
-            'mass_1_source', 'mass_2_source', 'total_mass_source',
-            'chirp_mass_source', 'phi_1', 'phi_2', 'cos_theta_jn', 'cos_iota',
-            'peak_luminosity', 'final_mass', 'final_spin','inverted_mass_ratio']
+        from base import gw_parameters
+        full_parameters = gw_parameters()
 
         self.result.generate_all_posterior_samples()
         assert all(i in self.result.parameters for i in full_parameters)

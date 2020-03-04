@@ -259,8 +259,8 @@ class TestNRutils(object):
             self.mass_1, self.mass_2, self.spin_1z, self.spin_2z
         )
         self.final_spin = bbh_final_spin_non_precessing_Healyetal(
-            self.mass_1, self.mass_2, self.total_mass, self.eta, self.spin_1z,
-            self.spin_2z
+            self.mass_1, self.mass_2, self.spin_1z, self.spin_2z,
+            version="2016"
         )
 
     def test_bbh_peak_luminosity_non_precessing_Healyetal(self):
@@ -269,8 +269,7 @@ class TestNRutils(object):
 
         assert np.round(
             bbh_peak_luminosity_non_precessing_Healyetal(
-                self.mass_1, self.mass_2, self.total_mass, self.eta,
-                self.spin_1z, self.spin_2z
+                self.mass_1, self.mass_2, self.spin_1z, self.spin_2z
             ), 8
         ) == np.round(
             lal_Healyetal(
@@ -284,8 +283,7 @@ class TestNRutils(object):
 
         assert np.round(
             bbh_peak_luminosity_non_precessing_T1600018(
-                self.mass_1, self.mass_2, self.total_mass, self.eta,
-                self.chi_eff, self.spin_1z, self.spin_2z
+                self.mass_1, self.mass_2, self.spin_1z, self.spin_2z
             ), 8
         ) == np.round(
             lal_T1600018(
@@ -299,8 +297,7 @@ class TestNRutils(object):
 
         assert np.round(
             bbh_peak_luminosity_non_precessing_UIB2016(
-                self.mass_1, self.mass_2, self.total_mass, self.eta,
-                self.spin_1z, self.spin_2z
+                self.mass_1, self.mass_2, self.spin_1z, self.spin_2z
             ), 8
         ) == np.round(
             lal_UIB2016(
@@ -311,8 +308,6 @@ class TestNRutils(object):
     def test_bbh_final_spin_non_precessing_Healyetal(self):
         from lalinference.imrtgr.nrutils import \
             bbh_final_spin_non_precessing_Healyetal as lal_Healyetal
-
-      
 
         assert np.round(self.final_spin, 8) == np.round(
             lal_Healyetal(
@@ -327,8 +322,8 @@ class TestNRutils(object):
 
         assert np.round(
             bbh_final_mass_non_precessing_Healyetal(
-                self.mass_1, self.mass_2, self.total_mass, self.eta,
-                self.spin_1z, self.spin_2z, self.final_spin
+                self.mass_1, self.mass_2, self.spin_1z, self.spin_2z,
+                final_spin=self.final_spin, version="2016"
             ), 8
         ) == np.round(
             lal_Healyetal(
