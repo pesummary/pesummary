@@ -219,7 +219,7 @@ def violin_plots(parameter, samples, labels, latex_labels):
     return fig
 
 
-def spin_distribution_plots(parameters, samples, label, color):
+def spin_distribution_plots(parameters, samples, label, color, colorbar=False):
     """Generate spin distribution plots for a set of parameters and samples
 
     Parameters
@@ -386,9 +386,16 @@ def spin_distribution_plots(parameters, samples, label, color):
     ax1.add_collection(p)
 
     # Event name top, spin labels bottom
-    title = plt.text(0.16, 1.25, label, fontsize=18, horizontalalignment='center')
-    S1_label = plt.text(1.25, -1.15, r'${S}_{1}/(Gm_1^2)$', fontsize=14)
-    S2_label = plt.text(-.5, -1.15, r'${S}_{2}/(Gm_2^2)$', fontsize=14)
+    if label is not None:
+        title = plt.text(0.16, 1.25, label, fontsize=18, horizontalalignment='center')
+    S1_label = plt.text(1.25, -1.15, r'$c{S}_{1}/(Gm_1^2)$', fontsize=14)
+    S2_label = plt.text(-.5, -1.15, r'$c{S}_{2}/(Gm_2^2)$', fontsize=14)
     plt.subplots_adjust(wspace=0.295)
+    ax3 = plt.axes([0.22, 0.05, 0.55, 0.02])
+    if colorbar:
+        cbar = fig.colorbar(
+            p, cax=ax3, orientation="horizontal", pad=0.2, shrink=0.5,
+            label='posterior probability per pixel'
+        )
     bbox_extra_artists = [title, S1_label, S2_label]
     return fig

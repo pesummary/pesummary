@@ -419,7 +419,7 @@ class Read(object):
         for param, desc in data.items():
             for num, samples_dict in enumerate(samples):
                 if labels:
-                    description = "{}_{}".format(desc, labels[num])
+                    description = "{}{}".format(desc, labels[num])
                 else:
                     description = desc
                 median = np.round(
@@ -434,13 +434,16 @@ class Read(object):
                     )
                 )
                 macros += (
-                    "\\def\\%s_median{$%s$}\n" % (description, median)
+                    "\\def\\%smedian{$%s$}\n" % (description, median)
                 )
                 macros += (
-                    "\\def\\%s_upper{%s$}\n" % (description, upper)
+                    "\\def\\%supper{$%s$}\n" % (
+                        description, np.round(confidence[1], rounding)
+                    )
                 )
                 macros += (
-                    "\\def\\%s_lower{%s$}\n" % (description, low)
+                    "\\def\\%slower{$%s$}\n" % (
+                        description, np.round(confidence[0], rounding))
                 )
         return macros
 
