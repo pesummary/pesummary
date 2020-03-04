@@ -1069,8 +1069,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             "source": {
                 "accept": ["source"], "reject": []
             },
-            "final_object": {
-                "accept": ["final", "peak_luminosity"], "reject": []
+            "remnant": {
+                "accept": ["final"], "reject": []
             },
             "inclination": {
                 "accept": ["theta", "iota"], "reject": []
@@ -1101,6 +1101,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             "calibration": {
                 "accept": ["spcal", "recalib", "frequency"],
                 "reject": ["minimum"]
+            },
+            "energy": {
+                "accept": ["peak_luminosity", "radiated"],
+                "reject": []
             },
             "others": {
                 "accept": ["phase", "likelihood", "prior"],

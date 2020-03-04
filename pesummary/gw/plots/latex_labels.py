@@ -81,13 +81,14 @@ GWlatex_labels = {
     "lambda_tilde": r"$\tilde{\lambda}$",
     "delta_lambda": r"$\delta\lambda$",
     "peak_luminosity": r"$L_{peak} [10^{56} ergss^{-1}]$",
-    "non_evolved_peak_luminosity": r"$L_{peak}^{non_evol} [10^{56} ergss^{-1}]$",
+    "non_evolved_peak_luminosity": r"$L_{peak}^{nonevol} [10^{56} ergss^{-1}]$",
     "final_mass": r"$m_{final} [M_{\odot}]$",
-    "non_evolved_final_mass": r"$m_{final}^{non_evol} [M_{\odot}]$",
+    "non_evolved_final_mass": r"$m_{final}^{nonevol} [M_{\odot}]$",
+    "non_evolved_final_mass_source": r"$m_{final}^{source, nonevol} [M_{\odot}]$",
     "final_spin": r"$a_{final}$",
-    "non_evolved_final_spin": r"a_{final}^{non_evol}",
+    "non_evolved_final_spin": r"a_{final}^{nonevol}",
     "radiated_energy": r"$E_{rad} [M_{\odot}]$",
-    "non_evolved_radiated_energy": r"$E_{rad}^{non_evol} [M_{\odot}]$"
+    "non_evolved_radiated_energy": r"$E_{rad}^{nonevol} [M_{\odot}]$"
 }
 
 public_GWlatex_labels = {"mass_1": r"$m_{1}^{det} [M_{\odot}]$",
