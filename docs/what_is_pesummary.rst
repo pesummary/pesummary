@@ -13,6 +13,8 @@ the general public. As a result, this package is meant to be as easy-to-use as
 possible with self explanatory function and class names and extensive
 documentation to show how easy it is to use this Summary page builder.
 
+The code is hosted at https://git.ligo.org/lscsoft/pesummary .
+
 The basic idea
 --------------
 
