@@ -72,7 +72,7 @@ a specific run by running:
     >>> IFOs = list(calibration_data.keys())
     >>> calibration_envelope = {
     ...     i: np.array(
-    ...         [tuple(j) for j in calibration_envelope[i]], dtype=[
+    ...         [tuple(j) for j in calibration_data[i]], dtype=[
     ...             ("Frequency", "f"),
     ...             ("Median Mag", "f"),
     ...             ("Phase (Rad)", "f"),
