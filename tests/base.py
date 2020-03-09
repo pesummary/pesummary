@@ -34,9 +34,9 @@ def gw_parameters():
         'cos_tilt_1', 'cos_tilt_2', 'redshift', 'comoving_distance',
         'mass_1_source', 'mass_2_source', 'total_mass_source',
         'chirp_mass_source', 'phi_1', 'phi_2', 'cos_theta_jn', 'cos_iota',
-        'non_evolved_peak_luminosity', 'non_evolved_final_spin',
-        'non_evolved_final_mass', 'non_evolved_final_mass_source',
-        'non_evolved_radiated_energy', 'inverted_mass_ratio'
+        'peak_luminosity_non_evolved', 'final_spin_non_evolved',
+        'final_mass_non_evolved', 'final_mass_source_non_evolved',
+        'radiated_energy_non_evolved', 'inverted_mass_ratio'
     ]
     return parameters
 
