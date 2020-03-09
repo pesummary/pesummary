@@ -65,14 +65,18 @@ def bbh_final_spin_non_precessing_Healyetal(*args, **kwargs):
     spin_2z: float/np.ndarray
         float/array of secondary spin aligned with the orbital angular momentum
     version: str, optional
-        version of the fitting coefficients you wish to use
+        version of the fitting coefficients you wish to use. Default are the
+        fits from 2016
     """
+    if "version" not in kwargs.keys():
+        kwargs.update({"version": "2016"})
     return nrutils.bbh_final_spin_non_precessing_Healyetal(*args, **kwargs)
 
 
 def bbh_final_mass_non_precessing_Healyetal(*args, **kwargs):
     """Return the final mass of the BH resulting from the merger of a BBH for an
-    aligned-spin system using the fit from Healy and Lousto: arXiv:1610.09713
+    aligned-spin system using the fit from Healy et al. If no version specified,
+    the default fit is Healy and Lousto: arXiv:1610.09713
 
     Parameters
     ----------
@@ -85,12 +89,15 @@ def bbh_final_mass_non_precessing_Healyetal(*args, **kwargs):
     spin_2z: float/np.ndarray
         float/array of secondary spin aligned with the orbital angular momentum
     version: str, optional
-        version of the fitting coefficients you wish to use
+        version of the fitting coefficients you wish to use. Default are the
+        fits from 2016
     final_spin: float/np.ndarray, optional
         float/array of precomputed final spins
     """
     chif = kwargs.pop("final_spin", None)
     kwargs.update({"chif": chif})
+    if "version" not in kwargs.keys():
+        kwargs.update({"version": "2016"})
     return nrutils.bbh_final_mass_non_precessing_Healyetal(*args, **kwargs)
 
 
@@ -191,18 +198,34 @@ def bbh_final_spin_non_precessing_HBR2016(*args, **kwargs):
     return nrutils.bbh_final_spin_non_precessing_HBR2016(*args, **kwargs)
 
 
-def _bbh_final_spin_precessing_using_non_precessing_fit(*args):
-    """
+def _bbh_final_spin_precessing_using_non_precessing_fit(
+    mass_1, mass_2, spin_1z, spin_2z, fit
+):
+    """Return the final spin of a BH results from the merger of a BH for a
+    precessing system using non_precessing fits
+
+    Parameters
+    ----------
+    mass_1: float/np.ndarray
+        float/array of masses for the primary object
+    mass_2: float/np.ndarray
+        float/array of masses for the secondary object
+    spin_1z: float/np.ndarray
+        float/array of primary spin aligned with the orbital angular momentum
+    spin_2z: float/np.ndarray
+        float/array of secondary spin aligned with the orbital angular momentum
+    fit: str
+        name of the NR fit you wish to use
     """
     return nrutils.bbh_final_spin_precessing(
-        args[0], args[1], np.abs(args[2]), np.abs(args[3]),
-        0.5 * np.pi * (1 - np.sign(args[2])),
-        0.5 * np.pi * (1 - np.sign(args[3])),
-        np.zeros_like(args[0]), args[4]
+        mass_1, mass_2, np.abs(spin_1z), np.abs(spin_2z),
+        0.5 * np.pi * (1 - np.sign(spin_1z)),
+        0.5 * np.pi * (1 - np.sign(spin_2z)),
+        np.zeros_like(mass_1), fit
     )
 
 
-def bbh_final_spin_precessing_Panetal(*args):
+def bbh_final_spin_Panetal(*args):
     """Return the final spin of the BH resulting from the merger of a BBH for a
     precessing system using the fit from Pan et al: Phys Rev D 84, 124052 (2011)
 
@@ -222,7 +245,8 @@ def bbh_final_spin_precessing_Panetal(*args):
 
 def bbh_final_spin_precessing_Healyetal(*args):
     """Return the final spin of the BH resulting from the merger of a BBH for a
-    precessing using the fit from Healy and Lousto: arXiv:1610.09713
+    precessing using the fit from Healy et al. If no version specified,
+    the default fit is Healy and Lousto: arXiv:1610.09713
 
     Parameters
     ----------
@@ -257,8 +281,13 @@ def bbh_final_spin_precessing_UIB2016(*args):
     return _bbh_final_spin_precessing_using_non_precessing_fit(*args, "UIB2016")
 
 
-def _bbh_final_spin_precessing_projected(*args, function=None):
-    """Project the precessing spins and calculate the final spin of the BH
+def _bbh_final_spin_precessing_projected(
+    mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, function=None
+):
+    """Project the precessing spins along the orbital angular momentum and
+    calculate the final spin of the BH with an aligned-spin fit from the
+    literature augmenting it with the leading contribution from the in-plane
+    spins
 
     Parameters
     ----------
@@ -279,9 +308,19 @@ def _bbh_final_spin_precessing_projected(*args, function=None):
         float/array of samples for the angle between the in-plane spin
         components
     """
-    spin_1z = args[2] * np.cos(args[4])
-    spin_2z = args[3] * np.cos(args[5])
-    return function(args[0], args[1], spin_1z, spin_2z)
+    spin_1z = a_1 * np.cos(tilt_1)
+    spin_2z = a_2 * np.cos(tilt_2)
+    final_spin_aligned = function(mass_1, mass_2, spin_1z, spin_2z)
+    final_spin_aligned_squared = final_spin_aligned * final_spin_aligned
+    total_mass = mass_1 + mass_2
+
+    a_1perp = mass_1 * mass_1 * a_1 * np.sin(tilt_1)
+    a_2perp = mass_2 * mass_2 * a_2 * np.sin(tilt_2)
+    a_perp_squared = (
+        a_1perp * a_1perp + a_2perp * a_2perp
+        + 2. * a_1perp * a_2perp * np.cos(phi_12)
+    )
+    return (final_spin_aligned_squared + a_perp_squared / (total_mass)**4.)**0.5
 
 
 def bbh_final_spin_precessing_projected_Healyetal(*args):
@@ -448,7 +487,6 @@ class FinalSpinFits(object):
 
 
 class FinalSpinPrecessingFits(object):
-    Panetal = bbh_final_spin_precessing_Panetal
     Healyetal = bbh_final_spin_precessing_projected_Healyetal
     UIB2016 = bbh_final_spin_precessing_projected_UIB2016
     HBR2016 = bbh_final_spin_precessing_HBR2016

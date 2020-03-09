@@ -1067,7 +1067,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 "reject": ["source", "final"]
             },
             "source": {
-                "accept": ["source"], "reject": []
+                "accept": ["source"], "reject": ["final"]
             },
             "remnant": {
                 "accept": ["final"], "reject": []
