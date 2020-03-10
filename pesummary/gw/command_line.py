@@ -74,6 +74,18 @@ def insert_gwspecific_option_group(parser):
                                 "ligo.skymap. These samples will be randomly "
                                 "drawn from the posterior distributions"),
                           default=None)
+    gw_group.add_argument("--evolve_spins", action="store_true",
+                          help=("Evolve the spins up to the Schwarzschild "
+                                "ISCO frequency for remnant fits evaluation"),
+                          default=False)
+    gw_group.add_argument("--f_low", dest="f_low",
+                          help=("Low frequency cutoff used to generate the "
+                                "samples"),
+                          nargs='+', default=None)
+    gw_group.add_argument("--f_ref", dest="f_ref",
+                          help=("Reference frequency used to generate the "
+                                "samples"),
+                          nargs='+', default=None)
     gw_group.add_argument("--no_ligo_skymap", action="store_true",
                           help="do not generate a skymap with ligo.skymap",
                           default=False)

@@ -325,7 +325,8 @@ def _bbh_final_spin_precessing_projected(
 
 def bbh_final_spin_precessing_projected_Healyetal(*args):
     """Return the final spin of the BH calculated from projected spins using
-    the fit from Healy and Lousto: arXiv:1610.09713
+    the fit from Healy and Lousto: arXiv:1610.09713 augmenting it with the
+    leading contribution from the in-plane spins
 
     Parameters
     ----------
@@ -354,7 +355,8 @@ def bbh_final_spin_precessing_projected_Healyetal(*args):
 def bbh_final_spin_precessing_projected_UIB2016(*args):
     """Return the final spin of the BH calculated from projected spins using
     the fit by David Keitel, Xisco Jimenez Forteza, Sascha Husa, Lionel London
-    et al. arxiv:1612.09566v1
+    et al. arxiv:1612.09566v1 augmenting it with the leading contribution from
+    the in-plane spins
 
     Parameters
     ----------
@@ -492,7 +494,9 @@ class FinalSpinPrecessingFits(object):
     HBR2016 = bbh_final_spin_precessing_HBR2016
 
 
-def _bbh_average_quantity(*args, fits=None, cls=None, quantity=None):
+def _bbh_average_quantity(
+    *args, fits=None, cls=None, quantity=None, return_fits_used=False
+):
     """Average the result from multiple fits
 
     Parameters
@@ -505,22 +509,26 @@ def _bbh_average_quantity(*args, fits=None, cls=None, quantity=None):
         class which maps a string to a given fitting function
     quantity: str
         quantity that you are combining results for
+    return_fits_used: Bool, optional
+        if True, return the fits that were used to calculate the average
     """
     data, used_fits = [], []
     for fit in fits:
         if hasattr(cls, fit):
             function = getattr(cls, fit)
-            used_fits.append(str(function))
+            used_fits.append(str(function).replace("<", "").replace(">", ""))
             data.append(function(*args))
     logger.info(
         "Averaging the {} from the following fits: {}".format(
             quantity, ", ".join(used_fits)
         )
     )
+    if return_fits_used:
+        return np.mean(data, axis=0), used_fits
     return np.mean(data, axis=0)
 
 
-def bbh_final_mass_average(*args, fits=FINALMASS_FITS):
+def bbh_final_mass_average(*args, fits=FINALMASS_FITS, return_fits_used=False):
     """Return the final mass averaged across multiple fits
 
     Parameters
@@ -535,13 +543,18 @@ def bbh_final_mass_average(*args, fits=FINALMASS_FITS):
         float/array of secondary spin aligned with the orbital angular momentum
     fits: list, optional
         list of fits that you wish to use
+    return_fits_used: Bool, optional
+        if True, return the fits that were used to calculate the average
     """
     return _bbh_average_quantity(
-        *args, fits=fits, cls=FinalMassFits, quantity="final mass"
+        *args, fits=fits, cls=FinalMassFits, quantity="final mass",
+        return_fits_used=return_fits_used
     )
 
 
-def bbh_final_spin_average_non_precessing(*args, fits=FINALSPIN_FITS):
+def bbh_final_spin_average_non_precessing(
+    *args, fits=FINALSPIN_FITS, return_fits_used=False
+):
     """Return the final spin averaged across multiple non-precessing fits
 
     Parameters
@@ -554,13 +567,20 @@ def bbh_final_spin_average_non_precessing(*args, fits=FINALSPIN_FITS):
         float/array of primary spin aligned with the orbital angular momentum
     spin_2z: float/np.ndarray
         float/array of secondary spin aligned with the orbital angular momentum
+    fits: list, optional
+        list of fits that you wish to use
+    return_fits_used: Bool, optional
+        if True, return the fits that were used to calculate the average
     """
     return _bbh_average_quantity(
-        *args, fits=fits, cls=FinalSpinFits, quantity="final spin"
+        *args, fits=fits, cls=FinalSpinFits, quantity="final spin",
+        return_fits_used=return_fits_used
     )
 
 
-def bbh_final_spin_average_precessing(*args, fits=FINALSPIN_FITS):
+def bbh_final_spin_average_precessing(
+    *args, fits=FINALSPIN_FITS, return_fits_used=False
+):
     """Return the final spin averaged across multiple fits
 
     Parameters
@@ -581,13 +601,18 @@ def bbh_final_spin_average_precessing(*args, fits=FINALSPIN_FITS):
     phi_12: float/np.ndarray
         float/array of samples for the angle between the in-plane spin
         components
+    fits: list, optional
+        list of fits that you wish to use
+    return_fits_used: Bool, optional
+        if True, return the fits that were used to calculate the average
     """
     return _bbh_average_quantity(
-        *args, fits=fits, cls=FinalSpinPrecessingFits, quantity="final spin"
+        *args, fits=fits, cls=FinalSpinPrecessingFits, quantity="final spin",
+        return_fits_used=return_fits_used
     )
 
 
-def bbh_peak_luminosity_average(*args, fits=LPEAK_FITS):
+def bbh_peak_luminosity_average(*args, fits=LPEAK_FITS, return_fits_used=False):
     """Return the peak luminosity (in units of 10^56 ergs/s) averaged across
     multiple fits.
 
@@ -603,7 +628,10 @@ def bbh_peak_luminosity_average(*args, fits=LPEAK_FITS):
         float/array of secondary spin aligned with the orbital angular momentum
     fits: list, optional
         list of fits that you wish to use
+    return_fits_used: Bool, optional
+        if True, return the fits that were used to calculate the average
     """
     return _bbh_average_quantity(
-        *args, fits=fits, cls=PeakLuminosityFits, quantity="peak luminosity"
+        *args, fits=fits, cls=PeakLuminosityFits, quantity="peak luminosity",
+        return_fits_used=return_fits_used
     )

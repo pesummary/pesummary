@@ -59,20 +59,16 @@ lalinference_map = {
     "lambda2": "lambda_2",
     "lambdaT": "lambda_tilde",
     "dLambdaT": "delta_lambda",
-    "mf": "final_mass",
-    "mf_evol": "final_mass",
+    "mf_evol_avg": "final_mass",
     "mf_nonevol": "final_mass_non_evolved",
-    "mf_source_evol": "final_mass_source",
+    "mf_source_evol_avg": "final_mass_source",
     "mf_source_nonevol": "final_mass_source_non_evolved",
-    "af": "final_spin",
     "af_nonevol": "final_spin_non_evolved",
-    "af_evol": "final_spin",
-    "l_peak": "peak_luminosity",
+    "af_evol_avg": "final_spin",
+    "l_peak_evol_avg": "peak_luminosity",
     "l_peak_nonevol": "peak_luminosity_non_evolved",
-    "l_peak_evol": "peak_luminosity",
-    "l_peak": "peak_luminosity",
     "e_rad_nonevol": "radiated_energy_non_evolved",
-    "e_rad_evol": "radiated_energy"
+    "e_rad_evol_avg": "radiated_energy",
 }
 
 bilby_map = {
@@ -140,6 +136,8 @@ pesummary_map = {
     "E1_matched_filter_snr_angle": "E1_matched_filter_snr_angle",
     "chirp_mass_source": "chirp_mass_source",
     "delta_lambda": "delta_lambda",
+    "spin_1z": "spin_1z",
+    "spin_2z": "spin_2z",
     "peak_luminosity": "peak_luminosity",
     "peak_luminosity_non_evolved": "peak_luminosity_non_evolved",
     "final_mass": "final_mass",
@@ -246,7 +244,15 @@ other_map = {
     "final_mass": "final_mass",
     "final_spin": "final_spin",
     "weights": "weights",
-    "inverted_mass_ratio": "inverted_mass_ratio"
+    "inverted_mass_ratio": "inverted_mass_ratio",
+    "mf": "final_mass",
+    "mf_evol": "final_mass",
+    "mf_source_evol": "final_mass_source",
+    "af": "final_spin",
+    "af_evol": "final_spin",
+    "l_peak": "peak_luminosity",
+    "l_peak_evol": "peak_luminosity",
+    "e_rad_evol": "radiated_energy",
 }
 
 

@@ -31,10 +31,6 @@ from pesummary.utils.utils import logger
 
 
 SAMPLER_KWARGS = {
-    "flow": "f_low",
-    "f_low": "f_low",
-    "fref": "f_ref",
-    "f_ref": "f_ref",
     "log_bayes_factor": "log_bayes_factor",
     "bayes_factor": "bayes_factor",
     "log_evidence": "log_evidence",
@@ -45,6 +41,10 @@ SAMPLER_KWARGS = {
 }
 
 META_DATA = {
+    "flow": "f_low",
+    "f_low": "f_low",
+    "fref": "f_ref",
+    "f_ref": "f_ref",
     "LAL_PNORDER": "pn_order",
     "LAL_APPROXIMANT": "approximant",
     "number_of_live_points": "number_of_live_points",

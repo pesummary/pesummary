@@ -250,7 +250,7 @@ class Read(object):
         samples = [list(x) for x in dat_file]
         return parameters, samples
 
-    def generate_all_posterior_samples(self):
+    def generate_all_posterior_samples(self, **kwargs):
         """Empty function
         """
         pass

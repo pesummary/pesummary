@@ -388,6 +388,39 @@ def network_snr(snrs):
     return network_snr
 
 
+def tilt_angles_and_phi_12_from_spin_vectors_and_L(a_1, a_2, Ln):
+    """Return the tilt angles and phi_12 given samples for the spin vectors
+    and the orbital angular momentum
+
+    Parameters
+    ----------
+    a_1: np.ndarray
+        Spin vector for the larger object
+    a_2: np.ndarray
+        Spin vector for the smaller object
+    Ln: np.ndarray
+        Orbital angular momentum of the binary
+    """
+    a_1_norm = np.linalg.norm(a_1)
+    a_2_norm = np.linalg.norm(a_2)
+    Ln /= np.linalg.norm(Ln)
+    a_1_dot = np.dot(a_1, Ln)
+    a_2_dot = np.dot(a_2, Ln)
+    a_1_perp = a_1 - a_1_dot * Ln
+    a_2_perp = a_2 - a_2_dot * Ln
+    cos_tilt_1 = a_1_dot / a_1_norm
+    cos_tilt_2 = a_2_dot / a_2_norm
+    cos_phi_12 = np.dot(a_1_perp, a_2_perp) / (
+        np.linalg.norm(a_1_perp) * np.linalg.norm(a_2_perp)
+    )
+    # set quadrant of phi12
+    phi_12 = np.arccos(cos_phi_12)
+    if np.sign(np.dot(Ln, np.cross(a_1, a_2))) < 0.:
+        phi_12 = 2. * np.pi - phi_12
+
+    return np.arccos(cos_tilt_1), np.arccos(cos_tilt_2), phi_12
+
+
 def _final_from_initial(
     mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
     approximant="SEOBNRv4"
@@ -451,7 +484,9 @@ def _final_from_initial(
     return final_mass, final_spin
 
 
-def final_mass_of_merger_from_NR(*args, NRfit="average", final_spin=None):
+def final_mass_of_merger_from_NR(
+    *args, NRfit="average", final_spin=None, return_fits_used=False
+):
     """Return the final mass resulting from a BBH merger using NR fits
 
     Parameters
@@ -462,6 +497,8 @@ def final_mass_of_merger_from_NR(*args, NRfit="average", final_spin=None):
         to have an average NR fit, then pass 'average'
     final_spin: float/np.ndarray, optional
         precomputed final spin of the remnant.
+    return_fits_used: Bool, optional
+        if True, return the fits that were used. Only used when NRfit='average'
     """
     from pesummary.gw.file import nrutils
 
@@ -477,6 +514,8 @@ def final_mass_of_merger_from_NR(*args, NRfit="average", final_spin=None):
         )
     if "healy" in NRfit.lower():
         return func(*args, final_spin=final_spin)
+    if NRfit.lower() == "average":
+        return func(*args, return_fits_used=return_fits_used)
     return func(*args)
 
 
@@ -487,7 +526,9 @@ def final_mass_of_merger_from_waveform(*args, approximant="SEOBNRv4"):
     return _final_from_initial(*args, approximant=approximant)[0]
 
 
-def final_spin_of_merger_from_NR(*args, NRfit="average"):
+def final_spin_of_merger_from_NR(
+    *args, NRfit="average", return_fits_used=False
+):
     """Return the final spin resulting from a BBH merger using NR fits
 
     Parameters
@@ -496,6 +537,8 @@ def final_spin_of_merger_from_NR(*args, NRfit="average"):
         Name of the fit you wish to use. If you wish to use a precessing fit
         please use the syntax 'precessing_{}'.format(fit_name). If you wish
         to have an average NR fit, then pass 'average'
+    return_fits_used: Bool, optional
+        if True, return the fits that were used. Only used when NRfit='average'
     """
     from pesummary.gw.file import nrutils
 
@@ -515,6 +558,8 @@ def final_spin_of_merger_from_NR(*args, NRfit="average"):
         func = getattr(
             nrutils, "bbh_final_spin_non_precessing_{}".format(NRfit)
         )
+    if NRfit.lower() == "average":
+        return func(*args, return_fits_used=return_fits_used)
     return func(*args)
 
 
@@ -526,7 +571,8 @@ def final_spin_of_merger_from_waveform(*args, approximant="SEOBNRv4"):
 
 
 def final_mass_of_merger(
-    *args, method="NR", approximant="SEOBNRv4", NRfit="average", final_spin=None
+    *args, method="NR", approximant="SEOBNRv4", NRfit="average",
+    final_spin=None, return_fits_used=False
 ):
     """Return the final mass resulting from a BBH merger
 
@@ -547,10 +593,16 @@ def final_mass_of_merger(
         Name of the approximant you wish to use if the chosen method is waveform
     NRFit: str
         Name of the NR fit you wish to use if chosen method is NR
+    return_fits_used: Bool, optional
+        if True, return the NR fits that were used. Only used when
+        NRFit='average'
     """
     if method.lower() == "nr":
         mass_func = final_mass_of_merger_from_NR
-        kwargs = {"NRfit": NRfit, "final_spin": final_spin}
+        kwargs = {
+            "NRfit": NRfit, "final_spin": final_spin,
+            "return_fits_used": return_fits_used
+        }
     else:
         mass_func = final_mass_of_merger_from_waveform
         kwargs = {"approximant": approximant}
@@ -559,7 +611,8 @@ def final_mass_of_merger(
 
 
 def final_spin_of_merger(
-    *args, method="NR", approximant="SEOBNRv4", NRfit="average"
+    *args, method="NR", approximant="SEOBNRv4", NRfit="average",
+    return_fits_used: False
 ):
     """Return the final mass resulting from a BBH merger
 
@@ -588,10 +641,13 @@ def final_spin_of_merger(
         Name of the approximant you wish to use if the chosen method is waveform
     NRFit: str
         Name of the NR fit you wish to use if chosen method is NR
+    return_fits_used: Bool, optional
+        if True, return the NR fits that were used. Only used when
+        NRFit='average'
     """
     if method.lower() == "nr":
         spin_func = final_spin_of_merger_from_NR
-        kwargs = {"NRfit": NRfit}
+        kwargs = {"NRfit": NRfit, "return_fits_used": return_fits_used}
     else:
         spin_func = final_spin_of_merger_from_waveform
         kwargs = {"approximant": approximant}
@@ -599,7 +655,7 @@ def final_spin_of_merger(
     return spin_func(*args, **kwargs)
 
 
-def peak_luminosity_of_merger(*args, NRfit="average"):
+def peak_luminosity_of_merger(*args, NRfit="average", return_fits_used=False):
     """Return the peak luminosity of an aligned-spin BBH using NR fits
 
     Parameters
@@ -612,6 +668,11 @@ def peak_luminosity_of_merger(*args, NRfit="average"):
         float/array of primary spin aligned with the orbital angular momentum
     spin_2z: float/np.ndarray
         float/array of secondary spin aligned with the orbital angular momentum
+    NRFit: str
+        Name of the NR fit you wish to use if chosen method is NR
+    return_fits_used: Bool, optional
+        if True, return the NR fits that were used. Only used when
+        NRFit='average'
     """
     from pesummary.gw.file import nrutils
 
@@ -621,6 +682,8 @@ def peak_luminosity_of_merger(*args, NRfit="average"):
         func = getattr(
             nrutils, "bbh_peak_luminosity_non_precessing_{}".format(NRfit)
         )
+    if NRfit.lower() == "average":
+        return func(*args, return_fits_used=return_fits_used)
     return func(*args)
 
 
@@ -654,6 +717,10 @@ class _Conversion(object):
     """
     def __new__(cls, *args, **kwargs):
         obj = super(_Conversion, cls).__new__(cls)
+        base_replace = (
+            "'{}': {} already found in the result file. Overwriting with "
+            "the passed {}"
+        )
         if len(args) > 2:
             raise ValueError(
                 "The _Conversion module only takes as arguments a dictionary "
@@ -668,20 +735,57 @@ class _Conversion(object):
             parameters, samples = args
             samples = np.atleast_2d(samples).tolist()
         extra_kwargs = kwargs.get("extra_kwargs", {"sampler": {}, "meta_data": {}})
+        f_low = kwargs.get("f_low", None)
         f_ref = kwargs.get("f_ref", None)
-        if f_ref is not None:
-            extra_kwargs["sampler"]["f_ref"] = f_ref
-        obj.__init__(parameters, samples, extra_kwargs)
-        if kwargs.get("return_dict", True):
+        approximant = kwargs.get("approximant", None)
+        evolve_spins = kwargs.get("evolve_spins", False)
+        if f_low is not None and "f_low" in extra_kwargs["meta_data"].keys():
+            logger.warn(
+                base_replace.format(
+                    "f_low", extra_kwargs["meta_data"]["f_low"], f_low
+                )
+            )
+            extra_kwargs["meta_data"]["f_low"] = f_low
+        elif f_low is not None:
+            extra_kwargs["meta_data"]["f_low"] = f_low
+        if approximant is not None and "approximant" in extra_kwargs["meta_data"].keys():
+            logger.warn(
+                base_replace.format(
+                    "approximant", extra_kwargs["meta_data"]["approximant"],
+                    approximant
+                )
+            )
+            extra_kwargs["meta_data"]["approximant"] = approximant
+        elif approximant is not None:
+            extra_kwargs["meta_data"]["approximant"] = approximant
+        if f_ref is not None and "f_ref" in extra_kwargs["meta_data"].keys():
+            logger.warn(
+                base_replace.format(
+                    "f_ref", extra_kwargs["meta_data"]["f_ref"], f_ref
+                )
+            )
+            extra_kwargs["meta_data"]["f_ref"] = f_ref
+        elif f_ref is not None:
+            extra_kwargs["meta_data"]["f_ref"] = f_ref
+        obj.__init__(parameters, samples, extra_kwargs, evolve_spins)
+        return_kwargs = kwargs.get("return_kwargs", False)
+        if kwargs.get("return_dict", True) and return_kwargs:
+            return [
+                SamplesDict(obj.parameters, np.array(obj.samples).T),
+                obj.extra_kwargs
+            ]
+        elif kwargs.get("return_dict", True):
             return SamplesDict(obj.parameters, np.array(obj.samples).T)
+        elif return_kwargs:
+            return obj.parameters, obj.samples, obj.extra_kwargs
         else:
             return obj.parameters, obj.samples
 
-    def __init__(self, parameters, samples, extra_kwargs):
+    def __init__(self, parameters, samples, extra_kwargs, evolve_spins):
         self.parameters = parameters
         self.samples = samples
         self.extra_kwargs = extra_kwargs
-        self.generate_all_posterior_samples()
+        self.generate_all_posterior_samples(evolve_spins=evolve_spins)
 
     def _specific_parameter_samples(self, param):
         """Return the samples for a specific parameter
@@ -771,7 +875,7 @@ class _Conversion(object):
     def _reference_frequency(self):
         self.parameters.append("reference_frequency")
         nsamples = len(self.samples)
-        extra_kwargs = self.extra_kwargs["sampler"]
+        extra_kwargs = self.extra_kwargs["meta_data"]
         if extra_kwargs != {} and "f_ref" in list(extra_kwargs.keys()):
             self.append_data([float(extra_kwargs["f_ref"])] * nsamples)
         else:
@@ -1073,9 +1177,54 @@ class _Conversion(object):
         snr = network_snr(samples)
         self.append_data(snr)
 
+    def _evolve_spins(self, final_velocity="ISCO"):
+        from pesummary.gw.file.evolve import evolve_spins
+
+        extra_kwargs = self.extra_kwargs["meta_data"]
+        if extra_kwargs != {} and "f_low" in list(extra_kwargs.keys()):
+            f_low = extra_kwargs["f_low"]
+        else:
+            raise ValueError(
+                "Could not find f_low in input file. Please either modify the "
+                "input file or pass it from the command line"
+            )
+        extra_kwargs = self.extra_kwargs["meta_data"]
+        if extra_kwargs != {} and "approximant" in list(extra_kwargs.keys()):
+            approximant = extra_kwargs["approximant"]
+        else:
+            raise ValueError(
+                "Unable to find the approximant used to generate the posterior "
+                "samples in the result file."
+            )
+        parameters = ["tilt_1", "tilt_2", "phi_12", "spin_1z", "spin_2z"]
+        for param in parameters:
+            self.parameters.append("{}_evolved".format(param))
+        samples = self.specific_parameter_samples(
+            ["mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2",
+             "phi_12", "reference_frequency"]
+        )
+        tilt_1_evolved, tilt_2_evolved, phi_12_evolved = evolve_spins(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5], samples[6], f_low, samples[7][0],
+            approximant, final_velocity=final_velocity
+        )
+        spin_1z_evolved = samples[2] * np.cos(tilt_1_evolved)
+        spin_2z_evolved = samples[3] * np.cos(tilt_2_evolved)
+        self.append_data(tilt_1_evolved)
+        self.append_data(tilt_2_evolved)
+        self.append_data(phi_12_evolved)
+        self.append_data(spin_1z_evolved)
+        self.append_data(spin_2z_evolved)
+
     @staticmethod
-    def _evolved_vs_non_evolved_parameter(parameter, evolved=False):
-        if evolved:
+    def _evolved_vs_non_evolved_parameter(
+        parameter, evolved=False, core_param=False
+    ):
+        if evolved and core_param:
+            base_string = "_evolved"
+        elif evolved:
+            base_string = ""
+        elif core_param:
             base_string = ""
         else:
             base_string = "_non_evolved"
@@ -1086,26 +1235,43 @@ class _Conversion(object):
             "peak_luminosity", evolved=evolved
         )
         self.parameters.append(param)
+        spin_1z_param = self._evolved_vs_non_evolved_parameter(
+            "spin_1z", evolved=evolved, core_param=True
+        )
+        spin_2z_param = self._evolved_vs_non_evolved_parameter(
+            "spin_2z", evolved=evolved, core_param=True
+        )
+
         samples = self.specific_parameter_samples([
-            "mass_1", "mass_2", "spin_1z", "spin_2z"
+            "mass_1", "mass_2", spin_1z_param, spin_2z_param
         ])
-        peak_luminosity = peak_luminosity_of_merger(
-            samples[0], samples[1], samples[2], samples[3]
+        peak_luminosity, fits = peak_luminosity_of_merger(
+            samples[0], samples[1], samples[2], samples[3],
+            return_fits_used=True
         )
         self.append_data(peak_luminosity)
+        self.extra_kwargs["meta_data"]["peak_luminosity_NR_fits"] = fits
 
     def _final_mass_of_merger(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
             "final_mass", evolved=evolved
         )
         self.parameters.append(param)
+        spin_1z_param = self._evolved_vs_non_evolved_parameter(
+            "spin_1z", evolved=evolved, core_param=True
+        )
+        spin_2z_param = self._evolved_vs_non_evolved_parameter(
+            "spin_2z", evolved=evolved, core_param=True
+        )
         samples = self.specific_parameter_samples([
-            "mass_1", "mass_2", "spin_1z", "spin_2z"
+            "mass_1", "mass_2", spin_1z_param, spin_2z_param
         ])
-        final_mass = final_mass_of_merger(
-            samples[0], samples[1], samples[2], samples[3]
+        final_mass, fits = final_mass_of_merger(
+            samples[0], samples[1], samples[2], samples[3],
+            return_fits_used=True
         )
         self.append_data(final_mass)
+        self.extra_kwargs["meta_data"]["final_mass_NR_fits"] = fits
 
     def _final_mass_source(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
@@ -1124,28 +1290,46 @@ class _Conversion(object):
         )
         self.parameters.append(param)
         if not non_precessing:
+            tilt_1 = self._evolved_vs_non_evolved_parameter(
+                "tilt_1", evolved=evolved, core_param=True
+            )
+            tilt_2 = self._evolved_vs_non_evolved_parameter(
+                "tilt_2", evolved=evolved, core_param=True
+            )
             samples = self.specific_parameter_samples([
-                "mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2"
+                "mass_1", "mass_2", "a_1", "a_2", tilt_1, tilt_2
             ])
-            if "phi_12" in self.parameters:
+            if "phi_12" in self.parameters and evolved:
+                phi_12_samples = self.specific_parameter_samples([
+                    self._evolved_vs_non_evolved_parameter("phi_12", evolved=True)
+                ])[0]
+            elif not evolved:
                 phi_12_samples = self.specific_parameter_samples(["phi_12"])[0]
             else:
                 phi_12_samples = np.zeros_like(samples[0])
-            final_spin = final_spin_of_merger(
+            final_spin, fits = final_spin_of_merger(
                 samples[0], samples[1], samples[2], samples[3], samples[4],
-                samples[5], phi_12_samples
+                samples[5], phi_12_samples, return_fits_used=True
             )
         else:
+            spin_1z = self._evolved_vs_non_evolved_parameter(
+                "spin_1z", evolved=evolved, core_param=True
+            )
+            spin_2z = self._evolved_vs_non_evolved_parameter(
+                "spin_2z", evolved=evolved, core_param=True
+            )
+
             samples = self.specific_parameter_samples([
-                "mass_1", "mass_2", "spin_1z", "spin_2z"
+                "mass_1", "mass_2", spin_1z, spin_2z
             ])
-            final_spin = final_spin_of_merger(
+            final_spin, fits = final_spin_of_merger(
                 samples[0], samples[1], np.abs(samples[2]), np.abs(samples[3]),
                 0.5 * np.pi * (1 - np.sign(samples[2])),
                 0.5 * np.pi * (1 - np.sign(samples[3])),
-                np.zeros_like(samples[0])
+                np.zeros_like(samples[0]), return_fits_used=True
             )
         self.append_data(final_spin)
+        self.extra_kwargs["meta_data"]["final_spin_NR_fits"] = fits
 
     def _radiated_energy(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
@@ -1194,7 +1378,7 @@ class _Conversion(object):
                     for i in np.arange(len(ind) - 1, -1, -1):
                         self.samples.remove(list(np.array(self.samples)[ind[i][0]]))
 
-    def generate_all_posterior_samples(self):
+    def generate_all_posterior_samples(self, evolve_spins=False):
         logger.debug("Starting to generate all derived posteriors")
         if "cos_theta_jn" in self.parameters and "theta_jn" not in self.parameters:
             self._cos_angle("theta_jn", reverse=True)
@@ -1320,20 +1504,40 @@ class _Conversion(object):
                     self._lambda_tilde_from_lambda1_lambda2()
                 if "delta_lambda" not in self.parameters:
                     self._delta_lambda_from_lambda1_lambda2()
-            final_spin_params = ["a_1", "a_2", "tilt_1", "tilt_2"]
+
+            evolve_suffix = "non_evolved"
+            final_spin_params = ["a_1", "a_2"]
+            non_precessing_NR_params = ["spin_1z", "spin_2z"]
+            evolve_condition = True if evolve_spins else False
+            if evolve_condition:
+                final_spin_params += [
+                    "tilt_1_evolved", "tilt_2_evolved", "phi_12_evolved"
+                ]
+                non_precessing_NR_params = [
+                    "{}_evolved".format(i) for i in non_precessing_NR_params
+                ]
+                evolve_suffix = "evolved"
+                evolve_spins_params = ["tilt_1", "tilt_2", "phi_12"]
+                if all(i in self.parameters for i in evolve_spins_params):
+                    self._evolve_spins(final_velocity=evolve_spins)
+                else:
+                    evolve_condition = False
+            else:
+                final_spin_params += ["tilt_1", "tilt_2", "phi_12"]
+
             if all(i in self.parameters for i in final_spin_params):
-                if "final_spin_non_evolved" not in self.parameters:
-                    self._final_spin_of_merger(evolved=False)
-            elif all(i in self.parameters for i in ["spin_1z", "spin_2z"]):
-                if "final_spin_non_evolved" not in self.parameters:
+                if "final_spin_{}".format(evolve_suffix) not in self.parameters:
+                    self._final_spin_of_merger(evolved=evolve_condition)
+            elif all(i in self.parameters for i in non_precessing_NR_params):
+                if "final_spin_{}".format(evolve_suffix) not in self.parameters:
                     self._final_spin_of_merger(
                         non_precessing=True, evolved=False
                     )
-            if all(i in self.parameters for i in ["spin_1z", "spin_2z"]):
-                if "peak_luminosity_non_evolved" not in self.parameters:
-                    self._peak_luminosity_of_merger(evolved=False)
-                if "final_mass_non_evolved" not in self.parameters:
-                    self._final_mass_of_merger(evolved=False)
+            if all(i in self.parameters for i in non_precessing_NR_params):
+                if "peak_luminosity_%s" % (evolve_suffix) not in self.parameters:
+                    self._peak_luminosity_of_merger(evolved=evolve_condition)
+                if "final_mass_%s" % (evolve_suffix) not in self.parameters:
+                    self._final_mass_of_merger(evolved=evolve_condition)
         if "cos_tilt_1" not in self.parameters and "tilt_1" in self.parameters:
             self._cos_tilt_1_from_tilt_1()
         if "cos_tilt_2" not in self.parameters and "tilt_2" in self.parameters:
@@ -1353,13 +1557,16 @@ class _Conversion(object):
                 self._mtotal_source_from_mtotal_z()
             if "chirp_mass_source" not in self.parameters and "chirp_mass" in self.parameters:
                 self._mchirp_source_from_mchirp_z()
-            if "final_mass_source_non_evolved" not in self.parameters:
-                if "final_mass_non_evolved" in self.parameters:
-                    self._final_mass_source(evolved=False)
+            evolve_suffix = "_non_evolved"
+            if evolve_spins:
+                evolve_suffix = ""
+            if "final_mass_source%s" % (evolve_suffix) not in self.parameters:
+                if "final_mass{}".format(evolve_suffix) in self.parameters:
+                    self._final_mass_source(evolved=evolve_condition)
         if "total_mass_source" in self.parameters:
-            if "final_mass_source_non_evolved" in self.parameters:
-                if "radiated_energy_non_evolved" not in self.parameters:
-                    self._radiated_energy(evolved=False)
+            if "final_mass_source{}".format(evolve_suffix) in self.parameters:
+                if "radiated_energy%s" % (evolve_suffix) not in self.parameters:
+                    self._radiated_energy(evolved=evolve_condition)
         location = ["geocent_time", "ra", "dec"]
         if all(i in self.parameters for i in location):
             try:
@@ -1380,13 +1587,14 @@ class _Conversion(object):
             self._cos_angle("cos_theta_jn")
         if "iota" in self.parameters and "cos_iota" not in self.parameters:
             self._cos_angle("cos_iota")
-        if "reference_frequency" in self.parameters:
-            ind = self.parameters.index("reference_frequency")
-            self.parameters.remove(self.parameters[ind])
-            for i in self.samples:
-                del i[ind]
-        if "minimum_frequency" in self.parameters:
-            ind = self.parameters.index("minimum_frequency")
-            self.parameters.remove(self.parameters[ind])
-            for i in self.samples:
-                del i[ind]
+        remove_parameters = [
+            "tilt_1_evolved", "tilt_2_evolved", "phi_12_evolved",
+            "spin_1z_evolved", "spin_2z_evolved", "reference_frequency",
+            "minimum_frequency"
+        ]
+        for param in remove_parameters:
+            if param in self.parameters:
+                ind = self.parameters.index(param)
+                self.parameters.remove(self.parameters[ind])
+                for i in self.samples:
+                    del i[ind]
