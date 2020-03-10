@@ -210,6 +210,10 @@ def _core_command_line_arguments(parser):
         help="web directory of existing output"
     )
     core_group.add_argument(
+        "--seed", dest="seed", default=None,
+        help="Random seed to used through the analysis"
+    )
+    core_group.add_argument(
         "-v", "--verbose", action="store_true",
         help="print useful information for debugging purposes"
     )

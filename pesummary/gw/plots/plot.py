@@ -545,8 +545,8 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
     hpmap.meta['origin'] = 'LIGO/Virgo'
     hpmap.meta['gps_creation_time'] = Time.now().gps
     if dist is not None:
-        hpmap.meta["distmean"] = np.mean(dist)
-        hpmap.meta["diststd"] = np.std(dist)
+        hpmap.meta["distmean"] = float(np.mean(dist))
+        hpmap.meta["diststd"] = float(np.std(dist))
     io.write_sky_map(
         os.path.join(savedir, "%s_skymap.fits" % (label)), hpmap, nest=True
     )
