@@ -14,6 +14,6 @@ plot. Below the image example and the script used to produce it.
 
 .. literalinclude:: ../../examples/GWTC-1_population_scatterplot.sh
     :language: bash
-    :lines: 1-28
+    :lines: 1-29
     :linenos:
 

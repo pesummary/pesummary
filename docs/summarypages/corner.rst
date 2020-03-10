@@ -3,7 +3,7 @@ The Corner page
 ===============
 
 PESummary prides itself on customisation and the customisable corner plot is
-one of PESummary's best features. One of the main disadvantages of a large
+one of its best features. One of the main disadvantages of a large
 corner plot is navigation. If more than 10 parameters are passed, it becomes
 very difficult to find correlations between specific parameters. This is solved
 by PESummary by allowing the user to specify only the parameters that they are

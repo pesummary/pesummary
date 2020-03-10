@@ -34,7 +34,8 @@ summarypublication --plot 2d_contour \
                    --labels ${LABELS[@]} \
                    --parameters mass_1 mass_2 \
                    --colors ${COLORS[@]} \
-                   --linestyles ${LINESTYLES[@]}
+                   --linestyles ${LINESTYLES[@]} \
+                   --publication_kwargs xlow:0 xhigh:100 ylow:0 yhigh:200
 
 # Top left panel of figure 5
 summarypublication --plot violin \
