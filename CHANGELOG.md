@@ -4,6 +4,24 @@
 
 - Command line buttons - All command lines are contained within the Bootstrap
   `popover` object.
+- IFO colors - Use the gwpy IFO colors
+- Multiple PESummary metafiles - Allow the user to pass multiple PESummary
+  metafiles from the command line with the `--samples` command line argument
+- Row major - Store the PESummary metafile in row major format rather than
+  column major for hdf5 file formats
+- `.to_lalinference` method - Tidy up the `.to_lalinference` method to allow
+  for more versatility
+- Remove the `summarycombine_metafiles` executable - The `summarycombine` and
+  `summarycombine_metafiles` are now combined into a single `summarycombine`
+  executable.
+- Permute result file - Permute the file format from key -> label to
+  label -> key
+- Store all attributes - Store all available attributes stored in the
+  lalinference result file in the PESummary metafile
+- ligo.skymap fits file - Store all required meta data in the ligo.skymap
+  fits file
+- Duplicated code - Started to remove duplicated code between the `core` and
+  `gw` packages.
 
 ### Added
 
@@ -29,6 +47,17 @@
   file to a latex table via the `to_latex_table` function
 - Added a function to allow the user to convert the data stored in a result
   file to a list of latex macros via the `generate_latex_macros` function
+- Add a function to calculated a prior conditioned on a given set of posterior
+  samples
+- Add a new `pesummary.core.plots.population` module to create scatter plots
+  for a given 'population' of result files
+- Add softlinks in the hdf5 PESummary metafile to help reduce the size
+- Add an `inverted_mass_ratio` conversion
+- Add function to unzip files that are passed from the command line
+- Allow the user to easily convert the any result file to a `lalinference`
+  posterior_samples.dat by using the `.to_lalinference` method.
+- Add conversions to calculate the remnant properties
+- Add conversions to calculate the spin-evolved remnant properties
 
 ## 0.3.2 [17/01/2020]
 
