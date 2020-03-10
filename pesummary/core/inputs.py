@@ -144,7 +144,7 @@ class _Input(object):
 
     @staticmethod
     def grab_data_from_file(
-        file, label, config=None, injection=None, read_function=Read
+        file, label, config=None, injection=None, read_function=Read, **kwargs
     ):
         """Grab data from a result file containing posterior samples
 
@@ -160,11 +160,15 @@ class _Input(object):
             path to an injection file used in the analysis
         read_function: func, optional
             PESummary function to use to read in the file
+        kwargs: dict
+            Dictionary of keyword arguments fed to the
+            `generate_all_posterior_samples` method
         """
         f = read_function(file)
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
-        f.generate_all_posterior_samples()
+
+        f.generate_all_posterior_samples(**kwargs)
         if injection:
             f.add_injection_parameters_from_file(injection)
         parameters = f.parameters
@@ -690,6 +694,10 @@ class _Input(object):
                     prior_dict["samples"][self.labels[num]] = data.samples_dict
         return prior_dict
 
+    @property
+    def grab_data_kwargs(self):
+        return dict()
+
     def grab_data_from_input(self, file, label, config=None, injection=None):
         """Wrapper function for the grab_data_from_metafile and
         grab_data_from_file functions
@@ -711,8 +719,13 @@ class _Input(object):
             )
             return existing_data
         else:
+            if label in self.grab_data_kwargs.keys():
+                grab_data_kwargs = self.grab_data_kwargs[label]
+            else:
+                grab_data_kwargs = self.grab_data_kwargs
             data = self.grab_data_from_file(
-                file, label, config=config, injection=injection
+                file, label, config=config, injection=injection,
+                **grab_data_kwargs
             )
             return data
 

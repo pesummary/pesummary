@@ -17,11 +17,15 @@ import os
 import sys
 import logging
 import contextlib
+import time
 
 import numpy as np
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 import h5py
+
+from tqdm import tqdm as _tqdm
+from tqdm.utils import _range
 
 
 class SamplesDict(dict):
@@ -383,6 +387,35 @@ class Array(np.ndarray):
         self.weights = getattr(obj, 'weights', None)
 
 
+class tqdm(_tqdm):
+    def __init__(self, *args, **kwargs):
+        super(tqdm, self).__init__(*args, **kwargs)
+
+    @property
+    def format_dict(self):
+        """Public API for read-only member access."""
+        return dict(
+            n=self.n, total=self.total,
+            elapsed=self._time() - self.start_t
+            if hasattr(self, 'start_t') else 0,
+            asctime=time.strftime("%Y-%m-%d  %H:%M:%S"),
+            ncols=self.dynamic_ncols(self.fp)
+            if self.dynamic_ncols else self.ncols,
+            prefix=self.desc, ascii=self.ascii, unit=self.unit,
+            unit_scale=self.unit_scale,
+            rate=1 / self.avg_time if self.avg_time else None,
+            bar_format=self.bar_format, postfix=self.postfix,
+            unit_divisor=self.unit_divisor)
+
+
+def trange(*args, **kwargs):
+    """
+    A shortcut for tqdm(xrange(*args), **kwargs).
+    On Python3+ range is used instead of xrange.
+    """
+    return tqdm(_range(*args), **kwargs)
+
+
 def resample_posterior_distribution(posterior, nsamples):
     """Randomly draw nsamples from the posterior distribution
 
@@ -568,6 +601,10 @@ def functions(opts):
     return dictionary
 
 
+def _logger_format():
+    return '%(asctime)s %(name)s %(levelname)-8s: %(message)s'
+
+
 def setup_logger():
     """Set up the logger output.
     """
@@ -580,7 +617,7 @@ def setup_logger():
     if "-v" in sys.argv or "--verbose" in sys.argv:
         level = 'DEBUG'
 
-    FORMAT = '%(asctime)s %(name)s %(levelname)-8s: %(message)s'
+    FORMAT = _logger_format()
     logger = logging.getLogger('PESummary')
     logger.setLevel(logging.DEBUG)
     fh = logging.FileHandler('%s/pesummary.log' % (dirpath), mode='w')
@@ -872,6 +909,35 @@ def unzip(zip_file, outdir=".", overwrite=False):
         with open(out_file, 'wb') as output:
             shutil.copyfileobj(input, output)
     return out_file
+
+
+def iterator(length, desc="", tqdm=False, logger=None, name="PESummary"):
+    """Return either a tqdm iterator, if tqdm installed, or a simple range
+
+    Parameters
+    ----------
+    length: int
+        number to iterate over
+    desc: str, optional
+        description for the tqdm bar
+    tqdm: Bool, optional
+        If True, a tqdm trange is used. Otherwise simple range.
+    """
+    if tqdm and logger is not None:
+        try:
+            data = {"name": name, "levelname": "INFO", "message": desc,
+                    "asctime": "{asctime}"}
+            DESC = _logger_format() % (data)
+            return trange(
+                length, bar_format=(
+                    DESC + ' | {percentage:3.0f}% | {n_fmt}/{total_fmt} '
+                    '| {elapsed}'
+                )
+            )
+        except ImportError:
+            return range(length)
+    else:
+        return range(length)
 
 
 setup_logger()

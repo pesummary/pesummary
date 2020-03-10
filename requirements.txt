@@ -13,3 +13,4 @@ lalsuite
 configparser
 gwpy
 plotly
+tqdm

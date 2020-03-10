@@ -55,9 +55,11 @@ GWlatex_labels = {
     "spin_1x": r"$S_{1}x$",
     "spin_1y": r"$S_{1}y$",
     "spin_1z": r"$S_{1}z$",
+    "spin_1z_evolved": r"$S_{1}z^{evol}$",
     "spin_2x": r"$S_{2}x$",
     "spin_2y": r"$S_{2}y$",
     "spin_2z": r"$S_{2}z$",
+    "spin_2z_evolved": r"$S_{2}z^{evol}$",
     "chi_p": r"$\chi_{p}$",
     "chi_eff": r"$\chi_{eff}$",
     "mass_ratio": r"$q$",
@@ -80,15 +82,27 @@ GWlatex_labels = {
     "lambda_2": r"$\lambda_{2}$",
     "lambda_tilde": r"$\tilde{\lambda}$",
     "delta_lambda": r"$\delta\lambda$",
-    "peak_luminosity": r"$L_{peak} [10^{56} ergs s^{-1}]$",
-    "peak_luminosity_non_evolved": r"$L_{peak}^{nonevol} [10^{56} ergs s^{-1}]$",
-    "final_mass": r"$M_{final} [M_{\odot}]$",
-    "final_mass_non_evolved": r"$M_{final}^{nonevol} [M_{\odot}]$",
-    "final_mass_source_non_evolved": r"$M_{final}^{source, nonevol} [M_{\odot}]$",
-    "final_spin": r"$a_{final}$",
-    "final_spin_non_evolved": r"$a_{final}^{nonevol}$",
-    "radiated_energy": r"$E_{rad} [M_{\odot}]$",
-    "radiated_energy_non_evolved": r"$E_{rad}^{nonevol} [M_{\odot}]$"
+    "peak_luminosity": (
+        r"$L_{\mathrm{peak}} [10^{56} \mathrm{ergs} \mathrm{s}^{-1}]$"
+    ),
+    "peak_luminosity_non_evolved": (
+        r"$L_{\mathrm{peak}}^{\mathrm{nonevol}} [10^{56} "
+        "\mathrm{ergs} \mathrm{s}^{-1}]$"
+    ),
+    "final_mass": r"$M_{\mathrm{final}} [M_{\odot}]$",
+    "final_mass_non_evolved": (
+        r"$M_{\mathrm{final}}^{\mathrm{nonevol}} [M_{\odot}]$"
+    ),
+    "final_mass_source": r"$M_{\mathrm{final}}^{\mathrm{source}} [M_{\odot}]$",
+    "final_mass_source_non_evolved": (
+        r"$M_{final}^{\mathrm{source, nonevol}} [M_{\odot}]$"
+    ),
+    "final_spin": r"$a_{\mathrm{final}}$",
+    "final_spin_non_evolved": r"$a_{\mathrm{final}}^{\mathrm{nonevol}}$",
+    "radiated_energy": r"$E_{\mathrm{rad}} [M_{\odot}]$",
+    "radiated_energy_non_evolved": (
+        r"$E_{\mathrm{rad}}^{\mathrm{nonevol}} [M_{\odot}]$"
+    )
 }
 
 public_GWlatex_labels = {"mass_1": r"$m_{1}^{det} [M_{\odot}]$",

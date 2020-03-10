@@ -84,8 +84,41 @@ class _GWInput(_Input):
         )
         return data
 
+    @property
+    def grab_data_kwargs(self):
+        if self.f_low is None:
+            self._f_low = [None] * len(self.labels)
+        if self.f_ref is None:
+            self._f_ref = [None] * len(self.labels)
+        if self.opts.approximant is None:
+            approx = [None] * len(self.labels)
+        else:
+            approx = self.opts.approximant
+        try:
+            return {
+                label: dict(
+                    evolve_spins=self.evolve_spins, f_low=self.f_low[num],
+                    approximant=approx[num], f_ref=self.f_ref[num],
+                    return_kwargs=True
+                ) for num, label in enumerate(self.labels)
+            }
+        except IndexError:
+            logger.warn(
+                "Unable to find an f_ref, f_low and approximant for each "
+                "label. Using and f_ref={}, f_low={} and approximant={} "
+                "for all result files".format(
+                    self.f_ref[0], self.f_low[0], approx[0]
+                )
+            )
+            return {
+                label: dict(
+                    evolve_spins=self.evolve_spins, f_low=self.f_low[0],
+                    approximant=approx[0], f_ref=self.f_ref[0]
+                ) for num, label in enumerate(self.labels)
+            }
+
     @staticmethod
-    def grab_data_from_file(file, label, config=None, injection=None):
+    def grab_data_from_file(file, label, config=None, injection=None, **kwargs):
         """Grab data from a result file containing posterior samples
 
         Parameters
@@ -101,7 +134,7 @@ class _GWInput(_Input):
         """
         data = _Input.grab_data_from_file(
             file, label, config=config, injection=injection,
-            read_function=GWRead
+            read_function=GWRead, **kwargs
         )
         return data
 
@@ -311,6 +344,37 @@ class _GWInput(_Input):
                 gwdata = gwdata[0]
             timeseries = StrainFile.load_strain_data(gwdata)
             self._gwdata = timeseries
+
+    @property
+    def evolve_spins(self):
+        return self._evolve_spins
+
+    @evolve_spins.setter
+    def evolve_spins(self, evolve_spins):
+        self._evolve_spins = evolve_spins
+        if evolve_spins:
+            logger.info("Evolving spins up to the Schwarzschild ISCO frequency")
+            self._evolve_spins = 6. ** -0.5
+
+    @property
+    def f_low(self):
+        return self._f_low
+
+    @f_low.setter
+    def f_low(self, f_low):
+        self._f_low = f_low
+        if f_low is not None:
+            self._f_low = [float(i) for i in f_low]
+
+    @property
+    def f_ref(self):
+        return self._f_ref
+
+    @f_ref.setter
+    def f_ref(self, f_ref):
+        self._f_ref = f_ref
+        if f_ref is not None:
+            self._f_ref = [float(i) for i in f_ref]
 
     @property
     def pepredicates_probs(self):
@@ -591,6 +655,9 @@ class GWInput(_GWInput, Input):
         if True, public facing summarypages are produced
     """
     def __init__(self, opts):
+        self.evolve_spins = opts.evolve_spins
+        self.f_low = opts.f_low
+        self.f_ref = opts.f_ref
         super(GWInput, self).__init__(opts, ignore_copy=True)
         if self.existing is not None:
             self.existing_data = self.grab_data_from_metafile(

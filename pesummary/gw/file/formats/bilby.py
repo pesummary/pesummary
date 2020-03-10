@@ -66,7 +66,7 @@ class Bilby(GWRead):
         f = bilby_object
         kwargs = CoreBilby.grab_extra_kwargs(bilby_object)
         try:
-            kwargs["sampler"]["f_ref"] = \
+            kwargs["meta_data"]["f_ref"] = \
                 f.meta_data["likelihood"]["waveform_arguments"]["reference_frequency"]
         except Exception:
             pass
