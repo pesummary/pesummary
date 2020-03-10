@@ -24,7 +24,7 @@ Of course, the colors and linestyles can be changed by simply specifying
 the `--palette` command line option or the `--colors` and `--linestyles`
 command line options.
 
-..note ::
+.. note::
     If you find that the publication plots require further smoothing, then
     simply add the `--publication_kwargs gridsize:500` command line
     argument

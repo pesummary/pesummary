@@ -26,16 +26,16 @@ To create a virtual environment, run :code:`virtualenv`:
 .. code-block:: console
 
    $ mkdir -p ~/virtualenvs
-   $ virtualenv ~/virtualenvs/environment
+   $ virtualenv ~/virtualenvs/pesummary_py3.6
 
 Here, the second argument is simply the location that you would like to create
 the virtual environment. Here we have chosen to create the virtual environment
-inside the `virtualenvs` directory in a sub directory called `environment`. To
+inside the `virtualenvs` directory in a sub directory called `pesummary_py3.6`. To
 activate this environment, run,
 
 .. code-block:: console
 
-   $ source ~/virtualenvs/environment/bin/activate
+   $ source ~/virtualenvs/pesummary_py3.6/bin/activate
    (environment) $
 
 You are now inside your virtual environment (as noted by the virtual environment
@@ -75,6 +75,6 @@ create a virtual environment with that python installation by using the command,
 
 .. code-block:: console
 
-   $ virtualenv -p ~/.pyenv/versions/3.6.0/bin/python3 ~/virtualenvs/environment
+   $ virtualenv -p ~/.pyenv/versions/3.6.0/bin/python3 ~/virtualenvs/pesummary_py3.6
 
 A virtual environment with a python 3.6 installation will then be created.
