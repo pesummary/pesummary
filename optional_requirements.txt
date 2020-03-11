@@ -8,5 +8,5 @@ sphinx_rtd_theme
 sphinxcontrib-programoutput
 testfixtures
 ligo.skymap
-pepredicates
+pepredicates>=0.0.2
 p_astro
