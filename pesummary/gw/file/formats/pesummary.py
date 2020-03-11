@@ -157,20 +157,32 @@ class PESummary(GWRead, CorePESummary):
             det_list.append(detectors)
         return det_list
 
-    def generate_all_posterior_samples(self):
+    def generate_all_posterior_samples(self, **conversion_kwargs):
         from pesummary.gw.file.conversions import _Conversion
 
-        converted_params, converted_samples = [], []
+        converted_params, converted_samples, converted_kwargs = [], [], []
         for param, samples, kwargs in zip(
                 self.parameters, self.samples, self.extra_kwargs
         ):
-            parameters, samples = _Conversion(
-                param, samples, extra_kwargs=kwargs, return_dict=False
+            if conversion_kwargs.get("evolve_spins", False):
+                if not conversion_kwargs.get("return_kwargs", False):
+                    conversion_kwargs["return_kwargs"] = True
+            data = _Conversion(
+                param, samples, extra_kwargs=kwargs, return_dict=False,
+                **conversion_kwargs
             )
-            converted_params.append(parameters)
-            converted_samples.append(samples)
+            converted_params.append(data[0])
+            converted_samples.append(data[1])
+            if kwargs.get("return_kwargs", False):
+                converted_kwargs.append(data[2])
         self.data["parameters"] = converted_params
         self.data["samples"] = converted_samples
+        if converted_kwargs != []:
+            self.extra_kwargs = {
+                label: converted_kwargs[num] for num, label in enumerate(
+                    self.labels
+                )
+            }
 
     def to_bilby(self):
         """Convert a PESummary metafile to a bilby results object

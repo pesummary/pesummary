@@ -28,7 +28,7 @@ class _GWInput(_Input):
     """Super class to handle gw specific command line inputs
     """
     @staticmethod
-    def grab_data_from_metafile(existing_file, webdir, compare=None):
+    def grab_data_from_metafile(existing_file, webdir, compare=None, **kwargs):
         """Grab data from an existing PESummary metafile
 
         Parameters
@@ -42,17 +42,12 @@ class _GWInput(_Input):
             wish to compare
         """
         data = _Input.grab_data_from_metafile(
-            existing_file, webdir, compare=compare, read_function=GWRead
+            existing_file, webdir, compare=compare, read_function=GWRead,
+            **kwargs
         )
         f = GWRead(existing_file)
 
         labels = data["labels"]
-        if hasattr(f, "priors") and f.priors != {}:
-            priors = f.priors["samples"]
-            if "calibration" in f.priors.keys():
-                priors["calibration"] = f.priors["calibration"]
-        else:
-            priors = {label: {} for label in labels}
 
         psd = {i: {} for i in labels}
         if f.psd is not None and f.psd != {}:
@@ -72,7 +67,6 @@ class _GWInput(_Input):
 
         data.update(
             {
-                "prior": priors,
                 "approximant": {
                     i: j for i, j in zip(
                         labels, [f.approximant[ind] for ind in data["indicies"]]

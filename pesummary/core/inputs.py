@@ -53,7 +53,7 @@ class _Input(object):
 
     @staticmethod
     def grab_data_from_metafile(
-        existing_file, webdir, compare=None, read_function=Read
+        existing_file, webdir, compare=None, read_function=Read, **kwargs
     ):
         """Grab data from an existing PESummary metafile
 
@@ -68,8 +68,12 @@ class _Input(object):
             wish to compare
         read_function: func, optional
             PESummary function to use to read in the existing file
+        kwargs: dict
+            All kwargs are passed to the `generate_all_posterior_samples`
+            method
         """
         f = read_function(existing_file)
+        f.generate_all_posterior_samples(**kwargs)
         labels = f.labels
         indicies = np.arange(len(labels))
 
@@ -84,9 +88,18 @@ class _Input(object):
                 indicies.append(labels.index(i))
             labels = compare
 
-        DataFrame = f.samples_dict
+        parameters = f.parameters
+        samples = [np.array(i).T for i in f.samples]
+        DataFrame = {
+            label: SamplesDict(parameters[ind], samples[ind])
+            for label, ind in zip(labels, indicies)
+        }
         if f.injection_parameters != []:
             inj_values = f.injection_dict
+            for label in f.injection_dict.keys():
+                for param in DataFrame[label].keys():
+                    if param not in f.injection_dict[label].keys():
+                        f.injection_dict[label][param] = float("nan")
         else:
             inj_values = {
                 i: [float("nan")] * len(DataFrame[i]) for i in labels
@@ -99,7 +112,7 @@ class _Input(object):
                     inj_values[i][param] = inj_values[i][param].decode("utf-8")
 
         if hasattr(f, "priors") and f.priors != {}:
-            priors = f.priors["samples"]
+            priors = f.priors
         else:
             priors = {label: {} for label in labels}
 
@@ -135,7 +148,7 @@ class _Input(object):
                     labels, [f.extra_kwargs[ind] for ind in indicies]
                 )
             },
-            "prior": {},
+            "prior": priors,
             "config": config,
             "labels": labels,
             "weights": weights,
@@ -462,25 +475,27 @@ class _Input(object):
                 weights_dict = data["weights"]
             if "prior" in data.keys():
                 for label in stored_labels:
-                    if data["prior"] != {} and data["prior"][label] != []:
-                        if self.priors != {} and label in self.priors["samples"].keys():
-                            logger.warn(
-                                "Replacing the prior file for {} with the prior "
-                                "samples stored in the result file".format(label)
+                    pp = data["prior"]
+                    if pp != {} and label in pp.keys() and pp[label] == []:
+                        self.add_to_prior_dict("samples/{}".format(label), [])
+                    elif pp != {} and label not in pp.keys():
+                        for key in pp.keys():
+                            if key in self.priors.keys():
+                                if label in self.priors[key].keys():
+                                    logger.warn(
+                                        "Replacing the prior file for {} "
+                                        "with the prior file stored in "
+                                        "the result file".format(
+                                            label
+                                        )
+                                    )
+                            self.add_to_prior_dict(
+                                "{}/{}".format(key, label), pp[key][label]
                             )
-                            self.add_to_prior_dict("samples/" + label, data["prior"][label])
-                        elif self.priors != {}:
-                            self.add_to_prior_dict("samples/" + label, data["prior"][label])
-                        elif self.priors == {}:
-                            self.add_to_prior_dict("samples/" + label, data["prior"][label])
-                    elif data["prior"] != {}:
-                        if self.priors != {} and label not in self.priors["samples"].keys():
-                            self.add_to_prior_dict("samples/" + label, data["prior"][label])
-                        elif self.priors == {}:
-                            self.add_to_prior_dict("samples/" + label, [])
                     else:
-                        if self.priors == {}:
-                            self.add_to_prior_dict("samples/" + label, [])
+                        self.add_to_prior_dict(
+                            "samples/{}".format(label), []
+                        )
             if "labels" in data.keys():
                 if num == 0:
                     labels = data["labels"]
@@ -713,16 +728,17 @@ class _Input(object):
         injection: str, optional
             path to an injection file used in the analysis
         """
+        if label in self.grab_data_kwargs.keys():
+            grab_data_kwargs = self.grab_data_kwargs[label]
+        else:
+            grab_data_kwargs = self.grab_data_kwargs
         if self.is_pesummary_metafile(file):
             existing_data = self.grab_data_from_metafile(
-                file, self.webdir, compare=self.compare_results
+                file, self.webdir, compare=self.compare_results,
+                **grab_data_kwargs
             )
             return existing_data
         else:
-            if label in self.grab_data_kwargs.keys():
-                grab_data_kwargs = self.grab_data_kwargs[label]
-            else:
-                grab_data_kwargs = self.grab_data_kwargs
             data = self.grab_data_from_file(
                 file, label, config=config, injection=injection,
                 **grab_data_kwargs

@@ -672,6 +672,15 @@ def _add_existing_data(namespace):
         if hasattr(namespace, "config"):
             if namespace.existing_config[num] not in namespace.config:
                 namespace.config.append(namespace.existing_config[num])
+        if hasattr(namespace, "priors"):
+            if hasattr(namespace, "existing_priors"):
+                for key, item in namespace.existing_priors.items():
+                    if key in namespace.priors.keys():
+                        for label in item.keys():
+                            if label not in namespace.priors[key].keys():
+                                namespace.priors[key][label] = item[label]
+                    else:
+                        namespace.priors.update({key: item})
         if hasattr(namespace, "approximant") and namespace.approximant is not None:
             if i not in list(namespace.approximant.keys()):
                 if i in list(namespace.existing_approximant.keys()):
