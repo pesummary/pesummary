@@ -41,13 +41,29 @@ class _Input(object):
         """
         extension = proposed_file.split(".")[-1]
         if extension == "h5" or extension == "hdf5" or extension == "hdf":
-            from pesummary.core.file.read import is_pesummary_hdf5_file
+            from pesummary.core.file.read import (
+                is_pesummary_hdf5_file, is_pesummary_hdf5_file_deprecated
+            )
 
-            return is_pesummary_hdf5_file(proposed_file)
+            result = any(
+                func(proposed_file) for func in [
+                    is_pesummary_hdf5_file,
+                    is_pesummary_hdf5_file_deprecated
+                ]
+            )
+            return result
         elif extension == "json":
-            from pesummary.core.file.read import is_pesummary_json_file
+            from pesummary.core.file.read import (
+                is_pesummary_json_file, is_pesummary_json_file_deprecated
+            )
 
-            return is_pesummary_json_file(proposed_file)
+            result = any(
+                func(proposed_file) for func in [
+                    is_pesummary_json_file,
+                    is_pesummary_json_file_deprecated
+                ]
+            )
+            return result
         else:
             return False
 
@@ -997,7 +1013,7 @@ class _Input(object):
         """Make the directories to store the information
         """
         for i in dirs:
-            if not os.path.isdir(i):
+            if not os.path.isdir(os.path.join(webdir, i)):
                 make_dir(os.path.join(webdir, i))
 
     def make_directories(self):
