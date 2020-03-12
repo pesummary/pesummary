@@ -1,6 +1,8 @@
-## 0.3.4 [unreleased]
+## 0.3.4 [12/03/2019]
 
 ### Changed
+- `_Input.is_pesummary_metafile` function - check for both standard and deprecated PESummary metafiles
+- `_make_directories` method - check to see if the directory webdir/dir exists not dir.
 
 ### Added
 
