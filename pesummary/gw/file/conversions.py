@@ -1301,9 +1301,11 @@ class _Conversion(object):
             ])
             if "phi_12" in self.parameters and evolved:
                 phi_12_samples = self.specific_parameter_samples([
-                    self._evolved_vs_non_evolved_parameter("phi_12", evolved=True)
+                    self._evolved_vs_non_evolved_parameter(
+                        "phi_12", evolved=True, core_param=True
+                    )
                 ])[0]
-            elif not evolved:
+            elif "phi_12" in self.parameters:
                 phi_12_samples = self.specific_parameter_samples(["phi_12"])[0]
             else:
                 phi_12_samples = np.zeros_like(samples[0])
