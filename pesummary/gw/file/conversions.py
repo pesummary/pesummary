@@ -754,7 +754,7 @@ class _Conversion(object):
         f_ref = kwargs.get("f_ref", None)
         approximant = kwargs.get("approximant", None)
         evolve_spins = kwargs.get("evolve_spins", False)
-        if isinstance(evolve_spins, bool):
+        if isinstance(evolve_spins, bool) and evolve_spins:
             raise ValueError(
                 "'evolve_spins' must be a float, the final velocity to "
                 "evolve the spins up to, or a string, 'ISCO', meaning "
