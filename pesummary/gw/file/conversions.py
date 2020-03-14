@@ -695,6 +695,21 @@ class _Conversion(object):
     data: dict, list
         either a dictionary or samples or a list of parameters and a list of
         samples. See the examples below for details
+    extra_kwargs: dict, optional
+        dictionary of kwargs associated with this set of posterior samples.
+    f_low: float, optional
+        the low frequency cut-off to use when evolving the spins
+    f_ref: float, optional
+        the reference frequency when spins are defined
+    approximant: str, optional
+        the approximant to use when evolving the spins
+    evolve_spins: float/str, optional
+        the final velocity to evolve the spins up to.
+    return_kwargs: Bool, optional
+        if True, return a modified dictionary of kwargs containing information
+        about the conversion
+    return_dict: Bool, optional
+        if True, return a pesummary.utils.utils.SamplesDict object
 
     Examples
     --------
@@ -739,6 +754,12 @@ class _Conversion(object):
         f_ref = kwargs.get("f_ref", None)
         approximant = kwargs.get("approximant", None)
         evolve_spins = kwargs.get("evolve_spins", False)
+        if isinstance(evolve_spins, bool):
+            raise ValueError(
+                "'evolve_spins' must be a float, the final velocity to "
+                "evolve the spins up to, or a string, 'ISCO', meaning "
+                "evolve the spins up to the ISCO frequency"
+            )
         if f_low is not None and "f_low" in extra_kwargs["meta_data"].keys():
             logger.warn(
                 base_replace.format(
