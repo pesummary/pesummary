@@ -113,6 +113,7 @@ Tutorials
     tutorials/make_your_own_page_from_metafile
     tutorials/population_scatter_plot_GWTC-1
     tutorials/latex
+    tutorials/interaction_with_ligo_skymap
 
 Indices and tables
 ------------------
