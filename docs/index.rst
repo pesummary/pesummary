@@ -90,17 +90,17 @@ for details:
 .. toctree::
     :maxdepth: 1
 
-    executables/summarypages
-    executables/summarypageslw
     executables/summaryclassification
-    executables/summarydetchar
-    executables/summaryreview
-    executables/summaryversion
-    executables/summarypublication
     executables/summaryclean
     executables/summarycombine
-    executables/summarycombine_metafiles
+    executables/summarydetchar
+    executables/summarymodify
+    executables/summarypages
+    executables/summarypageslw
     executables/summarypipe
+    executables/summarypublication
+    executables/summaryreview
+    executables/summaryversion
 
 Tutorials
 ---------

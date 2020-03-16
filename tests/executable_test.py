@@ -233,3 +233,61 @@ class TestSummaryReview(Base):
             "summaryreview --webdir .outdir --samples .outdir/test.hdf5"
         )
         self.launch(command_line)
+
+
+class TestSummaryModify(Base):
+    """Test the `summarymodify` executable
+    """
+    def setup(self):
+        """Setup the SummaryModify class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        make_result_file(
+            pesummary=True, pesummary_label="replace", extension="hdf5"
+        )
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_modify(self):
+        """Test the `summarymodify` script
+        """
+        import h5py
+
+        command_line = (
+            "summarymodify --webdir .outdir --samples .outdir/test.h5 "
+            "--labels replace:new"
+        )
+        self.launch(command_line)
+        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        data = h5py.File(".outdir/test.h5", "r")
+        assert "replace" not in list(modified_data.keys())
+        assert "new" in list(modified_data.keys())
+        for key in data["replace"].keys():
+            assert key in modified_data["new"].keys()
+            assert all(i == j for i, j in zip(
+                data["replace"][key], modified_data["new"][key]
+            ))
+            for i, j in zip(data["replace"][key], modified_data["new"][key]):
+                try:
+                    if isinstance(data["replace"][key][i],h5py._hl.dataset.Dataset):
+                        try:
+                            assert all(k == l for k, l in zip(
+                                data["replace"][key][i],
+                                modified_data["new"][key][j]
+                            ))
+                        except ValueError:
+                            assert all(
+                                all(m == n for m, n in zip(k, l)) for k, l in zip(
+                                    data["replace"][key][i],
+                                    modified_data["new"][key][j]
+                                )
+                            )
+                except TypeError:
+                    pass
+        data.close()
+        modified_data.close()

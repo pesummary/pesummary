@@ -85,20 +85,22 @@ class _GWMetaFile(_MetaFile):
             else:
                 self.data[label]["approximant"] = {}
 
-    def save_to_hdf5(self):
+    @staticmethod
+    def save_to_hdf5(data, labels, samples, meta_file, no_convert=False):
         """Save the metafile as a hdf5 file
         """
         import h5py
 
         key = "posterior_samples"
-        for label in self.labels:
-            self.data[label][key] = self._convert_posterior_samples_to_numpy(
-                self.samples[label]
-            )
-        with h5py.File(self.meta_file, "w") as f:
+        if not no_convert:
+            for label in labels:
+                data[label][key] = _GWMetaFile._convert_posterior_samples_to_numpy(
+                    samples[label]
+                )
+        with h5py.File(meta_file, "w") as f:
             recursively_save_dictionary_to_hdf5_file(
-                f=f, dictionary=self.data,
-                extra_keys=CORE_HDF5_KEYS + self.labels
+                f=f, dictionary=data,
+                extra_keys=CORE_HDF5_KEYS + labels
             )
 
 
@@ -152,9 +154,12 @@ class GWMetaFile(GWPostProcessing):
         )
         meta_file.make_dictionary()
         if not self.hdf5:
-            meta_file.save_to_json()
+            meta_file.save_to_json(meta_file.data, meta_file.meta_file)
         else:
-            meta_file.save_to_hdf5()
+            meta_file.save_to_hdf5(
+                meta_file.data, meta_file.labels, meta_file.samples,
+                meta_file.meta_file
+            )
         meta_file.save_to_dat()
         meta_file.write_marginalized_posterior_to_dat()
         logger.info(
