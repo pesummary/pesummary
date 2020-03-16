@@ -12,6 +12,7 @@ basic:
     - python setup.py install
     - summarypages --help
     - summaryplots --help
+    - summarymodify --help
     - summarypublication --help
     - summaryclassification --help
     - summaryclean --help

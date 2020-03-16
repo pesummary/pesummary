@@ -267,14 +267,16 @@ class TestMetaFile(object):
             self.input_injection, self.input_file_version, self.input_file_kwargs,
             webdir=".outdir", psd=self.psds, calibration=self.calibration)
         object.make_dictionary()
-        object.save_to_json()
+        object.save_to_json(object.data, object.meta_file)
         object = _GWMetaFile(
             self.input_data, self.input_labels, self.input_config,
             self.input_injection, self.input_file_version, self.input_file_kwargs,
             webdir=".outdir", psd=self.psds, calibration=self.calibration,
             hdf5=True)
         object.make_dictionary()
-        object.save_to_hdf5()
+        object.save_to_hdf5(
+            object.data, object.labels, object.samples, object.meta_file
+        )
 
         with open(".outdir/samples/posterior_samples.json", "r") as f:
             self.json_file = json.load(f)

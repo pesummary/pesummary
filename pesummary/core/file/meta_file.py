@@ -377,28 +377,31 @@ class _MetaFile(object):
                     ), samples, header=[param]
                 )
 
-    def save_to_json(self):
+    @staticmethod
+    def save_to_json(data, meta_file):
         """Save the metafile as a json file
         """
-        with open(self.meta_file, "w") as f:
+        with open(meta_file, "w") as f:
             json.dump(
-                self.data, f, indent=4, sort_keys=True,
+                data, f, indent=4, sort_keys=True,
                 cls=PESummaryJsonEncoder
             )
 
-    def save_to_hdf5(self):
+    @staticmethod
+    def save_to_hdf5(data, labels, samples, meta_file, no_convert=False):
         """Save the metafile as a hdf5 file
         """
         import h5py
 
         key = "posterior_samples"
-        for label in self.labels:
-            self.data[label][key] = self._convert_posterior_samples_to_numpy(
-                self.samples[label]
-            )
-        with h5py.File(self.meta_file, "w") as f:
+        if not no_convert:
+            for label in labels:
+                data[label][key] = _MetaFile._convert_posterior_samples_to_numpy(
+                    samples[label]
+                )
+        with h5py.File(meta_file, "w") as f:
             recursively_save_dictionary_to_hdf5_file(
-                f, self.data, extra_keys=DEFAULT_HDF5_KEYS + self.labels
+                f, data, extra_keys=DEFAULT_HDF5_KEYS + labels
             )
 
     def save_to_dat(self):
@@ -443,9 +446,12 @@ class MetaFile(PostProcessing):
         )
         meta_file.make_dictionary()
         if not self.hdf5:
-            meta_file.save_to_json()
+            meta_file.save_to_json(meta_file.data, meta_file.meta_file)
         else:
-            meta_file.save_to_hdf5()
+            meta_file.save_to_hdf5(
+                meta_file.data, meta_file.labels, meta_file.samples,
+                meta_file.meta_file
+            )
         meta_file.save_to_dat()
         meta_file.write_marginalized_posterior_to_dat()
         logger.info(
