@@ -40,7 +40,7 @@ class _GWMetaFile(_MetaFile):
         existing_calibration=None, existing_approximant=None,
         existing_config=None, existing_injection=None,
         existing_metadata=None, priors={}, outdir=None, existing=None,
-        existing_priors={}, existing_metafile=None
+        existing_priors={}, existing_metafile=None, package_information={}
     ):
         self.calibration = calibration
         self.psds = psd
@@ -56,7 +56,7 @@ class _GWMetaFile(_MetaFile):
             existing_injection=existing_injection,
             existing_metadata=existing_metadata,
             existing_config=existing_config, existing_priors=existing_priors,
-            outdir=outdir,
+            outdir=outdir, package_information=package_information,
             existing=existing, existing_metafile=existing_metafile,
         )
 
@@ -150,7 +150,8 @@ class GWMetaFile(GWPostProcessing):
             existing_metadata=existing_metadata,
             existing_config=existing_config, priors=self.priors,
             existing_priors=existing_priors, existing=existing,
-            existing_metafile=existing_metafile, approximant=self.approximant
+            existing_metafile=existing_metafile, approximant=self.approximant,
+            package_information=self.package_information
         )
         meta_file.make_dictionary()
         if not self.hdf5:
