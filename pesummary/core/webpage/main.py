@@ -103,6 +103,8 @@ class _WebpageGeneration(object):
         notes that you wish to put on the webpages
     disable_comparison: bool
         Whether to make comparison pages
+    package_information: dict
+        dictionary of package information
     """
     def __init__(
         self, webdir=None, samples=None, labels=None, publication=None,
@@ -112,7 +114,8 @@ class _WebpageGeneration(object):
         existing_injection_data=None, existing_samples=None,
         existing_metafile=None, existing_file_kwargs=None,
         existing_weights=None, add_to_existing=False, notes=None,
-        disable_comparison=False, disable_interactive=False
+        disable_comparison=False, disable_interactive=False,
+        package_information={"packages": []}
     ):
         self.webdir = webdir
         self.samples = samples
@@ -135,6 +138,7 @@ class _WebpageGeneration(object):
         self.add_to_existing = add_to_existing
         self.notes = notes
         self.make_interactive = not disable_interactive
+        self.package_information = package_information
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -973,19 +977,11 @@ class _WebpageGeneration(object):
         with open('{0:s}/css/Version.css'.format(self.webdir), 'w') as f:
             f.write(styles)
         html_file.end_container()
-        package_info = PackageInformation().package_info
-        if "build_string" in package_info[0]:  # conda list
-            headings = ("name", "version", "channel", "build_string")
-        else:  # pip list installed
-            headings = ("name", "version")
-        packages = [
-            tuple(pkg[col.lower()] for col in headings) for
-            pkg in sorted(package_info, key=itemgetter("name"))
-        ]
+        packages = self.package_information["packages"]
         style = "margin-top:{}; margin-bottom:{};"
         html_file.make_table(
-            headings=[x.title().replace('_', ' ') for x in headings],
-            contents=packages,
+            headings=[x.title().replace('_', ' ') for x in packages.dtype.names],
+            contents=[[pp.decode("utf-8") for pp in pkg] for pkg in packages],
             accordian=False, style=style.format("1em", "1em")
         )
         html_file.export(

@@ -1078,6 +1078,25 @@ class _Input(object):
                     label_list[ind] += "_%s" % (num)
         return label_list
 
+    @staticmethod
+    def get_package_information():
+        """Return a dictionary of parameter information
+        """
+        from pesummary._version_helper import PackageInformation
+        from operator import itemgetter
+
+        package_info = PackageInformation().package_info
+        package_dir = PackageInformation().package_dir
+        if "build_string" in package_info[0]:  # conda list
+            headings = ("name", "version", "channel", "build_string")
+        else:  # pip list installed
+            headings = ("name", "version")
+        packages = np.array([
+            tuple(pkg[col.lower()] for col in headings) for pkg in
+            sorted(package_info, key=itemgetter("name"))
+        ], dtype=[(col, "S20") for col in headings]).view(np.recarray)
+        return {"packages": packages, "environment": [package_dir]}
+
 
 class Input(_Input):
     """Class to handle the core command line arguments
@@ -1212,6 +1231,7 @@ class Input(_Input):
         self.disable_interactive = self.opts.disable_interactive
         self.multi_process = self.opts.multi_process
         self.multi_threading_for_plots = self.multi_process
+        self.package_information = self.get_package_information()
         if not ignore_copy:
             self.copy_files()
 
@@ -1338,6 +1358,7 @@ class PostProcessing(object):
         self.disable_comparison = self.inputs.disable_comparison
         self.disable_interactive = self.inputs.disable_interactive
         self.multi_process = self.inputs.multi_threading_for_plots
+        self.package_information = self.inputs.package_information
         self.same_parameters = []
 
     @property

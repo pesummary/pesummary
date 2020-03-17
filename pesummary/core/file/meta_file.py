@@ -94,7 +94,7 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
             data = np.array(value, dtype="S")
         elif isinstance(value[0], array_types):
             data = np.array(np.vstack(value))
-        elif isinstance(value[0], (tuple, np.record)):
+        elif isinstance(value[0], (tuple, np.record, np.recarray)):
             data = value
         elif math.isnan(value[0]):
             data = np.array(["NaN"] * len(value), dtype="S")
@@ -159,7 +159,8 @@ class _MetaFile(object):
         file_kwargs, webdir=None, result_files=None, hdf5=False, priors={},
         existing_version=None, existing_label=None, existing_samples=None,
         existing_injection=None, existing_metadata=None, existing_config=None,
-        existing_priors={}, existing_metafile=None, outdir=None, existing=None
+        existing_priors={}, existing_metafile=None, outdir=None, existing=None,
+        package_information={}
     ):
         self.data = {}
         self.webdir = webdir
@@ -182,6 +183,7 @@ class _MetaFile(object):
         self.existing_metafile = existing_metafile
         self.existing = existing
         self.outdir = outdir
+        self.package_information = package_information
 
         if self.existing_labels is None:
             self.existing_labels = [None]
@@ -226,7 +228,8 @@ class _MetaFile(object):
                 "meta_data": {}, "priors": {}, "config_file": {}
             } for label in self.labels
         }
-        dictionary["version"] = {"pesummary": [__version__]}
+        dictionary["version"] = self.package_information
+        dictionary["version"]["pesummary"] = [__version__]
         for num, label in enumerate(self.labels):
             parameters = self.samples[label].keys()
             samples = np.array([self.samples[label][i] for i in parameters]).T
@@ -442,7 +445,8 @@ class MetaFile(PostProcessing):
             existing_metadata=self.existing_file_kwargs,
             existing_config=self.existing_config, existing=self.existing,
             existing_priors=self.existing_priors,
-            existing_metafile=self.existing_metafile
+            existing_metafile=self.existing_metafile,
+            package_information=self.package_information
         )
         meta_file.make_dictionary()
         if not self.hdf5:

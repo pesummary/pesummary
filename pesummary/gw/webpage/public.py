@@ -32,7 +32,7 @@ class _PublicWebpageGeneration(_GWWebpageGeneration):
         existing_file_kwargs=None, existing_weights=None, result_files=None,
         notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
         disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False,
-        psd=None, priors=None
+        psd=None, priors=None, package_information={"packages": []}
     ):
         super(_PublicWebpageGeneration, self).__init__(
             webdir=webdir, samples=samples, labels=labels,
@@ -54,7 +54,8 @@ class _PublicWebpageGeneration(_GWWebpageGeneration):
             pastro_probs=pastro_probs, gwdata=gwdata,
             disable_interactive=disable_interactive,
             publication_kwargs=publication_kwargs,
-            no_ligo_skymap=no_ligo_skymap, psd=psd, priors=priors
+            no_ligo_skymap=no_ligo_skymap, psd=psd, priors=priors,
+            package_information=package_information
         )
 
     def setup_page(
