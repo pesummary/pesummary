@@ -1,0 +1,15 @@
+                                    Made by
+            ____  ___________
+           / __ \/ ____/ ___/__  ______ ___  ____ ___  ____ ________  __
+          / /_/ / __/  \__ \/ / / / __ `__ \/ __ `__ \/ __ `/ ___/ / / /
+         / ____/ /___ ___/ / /_/ / / / / / / / / / / / /_/ / /  / /_/ /
+        /_/   /_____//____/\__,_/_/ /_/ /_/_/ /_/ /_/\__,_/_/   \__, /
+                                                               /____/
+
+                                   MIT License
+
+       PESummary was developed by Hoy et al. and source code can be seen
+       here: git.ligo.org/lscsoft/pesummary. If you wish to use PESummary
+   for your own work, please cite PESummary. The following page gives details
+   https://lscsoft.docs.ligo.org/pesummary/stable_docs/citing_pesummary.html.
+                                     Thanks!

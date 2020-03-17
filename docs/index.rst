@@ -11,6 +11,14 @@ Welcome to PESummary's documentation!
 PESummary: The code agnostic Parameter Estimation Summary page builder
 ----------------------------------------------------------------------
 
+.. warning::
+
+      You are viewing documentation for a development build of PESummary.
+      This version may include unstable code, or breaking changes relative
+      the most recent stable release.
+      To view the documentation for the latest stable release of PESummary,
+      please `click here <../stable_docs/index.html>`_.
+
 PESummary is a collaboration-driven Python package providing tools for
 generating summary pages for all sample generating codes. 
 
@@ -121,4 +129,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
