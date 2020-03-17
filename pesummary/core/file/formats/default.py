@@ -39,14 +39,17 @@ class Default(Read):
         self.load_function = func_map[self.extension]
         try:
             self.load(self.load_function)
-        except Exception:
+        except Exception as e:
             raise Exception(
-                "Failed to read data for file %s" % (self.path_to_results_file))
+                "Failed to read data for file %s because: %s" % (
+                    self.path_to_results_file, e
+                )
+            )
 
     @classmethod
     def load_file(cls, path):
         if not os.path.isfile(path):
-            raise Exception("%s does not exist" % (path))
+            raise FileNotFoundError("%s does not exist" % (path))
         return cls(path)
 
     @staticmethod
@@ -107,19 +110,29 @@ class Default(Read):
         }
 
     @staticmethod
-    def _grab_data_with_h5py(path):
+    def _grab_data_with_h5py(path, remove_params=None):
         """Grab the data stored in a hdf5 file with `h5py`.
         """
         import h5py
+        import copy
 
         path_to_samples = Read.guess_path_to_samples(path)
 
         f = h5py.File(path, 'r')
-        if isinstance(f[path_to_samples], h5py._hl.group.Group):
-            parameters = [i for i in f[path_to_samples].keys()]
+        c1 = isinstance(f[path_to_samples], h5py._hl.group.Group)
+        if c1 and "parameter_names" not in f[path_to_samples].keys():
+            original_parameters = [i for i in f[path_to_samples].keys()]
+            if remove_params is not None:
+                parameters = [
+                    i for i in original_parameters if i not in remove_params
+                ]
+            else:
+                parameters = copy.deepcopy(original_parameters)
             n_samples = len(f[path_to_samples][parameters[0]])
-            samples = [[float(f[path_to_samples][i][num]) for i in parameters]
-                       for num in range(n_samples)]
+            samples = [
+                [float(f[path_to_samples][original_parameters.index(i)][num])
+                 for i in parameters] for num in range(n_samples)
+            ]
             cond1 = "loglr" not in parameters or "log_likelihood" not in \
                 parameters
             cond2 = "likelihood_stats" in f.keys() and "loglr" in \
@@ -128,6 +141,18 @@ class Default(Read):
                 parameters.append("log_likelihood")
                 for num, i in enumerate(samples):
                     samples[num].append(float(f["likelihood_stats/loglr"][num]))
+        elif c1:
+            original_parameters = [
+                i.decode("utf-8") if isinstance(i, bytes) else i for i in
+                f[path_to_samples]["parameter_names"]
+            ]
+            if remove_params is not None:
+                parameters = [
+                    i for i in original_parameters if i not in remove_params
+                ]
+            else:
+                parameters = copy.deepcopy(original_parameters)
+            samples = np.array(f[path_to_samples]["samples"])
         elif isinstance(f[path_to_samples], h5py._hl.dataset.Dataset):
             parameters = f[path_to_samples].dtype.names
             samples = [[float(i[parameters.index(j)]) for j in parameters] for
