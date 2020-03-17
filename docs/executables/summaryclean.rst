@@ -19,3 +19,6 @@ To see help for this executable please run:
     $ summaryclean --help
 
 .. program-output:: summaryclean --help
+
+Therefore a biproduct of this executable is to enable the user to switch between
+file formats easily from the command line.
