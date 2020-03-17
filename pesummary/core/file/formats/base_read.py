@@ -203,16 +203,39 @@ class Read(object):
         path: str
             path to the results file
         """
-        def _find_name(name):
+        def _find_name(name, item):
             c1 = "posterior_samples" in name or "posterior" in name
-            c2 = "posterior_samples/" not in name and "posterior/" not in name
-            if c1 and c2:
-                return name
+            c2 = isinstance(item, (h5py._hl.dataset.Dataset, np.ndarray))
+            try:
+                c3 = isinstance(item, h5py._hl.group.Group) and isinstance(
+                    item[0], (float, int, np.number)
+                )
+            except AttributeError:
+                c3 = False
+            c4 = (
+                isinstance(item, h5py._hl.group.Group) and "parameter_names" in
+                item.keys() and "samples" in item.keys()
+            )
+            if c1 and c3:
+                paths.append(name)
+            elif c1 and c4:
+                return paths.append(name)
+            elif c1 and c2:
+                return paths.append(name)
 
         f = h5py.File(path, 'r')
-        _path = f.visit(_find_name)
+        paths = []
+        f.visititems(_find_name)
         f.close()
-        return _path
+        if len(paths) == 1:
+            return paths[0]
+        else:
+            raise ValueError(
+                "Found multiple posterior sample tables in '{}': {}. Not sure "
+                "which to load.".format(
+                    path, ", ".join(paths)
+                )
+            )
 
     @staticmethod
     def _grab_params_and_samples_from_json_file(path):

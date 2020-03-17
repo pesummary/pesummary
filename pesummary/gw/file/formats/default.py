@@ -16,6 +16,7 @@
 import os
 import numpy as np
 from pesummary.gw.file.formats.base_read import GWRead
+from pesummary.core.file.formats.default import Default as CoreDefault
 
 
 class Default(GWRead):
@@ -39,14 +40,17 @@ class Default(GWRead):
         self.load_function = func_map[self.extension]
         try:
             self.load(self.load_function)
-        except Exception:
+        except Exception as e:
             raise Exception(
-                "Failed to read data for file %s" % (self.path_to_results_file))
+                "Failed to read data for file %s because: %s" % (
+                    self.path_to_results_file, e
+                )
+            )
 
     @classmethod
     def load_file(cls, path):
         if not os.path.isfile(path):
-            raise Exception("%s does not exist" % (path))
+            raise FileNotFoundError("%s does not exist" % (path))
         return cls(path)
 
     @staticmethod
@@ -121,35 +125,9 @@ class Default(GWRead):
     def _grab_data_with_h5py(path):
         """Grab the data stored in a hdf5 file with `h5py`.
         """
-        import h5py
-
-        path_to_samples = GWRead.guess_path_to_samples(path)
-
-        f = h5py.File(path, 'r')
-        if isinstance(f[path_to_samples], h5py._hl.group.Group):
-            original_parameters = [i for i in f[path_to_samples].keys()]
-            parameters = [
-                i for i in original_parameters if i != "waveform_approximant"]
-            n_samples = len(f[path_to_samples][parameters[0]])
-            samples = [[f[path_to_samples][original_parameters.index(i)][num]
-                        for i in parameters] for num in range(n_samples)]
-            cond1 = "loglr" not in parameters or "log_likelihood" not in \
-                parameters
-            cond2 = "likelihood_stats" in f.keys() and "loglr" in \
-                f["likelihood_stats"]
-            if cond1 and cond2:
-                parameters.append("log_likelihood")
-                for num, i in enumerate(samples):
-                    samples[num].append(f["likelihood_stats/loglr"][num])
-        elif isinstance(f[path_to_samples], h5py._hl.dataset.Dataset):
-            parameters = f[path_to_samples].dtype.names
-            samples = [[i[parameters.index(j)] for j in parameters] for i in
-                       f[path_to_samples]]
-        f.close()
-        injection = {i: float("nan") for i in parameters}
-        return {
-            "parameters": parameters, "samples": samples, "injection": injection
-        }
+        return CoreDefault._grab_data_with_h5py(
+            path, remove_params=["waveform_approximant"]
+        )
 
     @property
     def calibration_data_in_results_file(self):
