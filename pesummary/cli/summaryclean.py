@@ -38,7 +38,7 @@ def command_line():
                         default=None)
     parser.add_argument("--file_format", dest="file_format",
                         help="Save the cleaned data in this format",
-                        choices=["dat", "lalinference", "bilby"],
+                        choices=["dat", "lalinference", "bilby", "lalinference_dat"],
                         default="dat")
     return parser
 
@@ -72,6 +72,8 @@ def save(pesummary_object, file_format, webdir=None, label=None):
         pesummary_object.to_dat(outdir=webdir, label=label)
     elif file_format == "lalinference":
         pesummary_object.to_lalinference(outdir=webdir, label=label)
+    elif file_format == "lalinference_dat":
+        pesummary_object.to_lalinference(outdir=webdir, label=label, dat=True)
     elif file_format == "bilby":
         pesummary_object.to_bilby()
 
