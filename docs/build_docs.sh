@@ -44,7 +44,7 @@ cat >> index.html <<EOL
     <div class="row justify-content-center">
     <a class="btn btn-info" href="igwn_pinned/index.html" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Version available in the igwn-py37 conda environment">igwn-py37: v${igwn_version}</a>
     <a class="btn btn-info" href="stable_docs/index.html" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Latest released version on pypi">${stable}</a>
-    <a class="btn btn-warning" href="unstable_docs/index.html" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Latest development build">Latest</a>
+    <a class="btn btn-danger" href="unstable_docs/index.html" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Latest development build">Latest</a>
     </div>
 </div>
 </body>
