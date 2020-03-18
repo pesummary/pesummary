@@ -12,7 +12,7 @@ mv ../unstable_docs .
 cp unstable_docs/Makefile .
 cp unstable_docs/conf.py .
 
-python -c "from pesummary.gw.file.standard_names import descriptive_names; f = open('unstable_docs/data/parameter_descriptions.csv', 'w'); lines = ['{},{}\n'.format(key, item) for key, item in descriptive_names.items()]; f.writelines(lines)"
+python -c "from pesummary.gw.file.standard_names import descriptive_names; f = open('unstable_docs/data/parameter_descriptions.csv', 'w'); lines = ['\"{}\",\"{}\"\n'.format(key, item) for key, item in descriptive_names.items()]; f.writelines(lines)"
 
 cat >> index.html <<EOL
 <html lang='en'>
