@@ -42,9 +42,15 @@ cat >> index.html <<EOL
 </div>
 <div class="button-box col-lg-12">
     <div class="row justify-content-center">
-    <a href="stable_docs/index.html" class="btn btn-info" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button">${stable}</a>
-    <a href="igwn_pinned/index.html" class="btn btn-info" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button">igwn-py37: v${igwn_version}</a>
-    <a href="unstable_docs/index.html" class="btn btn-danger" style="font-size: 32px; width: 300px; margin-left: 0.5em" role="button">Latest</a>
+    <button href="igwn_pinned/index.html" type="button" class="btn btn-info" style="font-size: 32px; width: 300px; margin-right: 0.5em" data-toggle="tooltip" data-placement="top" title="Version available in the igwn-py37 conda environment">
+        igwn-py37: v${igwn_version}
+    </button>
+    <button href="stable_docs/index.html" type="button" class="btn btn-info" style="font-size: 32px; width: 300px; margin-right: 0.5em" data-toggle="tooltip" data-placement="top" title="Latest version available on pypi">
+        ${stable}
+    </button>
+    <button href="unstable_docs/index.html" type="button" class="btn btn-danger" style="font-size: 32px; width: 300px; margin-right: 0.5em" data-toggle="tooltip" data-placement="top" title="Latest development build">
+        Latest
+    </button>
     </div>
 </div>
 </body>
@@ -64,7 +70,9 @@ cd ..
 mkdir -p _build/html
 mkdir -p _build/html/stable_docs
 mkdir -p _build/html/unstable_docs
+mkdir -p _build/html/igwn_pinned
 mv stable_docs/_build/html/* _build/html/stable_docs/
 mv unstable_docs/_build/html/* _build/html/unstable_docs/
+mv igwn_pinned/_build/html/* _build/html/igwn_pinned/
 cp ../pesummary/core/webpage/copyright.txt ./_build/html
 mv index.html _build/html
