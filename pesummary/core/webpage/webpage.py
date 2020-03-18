@@ -216,7 +216,7 @@ class page(Base):
             "font-weight: 900; padding-right:10px'></i></a>"
         )
         link = (
-            "https://lscsoft.docs.ligo.org/pesummary/tutorials/"
+            "https://lscsoft.docs.ligo.org/pesummary/stable_docs/tutorials/"
             "make_your_own_page_from_metafile.html"
         )
         self.add_content(
