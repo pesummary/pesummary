@@ -8,6 +8,6 @@ for all result files, but will also will be added directly to the webpages
 ready for you to inspect and share with your collaborators. An example python
 script that is readable by PESummary is shown below:
 
-.. literalinclude:: ../../examples/custom_plot.py
+.. literalinclude:: ../../../examples/custom_plot.py
    :language: python
    :linenos:

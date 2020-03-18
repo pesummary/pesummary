@@ -45,6 +45,15 @@ cat >> index.rst <<EOL
 EMPTY FILE
 EOL
 
+cd stable_docs
 make html
+cd ../unstable_docs
+make html
+cd ..
+mkdir -p _build/html
+mkdir -p _build/html/stable_docs
+mkdir -p _build/html/unstable_docs
+mv stable_docs/_build/html/* _build/html/stable_docs/
+mv unstable_docs/_build/html/* _build/html/unstable_docs/
 cp ../pesummary/core/webpage/copyright.txt ./_build/html
 mv index.html _build/html
