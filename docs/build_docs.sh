@@ -42,15 +42,9 @@ cat >> index.html <<EOL
 </div>
 <div class="button-box col-lg-12">
     <div class="row justify-content-center">
-    <button href="igwn_pinned/index.html" type="button" class="btn btn-info" style="font-size: 32px; width: 300px; margin-right: 0.5em" data-toggle="tooltip" data-placement="top" title="Version available in the igwn-py37 conda environment">
-        igwn-py37: v${igwn_version}
-    </button>
-    <button href="stable_docs/index.html" type="button" class="btn btn-info" style="font-size: 32px; width: 300px; margin-right: 0.5em" data-toggle="tooltip" data-placement="top" title="Latest version available on pypi">
-        ${stable}
-    </button>
-    <button href="unstable_docs/index.html" type="button" class="btn btn-danger" style="font-size: 32px; width: 300px; margin-right: 0.5em" data-toggle="tooltip" data-placement="top" title="Latest development build">
-        Latest
-    </button>
+    <a class="btn btn-info" href="igwn_pinned/index.html" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Version available in the igwn-py37 conda environment">igwn-py37: v${igwn_version}</a>
+    <a class="btn btn-info" href="stable_docs/index.html" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Latest released version on pypi">${stable}</a>
+    <a class="btn btn-warning" href="unstable_docs/index.html" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Latest development build">Latest</a>
     </div>
 </div>
 </body>
