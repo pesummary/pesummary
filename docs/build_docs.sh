@@ -1,7 +1,7 @@
 tags=($(git tag))
 stable=${tags[${#tags[@]}-1]}
 
-igwn_version=`python -c "from bs4 import BeautifulSoup; import urllib; url = 'https://computing.docs.ligo.org/conda/environments/igwn-py37/'; page = urllib.request.urlopen(url); soup = BeautifulSoup(page, 'html.parser'); table_body = soup.find('tbody'); rows = table_body.find_all('tr'); pesummary_row = [i.find_all('td') for i in rows if 'pesummary' in str(i)][0]; version = pesummary_row[1].renderContents().decode('utf-8'); print(version)"`
+igwn_version=`python -c "from bs4 import BeautifulSoup; import urllib.request; url = 'https://computing.docs.ligo.org/conda/environments/igwn-py37/'; page = urllib.request.urlopen(url); soup = BeautifulSoup(page, 'html.parser'); table_body = soup.find('tbody'); rows = table_body.find_all('tr'); pesummary_row = [i.find_all('td') for i in rows if 'pesummary' in str(i)][0]; version = pesummary_row[1].renderContents().decode('utf-8'); print(version)"`
 
 mkdir -p ../stable_docs
 mkdir -p ../unstable_docs
