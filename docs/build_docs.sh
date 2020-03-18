@@ -1,14 +1,20 @@
 tags=($(git tag))
 stable=${tags[${#tags[@]}-1]}
 
+igwn_version=`python -c "from bs4 import BeautifulSoup; import urllib; url = 'https://computing.docs.ligo.org/conda/environments/igwn-py37/'; page = urllib.request.urlopen(url); soup = BeautifulSoup(page, 'html.parser'); table_body = soup.find('tbody'); rows = table_body.find_all('tr'); pesummary_row = [i.find_all('td') for i in rows if 'pesummary' in str(i)][0]; version = pesummary_row[1].renderContents().decode('utf-8'); print(version)"`
+
 mkdir -p ../stable_docs
 mkdir -p ../unstable_docs
+mkdir -p ../igwn_pinned
 mv ./* ../unstable_docs
 
 git checkout ${stable} ./*
 mv ./* ../stable_docs
+git checkout v${igwn_version} ./*
+mv ./* ../igwn_pinned
 mv ../stable_docs .
 mv ../unstable_docs .
+mv ../igwn_pinned .
 cp unstable_docs/Makefile .
 cp unstable_docs/conf.py .
 
@@ -36,8 +42,9 @@ cat >> index.html <<EOL
 </div>
 <div class="button-box col-lg-12">
     <div class="row justify-content-center">
-    <a href="stable_docs/index.html" class="btn btn-info" style="font-size: 40px; width: 400px; margin-right: 0.5em" ole="button">${stable}</a>
-    <a href="unstable_docs/index.html" class="btn btn-danger" style="font-size: 40px; width: 400px; margin-left: 0.5em" role="button">Latest</a>
+    <a href="stable_docs/index.html" class="btn btn-info" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button">${stable}</a>
+    <a href="igwn_pinned/index.html" class="btn btn-info" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button">igwn-py37: v${igwn_version}</a>
+    <a href="unstable_docs/index.html" class="btn btn-danger" style="font-size: 32px; width: 300px; margin-left: 0.5em" role="button">Latest</a>
     </div>
 </div>
 </body>
@@ -50,6 +57,8 @@ EOL
 cd stable_docs
 make html
 cd ../unstable_docs
+make html
+cd ../igwn_pinned
 make html
 cd ..
 mkdir -p _build/html
