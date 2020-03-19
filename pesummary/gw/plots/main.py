@@ -182,7 +182,7 @@ class _PlotGeneration(_BasePlotGeneration):
             fig, params, data = gw._make_corner_plot(samples, latex_labels)
             plt.savefig(
                 os.path.join(
-                    savedir, "corner", "{}_all_density_plot.png".format(
+                    savedir, "corner", "{}_all_density_plots.png".format(
                         label
                     )
                 )
