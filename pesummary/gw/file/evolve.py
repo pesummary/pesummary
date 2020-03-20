@@ -180,6 +180,6 @@ def _evolve_spins(
                     a_1_evolve, a_2_evolve, Ln_evolve
             )
         else:
-            tilt_1_evol[i], tilt_2_evol[i], phi_12_evol = \
+            tilt_1_evol[i], tilt_2_evol[i], phi_12_evol[i] = \
                 tilt_1[i], tilt_2[i], phi_12[i]
     return tilt_1_evol, tilt_2_evol, phi_12_evol
