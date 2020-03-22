@@ -464,11 +464,12 @@ def write_to_file(
     lalinference_samples = samples.to_structured_array()
     if dat:
         np.savetxt(
-            filename, lalinference_samples, delimiter="\t", comments="",
+            os.path.join(outdir, filename), lalinference_samples,
+            delimiter="\t", comments="",
             header="\t".join(lalinference_samples.dtype.names)
         )
     else:
-        with h5py.File(filename, "w") as f:
+        with h5py.File(os.path.join(outdir, filename), "w") as f:
             lalinference = f.create_group("lalinference")
             sampler = lalinference.create_group(sampler)
             samples = sampler.create_dataset(
