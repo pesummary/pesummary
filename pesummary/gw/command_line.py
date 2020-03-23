@@ -78,6 +78,12 @@ def insert_gwspecific_option_group(parser):
                           help=("Evolve the spins up to the Schwarzschild "
                                 "ISCO frequency for remnant fits evaluation"),
                           default=False)
+    gw_group.add_argument("--NRSur_fits", nargs="?", dest="NRSur_fits",
+                          help=("The NRSurrogate you wish to use to calculate "
+                                "the remnant quantities from your posterior "
+                                "samples. If not passed, the average NR fits "
+                                "are used"),
+                          default=False)
     gw_group.add_argument("--f_low", dest="f_low",
                           help=("Low frequency cutoff used to generate the "
                                 "samples"),

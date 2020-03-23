@@ -146,7 +146,8 @@ pesummary_map = {
     "final_spin_non_evolved": "final_spin_non_evolved",
     "radiated_energy": "radiated_energy",
     "radiated_energy_non_evolved": "radiated_energy_non_evolved",
-    "weights": "weights"
+    "weights": "weights",
+    "final_kick": "final_kick"
 }
 
 other_map = {

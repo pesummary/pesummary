@@ -83,11 +83,11 @@ GWlatex_labels = {
     "lambda_tilde": r"$\tilde{\lambda}$",
     "delta_lambda": r"$\delta\lambda$",
     "peak_luminosity": (
-        r"$L_{\mathrm{peak}} [10^{56} \mathrm{ergs} \mathrm{s}^{-1}]$"
+        r"$L_{\mathrm{peak}} [10^{56} \mathrm{ergs\;s^{-1}}]$"
     ),
     "peak_luminosity_non_evolved": (
         r"$L_{\mathrm{peak}}^{\mathrm{nonevol}} [10^{56} "
-        "\mathrm{ergs} \mathrm{s}^{-1}]$"
+        "\mathrm{ergs\;s^{-1}}]$"
     ),
     "final_mass": r"$M_{\mathrm{final}} [M_{\odot}]$",
     "final_mass_non_evolved": (
@@ -102,7 +102,8 @@ GWlatex_labels = {
     "radiated_energy": r"$E_{\mathrm{rad}} [M_{\odot}]$",
     "radiated_energy_non_evolved": (
         r"$E_{\mathrm{rad}}^{\mathrm{nonevol}} [M_{\odot}]$"
-    )
+    ),
+    "final_kick": r"$v_{\mathrm{final}} [\mathrm{km\;s^{-1}}]$"
 }
 
 public_GWlatex_labels = {"mass_1": r"$m_{1}^{det} [M_{\odot}]$",

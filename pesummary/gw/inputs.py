@@ -93,7 +93,7 @@ class _GWInput(_Input):
                 label: dict(
                     evolve_spins=self.evolve_spins, f_low=self.f_low[num],
                     approximant=approx[num], f_ref=self.f_ref[num],
-                    return_kwargs=True
+                    NRSur_fits=self.NRSur_fits, return_kwargs=True
                 ) for num, label in enumerate(self.labels)
             }
         except IndexError:
@@ -107,7 +107,8 @@ class _GWInput(_Input):
             return {
                 label: dict(
                     evolve_spins=self.evolve_spins, f_low=self.f_low[0],
-                    approximant=approx[0], f_ref=self.f_ref[0]
+                    approximant=approx[0], f_ref=self.f_ref[0],
+                    NRSur_fits=self.NRSur_fits
                 ) for num, label in enumerate(self.labels)
             }
 
@@ -349,6 +350,26 @@ class _GWInput(_Input):
         if evolve_spins:
             logger.info("Evolving spins up to the Schwarzschild ISCO frequency")
             self._evolve_spins = 6. ** -0.5
+
+    @property
+    def NRSur_fits(self):
+        return self._NRSur_fits
+
+    @NRSur_fits.setter
+    def NRSur_fits(self, NRSur_fits):
+        self._NRSur_fits = NRSur_fits
+        base = (
+            "Using the '{}' NRSurrogate model to calculate the remnant "
+            "quantities"
+        )
+        if isinstance(NRSur_fits, (str, bytes)):
+            logger.info(base.format(NRSur_fits))
+            self._NRSur_fits = NRSur_fits
+        elif NRSur_fits is None:
+            from pesummary.gw.file.nrutils import NRSUR_MODEL
+
+            logger.info(base.format(NRSUR_MODEL))
+            self._NRSur_fits = NRSUR_MODEL
 
     @property
     def f_low(self):
@@ -649,10 +670,10 @@ class GWInput(_GWInput, Input):
         if True, public facing summarypages are produced
     """
     def __init__(self, opts):
-        self.evolve_spins = opts.evolve_spins
-        self.f_low = opts.f_low
-        self.f_ref = opts.f_ref
-        super(GWInput, self).__init__(opts, ignore_copy=True)
+        super(GWInput, self).__init__(
+            opts, ignore_copy=True,
+            extra_options=["evolve_spins", "NRSur_fits", "f_low", "f_ref"]
+        )
         if self.existing is not None:
             self.existing_data = self.grab_data_from_metafile(
                 self.existing_metafile, self.existing,
