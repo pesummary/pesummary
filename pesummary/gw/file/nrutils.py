@@ -16,10 +16,23 @@
 import numpy as np
 from pesummary.utils.utils import logger
 from lalinference.imrtgr import nrutils
+import lalsimulation
+from lalsimulation import (
+    SimInspiralGetSpinFreqFromApproximant, SIM_INSPIRAL_SPINS_CASEBYCASE,
+    SIM_INSPIRAL_SPINS_FLOW
+)
+try:
+    from lalsimulation.nrfits.eval_fits import eval_nrfit as _eval_nrfit
+    NRSUR_MODULE = True
+except (ModuleNotFoundError, ImportError):
+    NRSUR_MODULE = False
 
 LPEAK_FITS = ["UIB2016", "Healyetal"]
 FINALMASS_FITS = ["UIB2016", "Healyetal"]
 FINALSPIN_FITS = ["UIB2016", "Healyetal", "HBR2016"]
+
+NRSUR_FITS = ["final_mass", "final_spin", "final_kick"]
+NRSUR_MODEL = "NRSur7dq4Remnant"
 
 
 def bbh_final_mass_non_spinning_Panetal(*args):
@@ -635,3 +648,173 @@ def bbh_peak_luminosity_average(*args, fits=LPEAK_FITS, return_fits_used=False):
         *args, fits=fits, cls=PeakLuminosityFits, quantity="peak luminosity",
         return_fits_used=return_fits_used
     )
+
+
+def eval_nrfit(*args, **kwargs):
+    from contextlib import contextmanager
+    import ctypes
+    import io
+    import os
+    import sys
+    import tempfile
+
+    libc = ctypes.CDLL(None)
+    c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
+
+    @contextmanager
+    def stdout_redirector(stream):
+        original_stdout_fd = sys.stdout.fileno()
+
+        def _redirect_stdout(to_fd):
+            """Redirect stdout to the given file descriptor."""
+            libc.fflush(c_stdout)
+            sys.stdout.close()
+            os.dup2(to_fd, original_stdout_fd)
+            sys.stdout = io.TextIOWrapper(os.fdopen(original_stdout_fd, 'wb'))
+
+        saved_stdout_fd = os.dup(original_stdout_fd)
+        try:
+            tfile = tempfile.TemporaryFile(mode='w+b')
+            _redirect_stdout(tfile.fileno())
+            yield
+            _redirect_stdout(saved_stdout_fd)
+            tfile.flush()
+            tfile.seek(0, io.SEEK_SET)
+            stream.write(tfile.read())
+        finally:
+            tfile.close()
+            os.close(saved_stdout_fd)
+
+    f = io.BytesIO()
+    with stdout_redirector(f):
+        NRSurrogate_kwargs = kwargs.copy()
+        approximant = kwargs.get("approximant", None)
+        f_low = kwargs.get("f_low", None)
+        f_ref = kwargs.get("f_ref", None)
+        spinfreq_enum = SimInspiralGetSpinFreqFromApproximant(
+            getattr(lalsimulation, approximant)
+        )
+        if spinfreq_enum == SIM_INSPIRAL_SPINS_CASEBYCASE:
+            raise ValueError(
+                "Unable to evolve spins as '{}' does not have a set frequency "
+                "at which the spins are defined".format(approximant)
+            )
+        f_start = float(np.where(
+            np.array(spinfreq_enum == SIM_INSPIRAL_SPINS_FLOW), f_low, f_ref
+        ))
+        NRSurrogate_kwargs["f_ref"] = f_start
+        NRSurrogate_kwargs.pop("f_low")
+        NRSurrogate_kwargs.pop("approximant")
+        data = _eval_nrfit(*args, **NRSurrogate_kwargs)
+    return data
+
+
+def NRSur_fit(
+    mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, phi_jl, theta_jn, phi_ref,
+    f_low=20., f_ref=20., model=NRSUR_MODEL, fits=NRSUR_FITS, return_fits_used=False,
+    approximant=None, **kwargs
+):
+    """Return the NR fits based on a chosen NRSurrogate model
+
+    Parameters
+    ----------
+    mass_1: float/np.ndarray
+        float/array of masses for the primary object. In units of solar mass
+    mass_2: float/np.ndarray
+        float/array of masses for the secondary object. In units of solar mass
+    a_1: float/np.ndarray
+        float/array of primary spin magnitudes
+    a_2: float/np.ndarray
+        float/array of secondary spin magnitudes
+    tilt_1: float/np.ndarray
+        float/array of primary spin tilt angle from the orbital angular momentum
+    tilt_2: float/np.ndarray
+        float/array of secondary spin tilt angle from the orbital angular
+        momentum
+    phi_12: float/np.ndarray
+        float/array of samples for the angle between the in-plane spin
+        components
+    phi_jl: float/np.ndarray
+        float/array of samples for the azimuthal angle of the orbital angular momentum
+        around the total orbital angular momentum
+    theta_jn: float/np.ndarray
+        float/array of samples for the angle between the total angular momentum and
+        the line of sight
+    phi_ref: float/np.ndarray
+        float/array of samples for the reference phase used in the analysis
+    f_low: float
+        the low frequency cut-off used in the analysis
+    f_ref: float/np.ndarray, optional
+        the reference frequency used in the analysis
+    model: str, optional
+        NRSurrogate model that you wish to use for the calculation
+    fits: list, optional
+        list of fits that you wish to evaluate
+    approximant: str, optional
+        The approximant that was used to generate the posterior samples
+    kwargs: dict, optional
+        optional kwargs that are passed directly to the
+        `lalsimulation.nrfits.eval_fits.eval_nrfit` function
+    """
+    from lal import MSUN_SI, C_SI
+    from pesummary.gw.file.conversions import (
+        component_spins, magnitude_from_vector
+    )
+    from pesummary.utils.utils import iterator
+    import copy
+
+    if not NRSUR_MODULE:
+        raise ImportError(
+            "Unable to import `lalsimulation.nrfits.eval_fits`. This is likely "
+            "due to the installed version of lalsimulation. Please update."
+        )
+
+    fits_map = {
+        "final_mass": "FinalMass", "final_spin": "FinalSpin",
+        "final_kick": "RecoilKick"
+    }
+    inverse_fits_map = {item: key for key, item in fits_map.items()}
+    description = "Evaluating NRSurrogate fit for {}".format(", ".join(fits))
+    converted_fits = copy.deepcopy(fits)
+    for fit, conversion in fits_map.items():
+        if fit in converted_fits:
+            ind = fits.index(fit)
+            converted_fits[ind] = conversion
+
+    spins = np.array(
+        component_spins(
+            theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1, mass_2,
+            f_ref, phi_ref
+        )
+    )
+    a_1_vec = np.array([spins.T[1], spins.T[2], spins.T[3]]).T
+    a_2_vec = np.array([spins.T[4], spins.T[5], spins.T[6]]).T
+    mass_1 *= MSUN_SI
+    mass_2 *= MSUN_SI
+    _fits = [
+        eval_nrfit(
+            mass_1[num], mass_2[num], a_1_vec[num], a_2_vec[num], model, converted_fits,
+            f_low=f_low, f_ref=f_ref[num], approximant=approximant,
+            extra_params_dict=kwargs
+        ) for num in iterator(len(mass_1), desc=description, tqdm=True, logger=logger)
+    ]
+    nr_fits = {key: np.array([dic[key] for dic in _fits]) for key in _fits[0]}
+    if fits_map["final_mass"] in nr_fits.keys():
+        nr_fits[fits_map["final_mass"]] = np.array(
+            [final_mass[0] for final_mass in nr_fits[fits_map["final_mass"]]]
+        ) / MSUN_SI
+    if fits_map["final_kick"] in nr_fits.keys():
+        nr_fits[fits_map["final_kick"]] *= C_SI / 1000
+        final_kick_abs = magnitude_from_vector(
+            nr_fits[fits_map["final_kick"]]
+        )
+        nr_fits[fits_map["final_kick"]] = final_kick_abs
+    if fits_map["final_spin"] in nr_fits.keys():
+        final_spin_abs = magnitude_from_vector(
+            nr_fits[fits_map["final_spin"]]
+        )
+        nr_fits[fits_map["final_spin"]] = final_spin_abs
+    return {
+        key if key not in inverse_fits_map.keys() else inverse_fits_map[key]:
+        item for key, item in nr_fits.items()
+    }

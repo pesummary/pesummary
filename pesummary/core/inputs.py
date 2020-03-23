@@ -1165,7 +1165,7 @@ class Input(_Input):
     disable_interactive: Bool
         if True, interactive plots are not produced
     """
-    def __init__(self, opts, ignore_copy=False):
+    def __init__(self, opts, ignore_copy=False, extra_options=None):
         logger.info("Command line arguments: %s" % (opts))
         self.opts = opts
         self.result_files = self.opts.samples
@@ -1212,6 +1212,9 @@ class Input(_Input):
             "samples", "plots", "js", "html", "css", "plots/corner", "config"
         ]
         self.make_directories()
+        if extra_options is not None:
+            for opt in extra_options:
+                setattr(self, opt, getattr(self.opts, opt))
         self.kde_plot = self.opts.kde_plot
         self.priors = self.opts.prior_file
         self.samples = self.opts.samples
