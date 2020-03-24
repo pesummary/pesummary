@@ -17,6 +17,7 @@ import copy
 
 import argparse
 import configparser
+import numpy as np
 from pesummary import conf
 
 
@@ -148,6 +149,47 @@ class DictionaryAction(argparse.Action):
                 items.append(value[0])
             else:
                 raise ValueError("Did not understand input")
+        setattr(namespace, self.dest, items)
+
+
+class DelimiterSplitAction(argparse.Action):
+    """Class to extend the argparse.Action to handle inputs which need to be split with
+    with a provided delimiter
+    """
+    def __init__(self, option_strings, dest, nargs=None, const=None,
+                 default=None, type=None, choices=None, required=False,
+                 help=None, metavar=None):
+        super(DelimiterSplitAction, self).__init__(
+            option_strings=option_strings, dest=dest, nargs=nargs,
+            const=const, default=default, type=str, choices=choices,
+            required=required, help=help, metavar=metavar)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        import sys
+
+        args = np.array(sys.argv[1:])
+        cond1 = "--delimiter" in args
+        cond2 = False
+        if cond1:
+            cond2 = (
+                float(np.argwhere(args == "--delimiter"))
+                > float(np.argwhere(args == self.option_strings[0]))
+            )
+        if cond1 and cond2:
+            raise ValueError(
+                "Please provide the '--delimiter' command line argument "
+                "before the '{}' argument".format(self.option_strings[0])
+            )
+        delimiter = namespace.delimiter
+        items = {}
+        for value in values:
+            value = value.split(delimiter)
+            if len(value) > 2:
+                raise ValueError(
+                    "'{}' appears multiple times. Please choose a different "
+                    "delimiter".format(delimiter)
+                )
+            items[value[0]] = value[1]
         setattr(namespace, self.dest, items)
 
 

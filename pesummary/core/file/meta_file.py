@@ -96,6 +96,8 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
             data = np.array(np.vstack(value))
         elif isinstance(value[0], (tuple, np.record, np.recarray)):
             data = value
+        elif isinstance(value[0], np.void) and value.dtype.names:
+            data = value
         elif math.isnan(value[0]):
             data = np.array(["NaN"] * len(value), dtype="S")
         elif isinstance(value[0], numeric_types):
