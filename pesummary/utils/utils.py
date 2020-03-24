@@ -25,7 +25,6 @@ from scipy.interpolate import interp1d
 import h5py
 
 from tqdm import tqdm as _tqdm
-from tqdm.utils import _range
 
 
 class SamplesDict(dict):
@@ -388,8 +387,6 @@ class Array(np.ndarray):
 
 
 class tqdm(_tqdm):
-    def __init__(self, *args, **kwargs):
-        super(tqdm, self).__init__(*args, **kwargs)
 
     @property
     def format_dict(self):
@@ -410,10 +407,9 @@ class tqdm(_tqdm):
 
 def trange(*args, **kwargs):
     """
-    A shortcut for tqdm(xrange(*args), **kwargs).
-    On Python3+ range is used instead of xrange.
+    A shortcut for tqdm(range(*args), **kwargs).
     """
-    return tqdm(_range(*args), **kwargs)
+    return tqdm(range(*args), **kwargs)
 
 
 def resample_posterior_distribution(posterior, nsamples):
