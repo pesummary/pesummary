@@ -24,7 +24,7 @@ from pathlib import Path
 
 from pesummary.utils.utils import logger, check_file_exists_and_rename
 from pesummary.utils.exceptions import InputError
-from pesummary.core.command_line import DictionaryAction
+from pesummary.core.command_line import DelimiterSplitAction
 from pesummary.gw.inputs import _GWInput
 from pesummary.gw.file.meta_file import _GWMetaFile
 
@@ -134,8 +134,9 @@ def command_line():
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--labels", dest="labels", nargs='+', action=DictionaryAction,
-        help="labels you wish to modify. Syntax: `--labels existing:new`",
+        "--labels", dest="labels", nargs='+', action=DelimiterSplitAction,
+        help=("labels you wish to modify. Syntax: `--labels existing:new` "
+              "where ':' is the default delimiter"),
         default=None
     )
     parser.add_argument(
@@ -149,6 +150,10 @@ def command_line():
     parser.add_argument(
         "--save_to_json", action="store_true", default=False,
         help="save the modified data in json format"
+    )
+    parser.add_argument(
+        "--delimiter", dest="delimiter", default=":",
+        help="Delimiter used to seperate the existing and new quantity"
     )
     return parser
 
