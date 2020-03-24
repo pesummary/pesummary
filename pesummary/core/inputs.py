@@ -505,9 +505,14 @@ class _Input(object):
                                             label
                                         )
                                     )
-                            self.add_to_prior_dict(
-                                "{}/{}".format(key, label), pp[key][label]
-                            )
+                            if pp[key] == {}:
+                                self.add_to_prior_dict(
+                                    "{}/{}".format(key, label), []
+                                )
+                            else:
+                                self.add_to_prior_dict(
+                                    "{}/{}".format(key, label), pp[key][label]
+                                )
                     else:
                         self.add_to_prior_dict(
                             "samples/{}".format(label), []
