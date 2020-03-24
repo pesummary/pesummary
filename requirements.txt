@@ -6,7 +6,7 @@ statsmodels
 corner
 tables
 deepdish
-pandas<1.0.0
+pandas
 pygments
 astropy>=3.2.3 #<=3.2.2 gives astropy.utils.iers error
 lalsuite
