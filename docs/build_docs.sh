@@ -1,17 +1,36 @@
+# Copyright (C) 2020  Charlie Hoy <charlie.hoy@ligo.org>
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 tags=($(git tag))
 stable=${tags[${#tags[@]}-1]}
 
 igwn_version=`python -c "from bs4 import BeautifulSoup; import urllib.request; url = 'https://computing.docs.ligo.org/conda/environments/igwn-py37/'; page = urllib.request.urlopen(url); soup = BeautifulSoup(page, 'html.parser'); table_body = soup.find('tbody'); rows = table_body.find_all('tr'); pesummary_row = [i.find_all('td') for i in rows if 'pesummary' in str(i)][0]; version = pesummary_row[1].renderContents().decode('utf-8'); print(version)"`
 
+mkdir -p ../broken_links
 mkdir -p ../stable_docs
 mkdir -p ../unstable_docs
 mkdir -p ../igwn_pinned
 mv ./* ../unstable_docs
 
+git checkout v0.3.4 ./*
+mv ./* ../broken_links
 git checkout ${stable} ./*
 mv ./* ../stable_docs
 git checkout v${igwn_version} ./*
 mv ./* ../igwn_pinned
+mv ../broken_links/ .
 mv ../stable_docs .
 mv ../unstable_docs .
 mv ../igwn_pinned .
@@ -68,5 +87,29 @@ mkdir -p _build/html/igwn_pinned
 mv stable_docs/_build/html/* _build/html/stable_docs/
 mv unstable_docs/_build/html/* _build/html/unstable_docs/
 mv igwn_pinned/_build/html/* _build/html/igwn_pinned/
+
+cd broken_links
+cp -r ./* ../_build/html/
+BROKEN_FILES=($(find ../_build/html/ -name "*.rst" -type f -print))
+for file in ${BROKEN_FILES[@]}; do
+    rm ${file}
+    html_name=`python -c "print('${file}'.replace('.rst', '.html'))"`
+    map=`python -c "raw_path = '${html_name}'.replace('../_build/html/', ''); raw_path = raw_path.replace('.//', ''); length = len(raw_path.split('/')[:-1]); print('/'.join(['../']*length + ['stable_docs'] + raw_path.split('/')))"`
+    cat >> ${html_name} <<EOL
+
+<!DOCTYPE html>
+<html>
+<body onload=myFunction()>
+<script>
+function myFunction() {
+    window.location = "${map}";
+}
+</script>
+</body>
+</html>
+EOL
+done
+
+cd ..
 cp ../pesummary/core/webpage/copyright.txt ./_build/html
 mv index.html _build/html
