@@ -1,8 +1,33 @@
-## 0.3.5 [unreleased]
+## 0.4.1 [unreleased]
 
 ### Changed
 
 ### Added
+
+## 0.4.0 [25/03/2019]
+
+### Changed
+
+- `summaryconvert` removal - removed the `summaryconvert` executable as this
+  is no longer supported
+- `pesummary.core.file.formats.default.Default` - improve the Default reading
+  class such that it can read more file formats
+- `pesummary.utils.utils.trange` - remove hidden function import
+- `pandas < 1.0.0` - remove the `pandas < 1.0.0` requirement.
+- Redirect old doc links - All old documentation links are redirected to the
+  stable_docs.
+
+### Added
+
+- Add new `summarymodify` executable which allows for result file modification
+  from the command line
+- Allow the for the user to change file format to a `lalinference` dat file
+  with the `summaryclean` executable
+- Store the package information in the PESummary metafile
+- Improve the documentation to include a new landing page for stable vs unstable
+  file versions
+- Allow for the user to calculate the remnant properties using the `NRSurrogate`
+  models. This can be done by adding the `--NRSur_fits` command line argument.
 
 ## 0.3.4 [12/03/2019]
 
