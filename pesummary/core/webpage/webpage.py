@@ -39,8 +39,8 @@ BOOTSTRAP = """<!DOCTYPE html>
 
        PESummary was developed by Hoy et al. and source code can be seen
        here: git.ligo.org/lscsoft/pesummary. If you wish to use PESummary
-       for your own work, please cite PESummary. The following page gives
-      details https://lscsoft.docs.ligo.org/pesummary/citing_pesummary.html.
+   for your own work, please cite PESummary. The following page gives details
+   https://lscsoft.docs.ligo.org/pesummary/stable_docs/citing_pesummary.html.
                                      Thanks!
   -->
 <html lang='en'>
