@@ -27,7 +27,7 @@ from setuptools.command import (
 # tell python we're in setup.py
 builtins._PESUMMARY_SETUP = True
 
-version = "0.3.4"
+version = "0.4.0"
 version_file = Path("pesummary") / ".version"
 
 
