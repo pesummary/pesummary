@@ -183,6 +183,26 @@ class Read(object):
                 yield z
 
     @staticmethod
+    def edit_dictionary(dictionary, path, value):
+        """Replace an entry in a nested dictionary
+
+        Parameters
+        ----------
+        dictionary: dict
+            the nested dictionary that you would like to edit
+        path: list
+            the path to the key that you would like to edit
+        value:
+            the replacement
+        """
+        from functools import reduce
+        from operator import getitem
+
+        edit = dictionary.copy()
+        reduce(getitem, path[:-1], edit)[path[-1]] = value
+        return edit
+
+    @staticmethod
     def extension_from_path(path):
         """Return the extension of the file from the file path
 

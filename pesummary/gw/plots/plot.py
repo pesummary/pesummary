@@ -13,7 +13,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.utils.utils import logger, number_of_columns_for_legend
+from pesummary.utils.utils import (
+    logger, number_of_columns_for_legend, _check_latex_install
+)
+from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.core.plots.kde import kdeplot
 from pesummary import conf
@@ -24,13 +27,17 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import corner
-
+import pkg_resources
 import numpy as np
 import math
 from scipy.ndimage import gaussian_filter
 from astropy.time import Time
 from gwpy.timeseries import TimeSeries
 from gwpy.plot.colors import GW_OBSERVATORY_COLORS
+
+path = pkg_resources.resource_filename("pesummary", "conf")
+plt.style.use(os.path.join(path, "matplotlib_rcparams.sty"))
+_check_latex_install()
 
 from lal import MSUN_SI, PC_SI
 try:
@@ -94,8 +101,8 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
         if prior is not None:
             kdeplot(prior, color=conf.prior_color, shade=True, alpha_shade=0.1,
                     linewidth=1.0, xlow=xlow, xhigh=xhigh)
-    plt.xlabel(latex_label, fontsize=16)
-    plt.ylabel("Probability Density", fontsize=16)
+    plt.xlabel(latex_label)
+    plt.ylabel("Probability Density")
     percentile = samples.confidence_interval([5, 95])
     if inj_value is not None:
         plt.axvline(inj_value, color=conf.injection_color, linestyle='-',
@@ -106,7 +113,7 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
     upper = np.round(percentile[1] - median, 2)
     lower = np.round(median - percentile[0], 2)
     median = np.round(median, 2)
-    plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
+    plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
     plt.grid(b=True)
     plt.xlim(xlims)
     plt.tight_layout()
@@ -179,8 +186,8 @@ def _1d_comparison_histogram_plot(param, samples, colors,
     for num, legobj in enumerate(legend.legendHandles):
         legobj.set_linewidth(1.75)
         legobj.set_linestyle(linestyles[num])
-    plt.xlabel(latex_label, fontsize=16)
-    plt.ylabel("Probability Density", fontsize=16)
+    plt.xlabel(latex_label)
+    plt.ylabel("Probability Density")
     plt.grid(b=True)
     plt.tight_layout()
     return fig
@@ -364,6 +371,7 @@ def __antenna_response(name, ra, dec, psi, time_gps):
     return fplus, fcross
 
 
+@no_latex_plot
 def _waveform_plot(detectors, maxL_params, **kwargs):
     """Plot the maximum likelihood waveform for a given approximant.
 
@@ -420,14 +428,15 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
                  color=colors[num], linewidth=1.0, label=i)
     plt.xscale("log")
     plt.yscale("log")
-    plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
-    plt.ylabel(r"Strain", fontsize=16)
+    plt.xlabel(r"Frequency $[Hz]$")
+    plt.ylabel(r"Strain")
     plt.grid(b=True)
     plt.legend(loc="best")
     plt.tight_layout()
     return fig
 
 
+@no_latex_plot
 def _waveform_comparison_plot(maxL_params_list, colors, labels,
                               **kwargs):
     """Generate a plot which compares the maximum likelihood waveforms for
@@ -491,8 +500,8 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
     plt.yscale("log")
     plt.grid(b=True)
     plt.legend(loc="best")
-    plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
-    plt.ylabel(r"Strain", fontsize=16)
+    plt.xlabel(r"Frequency $[Hz]$")
+    plt.ylabel(r"Strain")
     plt.tight_layout()
     return fig
 
@@ -669,8 +678,8 @@ def _default_skymap_plot(ra, dec, weights=None, **kwargs):
     ax.set_yticks([-np.pi / 3, -np.pi / 6, 0, np.pi / 6, np.pi / 3])
     labels = [r"$%s^{h}$" % (int(np.round((i + np.pi) * 3.82, 1))) for i in xticks]
     ax.set_xticklabels(labels[::-1], fontsize=10)
-    ax.set_yticklabels([r"$-60^\degree$", r"$-30^\degree$", r"$0^\degree$",
-                        r"$30^\degree$", r"$60^\degree$"], fontsize=10)
+    ax.set_yticklabels([r"$-60^{\circ}$", r"$-30^{\circ}$", r"$0^{\circ}$",
+                        r"$30^{\circ}$", r"$60^{\circ}$"], fontsize=10)
     ax.grid(b=True)
     return fig
 
@@ -792,6 +801,7 @@ def __get_cutoff_indices(flow, fhigh, df, N):
     return kmin, kmax
 
 
+@no_latex_plot
 def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
     """Generate the sky sensitivity for a given network
 
@@ -875,6 +885,7 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
     return fig
 
 
+@no_latex_plot
 def _time_domain_waveform(detectors, maxL_params, **kwargs):
     """
     Plot the maximum likelihood waveform for a given approximant
@@ -932,14 +943,15 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
         plt.plot(h_t.times, h_t,
                  color=colors[num], linewidth=1.0, label=i)
         plt.xlim([t_start - 3, t_start + 0.5])
-    plt.xlabel(r"Time $[s]$", fontsize=16)
-    plt.ylabel(r"Strain", fontsize=16)
+    plt.xlabel(r"Time $[s]$")
+    plt.ylabel(r"Strain")
     plt.grid(b=True)
     plt.legend(loc="best")
     plt.tight_layout()
     return fig
 
 
+@no_latex_plot
 def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
                                           **kwargs):
     """Generate a plot which compares the maximum likelihood waveforms for
@@ -1001,8 +1013,8 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
 
         plt.plot(h_t.times, h_t,
                  color=colors[num], label=labels[num], linewidth=2.0)
-    plt.xlabel(r"Time $[s]$", fontsize=16)
-    plt.ylabel(r"Strain", fontsize=16)
+    plt.xlabel(r"Time $[s]$")
+    plt.ylabel(r"Strain")
     plt.xlim([t_start - 3, t_start + 0.5])
     plt.grid(b=True)
     plt.legend(loc="best")
@@ -1042,13 +1054,14 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
             strains[num] = ss[ind]
         plt.loglog(i, strains[num], color=colors[num], label=labels[num])
     ax.tick_params(which="both", bottom=True, length=3, width=1)
-    ax.set_xlabel(r"Frequency $[Hz]$", fontsize=16)
-    ax.set_ylabel(r"Strain Noise $[1/\sqrt{Hz}]$", fontsize=16)
+    ax.set_xlabel(r"Frequency $[Hz]$")
+    ax.set_ylabel(r"Strain Noise $[1/\sqrt{Hz}]$")
     plt.legend(loc="best")
     plt.tight_layout()
     return fig
 
 
+@no_latex_plot
 def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
                                colors=None, prior=[]):
     """Generate a plot showing the calibration envelope
@@ -1144,7 +1157,7 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
             )
 
     plt.xscale('log')
-    plt.xlabel(r"Frequency $[Hz]$", fontsize=16)
+    plt.xlabel(r"Frequency $[Hz]$")
     plt.tight_layout()
     return fig
 
@@ -1251,6 +1264,7 @@ def _format_prob(prob):
         return '{}%'.format(int(np.round(100 * prob)))
 
 
+@no_latex_plot
 def _classification_plot(classification):
     """Generate a bar chart showing the source classifications probabilities
 
@@ -1259,6 +1273,12 @@ def _classification_plot(classification):
     classification: dict
         dictionary of source classifications
     """
+    from matplotlib import rcParams
+
+    original_fontsize = rcParams["font.size"]
+    original_ylabel = rcParams["ytick.labelsize"]
+    rcParams["font.size"] = 12
+    rcParams["ytick.labelsize"] = 12
     probs, names = zip(
         *sorted(zip(classification.values(), classification.keys())))
     with plt.style.context('seaborn-white'):
@@ -1273,4 +1293,6 @@ def _classification_plot(classification):
         for side in ['top', 'bottom', 'right']:
             ax.spines[side].set_visible(False)
         fig.tight_layout()
+    rcParams["font.size"] = original_fontsize
+    rcParams["ytick.labelsize"] = original_ylabel
     return fig

@@ -108,6 +108,7 @@ for details:
     executables/summarypageslw
     executables/summarypipe
     executables/summarypublication
+    executables/summaryrecreate
     executables/summaryreview
     executables/summaryversion
 

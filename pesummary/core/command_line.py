@@ -37,6 +37,7 @@ class ConfigAction(argparse.Action):
 
         items = {}
         config = configparser.ConfigParser()
+        config.optionxform = str
         try:
             config.read(values)
             for key, value in config.items("pesummary"):

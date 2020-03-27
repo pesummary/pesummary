@@ -28,6 +28,7 @@ from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.core.plots import interactive
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.utils import logger, resample_posterior_distribution
+from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots import publication
 from pesummary.gw.plots import plot as gw
 from pesummary import conf
@@ -275,6 +276,7 @@ class _PlotGeneration(_BasePlotGeneration):
                 process.start()
 
     @staticmethod
+    @no_latex_plot
     def _skymap_plot(savedir, ra, dec, label, weights):
         """Generate a skymap plot for a given set of samples
 
@@ -850,6 +852,7 @@ class _PlotGeneration(_BasePlotGeneration):
         )
 
     @staticmethod
+    @no_latex_plot
     def _pepredicates_plot(
         savedir, samples, label, probabilities, population_prior=False
     ):

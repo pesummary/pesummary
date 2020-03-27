@@ -291,3 +291,82 @@ class TestSummaryModify(Base):
                     pass
         data.close()
         modified_data.close()
+
+
+class TestSummaryRecreate(Base):
+    """Test the `summaryrecreate` executable
+    """
+    def setup(self):
+        """Setup the SummaryRecreate class
+        """
+        import configparser
+
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        config = configparser.ConfigParser()
+        config.optionxform = str
+        config.read("tests/files/config_lalinference.ini")
+        config_dictionary = dict(config._sections)
+        config_dictionary["paths"]["webdir"] = (
+            "./{}/webdir".format(os.environ["USER"])
+        )
+        make_result_file(
+            pesummary=True, pesummary_label="recreate", extension="hdf5",
+            config=config_dictionary
+        )
+        with open("GW150914.txt", "w") as f:
+            f.writelines(["115"])
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_recreate(self):
+        """Test the `summaryrecreate` script
+        """
+        import configparser
+
+        command_line = (
+            "summaryrecreate --rundir .outdir --samples .outdir/test.h5 "
+        )
+        self.launch(command_line)
+        assert os.path.isdir(os.path.join(".outdir", "recreate"))
+        assert os.path.isfile(os.path.join(".outdir", "recreate", "config.ini"))
+        assert os.path.isdir(os.path.join(".outdir", "recreate", "outdir"))
+        assert os.path.isdir(os.path.join(".outdir", "recreate", "outdir", "caches"))
+        config = configparser.ConfigParser()
+        config.read(os.path.join(".outdir", "recreate", "config.ini"))
+        original_config = configparser.ConfigParser()
+        original_config.read("tests/files/config_lalinference.ini")
+        for a, b in zip(
+          sorted(config.sections()), sorted(original_config.sections())
+        ):
+            assert a == b
+            for key, item in config[a].items():
+                assert config[b][key] == item
+        command_line = (
+            "summaryrecreate --rundir .outdir_modify --samples .outdir/test.h5 "
+            "--config_override approx:IMRPhenomPv3HM srate:4096"
+        )
+        self.launch(command_line)
+        config = configparser.ConfigParser()
+        config.read(os.path.join(".outdir_modify", "recreate", "config.ini"))
+        original_config = configparser.ConfigParser()
+        original_config.read("tests/files/config_lalinference.ini")
+        for a, b in zip(
+          sorted(config.sections()), sorted(original_config.sections())
+        ):
+            assert a == b
+            for key, item in config[a].items():
+                if key == "approx":
+                    assert original_config[b][key] != item
+                    assert config[b][key] == "IMRPhenomPv3HM"
+                elif key == "srate":
+                    assert original_config[b][key] != item
+                    assert config[b][key] == "4096"
+                elif key == "webdir":
+                    pass
+                else:
+                    assert original_config[b][key] == item

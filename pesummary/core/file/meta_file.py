@@ -23,6 +23,7 @@ import pesummary
 from pesummary import __version__
 from pesummary.core.inputs import PostProcessing
 from pesummary.utils.utils import make_dir, logger
+from pesummary.utils.decorators import open_config
 from pesummary import conf
 
 
@@ -257,6 +258,7 @@ class _MetaFile(object):
         self.data = dictionary
 
     @staticmethod
+    @open_config(index=0)
     def _grab_config_data_from_data_file(file):
         """Return the config data as a dictionary
 
@@ -265,20 +267,17 @@ class _MetaFile(object):
         file: str
             path to the configuration file
         """
-        import configparser
-
+        config = file
+        sections = config.sections()
         data = {}
-        config = configparser.ConfigParser()
-        try:
-            config.read(file)
-            sections = config.sections()
-        except Exception as e:
-            sections = None
+        if config.error:
             logger.info(
-                "Unable to open %s because %s. The data will not be stored in "
-                "the meta file" % (file, e)
+                "Unable to open %s with configparser because %s. The data will "
+                "not be stored in the meta file" % (
+                    config.path_to_file, config.error
+                )
             )
-        if sections:
+        if sections != []:
             for i in sections:
                 data[i] = {}
                 for key in config["%s" % (i)]:

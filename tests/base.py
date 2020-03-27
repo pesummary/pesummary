@@ -210,7 +210,8 @@ def read_result_file(outdir="./.outdir", extension="json", bilby=False,
 
 
 def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False,
-                     lalinference=False, pesummary=False, pesummary_label="label"):
+                     lalinference=False, pesummary=False, pesummary_label="label",
+                     config=None, psd=None, calibration=None):
     """Make a result file that can be read in by PESummary
 
     Parameters
@@ -315,7 +316,12 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
                 "pesummary": ["v0.1.7"]
             }
         }
-            
+        if config is not None:
+            dictionary[pesummary_label]["config_file"] = config
+        if psd is not None:
+            dictionary[pesummary_label]["psds"] = psds
+        if calibration is not None:
+            dictionary[pesummary_label]["calibration_envelope"] = calibration
 
         if extension == "json":
             import json

@@ -426,6 +426,7 @@ class TestMetaFile(object):
         config_data = []
         for i in self.input_config:
             config = configparser.ConfigParser()
+            config.optionxform = str
             config.read(i)
             config_data.append(config)
 

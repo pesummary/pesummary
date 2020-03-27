@@ -12,7 +12,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.utils.utils import logger, number_of_columns_for_legend
+from pesummary.utils.utils import (
+    logger, number_of_columns_for_legend, _check_latex_install
+)
 from pesummary.core.plots.kde import kdeplot
 from pesummary import conf
 
@@ -20,11 +22,16 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+import pkg_resources
+import os
 import corner
 import copy
 
 import numpy as np
 from scipy import signal
+path = pkg_resources.resource_filename("pesummary", "conf")
+plt.style.use(os.path.join(path, "matplotlib_rcparams.sty"))
+_check_latex_install()
 
 
 def _autocorrelation_plot(param, samples):
@@ -49,8 +56,8 @@ def _autocorrelation_plot(param, samples):
     plt.plot(acf / acf[0], linestyle=' ', marker='o', markersize=0.5,
              color=conf.color)
     plt.ticklabel_format(axis="x", style="plain")
-    plt.xlabel("lag", fontsize=16)
-    plt.ylabel("ACF", fontsize=16)
+    plt.xlabel("lag")
+    plt.ylabel("ACF")
     plt.tight_layout()
     plt.grid(b=True)
     return fig
@@ -77,8 +84,8 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
     plt.plot(range(n_samples), samples, linestyle=' ', marker='o',
              markersize=0.5, color=conf.color)
     plt.ticklabel_format(axis="x", style="plain")
-    plt.xlabel("samples", fontsize=16)
-    plt.ylabel(latex_label, fontsize=16)
+    plt.xlabel("samples")
+    plt.ylabel(latex_label)
     plt.tight_layout()
     plt.grid(b=True)
     return fig
@@ -101,15 +108,15 @@ def _1d_cdf_plot(param, samples, latex_label):
     fig = plt.figure()
     sorted_samples = copy.deepcopy(samples)
     sorted_samples.sort()
-    plt.xlabel(latex_label, fontsize=16)
-    plt.ylabel("Cumulative Density Function", fontsize=16)
+    plt.xlabel(latex_label)
+    plt.ylabel("Cumulative Density Function")
     upper_percentile = np.percentile(samples, 95)
     lower_percentile = np.percentile(samples, 5)
     median = np.median(samples)
     upper = np.round(upper_percentile - median, 2)
     lower = np.round(median - lower_percentile, 2)
     median = np.round(median, 2)
-    plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
+    plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
     plt.plot(sorted_samples, np.linspace(0, 1, len(sorted_samples)),
              color=conf.color)
     plt.grid(b=True)
@@ -161,8 +168,8 @@ def _1d_cdf_comparison_plot(
     for num, legobj in enumerate(legend.legendHandles):
         legobj.set_linewidth(1.75)
         legobj.set_linestyle(linestyles[num])
-    plt.xlabel(latex_label, fontsize=16)
-    plt.ylabel("Cumulative Density Function", fontsize=16)
+    plt.xlabel(latex_label)
+    plt.ylabel("Cumulative Density Function")
     plt.grid(b=True)
     plt.ylim([0, 1.05])
     plt.tight_layout()
@@ -213,8 +220,8 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
         if prior is not None:
             kdeplot(prior, color=conf.prior_color, shade=True, alpha_shade=0.1,
                     clip=[prior.minimum, prior.maximum], linewidth=1.0)
-    plt.xlabel(latex_label, fontsize=16)
-    plt.ylabel("Probability Density", fontsize=16)
+    plt.xlabel(latex_label)
+    plt.ylabel("Probability Density")
     percentile = samples.confidence_interval([5, 95])
     if inj_value is not None:
         plt.axvline(inj_value, color=conf.injection_color, linestyle='-',
@@ -225,7 +232,7 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
     upper = np.round(percentile[1] - median, 2)
     lower = np.round(median - percentile[0], 2)
     median = np.round(median, 2)
-    plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower), fontsize=18)
+    plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
     plt.grid(b=True)
     plt.xlim(xlims)
     plt.tight_layout()
@@ -288,8 +295,8 @@ def _1d_comparison_histogram_plot(param, samples, colors,
     for num, legobj in enumerate(legend.legendHandles):
         legobj.set_linewidth(1.75)
         legobj.set_linestyle(linestyles[num])
-    plt.xlabel(latex_label, fontsize=16)
-    plt.ylabel("Probability Density", fontsize=16)
+    plt.xlabel(latex_label)
+    plt.ylabel("Probability Density")
     plt.grid(b=True)
     plt.tight_layout()
     return fig
@@ -323,7 +330,7 @@ def _comparison_box_plot(param, samples, colors, latex_label, labels):
         plt.annotate(i, xy=(middle, 1), xytext=(middle, num + 1. + 0.2),
                      ha="center")
     plt.yticks([])
-    plt.xlabel(latex_label, fontsize=16)
+    plt.xlabel(latex_label)
     plt.tight_layout()
     plt.grid(b=True)
     return fig
