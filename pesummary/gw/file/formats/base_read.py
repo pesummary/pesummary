@@ -18,6 +18,7 @@ from scipy.interpolate import interp1d
 from pesummary.gw.file.standard_names import standard_names
 from pesummary.core.file.formats.base_read import Read
 from pesummary.utils.utils import logger
+from pesummary.utils.decorators import open_config
 from pesummary.gw.file import conversions as con
 
 try:
@@ -437,6 +438,7 @@ class GWRead(Read):
             config_file, self._add_fixed_parameters)
 
     @staticmethod
+    @open_config(index=2)
     def _add_fixed_parameters(parameters, samples, config_file):
         """Open a LALInference configuration file and add the fixed parameters
         to the list of parameters and samples
@@ -450,12 +452,10 @@ class GWRead(Read):
         config_file: str
             path to the configuration file
         """
-        import configparser
         from pesummary.gw.file.standard_names import standard_names
 
-        config = configparser.ConfigParser()
-        try:
-            config.read(config_file)
+        config = config_file
+        if not config.error:
             fixed_data = None
             if "engine" in config.sections():
                 fixed_data = {
@@ -484,8 +484,7 @@ class GWRead(Read):
                             for num in range(len(samples)):
                                 samples[num].append(float(fixed_value))
             return parameters, samples
-        except Exception:
-            return parameters, samples
+        return parameters, samples
 
     def _specific_parameter_samples(self, param):
         """Return the samples for a specific parameter

@@ -302,8 +302,18 @@ class _PlotGeneration(object):
         """
         try:
             function(*arguments)
+        except RuntimeError:
+            try:
+                from matplotlib import rcParams
+
+                rcParams['text.usetex'] = False
+                function(*arguments)
+                rcParams['text.usetex'] = True
+            except Exception as e:
+                logger.info(message.format(e))
         except Exception as e:
             logger.info(message.format(e))
+        finally:
             plt.close()
 
     def corner_plot(self, label):

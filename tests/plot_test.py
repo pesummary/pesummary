@@ -24,6 +24,8 @@ from pesummary.utils.utils import Array
 
 import numpy as np
 import matplotlib
+from matplotlib import rcParams
+rcParams["text.usetex"] = False
 
 import pytest
 

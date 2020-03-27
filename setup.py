@@ -126,6 +126,7 @@ setup(name='pesummary',
       package_data={
           'pesummary': [version_file.name],
           'pesummary.core': ['js/*.js', 'css/*.css'],
+          'pesummary.conf': ['matplotlib_rcparams.sty'],
           'pesummary.gw.plots': ['cylon.csv'],
       },
       entry_points={
@@ -140,6 +141,7 @@ setup(name='pesummary',
               'summarypipe=pesummary.cli.summarypipe:main',
               'summaryplots=pesummary.cli.summaryplots:main',
               'summarypublication=pesummary.cli.summarypublication:main',
+              'summaryrecreate=pesummary.cli.summaryrecreate:main',
               'summaryreview=pesummary.cli.summaryreview:main',
               'summaryversion=pesummary.cli.summaryversion:main']},
       classifiers=[

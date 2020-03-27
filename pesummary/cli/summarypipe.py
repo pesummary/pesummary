@@ -16,6 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.utils.utils import logger
+from pesummary.utils.decorators import open_config
 import argparse
 import shutil
 import os
@@ -251,6 +252,7 @@ class Base(object):
         print("\n\t$ {}\n".format(command))
 
     @staticmethod
+    @open_config(index=0)
     def load_config(path_to_config):
         """Load a configuration file with configparser
 
@@ -259,11 +261,7 @@ class Base(object):
         path_to_config: str
             path to the configuration file you wish to open
         """
-        import configparser
-
-        config = configparser.ConfigParser()
-        config.read(path_to_config)
-        return config
+        return path_to_config
 
 
 class LALInference(Base):

@@ -945,5 +945,15 @@ def iterator(length, desc="", tqdm=False, logger=None, name="PESummary"):
         return range(length)
 
 
+def _check_latex_install():
+    from matplotlib import rcParams
+    from distutils.spawn import find_executable
+
+    if find_executable("latex"):
+        rcParams["text.usetex"] = True
+    else:
+        rcParams["text.usetex"] = False
+
+
 setup_logger()
 logger = logging.getLogger('PESummary')

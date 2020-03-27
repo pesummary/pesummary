@@ -28,6 +28,7 @@ except ImportError:
 from pesummary.gw.file.formats.base_read import GWRead
 from pesummary.gw.file import conversions as con
 from pesummary.utils.utils import logger
+from pesummary.utils.decorators import open_config
 
 
 SAMPLER_KWARGS = {
@@ -282,6 +283,7 @@ class LALInference(GWRead):
             config_file, self._add_marginalized_parameters)
 
     @staticmethod
+    @open_config(index=2)
     def _add_fixed_parameters(parameters, samples, config_file):
         """Open a LALInference configuration file and add the fixed parameters
         to the list of parameters and samples
@@ -295,12 +297,10 @@ class LALInference(GWRead):
         config_file: str
             path to the configuration file
         """
-        import configparser
         from pesummary.gw.file.standard_names import standard_names
 
-        config = configparser.ConfigParser()
-        try:
-            config.read(config_file)
+        config = config_file
+        if not config.error:
             fixed_data = None
             if "engine" in config.sections():
                 fixed_data = {
@@ -329,10 +329,10 @@ class LALInference(GWRead):
                             for num in range(len(samples)):
                                 samples[num].append(float(fixed_value))
             return parameters, samples
-        except Exception:
-            return parameters, samples
+        return parameters, samples
 
     @staticmethod
+    @open_config(index=2)
     def _add_marginalized_parameters(parameters, samples, config_file):
         """Open a LALInference configuration file and add the marginalized
         parameters to the list of parameters and samples
@@ -346,12 +346,10 @@ class LALInference(GWRead):
         config_file: str
             path to the configuration file
         """
-        import configparser
         from pesummary.gw.file.standard_names import standard_names
 
-        config = configparser.ConfigParser()
-        try:
-            config.read(config_file)
+        config = config_file
+        if not config.error:
             fixed_data = None
             if "engine" in config.sections():
                 marg_par = {
@@ -404,8 +402,7 @@ class LALInference(GWRead):
                         for num, j in enumerate(samples):
                             samples[num].append(float(100.0))
             return parameters, samples
-        except Exception:
-            return parameters, samples
+        return parameters, samples
 
 
 def write_to_file(

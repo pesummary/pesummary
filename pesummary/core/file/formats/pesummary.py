@@ -239,6 +239,28 @@ class PESummary(Read):
             enumerate(self.labels)
         }
 
+    @staticmethod
+    def save_config_dictionary_to_file(config_dict, filename, outdir="./"):
+        """Save a dictionary containing the configuration settings to a file
+
+        Parameters
+        ----------
+        config_dict: dict
+            dictionary containing the configuration settings
+        filename: str
+            the name of the file you wish to write to
+        outdir: str, optional
+            path indicating where you would like to configuration file to be
+            saved. Default is current working directory
+        """
+        config = configparser.ConfigParser()
+        config.optionxform = str
+        for key in config_dict.keys():
+            config[key] = config_dict[key]
+
+        with open("%s/%s" % (outdir, filename), "w") as configfile:
+            config.write(configfile)
+
     def write_config_to_file(self, label, outdir="./"):
         """Write the config file stored as a dictionary to file
 
@@ -252,13 +274,10 @@ class PESummary(Read):
         """
         if label not in list(self.config.keys()):
             raise ValueError("The label %s does not exist." % label)
-        config_dict = self.config[label]
-        config = configparser.ConfigParser()
-        for key in config_dict.keys():
-            config[key] = config_dict[key]
-
-        with open("%s/%s_config.ini" % (outdir, label), "w") as configfile:
-            config.write(configfile)
+        self.save_config_dictionary_to_file(
+            self.config[label], outdir=outdir,
+            filename="%s_config.ini" % (label)
+        )
 
     def to_bilby(self):
         """Convert a PESummary metafile to a bilby results object

@@ -16,6 +16,7 @@ basic:
     - summarypublication --help
     - summaryclassification --help
     - summaryclean --help
+    - summaryrecreate --help
     - summaryreview --help
     - summarycombine --help
     - summarydetchar --help
@@ -32,6 +33,7 @@ python-3.6:
   stage: test
   image: python:3.6
   script:
+    - export USER=albert.einstein
     - pip install -r requirements.txt
     - pip install -r optional_requirements.txt
     - pip install bilby
@@ -50,6 +52,7 @@ python-3.7:
   stage: test
   image: python:3.7
   script:
+    - export USER=albert.einstein
     - pip install -r requirements.txt
     - pip install -r optional_requirements.txt
     - pip install bilby
