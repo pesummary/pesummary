@@ -1,12 +1,13 @@
-============================
-Reading a PESummary metafile
-============================
+===============================
+Reading in a pesummary metafile
+===============================
 
 Although the PESummary metafile can be read in with the core `JSON` or
 `h5py` packages, the recommended way of reading in a PESummary metafile is
-with the same `pesummary.core.file.read.read` or `pesummary.gw.file.read.read`
+with the same `pesummary.core.file.read.read` function. For details see
+
 functions that was used in the 
-`Reading result files <reading_a_result_file.html>`_ tutorial.
+`The read function <read.html>`_ tutorial.
 
 Identifying the label for a specific run
 ----------------------------------------
@@ -32,11 +33,10 @@ analysis, this can be done with the following:
 
     >>> print(data.samples_dict['EXP1'])
 
-This will return a `pesummary.utils.utils.SamplesDict` object. To see some of
-the functions and properties of this object see the
-`Reading result files <reading_a_result_file.html>`_ tutorial. Of course, you
-may choose to use `astropy` or `pandas` to read in your posterior samples. For
-details about this see below.
+This will return a `pesummary.utils.utils.SamplesDict` object. For details
+about the `SamplesDict` class see `SamplesDict class <SamplesDict.html>`_.
+Of course, you may choose to use `astropy` or `pandas` to read in your posterior
+samples. For details about this see below.
 
 Loading the configuration file for a specific run
 -------------------------------------------------
@@ -59,53 +59,6 @@ and you can save it to a file by running:
 
     >>> data.write_config_to_file("EXP1", outdir="./") 
 
-Loading the calibration envelope for a specific run
----------------------------------------------------
-
-If passed from the command line, the calibration envelope that was used during
-the analysis is also stored in the PESummary metafile. You can extract it for
-a specific run by running:
-
-.. code-block:: python
-
-    >>> calibration_data = data.priors["calibration"]["EXP1"]
-    >>> IFOs = list(calibration_data.keys())
-    >>> calibration_envelope = {
-    ...     i: np.array(
-    ...         [tuple(j) for j in calibration_data[i]], dtype=[
-    ...             ("Frequency", "f"),
-    ...             ("Median Mag", "f"),
-    ...             ("Phase (Rad)", "f"),
-    ...             ("-1 Sigma Mag", "f"),
-    ...             ("-1 Sigma Phase", "f"),
-    ...             ("+1 Sigma Mag", "f"),
-    ...             ("+1 Sigma Phase", "f")
-    ...         ]
-    ...     ) for i in IFOs
-    ... }
-
-
-Loading the psd for a specific run
-----------------------------------
-
-If passed from the command line, the psds that were used during the analysis
-is also stored in the PESummary metafile. You can extract it for a specific run
-by running:
-
-.. code-block:: python
-
-    >>> psd = data.psd["EXP1"]
-    >>> IFOs = list(psd.keys())
-    >>> psd_data = {
-    ...     i: np.array(
-    ...         [tuple(j) for j in psd[i]], dtype=[
-    ...             ("Frequency", "f"),
-    ...             ("Strain", "f")
-    ...         ]
-    ...     ) for i in IFOs
-    ... }
-
-
 Converting file format
 ----------------------
 
@@ -117,19 +70,6 @@ into either a `.dat`, a `bilby .json` or `lalinference .hdf5` or a
 
     >>> data.to_dat(label="EXP1", outdir="./")
     >>> bilby_objects = data.to_bilby()
-    >>> data.to_lalinference(outdir="./")
-    >>> data.to_lalinference(outdir="./", dat=True)
-
-
-Example script to extract all information from a PESummary metafile
--------------------------------------------------------------------
-
-An example python script showing how to extract information from the metafile
-is shown below:
-
-.. literalinclude:: ../../../examples/extract_information.py
-    :language: python
-    :linenos:
 
 Extract posterior samples using `astropy` or `pandas`
 -----------------------------------------------------
@@ -160,7 +100,7 @@ Of course, you do not have to use PESummary to load in the data from a
 PESummary metafile. Below we show how to extract the data using the core
 `JSON` and `h5py` python libraries:
 
-.. literalinclude:: ../../../examples/extract_information_without_pesummary.py
+.. literalinclude:: ../../../../examples/extract_information_without_pesummary.py
     :language: python
     :linenos:
 
@@ -168,10 +108,4 @@ PESummary metafile. Below we show how to extract the data using the core
 ---------------------------------------
 
 .. autoclass:: pesummary.core.file.formats.pesummary.PESummary
-    :members:
-
-`pesummary.gw.file.formats.pesummary`
--------------------------------------
-
-.. autoclass:: pesummary.gw.file.formats.pesummary.PESummary
     :members:

@@ -27,7 +27,7 @@ LIGO/Virgo samples and allows for the user to reproduce all outputs from the
 LIGO/Virgo Scientific collaboration.
 
 First Steps
------------
++++++++++++
 
 .. toctree::
     :maxdepth: 1
@@ -35,17 +35,15 @@ First Steps
     what_is_pesummary
     installation
     citing_pesummary
+    core/making_a_result_file
 
-Working with data
------------------
-
-Making a result file
-++++++++++++++++++++
+Configuration
++++++++++++++
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    data/making_a_result_file
+    conf/configuration
 
 Reading a result file
 +++++++++++++++++++++
@@ -53,29 +51,16 @@ Reading a result file
 .. toctree::
     :maxdepth: 1
 
-    data/reading_a_result_file
-    data/reading_the_metafile
-    data/conversion
-    data/latex_table
-    data/parameters
+    read
 
-The summary pages
-+++++++++++++++++
+Manipulating posterior samples
+++++++++++++++++++++++++++++++
 
 .. toctree::
     :maxdepth: 1
 
-    summarypages/corner
-    summarypages/config
-    summarypages/1d_histogram
-    summarypages/interactive
-    summarypages/classification
-    summarypages/comparison
-    summarypages/comparison_interactive
-    summarypages/publication
-    summarypages/notes
-    summarypages/downloads
-    summarypages/examples
+    core/Array
+    core/SamplesDict
 
 Customisation
 +++++++++++++
@@ -88,7 +73,26 @@ been mentioned and discussed in 'The summary pages' section above).
 .. toctree::
     :maxdepth: 1
 
-    custom/plots
+    core/custom_plots
+
+Base Summary pages
+++++++++++++++++++
+
+Below we show details about the `summarypages` that are built for the `core`
+module:
+
+.. toctree::
+    :maxdepth: 1
+
+    core/summarypages/corner
+    core/summarypages/config
+    core/summarypages/1d_histogram
+    core/summarypages/interactive
+    core/summarypages/comparison
+    core/summarypages/comparison_interactive
+    core/summarypages/notes
+    core/summarypages/downloads
+    core/summarypages/examples
 
 Executables
 +++++++++++
@@ -99,31 +103,57 @@ for details:
 .. toctree::
     :maxdepth: 1
 
-    executables/summaryclassification
-    executables/summaryclean
-    executables/summarycombine
-    executables/summarydetchar
-    executables/summarymodify
-    executables/summarypages
-    executables/summarypageslw
-    executables/summarypipe
-    executables/summarypublication
-    executables/summaryrecreate
-    executables/summaryreview
-    executables/summaryversion
+    cli/summaryclassification
+    cli/summaryclean
+    cli/summarycombine
+    cli/summarydetchar
+    cli/summarymodify
+    cli/summarypages
+    cli/summarypageslw
+    cli/summarypipe
+    cli/summarypublication
+    cli/summaryrecreate
+    cli/summaryreview
+    cli/summaryversion
 
 Tutorials
----------
++++++++++
 
 .. toctree::
     :maxdepth: 1
 
-    tutorials/GWTC1_plots
-    tutorials/public_pages
-    tutorials/make_your_own_page_from_metafile
-    tutorials/population_scatter_plot_GWTC-1
-    tutorials/latex
-    tutorials/interaction_with_ligo_skymap
+    tutorials
+
+Specific to Gravitational Waves
+-------------------------------
+
+Parameter definitions
++++++++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    gw/parameters
+
+Converting parameters
++++++++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    gw/Conversion
+
+GW specific summarypages
+++++++++++++++++++++++++
+
+Below we give details about the extra summary pages that are built when we use
+the `gw` module:
+
+.. toctree::
+    :maxdepth: 1
+
+    gw/summarypages/classification
+    gw/summarypages/publication
 
 Indices and tables
 ------------------

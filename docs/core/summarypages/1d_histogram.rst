@@ -23,7 +23,7 @@ If you choose to use the `--gw` module for your analysis and specify the
 represented by a bounded 1d KDE. These KDE plots will be bounded according to
 the following dictionary:
 
-.. literalinclude:: ../../pesummary/gw/plots/bounds.py
+.. literalinclude:: ../../../pesummary/gw/plots/bounds.py
    :language: python
    :lines: 19-65
    :linenos:

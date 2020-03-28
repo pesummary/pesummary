@@ -1,0 +1,17 @@
+probabilities.png filter=lfs diff=lfs merge=lfs -text
+scatter_plot.png filter=lfs diff=lfs merge=lfs -text
+1d_histogram.png filter=lfs diff=lfs merge=lfs -text
+autocorrelation.png filter=lfs diff=lfs merge=lfs -text
+classification_bar.png filter=lfs diff=lfs merge=lfs -text
+classification_scatter.png filter=lfs diff=lfs merge=lfs -text
+interactive_corner_source.html filter=lfs diff=lfs merge=lfs -text
+corner.mp4 filter=lfs diff=lfs merge=lfs -text
+comparison_1d_histogram.png filter=lfs diff=lfs merge=lfs -text
+comparison_box.png filter=lfs diff=lfs merge=lfs -text
+comparison_cdf.png filter=lfs diff=lfs merge=lfs -text
+contour_plot.png filter=lfs diff=lfs merge=lfs -text
+spin_disk.png filter=lfs diff=lfs merge=lfs -text
+violin_plot.png filter=lfs diff=lfs merge=lfs -text
+interactive_ridgeline_mass_1.html filter=lfs diff=lfs merge=lfs -text
+1d_kde_plot.png filter=lfs diff=lfs merge=lfs -text
+interactive_ridgeline.html filter=lfs diff=lfs merge=lfs -text
