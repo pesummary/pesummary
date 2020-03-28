@@ -142,12 +142,17 @@ class SamplesDict(dict):
     def number_of_samples(self):
         return len(self[self.parameters[0]])
 
-    def to_structured_array(self):
-        """Convert a SamplesDict object to a structured numpy array
+    def to_pandas(self):
+        """Convert a SamplesDict object to a pandas dataframe
         """
         from pandas import DataFrame
 
-        return DataFrame(self).to_records(index=False, column_dtypes=np.float)
+        return DataFrame(self)
+
+    def to_structured_array(self):
+        """Convert a SamplesDict object to a structured numpy array
+        """
+        return self.to_pandas().to_records(index=False, column_dtypes=np.float)
 
     def pop(self, parameter):
         """Delete a parameter from the SamplesDict
