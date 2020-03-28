@@ -18,6 +18,7 @@ from pesummary.core.file.formats.bilby import Bilby
 from pesummary.core.file.formats.default import Default
 from pesummary.core.file.formats.pesummary import PESummary, PESummaryDeprecated
 from pesummary.utils.utils import logger
+import os
 
 
 def is_bilby_hdf5_file(path):
@@ -241,6 +242,7 @@ def read(
     path: str
         path to results file
     """
+    path = os.path.expanduser(path)
     extension = Read.extension_from_path(path)
 
     if extension in ["hdf5", "h5", "hdf"]:
