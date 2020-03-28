@@ -69,10 +69,13 @@ style:
 documentation:
   stage: test
   image: python:3.6
+  before_script:
+    - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
   script:
     - pip install -r requirements.txt
     - pip install -r optional_requirements.txt
     - python setup.py install
+    - git lfs pull
     - cd docs
     - make clean
     - bash build_docs.sh

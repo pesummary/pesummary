@@ -14,5 +14,5 @@ to run the following:
 .. code-block:: console
 
     $ summarypages.py --webdir /home/albert.einstein/public_html/copy \
-                     --samples ./posterior_samples.json \
-                     --gw
+                      --samples ./posterior_samples.json \
+                      --gw

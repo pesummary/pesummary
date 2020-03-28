@@ -1,6 +1,6 @@
-========================
-GW parameter definitions
-========================
+============================
+The standard pesummary names
+============================
 
 Below we describe what each of the parameters are that are stored in the
 PESummary result file:
