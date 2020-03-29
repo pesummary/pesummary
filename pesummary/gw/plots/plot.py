@@ -47,6 +47,34 @@ except ImportError:
     LALSIMULATION = None
 
 
+def _return_bounds(param, samples, comparison=False):
+    """Return the bounds for a given param
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter you wish to get bounds for
+    samples: list/np.ndarray
+        array or list of array of posterior samples for param
+    comparison: Bool, optional
+        True if samples is a list of array's of posterior samples
+    """
+    xlow, xhigh = None, None
+    if param in default_bounds.keys():
+        bounds = default_bounds[param]
+        if "low" in bounds.keys():
+            xlow = bounds["low"]
+        if "high" in bounds.keys():
+            if isinstance(bounds["high"], str) and "mass_1" in bounds["high"]:
+                if comparison:
+                    xhigh = np.max([np.max(i) for i in samples])
+                else:
+                    xhigh = np.max(samples)
+            else:
+                xhigh = bounds["high"]
+    return xlow, xhigh
+
+
 def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
                        prior=None, weights=None):
     """Generate the 1d histogram plot for a given parameter for a given
@@ -69,55 +97,13 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
     weights: list
         list of weights for each sample
     """
-    logger.debug("Generating the 1d histogram plot for %s" % (param))
-    xlow = np.min(samples)
-    xhigh = np.max(samples)
-    if param in default_bounds.keys():
-        bounds = default_bounds[param]
-        if "low" in bounds.keys():
-            xlow = bounds["low"]
-        if "high" in bounds.keys():
-            if isinstance(bounds["high"], str) and "mass_1" in bounds["high"]:
-                xhigh = np.max(samples)
-            else:
-                xhigh = bounds["high"]
-    fig = plt.figure()
-    if np.ptp(samples) == 0:
-        plt.axvline(samples[0], color=conf.color)
-        xlims = plt.gca().get_xlim()
-    elif not kde:
-        plt.hist(samples, histtype="step", bins=50, color=conf.color,
-                 density=True, linewidth=1.75, weights=weights)
-        xlims = plt.gca().get_xlim()
-        if prior is not None:
-            plt.hist(prior, color=conf.prior_color, alpha=0.2, edgecolor="w",
-                     density=True, linewidth=1.75, histtype="bar", bins=50)
-    else:
-        x = kdeplot(
-            samples, color=conf.color, shade=True, alpha_shade=0.1,
-            linewidth=1.0, xlow=xlow, xhigh=xhigh
-        )
-        xlims = plt.gca().get_xlim()
-        if prior is not None:
-            kdeplot(prior, color=conf.prior_color, shade=True, alpha_shade=0.1,
-                    linewidth=1.0, xlow=xlow, xhigh=xhigh)
-    plt.xlabel(latex_label)
-    plt.ylabel("Probability Density")
-    percentile = samples.confidence_interval([5, 95])
-    if inj_value is not None:
-        plt.axvline(inj_value, color=conf.injection_color, linestyle='-',
-                    linewidth=2.5)
-    plt.axvline(percentile[0], color=conf.color, linestyle='--', linewidth=1.75)
-    plt.axvline(percentile[1], color=conf.color, linestyle='--', linewidth=1.75)
-    median = samples.average("median")
-    upper = np.round(percentile[1] - median, 2)
-    lower = np.round(median - percentile[0], 2)
-    median = np.round(median, 2)
-    plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
-    plt.grid(b=True)
-    plt.xlim(xlims)
-    plt.tight_layout()
-    return fig
+    from pesummary.core.plots.plot import _1d_histogram_plot
+
+    xlow, xhigh = _return_bounds(param, samples)
+    return _1d_histogram_plot(
+        param, samples, latex_label, inj_value=inj_value, kde=kde, prior=prior,
+        weights=weights, xlow=xlow, xhigh=xhigh
+    )
 
 
 def _1d_comparison_histogram_plot(param, samples, colors,
@@ -145,52 +131,13 @@ def _1d_comparison_histogram_plot(param, samples, colors,
     linestyles: list
         list of linestyles for each set of samples
     """
-    logger.debug("Generating the 1d comparison histogram plot for %s" % (param))
-    xlow = None
-    xhigh = None
-    if param in default_bounds.keys():
-        bounds = default_bounds[param]
-        if "low" in bounds.keys():
-            xlow = bounds["low"]
-        if "high" in bounds.keys():
-            if isinstance(bounds["high"], str) and "mass_1" in bounds["high"]:
-                xhigh = np.max([np.max(i) for i in samples])
-            else:
-                xhigh = bounds["high"]
-    if linestyles is None:
-        linestyles = ["-"] * len(samples)
-    fig = plt.figure(figsize=(8, 6))
-    handles = []
-    for num, i in enumerate(samples):
-        if np.ptp(i) == 0:
-            plt.axvline(i[0], color=colors[num], label=labels[num])
-        elif not kde:
-            plt.hist(i, histtype="step", bins=50, color=colors[num],
-                     label=labels[num], linewidth=2.5, density=True,
-                     linestyle=linestyles[num])
-        else:
-            kdeplot(i, color=colors[num], shade=True, alpha_shade=0.05,
-                    linewidth=1.5, xlow=xlow, xhigh=xhigh, label=labels[num])
-        plt.axvline(x=np.percentile(i, 95), color=colors[num], linestyle='--',
-                    linewidth=2.5)
-        plt.axvline(x=np.percentile(i, 5), color=colors[num], linestyle='--',
-                    linewidth=2.5)
-        handles.append(
-            mlines.Line2D([], [], color=colors[num], label=labels[num])
-        )
-    ncols = number_of_columns_for_legend(labels)
-    legend = plt.legend(
-        handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-        handlelength=3, ncol=ncols, mode="expand", borderaxespad=0.
+    from pesummary.core.plots.plot import _1d_comparison_histogram_plot
+
+    xlow, xhigh = _return_bounds(param, samples, comparison=True)
+    return _1d_comparison_histogram_plot(
+        param, samples, colors, latex_label, labels, kde=kde,
+        linestyles=linestyles, xlow=xlow, xhigh=xhigh
     )
-    for num, legobj in enumerate(legend.legendHandles):
-        legobj.set_linewidth(1.75)
-        legobj.set_linestyle(linestyles[num])
-    plt.xlabel(latex_label)
-    plt.ylabel("Probability Density")
-    plt.grid(b=True)
-    plt.tight_layout()
-    return fig
 
 
 def _make_corner_plot(samples, latex_labels, **kwargs):
@@ -209,48 +156,12 @@ def _make_corner_plot(samples, latex_labels, **kwargs):
     latex_labels: dict
         dictionary of latex labels for each parameter
     """
-    logger.debug("Generating the corner plot")
-    # set the default kwargs
-    default_kwargs = dict(
-        bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
-        title_kwargs=dict(fontsize=16), color='#0072C1',
-        truth_color='tab:orange', quantiles=[0.16, 0.84],
-        levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
-        plot_density=False, plot_datapoints=True, fill_contours=True,
-        max_n_ticks=3)
-    parameters = list(samples.keys())
-    corner_parameters = [
-        "luminosity_distance", "dec", "a_2", "a_1", "geocent_time", "phi_jl",
-        "psi", "ra", "phase", "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
-        "tilt_1", "chi_p", "chirp_mass", "mass_ratio", "symmetric_mass_ratio",
-        "total_mass", "chi_eff", "redshift", "mass_1_source", "mass_2_source",
-        "total_mass_source", "chirp_mass_source", "lambda_1", "lambda_2",
-        "delta_lambda", "lambda_tilde"]
-    included_parameters = [i for i in parameters if i in corner_parameters]
-    xs = np.zeros([len(included_parameters), len(samples[parameters[0]])])
-    for num, i in enumerate(included_parameters):
-        xs[num] = samples[i]
-    default_kwargs['range'] = [1.0] * len(included_parameters)
-    default_kwargs["labels"] = [latex_labels[i] for i in included_parameters]
-    figure = corner.corner(xs.T, **default_kwargs)
-    # grab the axes of the subplots
-    axes = figure.get_axes()
-    axes_of_interest = axes[:2]
-    location = []
-    for i in axes_of_interest:
-        extent = i.get_window_extent().transformed(
-            figure.dpi_scale_trans.inverted()
-        )
-        location.append([extent.x0 * figure.dpi, extent.y0 * figure.dpi])
-    width, height = extent.width, extent.height
-    width *= figure.dpi
-    height *= figure.dpi
-    seperation = abs(location[0][0] - location[1][0]) - width
-    data = {
-        "width": width, "height": height, "seperation": seperation,
-        "x0": location[0][0], "y0": location[0][0]
-    }
-    return figure, included_parameters, data
+    from pesummary.core.plots.plot import _make_corner_plot
+
+    return _make_corner_plot(
+        samples, latex_labels, corner_parameters=conf.gw_corner_parameters,
+        **kwargs
+    )
 
 
 def _make_source_corner_plot(samples, latex_labels, **kwargs):
@@ -269,25 +180,12 @@ def _make_source_corner_plot(samples, latex_labels, **kwargs):
     latex_labels: dict
         dictionary of latex labels for each parameter
     """
-    default_kwargs = dict(
-        bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
-        title_kwargs=dict(fontsize=16), color='#0072C1',
-        truth_color='tab:orange', quantiles=[0.16, 0.84],
-        levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
-        plot_density=False, plot_datapoints=True, fill_contours=True,
-        max_n_ticks=3)
-    parameters = list(samples.keys())
-    corner_parameters = [
-        "luminosity_distance", "mass_1_source", "mass_2_source",
-        "total_mass_source", "chirp_mass_source", "redshift"]
-    source_parameters = [i for i in parameters if i in corner_parameters]
-    xs = np.zeros([len(source_parameters), len(samples[parameters[0]])])
-    for num, i in enumerate(source_parameters):
-        xs[num] = samples[i]
-    default_kwargs['range'] = [1.0] * len(source_parameters)
-    default_kwargs["labels"] = [latex_labels[i] for i in source_parameters]
-    figure = corner.corner(xs.T, **default_kwargs)
-    return figure
+    from pesummary.core.plots.plot import _make_corner_plot
+
+    return _make_corner_plot(
+        samples, latex_labels,
+        corner_parameters=conf.gw_source_frame_corner_parameters, **kwargs
+    )[0]
 
 
 def _make_extrinsic_corner_plot(samples, latex_labels, **kwargs):
@@ -306,23 +204,12 @@ def _make_extrinsic_corner_plot(samples, latex_labels, **kwargs):
     latex_labels: dict
         dictionary of latex labels for each parameter
     """
-    default_kwargs = dict(
-        bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
-        title_kwargs=dict(fontsize=16), color='#0072C1',
-        truth_color='tab:orange', quantiles=[0.16, 0.84],
-        levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
-        plot_density=False, plot_datapoints=True, fill_contours=True,
-        max_n_ticks=3)
-    parameters = list(samples.keys())
-    corner_parameters = ["luminosity_distance", "psi", "ra", "dec"]
-    extrinsic_parameters = [i for i in parameters if i in corner_parameters]
-    xs = np.zeros([len(extrinsic_parameters), len(samples[parameters[0]])])
-    for num, i in enumerate(extrinsic_parameters):
-        xs[num] = samples[i]
-    default_kwargs['range'] = [1.0] * len(extrinsic_parameters)
-    default_kwargs["labels"] = [latex_labels[i] for i in extrinsic_parameters]
-    figure = corner.corner(xs.T, **default_kwargs)
-    return figure
+    from pesummary.core.plots.plot import _make_corner_plot
+
+    return _make_corner_plot(
+        samples, latex_labels,
+        corner_parameters=conf.gw_extrinsic_corner_parameters, **kwargs
+    )[0]
 
 
 def __antenna_response(name, ra, dec, psi, time_gps):

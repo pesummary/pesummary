@@ -56,9 +56,6 @@ class Bounded_1d_kde(kde):
         """Return an estimate of the density evaluated at the given
         points
         """
-        pts = np.atleast_1d(pts)
-        assert pts.ndim == 1, 'points must be one-dimensional'
-
         x = pts.T
         pdf = super(Bounded_1d_kde, self).evaluate(pts.T)
         if self.xlow is not None:

@@ -306,29 +306,29 @@ class LALInference(GWRead):
                 fixed_data = {
                     key.split("fix-")[1]: item for key, item in
                     config.items("engine") if "fix" in key}
-            for i in fixed_data.keys():
-                fixed_parameter = i
-                fixed_value = fixed_data[i]
-                try:
-                    param = standard_names[fixed_parameter]
-                    if param in parameters:
-                        pass
-                    else:
-                        parameters.append(param)
-                        for num in range(len(samples)):
-                            samples[num].append(float(fixed_value))
-                except Exception:
-                    if fixed_parameter == "logdistance":
-                        if "luminosity_distance" not in parameters:
-                            parameters.append(standard_names["distance"])
+            if fixed_data is not None:
+                for i in fixed_data.keys():
+                    fixed_parameter = i
+                    fixed_value = fixed_data[i]
+                    try:
+                        param = standard_names[fixed_parameter]
+                        if param in parameters:
+                            pass
+                        else:
+                            parameters.append(param)
                             for num in range(len(samples)):
                                 samples[num].append(float(fixed_value))
-                    if fixed_parameter == "costheta_jn":
-                        if "theta_jn" not in parameters:
-                            parameters.append(standard_names["theta_jn"])
-                            for num in range(len(samples)):
-                                samples[num].append(float(fixed_value))
-            return parameters, samples
+                    except Exception:
+                        if fixed_parameter == "logdistance":
+                            if "luminosity_distance" not in parameters:
+                                parameters.append(standard_names["distance"])
+                                for num in range(len(samples)):
+                                    samples[num].append(float(fixed_value))
+                        if fixed_parameter == "costheta_jn":
+                            if "theta_jn" not in parameters:
+                                parameters.append(standard_names["theta_jn"])
+                                for num in range(len(samples)):
+                                    samples[num].append(float(fixed_value))
         return parameters, samples
 
     @staticmethod
