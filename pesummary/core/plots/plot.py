@@ -177,7 +177,7 @@ def _1d_cdf_comparison_plot(
 
 
 def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
-                       prior=None, weights=None):
+                       prior=None, weights=None, xlow=None, xhigh=None):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
 
@@ -211,15 +211,15 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
             plt.hist(prior, color=conf.prior_color, alpha=0.2, edgecolor="w",
                      density=True, linewidth=1.75, histtype="bar", bins=50)
     else:
-        x = kdeplot(
-            samples, color=conf.color, shade=True, alpha_shade=0.1,
-            clip=[samples.minimum, samples.maximum], linewidth=1.0,
-            weights=weights
-        )
+        kwargs = {"shade": True, "alpha_shade": 0.1, "linewidth": 1.0}
+        if xlow is not None or xhigh is not None:
+            kwargs.update({"xlow": xlow, "xhigh": xhigh})
+        else:
+            kwargs.update({"clip": [samples.minimum, samples.maximum]})
+        x = kdeplot(samples, color=conf.color, **kwargs)
         xlims = plt.gca().get_xlim()
         if prior is not None:
-            kdeplot(prior, color=conf.prior_color, shade=True, alpha_shade=0.1,
-                    clip=[prior.minimum, prior.maximum], linewidth=1.0)
+            kdeplot(prior, color=conf.prior_color, **kwargs)
     plt.xlabel(latex_label)
     plt.ylabel("Probability Density")
     percentile = samples.confidence_interval([5, 95])
@@ -239,9 +239,10 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
     return fig
 
 
-def _1d_comparison_histogram_plot(param, samples, colors,
-                                  latex_label, labels, kde=False,
-                                  linestyles=None):
+def _1d_comparison_histogram_plot(
+    param, samples, colors, latex_label, labels, kde=False, linestyles=None,
+    xlow=None, xhigh=None
+):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
 
@@ -277,9 +278,15 @@ def _1d_comparison_histogram_plot(param, samples, colors,
                      label=labels[num], linewidth=2.5, density=True,
                      linestyle=linestyles[num])
         else:
-            kdeplot(i, color=colors[num], shade=True, alpha_shade=0.05,
-                    clip=[np.min(i), np.max(i)], linewidth=1.5,
-                    label=labels[num])
+            kwargs = {
+                "shade": True, "alpha_shade": 0.05, "linewidth": 1.5,
+                "label": labels[num]
+            }
+            if xlow is not None or xhigh is not None:
+                kwargs.update({"xlow": xlow, "xhigh": xhigh})
+            else:
+                kwargs.update({"clip": [np.min(i), np.max(i)]})
+            kdeplot(i, color=colors[num], **kwargs)
         plt.axvline(x=np.percentile(i, 95), color=colors[num], linestyle='--',
                     linewidth=2.5)
         plt.axvline(x=np.percentile(i, 5), color=colors[num], linestyle='--',
@@ -336,7 +343,7 @@ def _comparison_box_plot(param, samples, colors, latex_label, labels):
     return fig
 
 
-def _make_corner_plot(samples, latex_labels, **kwargs):
+def _make_corner_plot(samples, latex_labels, corner_parameters=None, **kwargs):
     """Generate the corner plots for a given approximant
 
     Parameters
@@ -354,19 +361,17 @@ def _make_corner_plot(samples, latex_labels, **kwargs):
     """
     logger.debug("Generating the corner plot")
     # set the default kwargs
-    default_kwargs = dict(
-        bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
-        title_kwargs=dict(fontsize=16), color='#0072C1',
-        truth_color='tab:orange', quantiles=[0.16, 0.84],
-        levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
-        plot_density=False, plot_datapoints=True, fill_contours=True,
-        max_n_ticks=3)
+    default_kwargs = conf.corner_kwargs
     parameters = list(samples.keys())
-    xs = np.zeros([len(parameters), len(samples[parameters[0]])])
-    for num, i in enumerate(parameters):
+    if corner_parameters is not None:
+        included_parameters = [i for i in parameters if i in corner_parameters]
+    else:
+        included_parameters = parameters
+    xs = np.zeros([len(included_parameters), len(samples[parameters[0]])])
+    for num, i in enumerate(included_parameters):
         xs[num] = samples[i]
-    default_kwargs['range'] = [1.0] * len(parameters)
-    default_kwargs["labels"] = [latex_labels[i] for i in parameters]
+    default_kwargs['range'] = [1.0] * len(included_parameters)
+    default_kwargs["labels"] = [latex_labels[i] for i in included_parameters]
     figure = corner.corner(xs.T, **default_kwargs)
     # grab the axes of the subplots
     axes = figure.get_axes()
@@ -380,9 +385,12 @@ def _make_corner_plot(samples, latex_labels, **kwargs):
     width, height = extent.width, extent.height
     width *= figure.dpi
     height *= figure.dpi
-    seperation = abs(location[0][0] - location[1][0]) - width
+    try:
+        seperation = abs(location[0][0] - location[1][0]) - width
+    except IndexError:
+        seperation = None
     data = {
         "width": width, "height": height, "seperation": seperation,
         "x0": location[0][0], "y0": location[0][0]
     }
-    return figure, parameters, data
+    return figure, included_parameters, data

@@ -68,23 +68,26 @@ class Default(Read):
         """Grab the data stored in a .json file
         """
         parameters, samples = Read._grab_params_and_samples_from_json_file(
-            path)
+            path
+        )
         injection = {i: float("nan") for i in parameters}
         return {
             "parameters": parameters, "samples": samples, "injection": injection
         }
 
     @staticmethod
-    def _grab_data_from_hdf5_file(path):
+    def _grab_data_from_hdf5_file(path, cls=None):
         """Grab the data stored in an hdf5 file
         """
+        if cls is None:
+            cls = Default
         try:
-            return Default._grab_data_with_deepdish(path)
+            return getattr(cls, "_grab_data_with_deepdish")(path)
         except Exception:
-            return Default._grab_data_with_h5py(path)
+            return getattr(cls, "_grab_data_with_h5py")(path)
 
     @staticmethod
-    def _grab_data_with_deepdish(path):
+    def _grab_data_with_deepdish(path, remove_params=None):
         """Grab the data stored in a h5py file with `deepdish`.
         """
         import deepdish
@@ -96,6 +99,10 @@ class Default(Read):
         path_to_results = path_to_results[0]
         reduced_f, = Read.load_recursively(path_to_results, f)
         parameters = [i for i in reduced_f.keys()]
+        if remove_params is not None:
+            for param in remove_params:
+                if param in parameters:
+                    parameters.remove(param)
         data = np.zeros([len(reduced_f[parameters[0]]), len(parameters)])
         for num, par in enumerate(parameters):
             for key, i in enumerate(reduced_f[par]):

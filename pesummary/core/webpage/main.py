@@ -15,6 +15,7 @@
 
 import os
 import sys
+import uuid
 from glob import glob
 from operator import itemgetter
 from pathlib import Path
@@ -647,9 +648,20 @@ class _WebpageGeneration(object):
                 background_colour=self.colors[num]
             )
             html_file.make_banner(approximant=i, key="corner")
+            popular_options = self.popular_options
+            if len(self.default_corner_params()):
+                params = self.default_corner_params()
+                included_parameters = [
+                    i for i in list(self.samples[i].keys()) if i in params
+                ]
+                popular_options += [{
+                    "all": ", ".join(included_parameters)
+                }]
+            else:
+                included_params = self.samples[i].keys()
             html_file.make_search_bar(
                 sidebar=self.samples[i].keys(),
-                popular_options=self.popular_options, label=i
+                popular_options=popular_options, label=i
             )
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
@@ -724,25 +736,41 @@ class _WebpageGeneration(object):
         )
         html_file.make_banner(approximant="Comparison", key="Comparison")
         path = self.image_path["other"]
+        if len(self.default_comparison_homepage_plots()):
+            contents = self.default_comparison_homepage_plots()
+            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
+            html_file.make_table_of_images(contents=contents, unique_id=unique_id)
+            images = [y for x in contents for y in x]
+            html_file.make_modal_carousel(images=images, unique_id=unique_id)
         if self.custom_plotting:
+            from glob import glob
+
             custom_plots = glob(
-                "{}/plots/combined_custom_plotting_*".format(self.webdir)
+                os.path.join(
+                    self.webdir, "plots", "combined_custom_plotting_*"
+                )
             )
             for num, i in enumerate(custom_plots):
                 custom_plots[num] = path + i.split("/")[-1]
             image_contents = [
-                custom_plots[i:4 + 1] for i in range(0, len(custom_plots), 4)
+                custom_plots[i:4 + i] for i in range(0, len(custom_plots), 4)
             ]
-            html_file.make_table_of_images(contents=image_contents)
+            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
+            html_file.make_table_of_images(
+                contents=image_contents, unique_id=unique_id
+            )
             images = [y for x in image_contents for y in x]
-            html_file.make_modal_carousel(images=images)
+            html_file.make_modal_carousel(images=images, unique_id=unique_id)
         path = self.image_path["other"]
         if self.comparison_stats is not None:
             rows = range(len(self.labels))
-            style = (
-                "margin-top:0em; margin-bottom:{}; background-color:#FFFFFF; "
+            base = (
+                "margin-top:{}em; margin-bottom:{}em; background-color:#FFFFFF; "
                 "box-shadow: 0 0 5px grey;"
             )
+            style_ks = base.format(5, 1)
+            style_js = base.format(0, 5)
+
             table_contents = {
                 i: [
                     [self.labels[j]] + self.comparison_stats[i][0][j] for j in
@@ -751,8 +779,7 @@ class _WebpageGeneration(object):
             }
             html_file.make_table(
                 headings=[" "] + self.labels, contents=table_contents,
-                heading_span=1, accordian_header="KS test total",
-                style=style.format("1em")
+                heading_span=1, accordian_header="KS test total", style=style_ks
             )
             table_contents = {
                 i: [
@@ -762,18 +789,17 @@ class _WebpageGeneration(object):
             }
             html_file.make_table(
                 headings=[" "] + self.labels, contents=table_contents,
-                heading_span=1, accordian_header="JS divergence test total",
-                style=style.format("5em")
+                heading_span=1, accordian_header="JS test total", style=style_js
             )
         html_file.make_footer(user=self.user, rundir=self.webdir)
-        for i in self.same_parameters:
+
+        for num, i in enumerate(self.same_parameters):
             html_file = self.setup_page(
                 "Comparison_{}".format(i), self.navbar["comparison"],
                 title="Comparison PDF for {}".format(i),
                 approximant="Comparison"
             )
             html_file.make_banner(approximant="Comparison", key="Comparison")
-
             path = self.image_path["other"]
             contents = [
                 [path + "combined_1d_posterior_{}.png".format(i)],
@@ -787,20 +813,21 @@ class _WebpageGeneration(object):
             )
             if self.comparison_stats is not None:
                 table_contents = [
-                    [self.labels[j]] + self.comparison_stats[i][0][j] for j in rows
+                    [self.labels[j]] + self.comparison_stats[i][0][j]
+                    for j in rows
                 ]
                 html_file.make_table(
                     headings=[" "] + self.labels, contents=table_contents,
-                    heading_span=1, accordian_header="KS test",
-                    style=style.format("1em")
+                    heading_span=1, accordian_header="KS test", style=style_ks
                 )
                 table_contents = [
-                    [self.labels[j]] + self.comparison_stats[i][1][j] for j in rows
+                    [self.labels[j]] + self.comparison_stats[i][1][j]
+                    for j in rows
                 ]
                 html_file.make_table(
                     headings=[" "] + self.labels, contents=table_contents,
                     heading_span=1, accordian_header="JS divergence test",
-                    style=style.format("1em")
+                    style=style_js
                 )
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
@@ -1126,32 +1153,49 @@ class _WebpageGeneration(object):
             accordian=False, style=style.format("1em", "1em")
         )
         for num, i in enumerate(self.labels):
-            html_file.add_content(
-                "<div class='banner', style='margin-left:-4em'>{}</div>".format(i)
+            table_contents = self._make_entry_in_downloads_table(
+                html_file, i, num, base_string
             )
-            table_contents = [
-                [
-                    base_string.format(
-                        "Dat file containing posterior samples",
-                        self.results_path["other"] + "%s_pesummary.dat" % (i)
-                    )
-                ]
-            ]
-            if self.config is not None and self.config[num] is not None:
-                table_contents.append(
-                    [
-                        base_string.format(
-                            "Config file used for this analysis",
-                            self.config_path["other"] + "%s_config.ini" % (i)
-                        )
-                    ]
-                )
             html_file.make_table(
                 headings=headings, contents=table_contents, accordian=False
             )
         html_file.end_container()
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
+
+    def _make_entry_in_downloads_table(self, html_file, label, num, base_string):
+        """Make a label specific entry into the downloads table
+
+        Parameters
+        ----------
+        label: str
+            the label you wish to add to the downloads table
+        base_string: str
+            the download string
+        """
+        html_file.add_content(
+            "<div class='banner', style='margin-left:-4em'>{}</div>".format(
+                label
+            )
+        )
+        table_contents = [
+            [
+                base_string.format(
+                    "Dat file containing posterior samples",
+                    self.results_path["other"] + "%s_pesummary.dat" % (label)
+                )
+            ]
+        ]
+        if self.config is not None and self.config[num] is not None:
+            table_contents.append(
+                [
+                    base_string.format(
+                        "Config file used for this analysis",
+                        self.config_path["other"] + "%s_config.ini" % (label)
+                    )
+                ]
+            )
+        return table_contents
 
     def make_notes_page(self):
         """Wrapper function for _make_notes_page
@@ -1233,6 +1277,17 @@ class _WebpageGeneration(object):
 
     def default_popular_options(self):
         """Return a list of default options
+        """
+        return []
+
+    def default_comparison_homepage_plots(self):
+        """Return a list of default plots for the comparison homepage
+        """
+        return []
+
+    def default_corner_params(self):
+        """Return a list of default corner parameters used by the corner
+        plotting function
         """
         return []
 

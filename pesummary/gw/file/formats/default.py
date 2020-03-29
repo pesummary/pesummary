@@ -57,8 +57,8 @@ class Default(GWRead):
     def _grab_data_from_dat_file(path):
         """Grab the data stored in a .dat file
         """
-        parameters, samples = GWRead._grab_params_and_samples_from_dat_file(
-            path)
+        data = CoreDefault._grab_data_from_dat_file(path)
+        parameters, samples = data["parameters"], data["samples"]
         parameters = GWRead._check_definition_of_inclination(parameters)
         condition1 = "luminosity_distance" not in parameters
         condition2 = "logdistance" in parameters
@@ -76,50 +76,21 @@ class Default(GWRead):
     def _grab_data_from_json_file(path):
         """Grab the data stored in a .json file
         """
-        parameters, samples = GWRead._grab_params_and_samples_from_json_file(
-            path)
-        injection = {i: float("nan") for i in parameters}
-        return {
-            "parameters": parameters, "samples": samples, "injection": injection
-        }
+        return CoreDefault._grab_data_from_json_file(path)
 
     @staticmethod
     def _grab_data_from_hdf5_file(path):
         """Grab the data stored in an hdf5 file
         """
-        try:
-            return Default._grab_data_with_deepdish(path)
-        except Exception:
-            return Default._grab_data_with_h5py(path)
+        return CoreDefault._grab_data_from_hdf5_file(path, cls=Default)
 
     @staticmethod
     def _grab_data_with_deepdish(path):
         """Grab the data stored in a h5py file with `deepdish`.
         """
-        import deepdish
-
-        f = deepdish.io.load(path)
-        path_to_results, = GWRead.paths_to_key("posterior", f)
-        if path_to_results[0] == []:
-            path_to_results, = GWRead.paths_to_key("posterior_samples", f)
-        path_to_results = path_to_results[0]
-        reduced_f, = GWRead.load_recursively(path_to_results, f)
-        parameters = [i for i in reduced_f.keys()]
-        if "waveform_approximant" in parameters:
-            approx = reduced_f["waveform_approximant"][0]
-            parameters.remove("waveform_approximant")
-        data = np.zeros([len(reduced_f[parameters[0]]), len(parameters)])
-        for num, par in enumerate(parameters):
-            for key, i in enumerate(reduced_f[par]):
-                data[key][num] = float(np.real(i))
-        data = data.tolist()
-        for num, par in enumerate(parameters):
-            if par == "logL":
-                parameters[num] = "log_likelihood"
-        injection = {i: float("nan") for i in parameters}
-        return {
-            "parameters": parameters, "samples": data, "injection": injection
-        }
+        return CoreDefault._grab_data_with_deepdish(
+            path, remove_params=["waveform_approximant"]
+        )
 
     @staticmethod
     def _grab_data_with_h5py(path):

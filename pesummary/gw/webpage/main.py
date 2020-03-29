@@ -155,48 +155,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.psd_path = {"other": os.path.join("..", "psds")}
         self.calibration_path = {"other": os.path.join("..", "calibration")}
 
-    def categorize_parameters(self, parameters):
-        """Categorize the parameters into common headings
-
-        Parameters
-        ----------
-        parameters: list
-            list of parameters that you would like to sort
-        """
-        params = []
-        for heading, category in self.categories.items():
-            if any(
-                any(j in i for j in category["accept"]) for i in parameters
-            ):
-                cond = self._condition(category["accept"], category["reject"])
-                params.append(
-                    [heading, self._partition(cond, parameters)]
-                )
-        used_headings = [i[0] for i in params]
-        other_index = \
-            used_headings.index("others") if "others" in used_headings else None
-        other_params = []
-        for pp in parameters:
-            if not any(pp in j[1] for j in params):
-                if other_index is not None:
-                    params[other_index][1].append(pp)
-                else:
-                    other_params.append(pp)
-        if other_index is None:
-            params.append(["others", other_params])
-        return params
-
     def make_navbar_for_homepage(self):
         """Make a navbar for the homepage
         """
-        links = [
-            "home", ["Result Pages", self._result_page_links()], "Logging",
-            "Version"
-        ]
-        if len(self.samples) > 1:
-            links[1][1] += ["Comparison"]
-        if self.publication:
-            links.insert(2, "Publication")
+        links = super(_WebpageGeneration, self).make_navbar_for_homepage()
         if self.gwdata is not None:
             links.append(["Detchar", [i for i in self.gwdata.keys()]])
         if self.notes is not None:
@@ -206,60 +168,22 @@ class _WebpageGeneration(_CoreWebpageGeneration):
     def make_navbar_for_result_page(self):
         """Make a navbar for the result page homepage
         """
-        links = {
-            i: ["1d Histograms", [{"Custom": i}, {"All": i}]] for i in self.labels
-        }
-        for num, label in enumerate(self.labels):
-            for j in self.categorize_parameters(self.samples[label].keys()):
-                j = [j[0], [{k: label} for k in j[1]]]
-                links[label].append(j)
-
-        final_links = {
-            i: [
-                "home", ["Result Pages", self._result_page_links()],
-                {"Corner": i}, {"Config": i}, links[i]
-            ] for i in self.labels
-        }
-        if len(self.samples) > 1:
-            for i in self.labels:
-                final_links[i][1][1] += ["Comparison"]
+        links = super(_WebpageGeneration, self).make_navbar_for_result_page()
         for num, label in enumerate(self.labels):
             if self.pepredicates_probs[label] is not None:
-                final_links[label].append({"Classification": label})
-        if self.make_interactive:
-            for label in self.labels:
-                final_links[label].append(
-                    ["Interactive", [{"Interactive_Corner": label}]]
-                )
-        return final_links
+                links[label].append({"Classification": label})
+        return links
 
     def generate_webpages(self):
         """Generate all webpages for all result files passed
         """
-        if self.add_to_existing:
-            self.add_existing_data()
-        self.make_home_pages()
-        self.make_1d_histogram_pages()
-        self.make_corner_pages()
-        self.make_config_pages()
-        if self.make_comparison:
-            self.make_comparison_pages()
-        if self.make_interactive:
-            self.make_interactive_pages()
+        super(_WebpageGeneration, self).generate_webpages()
         if self.publication:
             self.make_publication_pages()
         if self.gwdata is not None:
             self.make_detector_pages()
         if all(val is not None for key, val in self.pepredicates_probs.items()):
             self.make_classification_pages()
-        self.make_error_page()
-        self.make_version_page()
-        self.make_logging_page()
-        if self.notes is not None:
-            self.make_notes_page()
-        self.make_downloads_page()
-        self.make_about_page()
-        self.generate_specific_javascript()
 
     def _make_home_pages(self, pages):
         """Make the home pages
@@ -424,188 +348,6 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             )
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
-
-    def _make_corner_pages(self, pages):
-        """Make the corner pages
-
-        Parameters
-        ----------
-        pages: list
-            list of pages that you wish to create
-        """
-        for num, i in enumerate(self.labels):
-            html_file = self.setup_page(
-                "{}_Corner".format(i), self.navbar["result_page"][i], i,
-                title="{} Corner Plots".format(i), approximant=i,
-                background_colour=self.colors[num]
-            )
-            html_file.make_banner(approximant=i, key="corner")
-            params = [
-                "luminosity_distance", "dec", "a_2", "phase",
-                "a_1", "geocent_time", "phi_jl", "psi", "ra",
-                "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
-                "tilt_1", "chi_p", "chirp_mass", "mass_ratio",
-                "symmetric_mass_ratio", "total_mass", "chi_eff",
-                "redshift", "mass_1_source", "mass_2_source",
-                "total_mass_source", "chirp_mass_source",
-                "lambda_1", "lambda_2", "delta_lambda",
-                "lambda_tilde"
-            ]
-            included_parameters = [
-                i for i in list(self.samples[i].keys()) if i in params
-            ]
-            html_file.make_search_bar(
-                sidebar=included_parameters,
-                popular_options=self.popular_options + [{
-                    "all": ", ".join(included_parameters)
-                }], label=i
-            )
-            html_file.make_footer(user=self.user, rundir=self.webdir)
-            html_file.close()
-
-    def _make_comparison_pages(self, pages):
-        """Make the comparison pages
-
-        Parameters
-        ----------
-        pages: list
-            list of pages that you wish to create
-        """
-        html_file = self.setup_page(
-            "Comparison", self.navbar["comparison"],
-            title="Comparison Summary Page", approximant="Comparison"
-        )
-        html_file.make_banner(approximant="Comparison", key="Comparison")
-        path = self.image_path["other"]
-        base = os.path.join(path, "{}.png")
-        contents = [
-            [base.format("combined_skymap"), base.format("compare_waveforms")]
-        ]
-        unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
-        html_file.make_table_of_images(contents=contents, unique_id=unique_id)
-        images = [y for x in contents for y in x]
-        html_file.make_modal_carousel(images=images, unique_id=unique_id)
-        if self.custom_plotting:
-            from glob import glob
-
-            custom_plots = glob(
-                os.path.join(
-                    self.webdir, "plots", "combined_custom_plotting_*"
-                )
-            )
-            for num, i in enumerate(custom_plots):
-                custom_plots[num] = path + i.split("/")[-1]
-            image_contents = [
-                custom_plots[i:4 + i] for i in range(0, len(custom_plots), 4)
-            ]
-            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
-            html_file.make_table_of_images(
-                contents=image_contents, unique_id=unique_id
-            )
-            images = [y for x in image_contents for y in x]
-            html_file.make_modal_carousel(images=images, unique_id=unique_id)
-
-        if self.comparison_stats is not None:
-            rows = range(len(self.labels))
-            base = (
-                "margin-top:{}em; margin-bottom:{}em; background-color:#FFFFFF; "
-                "box-shadow: 0 0 5px grey;"
-            )
-            style_ks = base.format(5, 1)
-            style_js = base.format(0, 5)
-
-            table_contents = {
-                i: [
-                    [self.labels[j]] + self.comparison_stats[i][0][j] for j in
-                    rows
-                ] for i in self.same_parameters
-            }
-            html_file.make_table(
-                headings=[" "] + self.labels, contents=table_contents,
-                heading_span=1, accordian_header="KS test total", style=style_ks
-            )
-            table_contents = {
-                i: [
-                    [self.labels[j]] + self.comparison_stats[i][1][j] for j in
-                    rows
-                ] for i in self.same_parameters
-            }
-            html_file.make_table(
-                headings=[" "] + self.labels, contents=table_contents,
-                heading_span=1, accordian_header="JS test total", style=style_js
-            )
-        html_file.make_footer(user=self.user, rundir=self.webdir)
-
-        for num, i in enumerate(self.same_parameters):
-            html_file = self.setup_page(
-                "Comparison_{}".format(i), self.navbar["comparison"],
-                title="Comparison PDF for {}".format(i),
-                approximant="Comparison"
-            )
-            html_file.make_banner(approximant="Comparison", key="Comparison")
-            path = self.image_path["other"]
-            contents = [
-                [path + "combined_1d_posterior_{}.png".format(i)],
-                [
-                    path + "combined_cdf_{}.png".format(i),
-                    path + "combined_boxplot_{}.png".format(i)
-                ]
-            ]
-            html_file.make_table_of_images(
-                contents=contents, rows=1, columns=2, code="changeimage"
-            )
-            if self.comparison_stats is not None:
-                table_contents = [
-                    [self.labels[j]] + self.comparison_stats[i][0][j]
-                    for j in rows
-                ]
-                html_file.make_table(
-                    headings=[" "] + self.labels, contents=table_contents,
-                    heading_span=1, accordian_header="KS test",
-                    style=style_ks
-                )
-                table_contents = [
-                    [self.labels[j]] + self.comparison_stats[i][1][j]
-                    for j in rows
-                ]
-                html_file.make_table(
-                    headings=[" "] + self.labels, contents=table_contents,
-                    heading_span=1, accordian_header="JS divergence test",
-                    style=style_js
-                )
-            html_file.make_footer(user=self.user, rundir=self.webdir)
-            html_file.close()
-        html_file = self.setup_page(
-            "Comparison_Custom", self.navbar["comparison"],
-            approximant="Comparison", title="Comparison Posteriors for multiple"
-        )
-        html_file.make_search_bar(
-            sidebar=self.same_parameters, label="None", code="combines",
-            popular_options=self.popular_options + [{
-                "all": ", ".join(self.same_parameters)
-            }]
-        )
-        html_file.make_footer(user=self.user, rundir=self.webdir)
-        html_file.close()
-        html_file = self.setup_page(
-            "Comparison_All", self.navbar["comparison"],
-            title="All posteriors for Comparison", approximant="Comparison"
-        )
-        html_file.make_banner(approximant="Comparison", key="Comparison")
-        for j in self.same_parameters:
-            html_file.make_banner(
-                approximant=j, _style="font-size: 26px;"
-            )
-            contents = [
-                [path + "combined_1d_posterior_{}.png".format(j)],
-                [
-                    path + "combined_cdf_{}.png".format(j),
-                    path + "combined_boxplot_{}.png".format(j)
-                ]
-            ]
-            html_file.make_table_of_images(
-                contents=contents, rows=1, columns=2, code="changeimage")
-        html_file.close()
 
     def make_publication_pages(self):
         """Wrapper function for _make_publication_pages()
@@ -885,113 +627,57 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
-    def _make_downloads_page(self, pages):
-        """Make a page with links to files which can be downloaded
+    def _make_entry_in_downloads_table(self, html_file, label, num, base_string):
+        """Make a label specific entry into the downloads table
 
         Parameters
         ----------
-        pages: list
-            list of pages you wish to create
+        label: str
+            the label you wish to add to the downloads table
+        base_string: str
+            the download string
         """
-        html_file = webpage.open_html(
-            web_dir=self.webdir, base_url=self.base_url, html_page="Downloads"
+        table = super(_WebpageGeneration, self)._make_entry_in_downloads_table(
+            html_file, label, num, base_string
         )
-        html_file = self.setup_page(
-            "Downloads", self.navbar["home"], title="Downloads"
-        )
-        html_file.make_banner(approximant="Downloads", key="Downloads")
-        html_file.make_container()
-        base_string = "{} can be downloaded <a href={} download>here</a>"
-        style = "margin-top:{}; margin-bottom:{};"
-        headings = ["Description"]
-        metafile = (
-            "posterior_samples.json" if not self.hdf5 else "posterior_samples.h5"
-        )
-        html_file.make_table(
-            headings=headings,
-            contents=[
+        if not self.no_ligo_skymap:
+            table.append(
                 [
                     base_string.format(
-                        "The complete metafile containing all information "
-                        "about the analysis",
-                        self.results_path["other"] + metafile
-                    )
-                ], [
-                    (
-                        "Information about reading this metafile can be seen "
-                        " <a href={}>here</a>".format(
-                            "https://lscsoft.docs.ligo.org/pesummary/data/"
-                            "reading_the_metafile.html"
-                        )
+                        "Fits file containing skymap for this analysis",
+                        self.results_path["other"] + "%s_skymap.fits" % (label)
                     )
                 ]
-            ],
-            accordian=False, style=style.format("1em", "1em")
-        )
-        for num, i in enumerate(self.labels):
-            html_file.add_content(
-                "<div class='banner', style='margin-left:-4em'>{}</div>".format(i)
             )
-            table_contents = [
-                [
-                    base_string.format(
-                        "Dat file containing posterior samples",
-                        self.results_path["other"] + "%s_pesummary.dat" % (i)
+        if self.psd is not None and self.psd != {} and label in self.psd.keys():
+            for ifo in self.psd[label].keys():
+                if len(self.psd[label][ifo]):
+                    table.append(
+                        [
+                            base_string.format(
+                                "%s psd file used for this analysis" % (ifo),
+                                os.path.join(
+                                    self.psd_path["other"],
+                                    "%s_%s_psd.dat" % (label, ifo)
+                                )
+                            )
+                        ]
                     )
-                ]
-            ]
-            if self.config is not None and self.config[num] is not None:
-                table_contents.append(
-                    [
-                        base_string.format(
-                            "Config file used for this analysis",
-                            self.config_path["other"] + "%s_config.ini" % (i)
-                        )
-                    ]
-                )
-            if not self.no_ligo_skymap:
-                table_contents.append(
-                    [
-                        base_string.format(
-                            "Fits file containing skymap for this analysis",
-                            self.results_path["other"] + "%s_skymap.fits" % (i)
-                        )
-                    ]
-                )
-            if self.psd is not None and self.psd != {} and i in self.psd.keys():
-                for ifo in self.psd[i].keys():
-                    if len(self.psd[i][ifo]):
-                        table_contents.append(
-                            [
-                                base_string.format(
-                                    "%s psd file used for this analysis" % (ifo),
-                                    os.path.join(
-                                        self.psd_path["other"],
-                                        "%s_%s_psd.dat" % (i, ifo)
-                                    )
+        if "calibration" in self.priors.keys():
+            if label in self.priors["calibration"].keys():
+                for ifo in self.priors["calibration"][label].keys():
+                    table.append(
+                        [
+                            base_string.format(
+                                "%s calibration envelope file used for this "
+                                "analysis" % (ifo), os.path.join(
+                                    self.calibration_path["other"],
+                                    "%s_%s_cal.txt" % (label, ifo)
                                 )
-                            ]
-                        )
-            if "calibration" in self.priors.keys():
-                if i in self.priors["calibration"].keys():
-                    for ifo in self.priors["calibration"][i].keys():
-                        table_contents.append(
-                            [
-                                base_string.format(
-                                    "%s calibration envelope file used for this "
-                                    "analysis" % (ifo), os.path.join(
-                                        self.calibration_path["other"],
-                                        "%s_%s_cal.txt" % (i, ifo)
-                                    )
-                                )
-                            ]
-                        )
-            html_file.make_table(
-                headings=headings, contents=table_contents, accordian=False
-            )
-        html_file.end_container()
-        html_file.make_footer(user=self.user, rundir=self.webdir)
-        html_file.close()
+                            )
+                        ]
+                    )
+        return table
 
     def default_images_for_result_page(self, label):
         """Return the default images that will be displayed on the result page
@@ -1122,3 +808,19 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             "iota, phi_12, phi_jl, tilt_1, tilt_2"
         ]
         return popular_options
+
+    def default_comparison_homepage_plots(self):
+        """Return a list of default plots for the comparison homepage
+        """
+        path = self.image_path["other"]
+        base = os.path.join(path, "{}.png")
+        contents = [
+            [base.format("combined_skymap"), base.format("compare_waveforms")]
+        ]
+        return contents
+
+    def default_corner_params(self):
+        """Return a list of default corner parameters used by the corner
+        plotting function
+        """
+        return conf.gw_corner_parameters

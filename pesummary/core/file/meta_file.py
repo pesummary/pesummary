@@ -392,7 +392,10 @@ class _MetaFile(object):
             )
 
     @staticmethod
-    def save_to_hdf5(data, labels, samples, meta_file, no_convert=False):
+    def save_to_hdf5(
+        data, labels, samples, meta_file, no_convert=False,
+        extra_keys=DEFAULT_HDF5_KEYS
+    ):
         """Save the metafile as a hdf5 file
         """
         import h5py
@@ -405,7 +408,7 @@ class _MetaFile(object):
                 )
         with h5py.File(meta_file, "w") as f:
             recursively_save_dictionary_to_hdf5_file(
-                f, data, extra_keys=DEFAULT_HDF5_KEYS + labels
+                f, data, extra_keys=extra_keys + labels
             )
 
     def save_to_dat(self):

@@ -89,19 +89,10 @@ class _GWMetaFile(_MetaFile):
     def save_to_hdf5(data, labels, samples, meta_file, no_convert=False):
         """Save the metafile as a hdf5 file
         """
-        import h5py
-
-        key = "posterior_samples"
-        if not no_convert:
-            for label in labels:
-                data[label][key] = _GWMetaFile._convert_posterior_samples_to_numpy(
-                    samples[label]
-                )
-        with h5py.File(meta_file, "w") as f:
-            recursively_save_dictionary_to_hdf5_file(
-                f=f, dictionary=data,
-                extra_keys=CORE_HDF5_KEYS + labels
-            )
+        _MetaFile.save_to_hdf5(
+            data, labels, samples, meta_file, no_convert=no_convert,
+            extra_keys=CORE_HDF5_KEYS
+        )
 
 
 class GWMetaFile(GWPostProcessing):
