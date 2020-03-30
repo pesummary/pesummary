@@ -245,6 +245,97 @@ class TestConversions(object):
         assert network[0] == np.sqrt(3) * 2
         assert network[1] == np.sqrt(3) * 3
 
+    def test_full_conversion(self):
+        from pesummary.utils.utils import Array
+        from pesummary.gw.file.conversions import _Conversion
+
+        dictionary = {
+            "mass_1": [10.],
+            "mass_2": [2.],
+            "a_1": [0.2],
+            "a_2": [0.2],
+            "cos_theta_jn": [0.5],
+            "cos_tilt_1": [0.2],
+            "cos_tilt_2": [0.2],
+            "luminosity_distance": [0.2],
+            "geocent_time": [0.2],
+            "ra": [0.2],
+            "dec": [0.2],
+            "psi": [0.2],
+            "phase": [0.5],
+            "phi_12": [0.7],
+            "phi_jl": [0.25],
+            "H1_matched_filter_abs_snr": [10.0],
+            "H1_matched_filter_snr_angle": [0.],
+            "H1_matched_filter_snr": [10.0]
+        }
+        data = _Conversion(dictionary)
+        true_params = [
+            'mass_1', 'mass_2', 'a_1', 'a_2', 'cos_theta_jn', 'cos_tilt_1',
+            'cos_tilt_2', 'luminosity_distance', 'geocent_time', 'ra', 'dec',
+            'psi', 'phase', 'phi_12', 'phi_jl', 'H1_matched_filter_abs_snr',
+            'H1_matched_filter_snr_angle', 'H1_matched_filter_snr', 'theta_jn',
+            'tilt_1', 'tilt_2', 'mass_ratio', 'inverted_mass_ratio',
+            'total_mass', 'chirp_mass', 'symmetric_mass_ratio', 'iota',
+            'spin_1x', 'spin_1y', 'spin_1z', 'spin_2x', 'spin_2y', 'spin_2z',
+            'phi_1', 'phi_2', 'chi_eff', 'chi_p', 'final_spin_non_evolved',
+            'peak_luminosity_non_evolved', 'final_mass_non_evolved', 'redshift',
+            'comoving_distance', 'mass_1_source', 'mass_2_source',
+            'total_mass_source', 'chirp_mass_source',
+            'final_mass_source_non_evolved', 'radiated_energy_non_evolved',
+            'network_matched_filter_snr', 'cos_iota'
+        ]
+        assert all(i in data.parameters for i in true_params)
+        assert len(data.parameters) == len(set(data.parameters))
+        true = {
+            'mass_1': Array(dictionary["mass_1"]),
+            'mass_2': Array(dictionary["mass_2"]),
+            'a_1': Array(dictionary["a_1"]),
+            'a_2': Array(dictionary["a_2"]),
+            'cos_theta_jn': Array(dictionary["cos_theta_jn"]),
+            'cos_tilt_1': Array(dictionary["cos_tilt_1"]),
+            'cos_tilt_2': Array(dictionary["cos_tilt_2"]),
+            'luminosity_distance': Array(dictionary["luminosity_distance"]),
+            'geocent_time': Array(dictionary["geocent_time"]),
+            'ra': Array(dictionary["ra"]), 'dec': Array(dictionary["dec"]),
+            'psi': Array(dictionary["psi"]), 'phase': Array(dictionary["phase"]),
+            'phi_12': Array(dictionary["phi_12"]),
+            'phi_jl': Array(dictionary["phi_jl"]),
+            'H1_matched_filter_abs_snr': Array(dictionary["H1_matched_filter_abs_snr"]),
+            'H1_matched_filter_snr_angle': Array(dictionary["H1_matched_filter_snr_angle"]),
+            'H1_matched_filter_snr': Array(dictionary["H1_matched_filter_snr"]),
+            'theta_jn': Array(np.arccos(dictionary["cos_theta_jn"])),
+            'tilt_1': Array(np.arccos(dictionary["cos_tilt_1"])),
+            'tilt_2': Array(np.arccos(dictionary["cos_tilt_2"])),
+            'mass_ratio': Array([dictionary["mass_2"][0] / dictionary["mass_1"][0]]),
+            'inverted_mass_ratio': Array([dictionary["mass_1"][0] / dictionary["mass_2"][0]]),
+            'total_mass': Array([dictionary["mass_1"][0] + dictionary["mass_2"][0]]),
+            'chirp_mass': Array([3.67097772]),
+            'symmetric_mass_ratio': Array([0.13888889]),
+            'iota': Array([1.01719087]), 'spin_1x': Array([-0.18338713]),
+            'spin_1y': Array([0.06905911]), 'spin_1z': Array([0.04]),
+            'spin_2x': Array([-0.18475131]), 'spin_2y': Array([-0.06532192]),
+            'spin_2z': Array([0.04]), 'phi_1': Array([2.78144141]),
+            'phi_2': Array([3.48144141]), 'chi_eff': Array([0.04]),
+            'chi_p': Array([0.19595918]),
+            'final_spin_non_evolved': Array([0.46198316]),
+            'peak_luminosity_non_evolved': Array([1.01239394]),
+            'final_mass_non_evolved': Array([11.78221674]),
+            'redshift': Array([4.5191183e-05]),
+            'comoving_distance': Array([0.19999755]),
+            'mass_1_source': Array([9.99954811]),
+            'mass_2_source': Array([1.99990962]),
+            'total_mass_source': Array([11.99945773]),
+            'chirp_mass_source': Array([3.67081183]),
+            'final_mass_source_non_evolved': Array([11.78168431]),
+            'radiated_energy_non_evolved': Array([0.21777342]),
+            'network_matched_filter_snr': Array([10.0]),
+            'cos_iota': Array([0.52575756])
+        }
+        for key in true.keys():
+            assert np.round(true[key][0], 8) == np.round(data[key][0], 8)
+
+
 
 class TestNRutils(object):
 
