@@ -1037,34 +1037,35 @@ class _Conversion(object):
             samples = self._specific_parameter_samples(param)
         return samples
 
-    def append_data(self, samples):
+    def append_data(self, parameter, samples):
         """Add a list of samples to the existing samples data object
 
         Parameters
         ----------
+        parameter: str
+            the name of the parameter you would like to append
         samples: list
             the list of samples that you would like to append
         """
-        for num, i in enumerate(self.samples):
-            self.samples[num].append(samples[num])
+        if parameter not in self.parameters:
+            self.parameters.append(parameter)
+            for num, i in enumerate(self.samples):
+                self.samples[num].append(samples[num])
 
     def _mchirp_from_mchirp_source_z(self):
-        self.parameters.append("chirp_mass")
         samples = self.specific_parameter_samples(["chirp_mass_source", "redshift"])
         chirp_mass = mchirp_from_mchirp_source_z(samples[0], samples[1])
-        self.append_data(chirp_mass)
+        self.append_data("chirp_mass", chirp_mass)
 
     def _q_from_eta(self):
-        self.parameters.append("mass_ratio")
         samples = self.specific_parameter_samples("symmetric_mass_ratio")
         mass_ratio = q_from_eta(samples)
-        self.append_data(mass_ratio)
+        self.append_data("mass_ratio", mass_ratio)
 
     def _q_from_m1_m2(self):
-        self.parameters.append("mass_ratio")
         samples = self.specific_parameter_samples(["mass_1", "mass_2"])
         mass_ratio = q_from_m1_m2(samples[0], samples[1])
-        self.append_data(mass_ratio)
+        self.append_data("mass_ratio", mass_ratio)
 
     def _invert_q(self):
         ind = self.parameters.index("mass_ratio")
@@ -1072,84 +1073,73 @@ class _Conversion(object):
             self.samples[num][ind] = 1. / self.samples[num][ind]
 
     def _invq_from_q(self):
-        self.parameters.append("inverted_mass_ratio")
         samples = self.specific_parameter_samples("mass_ratio")
         inverted_mass_ratio = invq_from_q(samples)
-        self.append_data(inverted_mass_ratio)
+        self.append_data("inverted_mass_ratio", inverted_mass_ratio)
 
     def _mchirp_from_mtotal_q(self):
-        self.parameters.append("chirp_mass")
         samples = self.specific_parameter_samples(["total_mass", "mass_ratio"])
         chirp_mass = mchirp_from_mtotal_q(samples[0], samples[1])
-        self.append_data(chirp_mass)
+        self.append_data("chirp_mass", chirp_mass)
 
     def _m1_from_mchirp_q(self):
-        self.parameters.append("mass_1")
         samples = self.specific_parameter_samples(["chirp_mass", "mass_ratio"])
         mass_1 = m1_from_mchirp_q(samples[0], samples[1])
-        self.append_data(mass_1)
+        self.append_data("mass_1", mass_1)
 
     def _m2_from_mchirp_q(self):
-        self.parameters.append("mass_2")
         samples = self.specific_parameter_samples(["chirp_mass", "mass_ratio"])
         mass_2 = m2_from_mchirp_q(samples[0], samples[1])
-        self.append_data(mass_2)
+        self.append_data("mass_2", mass_2)
 
     def _reference_frequency(self):
-        self.parameters.append("reference_frequency")
         nsamples = len(self.samples)
         extra_kwargs = self.extra_kwargs["meta_data"]
         if extra_kwargs != {} and "f_ref" in list(extra_kwargs.keys()):
-            self.append_data([float(extra_kwargs["f_ref"])] * nsamples)
+            self.append_data(
+                "reference_frequency", [float(extra_kwargs["f_ref"])] * nsamples
+            )
         else:
             logger.warn(
                 "Could not find reference_frequency in input file. Using 20Hz "
                 "as default")
-            self.append_data([20.] * nsamples)
+            self.append_data("reference_frequency", [20.] * nsamples)
 
     def _mtotal_from_m1_m2(self):
-        self.parameters.append("total_mass")
         samples = self.specific_parameter_samples(["mass_1", "mass_2"])
         m_total = m_total_from_m1_m2(samples[0], samples[1])
-        self.append_data(m_total)
+        self.append_data("total_mass", m_total)
 
     def _mchirp_from_m1_m2(self):
-        self.parameters.append("chirp_mass")
         samples = self.specific_parameter_samples(["mass_1", "mass_2"])
         chirp_mass = mchirp_from_m1_m2(samples[0], samples[1])
-        self.append_data(chirp_mass)
+        self.append_data("chirp_mass", chirp_mass)
 
     def _eta_from_m1_m2(self):
-        self.parameters.append("symmetric_mass_ratio")
         samples = self.specific_parameter_samples(["mass_1", "mass_2"])
         eta = eta_from_m1_m2(samples[0], samples[1])
-        self.append_data(eta)
+        self.append_data("symmetric_mass_ratio", eta)
 
     def _phi_12_from_phi1_phi2(self):
-        self.parameters.append("phi_12")
         samples = self.specific_parameter_samples(["phi_1", "phi_2"])
         phi_12 = phi_12_from_phi1_phi2(samples[0], samples[1])
-        self.append_data(phi_12)
+        self.append_data("phi_12", phi_12)
 
     def _phi1_from_spins(self):
-        self.parameters.append("phi_1")
         samples = self.specific_parameter_samples(["spin_1x", "spin_1y"])
         phi_1 = phi1_from_spins(samples[0], samples[1])
-        self.append_data(phi_1)
+        self.append_data("phi_1", phi_1)
 
     def _phi2_from_spins(self):
-        self.parameters.append("phi_2")
         samples = self.specific_parameter_samples(["spin_2x", "spin_2y"])
         phi_2 = phi2_from_spins(samples[0], samples[1])
-        self.append_data(phi_2)
+        self.append_data("phi_2", phi_2)
 
     def _spin_angles(self):
         angles = ["theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12",
                   "a_1", "a_2"]
         spin_angles_to_calculate = [
             i for i in angles if i not in self.parameters]
-        for i in spin_angles_to_calculate:
-            self.parameters.append(i)
         spin_components = [
             "mass_1", "mass_2", "iota", "spin_1x", "spin_1y", "spin_1z",
             "spin_2x", "spin_2y", "spin_2z", "reference_frequency"]
@@ -1169,7 +1159,7 @@ class _Conversion(object):
         for i in spin_angles_to_calculate:
             ind = spin_angles_to_calculate.index(i)
             data = np.array([i[ind] for i in angles])
-            self.append_data(data)
+            self.append_data(i, data)
 
     def _non_precessing_component_spins(self):
         spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
@@ -1193,18 +1183,15 @@ class _Conversion(object):
                     iota, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z]
 
                 for i in spins_to_calculate:
-                    self.parameters.append(i)
                     ind = spins.index(i)
                     data = spin_components[ind]
-                    self.append_data(data)
+                    self.append_data(i, data)
 
     def _component_spins(self):
         spins = ["iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
                  "spin_2z"]
         spins_to_calculate = [
             i for i in spins if i not in self.parameters]
-        for i in spins_to_calculate:
-            self.parameters.append(i)
         angles = [
             "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
             "mass_1", "mass_2", "reference_frequency"]
@@ -1224,15 +1211,13 @@ class _Conversion(object):
         for i in spins_to_calculate:
             ind = spins.index(i)
             data = np.array([i[ind] for i in spin_components])
-            self.append_data(data)
+            self.append_data(i, data)
 
     def _component_spins_from_azimuthal_and_polar_angles(self):
         spins = ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
                  "spin_2z"]
         spins_to_calculate = [
             i for i in spins if i not in self.parameters]
-        for i in spins_to_calculate:
-            self.parameters.append(i)
         angles = [
             "a_1", "a_2", "a_1_azimuthal", "a_1_polar", "a_2_azimuthal",
             "a_2_polar"]
@@ -1243,79 +1228,68 @@ class _Conversion(object):
         for i in spins_to_calculate:
             ind = spins.index(i)
             data = np.array([i[ind] for i in spin_components])
-            self.append_data(data)
+            self.append_data(i, data)
 
     def _chi_p(self):
-        self.parameters.append("chi_p")
         parameters = [
             "mass_1", "mass_2", "spin_1x", "spin_1y", "spin_2x", "spin_2y"]
         samples = self.specific_parameter_samples(parameters)
         chi_p_samples = chi_p(
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5])
-        self.append_data(chi_p_samples)
+        self.append_data("chi_p", chi_p_samples)
 
     def _chi_eff(self):
-        self.parameters.append("chi_eff")
         parameters = ["mass_1", "mass_2", "spin_1z", "spin_2z"]
         samples = self.specific_parameter_samples(parameters)
         chi_eff_samples = chi_eff(
             samples[0], samples[1], samples[2], samples[3])
-        self.append_data(chi_eff_samples)
+        self.append_data("chi_eff", chi_eff_samples)
 
     def _cos_tilt_1_from_tilt_1(self):
-        self.parameters.append("cos_tilt_1")
         samples = self.specific_parameter_samples("tilt_1")
         cos_tilt_1 = np.cos(samples)
-        self.append_data(cos_tilt_1)
+        self.append_data("cos_tilt_1", cos_tilt_1)
 
     def _cos_tilt_2_from_tilt_2(self):
-        self.parameters.append("cos_tilt_2")
         samples = self.specific_parameter_samples("tilt_2")
         cos_tilt_2 = np.cos(samples)
-        self.append_data(cos_tilt_2)
+        self.append_data("cos_tilt_2", cos_tilt_2)
 
     def _dL_from_z(self):
-        self.parameters.append("luminosity_distance")
         samples = self.specific_parameter_samples("redshift")
         distance = dL_from_z(samples)
-        self.append_data(distance)
+        self.append_data("luminosity_distance", distance)
 
     def _z_from_dL(self):
-        self.parameters.append("redshift")
         samples = self.specific_parameter_samples("luminosity_distance")
         redshift = z_from_dL_approx(samples)
-        self.append_data(redshift)
+        self.append_data("redshift", redshift)
 
     def _comoving_distance_from_z(self):
-        self.parameters.append("comoving_distance")
         samples = self.specific_parameter_samples("redshift")
         distance = comoving_distance_from_z(samples)
-        self.append_data(distance)
+        self.append_data("comoving_distance", distance)
 
     def _m1_source_from_m1_z(self):
-        self.parameters.append("mass_1_source")
         samples = self.specific_parameter_samples(["mass_1", "redshift"])
         mass_1_source = m1_source_from_m1_z(samples[0], samples[1])
-        self.append_data(mass_1_source)
+        self.append_data("mass_1_source", mass_1_source)
 
     def _m2_source_from_m2_z(self):
-        self.parameters.append("mass_2_source")
         samples = self.specific_parameter_samples(["mass_2", "redshift"])
         mass_2_source = m2_source_from_m2_z(samples[0], samples[1])
-        self.append_data(mass_2_source)
+        self.append_data("mass_2_source", mass_2_source)
 
     def _mtotal_source_from_mtotal_z(self):
-        self.parameters.append("total_mass_source")
         samples = self.specific_parameter_samples(["total_mass", "redshift"])
         total_mass_source = m_total_source_from_mtotal_z(samples[0], samples[1])
-        self.append_data(total_mass_source)
+        self.append_data("total_mass_source", total_mass_source)
 
     def _mchirp_source_from_mchirp_z(self):
-        self.parameters.append("chirp_mass_source")
         samples = self.specific_parameter_samples(["chirp_mass", "redshift"])
         chirp_mass_source = mchirp_source_from_mchirp_z(samples[0], samples[1])
-        self.append_data(chirp_mass_source)
+        self.append_data("chirp_mass_source", chirp_mass_source)
 
     def _time_in_each_ifo(self):
         detectors = []
@@ -1327,38 +1301,33 @@ class _Conversion(object):
         samples = self.specific_parameter_samples(["ra", "dec", "geocent_time"])
         for i in detectors:
             time = time_in_each_ifo(i, samples[0], samples[1], samples[2])
-            self.append_data(time)
-            self.parameters.append("%s_time" % (i))
+            self.append_data("%s_time" % (i), time)
 
     def _lambda1_from_lambda_tilde(self):
-        self.parameters.append("lambda_1")
         samples = self.specific_parameter_samples([
             "lambda_tilde", "mass_1", "mass_2"])
         lambda_1 = lambda1_from_lambda_tilde(samples[0], samples[1], samples[2])
-        self.append_data(lambda_1)
+        self.append_data("lambda_1", lambda_1)
 
     def _lambda2_from_lambda1(self):
-        self.parameters.append("lambda_2")
         samples = self.specific_parameter_samples([
             "lambda_1", "mass_1", "mass_2"])
         lambda_2 = lambda2_from_lambda1(samples[0], samples[1], samples[2])
-        self.append_data(lambda_2)
+        self.append_data("lambda_2", lambda_2)
 
     def _lambda_tilde_from_lambda1_lambda2(self):
-        self.parameters.append("lambda_tilde")
         samples = self.specific_parameter_samples([
             "lambda_1", "lambda_2", "mass_1", "mass_2"])
         lambda_tilde = lambda_tilde_from_lambda1_lambda2(
             samples[0], samples[1], samples[2], samples[3])
-        self.append_data(lambda_tilde)
+        self.append_data("lambda_tilde", lambda_tilde)
 
     def _delta_lambda_from_lambda1_lambda2(self):
-        self.parameters.append("delta_lambda")
         samples = self.specific_parameter_samples([
             "lambda_1", "lambda_2", "mass_1", "mass_2"])
         delta_lambda = delta_lambda_from_lambda1_lambda2(
             samples[0], samples[1], samples[2], samples[3])
-        self.append_data(delta_lambda)
+        self.append_data("delta_lambda", delta_lambda)
 
     def _ifo_snr(self):
         abs_snrs = [
@@ -1368,22 +1337,21 @@ class _Conversion(object):
             i for i in self.parameters if "_matched_filter_snr_angle" in i
         ]
         for ifo in [snr.split("_matched_filter_abs_snr")[0] for snr in abs_snrs]:
-            self.parameters.append("{}_matched_filter_snr".format(ifo))
-            samples = self.specific_parameter_samples(
-                [
-                    "{}_matched_filter_abs_snr".format(ifo),
-                    "{}_matched_filter_snr_angle".format(ifo)
-                ]
-            )
-            snr = _ifo_snr(samples[0], samples[1])
-            self.append_data(snr)
+            if "{}_matched_filter_snr".format(ifo) not in self.parameters:
+                samples = self.specific_parameter_samples(
+                    [
+                        "{}_matched_filter_abs_snr".format(ifo),
+                        "{}_matched_filter_snr_angle".format(ifo)
+                    ]
+                )
+                snr = _ifo_snr(samples[0], samples[1])
+                self.append_data("{}_matched_filter_snr".format(ifo), snr)
 
     def _optimal_network_snr(self):
         snrs = [i for i in self.parameters if "_optimal_snr" in i]
         samples = self.specific_parameter_samples(snrs)
-        self.parameters.append("network_optimal_snr")
         snr = network_snr(samples)
-        self.append_data(snr)
+        self.append_data("network_optimal_snr", snr)
 
     def _matched_filter_network_snr(self):
         snrs = [
@@ -1396,9 +1364,8 @@ class _Conversion(object):
                 and "_angle" not in i
             ]
         samples = self.specific_parameter_samples(snrs)
-        self.parameters.append("network_matched_filter_snr")
         snr = network_snr(samples)
-        self.append_data(snr)
+        self.append_data("network_matched_filter_snr", snr)
 
     def _retrieve_f_low(self):
         extra_kwargs = self.extra_kwargs["meta_data"]
@@ -1428,8 +1395,6 @@ class _Conversion(object):
         f_low = self._retrieve_f_low()
         approximant = self._retrieve_approximant()
         parameters = ["tilt_1", "tilt_2", "phi_12", "spin_1z", "spin_2z"]
-        for param in parameters:
-            self.parameters.append("{}_evolved".format(param))
         samples = self.specific_parameter_samples(
             ["mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2",
              "phi_12", "reference_frequency"]
@@ -1441,11 +1406,11 @@ class _Conversion(object):
         )
         spin_1z_evolved = samples[2] * np.cos(tilt_1_evolved)
         spin_2z_evolved = samples[3] * np.cos(tilt_2_evolved)
-        self.append_data(tilt_1_evolved)
-        self.append_data(tilt_2_evolved)
-        self.append_data(phi_12_evolved)
-        self.append_data(spin_1z_evolved)
-        self.append_data(spin_2z_evolved)
+        self.append_data("tilt_1_evolved", tilt_1_evolved)
+        self.append_data("tilt_2_evolved", tilt_2_evolved)
+        self.append_data("phi_12_evolved", phi_12_evolved)
+        self.append_data("spin_1z_evolved", spin_1z_evolved)
+        self.append_data("spin_2z_evolved", spin_2z_evolved)
 
     @staticmethod
     def _evolved_vs_non_evolved_parameter(
@@ -1513,7 +1478,6 @@ class _Conversion(object):
         param = self._evolved_vs_non_evolved_parameter(
             "peak_luminosity", evolved=evolved
         )
-        self.parameters.append(param)
         spin_1z_param = self._evolved_vs_non_evolved_parameter(
             "spin_1z", evolved=evolved, core_param=True
         )
@@ -1528,7 +1492,7 @@ class _Conversion(object):
             samples[0], samples[1], samples[2], samples[3],
             return_fits_used=True
         )
-        self.append_data(peak_luminosity)
+        self.append_data(param, peak_luminosity)
         self.extra_kwargs["meta_data"]["peak_luminosity_NR_fits"] = fits
 
     def _final_remnant_properties_from_NRSurrogate(
@@ -1536,8 +1500,6 @@ class _Conversion(object):
     ):
         f_low = self._retrieve_f_low()
         approximant = self._retrieve_approximant()
-        for param in parameters:
-            self.parameters.append(param)
         samples = self._precessing_vs_non_precessing_parameters(
             non_precessing=non_precessing, evolved=False
         )
@@ -1550,14 +1512,13 @@ class _Conversion(object):
             approximant=approximant
         )
         for param in parameters:
-            self.append_data(data[param])
+            self.append_data(param, data[param])
             self.extra_kwargs["meta_data"]["{}_NR_fits".format(param)] = fits
 
     def _final_mass_of_merger(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
             "final_mass", evolved=evolved
         )
-        self.parameters.append(param)
         spin_1z_param = self._evolved_vs_non_evolved_parameter(
             "spin_1z", evolved=evolved, core_param=True
         )
@@ -1570,39 +1531,36 @@ class _Conversion(object):
         final_mass, fits = final_mass_of_merger(
             *samples, return_fits_used=True
         )
-        self.append_data(final_mass)
+        self.append_data(param, final_mass)
         self.extra_kwargs["meta_data"]["final_mass_NR_fits"] = fits
 
     def _final_mass_source(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
             "final_mass", evolved=evolved
         )
-        self.parameters.append(param.replace("mass", "mass_source"))
         samples = self.specific_parameter_samples([param, "redshift"])
         final_mass_source = _source_from_detector(
             samples[0], samples[1]
         )
-        self.append_data(final_mass_source)
+        self.append_data(param.replace("mass", "mass_source"), final_mass_source)
 
     def _final_spin_of_merger(self, non_precessing=False, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
             "final_spin", evolved=evolved
         )
-        self.parameters.append(param)
         samples = self._precessing_vs_non_precessing_parameters(
             non_precessing=non_precessing, evolved=evolved
         )
         final_spin, fits = final_spin_of_merger(
             *samples, return_fits_used=True
         )
-        self.append_data(final_spin)
+        self.append_data(param, final_spin)
         self.extra_kwargs["meta_data"]["final_spin_NR_fits"] = fits
 
     def _radiated_energy(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
             "radiated_energy", evolved=evolved
         )
-        self.parameters.append(param)
         final_mass_param = self._evolved_vs_non_evolved_parameter(
             "final_mass_source", evolved=evolved
         )
@@ -1610,10 +1568,9 @@ class _Conversion(object):
             "total_mass_source", final_mass_param
         ])
         radiated_energy = samples[0] - samples[1]
-        self.append_data(radiated_energy)
+        self.append_data(param, radiated_energy)
 
     def _cos_angle(self, parameter_to_add, reverse=False):
-        self.parameters.append(parameter_to_add)
         if reverse:
             samples = self.specific_parameter_samples(
                 ["cos_" + parameter_to_add])
@@ -1623,7 +1580,7 @@ class _Conversion(object):
                 [parameter_to_add.split("cos_")[1]]
             )
             cos_samples = np.cos(samples[0])
-        self.append_data(cos_samples)
+        self.append_data(parameter_to_add, cos_samples)
 
     def _check_parameters(self):
         params = ["mass_1", "mass_2", "a_1", "a_2", "mass_1_source", "mass_2_source",
