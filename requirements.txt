@@ -9,7 +9,7 @@ deepdish
 pandas
 pygments
 astropy>=3.2.3 #<=3.2.2 gives astropy.utils.iers error
-lalsuite
+lalsuite>=6.70.0 #<=6.70.0 gives lalsimulation error
 configparser
 gwpy
 plotly
