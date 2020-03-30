@@ -24,7 +24,7 @@ from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 import h5py
 
-from tqdm import tqdm as _tqdm
+from tqdm import tqdm as Basetqdm
 
 
 class SamplesDict(dict):
@@ -391,7 +391,7 @@ class Array(np.ndarray):
         self.weights = getattr(obj, 'weights', None)
 
 
-class tqdm(_tqdm):
+class _tqdm(Basetqdm):
 
     @property
     def format_dict(self):
@@ -414,7 +414,7 @@ def trange(*args, **kwargs):
     """
     A shortcut for tqdm(range(*args), **kwargs).
     """
-    return tqdm(range(*args), **kwargs)
+    return _tqdm(range(*args), **kwargs)
 
 
 def resample_posterior_distribution(posterior, nsamples):
@@ -921,33 +921,45 @@ def unzip(zip_file, outdir=".", overwrite=False):
     return out_file
 
 
-def iterator(length, desc="", tqdm=False, logger=None, name="PESummary"):
+def iterator(
+    iterable, desc="", tqdm=False, logger_output=True, total=None,
+    logger_name="PESummary"
+):
     """Return either a tqdm iterator, if tqdm installed, or a simple range
 
     Parameters
     ----------
-    length: int
-        number to iterate over
+    iterable: func
+        iterable that you wish to iterate over
     desc: str, optional
         description for the tqdm bar
     tqdm: Bool, optional
-        If True, a tqdm trange is used. Otherwise simple range.
+        If True, a tqdm object is used. Otherwise simply returns the iterator.
+    logger_output: Bool, optional
+        If True, the tqdm progress bar interacts with logger
+    total: float, optional
+        total length of iterable
+    logger_name: str, optional
+        name of the logger you wish to use
     """
-    if tqdm and logger is not None:
+    if tqdm:
         try:
-            data = {"name": name, "levelname": "INFO", "message": desc,
-                    "asctime": "{asctime}"}
-            DESC = _logger_format() % (data)
-            return trange(
-                length, bar_format=(
-                    DESC + ' | {percentage:3.0f}% | {n_fmt}/{total_fmt} '
-                    '| {elapsed}'
+            FORMAT, DESC = None, None
+            if logger_output:
+                data = {"name": logger_name, "levelname": "INFO",
+                        "message": desc, "asctime": "{asctime}"}
+                FORMAT = _logger_format() % (data) + (
+                    ' | {percentage:3.0f}% | {n_fmt}/{total_fmt} | {elapsed}'
                 )
+            elif len(desc):
+                DESC = desc
+            return _tqdm(
+                iterable, total=total, desc=DESC, bar_format=FORMAT
             )
         except ImportError:
-            return range(length)
+            return iterable
     else:
-        return range(length)
+        return iterable
 
 
 def _check_latex_install():
