@@ -796,7 +796,9 @@ def NRSur_fit(
             mass_1[num], mass_2[num], a_1_vec[num], a_2_vec[num], model, converted_fits,
             f_low=f_low, f_ref=f_ref[num], approximant=approximant,
             extra_params_dict=kwargs
-        ) for num in iterator(len(mass_1), desc=description, tqdm=True, logger=logger)
+        ) for num in iterator(
+            range(len(mass_1)), desc=description, tqdm=True, total=len(mass_1)
+        )
     ]
     nr_fits = {key: np.array([dic[key] for dic in _fits]) for key in _fits[0]}
     if fits_map["final_mass"] in nr_fits.keys():

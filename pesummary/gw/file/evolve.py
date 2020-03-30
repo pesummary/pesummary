@@ -133,7 +133,7 @@ def _evolve_spins(
     tilt_1_evol = np.zeros_like(mass_1)
     tilt_2_evol = np.zeros_like(mass_1)
     phi_12_evol = np.zeros_like(mass_1)
-    for i in iterator(len(mass_1), "Evolving spins", logger=logger, tqdm=True):
+    for i in iterator(range(len(mass_1)), desc="Evolving spins", tqdm=True):
         if np.logical_or(a_1[i] > tolerance, a_2[i] > tolerance):
             # Total mass in seconds
             total_mass = (mass_1[i] + mass_2[i]) * MTSUN_SI
