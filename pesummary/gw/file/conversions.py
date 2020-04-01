@@ -205,12 +205,13 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Return chi_p given samples for mass1, mass2, spin1x, spin1y, spin2x,
     spin2y
     """
-    mass_ratio = mass1 / mass2
-    B1 = 2.0 + 1.5 * mass_ratio
-    B2 = 2.0 + 3.0 / (2 * mass_ratio)
+    mass_ratio = mass2 / mass1
     S1_perp = ((spin1x)**2 + (spin1y)**2)**0.5
     S2_perp = ((spin2x)**2 + (spin2y)**2)**0.5
-    chi_p = 1.0 / B1 * np.maximum(B1 * S1_perp, B2 * S2_perp)
+    chi_p = np.maximum(
+        S1_perp, (4 * mass_ratio + 3) / (3 * mass_ratio + 4) * mass_ratio
+        * S2_perp
+    )
     return chi_p
 
 
