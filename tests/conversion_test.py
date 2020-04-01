@@ -152,12 +152,30 @@ class TestConversions(object):
         assert np.round(mchirp, 4) == 9.9906
 
     def test_chi_p(self):
+        from lalsimulation import SimPhenomUtilsChiP
+
         mass1, mass2 = self.opts.mass1, self.opts.mass2
         spin1x, spin1y = self.opts.spin1x, self.opts.spin1y
         spin1z, spin2x = self.opts.spin1z, self.opts.spin2x
         spin2y, spin2z = self.opts.spin2y, self.opts.spin2z
         chi_p_value = chi_p(mass1, mass2, spin1x, spin1y, spin2y, spin2y)
         assert chi_p_value == 0.75
+        for i in range(100):
+            mass_1 = np.random.randint(10, 100)
+            mass_2 = np.random.randint(5, mass_1)
+            spin1 = np.random.random(3)
+            norm = np.sqrt(np.sum(np.square(spin1)))
+            spin1 /= norm
+            spin2 = np.random.random(3)
+            norm = np.sqrt(np.sum(np.square(spin2)))
+            spin2 /= norm
+            chi_p_value = chi_p(
+                mass_1, mass_2, spin1[0], spin1[1], spin2[0], spin2[1]
+            )
+            lal_value = SimPhenomUtilsChiP(
+                mass_1, mass_2, spin1[0], spin1[1], spin2[0], spin2[1]
+            )
+            assert np.testing.assert_almost_equal(chi_p_value, lal_value, 9) is None
 
     def test_chi_eff(self):
         mass1, mass2 = self.opts.mass1, self.opts.mass2
