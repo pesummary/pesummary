@@ -905,6 +905,8 @@ class _Conversion(object):
     NRSur_fits: float/str, optional
         the NRSurrogate model to use to calculate the remnant fits. If nothing
         passed, the average NR fits are used instead
+    regenerate: list, optional
+        list of posterior distributions that you wish to regenerate
     return_dict: Bool, optional
         if True, return a pesummary.utils.utils.SamplesDict object
 
@@ -1003,8 +1005,10 @@ class _Conversion(object):
             extra_kwargs["meta_data"]["f_ref"] = f_ref
         elif f_ref is not None:
             extra_kwargs["meta_data"]["f_ref"] = f_ref
+        regenerate = kwargs.get("regenerate", None)
         obj.__init__(
-            parameters, samples, extra_kwargs, evolve_spins, NRSurrogate
+            parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
+            regenerate
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -1020,13 +1024,33 @@ class _Conversion(object):
             return obj.parameters, obj.samples
 
     def __init__(
-        self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate
+        self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
+        regenerate
     ):
         self.parameters = parameters
         self.samples = samples
         self.extra_kwargs = extra_kwargs
         self.NRSurrogate = NRSurrogate
+        self.regenerate = regenerate
+        if self.regenerate is not None:
+            for param in self.regenerate:
+                self.remove_posterior(param)
         self.generate_all_posterior_samples(evolve_spins=evolve_spins)
+
+    def remove_posterior(self, parameter):
+        if parameter in self.parameters:
+            logger.info(
+                "Removing the posterior samples for '{}'".format(parameter)
+            )
+            ind = self.parameters.index(parameter)
+            self.parameters.remove(self.parameters[ind])
+            for i in self.samples:
+                del i[ind]
+        else:
+            logger.info(
+                "'{}' is not in the table of posterior samples. Unable to "
+                "remove".format(parameter)
+            )
 
     def _specific_parameter_samples(self, param):
         """Return the samples for a specific parameter

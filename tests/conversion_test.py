@@ -565,13 +565,29 @@ class TestConversions(object):
         }
         for key in true.keys():
             assert np.round(true[key][0], 8) == np.round(data[key][0], 8)
-
         convert = convert_to_lal_binary_black_hole_parameters(dictionary)[0]
         for key, item in convert.items():
             assert np.testing.assert_almost_equal(
                 item, true[key], 8
             ) is None
 
+    def test_remove_parameter(self):
+        from pesummary.gw.file.conversions import _Conversion
+
+        dictionary = {
+            "mass_1": np.random.uniform(5, 100, 100),
+            "mass_ratio": [0.1] * 100
+        }
+        dictionary["mass_2"] = np.random.uniform(2, dictionary["mass_1"], 100)
+        incorrect_mass_ratio = _Conversion(dictionary)
+        data = _Conversion(dictionary, regenerate=["mass_ratio"])
+        assert all(i != j for i, j in zip(
+            incorrect_mass_ratio["mass_ratio"], data["mass_ratio"]
+        ))
+        assert np.testing.assert_almost_equal(
+            data["mass_ratio"],
+            q_from_m1_m2(dictionary["mass_1"], dictionary["mass_2"]), 8
+       ) is None
 
 
 class TestNRutils(object):
