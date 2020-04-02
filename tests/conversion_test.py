@@ -24,7 +24,20 @@ import deepdish
 
 from pesummary.gw.file.conversions import *
 from pesummary.gw.file.nrutils import *
+from pycbc import conversions
 import pytest
+
+
+def conversion_check(
+    pesummary_function, pesummary_args, other_function, other_args,
+    dp=8
+):
+    """Check that the conversions made by PESummary are the same as those
+    from pycbc
+    """
+    _pesummary = pesummary_function(*pesummary_args)
+    _other = other_function(*other_args)
+    assert np.testing.assert_almost_equal(_pesummary, _other, dp) is None
 
 
 class TestConversions(object):
@@ -65,36 +78,85 @@ class TestConversions(object):
         cls.opts = Arguments()
 
     def test_z_from_dL(self):
-        l_distance = self.opts.l_distance
-        redshift = z_from_dL_approx(l_distance)
-        redshift_exact = z_from_dL_exact(l_distance)
-        assert np.round(redshift, 4) == 0.1049
-        assert np.round(redshift_exact, 4) == 0.1049
+        from bilby.gw.conversion import luminosity_distance_to_redshift
+
+        l_distance = np.random.randint(100, 5000, 20)
+        bilby_function = luminosity_distance_to_redshift
+        pesummary_function = z_from_dL_exact
+        conversion_check(
+            pesummary_function, [l_distance], bilby_function, [l_distance]
+        )
+        pesummary_function = z_from_dL_approx
+        conversion_check(
+            pesummary_function, [l_distance], bilby_function, [l_distance],
+            dp=4
+        )
 
     def test_dL_from_z(self):
-        redshift = self.opts.redshift
-        l_distance = dL_from_z(redshift)
-        assert np.round(l_distance, 4) == 2918.3419
+        from bilby.gw.conversion import redshift_to_luminosity_distance
+
+        redshift = np.random.randint(1, 5, 100)
+        bilby_function = redshift_to_luminosity_distance
+        pesummary_function = dL_from_z
+        conversion_check(
+            pesummary_function, [redshift], bilby_function, [redshift]
+        )
 
     def test_comoving_distance_from_z(self):
-        redshift = self.opts.redshift
-        c_distance = comoving_distance_from_z(redshift)
-        assert np.round(c_distance, 4) == 1945.5613 
+        from bilby.gw.conversion import redshift_to_comoving_distance
+
+        redshift = np.random.randint(1, 5, 100)
+        bilby_function = redshift_to_comoving_distance
+        pesummary_function = comoving_distance_from_z
+        conversion_check(
+            pesummary_function, [redshift], bilby_function, [redshift]
+        )
 
     def test_m1_source_from_m1_z(self):
-        mass_1, redshift = self.opts.mass1, self.opts.redshift
-        mass_1_source = m1_source_from_m1_z(mass_1, redshift)
-        assert np.round(mass_1_source, 4) == 6.6667 
+        from bilby.gw.conversion import generate_source_frame_parameters
+
+        mass_1 = np.random.randint(5, 100, 100)
+        mass_2 = np.random.randint(2, mass_1, 100)
+        luminosity_distance = np.random.randint(100, 500, 100)
+        sample = generate_source_frame_parameters(
+            {"mass_1": mass_1, "mass_2": mass_2,
+             "luminosity_distance": luminosity_distance}
+        )
+        source_frame = generate_source_frame_parameters(sample)
+        assert np.testing.assert_almost_equal(
+            m1_source_from_m1_z(mass_1, sample["redshift"]), sample["mass_1_source"],
+            8
+        ) is None
 
     def test_m2_source_from_m2_z(self):
-        mass_2, redshift = self.opts.mass2, self.opts.redshift
-        mass_2_source = m2_source_from_m2_z(mass_2, redshift)
-        assert np.round(mass_2_source, 4) == 3.3333 
+        from bilby.gw.conversion import generate_source_frame_parameters
+
+        mass_1 = np.random.randint(5, 100, 100)
+        mass_2 = np.random.randint(2, mass_1, 100)
+        luminosity_distance = np.random.randint(100, 500, 100)
+        sample = generate_source_frame_parameters(
+            {"mass_1": mass_1, "mass_2": mass_2,
+             "luminosity_distance": luminosity_distance}
+        )
+        source_frame = generate_source_frame_parameters(sample)
+        assert np.testing.assert_almost_equal(
+            m2_source_from_m2_z(mass_1, sample["redshift"]), sample["mass_1_source"],
+            8
+        ) is None
 
     def test_m_total_source_from_mtotal_z(self):
-        total_mass, redshift = self.opts.mtotal, self.opts.redshift
-        m_total_source = m_total_source_from_mtotal_z(total_mass, redshift)
-        assert m_total_source == 20.
+        from bilby.gw.conversion import generate_source_frame_parameters
+
+        total_mass = np.random.randint(5, 100, 100)
+        luminosity_distance = np.random.randint(100, 500, 100)
+        sample = generate_source_frame_parameters(
+            {"total_mass": total_mass, "luminosity_distance": luminosity_distance}
+        )
+        source_frame = generate_source_frame_parameters(sample)
+        assert np.testing.assert_almost_equal(
+            m_total_source_from_mtotal_z(total_mass, sample["redshift"]),
+            sample["total_mass_source"], 8
+        ) is None
 
     def test_m_total_from_mtotal_source_z(self):
         total_mass_source, redshift = 20., self.opts.redshift
@@ -102,9 +164,20 @@ class TestConversions(object):
         assert np.round(m_total, 4) == self.opts.mtotal
 
     def test_mchirp_source_from_mchirp_z(self):
-        mchirp, redshift = self.opts.mchirp, self.opts.redshift
-        mchirp_source = mchirp_source_from_mchirp_z(mchirp, redshift)
-        assert np.round(mchirp_source, 4) == 6.6667
+        from bilby.gw.conversion import generate_source_frame_parameters
+
+        chirp_mass = np.random.randint(5, 100, 100)
+        luminosity_distance = np.random.randint(100, 500, 100)
+        sample = generate_source_frame_parameters(
+            {"chirp_mass": chirp_mass,
+             "luminosity_distance": luminosity_distance}
+        )
+        source_frame = generate_source_frame_parameters(sample)
+        assert np.testing.assert_almost_equal(
+            mchirp_source_from_mchirp_z(chirp_mass, sample["redshift"]),
+            sample["chirp_mass_source"],
+            8
+        ) is None
 
     def test_mchirp_from_mchirp_source_z(self):
         mchirp_source, redshift = 20./3., self.opts.redshift
@@ -112,39 +185,69 @@ class TestConversions(object):
         assert np.round(mchirp, 4) == self.opts.mchirp
 
     def test_mchirp_from_m1_m2(self):
-        mass1, mass2 = self.opts.mass1, self.opts.mass2
-        mchirp = mchirp_from_m1_m2(mass1, mass2)
-        assert np.round(mchirp, 4) == 6.0836
+        mass1 = np.random.randint(5, 100, 100)
+        mass2 = np.random.randint(2, mass1, 100)
+        pycbc_function = conversions.mchirp_from_mass1_mass2
+        pesummary_function = mchirp_from_m1_m2
+        conversion_check(
+            pesummary_function, [mass1, mass2], pycbc_function, [mass1, mass2]
+        )
 
     def test_m_total_from_m1_m2(self):
-        mass1, mass2 = self.opts.mass1, self.opts.mass2
-        mtotal = m_total_from_m1_m2(mass1, mass2)
-        assert mtotal == 15.
+        mass1 = np.random.randint(5, 100, 100)
+        mass2 = np.random.randint(2, mass1, 100)
+        pycbc_function = conversions.mtotal_from_mass1_mass2
+        pesummary_function = m_total_from_m1_m2
+        conversion_check(
+            pesummary_function, [mass1, mass2], pycbc_function, [mass1, mass2]
+        )
 
     def test_m1_from_mchirp_q(self):
+        mchirp = np.random.randint(5, 100, 100)
+        q = np.random.random(100)
         mchirp, q = self.opts.mchirp, self.opts.q
-        mass1 = m1_from_mchirp_q(mchirp, q)
-        assert np.round(mass1, 4) == 24.0225
+        pycbc_function = conversions.mass1_from_mchirp_q
+        pesummary_function = m1_from_mchirp_q
+        conversion_check(
+            pesummary_function, [mchirp, q], pycbc_function, [mchirp, 1./q]
+        )
 
     def test_m2_from_mchirp_q(self):
-        mchirp, q = self.opts.mchirp, self.opts.q
-        mass2 = m2_from_mchirp_q(mchirp, q)
-        assert np.round(mass2, 4) == 6.0056
+        mchirp = np.random.randint(5, 100, 100)
+        q = np.random.random(100)
+        pycbc_function = conversions.mass2_from_mchirp_q
+        pesummary_function = m2_from_mchirp_q
+        conversion_check(
+            pesummary_function, [mchirp, q], pycbc_function, [mchirp, 1./q]
+        )
 
     def test_eta_from_m1_m2(self):
-        mass1, mass2 = self.opts.mass1, self.opts.mass2
-        eta = eta_from_m1_m2(mass1, mass2)
-        assert np.round(eta, 4) == 0.2222
+        mass1 = np.random.randint(5, 100, 100)
+        mass2 = np.random.randint(2, mass1, 100)
+        pycbc_function = conversions.eta_from_mass1_mass2
+        pesummary_function = eta_from_m1_m2
+        conversion_check(
+            pesummary_function, [mass1, mass2], pycbc_function, [mass1, mass2]
+        )
 
     def test_q_from_m1_m2(self):
-        mass1, mass2 = self.opts.mass1, self.opts.mass2
-        q = q_from_m1_m2(mass1, mass2)
-        assert q == 1. / 2.
+        mass1 = np.random.randint(5, 100, 100)
+        mass2 = np.random.randint(2, mass1, 100)
+        pycbc_function = conversions.invq_from_mass1_mass2
+        pesummary_function = q_from_m1_m2
+        conversion_check(
+            pesummary_function, [mass1, mass2], pycbc_function, [mass1, mass2]
+        )
 
     def test_q_from_eta(self):
-        eta = self.opts.eta
-        q = q_from_eta(eta)
-        assert np.round(q, 4) == 0.4498
+        from bilby.gw.conversion import symmetric_mass_ratio_to_mass_ratio
+
+        eta = np.random.uniform(0, 0.25, 100)
+        bilby_function = symmetric_mass_ratio_to_mass_ratio
+        pesummary_function = q_from_eta
+        conversion_check(
+            pesummary_function, [eta], bilby_function, [eta]
+        )
 
     def test_mchirp_from_mtotal_q(self):
         mtotal, q = self.opts.mtotal, self.opts.q
@@ -152,6 +255,23 @@ class TestConversions(object):
         assert np.round(mchirp, 4) == 9.9906
 
     def test_chi_p(self):
+        mass1 = np.random.randint(5, 100, 100)
+        mass2 = np.random.randint(2, mass1, 100)
+        spin1_mag = np.random.random(100)
+        spin1_ang = np.random.random(100)
+        spin2_mag = np.random.random(100)
+        spin2_ang = np.random.random(100)
+        spin1x = spin1_mag * np.cos(spin1_ang)
+        spin1y = spin1_mag * np.sin(spin1_ang)
+        spin2x = spin2_mag * np.cos(spin2_ang)
+        spin2y = spin2_mag * np.sin(spin2_ang)
+        pycbc_function = conversions.chi_p
+        pesummary_function = chi_p
+        conversion_check(
+            pesummary_function, [mass1, mass2, spin1x, spin1y, spin2x, spin2y],
+            pycbc_function, [mass1, mass2, spin1x, spin1y, spin2x, spin2y]
+        )
+
         from lalsimulation import SimPhenomUtilsChiP
 
         mass1, mass2 = self.opts.mass1, self.opts.mass2
@@ -178,10 +298,16 @@ class TestConversions(object):
             assert np.testing.assert_almost_equal(chi_p_value, lal_value, 9) is None
 
     def test_chi_eff(self):
-        mass1, mass2 = self.opts.mass1, self.opts.mass2
-        spin1z, spin2z = self.opts.spin1z, self.opts.spin2z
-        chi_eff_value = chi_eff(mass1, mass2, spin1z, spin2z)
-        assert chi_eff_value == 0.5
+        mass1 = np.random.randint(5, 100, 100)
+        mass2 = np.random.randint(2, mass1, 100)
+        spin1z = np.random.uniform(-1, 1, 100)
+        spin2z = np.random.uniform(-1, 1, 100)
+        pycbc_function = conversions.chi_eff
+        pesummary_function = chi_eff
+        conversion_check(
+            pesummary_function, [mass1, mass2, spin1z, spin2z], pycbc_function,
+            [mass1, mass2, spin1z, spin2z]
+        )
 
     def test_phi_12_from_phi1_phi2(self):
         data = phi_12_from_phi1_phi2(0.2, 0.5)
@@ -200,59 +326,144 @@ class TestConversions(object):
         assert phi2_from_spins(0.1, 0.5) == cart2sph(0.1, 0.5)
 
     def test_spin_angles(self):
-        mass1, mass2 = [10., 10.], [5., 5.]
-        inc, spin1x, spin1y = self.opts.iota, self.opts.spin1x, self.opts.spin1y
-        spin1z, spin2x = self.opts.spin1z, self.opts.spin2x,
-        spin2y, spin2z = self.opts.spin2y, self.opts.spin2z
-        f_ref, phase = self.opts.f_ref, self.opts.phase
-        data = spin_angles(mass1, mass2, [inc]*2, [spin1x]*2, [spin1y]*2,
-                           [spin1z]*2, [spin2x]*2, [spin2y]*2, [spin2z]*2,
-                           f_ref, phase)
-        rounded = np.round(data, 4)
-        expected = [0.5345, 2.797, 0.9828, 0.0, 0.0, 0.9014, 0.5]
-        assert all(i == j for i,j in zip(rounded[0], expected))
+        from lalsimulation import SimInspiralTransformPrecessingWvf2PE
+
+        mass1 = np.random.uniform(5., 100., 100)
+        mass2 = np.random.uniform(2., mass1, 100)
+        inc = np.random.uniform(0, np.pi, 100)
+        spin1_mag = np.random.random(100)
+        spin1_ang = np.random.random(100)
+        spin2_mag = np.random.random(100)
+        spin2_ang = np.random.random(100)
+        spin1x = spin1_mag * np.cos(spin1_ang)
+        spin1y = spin1_mag * np.sin(spin1_ang)
+        spin2x = spin2_mag * np.cos(spin2_ang)
+        spin2y = spin2_mag * np.sin(spin2_ang)
+        spin1z = np.random.random(100) - (spin1x**2 + spin1y**2)**0.5
+        spin2z = np.random.random(100) - (spin1x**2 + spin1y**2)**0.5
+        f_ref = [20.0] * len(mass1)
+        phase = [0.4] * len(mass1)
+        lalsimulation_function = SimInspiralTransformPrecessingWvf2PE
+        pesummary_function = spin_angles
+        for ii in np.arange(len(mass1)):
+            conversion_check(
+                pesummary_function,
+                [mass1[ii], mass2[ii], inc[ii], spin1x[ii], spin1y[ii],
+                spin1z[ii], spin2x[ii], spin2y[ii], spin2z[ii], f_ref[ii],
+                phase[ii]],
+                lalsimulation_function,
+                [inc[ii], spin1x[ii], spin1y[ii], spin1z[ii], spin2x[ii],
+                spin2y[ii], spin2z[ii], mass1[ii], mass2[ii], f_ref[ii],
+                phase[ii]]
+        )
 
     def test_component_spins(self):
-        mass1, mass2 = [10., 10.], [5., 5.]
-        thetajn, phijl = self.opts.theta_jn, self.opts.phi_jl
-        t1, t2, phi12 = self.opts.tilt_1, self.opts.tilt_2, self.opts.phi_12
-        a1, a2, f_ref = self.opts.a_1, self.opts.a_2, self.opts.f_ref
-        phase = self.opts.phase
-        data = component_spins(thetajn, phijl, t1, t2, phi12, a1, a2, mass1,
-            mass2, f_ref, phase)
-        rounded = np.round(data, 4)
-        expected = [[0.4841,-0.2359,-0.0425, 0.4388,0.,0.,0.],
-                    [0.5,0.,0.,0.5,0.,0.,0.]]
-        for num, i in enumerate(rounded):
-            assert i.tolist() == expected[num]
+        from bilby.gw.conversion import bilby_to_lalsimulation_spins
+        from lal import MSUN_SI
+
+        mass1 = np.random.uniform(5., 100., 100)
+        mass2 = np.random.uniform(2., mass1, 100)
+        theta_jn = np.random.uniform(0, np.pi, 100)
+        phi_jl = np.random.uniform(0, np.pi, 100)
+        phi_12 = np.random.uniform(0, np.pi, 100)
+        a_1 = np.random.uniform(0, 1, 100)
+        a_2 = np.random.uniform(0, 1, 100)
+        tilt_1 = np.random.uniform(0, np.pi, 100)
+        tilt_2 = np.random.uniform(0, np.pi, 100)
+        f_ref = [20.] * len(mass1)
+        phase = [0.5] * len(mass2)
+        
+        bilby_function = bilby_to_lalsimulation_spins
+        pesummary_function = component_spins
+        for ii in np.arange(len(mass1)):
+            conversion_check(
+                pesummary_function,
+                [theta_jn[ii], phi_jl[ii], tilt_1[ii], tilt_1[ii], phi_12[ii],
+                a_1[ii], a_2[ii], mass1[ii], mass2[ii], f_ref[ii], phase[ii]],
+                bilby_function,
+                [theta_jn[ii], phi_jl[ii], tilt_1[ii], tilt_1[ii], phi_12[ii],
+                a_1[ii], a_2[ii], mass1[ii]*MSUN_SI, mass2[ii]*MSUN_SI,
+                f_ref[ii], phase[ii]]
+        )
 
     def test_time_in_each_ifo(self):
+        from pycbc.detector import Detector
+        from lal import TimeDelayFromEarthCenter
+        from lalsimulation import DetectorPrefixToLALDetector
+
         optimal_ra, optimal_dec = -0.2559168059473027, 0.81079526383
         time = time_in_each_ifo("H1", optimal_ra, optimal_dec, 0)
         light_time = 6371*10**3 / (3.0*10**8)
         assert -np.round(light_time, 4) == np.round(time, 4)
 
+        ra = np.random.uniform(-np.pi, np.pi, 100)
+        dec = np.random.uniform(0, 2*np.pi, 100)
+        time = np.random.uniform(10000, 20000, 100)
+        H1_time = time_in_each_ifo("H1", ra, dec, time)
+        pycbc_time = time + Detector("H1").time_delay_from_earth_center(
+            ra, dec, time
+        )
+        lal_time = time + np.array([TimeDelayFromEarthCenter(
+            DetectorPrefixToLALDetector('H1').location, ra[ii], dec[ii],
+            time[ii]) for ii in range(len(ra))
+        ])
+        difference = np.abs(lal_time - pycbc_time)
+        dp = np.floor(np.abs(np.log10(np.max(difference))))
+        assert np.testing.assert_almost_equal(H1_time, pycbc_time, dp) is None
+        assert np.testing.assert_almost_equal(H1_time, lal_time, dp) is None
+        
+
     def test_lambda_tilde_from_lambda1_lambda2(self):
-        lambda_tilde = lambda_tilde_from_lambda1_lambda2(
-            self.opts.lambda1, self.opts.lambda2, self.opts.mass1,
-            self.opts.mass2)
-        assert np.round(lambda_tilde, 4) == 630.5793
+        lambda1 = np.random.uniform(0, 5000, 100)
+        lambda2 = np.random.uniform(0, 5000, 100)
+        mass1 = np.random.randint(5, 100, 100)
+        mass2 = np.random.randint(2, mass1, 100)
+        pycbc_function = conversions.lambda_tilde
+        pesummary_function = lambda_tilde_from_lambda1_lambda2
+        conversion_check(
+            pesummary_function, [lambda1, lambda2, mass1, mass2],
+            pycbc_function, [mass1, mass2, lambda1, lambda2]
+        )
 
     def test_delta_lambda_from_lambda1_lambda2(self):
-        delta_lambda = delta_lambda_from_lambda1_lambda2(
-            self.opts.lambda1, self.opts.lambda2, self.opts.mass1,
-            self.opts.mass2)
-        assert np.round(delta_lambda, 4) == -150.1964
+        from bilby.gw.conversion import lambda_1_lambda_2_to_delta_lambda_tilde
+
+        lambda1 = np.random.uniform(0, 5000, 100)
+        lambda2 = np.random.uniform(0, 5000, 100)
+        mass1 = np.random.randint(5, 100, 100)
+        mass2 = np.random.randint(2, mass1, 100)
+        conversion_check(
+            delta_lambda_from_lambda1_lambda2,
+            [lambda1, lambda2, mass1, mass2],
+            lambda_1_lambda_2_to_delta_lambda_tilde,
+            [lambda1, lambda2, mass1, mass2]
+        )
 
     def test_lambda1_from_lambda_tilde(self):
-        lambda1 = lambda1_from_lambda_tilde(
-            self.opts.lambda_tilde, self.opts.mass1, self.opts.mass2)
-        assert np.round(lambda1, 4) == 192.8101
+        from bilby.gw.conversion import lambda_tilde_to_lambda_1_lambda_2
+
+        mass1 = np.random.randint(5, 100, 100)
+        mass2 = np.random.randint(2, mass1, 100)
+        lambda_tilde = np.random.uniform(-100, 100, 100)
+        lambda_1 = lambda_tilde_to_lambda_1_lambda_2(
+            lambda_tilde, mass1, mass2
+        )[0]
+        lambda1 = lambda1_from_lambda_tilde(lambda_tilde, mass1, mass2)
+        assert np.testing.assert_almost_equal(lambda1, lambda_1) is None
+        #assert np.round(lambda1, 4) == 192.8101
 
     def test_lambda2_from_lambda1(self):
-        lambda2 = lambda2_from_lambda1(
-            self.opts.lambda1, self.opts.mass1, self.opts.mass2)
-        assert np.round(lambda2, 4) == 16000.0
+        from bilby.gw.conversion import convert_to_lal_binary_neutron_star_parameters
+
+        mass1 = np.random.uniform(5, 50, 100)
+        mass2 = np.random.uniform(2, mass1, 100)
+        lambda_1 = np.random.uniform(0, 5000, 100)
+        sample = {"mass_1": mass1, "mass_2": mass2, "lambda_1": lambda_1}
+        convert = convert_to_lal_binary_neutron_star_parameters(sample)[0]
+        lambda2 = lambda2_from_lambda1(lambda_1, mass1, mass2)
+        diff = np.abs(lambda2 - convert["lambda_2"])
+        ind = np.argmax(diff)
+        assert np.testing.assert_almost_equal(lambda2, convert["lambda_2"], 5) is None
 
     def test_network_snr(self):
         snr_H1 = snr_L1 = snr_V1 = np.array([2., 3.])
@@ -266,6 +477,8 @@ class TestConversions(object):
     def test_full_conversion(self):
         from pesummary.utils.utils import Array
         from pesummary.gw.file.conversions import _Conversion
+        from bilby.gw.conversion import convert_to_lal_binary_black_hole_parameters
+        from pandas import DataFrame
 
         dictionary = {
             "mass_1": [10.],
@@ -352,6 +565,12 @@ class TestConversions(object):
         }
         for key in true.keys():
             assert np.round(true[key][0], 8) == np.round(data[key][0], 8)
+
+        convert = convert_to_lal_binary_black_hole_parameters(dictionary)[0]
+        for key, item in convert.items():
+            assert np.testing.assert_almost_equal(
+                item, true[key], 8
+            ) is None
 
 
 

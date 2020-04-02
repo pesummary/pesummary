@@ -253,6 +253,21 @@ def spin_angles(mass_1, mass_2, inc, spin1x, spin1y, spin1z, spin2x, spin2y,
     """Return the spin angles given samples for mass_1, mass_2, inc, spin1x,
     spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, phase
     """
+    return_float = False
+    if isinstance(mass_1, (int, float)):
+        return_float = True
+        mass_1 = [mass_1]
+        mass_2 = [mass_2]
+        inc = [inc]
+        spin1x = [spin1x]
+        spin1y = [spin1y]
+        spin1z = [spin1z]
+        spin2x = [spin2x]
+        spin2y = [spin2y]
+        spin2z = [spin2z]
+        f_ref = [f_ref]
+        phase = [phase]
+
     if LALINFERENCE_INSTALL:
         data = []
         for i in range(len(mass_1)):
@@ -262,6 +277,8 @@ def spin_angles(mass_1, mass_2, inc, spin1x, spin1y, spin1z, spin2x, spin2y,
                     S1y=spin1y[i], S1z=spin1z[i], S2x=spin2x[i], S2y=spin2y[i],
                     S2z=spin2z[i], fRef=float(f_ref[i]), phiRef=phase[i])
             data.append([theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2])
+        if return_float:
+            return data[0]
         return data
 
 
