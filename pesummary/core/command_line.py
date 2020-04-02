@@ -294,6 +294,12 @@ def _samples_command_line_arguments(parser):
             "Number of samples to remove as burnin"
         )
     )
+    sample_group.add_argument(
+        "--regenerate", dest="regenerate", default=None, nargs="+", help=(
+            "List of posterior distributions that you wish to regenerate if "
+            "possible"
+        )
+    )
     return sample_group
 
 

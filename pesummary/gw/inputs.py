@@ -80,6 +80,7 @@ class _GWInput(_Input):
 
     @property
     def grab_data_kwargs(self):
+        kwargs = super(_GWInput, self).grab_data_kwargs
         if self.f_low is None:
             self._f_low = [None] * len(self.labels)
         if self.f_ref is None:
@@ -89,13 +90,13 @@ class _GWInput(_Input):
         else:
             approx = self.opts.approximant
         try:
-            return {
-                label: dict(
+            for num, label in enumerate(self.labels):
+                kwargs[label].update(dict(
                     evolve_spins=self.evolve_spins, f_low=self.f_low[num],
                     approximant=approx[num], f_ref=self.f_ref[num],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True
-                ) for num, label in enumerate(self.labels)
-            }
+                ))
+            return kwargs
         except IndexError:
             logger.warn(
                 "Unable to find an f_ref, f_low and approximant for each "
@@ -104,13 +105,13 @@ class _GWInput(_Input):
                     self.f_ref[0], self.f_low[0], approx[0]
                 )
             )
-            return {
-                label: dict(
+            for num, label in enumerate(self.labels):
+                kwargs[label].update(dict(
                     evolve_spins=self.evolve_spins, f_low=self.f_low[0],
                     approximant=approx[0], f_ref=self.f_ref[0],
-                    NRSur_fits=self.NRSur_fits
-                ) for num, label in enumerate(self.labels)
-            }
+                    NRSur_fits=self.NRSur_fits, return_kwargs=True
+                ))
+            return kwargs
 
     @staticmethod
     def grab_data_from_file(file, label, config=None, injection=None, **kwargs):

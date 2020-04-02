@@ -732,7 +732,9 @@ class _Input(object):
 
     @property
     def grab_data_kwargs(self):
-        return dict()
+        return {
+            label: dict(regenerate=self.regenerate) for label in self.labels
+        }
 
     def grab_data_from_input(self, file, label, config=None, injection=None):
         """Wrapper function for the grab_data_from_metafile and
@@ -1217,6 +1219,7 @@ class Input(_Input):
             "samples", "plots", "js", "html", "css", "plots/corner", "config"
         ]
         self.make_directories()
+        self.regenerate = self.opts.regenerate
         if extra_options is not None:
             for opt in extra_options:
                 setattr(self, opt, getattr(self.opts, opt))
