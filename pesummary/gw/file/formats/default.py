@@ -54,6 +54,27 @@ class Default(GWRead):
         return cls(path)
 
     @staticmethod
+    def grab_extra_kwargs(parameters, samples):
+        """Grab any additional information stored in the file
+        """
+        def find_parameter_given_alternatives(parameters, options):
+            if any(i in options for i in parameters):
+                parameter = [i for i in parameters if i in options]
+                ind = parameters.index(parameter[0])
+                return ind
+            return None
+        kwargs = {"sampler": {}, "meta_data": {}}
+        possible_f_ref = ["f_ref", "fRef", "fref"]
+        ind = find_parameter_given_alternatives(parameters, possible_f_ref)
+        if ind is not None:
+            kwargs["meta_data"]["f_ref"] = samples[0][ind]
+        possible_f_low = ["flow", "f_low", "fLow"]
+        ind = find_parameter_given_alternatives(parameters, possible_f_low)
+        if ind is not None:
+            kwargs["meta_data"]["f_low"] = samples[0][ind]
+        return kwargs
+
+    @staticmethod
     def _grab_data_from_dat_file(path):
         """Grab the data stored in a .dat file
         """
@@ -68,8 +89,14 @@ class Default(GWRead):
                 samples[num].append(
                     np.exp(i[parameters.index("logdistance")]))
         injection = {i: float("nan") for i in parameters}
+        try:
+            extra_kwargs = Default.grab_extra_kwargs(parameters, samples)
+        except Exception:
+            extra_kwargs = {"sampler": {}, "meta_data": {}}
+        extra_kwargs["sampler"]["nsamples"] = len(samples)
         return {
-            "parameters": parameters, "samples": samples, "injection": injection
+            "parameters": parameters, "samples": samples,
+            "injection": injection, "kwargs": extra_kwargs
         }
 
     @staticmethod
