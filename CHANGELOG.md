@@ -1,12 +1,26 @@
-## 0.4.1 [unreleased]
+## 0.5.0 [03/04/2020]
 
 ### Changed
 
--
+- lalsuite requirement - increase the lalsuite requirement to be `>=6.70.0`
+- `chi_p` conversion - correct the definition of `chi_p` in the conversion
+  module
+- conversions tests - improve the conversion testing suite to prevent
+  conversion bugs from being introduced
 
 ### Added
 
--
+- Allow a `SamplesDict` object to be converted to pandas dataframe with the
+  `to_pandas` function
+- Add a new `summaryrecreate` executable which allows the user to recreate the
+  analysis that is stored in a PESummary metafile
+- Allow the user to regenerate derived posterior distributions with the
+  `--regenerate` command line argument
+- Ability to extract meta data (`f_low`, `f_ref` etc.) from a GW `.dat` result
+  file
+- Allow for the user to calculate the remnant properties using the
+  `IMRPhenomPv3HM` and `SEOBNRv4PHM` waveform models. This can be done by adding
+   the `--waveform_fits` command line argument.
 
 ## 0.4.0 [25/03/2019]
 
