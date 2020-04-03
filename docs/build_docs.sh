@@ -74,10 +74,16 @@ EMPTY FILE
 EOL
 
 cd stable_docs
+python -c "print(open('index.rst', 'r').read().replace('.. warning::\n', '.. warning::'))" | perl -00ne 'print unless /.. warning::/'s > index.rst_tmp
+rm index.rst
+mv index.rst_tmp index.rst
 make html
 cd ../unstable_docs
 make html
 cd ../igwn_pinned
+python -c "print(open('index.rst', 'r').read().replace('.. warning::\n', '.. warning::'))" | perl -00ne 'print unless /.. warning::/'s > index.rst_tmp
+rm index.rst
+mv index.rst_tmp index.rst
 make html
 cd ..
 mkdir -p _build/html
