@@ -1,3 +1,9 @@
+## 0.5.2 [unreleased]
+
+### Changed
+
+### Added
+
 ## 0.5.1 [03/04/2020]
 
 ### Changed
