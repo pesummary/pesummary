@@ -1642,10 +1642,13 @@ class _Conversion(object):
 
     def _time_in_each_ifo(self):
         detectors = []
-        for i in self.parameters:
-            if "optimal_snr" in i and i != "network_optimal_snr":
-                det = i.split("_optimal_snr")[0]
-                detectors.append(det)
+        if "IFOs" in list(self.extra_kwargs["meta_data"].keys()):
+            detectors = self.extra_kwargs["meta_data"]["IFOs"].split(" ")
+        else:
+            for i in self.parameters:
+                if "optimal_snr" in i and i != "network_optimal_snr":
+                    det = i.split("_optimal_snr")[0]
+                    detectors.append(det)
 
         samples = self.specific_parameter_samples(["ra", "dec", "geocent_time"])
         for i in detectors:
