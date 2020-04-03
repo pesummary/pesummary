@@ -94,7 +94,9 @@ class _GWInput(_Input):
                 kwargs[label].update(dict(
                     evolve_spins=self.evolve_spins, f_low=self.f_low[num],
                     approximant=approx[num], f_ref=self.f_ref[num],
-                    NRSur_fits=self.NRSur_fits, return_kwargs=True
+                    NRSur_fits=self.NRSur_fits, return_kwargs=True,
+                    waveform_fits=self.waveform_fits,
+                    multi_process=self.opts.multi_process
                 ))
             return kwargs
         except IndexError:
@@ -109,7 +111,9 @@ class _GWInput(_Input):
                 kwargs[label].update(dict(
                     evolve_spins=self.evolve_spins, f_low=self.f_low[0],
                     approximant=approx[0], f_ref=self.f_ref[0],
-                    NRSur_fits=self.NRSur_fits, return_kwargs=True
+                    NRSur_fits=self.NRSur_fits, return_kwargs=True,
+                    waveform_fits=self.waveform_fits,
+                    multi_process=self.opts.multi_process
                 ))
             return kwargs
 
@@ -371,6 +375,19 @@ class _GWInput(_Input):
 
             logger.info(base.format(NRSUR_MODEL))
             self._NRSur_fits = NRSUR_MODEL
+
+    @property
+    def waveform_fits(self):
+        return self._waveform_fits
+
+    @waveform_fits.setter
+    def waveform_fits(self, waveform_fits):
+        self._waveform_fits = waveform_fits
+        if waveform_fits:
+            logger.info(
+                "Evaluating the remnant quantities using the provided "
+                "approximant"
+            )
 
     @property
     def f_low(self):
@@ -672,8 +689,10 @@ class GWInput(_GWInput, Input):
     """
     def __init__(self, opts):
         super(GWInput, self).__init__(
-            opts, ignore_copy=True,
-            extra_options=["evolve_spins", "NRSur_fits", "f_low", "f_ref"]
+            opts, ignore_copy=True, extra_options=[
+                "evolve_spins", "NRSur_fits", "f_low", "f_ref",
+                "waveform_fits"
+            ]
         )
         if self.existing is not None:
             self.existing_data = self.grab_data_from_metafile(

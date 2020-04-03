@@ -43,3 +43,22 @@ Extra keyword arguments can be passed to the `Conversion` class to aid in
 parameter conversion. These include,
 
 .. autoclass:: pesummary.gw.file.conversions._Conversion
+
+Extra notes on specific conversions
+-----------------------------------
+
+Below are seperate pages which goes into extra detail about specific parameter
+conversions:
+
+.. toctree::
+    :maxdepth: 1
+
+    conversion/remnant_fits 
+
+Core conversion functions
+-------------------------
+
+Of course, the core conversion functions can be also be used,
+
+.. automodule:: pesummary.gw.file.conversions
+    :members:

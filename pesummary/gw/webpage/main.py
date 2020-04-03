@@ -777,7 +777,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     "ra", "dec", "psi", "luminosity_distance", "redshift",
                     "comoving_distance"
                 ],
-                "reject": ["mass_ratio"]
+                "reject": ["mass_ratio", "radiated", "ram", "ran", "rat"]
             },
             "timings": {
                 "accept": ["time"], "reject": []

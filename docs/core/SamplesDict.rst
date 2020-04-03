@@ -64,6 +64,9 @@ samples,
     >>> numpy_structured_array
     rec.array([(1., 6.), (2., 5.), (3., 4.), (4., 3.), (5., 2.), (6., 1.)],
           dtype=[('a', '<f8'), ('b', '<f8')])
+    >>> sliced = samplesdict[:2]
+    >>> sliced
+    {'a': Array([1, 2]), 'b': Array([6, 5.])}
     >>> pandas_dataframe = samplesdict.to_pandas()
     >>> pandas_dataframe
     
