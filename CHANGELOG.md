@@ -1,8 +1,13 @@
-## 0.5.1 [unreleased]
+## 0.5.1 [03/04/2020]
 
 ### Changed
 
+- Building PESummary - build PESummary from tarball in CI to prevent failed
+  tarballs from being released
+
 ### Added
+
+- Added the matplotlib style file MANIFEST.in to fix v0.5.0 tarball
 
 ## 0.5.0 [03/04/2020]
 
