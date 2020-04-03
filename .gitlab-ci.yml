@@ -4,12 +4,19 @@ stages:
   - consequences
   - deploy
 
+.pesummary_install: &pesummary_install |
+  pip install -r requirements.txt
+  pip install -r optional_requirements.txt
+  pip install -r testing_requirements.txt
+  pip install bilby
+  python setup.py sdist
+  pip install dist/*.tar.gz
+
 basic:
   stage: test
   image: python:3.6
   script:
-    - pip install -r requirements.txt
-    - python setup.py install
+    - *pesummary_install
     - summarypages --help
     - summaryplots --help
     - summarymodify --help
@@ -34,11 +41,7 @@ python-3.6:
   image: python:3.6
   script:
     - export USER=albert.einstein
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - pip install -r testing_requirements.txt
-    - pip install bilby
-    - python setup.py install
+    - *pesummary_install
     - coverage run -m pytest tests --ignore tests/workflow_test.py
     - coverage report
     - coverage html
@@ -54,11 +57,7 @@ python-3.7:
   image: python:3.7
   script:
     - export USER=albert.einstein
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - pip install -r testing_requirements.txt
-    - pip install bilby
-    - python setup.py install
+    - *pesummary_install
     - pytest tests --ignore tests/workflow_test.py
 
 style:
@@ -74,10 +73,7 @@ documentation:
   before_script:
     - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
   script:
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - python setup.py install
-    - git lfs pull
+    - *pesummary_install
     - cd docs
     - make clean
     - bash build_docs.sh
@@ -93,10 +89,7 @@ python3.6-core:
     - basic
   image: python:3.6
   script:
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - pip install bilby
-    - python setup.py install
+    - *pesummary_install
     - pytest -k "Core or core" tests/workflow_test.py
 
 python3.7-core:
@@ -107,10 +100,7 @@ python3.7-core:
     - basic
   image: python:3.7
   script:
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - pip install bilby
-    - python setup.py install
+    - *pesummary_install
     - pytest -k "Core or core" tests/workflow_test.py
 
 python3.6-gw:
@@ -121,10 +111,7 @@ python3.6-gw:
     - basic
   image: python:3.6
   script:
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - pip install bilby
-    - python setup.py install
+    - *pesummary_install
     - pytest -k "GW or gw" tests/workflow_test.py
 
 python3.7-gw:
@@ -135,10 +122,7 @@ python3.7-gw:
     - basic
   image: python:3.7
   script:
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - pip install bilby
-    - python setup.py install
+    - *pesummary_install
     - pytest -k "GW or gw" tests/workflow_test.py
 
 lalinference:
@@ -147,9 +131,7 @@ lalinference:
   before_script:
     - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
   script:
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - python setup.py install
+    - *pesummary_install
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - mkdir -p lalinference/test/
     - mkdir -p lalinference/lib
@@ -173,10 +155,7 @@ bilby:
   stage: consequences
   image: python:3.6
   script:
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - python setup.py install
-    - pip install bilby
+    - *pesummary_install
     - curl https://raw.githubusercontent.com/lscsoft/bilby/master/examples/gw_examples/injection_examples/fast_tutorial.py -o fast_tutorial.py
     - sed -i '/result.plot_corner()/d' ./fast_tutorial.py
     - sed -i 's/result = bilby.run_sampler(/result = bilby.run_sampler(dlogz=1000, /' ./fast_tutorial.py
@@ -190,9 +169,7 @@ released_samples:
   stage: consequences
   image: python:3.6
   script:
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - python setup.py install
+    - *pesummary_install
     - curl https://dcc.ligo.org/public/0165/P2000026/001/GW190425_posterior_samples.h5 -o GW190425_posterior_samples.h5
     - python tests/existing_file.py -f GW190425_posterior_samples.h5
   only:
