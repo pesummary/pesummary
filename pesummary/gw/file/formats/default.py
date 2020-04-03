@@ -64,11 +64,11 @@ class Default(GWRead):
                 return ind
             return None
         kwargs = {"sampler": {}, "meta_data": {}}
-        possible_f_ref = ["f_ref", "fRef", "fref"]
+        possible_f_ref = ["f_ref", "fRef", "fref", "fref_template"]
         ind = find_parameter_given_alternatives(parameters, possible_f_ref)
         if ind is not None:
             kwargs["meta_data"]["f_ref"] = samples[0][ind]
-        possible_f_low = ["flow", "f_low", "fLow"]
+        possible_f_low = ["flow", "f_low", "fLow", "flow_template"]
         ind = find_parameter_given_alternatives(parameters, possible_f_low)
         if ind is not None:
             kwargs["meta_data"]["f_low"] = samples[0][ind]
