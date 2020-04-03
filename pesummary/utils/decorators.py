@@ -15,6 +15,7 @@
 
 import functools
 import copy
+import numpy as np
 
 
 def open_config(index=0):
@@ -76,5 +77,53 @@ def no_latex_plot(func):
         rcParams["text.usetex"] = False
         value = func(*args, **kwargs)
         rcParams["text.usetex"] = original_tex
+        return value
+    return wrapper_function
+
+
+def array_input(func):
+    """Convert the input into an np.ndarray and return either a float or a
+    np.ndarray depending on what was input.
+
+    Examples
+    --------
+    >>> @array_input
+    >>> def total_mass(mass_1, mass_2):
+    ...    total_mass = mass_1 + mass_2
+    ...    return total_mass
+    ...
+    >>> print(total_mass(30, 10))
+    40.0
+    >>> print(total_mass([30, 3], [10, 1]))
+    [40 4]
+    """
+    @functools.wraps(func)
+    def wrapper_function(*args, **kwargs):
+        new_args = list(copy.deepcopy(args))
+        new_kwargs = kwargs.copy()
+        return_float = False
+        for num, arg in enumerate(args):
+            if isinstance(arg, (float, int)):
+                new_args[num] = np.array([arg])
+                return_float = True
+            elif isinstance(arg, (list, np.ndarray)):
+                new_args[num] = np.array(arg)
+            else:
+                pass
+        for key, item in kwargs.items():
+            if isinstance(item, (float, int)):
+                new_kwargs[key] = np.array([item])
+            elif isinstance(item, (list, np.ndarray)):
+                new_kwargs[key] = np.array(item)
+        value = np.array(func(*new_args, **new_kwargs))
+        if return_float:
+            new_value = copy.deepcopy(value)
+            if len(new_value) > 1:
+                new_value = np.array([arg[0] for arg in value])
+            elif new_value.ndim == 2:
+                new_value = new_value[0]
+            else:
+                new_value = float(new_value)
+            return new_value
         return value
     return wrapper_function

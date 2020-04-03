@@ -22,6 +22,44 @@ from pesummary.utils.utils import command_line_arguments
 from pesummary.core.command_line import DictionaryAction
 
 
+def _remnant_command_line_arguments(parser):
+    """Add remnant specific command line options to the Argument Parser
+
+    Parameters
+    ----------
+    parser: object
+        OptionParser instance
+    """
+    remnant_group = parser.add_argument_group(
+        "Options specific for calculating the remnant properties\n"
+        "-------------------------------------------------------"
+    )
+    remnant_group.add_argument(
+        "--evolve_spins", action="store_true",
+        help=(
+            "Evolve the spins up to the Schwarzschild ISCO frequency for "
+            "remnant fits evaluation"
+        ), default=False
+    )
+    remnant_group.add_argument(
+        "--NRSur_fits", nargs="?", dest="NRSur_fits",
+        help=(
+            "The NRSurrogate you wish to use to calculate the remnant "
+            "quantities from your posterior samples. If not passed, the "
+            "average NR fits are used"
+        ), default=False
+    )
+    remnant_group.add_argument(
+        "--waveform_fits", action="store_true",
+        help=(
+            "Use the provided approximant (either from command line or stored "
+            "in the result file) to calculate the remnant quantities from your "
+            "posterior samples. If not passed, the average NR fits are used"
+        ), default=False
+    )
+    return remnant_group
+
+
 def insert_gwspecific_option_group(parser):
     """Add gravitational wave related options to the optparser object
 
@@ -31,7 +69,10 @@ def insert_gwspecific_option_group(parser):
         OptionParser instance.
     """
     gw_group = parser.add_argument_group(
-        "Options specific for gravitational wave results files")
+        "\n\n=====================================================\n"
+        "Options specific for gravitational wave results files\n"
+        "====================================================="
+    )
 
     gw_group.add_argument("-a", "--approximant", dest="approximant",
                           help=("waveform approximant used to generate "
@@ -74,16 +115,6 @@ def insert_gwspecific_option_group(parser):
                                 "ligo.skymap. These samples will be randomly "
                                 "drawn from the posterior distributions"),
                           default=None)
-    gw_group.add_argument("--evolve_spins", action="store_true",
-                          help=("Evolve the spins up to the Schwarzschild "
-                                "ISCO frequency for remnant fits evaluation"),
-                          default=False)
-    gw_group.add_argument("--NRSur_fits", nargs="?", dest="NRSur_fits",
-                          help=("The NRSurrogate you wish to use to calculate "
-                                "the remnant quantities from your posterior "
-                                "samples. If not passed, the average NR fits "
-                                "are used"),
-                          default=False)
     gw_group.add_argument("--f_low", dest="f_low",
                           help=("Low frequency cutoff used to generate the "
                                 "samples"),
@@ -101,6 +132,7 @@ def insert_gwspecific_option_group(parser):
     gw_group.add_argument("--public", action="store_true",
                           help="generate public facing summary pages",
                           default=False)
+    remnant_group = _remnant_command_line_arguments(parser)
     return gw_group
 
 

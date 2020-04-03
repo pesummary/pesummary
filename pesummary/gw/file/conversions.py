@@ -16,12 +16,17 @@
 import numpy as np
 
 from pesummary.utils.utils import logger, SamplesDict
+from pesummary.utils.decorators import array_input
 
 try:
     import lalsimulation
-    from lalsimulation import SimInspiralTransformPrecessingNewInitialConditions
-    from lalsimulation import SimInspiralTransformPrecessingWvf2PE
-    from lalsimulation import DetectorPrefixToLALDetector
+    from lalsimulation import (
+        SimInspiralTransformPrecessingNewInitialConditions,
+        SimInspiralTransformPrecessingWvf2PE, DetectorPrefixToLALDetector,
+        FLAG_SEOBNRv4P_HAMILTONIAN_DERIVATIVE_NUMERICAL,
+        FLAG_SEOBNRv4P_EULEREXT_QNM_SIMPLE_PRECESSION,
+        FLAG_SEOBNRv4P_ZFRAME_L
+    )
     from lal import MSUN_SI, C_SI
     LALINFERENCE_INSTALL = True
 except ImportError:
@@ -37,8 +42,18 @@ except ImportError:
     logger.warning("You do not have astropy installed currently. You will"
                    " not be able to use some of the prebuilt functions.")
 
+DEFAULT_SEOBFLAGS = {
+    "SEOBNRv4P_SpinAlignedEOBversion": 4,
+    "SEOBNRv4P_SymmetrizehPlminusm": 1,
+    "SEOBNRv4P_HamiltonianDerivative": FLAG_SEOBNRv4P_HAMILTONIAN_DERIVATIVE_NUMERICAL,
+    "SEOBNRv4P_euler_extension": FLAG_SEOBNRv4P_EULEREXT_QNM_SIMPLE_PRECESSION,
+    "SEOBNRv4P_Zframe": FLAG_SEOBNRv4P_ZFRAME_L,
+    "SEOBNRv4P_debug": 0
+}
+
 
 @np.vectorize
+@array_input
 def z_from_dL_exact(luminosity_distance):
     """Return the redshift given samples for the luminosity distance
     """
@@ -47,6 +62,7 @@ def z_from_dL_exact(luminosity_distance):
     return z_at_value(Planck15.luminosity_distance, luminosity_distance * u.Mpc)
 
 
+@array_input
 def z_from_dL_approx(luminosity_distance):
     """Return the approximate redshift given samples for the luminosity
     distance. This technique uses interpolation to estimate the redshift
@@ -63,12 +79,14 @@ def z_from_dL_approx(luminosity_distance):
     return zvals
 
 
+@array_input
 def dL_from_z(redshift):
     """Return the luminosity distance given samples for the redshift
     """
     return Planck15.luminosity_distance(redshift).value
 
 
+@array_input
 def comoving_distance_from_z(redshift):
     """Return the comoving distance given samples for the redshift
     """
@@ -89,6 +107,7 @@ def _detector_from_source(parameter, z):
     return parameter * (1. + z)
 
 
+@array_input
 def m1_source_from_m1_z(mass_1, z):
     """Return the source mass of the bigger black hole given samples for the
     detector mass of the bigger black hole and the redshift
@@ -96,6 +115,7 @@ def m1_source_from_m1_z(mass_1, z):
     return _source_from_detector(mass_1, z)
 
 
+@array_input
 def m2_source_from_m2_z(mass_2, z):
     """Return the source mass of the smaller black hole given samples for the
     detector mass of the smaller black hole and the redshift
@@ -103,6 +123,7 @@ def m2_source_from_m2_z(mass_2, z):
     return _source_from_detector(mass_2, z)
 
 
+@array_input
 def m_total_source_from_mtotal_z(total_mass, z):
     """Return the source total mass of the binary given samples for detector
     total mass and redshift
@@ -110,6 +131,7 @@ def m_total_source_from_mtotal_z(total_mass, z):
     return _source_from_detector(total_mass, z)
 
 
+@array_input
 def mtotal_from_mtotal_source_z(total_mass_source, z):
     """Return the total mass of the binary given samples for the source total
     mass and redshift
@@ -117,6 +139,7 @@ def mtotal_from_mtotal_source_z(total_mass_source, z):
     return _detector_from_source(total_mass_source, z)
 
 
+@array_input
 def mchirp_source_from_mchirp_z(mchirp, z):
     """Return the source chirp mass of the binary given samples for detector
     chirp mass and redshift
@@ -124,6 +147,7 @@ def mchirp_source_from_mchirp_z(mchirp, z):
     return _source_from_detector(mchirp, z)
 
 
+@array_input
 def mchirp_from_mchirp_source_z(mchirp_source, z):
     """Return the chirp mass of the binary given samples for the source chirp
     mass and redshift
@@ -131,6 +155,7 @@ def mchirp_from_mchirp_source_z(mchirp_source, z):
     return _detector_from_source(mchirp_source, z)
 
 
+@array_input
 def mchirp_from_m1_m2(mass1, mass2):
     """Return the chirp mass given the samples for mass1 and mass2
 
@@ -140,12 +165,14 @@ def mchirp_from_m1_m2(mass1, mass2):
     return (mass1 * mass2)**0.6 / (mass1 + mass2)**0.2
 
 
+@array_input
 def m_total_from_m1_m2(mass1, mass2):
     """Return the total mass given the samples for mass1 and mass2
     """
     return mass1 + mass2
 
 
+@array_input
 def m1_from_mchirp_q(mchirp, q):
     """Return the mass of the larger black hole given the chirp mass and
     mass ratio
@@ -153,6 +180,7 @@ def m1_from_mchirp_q(mchirp, q):
     return ((1. / q)**(2. / 5.)) * ((1.0 + (1. / q))**(1. / 5.)) * mchirp
 
 
+@array_input
 def m2_from_mchirp_q(mchirp, q):
     """Return the mass of the smaller black hole given the chirp mass and
     mass ratio
@@ -160,18 +188,21 @@ def m2_from_mchirp_q(mchirp, q):
     return ((1. / q)**(-3. / 5.)) * ((1.0 + (1. / q))**(1. / 5.)) * mchirp
 
 
+@array_input
 def eta_from_m1_m2(mass1, mass2):
     """Return the symmetric mass ratio given the samples for mass1 and mass2
     """
     return (mass1 * mass2) / (mass1 + mass2)**2
 
 
+@array_input
 def q_from_m1_m2(mass1, mass2):
     """Return the mass ratio given the samples for mass1 and mass2
     """
     return mass2 / mass1
 
 
+@array_input
 def invq_from_m1_m2(mass1, mass2):
     """Return the inverted mass ratio (mass1/mass2 for mass1 > mass2)
     given the samples for mass1 and mass2
@@ -179,6 +210,7 @@ def invq_from_m1_m2(mass1, mass2):
     return 1. / q_from_m1_m2(mass1, mass2)
 
 
+@array_input
 def invq_from_q(mass_ratio):
     """Return the inverted mass ratio (mass1/mass2 for mass1 > mass2)
     given the samples for mass ratio (mass2/mass1)
@@ -186,6 +218,7 @@ def invq_from_q(mass_ratio):
     return 1. / mass_ratio
 
 
+@array_input
 def q_from_eta(symmetric_mass_ratio):
     """Return the mass ratio given samples for symmetric mass ratio
     """
@@ -193,6 +226,7 @@ def q_from_eta(symmetric_mass_ratio):
     return (temp - (temp ** 2 - 1) ** 0.5)
 
 
+@array_input
 def mchirp_from_mtotal_q(total_mass, mass_ratio):
     """Return the chirp mass given samples for total mass and mass ratio
     """
@@ -201,6 +235,7 @@ def mchirp_from_mtotal_q(total_mass, mass_ratio):
     return eta_from_m1_m2(mass1, mass2)**(3. / 5) * (mass1 + mass2)
 
 
+@array_input
 def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Return chi_p given samples for mass1, mass2, spin1x, spin1y, spin2x,
     spin2y
@@ -215,12 +250,14 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     return chi_p
 
 
+@array_input
 def chi_eff(mass1, mass2, spin1z, spin2z):
     """Return chi_eff given samples for mass1, mass2, spin1z, spin2z
     """
     return (spin1z * mass1 + spin2z * mass2) / (mass1 + mass2)
 
 
+@array_input
 def phi_12_from_phi1_phi2(phi1, phi2):
     """Return the difference in azimuthal angle between S1 and S2 given samples
     for phi1 and phi2
@@ -234,6 +271,7 @@ def phi_12_from_phi1_phi2(phi1, phi2):
     return phi12
 
 
+@array_input
 def phi1_from_spins(spin_1x, spin_1y):
     """Return phi_1 given samples for spin_1x and spin_1y
     """
@@ -241,6 +279,7 @@ def phi1_from_spins(spin_1x, spin_1y):
     return phi_1
 
 
+@array_input
 def phi2_from_spins(spin_2x, spin_2y):
     """Return phi_2 given samples for spin_2x and spin_2y
     """
@@ -248,6 +287,7 @@ def phi2_from_spins(spin_2x, spin_2y):
     return phi_2
 
 
+@array_input
 def spin_angles(mass_1, mass_2, inc, spin1x, spin1y, spin1z, spin2x, spin2y,
                 spin2z, f_ref, phase):
     """Return the spin angles given samples for mass_1, mass_2, inc, spin1x,
@@ -275,32 +315,19 @@ def spin_angles(mass_1, mass_2, inc, spin1x, spin1y, spin1z, spin2x, spin2y,
                 SimInspiralTransformPrecessingWvf2PE(
                     incl=inc[i], m1=mass_1[i], m2=mass_2[i], S1x=spin1x[i],
                     S1y=spin1y[i], S1z=spin1z[i], S2x=spin2x[i], S2y=spin2y[i],
-                    S2z=spin2z[i], fRef=float(f_ref[i]), phiRef=phase[i])
+                    S2z=spin2z[i], fRef=float(f_ref[i]), phiRef=float(phase[i]))
             data.append([theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2])
         if return_float:
             return data[0]
         return data
 
 
+@array_input
 def component_spins(theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1,
                     mass_2, f_ref, phase):
     """Return the component spins given samples for theta_jn, phi_jl, tilt_1,
     tilt_2, phi_12, a_1, a_2, mass_1, mass_2, f_ref, phase
     """
-    return_float = False
-    if isinstance(mass_1, (int, float)):
-        return_float = True
-        theta_jn = [theta_jn]
-        phi_jl = [phi_jl]
-        tilt_1 = [tilt_1]
-        tilt_2 = [tilt_2]
-        phi_12 = [phi_12]
-        a_1 = [a_1]
-        a_2 = [a_2]
-        mass_1 = [mass_1]
-        mass_2 = [mass_2]
-        f_ref = [f_ref]
-        phase = [phase]
     if LALINFERENCE_INSTALL:
         data = []
         for i in range(len(theta_jn)):
@@ -308,15 +335,14 @@ def component_spins(theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1,
                 SimInspiralTransformPrecessingNewInitialConditions(
                     theta_jn[i], phi_jl[i], tilt_1[i], tilt_2[i], phi_12[i],
                     a_1[i], a_2[i], mass_1[i] * MSUN_SI, mass_2[i] * MSUN_SI,
-                    float(f_ref[i]), phase[i])
+                    float(f_ref[i]), float(phase[i]))
             data.append([iota, S1x, S1y, S1z, S2x, S2y, S2z])
-        if return_float:
-            return data[0]
         return data
     else:
         raise Exception("Please install LALSuite for full conversions")
 
 
+@array_input
 def spin_angles_from_azimuthal_and_polar_angles(
         a_1, a_2, a_1_azimuthal, a_1_polar, a_2_azimuthal, a_2_polar):
     """Return the spin angles given samples for a_1, a_2, a_1_azimuthal,
@@ -335,6 +361,7 @@ def spin_angles_from_azimuthal_and_polar_angles(
     return data
 
 
+@array_input
 def time_in_each_ifo(detector, ra, dec, time_gps):
     """Return the event time in a given detector, given samples for ra, dec,
     time
@@ -356,6 +383,7 @@ def time_in_each_ifo(detector, ra, dec, time_gps):
                         "conversions")
 
 
+@array_input
 def lambda_tilde_from_lambda1_lambda2(lambda1, lambda2, mass1, mass2):
     """Return the dominant tidal term given samples for lambda1 and lambda2
     """
@@ -368,6 +396,7 @@ def lambda_tilde_from_lambda1_lambda2(lambda1, lambda2, mass1, mass2):
     return lambda_tilde
 
 
+@array_input
 def delta_lambda_from_lambda1_lambda2(lambda1, lambda2, mass1, mass2):
     """Return the second dominant tidal term given samples for lambda1 and
     lambda 2
@@ -382,6 +411,7 @@ def delta_lambda_from_lambda1_lambda2(lambda1, lambda2, mass1, mass2):
     return delta_lambda
 
 
+@array_input
 def lambda1_from_lambda_tilde(lambda_tilde, mass1, mass2):
     """Return the individual tidal parameter given samples for lambda_tilde
     """
@@ -393,6 +423,7 @@ def lambda1_from_lambda_tilde(lambda_tilde, mass1, mass2):
     return lambda1
 
 
+@array_input
 def lambda2_from_lambda1(lambda1, mass1, mass2):
     """Return the individual tidal parameter given samples for lambda1
     """
@@ -401,6 +432,7 @@ def lambda2_from_lambda1(lambda1, mass1, mass2):
     return lambda2
 
 
+@array_input
 def _ifo_snr(IFO_abs_snr, IFO_snr_angle):
     """Return the matched filter SNR for a given IFO given samples for the
     absolute SNR and the angle
@@ -408,6 +440,7 @@ def _ifo_snr(IFO_abs_snr, IFO_snr_angle):
     return IFO_abs_snr * np.cos(IFO_snr_angle)
 
 
+@array_input
 def network_snr(snrs):
     """Return the network SNR for N IFOs
 
@@ -422,6 +455,7 @@ def network_snr(snrs):
     return network_snr
 
 
+@array_input
 def tilt_angles_and_phi_12_from_spin_vectors_and_L(a_1, a_2, Ln):
     """Return the tilt angles and phi_12 given samples for the spin vectors
     and the orbital angular momentum
@@ -455,19 +489,185 @@ def tilt_angles_and_phi_12_from_spin_vectors_and_L(a_1, a_2, Ln):
     return np.arccos(cos_tilt_1), np.arccos(cos_tilt_2), phi_12
 
 
+def _wrapper_return_final_mass_and_final_spin_from_waveform(args):
+    """Wrapper function to calculate the remnant properties for a given waveform
+    for a pool of workers
+
+    Parameters
+    ----------
+    args: np.ndarray
+        2 dimensional array giving arguments to pass to
+        _return_final_mass_and_final_spin_from_waveform. The first argument
+        in each sublist is the keyword and the second argument in each sublist
+        is the item you wish to pass
+    """
+    kwargs = {arg[0]: arg[1] for arg in args}
+    return _return_final_mass_and_final_spin_from_waveform(**kwargs)
+
+
+def _return_final_mass_and_final_spin_from_waveform(
+    mass_function=None, spin_function=None, mass_function_args=[],
+    spin_function_args=[], mass_function_return_function=None,
+    mass_function_return_index=None, spin_function_return_function=None,
+    spin_function_return_index=None, mass_1_index=0, mass_2_index=1,
+    nsamples=0, approximant=None, default_SEOBNRv4P_kwargs=False
+):
+    """Return the final mass and final spin given functions to use
+
+    Parameters
+    ----------
+    mass_function: func
+        function you wish to use to calculate the final mass
+    spin_function: func
+        function you wish to use to calculate the final spin
+    mass_function_args: list
+        list of arguments you wish to pass to mass_function
+    spin_function_args: list
+        list of arguments you wish to pass to spin_function
+    mass_function_return_function: str, optional
+        function used to extract the final mass from the quantity returned from
+        mass_function. For example, if mass_function returns a list and the
+        final_mass is a property of the 3 arg of this list,
+        mass_function_return_function='[3].final_mass'
+    mass_function_return_index: str, optional
+        if mass_function returns a list of parameters,
+        mass_function_return_index indicates the index of `final_mass` in the
+        list
+    spin_function_return_function: str, optional
+        function used to extract the final spin from the quantity returned from
+        spin_function. For example, if spin_function returns a list and the
+        final_spin is a property of the 3 arg of this list,
+        spin_function_return_function='[3].final_spin'
+    spin_function_return_index: str, optional
+        if spin_function returns a list of parameters,
+        spin_function_return_index indicates the index of `final_spin` in the
+        list
+    mass_1_index: int, optional
+        the index of mass_1 in mass_function_args. Default is 0
+    mass_2_index: int, optional
+        the index of mass_2 in mass_function_args. Default is 1
+    nsamples: int, optional
+        the total number of samples
+    approximant: str, optional
+        the approximant used
+    default_SEOBNRv4P_kwargs: Bool, optional
+        if True, use the default SEOBNRv4P flags
+    """
+    if default_SEOBNRv4P_kwargs:
+        mode_array, seob_flags = _setup_SEOBNRv4P_args()
+        mass_function_args += [mode_array, seob_flags]
+        spin_function_args += [mode_array, seob_flags]
+    fm = mass_function(*mass_function_args)
+    if mass_function_return_function is not None:
+        fm = eval("fm{}".format(mass_function_return_function))
+    elif mass_function_return_index is not None:
+        fm = fm[mass_function_return_index]
+    fs = spin_function(*spin_function_args)
+    if spin_function_return_function is not None:
+        fs = eval("fs{}".format(spin_function_return_function))
+    elif spin_function_return_index is not None:
+        fs = fs[spin_function_return_index]
+    final_mass = fm * (
+        mass_function_args[mass_1_index] + mass_function_args[mass_2_index]
+    ) / MSUN_SI
+    final_spin = fs
+    return final_mass, final_spin
+
+
+def _setup_SEOBNRv4P_args(mode=[2, 2], seob_flags=DEFAULT_SEOBFLAGS):
+    """Setup the SEOBNRv4P[HM] kwargs
+    """
+    from lalsimulation import (
+        SimInspiralCreateModeArray, SimInspiralModeArrayActivateMode
+    )
+    from lal import DictInsertINT4Value, CreateDict
+
+    mode_array = SimInspiralCreateModeArray()
+    SimInspiralModeArrayActivateMode(mode_array, mode[0], mode[1])
+    _seob_flags = CreateDict()
+    for key, item in seob_flags.items():
+        DictInsertINT4Value(_seob_flags, key, item)
+    return mode_array, _seob_flags
+
+
+@array_input
 def _final_from_initial(
     mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
-    approximant="SEOBNRv4"
+    approximant="SEOBNRv4", iota=None, luminosity_distance=None, f_ref=None,
+    phi_ref=None, mode=[2, 2], delta_t=1. / 4096, seob_flags=DEFAULT_SEOBFLAGS,
+    return_fits_used=False, multi_process=None
 ):
     """Calculate the final mass and final spin given the initial parameters
-    of the binary without using the EOB spin evolution in precessing cases
+    of the binary using the approximant directly
+
+    Parameters
+    ----------
+    mass_1: float/np.ndarray
+        primary mass of the binary
+    mass_2: float/np.ndarray
+        secondary mass of the binary
+    spin_1x: float/np.ndarray
+        x component of the primary spin
+    spin_1y: float/np.ndarray
+        y component of the primary spin
+    spin_1z: float/np.ndarray
+        z component of the primary spin
+    spin_2x: float/np.ndarray
+        x component of the secondary spin
+    spin_2y: float/np.ndarray
+        y component of the secondary spin
+    spin_2z: float/np.ndarray
+        z component of the seconday spin
+    approximant: str
+        name of the approximant you wish to use for the remnant fits
+    iota: float/np.ndarray, optional
+        the angle between the total orbital angular momentum and the line of
+        sight of the source. Used when calculating the remnant fits for
+        SEOBNRv4PHM. Since we only need the EOB dynamics here it does not matter
+        what we pass
+    luminosity_distance: float/np.ndarray, optional
+        the luminosity distance of the source. Used when calculating the
+        remnant fits for SEOBNRv4PHM. Since we only need the EOB dynamics here
+        it does not matter what we pass.
+    f_ref: float/np.ndarray, optional
+        the reference frequency at which the spins are defined
+    phi_ref: float/np.ndarray, optional
+        the coalescence phase of the binary
+    mode: list, optional
+        specific mode to use when calculating the remnant fits for SEOBNRv4PHM.
+        Since we only need the EOB dynamics here it does not matter what we
+        pass.
+    delta_t: float, optional
+        the sampling rate used in the analysis, Used when calculating the
+        remnant fits for SEOBNRv4PHM
+    seob_flags: dict, optional
+        dictionary containing the SEOB flags. Used when calculating the remnant
+        fits for SEOBNRv4PHM
+    return_fits_used: Bool, optional
+        if True, return the approximant that was used.
+    multi_process: int, optional
+        the number of cores to use when calculating the remnant fits
     """
     from lalsimulation import (
         SimIMREOBFinalMassSpin, SimIMREOBFinalMassSpinPrec,
-        SimInspiralGetSpinSupportFromApproximant
+        SimInspiralGetSpinSupportFromApproximant,
+        SimIMRSpinPrecEOBWaveformAll, SimPhenomUtilsIMRPhenomDFinalMass,
+        SimPhenomUtilsPhenomPv2FinalSpin
     )
+    from pesummary.utils.utils import iterator
+    import multiprocessing
 
-    ALLOWED = ["SEOBNRv4", "SEOBNRv4P", "SEOBNRv4PHM"]
+    def convert_args_for_multi_processing(kwargs):
+        args = []
+        for n in range(kwargs["nsamples"]):
+            _args = []
+            for key, item in kwargs.items():
+                if key == "mass_function_args" or key == "spin_function_args":
+                    _args.append([key, [arg[n] for arg in item]])
+                else:
+                    _args.append([key, item])
+            args.append(_args)
+        return args
 
     try:
         approx = getattr(lalsimulation, approximant)
@@ -476,46 +676,120 @@ def _final_from_initial(
             "The waveform '{}' is not supported by lalsimulation"
         )
 
-    if approximant not in ALLOWED:
+    m1 = mass_1 * MSUN_SI
+    m2 = mass_2 * MSUN_SI
+    kwargs = {"nsamples": len(mass_1), "approximant": approximant}
+    if approximant.lower() in ["seobnrv4p", "seobnrv4phm"]:
+        if any(i is None for i in [iota, luminosity_distance, f_ref, phi_ref]):
+            raise ValueError(
+                "The approximant '{}' requires samples for iota, f_ref, "
+                "phi_ref and luminosity_distance. Please pass these "
+                "samples.".format(approximant)
+            )
+        if len(delta_t) == 1:
+            delta_t = [delta_t[0]] * len(mass_1)
+        elif len(delta_t) != len(mass_1):
+            raise ValueError(
+                "Please provide either a single 'delta_t' that is is used for "
+                "all samples, or a single 'delta_t' for each sample"
+            )
+        mode_array, _seob_flags = _setup_SEOBNRv4P_args(
+            mode=mode, seob_flags=seob_flags
+        )
+        args = np.array([
+            phi_ref, delta_t, m1, m2, f_ref, luminosity_distance, iota,
+            spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+            [mode_array] * len(mass_1), [_seob_flags] * len(mass_1)
+        ])
+        kwargs.update(
+            {
+                "mass_function": SimIMRSpinPrecEOBWaveformAll,
+                "spin_function": SimIMRSpinPrecEOBWaveformAll,
+                "mass_function_args": args,
+                "spin_function_args": args,
+                "mass_function_return_function": "[21].data[6]",
+                "spin_function_return_function": "[21].data[7]",
+                "mass_1_index": 2,
+                "mass_2_index": 3,
+            }
+        )
+    elif approximant.lower() in ["seobnrv4"]:
+        spin1 = np.array([spin_1x, spin_1y, spin_1z]).T
+        spin2 = np.array([spin_2x, spin_2y, spin_2z]).T
+        app = np.array([approx] * len(mass_1))
+        kwargs.update(
+            {
+                "mass_function": SimIMREOBFinalMassSpin,
+                "spin_function": SimIMREOBFinalMassSpin,
+                "mass_function_args": [m1, m2, spin1, spin2, app],
+                "spin_function_args": [m1, m2, spin1, spin2, app],
+                "mass_function_return_index": 1,
+                "spin_function_return_index": 2
+            }
+        )
+    elif "phenompv3" in approximant.lower():
+        kwargs.update(
+            {
+                "mass_function": SimPhenomUtilsIMRPhenomDFinalMass,
+                "spin_function": SimPhenomUtilsPhenomPv2FinalSpin,
+                "mass_function_args": [m1, m2, spin_1z, spin_2z],
+                "spin_function_args": [m1, m2, spin_1z, spin_2z]
+            }
+        )
+        if SimInspiralGetSpinSupportFromApproximant(approx) > 2:
+            # matches the waveform's internal usage as corrected in
+            # https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/1270
+            _chi_p = chi_p(mass_1, mass_2, spin_1x, spin_1y, spin_2x, spin_2y)
+            kwargs["spin_function_args"].append(_chi_p)
+        else:
+            kwargs["spin_function_args"].append(np.zeros_like(mass_1))
+    else:
         raise ValueError(
-            "The waveform '{}' is not support by this function. The list "
-            "of supported approximants are: {}".format(
-                approximant, ", ".join(ALLOWED)
+            "The waveform '{}' is not support by this function.".format(
+                approximant
             )
         )
 
-    return_float = False
-    if isinstance(mass_1, (int, float)):
-        return_float = True
-        mass_1 = [mass_1]
-        mass_2 = [mass_2]
-        spin_1x = [spin_1x]
-        spin_1y = [spin_1y]
-        spin_1z = [spin_1z]
-        spin_2x = [spin_2x]
-        spin_2y = [spin_2y]
-        spin_2z = [spin_2z]
-
-    final_mass = []
-    final_spin = []
-    for i in range(len(mass_1)):
-        m1 = mass_1[i] * MSUN_SI
-        m2 = mass_2[i] * MSUN_SI
-        spin1 = [spin_1x[i], spin_1y[i], spin_1z[i]]
-        spin2 = [spin_2x[i], spin_2y[i], spin_2z[i]]
-        if SimInspiralGetSpinSupportFromApproximant(approx) == 3:
-            _, fm, fs = SimIMREOBFinalMassSpinPrec(
-                m1, m2, spin1, spin2, getattr(lalsimulation, approximant)
+    args = convert_args_for_multi_processing(kwargs)
+    if multi_process is not None and multi_process[0] != 1:
+        _multi_process = multi_process[0]
+        if approximant.lower() in ["seobnrv4p", "seobnrv4phm"]:
+            logger.warn(
+                "Ignoring passed 'mode' and 'seob_flags' options. Defaults "
+                "must be used with multiprocessing. If you wish to use custom "
+                "options, please set `multi_process=None`"
             )
-        elif SimInspiralGetSpinSupportFromApproximant(approx) == 2:
-            _, fm, fs = SimIMREOBFinalMassSpin(
-                m1, m2, spin1, spin2, getattr(lalsimulation, approximant)
+            _kwargs = kwargs.copy()
+            _kwargs["mass_function_args"] = kwargs["mass_function_args"][:-2]
+            _kwargs["spin_function_args"] = kwargs["spin_function_args"][:-2]
+            _kwargs["default_SEOBNRv4P_kwargs"] = True
+            args = convert_args_for_multi_processing(_kwargs)
+        with multiprocessing.Pool(_multi_process) as pool:
+            data = np.array(list(
+                iterator(
+                    pool.imap(
+                        _wrapper_return_final_mass_and_final_spin_from_waveform,
+                        args
+                    ), tqdm=True, desc="Evaluating {} fit".format(approximant),
+                    logger_output=True, total=len(mass_1)
+                )
+            )).T
+    else:
+        final_mass, final_spin = [], []
+        _iterator = iterator(
+            range(kwargs["nsamples"]), tqdm=True, total=len(mass_1),
+            desc="Evaluating {} fit".format(approximant)
+        )
+        for i in _iterator:
+            data = _wrapper_return_final_mass_and_final_spin_from_waveform(
+                args[i]
             )
-        final_mass.append((fm * (m1 + m2)) / MSUN_SI)
-        final_spin.append(fs)
-    if return_float:
-        return final_mass[0], final_spin[0]
-    return final_mass, final_spin
+            final_mass.append(data[0])
+            final_spin.append(data[1])
+        data = [final_mass, final_spin]
+    if return_fits_used:
+        return data, [approximant]
+    return data
 
 
 def final_remnant_properties_from_NRSurrogate(
@@ -602,11 +876,11 @@ def final_mass_of_merger_from_NRSurrogate(
     return data["final_mass"]
 
 
-def final_mass_of_merger_from_waveform(*args, approximant="SEOBNRv4"):
+def final_mass_of_merger_from_waveform(*args, **kwargs):
     """Return the final mass resulting from a BBH merger using a given
     approximant
     """
-    return _final_from_initial(*args, approximant=approximant)[0]
+    return _final_from_initial(*args, **kwargs)[0]
 
 
 def final_spin_of_merger_from_NR(
@@ -661,11 +935,11 @@ def final_spin_of_merger_from_NRSurrogate(
     return data["final_spin"]
 
 
-def final_spin_of_merger_from_waveform(*args, approximant="SEOBNRv4"):
+def final_spin_of_merger_from_waveform(*args, **kwargs):
     """Return the final spin resulting from a BBH merger using a given
     approximant
     """
-    return _final_from_initial(*args, approximant=approximant)[1]
+    return _final_from_initial(*args, **kwargs)[1]
 
 
 def final_kick_of_merger_from_NRSurrogate(
@@ -905,6 +1179,12 @@ class _Conversion(object):
     NRSur_fits: float/str, optional
         the NRSurrogate model to use to calculate the remnant fits. If nothing
         passed, the average NR fits are used instead
+    waveform_fits: Bool, optional
+        if True, the approximant is used to calculate the remnant fits. Default
+        is False which means that the average NR fits are used
+    multi_process: int, optional
+        number of cores to use to parallelize the computationally expensive
+        conversions
     regenerate: list, optional
         list of posterior distributions that you wish to regenerate
     return_dict: Bool, optional
@@ -959,6 +1239,14 @@ class _Conversion(object):
                 "NRSurrogate model you wish to use to calculate the remnant "
                 "quantities"
             )
+        waveform_fits = kwargs.get("waveform_fits", False)
+        if NRSurrogate and waveform_fits:
+            raise ValueError(
+                "Unable to use both the NRSurrogate and {} to calculate "
+                "remnant quantities. Please select only one option".format(
+                    approximant
+                )
+            )
         evolve_spins = kwargs.get("evolve_spins", False)
         if isinstance(evolve_spins, bool) and evolve_spins:
             raise ValueError(
@@ -966,16 +1254,28 @@ class _Conversion(object):
                 "evolve the spins up to, or a string, 'ISCO', meaning "
                 "evolve the spins up to the ISCO frequency"
             )
-        if not evolve_spins and NRSurrogate:
-            logger.warn(
-                "Only evolved spin remnant quantities are returned by the "
-                "NRSurrogate fits."
-            )
-        elif evolve_spins and NRSurrogate:
-            logger.warn(
-                "The NRSurrogate fits already evolve the spins. Therefore "
-                "additional spin evolution will not be performed."
-            )
+        if not evolve_spins and (NRSurrogate or waveform_fits):
+            if "eob" in approximant or NRSurrogate:
+                logger.warn(
+                    "Only evolved spin remnant quantities are returned by the "
+                    "{} fits.".format(
+                        "NRSurrogate" if NRSurrogate else approximant
+                    )
+                )
+        elif evolve_spins and (NRSurrogate or waveform_fits):
+            if "eob" in approximant or NRSurrogate:
+                logger.warn(
+                    "The {} fits already evolve the spins. Therefore "
+                    "additional spin evolution will not be performed.".format(
+                        "NRSurrogate" if NRSurrogate else approximant
+                    )
+                )
+            else:
+                logger.warn(
+                    "The {} fits are not applied with spin evolution.".format(
+                        approximant
+                    )
+                )
             evolve_spins = False
         if f_low is not None and "f_low" in extra_kwargs["meta_data"].keys():
             logger.warn(
@@ -1006,9 +1306,12 @@ class _Conversion(object):
         elif f_ref is not None:
             extra_kwargs["meta_data"]["f_ref"] = f_ref
         regenerate = kwargs.get("regenerate", None)
+        multi_process = kwargs.get("multi_process", None)
+        if multi_process is not None:
+            multi_process = int(multi_process)
         obj.__init__(
             parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
-            regenerate
+            waveform_fits, multi_process, regenerate
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -1025,12 +1328,14 @@ class _Conversion(object):
 
     def __init__(
         self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
-        regenerate
+        waveform_fits, multi_process, regenerate
     ):
         self.parameters = parameters
         self.samples = samples
         self.extra_kwargs = extra_kwargs
         self.NRSurrogate = NRSurrogate
+        self.waveform_fit = waveform_fits
+        self.multi_process = multi_process
         self.regenerate = regenerate
         if self.regenerate is not None:
             for param in self.regenerate:
@@ -1060,6 +1365,8 @@ class _Conversion(object):
         param: str
             the parameter that you would like to return the samples for
         """
+        if param == "empty":
+            return np.array(np.zeros(len(self.samples)))
         ind = self.parameters.index(param)
         samples = np.array([i[ind] for i in self.samples])
         return samples
@@ -1557,6 +1864,45 @@ class _Conversion(object):
             self.append_data(param, data[param])
             self.extra_kwargs["meta_data"]["{}_NR_fits".format(param)] = fits
 
+    def _final_remnant_properties_from_waveform(
+        self, non_precessing=False, parameters=["final_mass", "final_spin"]
+    ):
+        f_low = self._retrieve_f_low()
+        approximant = self._retrieve_approximant()
+        if "delta_t" in self.extra_kwargs["meta_data"].keys():
+            delta_t = self.extra_kwargs["meta_data"]["delta_t"]
+        else:
+            delta_t = 1. / 4096
+            if "seob" in approximant.lower():
+                logger.warn(
+                    "Could not find 'delta_t' in the meta data. Using {} as "
+                    "default.".format(delta_t)
+                )
+        if non_precessing:
+            sample_params = [
+                "mass_1", "mass_2", "empty", "empty", "spin_1z", "empty",
+                "empty", "spin_2z", "iota", "luminosity_distance",
+                "phase"
+            ]
+        else:
+            sample_params = [
+                "mass_1", "mass_2", "spin_1x", "spin_1y", "spin_1z",
+                "spin_2x", "spin_2y", "spin_2z", "iota", "luminosity_distance",
+                "phase"
+            ]
+        samples = self.specific_parameter_samples(sample_params)
+        ind = self.parameters.index("spin_1x")
+        _data, fits = _final_from_initial(
+            *samples[:8], iota=samples[8], luminosity_distance=samples[9],
+            f_ref=[f_low] * len(samples[0]), phi_ref=samples[10],
+            delta_t=1. / 4096, approximant=approximant, return_fits_used=True,
+            multi_process=self.multi_process
+        )
+        data = {"final_mass": _data[0], "final_spin": _data[1]}
+        for param in parameters:
+            self.append_data(param, data[param])
+            self.extra_kwargs["meta_data"]["{}_NR_fits".format(param)] = fits
+
     def _final_mass_of_merger(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
             "final_mass", evolved=evolved
@@ -1792,19 +2138,26 @@ class _Conversion(object):
             else:
                 final_spin_params += ["tilt_1", "tilt_2", "phi_12"]
 
-            if self.NRSurrogate:
+            if self.NRSurrogate or self.waveform_fit:
                 parameters = []
-                for param in ["final_mass", "final_spin", "final_kick"]:
+                _default = ["final_mass", "final_spin"]
+                if self.NRSurrogate:
+                    _default.append("final_kick")
+                    function = self._final_remnant_properties_from_NRSurrogate
+                else:
+                    final_spin_params = [
+                        "spin_1x", "spin_1y", "spin_1z", "spin_2x",
+                        "spin_2y", "spin_2z"
+                    ]
+                    function = self._final_remnant_properties_from_waveform
+
+                for param in _default:
                     if param not in self.parameters:
                         parameters.append(param)
                 if all(i in self.parameters for i in final_spin_params):
-                    self._final_remnant_properties_from_NRSurrogate(
-                        non_precessing=False, parameters=parameters
-                    )
+                    function(non_precessing=False, parameters=parameters)
                 elif all(i in self.parameters for i in non_precessing_NR_params):
-                    self._final_remnant_properties_from_NRSurrogate(
-                        non_precessing=True, parameters=parameters
-                    )
+                    function(non_precessing=True, parameters=parameters)
                 if all(i in self.parameters for i in non_precessing_NR_params):
                     if "peak_luminosity%s" % (evolve_suffix) not in self.parameters:
                         self._peak_luminosity_of_merger(evolved=evolve_condition)
@@ -1834,7 +2187,7 @@ class _Conversion(object):
             self._comoving_distance_from_z()
 
         evolve_suffix = "_non_evolved"
-        if evolve_condition or self.NRSurrogate:
+        if evolve_condition or self.NRSurrogate or self.waveform_fit:
             evolve_suffix = ""
             evolve_condition = True
         if "redshift" in self.parameters:
