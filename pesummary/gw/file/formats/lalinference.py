@@ -431,7 +431,9 @@ def write_to_file(
         If True, a LALInference dat file is produced
     """
     from pesummary.gw.file.standard_names import lalinference_map
+    import copy
 
+    _samples = copy.deepcopy(samples)
     if not filename and not label:
         from time import time
 
@@ -448,9 +450,9 @@ def write_to_file(
         )
     reverse_map = {item: key for key, item in lalinference_map.items()}
     no_key = []
-    for param in samples.keys():
+    for param in _samples.keys():
         if param in reverse_map.keys():
-            samples[reverse_map[param]] = samples.pop(param)
+            _samples[reverse_map[param]] = _samples.pop(param)
         elif param not in lalinference_map.keys():
             no_key.append(param)
     if len(no_key):
@@ -458,7 +460,7 @@ def write_to_file(
             "Unable to find a LALInference name for the parameters: {}. "
             "Keeping the PESummary name.".format(", ".join(no_key))
         )
-    lalinference_samples = samples.to_structured_array()
+    lalinference_samples = _samples.to_structured_array()
     if dat:
         np.savetxt(
             os.path.join(outdir, filename), lalinference_samples,

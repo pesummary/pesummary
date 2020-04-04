@@ -92,6 +92,10 @@ class BaseRead(object):
             os.path.join(".outdir", "pesummary_label.dat"), names=True)
         assert all(i in self.parameters for i in list(data.dtype.names))
         assert all(i in list(data.dtype.names) for i in self.parameters)
+        for param in self.parameters:
+            assert np.testing.assert_almost_equal(
+                data[param], self.result.samples_dict[param], 8
+            ) is None
 
 
 class GWBaseRead(BaseRead):
@@ -148,6 +152,25 @@ class GWBaseRead(BaseRead):
         """Test the add_fixed_parameters_from_config_file method
         """
         pass
+
+    def test_to_lalinference_dat(self):
+        """Test the to_lalinference dat=True method
+        """
+        from pesummary.gw.file.standard_names import lalinference_map
+
+        self.result.to_lalinference(dat=True, outdir=".outdir",
+                                    filename="lalinference_label.dat")
+        assert os.path.isfile(os.path.join(".outdir", "lalinference_label.dat"))
+        data = np.genfromtxt(
+            os.path.join(".outdir", "lalinference_label.dat"), names=True)
+        for param in data.dtype.names:
+            if param not in self.result.parameters:
+                pesummary_param = lalinference_map[param]
+            else:
+                pesummary_param = param
+            assert np.testing.assert_almost_equal(
+                data[param], self.result.samples_dict[pesummary_param], 8
+            ) is None
 
 
 class TestCoreJsonFile(BaseRead):
@@ -754,6 +777,11 @@ class TestGWDatFile(GWBaseRead):
         """
         super(TestGWDatFile, self).test_to_dat()
 
+    def test_to_lalinference_dat(self):
+        """Test the to_lalinference dat=True method
+        """
+        super(TestGWDatFile, self).test_to_lalinference_dat()
+
 
 class TestGWHDF5File(GWBaseRead):
     """Class to test loading in an HDF5 file with the gw Read function
@@ -814,6 +842,11 @@ class TestGWHDF5File(GWBaseRead):
         """
         super(TestGWHDF5File, self).test_to_dat()
 
+    def test_to_lalinference_dat(self):
+        """Test the to_lalinference dat=True method
+        """
+        super(TestGWHDF5File, self).test_to_lalinference_dat()
+
 
 class TestGWJsonFile(GWBaseRead):
     """Class to test loading in an json file with the gw Read function
@@ -873,6 +906,11 @@ class TestGWJsonFile(GWBaseRead):
         """Test the to_dat method
         """
         super(TestGWJsonFile, self).test_to_dat()
+
+    def test_to_lalinference_dat(self):
+        """Test the to_lalinference dat=True method
+        """
+        super(TestGWJsonFile, self).test_to_lalinference_dat()
 
 
 class TestGWJsonBilbyFile(GWBaseRead):
@@ -942,6 +980,11 @@ class TestGWJsonBilbyFile(GWBaseRead):
         """
         super(TestGWJsonBilbyFile, self).test_to_dat()
 
+    def test_to_lalinference_dat(self):
+        """Test the to_lalinference dat=True method
+        """
+        super(TestGWJsonBilbyFile, self).test_to_lalinference_dat()
+
 
 class TestGWLALInferenceFile(GWBaseRead):
     """Class to test loading in a LALInference file with the gw Read function
@@ -1003,3 +1046,8 @@ class TestGWLALInferenceFile(GWBaseRead):
         """Test the to_dat method
         """
         super(TestGWLALInferenceFile, self).test_to_dat()
+
+    def test_to_lalinference_dat(self):
+        """Test the to_lalinference dat=True method
+        """
+        super(TestGWLALInferenceFile, self).test_to_lalinference_dat()
