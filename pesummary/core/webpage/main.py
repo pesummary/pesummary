@@ -1012,7 +1012,8 @@ class _WebpageGeneration(object):
             accordian=False, style=style.format("1em", "1em")
         )
         html_file.export(
-            "version_information.csv", margin_top="1em", json=True
+            "requirements.txt", margin_top="1em", csv=False,
+            requirements=True
         )
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
