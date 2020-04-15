@@ -195,7 +195,6 @@ def main():
         add_dynamic_calibration_to_namespace
     )
     from pesummary.utils import functions
-    from .summaryplots import PlotGeneration
 
     parser = command_line()
     insert_gwspecific_option_group(parser)
@@ -204,6 +203,8 @@ def main():
     add_dynamic_calibration_to_namespace(opts)
     func = functions(opts)
     args = func["input"](opts)
+    from .summaryplots import PlotGeneration
+
     PlotGeneration(args, gw=gw_results_file(opts))
     WebpageGeneration(args, gw=gw_results_file(opts))
     func["MetaFile"](args)

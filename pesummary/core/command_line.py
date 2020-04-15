@@ -349,6 +349,10 @@ def _plotting_command_line_arguments(parser):
         "--include_prior", action="store_true", default=False,
         help="Plot the prior on the same plot as the posterior",
     )
+    plot_group.add_argument(
+        "--style_file", dest="style_file", default=None,
+        help="Style file you wish to use when generating plots"
+    )
     return plot_group
 
 

@@ -223,3 +223,40 @@ def test_logger():
         utils.logger.warning("warning")
     l.check(("PESummary", "INFO", "info"),
             ("PESummary", "WARNING", "warning"),)
+
+
+def test_make_cache_style_file():
+    """Test that the `make_cache_style_file` works as expected
+    """
+    from pesummary.utils.utils import make_cache_style_file
+
+    sty = os.path.expanduser("~/.cache/pesummary/style/matplotlib_rcparams.sty")
+    with open("test.sty", "w") as f:
+        f.writelines(["test : 10"])
+    make_cache_style_file("test.sty")
+    assert os.path.isfile(sty)
+    with open(sty, "r") as f:
+        lines = f.readlines()
+    assert len(lines) == 1
+    assert lines[0] == "test : 10"
+
+
+def make_cache_style_file(style_file):
+    """Make a cache directory which stores the style file you wish to use
+    when plotting
+
+    Parameters
+    ----------
+    style_file: str
+        path to the style file that you wish to use when plotting
+    """
+    make_dir(CACHE_DIR)
+    shutil.copyfile(
+        style_file, os.path.join(CACHE_DIR, "matplotlib_rcparams.sty")
+    )
+
+
+def get_matplotlib_style_file():
+    """Return the path to the matplotlib style file that you wish to use
+    """
+    return os.path.join(CACHE_DIR, "matplotlib_rcparams.sty")

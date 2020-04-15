@@ -14,7 +14,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.utils.utils import (
-    logger, number_of_columns_for_legend, _check_latex_install
+    logger, number_of_columns_for_legend, _check_latex_install,
+    get_matplotlib_style_file
 )
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots.bounds import default_bounds
@@ -27,7 +28,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import corner
-import pkg_resources
 import numpy as np
 import math
 from scipy.ndimage import gaussian_filter
@@ -35,8 +35,7 @@ from astropy.time import Time
 from gwpy.timeseries import TimeSeries
 from gwpy.plot.colors import GW_OBSERVATORY_COLORS
 
-path = pkg_resources.resource_filename("pesummary", "conf")
-plt.style.use(os.path.join(path, "matplotlib_rcparams.sty"))
+plt.style.use(get_matplotlib_style_file())
 _check_latex_install()
 
 from lal import MSUN_SI, PC_SI

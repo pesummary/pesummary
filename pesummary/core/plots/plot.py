@@ -13,7 +13,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.utils.utils import (
-    logger, number_of_columns_for_legend, _check_latex_install
+    logger, number_of_columns_for_legend, _check_latex_install,
+    get_matplotlib_style_file
 )
 from pesummary.core.plots.kde import kdeplot
 from pesummary import conf
@@ -22,15 +23,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
-import pkg_resources
-import os
 import corner
 import copy
 
 import numpy as np
 from scipy import signal
-path = pkg_resources.resource_filename("pesummary", "conf")
-plt.style.use(os.path.join(path, "matplotlib_rcparams.sty"))
+plt.style.use(get_matplotlib_style_file())
 _check_latex_install()
 
 
