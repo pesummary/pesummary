@@ -18,6 +18,7 @@ import sys
 import logging
 import contextlib
 import time
+import shutil
 
 import numpy as np
 from scipy.integrate import cumtrapz
@@ -25,6 +26,10 @@ from scipy.interpolate import interp1d
 import h5py
 
 from tqdm import tqdm as Basetqdm
+
+CACHE_DIR = os.path.expanduser(
+    os.path.join("~", ".cache", "pesummary", "style")
+)
 
 
 class SamplesDict(dict):
@@ -501,10 +506,10 @@ def rename_group_or_dataset_in_hf5_file(base_file, group=None, dataset=None):
 
 
 def make_dir(path):
-    if os.path.isdir(path):
+    if os.path.isdir(os.path.expanduser(path)):
         pass
     else:
-        os.makedirs(path)
+        os.makedirs(os.path.expanduser(path))
 
 
 def guess_url(web_dir, host, user):
@@ -966,10 +971,37 @@ def _check_latex_install():
     from matplotlib import rcParams
     from distutils.spawn import find_executable
 
+    original = rcParams['text.usetex']
     if find_executable("latex"):
-        rcParams["text.usetex"] = True
+        rcParams["text.usetex"] = original
     else:
         rcParams["text.usetex"] = False
+
+
+def make_cache_style_file(style_file):
+    """Make a cache directory which stores the style file you wish to use
+    when plotting
+
+    Parameters
+    ----------
+    style_file: str
+        path to the style file that you wish to use when plotting
+    """
+    make_dir(CACHE_DIR)
+    shutil.copyfile(
+        style_file, os.path.join(CACHE_DIR, "matplotlib_rcparams.sty")
+    )
+
+
+def get_matplotlib_style_file():
+    """Return the path to the matplotlib style file that you wish to use
+    """
+    style_file = os.path.join(CACHE_DIR, "matplotlib_rcparams.sty")
+    if not os.path.isfile(style_file):
+        from pesummary import conf
+
+        return conf.style_file
+    return os.path.join(style_file)
 
 
 setup_logger()

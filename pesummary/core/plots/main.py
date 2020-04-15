@@ -306,9 +306,10 @@ class _PlotGeneration(object):
             try:
                 from matplotlib import rcParams
 
+                original = rcParams['text.usetex']
                 rcParams['text.usetex'] = False
                 function(*arguments)
-                rcParams['text.usetex'] = True
+                rcParams['text.usetex'] = original
             except Exception as e:
                 logger.info(message.format(e))
         except Exception as e:

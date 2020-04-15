@@ -1,4 +1,10 @@
 import numpy as np
+import pkg_resources
+import os
+
+# matplotlib style file
+_path = pkg_resources.resource_filename("pesummary", "conf")
+style_file = os.path.join(_path, "matplotlib_rcparams.sty")
 
 # Overwrite message
 overwrite = "Overwriting {} from {} to {}"

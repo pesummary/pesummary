@@ -16,14 +16,16 @@
 import os
 import re
 import socket
-import pkg_resources
 from glob import glob
+import pkg_resources
 
 import numpy as np
 import pesummary
 from pesummary.core.file.read import read as Read
 from pesummary.utils.exceptions import InputError
-from pesummary.utils.utils import SamplesDict, guess_url, logger, make_dir
+from pesummary.utils.utils import (
+    SamplesDict, guess_url, logger, make_dir, make_cache_style_file
+)
 from pesummary import conf
 
 
@@ -271,6 +273,34 @@ class _Input(object):
         self._existing_metafile = os.path.join(
             self.existing, "samples", files[0]
         )
+
+    @property
+    def style_file(self):
+        return self._style_file
+
+    @style_file.setter
+    def style_file(self, style_file):
+        default = conf.style_file
+        if style_file is not None and not os.path.isfile(style_file):
+            logger.warn(
+                "The file '{}' does not exist. Resorting to default".format(
+                    style_file
+                )
+            )
+            style_file = default
+        elif style_file is not None and os.path.isfile(style_file):
+            logger.info(
+                "Using the file '{}' as the matplotlib style file".format(
+                    style_file
+                )
+            )
+        elif style_file is None:
+            logger.debug(
+                "Using the default matplotlib style file"
+            )
+            style_file = default
+        make_cache_style_file(style_file)
+        self._style_file = style_file
 
     @property
     def user(self):
@@ -1175,6 +1205,7 @@ class Input(_Input):
     def __init__(self, opts, ignore_copy=False, extra_options=None):
         logger.info("Command line arguments: %s" % (opts))
         self.opts = opts
+        self.style_file = self.opts.style_file
         self.result_files = self.opts.samples
         self.meta_file = False
         if self.result_files is not None and len(self.result_files) == 1:
