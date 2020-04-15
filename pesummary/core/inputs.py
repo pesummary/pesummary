@@ -114,7 +114,7 @@ class _Input(object):
         }
         if f.injection_parameters != []:
             inj_values = f.injection_dict
-            for label in f.injection_dict.keys():
+            for label in labels:
                 for param in DataFrame[label].keys():
                     if param not in f.injection_dict[label].keys():
                         f.injection_dict[label][param] = float("nan")
