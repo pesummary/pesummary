@@ -209,6 +209,30 @@ def read_result_file(outdir="./.outdir", extension="json", bilby=False,
     return samples
 
 
+def make_psd(outdir="./.outdir"):
+    """Make a psd file
+    """
+    frequencies = np.linspace(0, 1024, 1000)
+    strains = np.random.uniform(10, 0.1, 1000)
+    data = np.vstack([frequencies, strains]).T
+    np.savetxt(
+        "{}/psd.dat".format(outdir), data, delimiter="\t",
+        header="\t".join(["frequencies", "strain"])
+    )
+
+
+def make_calibration(outdir="./.outdir"):
+    """Make a calibration file
+    """
+    frequencies = np.linspace(0, 1024, 1000)
+    columns = [np.random.uniform(10, 0.1, 1000) for _ in range(6)]
+    data = np.vstack([frequencies] + columns).T
+    np.savetxt(
+        "{}/calibration.dat".format(outdir), data, delimiter="\t",
+        header="\t".join(["frequencies", "a", "b", "c", "d", "e", "f"])
+    )
+
+
 def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False,
                      lalinference=False, pesummary=False, pesummary_label="label",
                      config=None, psd=None, calibration=None):

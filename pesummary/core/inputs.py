@@ -523,7 +523,15 @@ class _Input(object):
                 for label in stored_labels:
                     pp = data["prior"]
                     if pp != {} and label in pp.keys() and pp[label] == []:
-                        self.add_to_prior_dict("samples/{}".format(label), [])
+                        if len(self.priors):
+                            if label not in self.priors["samples"].keys():
+                                self.add_to_prior_dict(
+                                    "samples/{}".format(label), []
+                                )
+                        else:
+                            self.add_to_prior_dict(
+                                "samples/{}".format(label), []
+                            )
                     elif pp != {} and label not in pp.keys():
                         for key in pp.keys():
                             if key in self.priors.keys():
