@@ -33,6 +33,43 @@ class Bilby(GWRead):
         path to the results file that you wish to read in with `bilby`.
     kwargs: dict
         additional arguments that will be passed directly to `bilby`
+
+    Parameters
+    ----------
+    path_to_results_file: str
+        path to the results file you wish to load
+
+    Attributes
+    ----------
+    parameters: list
+        list of parameters stored in the result file
+    samples: 2d list
+        list of samples stored in the result file
+    samples_dict: dict
+        dictionary of samples stored in the result file keyed by parameters
+    input_version: str
+        version of the result file passed.
+    extra_kwargs: dict
+        dictionary of kwargs that were extracted from the result file
+    prior: dict
+        dictionary of prior samples extracted from the bilby result file. The
+        analytic priors are evaluated for 5000 samples
+    injection_parameters: dict
+        dictionary of injection parameters stored in the result file
+
+    Methods
+    -------
+    to_dat:
+        save the posterior samples to a .dat file
+    to_latex_table:
+        convert the posterior samples to a latex table
+    generate_latex_macros:
+        generate a set of latex macros for the stored posterior samples
+    to_lalinference:
+        convert the posterior samples to a lalinference result file
+    generate_all_posterior_samples:
+        generate all posterior distributions that may be derived from
+        sampled distributions
     """
     def __init__(self, path_to_results_file, **kwargs):
         super(Bilby, self).__init__(path_to_results_file)
