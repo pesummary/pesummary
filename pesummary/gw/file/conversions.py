@@ -54,16 +54,22 @@ DEFAULT_SEOBFLAGS = {
 
 @np.vectorize
 @array_input
+def _z_from_dL_exact(luminosity_distance):
+    """Return the redshift given samples for the luminosity distance
+    """
+    return z_at_value(Planck15.luminosity_distance, luminosity_distance * u.Mpc)
+
+
 def z_from_dL_exact(luminosity_distance):
     """Return the redshift given samples for the luminosity distance
     """
     logger.warning("Estimating the exact redshift for every luminosity "
                    "distance. This may take a few minutes.")
-    return z_at_value(Planck15.luminosity_distance, luminosity_distance * u.Mpc)
+    return _z_from_dL_exact(luminosity_distance)
 
 
 @array_input
-def z_from_dL_approx(luminosity_distance):
+def z_from_dL_approx(luminosity_distance, N=100):
     """Return the approximate redshift given samples for the luminosity
     distance. This technique uses interpolation to estimate the redshift
     """
@@ -73,7 +79,7 @@ def z_from_dL_approx(luminosity_distance):
     d_max = np.max(luminosity_distance)
     zmin = z_at_value(Planck15.luminosity_distance, d_min * u.Mpc)
     zmax = z_at_value(Planck15.luminosity_distance, d_max * u.Mpc)
-    zgrid = np.logspace(np.log10(zmin), np.log10(zmax), 100)
+    zgrid = np.logspace(np.log10(zmin), np.log10(zmax), N)
     Dgrid = [Planck15.luminosity_distance(i).value for i in zgrid]
     zvals = np.interp(luminosity_distance, Dgrid, zgrid)
     return zvals
@@ -1155,6 +1161,11 @@ def magnitude_from_vector(vector):
     return np.linalg.norm(vector, axis=1)
 
 
+class _Redshift(object):
+    exact = z_from_dL_exact
+    approx = z_from_dL_approx
+
+
 class _Conversion(object):
     """Class to calculate all possible derived quantities
 
@@ -1185,6 +1196,11 @@ class _Conversion(object):
     multi_process: int, optional
         number of cores to use to parallelize the computationally expensive
         conversions
+    redshift_method: str, optional
+        method you wish to use when calculating the redshift given luminosity
+        distance samples. If redshift samples already exist, this method is not
+        used. Default is 'approx' meaning that interpolation is used to calculate
+        the redshift given N luminosity distance points.
     regenerate: list, optional
         list of posterior distributions that you wish to regenerate
     return_dict: Bool, optional
@@ -1233,6 +1249,13 @@ class _Conversion(object):
         f_ref = kwargs.get("f_ref", None)
         approximant = kwargs.get("approximant", None)
         NRSurrogate = kwargs.get("NRSur_fits", False)
+        redshift_method = kwargs.get("redshift_method", "approx")
+        if redshift_method not in ["approx", "exact"]:
+            raise ValueError(
+                "'redshift_method' can either be 'approx' corresponding to "
+                "an approximant method, or 'exact' corresponding to an exact "
+                "method of calculating the redshift"
+            )
         if isinstance(NRSurrogate, bool) and NRSurrogate:
             raise ValueError(
                 "'NRSur_fits' must be a string corresponding to the "
@@ -1311,7 +1334,7 @@ class _Conversion(object):
             multi_process = int(multi_process)
         obj.__init__(
             parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
-            waveform_fits, multi_process, regenerate
+            waveform_fits, multi_process, regenerate, redshift_method
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -1328,7 +1351,7 @@ class _Conversion(object):
 
     def __init__(
         self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
-        waveform_fits, multi_process, regenerate
+        waveform_fits, multi_process, regenerate, redshift_method
     ):
         self.parameters = parameters
         self.samples = samples
@@ -1337,6 +1360,7 @@ class _Conversion(object):
         self.waveform_fit = waveform_fits
         self.multi_process = multi_process
         self.regenerate = regenerate
+        self.redshift_method = redshift_method
         if self.regenerate is not None:
             for param in self.regenerate:
                 self.remove_posterior(param)
@@ -1612,7 +1636,8 @@ class _Conversion(object):
 
     def _z_from_dL(self):
         samples = self.specific_parameter_samples("luminosity_distance")
-        redshift = z_from_dL_approx(samples)
+        func = getattr(_Redshift, self.redshift_method)
+        redshift = func(samples)
         self.append_data("redshift", redshift)
 
     def _comoving_distance_from_z(self):
