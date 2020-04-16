@@ -96,7 +96,8 @@ class _GWInput(_Input):
                     approximant=approx[num], f_ref=self.f_ref[num],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
                     waveform_fits=self.waveform_fits,
-                    multi_process=self.opts.multi_process
+                    multi_process=self.opts.multi_process,
+                    redshift_method=self.redshift_method
                 ))
             return kwargs
         except IndexError:
@@ -113,7 +114,8 @@ class _GWInput(_Input):
                     approximant=approx[0], f_ref=self.f_ref[0],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
                     waveform_fits=self.waveform_fits,
-                    multi_process=self.opts.multi_process
+                    multi_process=self.opts.multi_process,
+                    redshift_method=self.redshift_method
                 ))
             return kwargs
 
@@ -691,7 +693,7 @@ class GWInput(_GWInput, Input):
         super(GWInput, self).__init__(
             opts, ignore_copy=True, extra_options=[
                 "evolve_spins", "NRSur_fits", "f_low", "f_ref",
-                "waveform_fits"
+                "waveform_fits", "redshift_method"
             ]
         )
         if self.existing is not None:

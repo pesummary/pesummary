@@ -132,6 +132,9 @@ def insert_gwspecific_option_group(parser):
     gw_group.add_argument("--public", action="store_true",
                           help="generate public facing summary pages",
                           default=False)
+    gw_group.add_argument("--redshift_method", dest="redshift_method",
+                          help=("The method to use when estimating the redshift"),
+                          choices=["approx", "exact"], default="approx")
     remnant_group = _remnant_command_line_arguments(parser)
     return gw_group
 
