@@ -444,7 +444,7 @@ class MetaFile(PostProcessing):
             self.injection_data, self.file_version, self.file_kwargs,
             hdf5=self.hdf5, webdir=self.webdir, result_files=self.result_files,
             existing_version=self.existing_file_version, existing_label=self.existing_labels,
-            existing_samples=self.existing_samples,
+            priors=self.priors, existing_samples=self.existing_samples,
             existing_injection=self.existing_injection_data,
             existing_metadata=self.existing_file_kwargs,
             existing_config=self.existing_config, existing=self.existing,

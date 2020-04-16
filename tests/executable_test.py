@@ -16,6 +16,93 @@ class Base(object):
         process.wait()
 
 
+class TestSummaryPages(Base):
+    """Test the `summarypages` executable with trivial examples
+    """
+    def setup(self):
+        """Setup the SummaryClassification class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        make_result_file(gw=False, extension="json")
+        os.rename(".outdir/test.json", ".outdir/example.json")
+        make_result_file(gw=False, extension="hdf5")
+        os.rename(".outdir/test.h5", ".outdir/example2.h5")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def check_output(self, number=1):
+        """Check the output from the summarypages executable
+        """
+        assert os.path.isfile(".outdir/home.html")
+        plots = get_list_of_plots(gw=False, number=number)
+        assert all(
+            i == j for i, j in zip(
+                sorted(plots), sorted(glob.glob("./.outdir/plots/*.png"))
+            )
+        )
+        files = get_list_of_files(gw=False, number=number)
+        assert all(
+            i == j for i, j in zip(
+                sorted(files), sorted(glob.glob("./.outdir/html/*.html"))
+            )
+        )
+
+    def test_prior_input(self):
+        """Check that `summarypages` works when a prior file is passed from
+        the command line
+        """
+        import importlib
+
+        for package in ["core", "gw"]:
+            gw = True if package == "gw" else False
+            module = importlib.import_module(
+                "pesummary.{}.file.read".format(package)
+            )
+            make_result_file(gw=gw, extension="json")
+            os.rename(".outdir/test.json", ".outdir/prior.json")
+            command_line = (
+                "summarypages --webdir .outdir --samples .outdir/example.json "
+                "--prior_file .outdir/prior.json --labels test"
+            )
+            command_line += " --gw" if gw else ""
+            self.launch(command_line)
+            f = module.read(".outdir/samples/posterior_samples.h5")
+            stored = f.priors["samples"]["test"]
+            f = module.read(".outdir/prior.json")
+            original = f.samples_dict
+            for param in original.keys():
+                np.testing.assert_almost_equal(
+                    original[param], stored[param]
+                )
+
+    def test_calibration_and_psd(self):
+        """Test that the calibration and psd files are passed appropiately
+        """
+        from pesummary.gw.file.read import read
+        from base import make_psd, make_calibration
+
+        make_psd()
+        make_calibration()
+        command_line = (
+            "summarypages --webdir .outdir --samples .outdir/example.json "
+            "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
+            "--labels test"
+        )
+        self.launch(command_line)
+        f = read(".outdir/samples/posterior_samples.h5")
+        psd = np.genfromtxt(".outdir/psd.dat")
+        calibration = np.genfromtxt(".outdir/calibration.dat")
+        np.testing.assert_almost_equal(f.psd["test"]["H1"], psd[:-2])
+        np.testing.assert_almost_equal(
+            f.priors["calibration"]["test"]["L1"], calibration
+        )
+
+
 class TestSummaryClassification(Base):
     """Test the `summaryclassification` executable
     """
