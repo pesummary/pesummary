@@ -22,10 +22,37 @@ from pesummary.core.file.formats.default import Default as CoreDefault
 class Default(GWRead):
     """Class to handle the default loading options.
 
-    Attributes
+    Parameters
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+
+    Attributes
+    ----------
+    parameters: list
+        list of parameters stored in the result file
+    samples: 2d list
+        list of samples stored in the result file
+    samples_dict: dict
+        dictionary of samples stored in the result file keyed by parameters
+    input_version: str
+        version of the result file passed.
+    extra_kwargs: dict
+        dictionary of kwargs that were extracted from the result file
+
+    Methods
+    -------
+    to_dat:
+        save the posterior samples to a .dat file
+    to_latex_table:
+        convert the posterior samples to a latex table
+    generate_latex_macros:
+        generate a set of latex macros for the stored posterior samples
+    to_lalinference:
+        convert the posterior samples to a lalinference result file
+    generate_all_posterior_samples:
+        generate all posterior distributions that may be derived from
+        sampled distributions
     """
     def __init__(self, path_to_results_file):
         super(Default, self).__init__(path_to_results_file)

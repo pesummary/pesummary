@@ -28,20 +28,56 @@ class PESummary(GWRead, CorePESummary):
 
     Parameters
     ----------
-    parser: argparser
-        The parser containing the command line arguments
+    path_to_results_file: str
+        path to the results file you wish to load
 
     Attributes
     ----------
-    existing_file: str
-        the path to the existing posterior_samples.h5 file
-    existing_approximants: list
-        list of approximants that have been used in the previous analysis
-    existing_labels: list
-        list of labels that have been used in the previous analysis
-    existing_samples: nd list
-        nd list of samples stored for each approximant used in the previous
+    parameters: list
+        list of parameters stored in the result file
+    samples: 2d list
+        list of samples stored in the result file
+    samples_dict: dict
+        dictionary of samples stored in the result file keyed by parameters
+    input_version: str
+        version of the result file passed.
+    extra_kwargs: dict
+        dictionary of kwargs that were extracted from the result file
+    approximant: list
+        list of approximants stored in the result file
+    labels: list
+        list of analyses stored in the result file
+    config: list
+        list of dictonaries containing the configuration files for each
         analysis
+    psd: dict
+        dictionary containing the psds stored in the result file keyed by
+        the analysis label
+    calibration: dict
+        dictionary containing the calibration posterior samples keyed by
+        the analysis label
+    prior: dict
+        dictionary containing the prior samples for each analysis
+    weights: dict
+        dictionary of weights for each samples for each analysis
+    detectors: list
+        list of IFOs used in each analysis
+
+    Methods
+    -------
+    to_dat:
+        save the posterior samples to a .dat file
+    to_latex_table:
+        convert the posterior samples to a latex table
+    generate_latex_macros:
+        generate a set of latex macros for the stored posterior samples
+    to_lalinference:
+        convert the posterior samples to a lalinference result file
+    to_bilby:
+        convert the posterior samples to a bilby result file
+    generate_all_posterior_samples:
+        generate all posterior distributions that may be derived from
+        sampled distributions
     """
     def __init__(self, path_to_results_file, **kwargs):
         super(PESummary, self).__init__(

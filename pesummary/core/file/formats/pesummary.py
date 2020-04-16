@@ -37,20 +37,51 @@ class PESummary(Read):
 
     Parameters
     ----------
-    parser: argparser
-        The parser containing the command line arguments
+    path_to_results_file: str
+        path to the results file you wish to load
 
     Attributes
     ----------
-    existing_file: str
-        the path to the existing posterior_samples.h5 file
-    existing_approximants: list
-        list of approximants that have been used in the previous analysis
-    existing_labels: list
-        list of labels that have been used in the previous analysis
-    existing_samples: nd list
-        nd list of samples stored for each approximant used in the previous
+    parameters: nd list
+        list of parameters stored in the result file for each analysis stored
+        in the result file
+    samples: 3d list
+        list of samples stored in the result file for each analysis stored
+        in the result file
+    samples_dict: nested dict
+        nested dictionary of samples stored in the result file keyed by their
+        respective label
+    input_version: str
+        version of the result file passed.
+    extra_kwargs: list
+        list of dictionaries containing kwargs that were extracted from each
         analysis
+    injection_parameters: list
+        list of dictionaries of injection parameters for each analysis
+    injection_dict: dict
+        dictionary containing the injection parameters keyed by their respective
+        label
+    prior: dict
+        dictionary of prior samples stored in the result file
+    config: dict
+        dictionary containing the configuration file stored in the result file
+    labels: list
+        list of analyses stored in the result file
+    weights: dict
+        dictionary of weights for each sample for each analysis
+
+    Methods
+    -------
+    to_dat:
+        save the posterior samples to a .dat file
+    to_bilby:
+        convert the posterior samples to a bilby.core.result.Result object
+    to_latex_table:
+        convert the posterior samples to a latex table
+    generate_latex_macros:
+        generate a set of latex macros for the stored posterior samples
+    write_config_to_file:
+        write the config file stored in the result file to file
     """
     def __init__(self, path_to_results_file):
         super(PESummary, self).__init__(path_to_results_file)
