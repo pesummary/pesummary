@@ -102,6 +102,21 @@ class TestSummaryPages(Base):
             f.priors["calibration"]["test"]["L1"], calibration
         )
 
+    def test_gracedb(self):
+        """Test that when the gracedb ID is passed from the command line it is
+        correctly stored in the meta data
+        """
+        from pesummary.gw.file.read import read
+
+        command_line = (
+            "summarypages --webdir .outdir --samples .outdir/example.json "
+            "--gracedb G17864 --gw --labels test"
+        )
+        self.launch(command_line)
+        f = read(".outdir/samples/posterior_samples.h5")
+        assert "gracedb" in f.extra_kwargs[0]["meta_data"]
+        assert "G17864" == f.extra_kwargs[0]["meta_data"]["gracedb"]
+
 
 class TestSummaryClassification(Base):
     """Test the `summaryclassification` executable
