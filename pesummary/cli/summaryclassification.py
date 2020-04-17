@@ -180,11 +180,11 @@ def make_plots(
                 )
 
 
-def main():
+def main(args=None):
     """Top level interface for `summarypublication`
     """
     parser = command_line()
-    opts = parser.parse_args()
+    opts = parser.parse_args(args=args)
     if opts.webdir:
         make_dir(opts.webdir)
     else:

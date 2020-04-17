@@ -125,11 +125,11 @@ def make_omegascan_plot(opts):
         plt.close()
 
 
-def main():
+def main(args=None):
     """Top level interface for `summarydetchar`
     """
     parser = command_line()
-    opts = parser.parse_args()
+    opts = parser.parse_args(args=args)
     make_dir(opts.webdir)
     func_map = {"spectrogram": make_spectrogram_plot,
                 "omegascan": make_omegascan_plot}

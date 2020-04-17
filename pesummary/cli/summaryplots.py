@@ -315,12 +315,12 @@ def skymap_plot(opts):
         )
 
 
-def main():
+def main(args=None):
     """The main interface for `summaryplots`
     """
     latex_labels.update(GWlatex_labels)
     parser = command_line()
-    opts = parser.parse_args()
+    opts = parser.parse_args(args=args)
     opts = check_inputs(opts)
     make_dir(opts.webdir)
     func_map = {

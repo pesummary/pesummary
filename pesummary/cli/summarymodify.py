@@ -201,11 +201,11 @@ def modify(data, function, **kwargs):
     return func_map[function](data, **kwargs)
 
 
-def main():
+def main(args=None):
     """
     """
     parser = command_line()
-    opts = parser.parse_args()
+    opts = parser.parse_args(args=args)
     args = Input(opts)
     meta_file = os.path.join(
         args.webdir, "modified_posterior_samples.{}".format(

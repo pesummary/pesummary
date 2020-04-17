@@ -27,12 +27,12 @@ __doc__ = """This executable is used to combine multiple result files into a
 single PESummary metafile"""
 
 
-def main():
+def main(args=None):
     """Top level interface for `summarycombine`
     """
     parser = command_line()
     insert_gwspecific_option_group(parser)
-    opts, unknown = parser.parse_known_args()
+    opts, unknown = parser.parse_known_args(args=args)
     add_dynamic_PSD_to_namespace(opts)
     add_dynamic_calibration_to_namespace(opts)
     func = functions(opts)
