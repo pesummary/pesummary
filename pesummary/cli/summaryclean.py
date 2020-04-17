@@ -78,11 +78,11 @@ def save(pesummary_object, file_format, webdir=None, label=None):
         pesummary_object.to_bilby()
 
 
-def main():
+def main(args=None):
     """Top level interface for `summaryclean`
     """
     parser = command_line()
-    opts = parser.parse_args()
+    opts = parser.parse_args(args=args)
     if opts.labels:
         if len(opts.labels) != len(opts.samples):
             raise Exception("Please provide labels for all result files")

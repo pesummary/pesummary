@@ -336,12 +336,12 @@ def make_population_scatter_plot(opts):
         plt.close()
 
 
-def main():
+def main(args=None):
     """Top level interface for `summarypublication`
     """
     latex_labels.update(GWlatex_labels)
     parser = command_line()
-    opts = parser.parse_args()
+    opts = parser.parse_args(args=args)
     make_dir(opts.webdir)
     func_map = {"2d_contour": make_2d_contour_plot,
                 "violin": make_violin_plot,

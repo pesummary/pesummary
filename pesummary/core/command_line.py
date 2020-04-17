@@ -245,6 +245,9 @@ def _core_command_line_arguments(parser):
         "--user", dest="user", help=argparse.SUPPRESS, default=conf.user
     )
     core_group.add_argument(
+        "--testing", action="store_true", help=argparse.SUPPRESS, default=False
+    )
+    core_group.add_argument(
         "--add_to_existing", action="store_true", default=False,
         help="add new results to an existing html page"
     )

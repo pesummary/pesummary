@@ -264,13 +264,13 @@ def make_basic_comparison_html(webdir):
     html_file.close()
 
 
-def main():
+def main(args=None):
     """Top level interface for `summaryreview`
     """
     import time
 
     parser = command_line()
-    opts = parser.parse_args()
+    opts = parser.parse_args(args=args)
     logger.info("Starting to generate plots using 'cbcBayesPostProc'")
     t0 = time.time()
     launch_lalinference(opts.webdir, opts.samples)

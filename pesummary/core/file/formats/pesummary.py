@@ -286,6 +286,10 @@ class PESummary(Read):
         """
         config = configparser.ConfigParser()
         config.optionxform = str
+        if config_dict is None:
+            logger.warn("No config data found. Unable to write to file")
+            return
+
         for key in config_dict.keys():
             config[key] = config_dict[key]
 

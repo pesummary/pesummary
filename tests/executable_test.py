@@ -4,6 +4,7 @@ import subprocess
 import numpy as np
 
 from base import make_result_file
+import importlib
 
 
 class Base(object):
@@ -12,8 +13,12 @@ class Base(object):
     def launch(self, command_line):
         """
         """
-        process = subprocess.Popen(command_line, shell=True)
-        process.wait()
+        args = command_line.split(" ")
+        executable = args[0]
+        cla = args[1:]
+        module = importlib.import_module("pesummary.cli.{}".format(executable))
+        print(cla)
+        module.main(args=[i for i in cla if i != " " and i != ""])
 
 
 class TestSummaryPages(Base):

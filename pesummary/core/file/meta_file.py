@@ -149,6 +149,8 @@ class PESummaryJsonEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, (np.bool, np.bool_, bool)):
             return str(obj)
+        elif isinstance(obj, bytes):
+            return str(obj)
         elif isinstance(obj, type):
             return str(obj)
         return json.JSONEncoder.default(self, obj)

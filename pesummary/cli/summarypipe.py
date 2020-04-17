@@ -407,11 +407,11 @@ class LALInference(Base):
         )
 
 
-def main():
+def main(args=None):
     """Top level interface for `summarypipe`
     """
     parser = command_line()
-    opts = parser.parse_args()
+    opts = parser.parse_args(args=args)
     label = opts.labels[0] if opts.labels is not None else None
     if is_lalinference_rundir(opts.rundir):
         LALInference(opts.rundir, webdir=opts.webdir, label=label)

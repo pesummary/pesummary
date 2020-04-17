@@ -209,11 +209,11 @@ def make_webpages(inputs):
     webpage_object.generate_webpages()
 
 
-def main():
+def main(args=None):
     """The main interface to `summarypageslw`
     """
     parser = command_line()
-    opts = parser.parse_args()
+    opts = parser.parse_args(args=args)
     inputs = LWInput(opts)
     make_plots(inputs)
     make_webpages(inputs)

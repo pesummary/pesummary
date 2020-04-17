@@ -312,11 +312,11 @@ class Input(_Input):
         self.config = self.write_config_file()
 
 
-def main():
+def main(args=None):
     """The main function for the `summaryrecreate` executable
     """
     parser = command_line()
-    opts = parser.parse_args()
+    opts = parser.parse_args(args=args)
     inputs = Input(opts)
     for label in inputs.labels:
         inputs.code.pipe(os.path.join(inputs.rundir, label), inputs.config[label])

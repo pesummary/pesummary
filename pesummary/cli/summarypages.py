@@ -186,7 +186,7 @@ class _PublicGWWebpageGeneration(GWPostProcessing):
         self.webpage_object.generate_webpages()
 
 
-def main():
+def main(args=None):
     """Top level interface for `summarypages`
     """
     from pesummary.core.command_line import command_line
@@ -198,7 +198,7 @@ def main():
 
     parser = command_line()
     insert_gwspecific_option_group(parser)
-    opts, unknown = parser.parse_known_args()
+    opts, unknown = parser.parse_known_args(args=args)
     add_dynamic_PSD_to_namespace(opts)
     add_dynamic_calibration_to_namespace(opts)
     func = functions(opts)
