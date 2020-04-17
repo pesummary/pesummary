@@ -187,6 +187,8 @@ class _GWInput(_Input):
                     "Invalid GraceDB ID passed. The GraceDB ID must be of the "
                     "form G0000 or S0000"
                 )
+            for label in self.labels:
+                self.file_kwargs[label]["meta_data"]["gracedb"] = gracedb
 
     @property
     def detectors(self):
