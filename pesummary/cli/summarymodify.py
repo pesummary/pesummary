@@ -52,6 +52,21 @@ class _Input(_GWInput):
             )
 
     @property
+    def kwargs(self):
+        return self._kwargs
+
+    @kwargs.setter
+    def kwargs(self, kwargs):
+        self._kwargs = kwargs
+        if kwargs is not None and isinstance(kwargs, dict):
+            self._kwargs = kwargs
+        elif kwargs is not None:
+            raise InputError(
+                "Please provide the label, kwarg and value with '--kwargs "
+                "label:kwarg:value`"
+            )
+
+    @property
     def samples(self):
         return self._samples
 
@@ -125,7 +140,9 @@ class Input(_Input):
         self.webdir = self.opts.webdir
         self.samples = self.opts.samples
         self.labels = self.opts.labels
+        self.kwargs = self.opts.kwargs
         self.hdf5 = not self.opts.save_to_json
+        self.overwrite = self.opts.overwrite
         self.data = None
 
 
@@ -155,6 +172,18 @@ def command_line():
         "--delimiter", dest="delimiter", default=":",
         help="Delimiter used to seperate the existing and new quantity"
     )
+    parser.add_argument(
+        "--kwargs", dest="kwargs", nargs='+', action=DelimiterSplitAction,
+        help=("kwargs you wish to modify. Syntax: `--kwargs label/kwarg:item` "
+              "where '/' is a delimiter of your choosing (it cannot be ':'), "
+              "kwarg is the kwarg name and item is the value of the kwarg"),
+        default=None
+    )
+    parser.add_argument(
+        "--overwrite", action="store_true", default=False,
+        help=("Overwrite the supplied PESummary meta file with the modified "
+              "version")
+    )
     return parser
 
 
@@ -183,6 +212,39 @@ def _modify_labels(data, labels=None):
     return data
 
 
+def _modify_kwargs(data, kwargs=None):
+    """Modify kwargs that are stored in the data
+
+    Parameters
+    ----------
+    data: dict
+        dictionary containing the data
+    kwargs: dict
+        dictionary of kwargs showing the label as key and kwarg:value as the
+        item
+    """
+    def add_to_meta_data(data, string):
+        kwarg, value = string.split(":")
+        if "other" not in data[label]["meta_data"].keys():
+            data[label]["meta_data"]["other"] = {}
+        data[label]["meta_data"]["other"][kwarg] = value
+        return data
+
+    for label, item in kwargs.items():
+        if label not in data.keys():
+            logger.warn(
+                "Unable to find label '{}' in the metafile. Unable to modify "
+                "kwargs".format(label)
+            )
+        else:
+            if isinstance(item, list):
+                for _item in item:
+                    data = add_to_meta_data(data, _item)
+            else:
+                data = add_to_meta_data(data, item)
+    return data
+
+
 def modify(data, function, **kwargs):
     """Modify the data according to a given function
 
@@ -196,7 +258,8 @@ def modify(data, function, **kwargs):
         dictionary of kwargs for function
     """
     func_map = {
-        "labels": _modify_labels
+        "labels": _modify_labels,
+        "kwargs": _modify_kwargs,
     }
     return func_map[function](data, **kwargs)
 
@@ -207,14 +270,19 @@ def main(args=None):
     parser = command_line()
     opts = parser.parse_args(args=args)
     args = Input(opts)
-    meta_file = os.path.join(
-        args.webdir, "modified_posterior_samples.{}".format(
-            "h5" if args.hdf5 else "json"
+    if not args.overwrite:
+        meta_file = os.path.join(
+            args.webdir, "modified_posterior_samples.{}".format(
+                "h5" if args.hdf5 else "json"
+            )
         )
-    )
-    check_file_exists_and_rename(meta_file)
+        check_file_exists_and_rename(meta_file)
+    else:
+        meta_file = args.samples
     if args.labels is not None:
         modified_data = modify(args.data, "labels", labels=args.labels)
+    if args.kwargs is not None:
+        modified_data = modify(args.data, "kwargs", kwargs=args.kwargs)
     logger.info(
         "Saving the modified data to '{}'".format(meta_file)
     )

@@ -205,10 +205,14 @@ def main(args=None):
     args = func["input"](opts)
     from .summaryplots import PlotGeneration
 
-    PlotGeneration(args, gw=gw_results_file(opts))
+    plotting_object = PlotGeneration(args, gw=gw_results_file(opts))
     WebpageGeneration(args, gw=gw_results_file(opts))
     func["MetaFile"](args)
-    func["FinishingTouches"](args)
+    if gw_results_file(opts):
+        kwargs = dict(ligo_skymap_PID=plotting_object.ligo_skymap_PID)
+    else:
+        kwargs = {}
+    func["FinishingTouches"](args, **kwargs)
 
 
 if __name__ == "__main__":

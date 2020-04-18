@@ -599,11 +599,13 @@ def functions(opts):
     from pesummary.core.file.meta_file import MetaFile
     from pesummary.gw.file.meta_file import GWMetaFile
     from pesummary.core.finish import FinishingTouches
+    from pesummary.gw.finish import GWFinishingTouches
 
     dictionary = {}
     dictionary["input"] = GWInput if gw_results_file(opts) else Input
     dictionary["MetaFile"] = GWMetaFile if gw_results_file(opts) else MetaFile
-    dictionary["FinishingTouches"] = FinishingTouches
+    dictionary["FinishingTouches"] = \
+        GWFinishingTouches if gw_results_file(opts) else FinishingTouches
     return dictionary
 
 
