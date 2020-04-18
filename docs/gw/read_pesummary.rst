@@ -12,6 +12,21 @@ extra functionality on top of the core package. For details about the core
 functionality see
 `The core pesummary read function <../core/read_pesummary.html>`_.
 
+Extracting skymap statistics
+----------------------------
+
+If a `ligo.skymap` skymap was successfully produced when the metafile was created,
+the skymap statistics (sky localisation at 90% confidence, localization volume
+at 90% confidence etc.) are stored in the metadata. These can be extracted by
+running:
+
+.. code-block:: python
+
+    >>> ind = data.labels.index("EXP1")
+    >>> kwargs = data.extra_kwargs[ind]["other"]
+    >>> print(kwargs["area90"])
+    '1234.0'
+
 Loading the calibration envelope for a specific run
 ---------------------------------------------------
 

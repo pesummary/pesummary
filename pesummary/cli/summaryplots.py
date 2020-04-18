@@ -47,11 +47,14 @@ class PlotGeneration(object):
         logger.info("Starting to generate plots")
         if self.gw and self.inputs.public:
             object = _PublicGWPlotGeneration(self.inputs, colors=self.colors)
+            self.ligo_skymap_PID = object.ligo_skymap_PID
         elif self.gw:
             object = _GWPlotGeneration(self.inputs, colors=self.colors)
         else:
             object = _CorePlotGeneration(self.inputs, colors=self.colors)
         object.generate_plots()
+        if self.gw:
+            self.ligo_skymap_PID = object.ligo_skymap_PID
         logger.info("Finished generating plots")
 
 
@@ -137,6 +140,7 @@ class _GWPlotGeneration(GWPostProcessing):
             publication_kwargs=self.publication_kwargs,
             multi_process=self.multi_process
         )
+        self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 
     def generate_plots(self):
         """Generate all plots within the GW module
@@ -189,6 +193,7 @@ class _PublicGWPlotGeneration(GWPostProcessing):
             publication_kwargs=self.publication_kwargs,
             multi_process=self.multi_process
         )
+        self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 
     def generate_plots(self):
         """Generate all plots within the GW module

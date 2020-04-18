@@ -190,7 +190,12 @@ class DelimiterSplitAction(argparse.Action):
                     "'{}' appears multiple times. Please choose a different "
                     "delimiter".format(delimiter)
                 )
-            items[value[0]] = value[1]
+            if value[0] in items.keys() and not isinstance(items[value[0]], list):
+                items[value[0]] = [items[value[0]]]
+            if value[0] in items.keys():
+                items[value[0]].append(value[1])
+            else:
+                items[value[0]] = value[1]
         setattr(namespace, self.dest, items)
 
 

@@ -28,7 +28,7 @@ class FinishingTouches(PostProcessing):
     parser: argparser
         The parser containing the command line arguments
     """
-    def __init__(self, inputs):
+    def __init__(self, inputs, **kwargs):
         super(FinishingTouches, self).__init__(inputs)
         self.send_email()
         logger.info("Complete. Webpages can be viewed at the following url "

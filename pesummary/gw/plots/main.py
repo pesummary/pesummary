@@ -86,6 +86,7 @@ class _PlotGeneration(_BasePlotGeneration):
         self.pepredicates_probs = pepredicates_probs
         self.publication = publication
         self.publication_kwargs = publication_kwargs
+        self._ligo_skymap_PID = {}
 
         self.plot_type_dictionary.update({
             "psd": self.psd_plot,
@@ -105,6 +106,10 @@ class _PlotGeneration(_BasePlotGeneration):
                 "waveform_comparison_td": self.waveform_comparison_td_plot,
                 "2d_comparison_contour": self.twod_comparison_contour_plot,
             })
+
+    @property
+    def ligo_skymap_PID(self):
+        return self._ligo_skymap_PID
 
     def generate_plots(self):
         """Generate all plots for all result files
@@ -274,6 +279,8 @@ class _PlotGeneration(_BasePlotGeneration):
                     ]
                 )
                 process.start()
+                PID = process.pid
+            self._ligo_skymap_PID[label] = PID
 
     @staticmethod
     @no_latex_plot
