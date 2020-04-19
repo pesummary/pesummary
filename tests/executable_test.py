@@ -1,9 +1,12 @@
 import os
 import shutil
+import glob
 import subprocess
 import numpy as np
 
-from base import make_result_file
+from base import make_result_file, get_list_of_plots, get_list_of_files
+import pytest
+from pesummary.utils.exceptions import InputError
 import importlib
 
 
@@ -121,6 +124,40 @@ class TestSummaryPages(Base):
         f = read(".outdir/samples/posterior_samples.h5")
         assert "gracedb" in f.extra_kwargs[0]["meta_data"]
         assert "G17864" == f.extra_kwargs[0]["meta_data"]["gracedb"]
+
+    def test_single(self):
+        """Test on a single input
+        """
+        command_line = (
+            "summarypages --webdir .outdir --samples "
+            ".outdir/example.json --label core0"
+        )
+        self.launch(command_line)
+        self.check_output(number=1)
+
+    def test_mcmc(self):
+        """Test the `--mcmc_samples` command line argument
+        """
+        command_line = (
+            "summarypages --webdir .outdir --samples "
+            ".outdir/example.json .outdir/example2.h5 "
+            "--label core0 --mcmc_samples"
+        )
+        self.launch(command_line)
+        self.check_output(number=1)
+
+    def test_mcmc_more_than_label(self):
+        """Test that the code fails with the `--mcmc_samples` command line
+        argument when multiple labels are passed.
+        """
+        command_line = (
+            "summarypages --webdir .outdir --samples "
+            ".outdir/example.json .outdir/example2.h5 "
+            ".outdir/example.json .outdir/example2.h5 "
+            "--label core0 core1 --mcmc_samples"
+        )
+        with pytest.raises(InputError): 
+            self.launch(command_line)
 
 
 class TestSummaryClassification(Base):

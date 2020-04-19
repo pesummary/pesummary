@@ -23,7 +23,7 @@ import numpy as np
 from pesummary.gw.file import meta_file
 from pesummary.gw.file.meta_file import _GWMetaFile
 from pesummary.gw.inputs import GWInput
-from pesummary.utils.utils import SamplesDict, Array
+from pesummary.utils.samples_dict import SamplesDict, Array
 
 
 def test_recursively_save_dictionary_to_hdf5_file():

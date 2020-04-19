@@ -23,7 +23,8 @@ import configparser
 import warnings
 
 from pesummary.core.file.formats.base_read import Read
-from pesummary.utils.utils import logger, SamplesDict, Array
+from pesummary.utils.samples_dict import MCMCSamplesDict, SamplesDict, Array
+from pesummary.utils.utils import logger
 
 
 deprecation_warning = (
@@ -159,20 +160,32 @@ class PESummary(Read):
         parameter_list, sample_list, inj_list, ver_list = [], [], [], []
         meta_data_list, weights_list = [], []
         prior_dict, config_dict = {}, {}
+        mcmc_samples = False
         for num, label in enumerate(labels):
             if label == "version":
                 continue
             data, = Read.load_recursively(label, dictionary)
-            posterior_samples = data["posterior_samples"]
-            if isinstance(posterior_samples, (h5py._hl.dataset.Dataset, np.ndarray)):
-                parameters = [j for j in posterior_samples.dtype.names]
-                samples = [np.array(j.tolist()) for j in posterior_samples]
-            else:
-                parameters = \
-                    posterior_samples["parameter_names"].copy()
+            if "mcmc_chains" in data.keys():
+                mcmc_samples = True
+                dataset = data["mcmc_chains"]
+                chains = list(dataset.keys())
+                parameters = [j for j in dataset[chains[0]].dtype.names]
                 samples = [
-                    j for j in posterior_samples["samples"]
-                ].copy()
+                    [np.array(j.tolist()) for j in dataset[chain]] for chain
+                    in chains
+                ]
+            else:
+                posterior_samples = data["posterior_samples"]
+                new_format = (h5py._hl.dataset.Dataset, np.ndarray)
+                if isinstance(posterior_samples, new_format):
+                    parameters = [j for j in posterior_samples.dtype.names]
+                    samples = [np.array(j.tolist()) for j in posterior_samples]
+                else:
+                    parameters = \
+                        posterior_samples["parameter_names"].copy()
+                    samples = [
+                        j for j in posterior_samples["samples"]
+                    ].copy()
                 if isinstance(parameters[0], bytes):
                     parameters = [
                         parameter.decode("utf-8") for parameter in parameters
@@ -239,7 +252,8 @@ class PESummary(Read):
             "weights": {i: j for i, j in zip(labels, weights_list)},
             "labels": labels,
             "config": config_dict,
-            "prior": reversed_prior_dict
+            "prior": reversed_prior_dict,
+            "mcmc_samples": mcmc_samples
         }
 
     @property
@@ -248,19 +262,24 @@ class PESummary(Read):
 
     @samples_dict.setter
     def samples_dict(self, samples_dict):
-        if all("log_likelihood" in i for i in self.parameters):
-            likelihood_inds = [self.parameters[idx].index("log_likelihood") for
-                               idx in range(len(self.labels))]
-            likelihoods = [[i[likelihood_inds[idx]] for i in self.samples[idx]]
-                           for idx, label in enumerate(self.labels)]
+        if self.mcmc_samples:
+            outdict = MCMCSamplesDict(
+                self.parameters[0], [np.array(i).T for i in self.samples[0]]
+            )
         else:
-            likelihoods = [None] * len(self.labels)
-        outdict = {
-            label:
-                SamplesDict(
-                    self.parameters[idx], np.array(self.samples[idx]).T
-                ) for idx, label in enumerate(self.labels)
-        }
+            if all("log_likelihood" in i for i in self.parameters):
+                likelihood_inds = [self.parameters[idx].index("log_likelihood")
+                                   for idx in range(len(self.labels))]
+                likelihoods = [[i[likelihood_inds[idx]] for i in self.samples[idx]]
+                               for idx, label in enumerate(self.labels)]
+            else:
+                likelihoods = [None] * len(self.labels)
+            outdict = {
+                label:
+                    SamplesDict(
+                        self.parameters[idx], np.array(self.samples[idx]).T
+                    ) for idx, label in enumerate(self.labels)
+            }
         self._samples_dict = outdict
 
     @property

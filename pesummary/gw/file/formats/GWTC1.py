@@ -60,7 +60,7 @@ class GWTC1(GWRead):
     def grab_priors(obj):
         """
         """
-        from pesummary.utils.utils import SamplesDict
+        from pesummary.utils.samples_dict import SamplesDict
 
         keys = list(obj.keys())
         if "prior" in keys or "priors" in keys:

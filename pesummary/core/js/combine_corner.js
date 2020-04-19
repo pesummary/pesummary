@@ -68,6 +68,7 @@ function combine(list, label="None") {
           }
       }
       imgObject.src = '../plots/corner/'+label+'_all_density_plots.png';
+      imgObject.onerror = function(){ window.location = "./error.html";}
       promise = new Promise((resolve, reject) => {
           imgObject.onload = () => onImgLoaded(reject)
       })

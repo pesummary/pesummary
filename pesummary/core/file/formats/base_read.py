@@ -15,7 +15,8 @@
 
 import numpy as np
 import h5py
-from pesummary.utils.utils import SamplesDict, Array, logger
+from pesummary.utils.samples_dict import SamplesDict, MCMCSamplesDict, Array
+from pesummary.utils.utils import logger
 
 
 class Read(object):
@@ -50,6 +51,7 @@ class Read(object):
     """
     def __init__(self, path_to_results_file):
         self.path_to_results_file = path_to_results_file
+        self.mcmc_samples = False
         self.extension = self.extension_from_path(self.path_to_results_file)
 
     @staticmethod
@@ -97,6 +99,8 @@ class Read(object):
         """
         self.data = self.load_from_function(
             function, self.path_to_results_file, **kwargs)
+        if "mcmc_samples" in self.data.keys():
+            self.mcmc_samples = self.data["mcmc_samples"]
         if "injection" in self.data.keys():
             if isinstance(self.data["injection"], dict):
                 self.injection_parameters = {
@@ -144,6 +148,10 @@ class Read(object):
 
     @property
     def samples_dict(self):
+        if self.mcmc_samples:
+            return MCMCSamplesDict(
+                self.parameters, [np.array(i).T for i in self.samples]
+            )
         return SamplesDict(self.parameters, np.array(self.samples).T)
 
     @staticmethod

@@ -23,8 +23,24 @@ metafile) can be found by running the following:
     >>> print(data.labels)
     ['EXP1', 'EXP2', EXP3']
 
+Loading the samples for a specific run
+--------------------------------------
+
+Your result file may store either mcmc chains or posterior samples. The
+resulting data structures are a bit different with different useful features.
+To identify if yours is storing mcmc chains or posterior samples, you may run
+the following:
+
+.. code-block:: python
+
+    >>> print(data.mcmc_chains)
+
+If `True`, then please look at `Loading the mcmc samples for a specific run`
+below. If `False`, then please look at `Loading the posterior samples for a
+specific run` below.
+
 Loading the posterior samples for a specific run
-------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If, for example, you wanted to extract the posterior samples for the 'EXP1'
 analysis, this can be done with the following:
@@ -33,10 +49,38 @@ analysis, this can be done with the following:
 
     >>> print(data.samples_dict['EXP1'])
 
-This will return a `pesummary.utils.utils.SamplesDict` object. For details
+This will return a `pesummary.utils.samples_dict.SamplesDict` object. For details
 about the `SamplesDict` class see `SamplesDict class <SamplesDict.html>`_.
 Of course, you may choose to use `astropy` or `pandas` to read in your posterior
 samples. For details about this see below.
+
+Loading the mcmc chains for a specific run
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you wanted to load the mcmc chains stored in the result file, this can be
+done with the following:
+
+.. code-block:: python
+
+    >>> print(data.samples_dict)
+
+This will return a `pesummary.utils.samples_dict.MCMCSamplesDict` object. For
+details about the `MCMCSamplesDict` class see
+`MCMCSamplesDict class <MCMCSamplesDict.html>`_. To load a specific chain, you
+may run something like the following:
+
+.. code-block:: python
+
+    >>> print(data.samples_dict["chain_1"])
+
+The data for each chain is stored as a
+`pesummary.utils.samples_dict.SamplesDict` object. For details about
+the `SamplesDict` class see `SamplesDict class <SamplesDict.html>`_. To see how
+many chains are stored in the result file, you may run:
+
+.. code-block:: python
+
+    >>> print(data.samples_dict.nchains)
 
 Loading the configuration file for a specific run
 -------------------------------------------------

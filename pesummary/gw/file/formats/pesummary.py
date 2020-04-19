@@ -99,6 +99,8 @@ class PESummary(GWRead, CorePESummary):
         data = self.load_from_function(
             function, self.path_to_results_file, **kwargs)
         self.data = data
+        if "mcmc_samples" in data.keys():
+            self.mcmc_samples = data["mcmc_samples"]
         if "version" in data.keys() and data["version"] is not None:
             self.input_version = data["version"]
         else:

@@ -22,6 +22,7 @@ import copy
 import pesummary
 from pesummary import __version__
 from pesummary.core.inputs import PostProcessing
+from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.utils import make_dir, logger
 from pesummary.utils.decorators import open_config
 from pesummary import conf
@@ -82,7 +83,7 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
         Current string withing the hdf5 file
     """
     error_message = "Cannot process {}={} from list with type {} for hdf5"
-    array_types = (list, pesummary.utils.utils.Array, np.ndarray)
+    array_types = (list, pesummary.utils.samples_dict.Array, np.ndarray)
     numeric_types = (float, int, np.number)
     string_types = (str, bytes)
     SOFTLINK = False
@@ -165,7 +166,7 @@ class _MetaFile(object):
         existing_version=None, existing_label=None, existing_samples=None,
         existing_injection=None, existing_metadata=None, existing_config=None,
         existing_priors={}, existing_metafile=None, outdir=None, existing=None,
-        package_information={}
+        package_information={}, mcmc_samples=False
     ):
         self.data = {}
         self.webdir = webdir
@@ -189,6 +190,7 @@ class _MetaFile(object):
         self.existing = existing
         self.outdir = outdir
         self.package_information = package_information
+        self.mcmc_samples = mcmc_samples
 
         if self.existing_labels is None:
             self.existing_labels = [None]
@@ -227,9 +229,13 @@ class _MetaFile(object):
     def _make_dictionary(self):
         """Generate a single dictionary which stores all information
         """
+        if self.mcmc_samples:
+            posterior = "mcmc_chains"
+        else:
+            posterior = "posterior_samples"
         dictionary = {
             label: {
-                "posterior_samples": {}, "injection_data": {}, "version": {},
+                posterior: {}, "injection_data": {}, "version": {},
                 "meta_data": {}, "priors": {}, "config_file": {}
             } for label in self.labels
         }
@@ -238,7 +244,7 @@ class _MetaFile(object):
         for num, label in enumerate(self.labels):
             parameters = self.samples[label].keys()
             samples = np.array([self.samples[label][i] for i in parameters]).T
-            dictionary[label]["posterior_samples"] = {
+            dictionary[label][posterior] = {
                 "parameter_names": list(parameters), "samples": samples.tolist()
             }
             dictionary[label]["injection_data"] = {
@@ -305,7 +311,7 @@ class _MetaFile(object):
         )
 
     @staticmethod
-    def _convert_posterior_samples_to_numpy(dictionary):
+    def _convert_posterior_samples_to_numpy(dictionary, mcmc_samples=False):
         """Convert the posterior samples from a column-major dictionary
         to a row-major numpy array
 
@@ -313,6 +319,8 @@ class _MetaFile(object):
         ----------
         dictionary: dict
             dictionary of posterior samples to convert to a numpy array.
+        mcmc_samples: Bool, optional
+            if True, the dictionary contains seperate mcmc chains
 
         Examples
         --------
@@ -325,6 +333,17 @@ class _MetaFile(object):
         ...           dtype=[('mass_1', '<f4'), ('mass_2', '<f4')])
         """
         samples = copy.deepcopy(dictionary)
+        if mcmc_samples:
+            parameters = list(samples.keys())
+            chains = samples[parameters[0]].keys()
+            data = {
+                key: SamplesDict({
+                    param: samples[param][key] for param in parameters
+                }) for key in chains
+            }
+            return {
+                key: item.to_structured_array() for key, item in data.items()
+            }
         return samples.to_structured_array()
 
     @staticmethod
@@ -373,6 +392,8 @@ class _MetaFile(object):
     def write_marginalized_posterior_to_dat(self):
         """Write the marginalized posterior for each parameter to a .dat file
         """
+        if self.mcmc_samples:
+            return
         for label in self.labels:
             if not os.path.isdir(os.path.join(self.outdir, label)):
                 make_dir(os.path.join(self.outdir, label))
@@ -396,17 +417,20 @@ class _MetaFile(object):
     @staticmethod
     def save_to_hdf5(
         data, labels, samples, meta_file, no_convert=False,
-        extra_keys=DEFAULT_HDF5_KEYS
+        extra_keys=DEFAULT_HDF5_KEYS, mcmc_samples=False
     ):
         """Save the metafile as a hdf5 file
         """
         import h5py
 
-        key = "posterior_samples"
+        if mcmc_samples:
+            key = "mcmc_chains"
+        else:
+            key = "posterior_samples"
         if not no_convert:
             for label in labels:
                 data[label][key] = _MetaFile._convert_posterior_samples_to_numpy(
-                    samples[label]
+                    samples[label], mcmc_samples=mcmc_samples
                 )
         with h5py.File(meta_file, "w") as f:
             recursively_save_dictionary_to_hdf5_file(
@@ -416,13 +440,27 @@ class _MetaFile(object):
     def save_to_dat(self):
         """Save the samples to a .dat file
         """
-        for label in self.labels:
-            parameters = self.samples[label].keys()
-            samples = np.array([self.samples[label][i] for i in parameters])
+        def _save(parameters, samples, label):
+            """Helper function to save the parameters and samples to file
+            """
             self.write_to_dat(
                 os.path.join(self.outdir, "{}_pesummary.dat".format(label)),
                 samples.T, header=parameters
             )
+
+        if self.mcmc_samples:
+            for label in self.labels:
+                parameters = list(self.samples[label].keys())
+                for chain in self.samples[label][parameters[0]].keys():
+                    samples = np.array(
+                        [self.samples[label][i][chain] for i in parameters]
+                    )
+                    _save(parameters, samples, chain)
+                    return
+        for label in self.labels:
+            parameters = self.samples[label].keys()
+            samples = np.array([self.samples[label][i] for i in parameters])
+            _save(parameters, samples, label)
 
     def add_existing_data(self):
         """
@@ -452,7 +490,8 @@ class MetaFile(PostProcessing):
             existing_config=self.existing_config, existing=self.existing,
             existing_priors=self.existing_priors,
             existing_metafile=self.existing_metafile,
-            package_information=self.package_information
+            package_information=self.package_information,
+            mcmc_samples=self.mcmc_samples
         )
         meta_file.make_dictionary()
         if not self.hdf5:
@@ -460,7 +499,7 @@ class MetaFile(PostProcessing):
         else:
             meta_file.save_to_hdf5(
                 meta_file.data, meta_file.labels, meta_file.samples,
-                meta_file.meta_file
+                meta_file.meta_file, mcmc_samples=meta_file.mcmc_samples
             )
         meta_file.save_to_dat()
         meta_file.write_marginalized_posterior_to_dat()

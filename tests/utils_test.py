@@ -17,10 +17,12 @@ import os
 import shutil
 import h5py
 import numpy as np
+import copy
 
 import pesummary
 import pesummary.cli as cli
 from pesummary.utils import utils
+from pesummary.utils.samples_dict import Array, SamplesDict, MCMCSamplesDict
 from pesummary._version_helper import GitInformation, PackageInformation
 from pesummary._version_helper import get_version_information
 
@@ -223,6 +225,243 @@ def test_logger():
         utils.logger.warning("warning")
     l.check(("PESummary", "INFO", "info"),
             ("PESummary", "WARNING", "warning"),)
+
+
+class TestGelmanRubin(object):
+    """Test the Gelman Rubin calculation
+    """
+    def test_same_as_lalinference(self):
+        """Test the Gelman rubin output from pesummary is the same as
+        the one coded in LALInference
+        """
+        from lalinference.bayespputils import Posterior
+        from pesummary.utils.utils import gelman_rubin
+
+        header = ["a", "b", "logL", "chain"]
+        for _ in np.arange(100):
+            samples = np.array(
+                [
+                    np.random.uniform(np.random.random(), 0.1, 3).tolist() +
+                    [np.random.randint(1, 3)] for _ in range(10)
+                ]
+            )
+            obj = Posterior([header, np.array(samples)])
+            R = obj.gelman_rubin("a")
+            chains = np.unique(obj["chain"].samples)
+            chain_index = obj.names.index("chain")
+            param_index = obj.names.index("a")
+            data, _ = obj.samples()
+            chainData=[
+                data[data[:,chain_index] == chain, param_index] for chain in
+                chains
+            ]
+            np.testing.assert_almost_equal(
+                gelman_rubin(chainData, decimal=10), R, 7
+            )
+
+    def test_same_samples(self):
+        """Test that when passed two identical chains (perfect convergence),
+        the Gelman Rubin is 1
+        """
+        from pesummary.core.plots.plot import gelman_rubin
+
+        samples = np.random.uniform(1, 0.5, 10)
+        R = gelman_rubin([samples, samples])
+        assert R == 1
+
+
+class TestSamplesDict(object):
+    """Test the SamplesDict class
+    """
+    def setup(self):
+        self.parameters = ["a", "b"]
+        self.samples = [
+            np.random.uniform(10, 0.5, 100), np.random.uniform(200, 10, 100)
+        ]
+
+    def test_initalize(self):
+        """Test that the two ways to initialize the SamplesDict class are
+        equivalent
+        """
+        base = SamplesDict(self.parameters, self.samples)
+        other = SamplesDict(
+            {
+                param: sample for param, sample in zip(
+                    self.parameters, self.samples
+                )
+            }
+        )
+        assert base.parameters == other.parameters
+        assert sorted(base.parameters) == sorted(self.parameters)
+        np.testing.assert_almost_equal(base.samples, other.samples)
+        assert sorted(list(base.keys())) == sorted(list(other.keys()))
+        np.testing.assert_almost_equal(base.samples, self.samples)
+
+    def test_properties(self):
+        """Test that the properties of the SamplesDict class are correct
+        """
+        import pandas as pd
+
+        dataset = SamplesDict(self.parameters, self.samples)
+        assert sorted(dataset.minimum.keys()) == sorted(self.parameters)
+        assert dataset.minimum["a"] == np.min(self.samples[0])
+        assert dataset.minimum["b"] == np.min(self.samples[1])
+        assert dataset.median["a"] == np.median(self.samples[0])
+        assert dataset.median["b"] == np.median(self.samples[1])
+        assert dataset.mean["a"] == np.mean(self.samples[0])
+        assert dataset.mean["b"] == np.mean(self.samples[1])
+        assert dataset.number_of_samples == len(self.samples[1])
+        assert len(dataset.downsample(10)["a"]) == 10
+        dataset = SamplesDict(self.parameters, self.samples)
+        assert len(dataset.discard_samples(10)["a"]) == len(self.samples[0]) - 10
+        p = dataset.to_pandas()
+        assert isinstance(p, pd.core.frame.DataFrame)
+        remove = dataset.pop("a")
+        assert list(dataset.keys()) == ["b"]
+
+
+class TestMCMCSamplesDict(object):
+    """Test the MCMCSamplesDict class
+    """
+    def setup(self):
+        self.parameters = ["a", "b"]
+        self.chains = [
+            [np.random.uniform(10, 0.5, 100), np.random.uniform(100, 10, 100)],
+            [np.random.uniform(5, 0.5, 100), np.random.uniform(80, 10, 100)]
+        ]
+
+    def test_initalize(self):
+        """Test the different ways to initalize the class
+        """
+        dataframe = MCMCSamplesDict(self.parameters, self.chains)
+        assert sorted(list(dataframe.keys())) == sorted(
+            ["chain_{}".format(num) for num in range(len(self.chains))]
+        )
+        assert sorted(list(dataframe["chain_0"].keys())) == sorted(["a", "b"])
+        assert sorted(list(dataframe["chain_1"].keys())) == sorted(["a", "b"])
+        np.testing.assert_almost_equal(
+            dataframe["chain_0"]["a"], self.chains[0][0]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["chain_0"]["b"], self.chains[0][1]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["chain_1"]["a"], self.chains[1][0]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["chain_1"]["b"], self.chains[1][1]
+        )
+        other = MCMCSamplesDict({
+            "chain_{}".format(num): {
+                param: self.chains[num][idx] for idx, param in enumerate(
+                    self.parameters
+                )
+            } for num in range(len(self.chains))
+        })
+        assert sorted(other.keys()) == sorted(dataframe.keys())
+        assert sorted(other["chain_0"].keys()) == sorted(
+            dataframe["chain_0"].keys()
+        )
+        np.testing.assert_almost_equal(
+            other["chain_0"]["a"], dataframe["chain_0"]["a"]
+        )
+        np.testing.assert_almost_equal(
+            other["chain_0"]["b"], dataframe["chain_0"]["b"]
+        )
+        np.testing.assert_almost_equal(
+            other["chain_1"]["a"], dataframe["chain_1"]["a"]
+        )
+        np.testing.assert_almost_equal(
+            other["chain_1"]["b"], dataframe["chain_1"]["b"]
+        )
+
+    def test_unequal_chain_length(self):
+        """Test that when inverted, the chains keep their unequal chain
+        length
+        """
+        chains = [
+            [np.random.uniform(10, 0.5, 100), np.random.uniform(100, 10, 100)],
+            [np.random.uniform(5, 0.5, 200), np.random.uniform(80, 10, 200)]
+        ]
+        dataframe = MCMCSamplesDict(self.parameters, chains)
+        transpose = dataframe.T
+        assert len(transpose["a"]["chain_0"]) == 100
+        assert len(transpose["a"]["chain_1"]) == 200
+        assert dataframe.number_of_samples == {
+            "chain_0": 100, "chain_1": 200
+        }
+        assert dataframe.minimum_number_of_samples == 100
+        assert transpose.number_of_samples == dataframe.number_of_samples
+        assert transpose.minimum_number_of_samples == \
+            dataframe.minimum_number_of_samples
+
+    def test_properties(self):
+        """Test that the properties of the MCMCSamplesDict class are correct
+        """
+        dataframe = MCMCSamplesDict(self.parameters, self.chains)
+        transpose = dataframe.T
+        np.testing.assert_almost_equal(
+            dataframe["chain_0"]["a"], transpose["a"]["chain_0"]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["chain_0"]["b"], transpose["b"]["chain_0"]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["chain_1"]["a"], transpose["a"]["chain_1"]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["chain_1"]["b"], transpose["b"]["chain_1"]
+        )
+        average = dataframe.average
+        transpose_average = transpose.average
+        for param in self.parameters:
+            np.testing.assert_almost_equal(
+                average[param], transpose_average[param]
+            )
+        assert dataframe.total_number_of_samples == 200
+        assert dataframe.total_number_of_samples == \
+            transpose.total_number_of_samples
+
+    def test_burnin_removal(self):
+        """Test that the different methods for removing the samples as burnin
+        as expected
+        """
+        uniform = np.random.uniform
+        parameters = ["a", "b", "cycle"]
+        chains = [
+            [uniform(10, 0.5, 100), uniform(100, 10, 100), uniform(1, 0.8, 100)],
+            [uniform(5, 0.5, 100), uniform(80, 10, 100), uniform(1, 0.8, 100)],
+            [uniform(1, 0.8, 100), uniform(90, 10, 100), uniform(1, 0.8, 100)]
+        ]
+        dataframe = MCMCSamplesDict(parameters, chains)
+        burnin = dataframe.burnin(algorithm="burnin_by_step_number")
+        idxs = np.argwhere(chains[0][2] > 0)
+        assert len(burnin["chain_0"]["a"]) == len(idxs)
+        dataframe = MCMCSamplesDict(parameters, chains)
+        burnin = dataframe.burnin(10, algorithm="burnin_by_first_n")
+        assert len(burnin["chain_0"]["a"]) == 90
+        dataframe = MCMCSamplesDict(parameters, chains)
+        burnin = dataframe.burnin(
+            10, algorithm="burnin_by_first_n", step_number=True
+        )
+        assert len(burnin["chain_0"]["a"]) == len(idxs) - 10
+        
+        
+
+
+class TestArray(object):
+    """Test the Array class
+    """
+    def test_properties(self):
+        samples = np.random.uniform(100, 10, 100)
+        array = Array(samples)
+        assert array.average(type="mean") == np.mean(samples)
+        assert array.average(type="median") == np.median(samples)
+        assert array.standard_deviation == np.std(samples)
+        np.testing.assert_almost_equal(
+            array.confidence_interval(percentile=[5, 95]),
+            [np.percentile(array, 5), np.percentile(array, 95)]
+        )
 
 
 def test_make_cache_style_file():

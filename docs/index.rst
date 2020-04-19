@@ -61,6 +61,7 @@ Manipulating posterior samples
 
     core/Array
     core/SamplesDict
+    core/MCMCSamplesDict
 
 Customisation
 +++++++++++++

@@ -83,7 +83,7 @@ class _CorePlotGeneration(PostProcessing):
             disable_comparison=self.disable_comparison,
             linestyles=self.linestyles,
             disable_interactive=self.disable_interactive,
-            multi_process=self.multi_process
+            multi_process=self.multi_process, mcmc_samples=self.mcmc_samples
         )
 
     def generate_plots(self):
@@ -135,7 +135,7 @@ class _GWPlotGeneration(GWPostProcessing):
             disable_comparison=self.disable_comparison,
             disable_interactive=self.disable_interactive,
             publication_kwargs=self.publication_kwargs,
-            multi_process=self.multi_process
+            multi_process=self.multi_process, mcmc_samples=self.mcmc_samples
         )
 
     def generate_plots(self):
@@ -187,7 +187,7 @@ class _PublicGWPlotGeneration(GWPostProcessing):
             disable_comparison=self.disable_comparison,
             disable_interactive=self.disable_interactive,
             publication_kwargs=self.publication_kwargs,
-            multi_process=self.multi_process
+            multi_process=self.multi_process, mcmc_samples=self.mcmc_samples
         )
 
     def generate_plots(self):

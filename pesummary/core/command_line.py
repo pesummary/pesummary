@@ -298,9 +298,21 @@ def _samples_command_line_arguments(parser):
         )
     )
     sample_group.add_argument(
+        "--burnin_method", dest="burnin_method", default=None, help=(
+            "The algorithm to use to remove mcmc samples as burnin. This is "
+            "only used when `--mcmc_samples` also used"
+        )
+    )
+    sample_group.add_argument(
         "--regenerate", dest="regenerate", default=None, nargs="+", help=(
             "List of posterior distributions that you wish to regenerate if "
             "possible"
+        )
+    )
+    sample_group.add_argument(
+        "--mcmc_samples", action="store_true", default=False, help=(
+            "treat the passed samples as seperate mcmc chains for the same "
+            "analysis"
         )
     )
     return sample_group
