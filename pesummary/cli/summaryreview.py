@@ -181,6 +181,19 @@ def make_basic_comparison_html(webdir):
     from pesummary.core.webpage import webpage
     from pesummary.gw.file.standard_names import standard_names
     from glob import glob
+    import os
+    import numpy as np
+
+    try:
+        lalinference_data = np.genfromtxt(
+            os.path.join(webdir, "lalinference", "posterior_samples.dat"),
+            names=True
+        )
+        pesummary_dat = glob(os.path.join(webdir, "pesummary", "samples", "*.dat"))
+        pesummary_data = np.genfromtxt(pesummary_dat[0], names=True)
+    except Exception:
+        logger.info("Not printing maximum difference between samples")
+        lalinference_data, pesummary_data = None, None
 
     lalinference_1d_histograms, lalinference_params = get_list_of_plots(
         webdir, lalinference=True)
@@ -223,6 +236,21 @@ def make_basic_comparison_html(webdir):
                         ["./pesummary/plots/pesummary_sample_evolution_%s.png" % (i[0])]]
             make_table_of_images(html_file, contents)
             html_file.end_container()
+            try:
+                html_file.make_div(_class="banner", _style="font-size:28px")
+                html_file.add_content(
+                    "max difference in %s samples: "
+                    "%s" % (
+                        i[0], np.max(
+                            np.abs(
+                                lalinference_data[i[1]] - pesummary_data[i[0]]
+                            )
+                        )
+                    )
+                )
+                html_file.end_div()
+            except Exception:
+                pass
 
     html_file.make_div(_class="banner", _style="font-size:28px")
     html_file.add_content("Plots only made my 'summarypages'")
