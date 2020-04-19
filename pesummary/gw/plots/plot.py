@@ -105,6 +105,39 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
     )
 
 
+def _1d_histogram_plot_mcmc(
+    param, samples, latex_label, inj_value=None, kde=False, prior=None,
+    weights=None
+):
+    """Generate the 1d histogram plot for a given parameter for set of
+    mcmc chains
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: np.ndarray
+        2d array of samples for param for each mcmc chain
+    latex_label: str
+        latex label for param
+    inj_value: float
+        value that was injected
+    kde: Bool
+        if true, a kde is plotted instead of a histogram
+    prior: list
+        list of prior samples for param
+    weights: list
+        list of weights for each sample
+    """
+    from pesummary.core.plots.plot import _1d_histogram_plot_mcmc
+
+    xlow, xhigh = _return_bounds(param, samples, comparison=True)
+    return _1d_histogram_plot_mcmc(
+        param, samples, latex_label, inj_value=inj_value, kde=kde, prior=prior,
+        weights=weights, xlow=xlow, xhigh=xhigh
+    )
+
+
 def _1d_comparison_histogram_plot(param, samples, colors,
                                   latex_label, labels, kde=False,
                                   linestyles=None):

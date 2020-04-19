@@ -78,6 +78,8 @@ class GWRead(Read):
         """
         data = self.load_from_function(
             function, self.path_to_results_file, **kwargs)
+        if "mcmc_samples" in data.keys():
+            self.mcmc_samples = data["mcmc_samples"]
         parameters, samples = self.translate_parameters(
             data["parameters"], data["samples"]
         )

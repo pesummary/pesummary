@@ -72,7 +72,7 @@ class Bilby(Read):
     def grab_priors(bilby_object, nsamples=5000):
         """Draw samples from the prior functions stored in the bilby file
         """
-        from pesummary.utils.utils import Array
+        from pesummary.utils.samples_dict import Array
 
         f = bilby_object
         try:

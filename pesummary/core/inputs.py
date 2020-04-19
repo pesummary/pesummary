@@ -23,8 +23,9 @@ import numpy as np
 import pesummary
 from pesummary.core.file.read import read as Read
 from pesummary.utils.exceptions import InputError
+from pesummary.utils.samples_dict import SamplesDict, MCMCSamplesDict
 from pesummary.utils.utils import (
-    SamplesDict, guess_url, logger, make_dir, make_cache_style_file
+    guess_url, logger, make_dir, make_cache_style_file
 )
 from pesummary import conf
 
@@ -91,9 +92,13 @@ class _Input(object):
             method
         """
         f = read_function(existing_file)
-        f.generate_all_posterior_samples(**kwargs)
-        labels = f.labels
-        indicies = np.arange(len(labels))
+        if not f.mcmc_samples:
+            f.generate_all_posterior_samples(**kwargs)
+            labels = f.labels
+            indicies = np.arange(len(labels))
+        else:
+            labels = list(f.samples_dict.keys())
+            indicies = np.arange(len(labels))
 
         if compare:
             indicies = []
@@ -107,11 +112,24 @@ class _Input(object):
             labels = compare
 
         parameters = f.parameters
-        samples = [np.array(i).T for i in f.samples]
-        DataFrame = {
-            label: SamplesDict(parameters[ind], samples[ind])
-            for label, ind in zip(labels, indicies)
-        }
+        if not f.mcmc_samples:
+            samples = [np.array(i).T for i in f.samples]
+            DataFrame = {
+                label: SamplesDict(parameters[ind], samples[ind])
+                for label, ind in zip(labels, indicies)
+            }
+            _parameters = lambda label: DataFrame[label].keys()
+        else:
+            DataFrame = {
+                f.labels[0]: MCMCSamplesDict(
+                    {
+                        label: f.samples_dict[label] for label in labels
+                    }
+                )
+            }
+            labels = f.labels
+            indicies = np.arange(len(labels))
+            _parameters = lambda label: DataFrame[f.labels[0]].parameters
         if f.injection_parameters != []:
             inj_values = f.injection_dict
             for label in labels:
@@ -170,7 +188,8 @@ class _Input(object):
             "config": config,
             "labels": labels,
             "weights": weights,
-            "indicies": indicies
+            "indicies": indicies,
+            "mcmc_samples": f.mcmc_samples
         }
 
     @staticmethod
@@ -373,6 +392,19 @@ class _Input(object):
             self._baseurl = guess_url(self.webdir, self.host, self.user)
 
     @property
+    def mcmc_samples(self):
+        return self._mcmc_samples
+
+    @mcmc_samples.setter
+    def mcmc_samples(self, mcmc_samples):
+        self._mcmc_samples = mcmc_samples
+        if self._mcmc_samples:
+            logger.info(
+                "Treating all samples as seperate mcmc chains for the same "
+                "analysis."
+            )
+
+    @property
     def labels(self):
         return self._labels
 
@@ -381,6 +413,11 @@ class _Input(object):
         if not hasattr(self, "._labels"):
             if labels is None:
                 labels = self.default_labels()
+            elif self.mcmc_samples and len(labels) != 1:
+                raise InputError(
+                    "Please provide a single label that corresponds to all "
+                    "mcmc samples"
+                )
             elif len(np.unique(labels)) != len(labels):
                 raise InputError(
                     "Please provide unique labels for each result file"
@@ -471,6 +508,8 @@ class _Input(object):
 
     @samples.setter
     def samples(self, samples):
+        if isinstance(samples, dict):
+            return samples
         self._set_samples(samples)
 
     def _set_samples(
@@ -478,7 +517,7 @@ class _Input(object):
     ):
         if not samples:
             raise InputError("Please provide a results file")
-        if len(samples) != len(self.labels):
+        if len(samples) != len(self.labels) and not self.mcmc_samples:
             logger.info(
                 "You have passed {} result files and {} labels. Setting "
                 "labels = {}".format(
@@ -488,23 +527,34 @@ class _Input(object):
             self.labels = self.labels[:len(samples)]
         labels, labels_dict = None, {}
         weights_dict = {}
+        if self.mcmc_samples:
+            nsamples = 0.
         for num, i in enumerate(samples):
-            logger.info("Assigning {} to {}".format(self.labels[num], i))
+            idx = num
+            if not self.mcmc_samples:
+                logger.info("Assigning {} to {}".format(self.labels[num], i))
+            else:
+                num = 0
             if not os.path.isfile(i):
                 raise InputError("File %s does not exist" % (i))
             if self.is_pesummary_metafile(samples[num]):
                 data = self.grab_data_from_input(
                     i, self.labels[num], config=None, injection=None
-
                 )
+                self.mcmc_samples = data["mcmc_samples"]
             else:
                 data = self.grab_data_from_input(
                     i, self.labels[num], config=self.config[num],
                     injection=self.injection_file[num]
                 )
+                if self.mcmc_samples:
+                    data["samples"] = {
+                        "{}_mcmc_chain_{}".format(key, idx): item for key, item
+                        in data["samples"].items()
+                    }
             for key, item in data.items():
                 if key not in ignore_keys:
-                    if num == 0:
+                    if idx == 0:
                         setattr(self, "_{}".format(key), item)
                     else:
                         x = getattr(self, "_{}".format(key))
@@ -513,6 +563,13 @@ class _Input(object):
                         elif isinstance(x, list):
                             x += item
                         setattr(self, "_{}".format(key), x)
+            if self.mcmc_samples:
+                try:
+                    nsamples += data["file_kwargs"][self.labels[num]]["sampler"][
+                        "nsamples"
+                    ]
+                except UnboundLocalError:
+                    pass
             if "labels" in data.keys():
                 stored_labels = data["labels"]
             else:
@@ -561,6 +618,18 @@ class _Input(object):
                 else:
                     labels += data["labels"]
                 labels_dict[num] = data["labels"]
+        if self.mcmc_samples:
+            try:
+                self.file_kwargs[self.labels[0]]["sampler"].update(
+                    {"nsamples": nsamples, "nchains": len(self.result_files)}
+                )
+            except (KeyError, UnboundLocalError):
+                pass
+            _labels = list(self._samples.keys())
+            if not isinstance(self._samples[_labels[0]], MCMCSamplesDict):
+                self._samples = MCMCSamplesDict(self._samples)
+            else:
+                self._samples = self._samples[_labels[0]]
         if labels is not None:
             self._labels = labels
             if len(labels) != len(self.result_files):
@@ -574,11 +643,49 @@ class _Input(object):
             self.weights = weights_dict
 
     @property
+    def burnin_method(self):
+        return self._burnin_method
+
+    @burnin_method.setter
+    def burnin_method(self, burnin_method):
+        self._burnin_method = burnin_method
+        if not self.mcmc_samples and burnin_method is not None:
+            logger.info(
+                "The {} method will not be used to remove samples as "
+                "burnin as this can only be used for mcmc chains.".format(
+                    burnin_method
+                )
+            )
+            self._burnin_method = None
+        elif self.mcmc_samples and burnin_method is None:
+            logger.info(
+                "No burnin method provided. Using {} as default".format(
+                    conf.burnin_method
+                )
+            )
+            self._burnin_method = conf.burnin_method
+        elif self.mcmc_samples:
+            from pesummary.core.file import mcmc
+
+            if burnin_method not in mcmc.algorithms:
+                logger.warn(
+                    "Unrecognised burnin method: {}. Resorting to the default: "
+                    "{}".format(burnin_method, conf.burnin_method)
+                )
+                self._burnin_method = conf.burnin_method
+        if self._burnin_method is not None:
+            for label in self.labels:
+                self.file_kwargs[label]["sampler"]["burnin_method"] = (
+                    self._burnin_method
+                )
+
+    @property
     def burnin(self):
         return self._burnin
 
     @burnin.setter
     def burnin(self, burnin):
+        _name = "nsamples_removed_from_burnin"
         if burnin is not None:
             samples_lengths = [
                 self.samples[key].number_of_samples for key in
@@ -594,11 +701,40 @@ class _Input(object):
             logger.info(
                 conf.overwrite.format("burnin", conf.burnin, burnin)
             )
-            conf.burnin = burnin
-        for label in self.samples:
-            self.samples[label] = self.samples[label].discard_samples(
-                int(conf.burnin)
+            burnin = int(burnin)
+        else:
+            burnin = conf.burnin
+        if self.burnin_method is not None:
+            arguments, kwargs = [], {}
+            if burnin != 0 and self.burnin_method == "burnin_by_step_number":
+                logger.warn(
+                    "The first {} samples have been requested to be removed "
+                    "as burnin, but the burnin method has been chosen to be "
+                    "burnin_by_step_number. Changing method to "
+                    "burnin_by_first_n with keyword argument step_number="
+                    "True such that all samples with step number < {} are "
+                    "removed".format(burnin, burnin)
+                )
+                self.burnin_method = "burnin_by_first_n"
+                arguments = [burnin]
+                kwargs = {"step_number": True}
+            elif self.burnin_method == "burnin_by_first_n":
+                arguments = [burnin]
+            initial = self.samples.total_number_of_samples
+            self._samples = self.samples.burnin(
+                *arguments, algorithm=self.burnin_method, **kwargs
             )
+            diff = initial - self.samples.total_number_of_samples
+            self.file_kwargs[self.labels[0]]["sampler"][_name] = diff
+            self.file_kwargs[self.labels[0]]["sampler"]["nsamples"] = \
+                self._samples.total_number_of_samples
+        else:
+            for label in self.samples:
+                self.samples[label] = self.samples[label].discard_samples(
+                    burnin
+                )
+                if burnin != conf.burnin:
+                    self.file_kwargs[label]["sampler"][_name] = burnin
 
     @property
     def nsamples(self):
@@ -788,6 +924,8 @@ class _Input(object):
             path to a configuration file used in the analysis
         injection: str, optional
             path to an injection file used in the analysis
+        mcmc: Bool, optional
+            if True, the result file is an mcmc chain
         """
         if label in self.grab_data_kwargs.keys():
             grab_data_kwargs = self.grab_data_kwargs[label]
@@ -1101,12 +1239,20 @@ class _Input(object):
         """
         from time import time
 
+        def _default_label(file_name):
+            return "%s_%s" % (round(time()), file_name)
+
         label_list = []
         if self.result_files is None or len(self.result_files) == 0:
             raise InputError("Please provide a results file")
-        for num, i in enumerate(self.result_files):
-            file_name = os.path.splitext(os.path.basename(i))[0]
-            label_list.append("%s_%s" % (round(time()), file_name))
+        elif self.mcmc_samples:
+            f = self.result_files[0]
+            file_name = os.path.splitext(os.path.basename(f))[0]
+            label_list.append(_default_label(file_name))
+        else:
+            for num, i in enumerate(self.result_files):
+                file_name = os.path.splitext(os.path.basename(i))[0]
+                label_list.append(_default_label(file_name))
 
         duplicates = dict(set(
             (x, label_list.count(x)) for x in
@@ -1248,6 +1394,7 @@ class Input(_Input):
         self.user = self.opts.user
         self.webdir = self.opts.webdir
         self.baseurl = self.opts.baseurl
+        self.mcmc_samples = self.opts.mcmc_samples
         self.labels = self.opts.labels
         self.weights = {i: None for i in self.labels}
         self.config = self.opts.config
@@ -1266,6 +1413,7 @@ class Input(_Input):
         self.priors = self.opts.prior_file
         self.samples = self.opts.samples
         self.ignore_parameters = self.opts.ignore_parameters
+        self.burnin_method = self.opts.burnin_method
         self.burnin = self.opts.burnin
         self.nsamples = self.opts.nsamples
         self.custom_plotting = self.opts.custom_plotting
@@ -1385,6 +1533,7 @@ class PostProcessing(object):
         self.host = self.inputs.host
         self.webdir = self.inputs.webdir
         self.baseurl = self.inputs.baseurl
+        self.mcmc_samples = self.inputs.mcmc_samples
         self.labels = self.inputs.labels
         self.weights = self.inputs.weights
         self.config = self.inputs.config
@@ -1410,6 +1559,8 @@ class PostProcessing(object):
         self.multi_process = self.inputs.multi_threading_for_plots
         self.package_information = self.inputs.package_information
         self.same_parameters = []
+        if self.mcmc_samples:
+            self.samples = {label: self.samples.T for label in self.labels}
 
     @property
     def same_parameters(self):

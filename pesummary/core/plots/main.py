@@ -72,12 +72,13 @@ class _PlotGeneration(object):
         injection_data=None, colors=None, custom_plotting=None,
         add_to_existing=False, priors={}, include_prior=False, weights=None,
         disable_comparison=False, linestyles=None, disable_interactive=False,
-        multi_process=1
+        multi_process=1, mcmc_samples=False
     ):
         self.package = "core"
         self.webdir = webdir
         self.savedir = savedir
         self.labels = labels
+        self.mcmc_samples = mcmc_samples
         self.samples = samples
         self.kde_plot = kde_plot
         self.existing_labels = existing_labels
@@ -102,16 +103,16 @@ class _PlotGeneration(object):
             weights if weights is not None else {i: None for i in self.labels}
         )
 
-        if self.same_parameters is not None:
+        if self.same_parameters is not None and not self.mcmc_samples:
             self.same_samples = {
                 param: {
-                    i: self.samples[i][param] for i in self.labels
+                    key: item[param] for key, item in self.samples.items()
                 } for param in self.same_parameters
             }
         else:
             self.same_samples = None
 
-        for i in self.labels:
+        for i in self.samples.keys():
             self.check_latex_labels(self.samples[i].keys())
 
         self.plot_type_dictionary = {
@@ -325,8 +326,12 @@ class _PlotGeneration(object):
         label: str
             the label for the results file that you wish to plot
         """
+        if self.mcmc_samples:
+            samples = self.samples[label].average
+        else:
+            samples = self.samples[label]
         self._corner_plot(
-            self.savedir, label, self.samples[label], latex_labels, self.webdir
+            self.savedir, label, samples, latex_labels, self.webdir
         )
 
     @staticmethod
@@ -394,6 +399,19 @@ class _PlotGeneration(object):
             new_file.writelines(combine_corner)
             new_file.close()
 
+    def _mcmc_iterator(self, label, function):
+        """If the data is a set of mcmc chains, return a 2d list of samples
+        to plot. Otherwise return a list of posterior samples
+        """
+        if self.mcmc_samples:
+            function += "_mcmc"
+            return self.same_parameters, self.samples[label], getattr(
+                self, function
+            )
+        return self.samples[label].keys(), self.samples[label], getattr(
+            self, function
+        )
+
     def oned_histogram_plot(self, label):
         """Generate oned histogram plots for all parameters in the result file
 
@@ -408,27 +426,24 @@ class _PlotGeneration(object):
             "Failed to generate oned_histogram plot for %s because {}"
         )
 
-        if self.include_prior:
-            arguments = [
-                (
-                    [
-                        self.savedir, label, param, samples, latex_labels[param],
-                        self.injection_data[label][param], self.kde_plot,
-                        self.check_prior_samples_in_dict(label, param),
-                        self.weights[label], self.package
-                    ], self._oned_histogram_plot, error_message % (param)
-                ) for param, samples in self.samples[label].items()
-            ]
-        else:
-            arguments = [
-                (
-                    [
-                        self.savedir, label, param, samples, latex_labels[param],
-                        self.injection_data[label][param], self.kde_plot,
-                        None, self.weights[label], self.package
-                    ], self._oned_histogram_plot, error_message % (param)
-                ) for param, samples in self.samples[label].items()
-            ]
+        iterator, samples, function = self._mcmc_iterator(
+            label, "_oned_histogram_plot"
+        )
+
+        prior = lambda param: self.check_prior_samples_in_dict(
+            label, param
+        ) if self.include_prior else None
+
+        arguments = [
+            (
+                [
+                    self.savedir, label, param, samples[param],
+                    latex_labels[param], self.injection_data[label][param],
+                    self.kde_plot, prior(param), self.weights[label],
+                    self.package
+                ], function, error_message % (param)
+            ) for param in iterator
+        ]
         self.pool.starmap(self._try_to_make_a_plot, arguments)
 
     def oned_histogram_comparison_plot(self, label):
@@ -542,6 +557,54 @@ class _PlotGeneration(object):
             )
         )
 
+    @staticmethod
+    def _oned_histogram_plot_mcmc(
+        savedir, label, parameter, samples, latex_label, injection, kde=False,
+        prior=None, weights=None, package="core"
+    ):
+        """Generate a oned histogram plot for a given set of samples for
+        multiple mcmc chains
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        label: str
+            the label corresponding to the results file
+        parameter: str
+            the name of the parameter that you wish to plot
+        samples: dict
+            dictionary of PESummary.utils.utils.Array objects containing the
+            samples corresponding to parameter for multiple mcmc chains
+        latex_label: str
+            the latex label corresponding to parameter
+        injection: float
+            the injected value
+        kde: Bool, optional
+            if True, kde plots will be generated rather than 1d histograms
+        prior: PESummary.utils.utils.Array, optional
+            the prior samples for param
+        weights: PESummary.utils.utils.Array, optional
+            the weights for each samples. If None, assumed to be 1
+        """
+        import math
+        module = importlib.import_module(
+            "pesummary.{}.plots.plot".format(package)
+        )
+
+        if math.isnan(injection):
+            injection = None
+        same_samples = [val for key, val in samples.items()]
+        fig = module._1d_histogram_plot_mcmc(
+            parameter, same_samples, latex_label, injection, kde=kde,
+            prior=prior, weights=weights
+        )
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "{}_1d_posterior_{}".format(label, parameter)
+            )
+        )
+
     def sample_evolution_plot(self, label):
         """Generate sample evolution plots for all parameters in the result file
 
@@ -553,13 +616,16 @@ class _PlotGeneration(object):
         error_message = (
             "Failed to generate a sample evolution plot for %s because {}"
         )
+        iterator, samples, function = self._mcmc_iterator(
+            label, "_sample_evolution_plot"
+        )
         arguments = [
             (
                 [
-                    self.savedir, label, param, samples, latex_labels[param],
-                    self.injection_data[label][param]
-                ], self._sample_evolution_plot, error_message % (param)
-            ) for param, samples in self.samples[label].items()
+                    self.savedir, label, param, samples[param],
+                    latex_labels[param], self.injection_data[label][param]
+                ], function, error_message % (param)
+            ) for param in iterator
         ]
         self.pool.starmap(self._try_to_make_a_plot, arguments)
 
@@ -593,6 +659,38 @@ class _PlotGeneration(object):
             )
         )
 
+    @staticmethod
+    def _sample_evolution_plot_mcmc(
+        savedir, label, parameter, samples, latex_label, injection
+    ):
+        """Generate a sample evolution plot for a given set of mcmc chains
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        label: str
+            the label corresponding to the results file
+        parameter: str
+            the name of the parameter that you wish to plot
+        samples: dict
+            dictionary containing pesummary.utils.utils.Array objects containing
+            the samples corresponding to parameter for each chain
+        latex_label: str
+            the latex label corresponding to parameter
+        injection: float
+            the injected value
+        """
+        same_samples = [val for key, val in samples.items()]
+        fig = core._sample_evolution_plot_mcmc(
+            parameter, same_samples, latex_label, injection
+        )
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "{}_sample_evolution_{}".format(label, parameter)
+            )
+        )
+
     def autocorrelation_plot(self, label):
         """Generate autocorrelation plots for all parameters in the result file
 
@@ -604,11 +702,14 @@ class _PlotGeneration(object):
         error_message = (
             "Failed to generate an autocorrelation plot for %s because {}"
         )
+        iterator, samples, function = self._mcmc_iterator(
+            label, "_autocorrelation_plot"
+        )
         arguments = [
             (
-                [self.savedir, label, param, samples],
-                self._autocorrelation_plot, error_message % (param)
-            ) for param, samples in self.samples[label].items()
+                [self.savedir, label, param, samples[param]],
+                function, error_message % (param)
+            ) for param in iterator
         ]
         self.pool.starmap(self._try_to_make_a_plot, arguments)
 
@@ -636,6 +737,33 @@ class _PlotGeneration(object):
             )
         )
 
+    @staticmethod
+    def _autocorrelation_plot_mcmc(savedir, label, parameter, samples):
+        """Generate an autocorrelation plot for a list of samples, one for each
+        mcmc chain
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        label: str
+            the label corresponding to the results file
+        parameter: str
+            the name of the parameter that you wish to plot
+        samples: dict
+            dictioanry of PESummary.utils.utils.Array objects containing the
+            samples corresponding to parameter for each mcmc chain
+        """
+        same_samples = [val for key, val in samples.items()]
+        fig = core._autocorrelation_plot_mcmc(parameter, same_samples)
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "{}_autocorrelation_{}".format(
+                    label, parameter
+                )
+            )
+        )
+
     def oned_cdf_plot(self, label):
         """Generate oned CDF plots for all parameters in the result file
 
@@ -647,14 +775,18 @@ class _PlotGeneration(object):
         error_message = (
             "Failed to generate a CDF plot for %s because {}"
         )
-        for param, samples in self.samples[label].items():
-            arguments = [
-                self.savedir, label, param, samples, latex_labels[param]
-            ]
-            self._try_to_make_a_plot(
-                arguments, self._oned_cdf_plot, error_message % (param)
-            )
-            continue
+        iterator, samples, function = self._mcmc_iterator(
+            label, "_oned_cdf_plot"
+        )
+        arguments = [
+            (
+                [
+                    self.savedir, label, param, samples[param],
+                    latex_labels[param]
+                ], function, error_message % (param)
+            ) for param in iterator
+        ]
+        self.pool.starmap(self._try_to_make_a_plot, arguments)
 
     @staticmethod
     def _oned_cdf_plot(savedir, label, parameter, samples, latex_label):
@@ -674,6 +806,33 @@ class _PlotGeneration(object):
             the latex label corresponding to parameter
         """
         fig = core._1d_cdf_plot(parameter, samples, latex_label)
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir + "{}_cdf_{}".format(label, parameter)
+            )
+        )
+
+    @staticmethod
+    def _oned_cdf_plot_mcmc(savedir, label, parameter, samples, latex_label):
+        """Generate a oned CDF plot for a given set of samples, one for each
+        mcmc chain
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        label: str
+            the label corresponding to the results file
+        parameter: str
+            the name of the parameter that you wish to plot
+        samples: dict
+            dictionary of PESummary.utils.utils.Array objects containing the
+            samples corresponding to parameter for each mcmc chain
+        latex_label: str
+            the latex label corresponding to parameter
+        """
+        same_samples = [val for key, val in samples.items()]
+        fig = core._1d_cdf_plot_mcmc(parameter, same_samples, latex_label)
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir + "{}_cdf_{}".format(label, parameter)

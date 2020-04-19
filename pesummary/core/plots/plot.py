@@ -14,7 +14,7 @@
 
 from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, _check_latex_install,
-    get_matplotlib_style_file
+    get_matplotlib_style_file, gelman_rubin
 )
 from pesummary.core.plots.kde import kdeplot
 from pesummary import conf
@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import corner
 import copy
+from itertools import cycle
 
 import numpy as np
 from scipy import signal
@@ -32,27 +33,34 @@ plt.style.use(get_matplotlib_style_file())
 _check_latex_install()
 
 
-def _autocorrelation_plot(param, samples):
+def _autocorrelation_plot(
+    param, samples, fig=None, color=conf.color, markersize=0.5
+):
     """Generate the autocorrelation function for a set of samples for a given
     parameter for a given approximant.
 
-    Parameters
+     Parameters
     ----------
     param: str
         name of the parameter that you wish to plot
     samples: list
         list of samples for param
+    fig: matplotlib.pyplot.figure
+        existing figure you wish to use
+    color: str, optional
+        color you wish to use for the autocorrelation plot
     """
     logger.debug("Generating the autocorrelation function for %s" % (param))
+    if fig is None:
+        fig = plt.figure()
     samples = samples[int(len(samples) / 2):]
     x = samples - np.mean(samples)
     y = np.conj(x[::-1])
     acf = np.fft.ifftshift(signal.fftconvolve(y, x, mode='full'))
     N = np.array(samples).shape[0]
     acf = acf[0:N]
-    fig = plt.figure()
-    plt.plot(acf / acf[0], linestyle=' ', marker='o', markersize=0.5,
-             color=conf.color)
+    plt.plot(acf / acf[0], linestyle=' ', marker='o', markersize=markersize,
+             color=color)
     plt.ticklabel_format(axis="x", style="plain")
     plt.xlabel("lag")
     plt.ylabel("ACF")
@@ -61,7 +69,32 @@ def _autocorrelation_plot(param, samples):
     return fig
 
 
-def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
+def _autocorrelation_plot_mcmc(param, samples, colorcycle=conf.colorcycle):
+    """Generate the autocorrelation function for a set of samples for a given
+    parameter for a given set of mcmc chains
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: np.ndarray
+        2d array containing a list of samples for param for each mcmc chain
+    colorcycle: list, str
+        color cycle you wish to use for the different mcmc chains
+    """
+    cycol = cycle(colorcycle)
+    fig = plt.figure()
+    for ss in samples:
+        fig = _autocorrelation_plot(
+            param, ss, fig=fig, markersize=1.25, color=next(cycol)
+        )
+    return fig
+
+
+def _sample_evolution_plot(
+    param, samples, latex_label, inj_value=None, fig=None, color=conf.color,
+    markersize=0.5
+):
     """Generate a scatter plot showing the evolution of the samples for a
     given parameter for a given approximant.
 
@@ -75,12 +108,17 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
         latex label for param
     inj_value: float
         value that was injected
+    fig: matplotlib.pyplot.figure, optional
+        existing figure you wish to use
+    color: str, optional
+        color you wish to use to plot the scatter points
     """
     logger.debug("Generating the sample scatter plot for %s" % (param))
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure()
     n_samples = len(samples)
     plt.plot(range(n_samples), samples, linestyle=' ', marker='o',
-             markersize=0.5, color=conf.color)
+             markersize=markersize, color=color)
     plt.ticklabel_format(axis="x", style="plain")
     plt.xlabel("samples")
     plt.ylabel(latex_label)
@@ -89,7 +127,38 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None):
     return fig
 
 
-def _1d_cdf_plot(param, samples, latex_label):
+def _sample_evolution_plot_mcmc(
+    param, samples, latex_label, inj_value=None, colorcycle=conf.colorcycle
+):
+    """Generate a scatter plot showing the evolution of the samples in each
+    mcmc chain for a given parameter
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: np.ndarray
+        2d array containing the samples for param for each mcmc chain
+    latex_label: str
+        latex label for param
+    inj_value: float
+        value that was injected
+    colorcycle: list, str
+        color cycle you wish to use for the different mcmc chains
+    """
+    cycol = cycle(colorcycle)
+    fig = plt.figure()
+    for ss in samples:
+        fig = _sample_evolution_plot(
+            param, ss, latex_label, inj_value=None, fig=fig, markersize=1.25,
+            color=next(cycol)
+        )
+    return fig
+
+
+def _1d_cdf_plot(
+    param, samples, latex_label, fig=None, color=conf.color, title=True
+):
     """Generate the cumulative distribution function for a given parameter for
     a given approximant.
 
@@ -101,9 +170,17 @@ def _1d_cdf_plot(param, samples, latex_label):
         list of samples for param
     latex_label: str
         latex label for param
+    fig: matplotlib.pyplot.figure, optional
+        existing figure you wish to use
+    color: str, optional09
+        color you wish to use to plot the scatter points
+    title: Bool, optional
+        if True, add a title to the 1d cdf plot showing giving the median
+        and symmetric 90% credible intervals
     """
     logger.debug("Generating the 1d CDF for %s" % (param))
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure()
     sorted_samples = copy.deepcopy(samples)
     sorted_samples.sort()
     plt.xlabel(latex_label)
@@ -114,12 +191,39 @@ def _1d_cdf_plot(param, samples, latex_label):
     upper = np.round(upper_percentile - median, 2)
     lower = np.round(median - lower_percentile, 2)
     median = np.round(median, 2)
-    plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
+    if title:
+        plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
     plt.plot(sorted_samples, np.linspace(0, 1, len(sorted_samples)),
-             color=conf.color)
+             color=color)
     plt.grid(b=True)
     plt.ylim([0, 1.05])
     plt.tight_layout()
+    return fig
+
+
+def _1d_cdf_plot_mcmc(param, samples, latex_label, colorcycle=conf.colorcycle):
+    """Generate the cumulative distribution function for a given parameter
+    for a given set of mcmc chains
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: np.ndarray
+        2d array containing the samples for param for each mcmc chain
+    latex_label: str
+        latex label for param
+    colorcycle: list, str
+        color cycle you wish to use for the different mcmc chains
+    """
+    cycol = cycle(colorcycle)
+    fig = plt.figure()
+    for ss in samples:
+        fig = _1d_cdf_plot(
+            param, ss, latex_label, fig=fig, color=next(cycol), title=False
+        )
+    gelman = gelman_rubin(samples)
+    plt.title("Gelman-Rubin: {}".format(gelman))
     return fig
 
 
@@ -175,7 +279,9 @@ def _1d_cdf_comparison_plot(
 
 
 def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
-                       prior=None, weights=None, xlow=None, xhigh=None):
+                       prior=None, weights=None, xlow=None, xhigh=None,
+                       fig=None, title=True, color=conf.color,
+                       autoscale=True):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
 
@@ -195,14 +301,24 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
         list of prior samples for param
     weights: list
         list of weights for each sample
+    fig: matplotlib.pyplot.figure, optional
+        existing figure you wish to use
+    color: str, optional09
+        color you wish to use to plot the scatter points
+    title: Bool, optional
+        if True, add a title to the 1d cdf plot showing giving the median
+        and symmetric 90% credible intervals
+    autoscale: Bool, optional
+        autoscale the x axis
     """
     logger.debug("Generating the 1d histogram plot for %s" % (param))
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure()
     if np.ptp(samples) == 0:
         plt.axvline(samples[0], color=conf.color)
         xlims = plt.gca().get_xlim()
     elif not kde:
-        plt.hist(samples, histtype="step", bins=50, color=conf.color,
+        plt.hist(samples, histtype="step", bins=50, color=color,
                  density=True, linewidth=1.75, weights=weights)
         xlims = plt.gca().get_xlim()
         if prior is not None:
@@ -214,7 +330,7 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
             kwargs.update({"xlow": xlow, "xhigh": xhigh})
         else:
             kwargs.update({"clip": [samples.minimum, samples.maximum]})
-        x = kdeplot(samples, color=conf.color, **kwargs)
+        x = kdeplot(samples, color=color, **kwargs)
         xlims = plt.gca().get_xlim()
         if prior is not None:
             kdeplot(prior, color=conf.prior_color, **kwargs)
@@ -224,16 +340,57 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
     if inj_value is not None:
         plt.axvline(inj_value, color=conf.injection_color, linestyle='-',
                     linewidth=2.5)
-    plt.axvline(percentile[0], color=conf.color, linestyle='--', linewidth=1.75)
-    plt.axvline(percentile[1], color=conf.color, linestyle='--', linewidth=1.75)
+    plt.axvline(percentile[0], color=color, linestyle='--', linewidth=1.75)
+    plt.axvline(percentile[1], color=color, linestyle='--', linewidth=1.75)
     median = samples.average("median")
-    upper = np.round(percentile[1] - median, 2)
-    lower = np.round(median - percentile[0], 2)
-    median = np.round(median, 2)
-    plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
+    if title:
+        upper = np.round(percentile[1] - median, 2)
+        lower = np.round(median - percentile[0], 2)
+        median = np.round(median, 2)
+        plt.title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
     plt.grid(b=True)
-    plt.xlim(xlims)
+    if autoscale:
+        plt.xlim(xlims)
     plt.tight_layout()
+    return fig
+
+
+def _1d_histogram_plot_mcmc(
+    param, samples, latex_label, inj_value=None, kde=False, prior=None,
+    weights=None, xlow=None, xhigh=None, colorcycle=conf.colorcycle
+):
+    """Generate a 1d histogram plot for a given parameter for a given
+    set of mcmc chains
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: np.ndarray
+        2d array of samples for param for each mcmc chain
+    latex_label: str
+        latex label for param
+    inj_value: float
+        value that was injected
+    kde: Bool
+        if true, a kde is plotted instead of a histogram
+    prior: list
+        list of prior samples for param
+    weights: list
+        list of weights for each sample
+    colorcycle: list, str
+        color cycle you wish to use for the different mcmc chains
+    """
+    cycol = cycle(colorcycle)
+    fig = plt.figure()
+    for ss in samples:
+        fig = _1d_histogram_plot(
+            param, ss, latex_label, inj_value=inj_value, kde=kde, prior=prior,
+            weights=weights, xlow=xlow, xhigh=xhigh, fig=fig,
+            color=next(cycol), title=False, autoscale=False
+        )
+    gelman = gelman_rubin(samples)
+    plt.title("Gelman-Rubin: {}".format(gelman))
     return fig
 
 

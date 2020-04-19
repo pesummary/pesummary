@@ -21,7 +21,8 @@ from pesummary.gw.file.read import read as GWRead
 from pesummary.gw.file.psd import PSD
 from pesummary.gw.file.calibration import Calibration
 from pesummary.utils.exceptions import InputError
-from pesummary.utils.utils import logger, SamplesDict
+from pesummary.utils.samples_dict import SamplesDict
+from pesummary.utils.utils import logger
 
 
 class _GWInput(_Input):
@@ -198,7 +199,7 @@ class _GWInput(_Input):
     def detectors(self, detectors):
         detector = {}
         if not detectors:
-            for i in self.labels:
+            for i in self.samples.keys():
                 params = list(self.samples[i].keys())
                 individual_detectors = []
                 for j in params:
@@ -247,20 +248,21 @@ class _GWInput(_Input):
             for num, i in enumerate(self.result_files):
                 f = GWRead(i)
                 calibration_data = f.calibration_data_in_results_file
+                labels = list(self.samples.keys())
                 if calibration_data is None:
-                    data[self.labels[num]] = {
+                    data[labels[num]] = {
                         None: None
                     }
                 elif isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
                     for num in range(len(calibration_data[0])):
-                        data[self.labels[num]] = {
+                        data[labels[num]] = {
                             j: k for j, k in zip(
                                 calibration_data[1][num],
                                 calibration_data[0][num]
                             )
                         }
                 else:
-                    data[self.labels[num]] = {
+                    data[labels[num]] = {
                         j: k for j, k in zip(
                             calibration_data[1], calibration_data[0]
                         )
@@ -422,8 +424,19 @@ class _GWInput(_Input):
         from pesummary.gw.pepredicates import get_classifications
 
         classifications = {}
-        for num, i in enumerate(self.labels):
+        for num, i in enumerate(list(self.samples.keys())):
             classifications[i] = get_classifications(self.samples[i])
+        if self.mcmc_samples:
+            logger.debug(
+                "Averaging classification probability across mcmc samples"
+            )
+            classifications[self.labels[0]] = {
+                prior: {
+                    key: np.round(np.mean(
+                        [val[prior][key] for val in classifications.values()]
+                    ), 3) for key in _probs.keys()
+                } for prior, _probs in list(classifications.values())[0].items()
+            }
         self._pepredicates_probs = classifications
 
     @property
@@ -435,7 +448,7 @@ class _GWInput(_Input):
         from pesummary.gw.p_astro import get_probabilities
 
         probabilities = {}
-        for num, i in enumerate(self.labels):
+        for num, i in enumerate(list(self.samples.keys())):
             em_bright = get_probabilities(self.samples[i])
             if em_bright is not None:
                 probabilities[i] = {
@@ -443,6 +456,17 @@ class _GWInput(_Input):
                 }
             else:
                 probabilities[i] = None
+        if self.mcmc_samples:
+            logger.debug(
+                "Averaging em_bright probability across mcmc samples"
+            )
+            probabilities[self.labels[0]] = {
+                prior: {
+                    key: np.round(np.mean(
+                        [val[prior][key] for val in probabilities.values()]
+                    ), 3) for key in _probs.keys()
+                } for prior, _probs in list(probabilities.values())[0].items()
+            }
         self._pastro_probs = probabilities
 
     @staticmethod
@@ -914,14 +938,31 @@ class GWPostProcessing(PostProcessing):
         """Grab the mean, median, maxL and standard deviation for all
         parameters for all each result file
         """
+        def smart_average(data, _type="mean", multiple=False):
+            if not multiple and _type == "std":
+                return data.standard_deviation
+            elif not multiple and _type == "maxL":
+                return data.maxL
+            elif not multiple:
+                return data.average(_type)
+            else:
+                _data = np.concatenate(list(data.values()))
+                if _type == "mean":
+                    return np.mean(_data)
+                elif _type == "median":
+                    return np.median(_data)
+                elif _type == "std":
+                    return np.std(_data)
+                else:
+                    return float("nan")
+
         key_data = {
-            i: {
+            key: {
                 j: {
-                    "mean": self.samples[i][j].average("mean"),
-                    "median": self.samples[i][j].average("median"),
-                    "std": self.samples[i][j].standard_deviation,
-                    "maxL": self.samples[i][j].maxL
-                } for j in self.samples[i].keys()
-            } for i in self.labels
+                    _type: smart_average(
+                        val[j], multiple=self.mcmc_samples, _type=_type
+                    ) for _type in ["mean", "median", "std", "maxL"]
+                } for j in val.keys()
+            } for key, val in self.samples.items()
         }
         return key_data

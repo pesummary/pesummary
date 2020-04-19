@@ -15,7 +15,8 @@
 
 import numpy as np
 
-from pesummary.utils.utils import logger, SamplesDict
+from pesummary.utils.samples_dict import SamplesDict
+from pesummary.utils.utils import logger
 from pesummary.utils.decorators import array_input
 
 try:

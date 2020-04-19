@@ -122,7 +122,7 @@ setup(name='pesummary',
                 'pesummary.core.file.formats', 'pesummary.gw',
                 'pesummary.gw.file', 'pesummary.gw.file.formats',
                 'pesummary.gw.plots', 'pesummary.gw.webpage', 'pesummary.utils',
-                'pesummary.conf', 'pesummary.cli'],
+                'pesummary.conf', 'pesummary.cli', 'pesummary.io'],
       package_data={
           'pesummary': [version_file.name],
           'pesummary.core': ['js/*.js', 'css/*.css'],

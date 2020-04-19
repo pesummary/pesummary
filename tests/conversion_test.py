@@ -475,7 +475,7 @@ class TestConversions(object):
         assert network[1] == np.sqrt(3) * 3
 
     def test_full_conversion(self):
-        from pesummary.utils.utils import Array
+        from pesummary.utils.samples_dict import Array
         from pesummary.gw.file.conversions import _Conversion
         from bilby.gw.conversion import convert_to_lal_binary_black_hole_parameters
         from pandas import DataFrame

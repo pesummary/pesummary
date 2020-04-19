@@ -40,7 +40,8 @@ class _GWMetaFile(_MetaFile):
         existing_calibration=None, existing_approximant=None,
         existing_config=None, existing_injection=None,
         existing_metadata=None, priors={}, outdir=None, existing=None,
-        existing_priors={}, existing_metafile=None, package_information={}
+        existing_priors={}, existing_metafile=None, package_information={},
+        mcmc_samples=False
     ):
         self.calibration = calibration
         self.psds = psd
@@ -58,6 +59,7 @@ class _GWMetaFile(_MetaFile):
             existing_config=existing_config, existing_priors=existing_priors,
             outdir=outdir, package_information=package_information,
             existing=existing, existing_metafile=existing_metafile,
+            mcmc_samples=mcmc_samples
         )
 
     def _make_dictionary(self):
@@ -86,12 +88,14 @@ class _GWMetaFile(_MetaFile):
                 self.data[label]["approximant"] = {}
 
     @staticmethod
-    def save_to_hdf5(data, labels, samples, meta_file, no_convert=False):
+    def save_to_hdf5(
+        data, labels, samples, meta_file, no_convert=False, mcmc_samples=False
+    ):
         """Save the metafile as a hdf5 file
         """
         _MetaFile.save_to_hdf5(
             data, labels, samples, meta_file, no_convert=no_convert,
-            extra_keys=CORE_HDF5_KEYS
+            extra_keys=CORE_HDF5_KEYS, mcmc_samples=mcmc_samples
         )
 
 
@@ -142,7 +146,8 @@ class GWMetaFile(GWPostProcessing):
             existing_config=existing_config, priors=self.priors,
             existing_priors=existing_priors, existing=existing,
             existing_metafile=existing_metafile, approximant=self.approximant,
-            package_information=self.package_information
+            package_information=self.package_information,
+            mcmc_samples=self.mcmc_samples
         )
         meta_file.make_dictionary()
         if not self.hdf5:
@@ -150,7 +155,7 @@ class GWMetaFile(GWPostProcessing):
         else:
             meta_file.save_to_hdf5(
                 meta_file.data, meta_file.labels, meta_file.samples,
-                meta_file.meta_file
+                meta_file.meta_file, mcmc_samples=meta_file.mcmc_samples
             )
         meta_file.save_to_dat()
         meta_file.write_marginalized_posterior_to_dat()

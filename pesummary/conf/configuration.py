@@ -21,6 +21,9 @@ user = "albert.einstein"
 # The number of samples to disregard as burnin
 burnin = 0
 
+# The method to use to remove the samples as burnin
+burnin_method = "burnin_by_step_number"
+
 # delimiter to use when saving files to dat with np.savetxt
 delimiter = "\t"
 
@@ -29,6 +32,9 @@ kde_plot = False
 
 # color for non-comparison plots
 color = 'b'
+
+# color cycle for different mcmc chains
+colorcycle = "brgkmc"
 
 # color for injection lines
 injection_color = 'orange'

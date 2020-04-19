@@ -177,6 +177,11 @@ def _check_pesummary_file(f):
                 label != "version"
         ):
             return True
+        elif all(
+                "mcmc_chains" in f[label].keys() for label in labels if
+                label != "version"
+        ):
+            return True
         else:
             return False
     except Exception:

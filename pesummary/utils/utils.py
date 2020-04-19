@@ -32,370 +32,6 @@ CACHE_DIR = os.path.expanduser(
 )
 
 
-class SamplesDict(dict):
-    """Class to store the samples from a single run
-
-    Parameters
-    ----------
-    parameters: list
-        list of parameters
-    samples: nd list
-        list of samples for each parameter
-    """
-    def __init__(self, parameters, samples):
-        super(SamplesDict, self).__init__()
-        self.parameters = parameters
-        self.samples = samples
-        lengths = [len(i) for i in samples]
-        if len(np.unique(lengths)) > 1:
-            raise Exception("Unequal number of samples for each parameter")
-        self.make_dictionary()
-
-    def __getitem__(self, key):
-        """Return an object representing the specialization of SamplesDict
-        by type arguments found in key.
-        """
-        if isinstance(key, slice):
-            return SamplesDict(
-                self.parameters,
-                [i[key.start:key.stop:key.step] for i in self.samples]
-            )
-        if isinstance(key, str):
-            if key not in self.keys():
-                raise KeyError(
-                    "{} not in dictionary. The list of available keys are "
-                    "{}".format(key, self.keys())
-                )
-        return super(SamplesDict, self).__getitem__(key)
-
-    def __str__(self):
-        """Print a summary of the information stored in the dictionary
-        """
-        def format_string(string, row):
-            """Format a list into a table
-
-            Parameters
-            ----------
-            string: str
-                existing table
-            row: list
-                the row you wish to be written to a table
-            """
-            string += "{:<8}".format(row[0])
-            for i in range(1, len(row)):
-                if isinstance(row[i], str):
-                    string += "{:<15}".format(row[i])
-                elif isinstance(row[i], (float, int, np.int64, np.int32)):
-                    string += "{:<15.6f}".format(row[i])
-            string += "\n"
-            return string
-
-        string = ""
-        string = format_string(string, ["idx"] + list(self.keys()))
-
-        if self.number_of_samples < 8:
-            for i in range(self.number_of_samples):
-                string = format_string(
-                    string, [i] + [item[i] for key, item in self.items()]
-                )
-        else:
-            for i in range(4):
-                string = format_string(
-                    string, [i] + [item[i] for key, item in self.items()]
-                )
-            for i in range(2):
-                string = format_string(string, ["."] * (len(self.keys()) + 1))
-            for i in range(self.number_of_samples - 2, self.number_of_samples):
-                string = format_string(
-                    string, [i] + [item[i] for key, item in self.items()]
-                )
-        return string
-
-    @property
-    def maxL(self):
-        return SamplesDict(
-            self.parameters, [[item.maxL] for key, item in self.items()]
-        )
-
-    @property
-    def minimum(self):
-        return SamplesDict(
-            self.parameters, [[item.minimum] for key, item in self.items()]
-        )
-
-    @property
-    def maximum(self):
-        return SamplesDict(
-            self.parameters, [[item.maximum] for key, item in self.items()]
-        )
-
-    @property
-    def median(self):
-        return SamplesDict(
-            self.parameters,
-            [[item.average(type="median")] for key, item in self.items()]
-        )
-
-    @property
-    def mean(self):
-        return SamplesDict(
-            self.parameters,
-            [[item.average(type="mean")] for key, item in self.items()]
-        )
-
-    @property
-    def number_of_samples(self):
-        return len(self[self.parameters[0]])
-
-    def to_pandas(self):
-        """Convert a SamplesDict object to a pandas dataframe
-        """
-        from pandas import DataFrame
-
-        return DataFrame(self)
-
-    def to_structured_array(self):
-        """Convert a SamplesDict object to a structured numpy array
-        """
-        return self.to_pandas().to_records(index=False, column_dtypes=np.float)
-
-    def pop(self, parameter):
-        """Delete a parameter from the SamplesDict
-
-        Parameters
-        ----------
-        parameter: str
-            name of the parameter you wish to remove from the SamplesDict
-        """
-        if parameter not in self.parameters:
-            logger.info(
-                "{} not in SamplesDict. Unable to remove {}".format(
-                    parameter, parameter
-                )
-            )
-            return
-        ind = self.parameters.index(parameter)
-        self.parameters.remove(parameter)
-        remove = self.samples[ind]
-        if isinstance(self.samples, np.ndarray):
-            samples = self.samples.tolist()
-            remove = self.samples[ind].tolist()
-        samples.remove(remove)
-        if isinstance(self.samples, np.ndarray):
-            self.samples = np.array(samples)
-        return super(SamplesDict, self).pop(parameter)
-
-    def downsample(self, number):
-        """Downsample the samples stored in the SamplesDict class
-
-        Parameters
-        ----------
-        number: int
-            Number of samples you wish to downsample to
-        """
-        self.samples = resample_posterior_distribution(self.samples, number)
-        self.make_dictionary()
-        return self
-
-    def discard_samples(self, number):
-        """Remove the first n samples
-
-        Parameters
-        ----------
-        number: int
-            Number of samples that you wish to remove
-        """
-        self.make_dictionary(discard_samples=number)
-        return self
-
-    def make_dictionary(self, discard_samples=None):
-        """Add the parameters and samples to the class
-        """
-        if "log_likelihood" in self.parameters:
-            likelihoods = self.samples[self.parameters.index("log_likelihood")]
-            likelihoods = likelihoods[discard_samples:]
-        else:
-            likelihoods = None
-        if any(i in self.parameters for i in ["weights", "weight"]):
-            ind = (
-                self.parameters.index("weights") if "weights" in self.parameters
-                else self.parameters.index("weight")
-            )
-            weights = self.samples[ind][discard_samples:]
-        else:
-            weights = None
-        for key, val in zip(self.parameters, self.samples):
-            self[key] = Array(
-                val[discard_samples:], likelihood=likelihoods, weights=weights
-            )
-
-
-class Array(np.ndarray):
-    """Class to add extra functions and methods to np.ndarray
-
-    Parameters
-    ----------
-    input_aray: list/array
-        input list/array
-
-    Attributes
-    ----------
-    median: float
-        median of the input array
-    mean: float
-        mean of the input array
-    """
-    __slots__ = ["standard_deviation", "minimum", "maximum", "maxL", "weights"]
-
-    def __new__(cls, input_array, likelihood=None, weights=None):
-        obj = np.asarray(input_array).view(cls)
-        obj.standard_deviation = np.std(obj)
-        obj.minimum = np.min(obj)
-        obj.maximum = np.max(obj)
-        obj.maxL = cls._maxL(obj, likelihood)
-        obj.weights = weights
-        return obj
-
-    def __reduce__(self):
-        pickled_state = super(Array, self).__reduce__()
-        new_state = pickled_state[2] + tuple(
-            [getattr(self, i) for i in self.__slots__]
-        )
-        return (pickled_state[0], pickled_state[1], new_state)
-
-    def __setstate__(self, state):
-        self.standard_deviation = state[-5]
-        self.minimum = state[-4]
-        self.maximum = state[-3]
-        self.maxL = state[-2]
-        self.weights = state[-1]
-        super(Array, self).__setstate__(state[0:-5])
-
-    def average(self, type="mean"):
-        """Return the average of the array
-
-        Parameters
-        ----------
-        type: str
-            the method to average the array
-        """
-        if type == "mean":
-            return self._mean(self, weights=self.weights)
-        elif type == "median":
-            return self._median(self, weights=self.weights)
-        else:
-            return None
-
-    @staticmethod
-    def _mean(array, weights=None):
-        """Compute the mean from a set of weighted samples
-
-        Parameters
-        ----------
-        array: np.ndarray
-            input array
-        weights: np.ndarray, optional
-            list of weights associated with each sample
-        """
-        if weights is None:
-            return np.mean(array)
-        weights = np.array(weights).flatten() / float(sum(weights))
-        return float(np.dot(np.array(array), weights))
-
-    @staticmethod
-    def _median(array, weights=None):
-        """Compute the median from a set of weighted samples
-
-        Parameters
-        ----------
-        array: np.ndarray
-            input array
-        weights: np.ndarray, optional
-            list of weights associated with each sample
-        """
-        if weights is None:
-            return np.median(array)
-        return Array.percentile(array, weights=weights, percentile=0.5)
-
-    @staticmethod
-    def _maxL(array, likelihood=None):
-        """Return the maximum likelihood value of the array
-
-        Parameters
-        ----------
-        array: np.ndarray
-            input array
-        likelihood: np.ndarray, optional
-            likelihoods associated with each sample
-        """
-        if likelihood is not None:
-            likelihood = list(likelihood)
-            ind = likelihood.index(np.max(likelihood))
-            return array[ind]
-        return None
-
-    @staticmethod
-    def percentile(array, weights=None, percentile=None):
-        """Compute the Nth percentile of a set of weighted samples
-
-        Parameters
-        ----------
-        array: np.ndarray
-            input array
-        weights: np.ndarray, optional
-            list of weights associated with each sample
-        percentile: float, list
-            list of percentiles to compute
-        """
-        if weights is None:
-            return np.percentile(array, percentile)
-
-        array, weights = np.array(array), np.array(weights)
-        percentile_type = percentile
-        if not isinstance(percentile, (list, np.ndarray)):
-            percentile = [float(percentile)]
-        percentile = np.array([float(i) for i in percentile])
-        if not all(i < 1 for i in percentile):
-            percentile *= 0.01
-        ind_sorted = np.argsort(array)
-        sorted_data = array[ind_sorted]
-        sorted_weights = weights[ind_sorted]
-        Sn = np.cumsum(sorted_weights)
-        Pn = (Sn - 0.5 * sorted_weights) / Sn[-1]
-        data = np.interp(percentile, Pn, sorted_data)
-        if isinstance(percentile_type, (int, float, np.float64, np.float32)):
-            return float(data[0])
-        return data
-
-    def confidence_interval(self, percentile=None):
-        """Return the confidence interval of the array
-
-        Parameters
-        ----------
-        percentile: int/list, optional
-            Percentile or sequence of percentiles to compute, which must be
-            between 0 and 100 inclusive
-        """
-        if percentile is not None:
-            if isinstance(percentile, int):
-                return self.percentile(self, self.weights, percentile)
-            return np.array(
-                [self.percentile(self, self.weights, i) for i in percentile]
-            )
-        return np.array(
-            [self.percentile(self, self.weights, i) for i in [5, 95]]
-        )
-
-    def __array_finalize__(self, obj):
-        if obj is None:
-            return
-        self.standard_deviation = getattr(obj, 'standard_deviation', None)
-        self.minimum = getattr(obj, 'minimum', None)
-        self.maximum = getattr(obj, 'maximum', None)
-        self.maxL = getattr(obj, 'maxL', None)
-        self.weights = getattr(obj, 'weights', None)
-
-
 class _tqdm(Basetqdm):
 
     @property
@@ -831,9 +467,9 @@ def draw_conditioned_prior_samples(
 
     Parameters
     ----------
-    samples_dict: pesummary.utils.utils.SamplesDict
+    samples_dict: pesummary.utils.samples_dict.SamplesDict
         SamplesDict containing the posterior samples
-    prior_samples_dict: pesummary.utils.utils.SamplesDict
+    prior_samples_dict: pesummary.utils.samples_dict.SamplesDict
         SamplesDict containing the prior samples
     conditioned: list
         list of parameters that you wish to condition your prior on
@@ -978,6 +614,34 @@ def _check_latex_install():
         rcParams["text.usetex"] = original
     else:
         rcParams["text.usetex"] = False
+
+
+def gelman_rubin(samples, decimal=5):
+    """Return an approximation to the Gelman-Rubin statistic (see Gelman, A. and
+     Rubin, D. B., Statistical Science, Vol 7, No. 4, pp. 457--511 (1992))
+
+    Parameters
+    ----------
+    samples: np.ndarray
+        2d array of samples for a given parameter, one for each chain
+    decimal: int
+        number of decimal places to keep when rounding
+
+    Examples
+    --------
+    >>> from pesummary.utils.utils import gelman_rubin
+    >>> samples = [[1, 1.5, 1.2, 1.4, 1.6, 1.2], [1.5, 1.3, 1.4, 1.7]]
+    >>> gelman_rubin(samples, decimal=5)
+    1.2972
+    """
+    means = [np.mean(data) for data in samples]
+    variances = [np.var(data) for data in samples]
+    BoverN = np.var(means)
+    W = np.mean(variances)
+    sigma = W + BoverN
+    m = len(samples)
+    Vhat = sigma + BoverN / m
+    return np.round(Vhat / W, decimal)
 
 
 def make_cache_style_file(style_file):

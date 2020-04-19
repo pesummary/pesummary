@@ -52,7 +52,7 @@ class _PlotGeneration(_BasePlotGeneration):
         existing_approximant=None, existing_psd=None, existing_calibration=None,
         existing_weights=None, weights=None, disable_comparison=False,
         linestyles=None, disable_interactive=False, publication_kwargs={},
-        multi_process=1
+        multi_process=1, mcmc_samples=False
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -61,7 +61,7 @@ class _PlotGeneration(_BasePlotGeneration):
             existing_samples=existing_samples,
             existing_weights=existing_weights,
             same_parameters=same_parameters,
-            injection_data=injection_data,
+            injection_data=injection_data, mcmc_samples=mcmc_samples,
             colors=colors, custom_plotting=custom_plotting,
             add_to_existing=add_to_existing, priors=priors,
             include_prior=include_prior, weights=weights,
@@ -257,9 +257,13 @@ class _PlotGeneration(_BasePlotGeneration):
         except ImportError:
             SKYMAP = False
 
+        if self.mcmc_samples:
+            samples = self.samples[label].average
+        else:
+            samples = self.samples[label]
         self._skymap_plot(
-            self.savedir, self.samples[label]["ra"], self.samples[label]["dec"],
-            label, self.weights[label]
+            self.savedir, samples["ra"], samples["dec"], label,
+            self.weights[label]
         )
 
         if SKYMAP and not self.no_ligo_skymap:
@@ -271,9 +275,8 @@ class _PlotGeneration(_BasePlotGeneration):
                 process = mp.Process(
                     target=self._ligo_skymap_plot,
                     args=[
-                        self.savedir, self.samples[label]["ra"],
-                        self.samples[label]["dec"],
-                        self.samples[label]["luminosity_distance"], label,
+                        self.savedir, samples["ra"], samples["dec"],
+                        samples["luminosity_distance"], label,
                         self.nsamples_for_skymap, self.webdir,
                         self.multi_threading_for_skymap
                     ]
@@ -306,6 +309,7 @@ class _PlotGeneration(_BasePlotGeneration):
         )
 
     @staticmethod
+    @no_latex_plot
     def _ligo_skymap_plot(savedir, ra, dec, dist, label, nsamples_for_skymap,
                           webdir, multi_threading_for_skymap):
         """Generate a skymap plot for a given set of samples using the
@@ -849,12 +853,16 @@ class _PlotGeneration(_BasePlotGeneration):
         label: str
             the label for the results file that you wish to plot
         """
+        if self.mcmc_samples:
+            samples = self.samples[label].average
+        else:
+            samples = self.samples[label]
         self._pepredicates_plot(
-            self.savedir, self.samples[label], label,
+            self.savedir, samples, label,
             self.pepredicates_probs[label]["default"], population_prior=False
         )
         self._pepredicates_plot(
-            self.savedir, self.samples[label], label,
+            self.savedir, samples, label,
             self.pepredicates_probs[label]["population"], population_prior=True
         )
 
