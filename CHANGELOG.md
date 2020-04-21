@@ -1,8 +1,26 @@
-## 0.5.2 [unreleased]
+## 0.5.2 [21/04/2020]
 
 ### Changed
 
+- Storing priors - Fix a bug where the priors were not being stored correctly
+  in the PESummary meta file
+- `--compare results` - Fix a bug where the injection dataset was not being
+  calculated properly when the `--compare_results` option is passed.
+
+
 ### Added
+
+- Allow the user to pass MCMC chains to the `summarypages` executable. This is
+  activated with the `--mcmc_samples` command line argument
+- Add extra information to the `summaryreview` script. This includes computing
+  the maximum difference between the samples
+- Store the `ligo.skymap` statistics in the PESummary meta data
+- Store the gracedb ID in the PESummary meta data
+- Allow the user to choose which method they wish to adopt when computing the
+  redshift. This is done with the `--redshift_method` argument
+- Allow the user to pass a custom matplotlib style file for custom plotting.
+  This is done with the `--style_file` argument
+
 
 ## 0.5.1 [03/04/2020]
 
