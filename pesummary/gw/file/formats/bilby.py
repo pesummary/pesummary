@@ -240,8 +240,7 @@ class Bilby(GWRead):
         # Drop all non numeric bilby data outputs
         posterior = posterior.select_dtypes(include=[float, int])
         parameters = list(posterior.keys())
-        number = len(posterior[parameters[0]])
-        samples = [[np.real(posterior[param][i]) for param in parameters] for i in range(number)]
+        samples = posterior.to_numpy().real
         injection = bilby_object.injection_parameters
         if injection is None:
             injection = {i: j for i, j in zip(
