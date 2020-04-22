@@ -92,6 +92,18 @@ class TestConversions(object):
             dp=4
         )
 
+    def test_change_of_cosmology_for_z_from_dL(self):
+        from lalinference.bayespputils import calculate_redshift
+
+        l_distance = np.random.randint(100, 5000, 20)
+        lal_redshift = calculate_redshift(
+            np.atleast_2d(l_distance).T
+        ).T[0]
+        redshift = z_from_dL_exact(
+            l_distance, cosmology="Planck15_lal"
+        )
+        np.testing.assert_almost_equal(lal_redshift, redshift, 8)
+
     def test_dL_from_z(self):
         from bilby.gw.conversion import redshift_to_luminosity_distance
 

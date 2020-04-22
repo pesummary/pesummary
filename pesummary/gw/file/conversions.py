@@ -55,49 +55,63 @@ DEFAULT_SEOBFLAGS = {
 
 @np.vectorize
 @array_input
-def _z_from_dL_exact(luminosity_distance):
+def _z_from_dL_exact(luminosity_distance, cosmology):
     """Return the redshift given samples for the luminosity distance
     """
-    return z_at_value(Planck15.luminosity_distance, luminosity_distance * u.Mpc)
+    return z_at_value(
+        cosmology.luminosity_distance, luminosity_distance * u.Mpc
+    )
 
 
-def z_from_dL_exact(luminosity_distance):
+def z_from_dL_exact(luminosity_distance, cosmology="Planck15"):
     """Return the redshift given samples for the luminosity distance
     """
+    from pesummary.gw.cosmology import get_cosmology
+
     logger.warning("Estimating the exact redshift for every luminosity "
                    "distance. This may take a few minutes.")
-    return _z_from_dL_exact(luminosity_distance)
+    cosmo = get_cosmology(cosmology)
+    return _z_from_dL_exact(luminosity_distance, cosmo)
 
 
 @array_input
-def z_from_dL_approx(luminosity_distance, N=100):
+def z_from_dL_approx(luminosity_distance, N=100, cosmology="Planck15"):
     """Return the approximate redshift given samples for the luminosity
     distance. This technique uses interpolation to estimate the redshift
     """
+    from pesummary.gw.cosmology import get_cosmology
+
     logger.warning("The redshift is being approximated using interpolation. "
                    "Bear in mind that this does introduce a small error.")
+    cosmo = get_cosmology(cosmology)
     d_min = np.min(luminosity_distance)
     d_max = np.max(luminosity_distance)
-    zmin = z_at_value(Planck15.luminosity_distance, d_min * u.Mpc)
-    zmax = z_at_value(Planck15.luminosity_distance, d_max * u.Mpc)
+    zmin = z_at_value(cosmo.luminosity_distance, d_min * u.Mpc)
+    zmax = z_at_value(cosmo.luminosity_distance, d_max * u.Mpc)
     zgrid = np.logspace(np.log10(zmin), np.log10(zmax), N)
-    Dgrid = [Planck15.luminosity_distance(i).value for i in zgrid]
+    Dgrid = [cosmo.luminosity_distance(i).value for i in zgrid]
     zvals = np.interp(luminosity_distance, Dgrid, zgrid)
     return zvals
 
 
 @array_input
-def dL_from_z(redshift):
+def dL_from_z(redshift, cosmology="Planck15"):
     """Return the luminosity distance given samples for the redshift
     """
-    return Planck15.luminosity_distance(redshift).value
+    from pesummary.gw.cosmology import get_cosmology
+
+    cosmo = get_cosmology(cosmology)
+    return cosmo.luminosity_distance(redshift).value
 
 
 @array_input
-def comoving_distance_from_z(redshift):
+def comoving_distance_from_z(redshift, cosmology="Planck15"):
     """Return the comoving distance given samples for the redshift
     """
-    return Planck15.comoving_distance(redshift).value
+    from pesummary.gw.cosmology import get_cosmology
+
+    cosmo = get_cosmology(cosmology)
+    return cosmo.comoving_distance(redshift).value
 
 
 def _source_from_detector(parameter, z):
@@ -1202,6 +1216,9 @@ class _Conversion(object):
         distance samples. If redshift samples already exist, this method is not
         used. Default is 'approx' meaning that interpolation is used to calculate
         the redshift given N luminosity distance points.
+    cosmology: str, optional
+        cosmology you wish to use when calculating the redshift given luminosity
+        distance samples.
     regenerate: list, optional
         list of posterior distributions that you wish to regenerate
     return_dict: Bool, optional
@@ -1251,6 +1268,7 @@ class _Conversion(object):
         approximant = kwargs.get("approximant", None)
         NRSurrogate = kwargs.get("NRSur_fits", False)
         redshift_method = kwargs.get("redshift_method", "approx")
+        cosmology = kwargs.get("cosmology", "Planck15")
         if redshift_method not in ["approx", "exact"]:
             raise ValueError(
                 "'redshift_method' can either be 'approx' corresponding to "
@@ -1335,7 +1353,8 @@ class _Conversion(object):
             multi_process = int(multi_process)
         obj.__init__(
             parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
-            waveform_fits, multi_process, regenerate, redshift_method
+            waveform_fits, multi_process, regenerate, redshift_method,
+            cosmology
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -1352,7 +1371,8 @@ class _Conversion(object):
 
     def __init__(
         self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
-        waveform_fits, multi_process, regenerate, redshift_method
+        waveform_fits, multi_process, regenerate, redshift_method,
+        cosmology
     ):
         self.parameters = parameters
         self.samples = samples
@@ -1362,6 +1382,7 @@ class _Conversion(object):
         self.multi_process = multi_process
         self.regenerate = regenerate
         self.redshift_method = redshift_method
+        self.cosmology = cosmology
         if self.regenerate is not None:
             for param in self.regenerate:
                 self.remove_posterior(param)
@@ -1632,18 +1653,21 @@ class _Conversion(object):
 
     def _dL_from_z(self):
         samples = self.specific_parameter_samples("redshift")
-        distance = dL_from_z(samples)
+        distance = dL_from_z(samples, cosmology=self.cosmology)
+        self.extra_kwargs["meta_data"]["cosmology"] = self.cosmology
         self.append_data("luminosity_distance", distance)
 
     def _z_from_dL(self):
         samples = self.specific_parameter_samples("luminosity_distance")
         func = getattr(_Redshift, self.redshift_method)
-        redshift = func(samples)
+        redshift = func(samples, cosmology=self.cosmology)
+        self.extra_kwargs["meta_data"]["cosmology"] = self.cosmology
         self.append_data("redshift", redshift)
 
     def _comoving_distance_from_z(self):
         samples = self.specific_parameter_samples("redshift")
-        distance = comoving_distance_from_z(samples)
+        distance = comoving_distance_from_z(samples, cosmology=self.cosmology)
+        self.extra_kwargs["meta_data"]["cosmology"] = self.cosmology
         self.append_data("comoving_distance", distance)
 
     def _m1_source_from_m1_z(self):

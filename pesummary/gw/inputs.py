@@ -98,7 +98,8 @@ class _GWInput(_Input):
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
                     waveform_fits=self.waveform_fits,
                     multi_process=self.opts.multi_process,
-                    redshift_method=self.redshift_method
+                    redshift_method=self.redshift_method,
+                    cosmology=self.cosmology
                 ))
             return kwargs
         except IndexError:
@@ -116,7 +117,8 @@ class _GWInput(_Input):
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
                     waveform_fits=self.waveform_fits,
                     multi_process=self.opts.multi_process,
-                    redshift_method=self.redshift_method
+                    redshift_method=self.redshift_method,
+                    cosmology=self.cosmology
                 ))
             return kwargs
 
@@ -140,6 +142,26 @@ class _GWInput(_Input):
             read_function=GWRead, **kwargs
         )
         return data
+
+    @property
+    def cosmology(self):
+        return self._cosmology
+
+    @cosmology.setter
+    def cosmology(self, cosmology):
+        from pesummary.gw.cosmology import available_cosmologies
+        from pesummary import conf
+
+        if cosmology.lower() not in available_cosmologies:
+            logger.warn(
+                "Unrecognised cosmology: {}. Using {} as default".format(
+                    cosmology, conf.cosmology
+                )
+            )
+            cosmology = conf.cosmology
+        else:
+            logger.debug("Using the {} cosmology".format(cosmology))
+        self._cosmology = cosmology
 
     @property
     def approximant(self):
@@ -719,7 +741,7 @@ class GWInput(_GWInput, Input):
         super(GWInput, self).__init__(
             opts, ignore_copy=True, extra_options=[
                 "evolve_spins", "NRSur_fits", "f_low", "f_ref",
-                "waveform_fits", "redshift_method"
+                "waveform_fits", "redshift_method", "cosmology"
             ]
         )
         if self.existing is not None:

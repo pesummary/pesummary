@@ -109,7 +109,8 @@ def launch_pesummary(webdir, path_to_results_file, trigger_file=None):
     webdir += "/pesummary"
     default_arguments = ["--webdir", webdir, "--samples", path_to_results_file,
                          "--approximant", "IMRPhenomPv2", "--gw",
-                         "--labels", "pesummary", '--no_ligo_skymap']
+                         "--labels", "pesummary", '--no_ligo_skymap',
+                         "--cosmology", "planck15_lal"]
 
     if trigger_file is not None:
         default_arguments.append("--trig_file")

@@ -76,3 +76,6 @@ gw_source_frame_corner_parameters = [
 
 # Parameters to use for GW extrinsic corner plot
 gw_extrinsic_corner_parameters = ["luminosity_distance", "psi", "ra", "dec"]
+
+# Cosmology to use when calculating redshift
+cosmology = "Planck15"
