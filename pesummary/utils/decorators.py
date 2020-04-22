@@ -38,11 +38,17 @@ def open_config(index=0):
     def open(parameters, samples, config=config):
         print(list(config['condor'].keys()))
     """
+    import configparser
+
     def _safe_read(config, config_file):
         setattr(config, "path_to_file", config_file)
         try:
             setattr(config, "error", False)
             return config.read(config_file)
+        except configparser.MissingSectionHeaderError:
+            with open(config_file, "r") as f:
+                _config = '[config]\n' + f.read()
+            return config.read_string(_config)
         except Exception as e:
             setattr(config, "error", e)
             return None
@@ -50,8 +56,6 @@ def open_config(index=0):
     def decorator(func):
         @functools.wraps(func)
         def wrapper_function(*args, **kwargs):
-            import configparser
-
             config = configparser.ConfigParser()
             config.optionxform = str
             if kwargs.get("config", None) is not None:
