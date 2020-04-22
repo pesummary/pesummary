@@ -135,6 +135,10 @@ def insert_gwspecific_option_group(parser):
     gw_group.add_argument("--redshift_method", dest="redshift_method",
                           help=("The method to use when estimating the redshift"),
                           choices=["approx", "exact"], default="approx")
+    gw_group.add_argument("--cosmology", dest="cosmology",
+                          help=("The cosmology to use when calculating "
+                                "the redshift"),
+                          default="Planck15")
     remnant_group = _remnant_command_line_arguments(parser)
     return gw_group
 
