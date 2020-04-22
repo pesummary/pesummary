@@ -490,7 +490,7 @@ class GWRead(Read):
 
         config = config_file
         if not config.error:
-            fixed_data = None
+            fixed_data = {}
             if "engine" in config.sections():
                 fixed_data = {
                     key.split("fix-")[1]: item for key, item in
