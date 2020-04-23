@@ -190,8 +190,8 @@ release:
   script:
     - curl --request POST --form "variables[REPO]=pesummary" --form ref=master --form "token=$CI_RELEASE_TRIGGER_TOKEN" https://git.ligo.org/api/v4/projects/4737/trigger/pipeline
   only:
+    - $CI_COMMIT_MESSAGE =~ /Releasing version/
     - master@lscsoft/pesummary
-    - web
 
 pages:
   stage: deploy
