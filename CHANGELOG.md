@@ -1,8 +1,16 @@
-## 0.5.3 [unreleased]
+## 0.5.3 [23/04/2020]
 
 ### Changed
 
+- bilby posterior load - small change in how the pandas DataFrame
+  is converted to a numpy array
+
 ### Added
+
+- Allowing the user to specify a chosen cosmology for redshift calculations.
+  This is done via the `--cosmology` command line argument
+- Allow configuration files that do not include section headers to be read
+  in with PESummary.
 
 ## 0.5.2 [21/04/2020]
 
