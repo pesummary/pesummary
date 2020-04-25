@@ -182,11 +182,21 @@ class _WebpageGeneration(object):
         """Generate comparison statistics for all parameters that are common to
         all result files
         """
-        data = {
-            i: self._generate_comparison_statistics(
-                [self.samples[j][i] for j in self.labels]
-            ) for i in self.same_parameters
-        }
+        data = {}
+        for i in self.same_parameters:
+            try:
+                data[i] = self._generate_comparison_statistics(
+                    [
+                        self.samples[j][i] for j in self.labels if not all(
+                            x == self.samples[j][i][0] for x in self.samples[j][i]
+                        )
+                    ]
+                )
+            except ValueError:
+                data[i] = [
+                    [[float('nan')] * len(self.labels)] * len(self.samples) for j in
+                    self.labels
+                ]
         return data
 
     def _generate_comparison_statistics(self, samples):
