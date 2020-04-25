@@ -210,8 +210,13 @@ class Read(object):
         if isinstance(key, (str, float)):
             key = [key]
         if key[-1] in dictionary.keys():
-            converted_dictionary = Read.convert_list_to_item(dictionary[key[-1]])
-            yield converted_dictionary
+            try:
+                converted_dictionary = Read.convert_list_to_item(
+                    dictionary[key[-1]]
+                )
+                yield converted_dictionary
+            except AttributeError:
+                yield dictionary[key[-1]]
         else:
             old, new = key[0], key[1:]
             for z in Read.load_recursively(new, dictionary[old]):

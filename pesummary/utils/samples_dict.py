@@ -307,6 +307,8 @@ class MCMCSamplesDict(dict):
         The mean of each sample across multiple chains. If the chains are of
         different lengths, all chains are resized to the minimum number of
         samples
+    combine: pesummary.utils.samples_dict.SamplesDict
+        Combine all samples from all chains into a single SamplesDict object
     nchains: int
         Total number of chains stored in the MCMCSamplesDict object
     number_of_samples: dict
@@ -423,6 +425,22 @@ class MCMCSamplesDict(dict):
                         self[key][param][:self.minimum_number_of_samples] for
                         key in self.keys()
                     ], axis=0
+                ) for param in self.parameters
+            }, logger_warn="debug")
+        return data
+
+    @property
+    def combine(self):
+        if self.transpose:
+            data = SamplesDict({
+                param: np.concatenate(
+                    [self[param][key] for key in self[param].keys()]
+                ) for param in self.parameters
+            }, logger_warn="debug")
+        else:
+            data = SamplesDict({
+                param: np.concatenate(
+                    [self[key][param] for key in self.keys()]
                 ) for param in self.parameters
             }, logger_warn="debug")
         return data

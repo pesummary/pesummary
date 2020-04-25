@@ -19,7 +19,8 @@ from pesummary.core.webpage.base import Base
 class table_of_images(Base):
 
     def __init__(self, content, rows, columns, html_file, code, cli,
-                 autoscale=False, unique_id=None, captions=None, extra_div=False):
+                 autoscale=False, unique_id=None, captions=None, extra_div=False,
+                 mcmc_samples=False):
         """
 
         Parameters
@@ -38,6 +39,7 @@ class table_of_images(Base):
         self.autoscale = autoscale
         self.unique_id = unique_id
         self.extra_div = extra_div
+        self.mcmc_samples = mcmc_samples
         if self.unique_id is not None:
             self.modal_id = "Modal_{}".format(self.unique_id)
             self.demo_id = "demo_{}".format(self.unique_id)
@@ -52,9 +54,12 @@ class table_of_images(Base):
     def _insert_image(self, path, width, indent, _id, justify="center"):
         string = "<img src='{}' alt='No image available' ".format(path) + \
                  "style='align-items:center; width:{}px;'".format(width)
-        string += "id={} onclick='{}(\"{}\", \"{}\")'>\n".format(
-            _id, self.code, _id, self.modal_id
-        )
+        string += "id={} onclick='{}(\"{}\"".format(_id, self.code, _id)
+        if self.code != "changeimage":
+            string += ", \"{}\"".format(self.modal_id)
+        if self.mcmc_samples:
+            string += ", mcmc_samples=\"{}\"".format(self.mcmc_samples)
+        string += ")'>\n"
         self.add_content(string, indent=indent)
 
     def make(self):

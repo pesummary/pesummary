@@ -83,7 +83,7 @@ def get_list_of_files(gw=False, number=1):
     return sorted(html)
 
 
-def get_list_of_plots(gw=False, number=1):
+def get_list_of_plots(gw=False, number=1, mcmc=False):
     """Return a list of plots that should be generated from a typical workflow
     """
     if not gw:
@@ -100,6 +100,9 @@ def get_list_of_plots(gw=False, number=1):
         for i in ["sample_evolution", "autocorrelation", "1d_posterior", "cdf"]:
             for j in parameters:
                 plots.append("./.outdir/plots/%s%s_%s_%s.png" % (label, num, i, j))
+        if mcmc:
+            for j in parameters:
+                plots.append("./.outdir/plots/%s%s_1d_posterior_%s_combined.png" % (label, num, j))
     if number > 1:
         for i in ["1d_posterior", "boxplot", "cdf"]:
             for j in parameters:

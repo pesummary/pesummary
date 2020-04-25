@@ -81,7 +81,8 @@ class _CoreWebpageGeneration(PostProcessing):
             add_to_existing=self.add_to_existing, notes=self.notes,
             disable_comparison=self.disable_comparison,
             disable_interactive=self.disable_interactive,
-            package_information=self.package_information
+            package_information=self.package_information,
+            mcmc_samples=self.mcmc_samples
         )
 
     def generate_webpages(self):
@@ -129,7 +130,8 @@ class _GWWebpageGeneration(GWPostProcessing):
             publication_kwargs=self.publication_kwargs,
             no_ligo_skymap=self.no_ligo_skymap,
             psd=self.psd, priors=self.priors,
-            package_information=self.package_information
+            package_information=self.package_information,
+            mcmc_samples=self.mcmc_samples
         )
 
     def generate_webpages(self):
@@ -177,7 +179,8 @@ class _PublicGWWebpageGeneration(GWPostProcessing):
             publication_kwargs=self.publication_kwargs,
             no_ligo_skymap=self.no_ligo_skymap,
             psd=self.psd, priors=self.priors,
-            package_information=self.package_information
+            package_information=self.package_information,
+            mcmc_samples=self.mcmc_samples
         )
 
     def generate_webpages(self):

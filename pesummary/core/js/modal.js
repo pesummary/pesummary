@@ -27,14 +27,21 @@ function modal(id, modal) {
     _onclick(id, modal)
 }
 
-function changeimage(id) {
+function changeimage(id, mcmc_samples="False") {
     /* */
     var img = document.getElementById(id);
     var current_src = img.src;
-    if ( current_src.indexOf("posterior") >= 0 ) {
-        img.src = current_src.replace("1d_posterior", "cdf");
-    }
-    else if ( current_src.indexOf("cdf") >= 0 ) {
-        img.src = current_src.replace("cdf", "1d_posterior");
+    if ( mcmc_samples == "False" ) {
+        if ( current_src.indexOf("posterior") >= 0 ) {
+            img.src = current_src.replace("1d_posterior", "cdf");
+        } else if ( current_src.indexOf("cdf") >= 0 ) {
+            img.src = current_src.replace("cdf", "1d_posterior");
+        }
+    } else {
+        if ( current_src.indexOf("combined") >= 0 ) {
+            img.src = current_src.replace("_combined", "");
+        } else if ( current_src.indexOf("posterior") >= 0 ) {
+            img.src = current_src.slice(0, -4) + "_combined.png";
+        }
     }
 }

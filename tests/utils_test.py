@@ -394,6 +394,13 @@ class TestMCMCSamplesDict(object):
         assert transpose.number_of_samples == dataframe.number_of_samples
         assert transpose.minimum_number_of_samples == \
             dataframe.minimum_number_of_samples
+        combined = dataframe.combine
+        assert combined.number_of_samples == 300
+        np.testing.assert_almost_equal(
+            np.concatenate(
+                [dataframe["chain_0"]["a"], dataframe["chain_1"]["a"]]
+            ), combined["a"]
+        )
 
     def test_properties(self):
         """Test that the properties of the MCMCSamplesDict class are correct
@@ -421,6 +428,13 @@ class TestMCMCSamplesDict(object):
         assert dataframe.total_number_of_samples == 200
         assert dataframe.total_number_of_samples == \
             transpose.total_number_of_samples
+        combined = dataframe.combine
+        assert combined.number_of_samples == 200
+        np.testing.assert_almost_equal(
+            np.concatenate(
+                [dataframe["chain_0"]["a"], dataframe["chain_1"]["a"]]
+            ), combined["a"]
+        )
 
     def test_burnin_removal(self):
         """Test that the different methods for removing the samples as burnin
