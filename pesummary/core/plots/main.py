@@ -21,6 +21,7 @@ import importlib
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import logger
@@ -327,7 +328,7 @@ class _PlotGeneration(object):
             the label for the results file that you wish to plot
         """
         if self.mcmc_samples:
-            samples = self.samples[label].average
+            samples = self.samples[label].combine
         else:
             samples = self.samples[label]
         self._corner_plot(
@@ -588,6 +589,8 @@ class _PlotGeneration(object):
             the weights for each samples. If None, assumed to be 1
         """
         import math
+        from pesummary.utils.samples_dict import Array
+
         module = importlib.import_module(
             "pesummary.{}.plots.plot".format(package)
         )
@@ -602,6 +605,15 @@ class _PlotGeneration(object):
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir, "{}_1d_posterior_{}".format(label, parameter)
+            )
+        )
+        fig = module._1d_histogram_plot(
+            parameter, Array(np.concatenate(same_samples)), latex_label,
+            injection, kde=kde, prior=prior, weights=weights
+        )
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "{}_1d_posterior_{}_combined".format(label, parameter)
             )
         )
 

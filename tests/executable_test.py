@@ -43,11 +43,11 @@ class TestSummaryPages(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
-    def check_output(self, number=1):
+    def check_output(self, number=1, mcmc=False):
         """Check the output from the summarypages executable
         """
         assert os.path.isfile(".outdir/home.html")
-        plots = get_list_of_plots(gw=False, number=number)
+        plots = get_list_of_plots(gw=False, number=number, mcmc=mcmc)
         assert all(
             i == j for i, j in zip(
                 sorted(plots), sorted(glob.glob("./.outdir/plots/*.png"))
@@ -144,7 +144,7 @@ class TestSummaryPages(Base):
             "--label core0 --mcmc_samples"
         )
         self.launch(command_line)
-        self.check_output(number=1)
+        self.check_output(number=1, mcmc=True)
 
     def test_mcmc_more_than_label(self):
         """Test that the code fails with the `--mcmc_samples` command line

@@ -258,7 +258,7 @@ class _PlotGeneration(_BasePlotGeneration):
             SKYMAP = False
 
         if self.mcmc_samples:
-            samples = self.samples[label].average
+            samples = self.samples[label].combine
         else:
             samples = self.samples[label]
         self._skymap_plot(
@@ -854,7 +854,7 @@ class _PlotGeneration(_BasePlotGeneration):
             the label for the results file that you wish to plot
         """
         if self.mcmc_samples:
-            samples = self.samples[label].average
+            samples = self.samples[label].combine
         else:
             samples = self.samples[label]
         self._pepredicates_plot(

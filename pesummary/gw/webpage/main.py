@@ -118,7 +118,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         existing_file_kwargs=None, existing_weights=None, result_files=None,
         notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
         disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False,
-        psd=None, priors=None, package_information={"packages": []}
+        psd=None, priors=None, package_information={"packages": []},
+        mcmc_samples=False
     ):
         self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
@@ -150,7 +151,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             add_to_existing=add_to_existing, notes=notes,
             disable_comparison=disable_comparison,
             disable_interactive=disable_interactive,
-            package_information=package_information
+            package_information=package_information, mcmc_samples=mcmc_samples
         )
         self.psd_path = {"other": os.path.join("..", "psds")}
         self.calibration_path = {"other": os.path.join("..", "calibration")}

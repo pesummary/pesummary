@@ -106,6 +106,8 @@ class _WebpageGeneration(object):
         Whether to make comparison pages
     package_information: dict
         dictionary of package information
+    mcmc_samples: Bool
+        Whether or not mcmc samples have been passed
     """
     def __init__(
         self, webdir=None, samples=None, labels=None, publication=None,
@@ -116,7 +118,7 @@ class _WebpageGeneration(object):
         existing_metafile=None, existing_file_kwargs=None,
         existing_weights=None, add_to_existing=False, notes=None,
         disable_comparison=False, disable_interactive=False,
-        package_information={"packages": []}
+        package_information={"packages": []}, mcmc_samples=False
     ):
         self.webdir = webdir
         self.samples = samples
@@ -140,6 +142,7 @@ class _WebpageGeneration(object):
         self.notes = notes
         self.make_interactive = not disable_interactive
         self.package_information = package_information
+        self.mcmc_samples = mcmc_samples
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -585,7 +588,7 @@ class _WebpageGeneration(object):
                 ]
                 html_file.make_table_of_images(
                     contents=contents, rows=1, columns=2, code="changeimage",
-                    captions=captions
+                    captions=captions, mcmc_samples=self.mcmc_samples
                 )
                 html_file.export(
                     "", csv=False, json=False, shell=False, margin_bottom="1em",
