@@ -29,14 +29,15 @@ from pesummary.gw.file.formats.base_read import GWRead
 from pesummary.gw.file import conversions as con
 from pesummary.utils.utils import logger
 from pesummary.utils.decorators import open_config
+from pesummary import conf
 
 
 SAMPLER_KWARGS = {
-    "log_bayes_factor": "log_bayes_factor",
-    "bayes_factor": "bayes_factor",
-    "log_evidence": "log_evidence",
-    "evidence": "evidence",
-    "log_prior_volume": "log_prior_volume",
+    "log_bayes_factor": conf.log_bayes_factor,
+    "bayes_factor": conf.bayes_factor,
+    "log_evidence": conf.log_evidence,
+    "evidence": conf.evidence,
+    "log_prior_volume": conf.log_prior_volume,
     "sampleRate": "sample_rate",
     "segmentLength": "segment_length"
 }
@@ -178,9 +179,9 @@ class LALInference(GWRead):
         attributes = dict(f[path_to_sampler].attrs.items())
         for kwarg, item in attributes.items():
             if kwarg in list(SAMPLER_KWARGS.keys()) and kwarg == "evidence":
-                kwargs["sampler"]["log_evidence"] = np.round(np.log(item), 2)
+                kwargs["sampler"][conf.log_evidence] = np.round(np.log(item), 2)
             elif kwarg in list(SAMPLER_KWARGS.keys()) and kwarg == "bayes_factor":
-                kwargs["sampler"]["log_bayes_factor"] = np.round(
+                kwargs["sampler"][conf.log_bayes_factor] = np.round(
                     np.log(item), 2
                 )
             elif kwarg in list(SAMPLER_KWARGS.keys()):

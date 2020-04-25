@@ -17,6 +17,7 @@ import os
 import numpy as np
 from pesummary.core.file.formats.base_read import Read
 from pesummary.core.plots.latex_labels import latex_labels
+from pesummary import conf
 from pesummary.utils.utils import logger
 
 
@@ -89,10 +90,10 @@ class Bilby(Read):
         """
         f = bilby_object
         kwargs = {"sampler": {
-            "log_evidence": np.round(f.log_evidence, 2),
-            "log_evidence_error": np.round(f.log_evidence_err, 2),
-            "log_bayes_factor": np.round(f.log_bayes_factor, 2),
-            "log_noise_evidence": np.round(f.log_noise_evidence, 2)},
+            conf.log_evidence: np.round(f.log_evidence, 2),
+            conf.log_evidence_error: np.round(f.log_evidence_err, 2),
+            conf.log_bayes_factor: np.round(f.log_bayes_factor, 2),
+            conf.log_noise_evidence: np.round(f.log_noise_evidence, 2)},
             "meta_data": {}}
         return kwargs
 
