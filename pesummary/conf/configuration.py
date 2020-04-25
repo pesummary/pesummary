@@ -48,6 +48,15 @@ public = False
 # Number of cores to run on
 multi_process = 1
 
+# Standard meta_data names
+log_evidence = "ln_evidence"
+evidence = "evidence"
+log_evidence_error = "ln_evidence_error"
+log_bayes_factor = "ln_bayes_factor"
+bayes_factor = "bayes_factor"
+log_noise_evidence = "ln_noise_evidence"
+log_prior_volume = "ln_prior_volume"
+
 # corner.corner default kwargs
 corner_kwargs = dict(
     bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
