@@ -14,13 +14,13 @@
 
 from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, _check_latex_install,
-    get_matplotlib_style_file, gelman_rubin
+    get_matplotlib_style_file, gelman_rubin, get_matplotlib_backend
 )
 from pesummary.core.plots.kde import kdeplot
 from pesummary import conf
 
 import matplotlib
-matplotlib.use("Agg")
+matplotlib.use(get_matplotlib_backend())
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import corner
@@ -281,7 +281,7 @@ def _1d_cdf_comparison_plot(
 def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
                        prior=None, weights=None, xlow=None, xhigh=None,
                        fig=None, title=True, color=conf.color,
-                       autoscale=True):
+                       autoscale=True, bins=50, histtype="step"):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
 
@@ -310,6 +310,10 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
         and symmetric 90% credible intervals
     autoscale: Bool, optional
         autoscale the x axis
+    bins: int, optional
+        number of bins to use for histogram
+    histtype: str, optional
+        histogram type to use when plotting
     """
     logger.debug("Generating the 1d histogram plot for %s" % (param))
     if fig is None:
@@ -318,12 +322,12 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
         plt.axvline(samples[0], color=conf.color)
         xlims = plt.gca().get_xlim()
     elif not kde:
-        plt.hist(samples, histtype="step", bins=50, color=color,
+        plt.hist(samples, histtype=histtype, bins=bins, color=color,
                  density=True, linewidth=1.75, weights=weights)
         xlims = plt.gca().get_xlim()
         if prior is not None:
             plt.hist(prior, color=conf.prior_color, alpha=0.2, edgecolor="w",
-                     density=True, linewidth=1.75, histtype="bar", bins=50)
+                     density=True, linewidth=1.75, histtype="bar", bins=bins)
     else:
         kwargs = {"shade": True, "alpha_shade": 0.1, "linewidth": 1.0}
         if xlow is not None or xhigh is not None:

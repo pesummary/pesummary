@@ -21,7 +21,10 @@ import argparse
 
 from pesummary.gw.inputs import GWInput, GWPostProcessing
 from pesummary.core.command_line import command_line
-from pesummary.gw.command_line import insert_gwspecific_option_group 
+from pesummary.gw.command_line import (
+    insert_gwspecific_option_group, add_dynamic_PSD_to_namespace,
+    add_dynamic_calibration_to_namespace
+)
 
 import numpy as np
 import h5py
@@ -193,7 +196,7 @@ class TestInput(object):
             "--samples", "./tests/files/bilby_example.h5",
             "--email", "albert.einstein@ligo.org",
             "--gracedb", "Grace",
-            "--label", "example"]
+            "--labels", "example"]
         self.make_input_object()
 
     @staticmethod
@@ -220,7 +223,9 @@ class TestInput(object):
                 self.default_arguments.append(i)
         else:
             self.default_arguments.append(argument)
-        self.opts = self.parser.parse_args(self.default_arguments)
+        self.opts, unknown = self.parser.parse_known_args(self.default_arguments)
+        add_dynamic_PSD_to_namespace(self.opts)
+        add_dynamic_calibration_to_namespace(self.opts)
         self.inputs = GWInput(self.opts)
 
     def replace_existing_argument(self, argument, new_value):
@@ -232,7 +237,9 @@ class TestInput(object):
         self.make_input_object()
 
     def make_input_object(self):
-        self.opts = self.parser.parse_args(self.default_arguments) 
+        self.opts, unknown = self.parser.parse_known_args(self.default_arguments)
+        add_dynamic_PSD_to_namespace(self.opts)
+        add_dynamic_calibration_to_namespace(self.opts)
         self.inputs = GWInput(self.opts)
 
     def test_webdir(self):
@@ -325,6 +332,12 @@ class TestInput(object):
         assert self.inputs.psd == {"example": {}}
         self.add_argument(["--psd", "./.outdir/psd.dat"])
         assert list(self.inputs.psd["example"].keys()) == ["psd.dat"]
+        self.add_argument(["--psd", "H1:./.outdir/psd.dat"])
+        assert list(self.inputs.psd["example"].keys()) == ["H1"]
+        np.testing.assert_almost_equal(
+            self.inputs.psd["example"]["H1"],
+            [[1.00, 3.44], [2.00, 5.66]]
+        )
 
     def test_calibration(self):
         with open("./.outdir/calibration.dat", "w") as f:
@@ -334,6 +347,37 @@ class TestInput(object):
         self.add_argument(["--calibration", "./.outdir/calibration.dat"])
         assert self.inputs.calibration["example"] == {None: None}
         assert list(self.inputs.priors["calibration"]["example"].keys()) == ['calibration.dat']
+
+    def test_custom_psd(self):
+        with open("./.outdir/psd.dat", "w") as f:
+            f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
+        parser = command_line()
+        insert_gwspecific_option_group(parser)
+        default_arguments = [
+            "--approximant", "IMRPhenomPv2", "IMRPhenomPv2",
+            "--webdir", "./.outdir",
+            "--samples", "./tests/files/bilby_example.h5",
+            "./tests/files/bilby_example.h5",
+            "--email", "albert.einstein@ligo.org",
+            "--gracedb", "Grace",
+            "--labels", "test", "test2",
+            "--test_psd", "L1:./.outdir/psd.dat",
+            "--test2_psd", "V1:./.outdir/psd.dat",
+            "--gw"
+        ]
+        opts, unknown = parser.parse_known_args(default_arguments)
+        add_dynamic_PSD_to_namespace(opts, command_line=default_arguments)
+        add_dynamic_calibration_to_namespace(
+            opts, command_line=default_arguments
+        )
+        inputs = GWInput(opts)
+        assert sorted(list(inputs.psd.keys())) == sorted(["test", "test2"])
+        assert list(inputs.psd["test"].keys()) == ["L1"]
+        assert list(inputs.psd["test2"].keys()) == ["V1"]
+        np.testing.assert_almost_equal(
+            inputs.psd["test"]["L1"],
+            [[1.00, 3.44], [2.00, 5.66]]
+        )
 
     def test_IFO_from_file_name(self):
         file_name = "IFO0.dat"

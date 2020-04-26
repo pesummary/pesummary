@@ -18,6 +18,11 @@ import numpy as np
 from pesummary.utils.utils import (
     resample_posterior_distribution, gelman_rubin as _gelman_rubin, logger
 )
+from pesummary.core.plots.latex_labels import latex_labels
+from pesummary.gw.plots.latex_labels import GWlatex_labels
+import importlib
+
+latex_labels.update(GWlatex_labels)
 
 
 class SamplesDict(dict):
@@ -50,6 +55,8 @@ class SamplesDict(dict):
         distribution
     number_of_samples: int
         Number of samples stored in the SamplesDict object
+    latex_labels: dict
+        Dictionary of latex labels for each parameter
 
     Methods
     -------
@@ -64,6 +71,8 @@ class SamplesDict(dict):
         pesummary.utils.utils.resample_posterior_distribution method
     discard_samples:
         Remove the first N samples from each distribution
+    plot:
+        Generate a plot based on the posterior samples stored
 
     Examples
     --------
@@ -81,6 +90,8 @@ class SamplesDict(dict):
     ...     [10.2, 11.3, 11.6, 9.5, 8.6, 10.8, 10.9]
     ... }
     >>> dataset = SamplesDict(parameters, samples)
+    >>> fig = dataset.plot("a", type="hist", bins=30)
+    >>> fig.show()
     """
     def __init__(self, *args, logger_warn="warn", autoscale=True):
         super(SamplesDict, self).__init__()
@@ -105,6 +116,10 @@ class SamplesDict(dict):
                     dataset[:nsamples] for dataset in self.samples
                 ]
             self.make_dictionary()
+        self.latex_labels = {
+            param: latex_labels[param] if param in latex_labels.keys() else
+            param for param in self.parameters
+        }
 
     def __getitem__(self, key):
         """Return an object representing the specialization of SamplesDict
@@ -284,6 +299,71 @@ class SamplesDict(dict):
             self[key] = Array(
                 val[discard_samples:], likelihood=likelihoods, weights=weights
             )
+
+    def plot(self, *args, type="marginalized_posterior", **kwargs):
+        """Generate a plot for the posterior samples stored in SamplesDict
+
+        Parameters
+        ----------
+        *args: tuple
+            all arguments are passed to the plotting function
+        type: str
+            name of the plot you wish to make
+        **kwargs: dict
+            all additional kwargs are passed to the plotting function
+        """
+        plotting_map = {
+            "marginalized_posterior": self._marginalized_posterior,
+            "skymap": self._skymap,
+            "hist": self._marginalized_posterior
+        }
+        if type not in plotting_map.keys():
+            raise NotImplementedError(
+                "The {} method is not currently implemented. The allowed "
+                "plotting methods are {}".format(
+                    type, ", ".join(plotting_map.keys())
+                )
+            )
+        return plotting_map[type](*args, **kwargs)
+
+    def _marginalized_posterior(self, parameter, module="core", **kwargs):
+        """Wrapper for the `pesummary.core.plots.plot._1d_histogram_plot` or
+        `pesummary.gw.plots.plot._1d_histogram_plot`
+
+        Parameters
+        ----------
+        parameter: str
+            name of the parameter you wish to plot
+        module: str, optional
+            module you wish to use for the plotting
+        **kwargs: dict
+            all additional kwargs are passed to the `_1d_histogram_plot`
+            function
+        """
+        module = importlib.import_module(
+            "pesummary.{}.plots.plot".format(module)
+        )
+        return getattr(module, "_1d_histogram_plot")(
+            parameter, self[parameter], self.latex_labels[parameter], **kwargs
+        )
+
+    def _skymap(self, **kwargs):
+        """Wrapper for the `pesummary.gw.plots.plot._ligo_skymap_plot`
+        function
+
+        Parameters
+        ----------
+        **kwargs: dict
+            All kwargs are passed to the `_ligo_skymap_plot` function
+        """
+        from pesummary.gw.plots.plot import _ligo_skymap_plot
+
+        if "luminosity_distance" in self.keys():
+            dist = self["luminosity_distance"]
+        else:
+            dist = None
+
+        return _ligo_skymap_plot(self["ra"], self["dec"], dist=dist, **kwargs)
 
 
 class MCMCSamplesDict(dict):

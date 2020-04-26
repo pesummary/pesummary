@@ -15,7 +15,7 @@
 
 from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, _check_latex_install,
-    get_matplotlib_style_file
+    get_matplotlib_style_file, get_matplotlib_backend
 )
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots.bounds import default_bounds
@@ -24,7 +24,7 @@ from pesummary import conf
 
 import os
 import matplotlib
-matplotlib.use("Agg")
+matplotlib.use(get_matplotlib_backend())
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import corner
@@ -75,7 +75,7 @@ def _return_bounds(param, samples, comparison=False):
 
 
 def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
-                       prior=None, weights=None):
+                       prior=None, weights=None, bins=50):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
 
@@ -95,13 +95,15 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
         list of prior samples for param
     weights: list
         list of weights for each sample
+    bins: int, optional
+        number of bins to use for histogram
     """
     from pesummary.core.plots.plot import _1d_histogram_plot
 
     xlow, xhigh = _return_bounds(param, samples)
     return _1d_histogram_plot(
         param, samples, latex_label, inj_value=inj_value, kde=kde, prior=prior,
-        weights=weights, xlow=xlow, xhigh=xhigh
+        weights=weights, xlow=xlow, xhigh=xhigh, bins=bins
     )
 
 

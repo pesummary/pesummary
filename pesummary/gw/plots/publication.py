@@ -13,9 +13,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.utils.utils import logger, number_of_columns_for_legend
+from pesummary.utils.utils import (
+    logger, number_of_columns_for_legend, get_matplotlib_backend
+)
 import matplotlib
-matplotlib.use("Agg")
+matplotlib.use(get_matplotlib_backend())
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import seaborn

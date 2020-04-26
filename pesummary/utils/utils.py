@@ -610,7 +610,7 @@ def _check_latex_install():
     from distutils.spawn import find_executable
 
     original = rcParams['text.usetex']
-    if find_executable("latex"):
+    if find_executable("latex") is not None:
         rcParams["text.usetex"] = original
     else:
         rcParams["text.usetex"] = False
@@ -668,6 +668,32 @@ def get_matplotlib_style_file():
 
         return conf.style_file
     return os.path.join(style_file)
+
+
+def get_matplotlib_backend(parallel=False):
+    """Return the matplotlib backend to use for the plotting modules
+
+    Parameters
+    ----------
+    parallel: Bool, optional
+        if True, backend is always set to 'Agg' for the multiprocessing module
+    """
+    try:
+        os.environ["DISPLAY"]
+    except KeyError:
+        try:
+            __IPYTHON__
+        except NameError:
+            DISPLAY = False
+        else:
+            DISPLAY = True
+    else:
+        DISPLAY = True
+    if DISPLAY and not parallel:
+        backend = "TKAgg"
+    else:
+        backend = "Agg"
+    return backend
 
 
 setup_logger()
