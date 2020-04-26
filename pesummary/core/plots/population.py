@@ -14,10 +14,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import numpy as np
+from pesummary.utils.utils import logger, get_matplotlib_backend
 import matplotlib
-matplotlib.use("Agg")
+matplotlib.use(get_matplotlib_backend())
 import matplotlib.pyplot as plt
-from pesummary.utils.utils import logger
 
 
 def scatter_plot(

@@ -18,15 +18,15 @@
 import os
 import importlib
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-
 from pesummary.core.plots.latex_labels import latex_labels
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, get_matplotlib_backend
 from pesummary.core.plots import plot as core
 from pesummary.core.plots import interactive
+
+import matplotlib
+matplotlib.use(get_matplotlib_backend(parallel=True))
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 class _PlotGeneration(object):

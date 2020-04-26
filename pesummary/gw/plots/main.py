@@ -17,21 +17,23 @@
 
 import os
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import multiprocessing as mp
-import numpy as np
-
 from pesummary.core.plots.main import _PlotGeneration as _BasePlotGeneration
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.core.plots import interactive
 from pesummary.gw.plots.latex_labels import GWlatex_labels
-from pesummary.utils.utils import logger, resample_posterior_distribution
+from pesummary.utils.utils import (
+    logger, resample_posterior_distribution, get_matplotlib_backend
+)
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots import publication
 from pesummary.gw.plots import plot as gw
 from pesummary import conf
+
+import matplotlib
+matplotlib.use(get_matplotlib_backend(parallel=True))
+import matplotlib.pyplot as plt
+import multiprocessing as mp
+import numpy as np
 
 
 latex_labels.update(GWlatex_labels)

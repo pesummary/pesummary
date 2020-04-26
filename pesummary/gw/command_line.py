@@ -145,7 +145,7 @@ def insert_gwspecific_option_group(parser):
 
 def add_dynamic_argparse(
         existing_namespace, pattern, example="--{}_psd", default={},
-        nargs='+', action=DictionaryAction
+        nargs='+', action=DictionaryAction, command_line=None
 ):
     """Add a dynamic argparse argument and add it to an existing
     argparse.Namespace object
@@ -163,8 +163,12 @@ def add_dynamic_argparse(
     nargs: str
     action: argparse.Action
         argparse action to use for the dynamic argparse
+    command_line: str, optional
+        command line you wish to pass. If None, command line taken from
+        sys.argv
     """
-    command_line = command_line_arguments()
+    if command_line is None:
+        command_line = command_line_arguments()
     commands = fnmatch.filter(command_line, pattern)
     duplicates = [
         item for item, count in collections.Counter(commands).items() if
@@ -184,29 +188,36 @@ def add_dynamic_argparse(
             i, help=argparse.SUPPRESS, action=action, nargs=nargs,
             default=default
         )
-    args, unknown = parser.parse_known_args()
+    args, unknown = parser.parse_known_args(args=command_line)
     existing_namespace.__dict__.update(vars(args))
 
 
-def add_dynamic_PSD_to_namespace(existing_namespace):
+def add_dynamic_PSD_to_namespace(existing_namespace, command_line=None):
     """Add a dynamic PSD argument to the argparse namespace
 
     Parameters
     ----------
     existing_namespace: argparse.Namespace
         existing namespace you wish to add the dynamic arguments too
+    command_line: str, optional
+        The command line which you are passing. Default None
     """
-    add_dynamic_argparse(existing_namespace, "--*_psd")
+    add_dynamic_argparse(
+        existing_namespace, "--*_psd", command_line=command_line
+    )
 
 
-def add_dynamic_calibration_to_namespace(existing_namespace):
+def add_dynamic_calibration_to_namespace(existing_namespace, command_line=None):
     """Add a dynamic calibration argument to the argparse namespace
 
     Parameters
     ----------
     existing_namespace: argparse.Namespace
         existing namespace you wish to add the dynamic arguments too
+    command_line: str, optional
+        The command line which you are passing. Default None
     """
     add_dynamic_argparse(
-        existing_namespace, "--*_calibration", example="--{}_calibration"
+        existing_namespace, "--*_calibration", example="--{}_calibration",
+        command_line=command_line
     )

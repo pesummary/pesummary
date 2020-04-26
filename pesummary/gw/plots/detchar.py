@@ -13,9 +13,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, get_matplotlib_backend
 import matplotlib
-matplotlib.use("Agg")
+matplotlib.use(get_matplotlib_backend())
 import matplotlib.pyplot as plt
 
 
