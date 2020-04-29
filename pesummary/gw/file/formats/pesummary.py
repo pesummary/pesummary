@@ -146,6 +146,19 @@ class PESummary(GWRead, CorePESummary):
                 }
             except (KeyError, AttributeError):
                 self.calibration = self.data["calibration"]
+        if "calibration" in self.data["prior"].keys():
+            from pesummary.gw.file.calibration import Calibration
+
+            try:
+                self.priors["calibration"] = {
+                    label: {
+                        ifo: Calibration(value) for ifo, value in
+                        calibration_data.items()
+                    } for label, calibration_data in
+                    self.data["prior"]["calibration"].items()
+                }
+            except (KeyError, AttributeError):
+                pass
 
     @staticmethod
     def _grab_data_from_dictionary(dictionary):

@@ -515,6 +515,16 @@ class _Input(object):
     def _set_samples(
         self, samples, ignore_keys=["prior", "weights", "labels", "indicies"]
     ):
+        """Extract the samples and store them as attributes of self
+
+        Parameters
+        ----------
+        samples: list
+            A list containing the paths to result files
+        ignore_keys: list, optional
+            A list containing properties of the read file that you do not want to be
+            stored as attributes of self
+        """
         if not samples:
             raise InputError("Please provide a results file")
         if len(samples) != len(self.labels) and not self.mcmc_samples:
