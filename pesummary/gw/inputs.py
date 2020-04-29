@@ -143,6 +143,13 @@ class _GWInput(_Input):
         )
         return data
 
+    def _set_samples(self, *args, **kwargs):
+        super(_GWInput, self)._set_samples(*args, **kwargs)
+        if "calibration" not in self.priors:
+            self.priors["calibration"] = {
+                label: {} for label in self.labels
+            }
+
     @property
     def cosmology(self):
         return self._cosmology
@@ -245,7 +252,7 @@ class _GWInput(_Input):
 
     @calibration.setter
     def calibration(self, calibration):
-        if not hasattr(self, "._calibration"):
+        if not hasattr(self, "_calibration"):
             data = {i: {} for i in self.labels}
             if calibration != {}:
                 prior_data = self.get_psd_or_calibration_data(
