@@ -559,16 +559,21 @@ class GWRead(Read):
             self.samples[num].append(samples[num])
 
     def generate_all_posterior_samples(self, **kwargs):
-        from pesummary.gw.file.conversions import _Conversion
+        if "no_conversion" in kwargs.keys():
+            no_conversion = kwargs.pop("no_conversion")
+        else:
+            no_conversion = False
+        if not no_conversion:
+            from pesummary.gw.file.conversions import _Conversion
 
-        data = _Conversion(
-            self.parameters, self.samples, extra_kwargs=self.extra_kwargs,
-            return_dict=False, **kwargs
-        )
-        self.data["parameters"] = data[0]
-        self.data["samples"] = data[1]
-        if kwargs.get("return_kwargs", False):
-            self.extra_kwargs = data[2]
+            data = _Conversion(
+                self.parameters, self.samples, extra_kwargs=self.extra_kwargs,
+                return_dict=False, **kwargs
+            )
+            self.data["parameters"] = data[0]
+            self.data["samples"] = data[1]
+            if kwargs.get("return_kwargs", False):
+                self.extra_kwargs = data[2]
 
     def to_lalinference(
         self, outdir="./", label=None, filename=None, overwrite=False,

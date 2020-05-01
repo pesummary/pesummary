@@ -185,21 +185,13 @@ class _WebpageGeneration(object):
         """Generate comparison statistics for all parameters that are common to
         all result files
         """
-        data = {}
-        for i in self.same_parameters:
-            try:
-                data[i] = self._generate_comparison_statistics(
-                    [
-                        self.samples[j][i] for j in self.labels if not all(
-                            x == self.samples[j][i][0] for x in self.samples[j][i]
-                        )
-                    ]
-                )
-            except ValueError:
-                data[i] = [
-                    [[float('nan')] * len(self.labels)] * len(self.samples) for j in
-                    self.labels
-                ]
+        data = {
+            i: self._generate_comparison_statistics(
+                [self.samples[j][i] for j in self.labels]
+            ) for i in self.same_parameters
+        }
+        return data
+
         return data
 
     def _generate_comparison_statistics(self, samples):
@@ -214,7 +206,10 @@ class _WebpageGeneration(object):
 
         rows = range(len(samples))
         columns = range(len(samples))
-        kernel = [gaussian_kde(i) for i in samples]
+        try:
+            kernel = [gaussian_kde(i) for i in samples]
+        except np.linalg.LinAlgError:
+            kernel = None
         x = np.linspace(
             np.min([np.min(i) for i in samples]),
             np.max([np.max(i) for i in samples]),
@@ -226,12 +221,16 @@ class _WebpageGeneration(object):
                 rows
             ] for j in columns
         ]
-        js = [
-            [
-                self.jension_shannon_divergence(kernel[i](x), kernel[j](x)) for
-                i in rows
-            ] for j in columns
-        ]
+        if kernel is None:
+            js = [[float("nan") for i in rows] for j in columns]
+        else:
+            js = [
+                [
+                    self.jension_shannon_divergence(kernel[i](x), kernel[j](x)) for
+                    i in rows
+                ] for j in columns
+            ]
+
         return [ks, js]
 
     @staticmethod
