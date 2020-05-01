@@ -86,6 +86,7 @@ class _CorePlotGeneration(PostProcessing):
             disable_comparison=self.disable_comparison,
             linestyles=self.linestyles,
             disable_interactive=self.disable_interactive,
+            disable_corner=self.disable_corner,
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples
         )
 
@@ -137,6 +138,7 @@ class _GWPlotGeneration(GWPostProcessing):
             linestyles=self.linestyles,
             disable_comparison=self.disable_comparison,
             disable_interactive=self.disable_interactive,
+            disable_corner=self.disable_corner,
             publication_kwargs=self.publication_kwargs,
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples
         )
@@ -190,6 +192,7 @@ class _PublicGWPlotGeneration(GWPostProcessing):
             linestyles=self.linestyles,
             disable_comparison=self.disable_comparison,
             disable_interactive=self.disable_interactive,
+            disable_corner=self.disable_corner,
             publication_kwargs=self.publication_kwargs,
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples
         )

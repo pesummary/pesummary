@@ -65,6 +65,8 @@ class _PlotGeneration(object):
         will be generated
     disable_interactive: bool, optional
         whether to make interactive plots, default is False
+    disable_corner: bool, optional
+        whether to make the corner plot, default is False
     """
     def __init__(
         self, savedir=None, webdir=None, labels=None, samples=None,
@@ -73,7 +75,7 @@ class _PlotGeneration(object):
         injection_data=None, colors=None, custom_plotting=None,
         add_to_existing=False, priors={}, include_prior=False, weights=None,
         disable_comparison=False, linestyles=None, disable_interactive=False,
-        multi_process=1, mcmc_samples=False
+        multi_process=1, mcmc_samples=False, disable_corner=False
     ):
         self.package = "core"
         self.webdir = webdir
@@ -95,6 +97,7 @@ class _PlotGeneration(object):
         self.include_prior = include_prior
         self.linestyles = linestyles
         self.make_interactive = not disable_interactive
+        self.make_corner = not disable_corner
         self.multi_process = multi_process
         self.pool = self.setup_pool()
         self.make_comparison = (
@@ -117,13 +120,14 @@ class _PlotGeneration(object):
             self.check_latex_labels(self.samples[i].keys())
 
         self.plot_type_dictionary = {
-            "corner": self.corner_plot,
             "oned_histogram": self.oned_histogram_plot,
             "sample_evolution": self.sample_evolution_plot,
             "autocorrelation": self.autocorrelation_plot,
             "oned_cdf": self.oned_cdf_plot,
             "custom": self.custom_plot
         }
+        if self.make_corner:
+            self.plot_type_dictionary.update({"corner": self.corner_plot})
         if self.make_comparison:
             self.plot_type_dictionary.update(dict(
                 oned_histogram_comparison=self.oned_histogram_comparison_plot,
@@ -250,7 +254,8 @@ class _PlotGeneration(object):
     def _generate_plots(self, label):
         """Generate all plots for a a given result file
         """
-        self.try_to_make_a_plot("corner", label=label)
+        if self.make_corner:
+            self.try_to_make_a_plot("corner", label=label)
         self.try_to_make_a_plot("oned_histogram", label=label)
         self.try_to_make_a_plot("sample_evolution", label=label)
         self.try_to_make_a_plot("autocorrelation", label=label)
