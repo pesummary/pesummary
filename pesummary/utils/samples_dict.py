@@ -15,9 +15,7 @@
 
 import copy
 import numpy as np
-from pesummary.utils.utils import (
-    resample_posterior_distribution, gelman_rubin as _gelman_rubin, logger
-)
+from pesummary.utils.utils import resample_posterior_distribution, logger
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 import importlib
@@ -366,7 +364,166 @@ class SamplesDict(dict):
         return _ligo_skymap_plot(self["ra"], self["dec"], dist=dist, **kwargs)
 
 
-class MCMCSamplesDict(dict):
+class _MultiDimensionalSamplesDict(dict):
+    """Class to store multiple SamplesDict objects
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters
+    samples: nd list
+        list of samples for each parameter for each chain
+    label_prefix: str, optional
+        prefix to use when distinguishing different analyses. The label is then
+        '{label_prefix}_{num}' where num is the result file index. Default
+        is 'dataset'
+    transpose: Bool, optional
+        True if the input is a transposed dictionary
+    labels: list, optional
+        the labels to use to distinguish different analyses. If provided
+        label_prefix is ignored
+
+    Attributes
+    ----------
+    T: pesummary.utils.samples_dict._MultiDimensionalSamplesDict
+        Transposed _MultiDimensionalSamplesDict object keyed by parameters
+        rather than label
+    combine: pesummary.utils.samples_dict.SamplesDict
+        Combine all samples from all analyses into a single SamplesDict object
+    nsamples: int
+        Total number of analyses stored in the _MultiDimensionalSamplesDict
+        object
+    number_of_samples: dict
+        Number of samples stored in the _MultiDimensionalSamplesDict for each
+        analysis
+    total_number_of_samples: int
+        Total number of samples stored across the multiple analyses
+    minimum_number_of_samples: int
+        The number of samples in the smallest analysis
+
+    Methods
+    -------
+    samples:
+        Return a list of samples stored in the _MultiDimensionalSamplesDict
+        object for a given parameter
+    """
+    def __init__(
+        self, *args, label_prefix="dataset", transpose=False, labels=None
+    ):
+        if labels is not None and len(np.unique(labels)) != len(labels):
+            raise ValueError(
+                "Please provide a unique set of labels for each analysis"
+            )
+        invalid_label_number_error = "Please provide a label for each analysis"
+        self.labels = labels
+        self.name = _MultiDimensionalSamplesDict
+        self.transpose = transpose
+        if len(args) == 1 and isinstance(args[0], dict):
+            if transpose:
+                parameters = list(args[0].keys())
+                _labels = list(args[0][parameters[0]].keys())
+                outer_iterator, inner_iterator = parameters, _labels
+            else:
+                _labels = list(args[0].keys())
+                parameters = list(args[0][_labels[0]].keys())
+                outer_iterator, inner_iterator = _labels, parameters
+            if labels is None:
+                self.labels = _labels
+            for num, dataset in enumerate(outer_iterator):
+                samples = np.array(
+                    [args[0][dataset][param] for param in inner_iterator]
+                )
+                if transpose:
+                    desc = parameters[num]
+                    self[desc] = SamplesDict(
+                        self.labels, samples, logger_warn="debug",
+                        autoscale=False
+                    )
+                else:
+                    if self.labels is not None:
+                        desc = self.labels[num]
+                    else:
+                        desc = "{}_{}".format(label_prefix, num)
+                    self[desc] = SamplesDict(parameters, samples)
+        else:
+            parameters, samples = args
+            if labels is not None and len(labels) != len(samples):
+                raise ValueError(invalid_label_number_error)
+            for num, dataset in enumerate(samples):
+                if labels is not None:
+                    desc = labels[num]
+                else:
+                    desc = "{}_{}".format(label_prefix, num)
+                self[desc] = SamplesDict(parameters, dataset)
+        if self.labels is None:
+            self.labels = [
+                "{}_{}".format(label_prefix, num) for num, _ in
+                enumerate(samples)
+            ]
+        self.parameters = parameters
+
+    @property
+    def T(self):
+        return self.name({
+            param: {
+                label: dataset[param] for label, dataset in self.items()
+            } for param in self[self.labels[0]].keys()
+        }, transpose=True)
+
+    @property
+    def combine(self):
+        if self.transpose:
+            data = SamplesDict({
+                param: np.concatenate(
+                    [self[param][key] for key in self[param].keys()]
+                ) for param in self.parameters
+            }, logger_warn="debug")
+        else:
+            data = SamplesDict({
+                param: np.concatenate(
+                    [self[key][param] for key in self.keys()]
+                ) for param in self.parameters
+            }, logger_warn="debug")
+        return data
+
+    @property
+    def nsamples(self):
+        if self.transpose:
+            parameters = list(self.keys())
+            return len(self[parameters[0]])
+        return len(self)
+
+    @property
+    def number_of_samples(self):
+        if self.transpose:
+            return {
+                label: len(self[iterator][label]) for iterator, label in zip(
+                    self.keys(), self.labels
+                )
+            }
+        return {
+            label: self[iterator].number_of_samples for iterator, label in zip(
+                self.keys(), self.labels
+            )
+        }
+
+    @property
+    def total_number_of_samples(self):
+        return np.sum([length for length in self.number_of_samples.values()])
+
+    @property
+    def minimum_number_of_samples(self):
+        return np.min([length for length in self.number_of_samples.values()])
+
+    def samples(self, parameter):
+        if self.transpose:
+            samples = [self[parameter][label] for label in self.labels]
+        else:
+            samples = [self[label][parameter] for label in self.labels]
+        return samples
+
+
+class MCMCSamplesDict(_MultiDimensionalSamplesDict):
     """Class to store the mcmc chains from a single run
 
     Parameters
@@ -408,6 +565,9 @@ class MCMCSamplesDict(dict):
     gelman_rubin: float
         Return the Gelman-Rubin statistic between the chains for a given
         parameter. See pesummary.utils.utils.gelman_rubin
+    samples:
+        Return a list of samples stored in the MCMCSamplesDict object for a
+        given parameter
 
     Examples
     --------
@@ -438,54 +598,19 @@ class MCMCSamplesDict(dict):
     >>> dataset = MCMCSamplesDict(parameter, samples)
     """
     def __init__(self, *args, transpose=False):
-        super(MCMCSamplesDict, self).__init__()
         single_chain_error = (
             "This class requires more than one mcmc chain to be passed. "
             "As only one dataset is available, please use the SamplesDict "
             "class."
         )
-        self.transpose = transpose
-        if len(args) == 1 and isinstance(args[0], dict):
-            if transpose:
-                parameters = list(args[0].keys())
-                chains = list(args[0][parameters[0]].keys())
-                outer_iterator, inner_iterator = parameters, chains
-            else:
-                chains = list(args[0].keys())
-                parameters = list(args[0][chains[0]].keys())
-                outer_iterator, inner_iterator = chains, parameters
-            if len(chains) == 1:
-                raise ValueError(single_chain_error)
-            for num, dataset in enumerate(outer_iterator):
-                samples = np.array(
-                    [args[0][dataset][param] for param in inner_iterator]
-                )
-                if transpose:
-                    desc = parameters[num]
-                    self[desc] = SamplesDict(
-                        chains, samples, logger_warn="debug", autoscale=False
-                    )
-                else:
-                    desc = "chain_{}".format(num)
-                    self[desc] = SamplesDict(parameters, samples)
-        else:
-            parameters, chains = args
-            if len(chains) == 1:
-                raise ValueError(single_chain_error)
-            for num, dataset in enumerate(chains):
-                self["chain_{}".format(num)] = SamplesDict(
-                    parameters, dataset
-                )
-        self.chains = ["chain_{}".format(num) for num, _ in enumerate(chains)]
-        self.parameters = parameters
-
-    @property
-    def T(self):
-        return MCMCSamplesDict({
-            param: {
-                chain: dataset[param] for chain, dataset in self.items()
-            } for param in self[self.chains[0]].keys()
-        }, transpose=True)
+        super(MCMCSamplesDict, self).__init__(
+            *args, transpose=transpose, label_prefix="chain"
+        )
+        self.name = MCMCSamplesDict
+        if len(self.labels) == 1:
+            raise ValueError(single_chain_error)
+        self.chains = self.labels
+        self.nchains = self.nsamples
 
     @property
     def average(self):
@@ -508,51 +633,6 @@ class MCMCSamplesDict(dict):
                 ) for param in self.parameters
             }, logger_warn="debug")
         return data
-
-    @property
-    def combine(self):
-        if self.transpose:
-            data = SamplesDict({
-                param: np.concatenate(
-                    [self[param][key] for key in self[param].keys()]
-                ) for param in self.parameters
-            }, logger_warn="debug")
-        else:
-            data = SamplesDict({
-                param: np.concatenate(
-                    [self[key][param] for key in self.keys()]
-                ) for param in self.parameters
-            }, logger_warn="debug")
-        return data
-
-    @property
-    def nchains(self):
-        if self.transpose:
-            parameters = list(self.keys())
-            return len(self[parameters[0]])
-        return len(self)
-
-    @property
-    def number_of_samples(self):
-        if self.transpose:
-            return {
-                chain: len(self[iterator][chain]) for iterator, chain in zip(
-                    self.keys(), self.chains
-                )
-            }
-        return {
-            chain: self[iterator].number_of_samples for iterator, chain in zip(
-                self.keys(), self.chains
-            )
-        }
-
-    @property
-    def total_number_of_samples(self):
-        return np.sum([length for length in self.number_of_samples.values()])
-
-    @property
-    def minimum_number_of_samples(self):
-        return np.min([length for length in self.number_of_samples.values()])
 
     def discard_samples(self, number):
         """Remove the first n samples
@@ -602,13 +682,100 @@ class MCMCSamplesDict(dict):
         decimal: int
             number of decimal places to keep when rounding
         """
-        from pesummary.utils.utils import gelman_rubin
+        from pesummary.utils.utils import gelman_rubin as _gelman_rubin
 
-        if self.transpose:
-            samples = [self[parameter][chain] for chain in self.chains]
-        else:
-            samples = [self[chain][parameter] for chain in self.chains]
-        return _gelman_rubin(samples, decimal=decimal)
+        return _gelman_rubin(self.samples(parameter), decimal=decimal)
+
+
+class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
+    """Class to samples from multiple analyses
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters
+    samples: nd list
+        list of samples for each parameter for each chain
+    labels: list, optional
+        the labels to use to distinguish different analyses.
+    transpose: Bool, optional
+        True if the input is a transposed dictionary
+
+    Attributes
+    ----------
+    T: pesummary.utils.samples_dict.MultiAnalysisSamplesDict
+        Transposed MultiAnalysisSamplesDict object keyed by parameters
+        rather than label
+    combine: pesummary.utils.samples_dict.SamplesDict
+        Combine all samples from all analyses into a single SamplesDict object
+    nsamples: int
+        Total number of analyses stored in the MultiAnalysisSamplesDict
+        object
+    number_of_samples: dict
+        Number of samples stored in the MultiAnalysisSamplesDict for each
+        analysis
+    total_number_of_samples: int
+        Total number of samples stored across the multiple analyses
+    minimum_number_of_samples: int
+        The number of samples in the smallest analysis
+
+    Methods
+    -------
+    js_divergence: float
+        Return the JS divergence between two posterior distributions for a
+        given parameter. See pesummary.utils.utils.jension_shannon_divergence
+    ks_statistic: float
+        Return the KS statistic between two posterior distributions for a
+        given parameter. See pesummary.utils.utils.kolmogorov_smirnov_test
+    samples:
+        Return a list of samples stored in the MCMCSamplesDict object for a
+        given parameter
+    """
+    def __init__(self, *args, labels=None, transpose=False):
+        if labels is None and not isinstance(args[0], dict):
+            raise ValueError(
+                "Please provide a unique label for each analysis"
+            )
+        super(MultiAnalysisSamplesDict, self).__init__(
+            *args, labels=labels, transpose=transpose
+        )
+        self.name = MultiAnalysisSamplesDict
+
+    def js_divergence(self, parameter, decimal=5):
+        """Return the JS divergence between the posterior samples for
+        a given parameter
+
+        Parameters
+        ----------
+        parameter: str
+            name of the parameter you wish to return the gelman rubin statistic
+            for
+        decimal: int
+            number of decimal places to keep when rounding
+        """
+        from pesummary.utils.utils import jension_shannon_divergence
+
+        return jension_shannon_divergence(
+            self.samples(parameter), decimal=decimal
+        )
+
+    def ks_statistic(self, parameter, decimal=5):
+        """Return the KS statistic between the posterior samples for
+        a given parameter
+
+        Parameters
+        ----------
+        parameter: str
+            name of the parameter you wish to return the gelman rubin statistic
+            for
+        decimal: int
+            number of decimal places to keep when rounding
+        """
+        from pesummary.utils.utils import kolmogorov_smirnov_test
+
+        return kolmogorov_smirnov_test(
+            self.samples(parameter), decimal=decimal
+        )
 
 
 class Array(np.ndarray):

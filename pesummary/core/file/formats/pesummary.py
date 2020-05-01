@@ -23,7 +23,9 @@ import configparser
 import warnings
 
 from pesummary.core.file.formats.base_read import Read
-from pesummary.utils.samples_dict import MCMCSamplesDict, SamplesDict, Array
+from pesummary.utils.samples_dict import (
+    MCMCSamplesDict, MultiAnalysisSamplesDict, SamplesDict, Array
+)
 from pesummary.utils.utils import logger
 
 
@@ -274,12 +276,12 @@ class PESummary(Read):
                                for idx, label in enumerate(self.labels)]
             else:
                 likelihoods = [None] * len(self.labels)
-            outdict = {
+            outdict = MultiAnalysisSamplesDict({
                 label:
                     SamplesDict(
                         self.parameters[idx], np.array(self.samples[idx]).T
                     ) for idx, label in enumerate(self.labels)
-            }
+            })
         self._samples_dict = outdict
 
     @property
