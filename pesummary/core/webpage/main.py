@@ -203,34 +203,24 @@ class _WebpageGeneration(object):
             list of samples for each result file
         """
         from scipy.stats import gaussian_kde
+        from pesummary.utils.utils import (
+            kolmogorov_smirnov_test, jension_shannon_divergence
+        )
 
         rows = range(len(samples))
         columns = range(len(samples))
-        try:
-            kernel = [gaussian_kde(i) for i in samples]
-        except np.linalg.LinAlgError:
-            kernel = None
-        x = np.linspace(
-            np.min([np.min(i) for i in samples]),
-            np.max([np.max(i) for i in samples]),
-            100
-        )
         ks = [
             [
-                self.kolmogorov_smirnov_test(samples[i], samples[j]) for i in
+                kolmogorov_smirnov_test([samples[i], samples[j]]) for i in
                 rows
             ] for j in columns
         ]
-        if kernel is None:
-            js = [[float("nan") for i in rows] for j in columns]
-        else:
-            js = [
-                [
-                    self.jension_shannon_divergence(kernel[i](x), kernel[j](x)) for
-                    i in rows
-                ] for j in columns
-            ]
-
+        js = [
+            [
+                jension_shannon_divergence([samples[i], samples[j]]) for
+                i in rows
+            ] for j in columns
+        ]
         return [ks, js]
 
     @staticmethod
@@ -249,39 +239,6 @@ class _WebpageGeneration(object):
                 str(Path(sys.executable).parent),
             )),
         )
-
-    @staticmethod
-    def kolmogorov_smirnov_test(a, b):
-        """Return the KS p value between two PDFs
-
-        Parameters
-        ----------
-        a: list
-            List containing the first PDF that you would like to compare
-        b: list
-            List containing the second PDF that you would like to compare
-        """
-        return stats.ks_2samp(a, b)[1]
-
-    @staticmethod
-    def jension_shannon_divergence(a, b):
-        """Return the JS divergence test between two PDFs
-
-        Parameters
-        ----------
-        a: list
-            List containing the first PDF that you would like to compare
-        b: list
-            List containing the second PDF that you would like to compare
-        """
-        a = np.asarray(a)
-        b = np.asarray(b)
-        a /= a.sum()
-        b /= b.sum()
-        m = 1. / 2 * (a + b)
-        kl_forward = stats.entropy(a, qk=m)
-        kl_backward = stats.entropy(b, qk=m)
-        return kl_forward / 2. + kl_backward / 2.
 
     def _result_page_links(self):
         """Return the navbar structure for the Result Page tab.

@@ -22,7 +22,9 @@ import copy
 import pesummary
 import pesummary.cli as cli
 from pesummary.utils import utils
-from pesummary.utils.samples_dict import Array, SamplesDict, MCMCSamplesDict
+from pesummary.utils.samples_dict import (
+    Array, SamplesDict, MCMCSamplesDict, MultiAnalysisSamplesDict
+)
 from pesummary._version_helper import GitInformation, PackageInformation
 from pesummary._version_helper import get_version_information
 
@@ -318,6 +320,63 @@ class TestSamplesDict(object):
         assert isinstance(p, pd.core.frame.DataFrame)
         remove = dataset.pop("a")
         assert list(dataset.keys()) == ["b"]
+
+
+class TestMultiAnalysisSamplesDict(object):
+    """Test the MultiAnalysisSamplesDict class
+    """
+    def setup(self):
+        self.parameters = ["a", "b"]
+        self.samples = [
+            [np.random.uniform(10, 0.5, 100), np.random.uniform(100, 10, 100)],
+            [np.random.uniform(5, 0.5, 100), np.random.uniform(80, 10, 100)]
+        ]
+        self.labels = ["one", "two"]
+
+    def test_initalize(self):
+        """Test the different ways to initalize the class
+        """
+        dataframe = MultiAnalysisSamplesDict(
+            self.parameters, self.samples, labels=["one", "two"]
+        )
+        assert sorted(list(dataframe.keys())) == sorted(self.labels)
+        assert sorted(list(dataframe["one"])) == sorted(["a", "b"])
+        assert sorted(list(dataframe["two"])) == sorted(["a", "b"])
+        np.testing.assert_almost_equal(
+            dataframe["one"]["a"], self.samples[0][0]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["one"]["b"], self.samples[0][1]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["two"]["a"], self.samples[1][0]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["two"]["b"], self.samples[1][1]
+        )
+        other = MCMCSamplesDict({
+            label: {
+                param: self.samples[num][idx] for idx, param in enumerate(
+                    self.parameters
+                )
+            } for num, label in enumerate(self.labels)
+        })
+        assert sorted(other.keys()) == sorted(dataframe.keys())
+        assert sorted(other["one"].keys()) == sorted(
+            dataframe["one"].keys()
+        )
+        np.testing.assert_almost_equal(
+            other["one"]["a"], dataframe["one"]["a"]
+        )
+        np.testing.assert_almost_equal(
+            other["one"]["b"], dataframe["one"]["b"]
+        )
+        np.testing.assert_almost_equal(
+            other["two"]["a"], dataframe["two"]["a"]
+        )
+        np.testing.assert_almost_equal(
+            other["two"]["b"], dataframe["two"]["b"]
+        )
 
 
 class TestMCMCSamplesDict(object):

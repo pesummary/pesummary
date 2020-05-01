@@ -23,6 +23,7 @@ import shutil
 import numpy as np
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
+from scipy import stats
 import h5py
 
 from tqdm import tqdm as Basetqdm
@@ -642,6 +643,41 @@ def gelman_rubin(samples, decimal=5):
     m = len(samples)
     Vhat = sigma + BoverN / m
     return np.round(Vhat / W, decimal)
+
+
+def kolmogorov_smirnov_test(samples, decimal=5):
+    """Return the KS p value between two PDFs
+
+    Parameters
+    ----------
+    samples: 2d list
+        2d list containing the 2 PDFs that you wish to compare
+    decimal: int
+        number of decimal places to keep when rounding
+    """
+    return np.round(stats.ks_2samp(*samples)[1], decimal)
+
+
+def jension_shannon_divergence(samples, decimal=5):
+    try:
+        kernel = [stats.gaussian_kde(i) for i in samples]
+    except np.linalg.LinAlgError:
+        return float("nan")
+    a, b = kernel
+    x = np.linspace(
+        np.min([np.min(i) for i in samples]),
+        np.max([np.max(i) for i in samples]),
+        100
+    )
+    a, b = [k(x) for k in kernel]
+    a = np.asarray(a)
+    b = np.asarray(b)
+    a /= a.sum()
+    b /= b.sum()
+    m = 1. / 2 * (a + b)
+    kl_forward = stats.entropy(a, qk=m)
+    kl_backward = stats.entropy(b, qk=m)
+    return np.round(kl_forward / 2. + kl_backward / 2., decimal)
 
 
 def make_cache_style_file(style_file):
