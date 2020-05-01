@@ -209,6 +209,12 @@ class PESummary(GWRead, CorePESummary):
         return det_list
 
     def generate_all_posterior_samples(self, **conversion_kwargs):
+        if "no_conversion" in conversion_kwargs.keys():
+            no_conversion = conversion_kwargs.pop("no_conversion")
+        else:
+            no_conversion = False
+        if no_conversion:
+            return
         from pesummary.gw.file.conversions import _Conversion
 
         converted_params, converted_samples, converted_kwargs = [], [], []

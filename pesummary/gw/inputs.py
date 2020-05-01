@@ -99,7 +99,8 @@ class _GWInput(_Input):
                     waveform_fits=self.waveform_fits,
                     multi_process=self.opts.multi_process,
                     redshift_method=self.redshift_method,
-                    cosmology=self.cosmology
+                    cosmology=self.cosmology,
+                    no_conversion=self.no_conversion
                 ))
             return kwargs
         except IndexError:
@@ -118,7 +119,8 @@ class _GWInput(_Input):
                     waveform_fits=self.waveform_fits,
                     multi_process=self.opts.multi_process,
                     redshift_method=self.redshift_method,
-                    cosmology=self.cosmology
+                    cosmology=self.cosmology,
+                    no_conversion=self.no_conversion
                 ))
             return kwargs
 
@@ -646,8 +648,14 @@ class _GWInput(_Input):
                     logger.info(
                         "Assigning {} to {}".format(self.labels[num], i)
                     )
+                    if self.labels[num] in self.grab_data_kwargs.keys():
+                        grab_data_kwargs = self.grab_data_kwargs[
+                            self.labels[num]
+                        ]
+                    else:
+                        grab_data_kwargs = self.grab_data_kwargs
                     data = GWRead(priors[num])
-                    data.generate_all_posterior_samples()
+                    data.generate_all_posterior_samples(**grab_data_kwargs)
                     prior_dict["samples"][self.labels[num]] = data.samples_dict
         return prior_dict
 
@@ -748,7 +756,8 @@ class GWInput(_GWInput, Input):
         super(GWInput, self).__init__(
             opts, ignore_copy=True, extra_options=[
                 "evolve_spins", "NRSur_fits", "f_low", "f_ref",
-                "waveform_fits", "redshift_method", "cosmology"
+                "waveform_fits", "redshift_method", "cosmology",
+                "no_conversion"
             ]
         )
         if self.existing is not None:

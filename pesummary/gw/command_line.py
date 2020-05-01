@@ -139,6 +139,9 @@ def insert_gwspecific_option_group(parser):
                           help=("The cosmology to use when calculating "
                                 "the redshift"),
                           default="Planck15")
+    gw_group.add_argument("--no_conversion", action="store_true",
+                          help="Do not generate any conversions",
+                          default=False)
     remnant_group = _remnant_command_line_arguments(parser)
     return gw_group
 
