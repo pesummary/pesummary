@@ -1076,6 +1076,20 @@ class _Input(object):
         self._linestyles = linestyles
 
     @property
+    def disable_corner(self):
+        return self._disable_corner
+
+    @disable_corner.setter
+    def disable_corner(self, disable_corner):
+        self._disable_corner = disable_corner
+        if disable_corner:
+            logger.warn(
+                "No corner plot will be produced. This will reduce overall "
+                "runtime but does mean that the interactive corner plot feature "
+                "on the webpages will no longer work"
+            )
+
+    @property
     def notes(self):
         return self._notes
 
@@ -1434,6 +1448,7 @@ class Input(_Input):
         self.include_prior = self.opts.include_prior
         self.colors = self.opts.colors
         self.linestyles = self.opts.linestyles
+        self.disable_corner = self.opts.disable_corner
         self.notes = self.opts.notes
         self.disable_comparison = self.opts.disable_comparison
         self.disable_interactive = self.opts.disable_interactive
@@ -1566,6 +1581,7 @@ class PostProcessing(object):
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison
         self.disable_interactive = self.inputs.disable_interactive
+        self.disable_corner = self.inputs.disable_corner
         self.multi_process = self.inputs.multi_threading_for_plots
         self.package_information = self.inputs.package_information
         self.same_parameters = []

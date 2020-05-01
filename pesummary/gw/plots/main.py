@@ -53,8 +53,8 @@ class _PlotGeneration(_BasePlotGeneration):
         pepredicates_probs=None, include_prior=False, publication=False,
         existing_approximant=None, existing_psd=None, existing_calibration=None,
         existing_weights=None, weights=None, disable_comparison=False,
-        linestyles=None, disable_interactive=False, publication_kwargs={},
-        multi_process=1, mcmc_samples=False
+        linestyles=None, disable_interactive=False, disable_corner=False,
+        publication_kwargs={}, multi_process=1, mcmc_samples=False
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -68,7 +68,8 @@ class _PlotGeneration(_BasePlotGeneration):
             add_to_existing=add_to_existing, priors=priors,
             include_prior=include_prior, weights=weights,
             disable_comparison=disable_comparison, linestyles=linestyles,
-            disable_interactive=disable_interactive, multi_process=multi_process
+            disable_interactive=disable_interactive, disable_corner=disable_corner,
+            multi_process=multi_process
         )
         self.package = "gw"
         self.file_kwargs = file_kwargs
@@ -137,7 +138,7 @@ class _PlotGeneration(_BasePlotGeneration):
     def _generate_plots(self, label):
         """Generate all plots for a given result file
         """
-        self.try_to_make_a_plot("corner", label=label)
+        super(_PlotGeneration, self)._generate_plots(label)
         self.try_to_make_a_plot("skymap", label=label)
         self.try_to_make_a_plot("waveform_td", label=label)
         self.try_to_make_a_plot("waveform_fd", label=label)
@@ -145,22 +146,14 @@ class _PlotGeneration(_BasePlotGeneration):
             self.try_to_make_a_plot("pepredicates", label=label)
         if self.gwdata:
             self.try_to_make_a_plot("data", label=label)
-        self.try_to_make_a_plot("oned_histogram", label=label)
-        self.try_to_make_a_plot("sample_evolution", label=label)
-        self.try_to_make_a_plot("autocorrelation", label=label)
-        self.try_to_make_a_plot("oned_cdf", label=label)
-        if self.custom_plotting:
-            self.try_to_make_a_plot("custom", label=label)
 
     def _generate_comparison_plots(self):
         """Generate all comparison plots
         """
+        super(_PlotGeneration, self)._generate_comparison_plots()
         self.try_to_make_a_plot("skymap_comparison")
         self.try_to_make_a_plot("waveform_comparison_td")
         self.try_to_make_a_plot("waveform_comparison_fd")
-        self.try_to_make_a_plot("oned_histogram_comparison")
-        self.try_to_make_a_plot("oned_cdf_comparison")
-        self.try_to_make_a_plot("box_plot_comparison")
         if self.publication:
             self.try_to_make_a_plot("2d_comparison_contour")
             self.try_to_make_a_plot("violin")

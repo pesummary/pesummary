@@ -442,6 +442,10 @@ def _performance_command_line_options(parser):
         help="Whether to make interactive plots or not"
     )
     performance_group.add_argument(
+        "--disable_corner", action="store_true", default=False,
+        help="Whether to make a corner plot or not"
+    )
+    performance_group.add_argument(
         "--multi_process", dest="multi_process", default=1,
         help="The number of cores to use when generating plots"
     )
