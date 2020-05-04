@@ -16,13 +16,18 @@
 import importlib
 
 
-def read(path, package="gw"):
+def read(path, package="gw", file_format=None):
     """Read in a results file.
 
     Parameters
     ----------
     path: str
         path to results file
+    package: str
+        the package you wish to use
+    file_format: str
+        the file format you wish to use. Default None. If None, the read
+        function loops through all possible options
     """
     module = importlib.import_module("pesummary.{}.file.read".format(package))
-    return getattr(module, "read")(path)
+    return getattr(module, "read")(path, file_format=file_format)

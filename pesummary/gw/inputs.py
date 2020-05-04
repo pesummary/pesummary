@@ -125,7 +125,9 @@ class _GWInput(_Input):
             return kwargs
 
     @staticmethod
-    def grab_data_from_file(file, label, config=None, injection=None, **kwargs):
+    def grab_data_from_file(
+        file, label, config=None, injection=None, file_format=None, **kwargs
+    ):
         """Grab data from a result file containing posterior samples
 
         Parameters
@@ -138,10 +140,13 @@ class _GWInput(_Input):
             path to a configuration file used in the analysis
         injection: str, optional
             path to an injection file used in the analysis
+        file_format, str, optional
+            the file format you wish to use when loading. Default None.
+            If None, the read function loops through all possible options
         """
         data = _Input.grab_data_from_file(
             file, label, config=config, injection=injection,
-            read_function=GWRead, **kwargs
+            read_function=GWRead, file_format=file_format, **kwargs
         )
         return data
 

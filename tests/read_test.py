@@ -97,6 +97,12 @@ class BaseRead(object):
                 data[param], self.result.samples_dict[param], 8
             ) is None
 
+    def test_file_format_read(self, path, file_format, _class, function=Read):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        result = function(path, file_format=file_format)
+        assert isinstance(result, _class)
+
 
 class GWBaseRead(BaseRead):
     """Base class to test the GWRead specific functions
@@ -172,6 +178,13 @@ class GWBaseRead(BaseRead):
                 data[param], self.result.samples_dict[pesummary_param], 8
             ) is None
 
+    def test_file_format_read(self, path, file_format, _class):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        super(GWBaseRead, self).test_file_format_read(
+            path, file_format, _class, function=GWRead
+        )
+
 
 class TestCoreJsonFile(BaseRead):
     """Class to test loading in a JSON file with the core Read function
@@ -182,7 +195,8 @@ class TestCoreJsonFile(BaseRead):
         if not os.path.isdir(".outdir"):
             os.mkdir(".outdir")
         self.parameters, self.samples = make_result_file(extension="json", gw=False)
-        self.result = Read(os.path.join(".outdir", "test.json"))
+        self.path = os.path.join(".outdir", "test.json")
+        self.result = Read(self.path)
 
     def teardown(self):
         """Remove all files and directories created from this class
@@ -230,6 +244,13 @@ class TestCoreJsonFile(BaseRead):
         """
         super(TestCoreJsonFile, self).test_to_dat()
 
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.core.file.formats.default import Default
+
+        super(TestCoreJsonFile, self).test_file_format_read(self.path, "json", Default)
+
 
 class TestCoreHDF5File(BaseRead):
     """Class to test loading in an HDF5 file with the core Read function
@@ -240,7 +261,8 @@ class TestCoreHDF5File(BaseRead):
         if not os.path.isdir(".outdir"):
             os.mkdir(".outdir")
         self.parameters, self.samples = make_result_file(extension="hdf5", gw=False)
-        self.result = Read(os.path.join(".outdir", "test.h5"))
+        self.path = os.path.join(".outdir", "test.h5")
+        self.result = Read(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -290,6 +312,13 @@ class TestCoreHDF5File(BaseRead):
         """
         super(TestCoreHDF5File, self).test_to_dat()
 
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.core.file.formats.default import Default
+
+        super(TestCoreHDF5File, self).test_file_format_read(self.path, "hdf5", Default)
+
 
 class TestCoreDatFile(BaseRead):
     """Class to test loading in an dat file with the core Read function
@@ -300,7 +329,8 @@ class TestCoreDatFile(BaseRead):
         if not os.path.isdir(".outdir"):
             os.mkdir(".outdir")
         self.parameters, self.samples = make_result_file(extension="dat", gw=False)
-        self.result = Read(os.path.join(".outdir", "test.dat"))
+        self.path = os.path.join(".outdir", "test.dat")
+        self.result = Read(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -350,6 +380,13 @@ class TestCoreDatFile(BaseRead):
         """
         super(TestCoreDatFile, self).test_to_dat()
 
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.core.file.formats.default import Default
+
+        super(TestCoreDatFile, self).test_file_format_read(self.path, "dat", Default)
+
 
 class BilbyFile(BaseRead):
     """Base class to test loading in a bilby file with the core Read function
@@ -397,6 +434,13 @@ class BilbyFile(BaseRead):
         """
         super(BilbyFile, self).test_injection_parameters(true)
 
+    def test_file_format_read(self, path, file_format):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.core.file.formats.bilby import Bilby
+
+        super(BilbyFile, self).test_file_format_read(path, file_format, Bilby)
+
 
 class TestCoreJsonBilbyFile(BilbyFile):
     """Class to test loading in a bilby json file with the core Read function
@@ -408,7 +452,8 @@ class TestCoreJsonBilbyFile(BilbyFile):
             os.mkdir(".outdir")
         self.parameters, self.samples = make_result_file(
             extension="json", gw=False, bilby=True)
-        self.result = Read(os.path.join(".outdir", "test.json"))
+        self.path = os.path.join(".outdir", "test.json")
+        self.result = Read(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -457,6 +502,11 @@ class TestCoreJsonBilbyFile(BilbyFile):
         """
         super(TestCoreJsonBilbyFile, self).test_to_dat()
 
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        super(TestCoreJsonBilbyFile, self).test_file_format_read(self.path, "bilby")
+
 
 class TestCoreHDF5BilbyFile(BilbyFile):
     """Class to test loading in a bilby hdf5 file with the core Read function
@@ -468,7 +518,8 @@ class TestCoreHDF5BilbyFile(BilbyFile):
             os.mkdir(".outdir")
         self.parameters, self.samples = make_result_file(
             extension="hdf5", gw=False, bilby=True)
-        self.result = Read(os.path.join(".outdir", "test.h5"))
+        self.path = os.path.join(".outdir", "test.h5")
+        self.result = Read(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -516,6 +567,11 @@ class TestCoreHDF5BilbyFile(BilbyFile):
         """Test the to_dat method
         """
         super(TestCoreHDF5BilbyFile, self).test_to_dat()
+
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        super(TestCoreHDF5BilbyFile, self).test_file_format_read(self.path, "bilby")
 
 
 class PESummaryFile(BaseRead):
@@ -650,6 +706,11 @@ class TestCoreJsonPESummaryFile(PESummaryFile):
         """
         super(TestCoreJsonPESummaryFile, self).test_to_dat()
 
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        pass
+
 
 class TestCoreHDF5PESummaryFile(PESummaryFile):
     """Class to test loading in a PESummary hdf5 file with the core Read
@@ -717,6 +778,11 @@ class TestCoreHDF5PESummaryFile(PESummaryFile):
         """
         super(TestCoreHDF5PESummaryFile, self).test_to_dat()
 
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        pass
+
 
 class TestGWDatFile(GWBaseRead):
     """Class to test loading in an dat file with the core Read function
@@ -727,7 +793,8 @@ class TestGWDatFile(GWBaseRead):
         if not os.path.isdir(".outdir"):
             os.mkdir(".outdir")
         self.parameters, self.samples = make_result_file(extension="dat", gw=True)
-        self.result = GWRead(os.path.join(".outdir", "test.dat"))
+        self.path = os.path.join(".outdir", "test.dat")
+        self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -782,6 +849,13 @@ class TestGWDatFile(GWBaseRead):
         """
         super(TestGWDatFile, self).test_to_lalinference_dat()
 
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.gw.file.formats.default import Default
+
+        super(TestGWDatFile, self).test_file_format_read(self.path, "dat", Default)
+
 
 class TestGWHDF5File(GWBaseRead):
     """Class to test loading in an HDF5 file with the gw Read function
@@ -792,7 +866,8 @@ class TestGWHDF5File(GWBaseRead):
         if not os.path.isdir(".outdir"):
             os.mkdir(".outdir")
         self.parameters, self.samples = make_result_file(extension="hdf5", gw=True)
-        self.result = GWRead(os.path.join(".outdir", "test.h5"))
+        self.path = os.path.join(".outdir", "test.h5")
+        self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -847,6 +922,13 @@ class TestGWHDF5File(GWBaseRead):
         """
         super(TestGWHDF5File, self).test_to_lalinference_dat()
 
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.gw.file.formats.default import Default
+
+        super(TestGWHDF5File, self).test_file_format_read(self.path, "hdf5", Default)
+
 
 class TestGWJsonFile(GWBaseRead):
     """Class to test loading in an json file with the gw Read function
@@ -857,7 +939,8 @@ class TestGWJsonFile(GWBaseRead):
         if not os.path.isdir(".outdir"):
             os.mkdir(".outdir")
         self.parameters, self.samples = make_result_file(extension="json", gw=True)
-        self.result = GWRead(os.path.join(".outdir", "test.json"))
+        self.path = os.path.join(".outdir", "test.json")
+        self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -912,6 +995,13 @@ class TestGWJsonFile(GWBaseRead):
         """
         super(TestGWJsonFile, self).test_to_lalinference_dat()
 
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.gw.file.formats.default import Default
+
+        super(TestGWJsonFile, self).test_file_format_read(self.path, "json", Default)
+
 
 class TestGWJsonBilbyFile(GWBaseRead):
     """Class to test loading in a bilby json file with the gw Read function
@@ -923,7 +1013,8 @@ class TestGWJsonBilbyFile(GWBaseRead):
             os.mkdir(".outdir")
         self.parameters, self.samples = make_result_file(
             extension="json", gw=True, bilby=True)
-        self.result = GWRead(os.path.join(".outdir", "test.json"))
+        self.path = os.path.join(".outdir", "test.json")
+        self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -985,6 +1076,13 @@ class TestGWJsonBilbyFile(GWBaseRead):
         """
         super(TestGWJsonBilbyFile, self).test_to_lalinference_dat()
 
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.gw.file.formats.bilby import Bilby
+
+        super(TestGWJsonBilbyFile, self).test_file_format_read(self.path, "bilby", Bilby)
+
 
 class TestGWLALInferenceFile(GWBaseRead):
     """Class to test loading in a LALInference file with the gw Read function
@@ -996,7 +1094,8 @@ class TestGWLALInferenceFile(GWBaseRead):
             os.mkdir(".outdir")
         self.parameters, self.samples = make_result_file(
             extension="hdf5", gw=True, lalinference=True)
-        self.result = GWRead(os.path.join(".outdir", "test.hdf5"))
+        self.path = os.path.join(".outdir", "test.hdf5")
+        self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -1051,3 +1150,12 @@ class TestGWLALInferenceFile(GWBaseRead):
         """Test the to_lalinference dat=True method
         """
         super(TestGWLALInferenceFile, self).test_to_lalinference_dat()
+
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.gw.file.formats.lalinference import LALInference
+
+        super(TestGWLALInferenceFile, self).test_file_format_read(
+            self.path, "lalinference", LALInference
+        )
