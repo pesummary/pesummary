@@ -159,6 +159,19 @@ class TestSummaryPages(Base):
         with pytest.raises(InputError): 
             self.launch(command_line)
 
+    def test_file_format_wrong_number(self):
+        """Test that the code fails with the `--file_format` command line
+        argument when the number of file formats does not match the number of
+        samples
+        """
+        command_line = (
+            "summarypages --webdir .outdir --samples "
+            ".outdir/example.json .outdir/example2.h5 "
+            "--file_format hdf5 json dat"
+        )
+        with pytest.raises(InputError):
+            self.launch(command_line)
+
 
 class TestSummaryClassification(Base):
     """Test the `summaryclassification` executable

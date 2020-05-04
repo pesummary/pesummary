@@ -194,7 +194,8 @@ class _Input(object):
 
     @staticmethod
     def grab_data_from_file(
-        file, label, config=None, injection=None, read_function=Read, **kwargs
+        file, label, config=None, injection=None, read_function=Read,
+        file_format=None, **kwargs
     ):
         """Grab data from a result file containing posterior samples
 
@@ -210,11 +211,14 @@ class _Input(object):
             path to an injection file used in the analysis
         read_function: func, optional
             PESummary function to use to read in the file
+        file_format, str, optional
+            the file format you wish to use when loading. Default None.
+            If None, the read function loops through all possible options
         kwargs: dict
             Dictionary of keyword arguments fed to the
             `generate_all_posterior_samples` method
         """
-        f = read_function(file)
+        f = read_function(file, file_format=file_format)
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
 
@@ -503,6 +507,26 @@ class _Input(object):
             )
 
     @property
+    def file_format(self):
+        return self._file_format
+
+    @file_format.setter
+    def file_format(self, file_format):
+        if file_format is None:
+            self._file_format = [None] * len(self.labels)
+        elif len(file_format) == 1 and len(file_format) != len(self.labels):
+            logger.warn(
+                "Only one file format specified. Assuming all files are of this format"
+            )
+            self._file_format = [file_format] * len(self.labels)
+        elif len(file_format) != len(self.labels):
+            raise InputError(
+                "Please provide a file format for each result file"
+            )
+        else:
+            self._file_format = file_format
+
+    @property
     def samples(self):
         return self._samples
 
@@ -555,7 +579,8 @@ class _Input(object):
             else:
                 data = self.grab_data_from_input(
                     i, self.labels[num], config=self.config[num],
-                    injection=self.injection_file[num]
+                    injection=self.injection_file[num],
+                    file_format=self.file_format[num]
                 )
                 if self.mcmc_samples:
                     data["samples"] = {
@@ -920,7 +945,9 @@ class _Input(object):
             label: dict(regenerate=self.regenerate) for label in self.labels
         }
 
-    def grab_data_from_input(self, file, label, config=None, injection=None):
+    def grab_data_from_input(
+        self, file, label, config=None, injection=None, file_format=None
+    ):
         """Wrapper function for the grab_data_from_metafile and
         grab_data_from_file functions
 
@@ -934,6 +961,9 @@ class _Input(object):
             path to a configuration file used in the analysis
         injection: str, optional
             path to an injection file used in the analysis
+        file_format, str, optional
+            the file format you wish to use when loading. Default None.
+            If None, the read function loops through all possible options
         mcmc: Bool, optional
             if True, the result file is an mcmc chain
         """
@@ -950,7 +980,7 @@ class _Input(object):
         else:
             data = self.grab_data_from_file(
                 file, label, config=config, injection=injection,
-                **grab_data_kwargs
+                file_format=file_format, **grab_data_kwargs
             )
             return data
 
@@ -1435,6 +1465,7 @@ class Input(_Input):
                 setattr(self, opt, getattr(self.opts, opt))
         self.kde_plot = self.opts.kde_plot
         self.priors = self.opts.prior_file
+        self.file_format = self.opts.file_format
         self.samples = self.opts.samples
         self.ignore_parameters = self.opts.ignore_parameters
         self.burnin_method = self.opts.burnin_method

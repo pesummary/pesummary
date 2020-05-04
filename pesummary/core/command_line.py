@@ -449,6 +449,10 @@ def _performance_command_line_options(parser):
         "--multi_process", dest="multi_process", default=1,
         help="The number of cores to use when generating plots"
     )
+    performance_group.add_argument(
+        "--file_format", dest="file_format", nargs='+', default=None,
+        help="The file format of each result file."
+    )
     return performance_group
 
 
