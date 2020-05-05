@@ -425,14 +425,21 @@ class _MultiDimensionalSamplesDict(dict):
                 outer_iterator, inner_iterator = parameters, _labels
             else:
                 _labels = list(args[0].keys())
-                parameters = list(args[0][_labels[0]].keys())
+                parameters = {
+                    label: list(args[0][label].keys()) for label in _labels
+                }
                 outer_iterator, inner_iterator = _labels, parameters
             if labels is None:
                 self.labels = _labels
             for num, dataset in enumerate(outer_iterator):
-                samples = np.array(
-                    [args[0][dataset][param] for param in inner_iterator]
-                )
+                if isinstance(inner_iterator, dict):
+                    samples = np.array(
+                        [args[0][dataset][param] for param in inner_iterator[dataset]]
+                    )
+                else:
+                    samples = np.array(
+                        [args[0][dataset][param] for param in inner_iterator]
+                    )
                 if transpose:
                     desc = parameters[num]
                     self[desc] = SamplesDict(
@@ -444,7 +451,7 @@ class _MultiDimensionalSamplesDict(dict):
                         desc = self.labels[num]
                     else:
                         desc = "{}_{}".format(label_prefix, num)
-                    self[desc] = SamplesDict(parameters, samples)
+                    self[desc] = SamplesDict(parameters[self.labels[num]], samples)
         else:
             parameters, samples = args
             if labels is not None and len(labels) != len(samples):
@@ -464,6 +471,11 @@ class _MultiDimensionalSamplesDict(dict):
 
     @property
     def T(self):
+        _params = sorted([param for param in self[self.labels[0]].keys()])
+        if not all(sorted(self[label].keys()) == _params for label in self.labels):
+            raise ValueError(
+                "Unable to transpose as not all samples have the same parameters"
+            )
         return self.name({
             param: {
                 label: dataset[param] for label, dataset in self.items()

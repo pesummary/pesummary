@@ -378,6 +378,32 @@ class TestMultiAnalysisSamplesDict(object):
             other["two"]["b"], dataframe["two"]["b"]
         )
 
+    def test_different_samples_for_different_analyses(self):
+        """Test that nothing breaks when different samples have different parameters
+        """
+        data = {
+            "one": {
+                "a": np.random.uniform(10, 0.5, 100),
+                "b": np.random.uniform(5, 0.5, 100)
+            }, "two": {
+                "a": np.random.uniform(10, 0.5, 100)
+            }
+        }
+        dataframe = MultiAnalysisSamplesDict(data)
+        assert sorted(dataframe["one"].keys()) == sorted(data["one"].keys())
+        assert sorted(dataframe["two"].keys()) == sorted(data["two"].keys())
+        np.testing.assert_almost_equal(
+            dataframe["one"]["a"], data["one"]["a"]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["one"]["b"], data["one"]["b"]
+        )
+        np.testing.assert_almost_equal(
+            dataframe["two"]["a"], data["two"]["a"]
+        )
+        with pytest.raises(ValueError):
+            transpose = dataframe.T
+
 
 class TestMCMCSamplesDict(object):
     """Test the MCMCSamplesDict class
