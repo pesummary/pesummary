@@ -165,7 +165,18 @@ bilby:
     - schedule
     - pushes
 
-released_samples:
+GW190412:
+  stage: consequences
+  image: python:3.6
+  script:
+    - *pesummary_install
+    - curl https://dcc.ligo.org/public/0163/P190412/009/posterior_samples.h5 -o GW190412_posterior_samples.h5
+    - python tests/existing_file.py -f GW190412_posterior_samples.h5
+  only:
+    - schedule
+    - pushes
+
+GW190425:
   stage: consequences
   image: python:3.6
   script:
