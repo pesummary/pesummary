@@ -438,6 +438,76 @@ class TestSummaryModify(Base):
         assert modified_data["replace"]["meta_data"]["other"]["test"][0] == b'10'
         modified_data.close()
 
+    def test_modify_posterior(self):
+        """Test that a posterior distribution is correctly modified
+        """
+        import h5py
+
+        new_posterior = np.random.uniform(10, 0.5, 1000)
+        np.savetxt(".outdir/different_posterior.dat", new_posterior)
+        command_line = (
+            "summarymodify --webdir .outdir --samples .outdir/test.h5 --delimiter ; "
+            "--replace_posterior replace;mass_1:.outdir/different_posterior.dat"
+        )
+        self.launch(command_line)
+        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        np.testing.assert_almost_equal(
+            modified_data["replace"]["posterior_samples"]["mass_1"], new_posterior
+        )
+        modified_data.close()
+        command_line = (
+            "summarymodify --webdir .outdir --samples .outdir/test.h5 --delimiter ; "
+            "--replace_posterior replace;abc:.outdir/different_posterior.dat"
+        )
+        self.launch(command_line)
+        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        np.testing.assert_almost_equal(
+            modified_data["replace"]["posterior_samples"]["abc"], new_posterior
+        )
+        modified_data.close()
+
+    def test_remove_posterior(self):
+        """Test that a posterior is correctly removed
+        """
+        import h5py
+
+        command_line = (
+            "summarymodify --webdir .outdir --samples .outdir/test.h5 --delimiter ; "
+            "--remove_posterior replace;mass_1"
+        )
+        self.launch(command_line)
+        original_data = h5py.File(".outdir/test.h5", "r")
+        params = list(original_data["replace"]["posterior_samples"]["parameter_names"])
+        if isinstance(params[0], bytes):
+            params = [param.decode("utf-8") for param in params]
+        assert "mass_1" in params
+        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        assert "mass_1" not in modified_data["replace"]["posterior_samples"].dtype.names
+        original_data.close()
+        modified_data.close()
+
+    def test_remove_multiple_posteriors(self):
+        """Test that multiple posteriors are correctly removed
+        """
+        import h5py
+
+        command_line = (
+            "summarymodify --webdir .outdir --samples .outdir/test.h5 --delimiter ; "
+            "--remove_posterior replace;mass_1 replace;mass_2"
+        )
+        self.launch(command_line)
+        original_data = h5py.File(".outdir/test.h5", "r")
+        params = list(original_data["replace"]["posterior_samples"]["parameter_names"])
+        if isinstance(params[0], bytes):
+            params = [param.decode("utf-8") for param in params]
+        assert "mass_1" in params
+        assert "mass_2" in params
+        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        assert "mass_1" not in modified_data["replace"]["posterior_samples"].dtype.names
+        assert "mass_2" not in modified_data["replace"]["posterior_samples"].dtype.names
+        original_data.close()
+        modified_data.close()
+
     def test_modify(self):
         """Test the `summarymodify` script
         """
@@ -454,9 +524,6 @@ class TestSummaryModify(Base):
         assert "new" in list(modified_data.keys())
         for key in data["replace"].keys():
             assert key in modified_data["new"].keys()
-            assert all(i == j for i, j in zip(
-                data["replace"][key], modified_data["new"][key]
-            ))
             for i, j in zip(data["replace"][key], modified_data["new"][key]):
                 try:
                     if isinstance(data["replace"][key][i],h5py._hl.dataset.Dataset):
