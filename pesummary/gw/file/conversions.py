@@ -1219,6 +1219,9 @@ class _Conversion(object):
     cosmology: str, optional
         cosmology you wish to use when calculating the redshift given luminosity
         distance samples.
+    force_non_evolved: Bool, optional
+        force non evolved remnant quantities to be calculated when evolved quantities
+        already exist in the input. Default False
     regenerate: list, optional
         list of posterior distributions that you wish to regenerate
     return_dict: Bool, optional
@@ -1269,6 +1272,7 @@ class _Conversion(object):
         NRSurrogate = kwargs.get("NRSur_fits", False)
         redshift_method = kwargs.get("redshift_method", "approx")
         cosmology = kwargs.get("cosmology", "Planck15")
+        force_non_evolved = kwargs.get("force_non_evolved", False)
         if redshift_method not in ["approx", "exact"]:
             raise ValueError(
                 "'redshift_method' can either be 'approx' corresponding to "
@@ -1354,7 +1358,7 @@ class _Conversion(object):
         obj.__init__(
             parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
             waveform_fits, multi_process, regenerate, redshift_method,
-            cosmology
+            cosmology, force_non_evolved
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -1372,7 +1376,7 @@ class _Conversion(object):
     def __init__(
         self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
         waveform_fits, multi_process, regenerate, redshift_method,
-        cosmology
+        cosmology, force_non_evolved
     ):
         self.parameters = parameters
         self.samples = samples
@@ -1383,6 +1387,7 @@ class _Conversion(object):
         self.regenerate = regenerate
         self.redshift_method = redshift_method
         self.cosmology = cosmology
+        self.force_non_evolved = force_non_evolved
         if self.regenerate is not None:
             for param in self.regenerate:
                 self.remove_posterior(param)
@@ -2191,6 +2196,19 @@ class _Conversion(object):
             else:
                 final_spin_params += ["tilt_1", "tilt_2", "phi_12"]
 
+            check_for_evolved_parameter = lambda suffix, param, params: (
+                param not in params and param + suffix not in params if
+                len(suffix) else param not in params
+            )
+            condition_peak_luminosity = check_for_evolved_parameter(
+                evolve_suffix, "peak_luminosity", self.parameters
+            )
+            condition_final_spin = check_for_evolved_parameter(
+                evolve_suffix, "final_spin", self.parameters
+            )
+            condition_final_mass = check_for_evolved_parameter(
+                evolve_suffix, "final_mass", self.parameters
+            )
             if self.NRSurrogate or self.waveform_fit:
                 parameters = []
                 _default = ["final_mass", "final_spin"]
@@ -2212,21 +2230,21 @@ class _Conversion(object):
                 elif all(i in self.parameters for i in non_precessing_NR_params):
                     function(non_precessing=True, parameters=parameters)
                 if all(i in self.parameters for i in non_precessing_NR_params):
-                    if "peak_luminosity%s" % (evolve_suffix) not in self.parameters:
+                    if condition_peak_luminosity or self.force_non_evolved:
                         self._peak_luminosity_of_merger(evolved=evolve_condition)
             else:
                 if all(i in self.parameters for i in final_spin_params):
-                    if "final_spin{}".format(evolve_suffix) not in self.parameters:
+                    if condition_final_spin or self.force_non_evolved:
                         self._final_spin_of_merger(evolved=evolve_condition)
                 elif all(i in self.parameters for i in non_precessing_NR_params):
-                    if "final_spin{}".format(evolve_suffix) not in self.parameters:
+                    if condition_final_spin or self.force_non_evolved:
                         self._final_spin_of_merger(
                             non_precessing=True, evolved=False
                         )
                 if all(i in self.parameters for i in non_precessing_NR_params):
-                    if "peak_luminosity%s" % (evolve_suffix) not in self.parameters:
+                    if condition_peak_luminosity or self.force_non_evolved:
                         self._peak_luminosity_of_merger(evolved=evolve_condition)
-                    if "final_mass%s" % (evolve_suffix) not in self.parameters:
+                    if condition_final_mass or self.force_non_evolved:
                         self._final_mass_of_merger(evolved=evolve_condition)
         if "cos_tilt_1" not in self.parameters and "tilt_1" in self.parameters:
             self._cos_tilt_1_from_tilt_1()
@@ -2252,12 +2270,18 @@ class _Conversion(object):
                 self._mtotal_source_from_mtotal_z()
             if "chirp_mass_source" not in self.parameters and "chirp_mass" in self.parameters:
                 self._mchirp_source_from_mchirp_z()
-            if "final_mass_source%s" % (evolve_suffix) not in self.parameters:
+            condition_final_mass_source = check_for_evolved_parameter(
+                evolve_suffix, "final_mass_source", self.parameters
+            )
+            if condition_final_mass_source or self.force_non_evolved:
                 if "final_mass{}".format(evolve_suffix) in self.parameters:
                     self._final_mass_source(evolved=evolve_condition)
         if "total_mass_source" in self.parameters:
             if "final_mass_source{}".format(evolve_suffix) in self.parameters:
-                if "radiated_energy%s" % (evolve_suffix) not in self.parameters:
+                condition_radiated_energy = check_for_evolved_parameter(
+                    evolve_suffix, "radiated_energy", self.parameters
+                )
+                if condition_radiated_energy or self.force_non_evolved:
                     self._radiated_energy(evolved=evolve_condition)
         location = ["geocent_time", "ra", "dec"]
         if all(i in self.parameters for i in location):
