@@ -474,7 +474,9 @@ class Read(object):
         return table
 
     @staticmethod
-    def latex_macros(samples, parameter_dict=None, labels=None, rounding=2):
+    def latex_macros(
+        samples, parameter_dict=None, labels=None, rounding="smart"
+    ):
         """Return a latex table displaying the passed data.
 
         Parameters
@@ -485,6 +487,10 @@ class Read(object):
             dictionary of parameters that you wish to generate macros for. The
             keys are the name of the parameters and the items are the latex
             macros name you wish to use. If None, all parameters are included.
+        rounding: int, optional
+            decimal place for rounding. Default uses the
+            `pesummary.utils.utils.smart_round` function to round according to
+            the uncertainty
         """
         macros = ""
         data = {i: i for i in samples[0].keys()}
@@ -505,12 +511,19 @@ class Read(object):
                     description = "{}{}".format(desc, labels[num])
                 else:
                     description = desc
-                median = np.round(
-                    samples_dict[param].average(type="median"), rounding
-                )
+
+                median = samples_dict[param].average(type="median")
                 confidence = samples_dict[param].confidence_interval()
-                low = np.round(median - confidence[0], rounding)
-                upper = np.round(confidence[1] - median, rounding)
+                if rounding == "smart":
+                    from pesummary.utils.utils import smart_round
+
+                    median, upper, low = smart_round([
+                        median, confidence[1] - median, median - confidence[0]
+                    ])
+                else:
+                    median = np.round(median, rounding)
+                    low = np.round(median - confidence[0], rounding)
+                    upper = np.round(confidence[1] - median, rounding)
                 macros += (
                     "\\def\\%s{$%s_{-%s}^{+%s}$}\n" % (
                         description, median, low, upper
@@ -521,12 +534,13 @@ class Read(object):
                 )
                 macros += (
                     "\\def\\%supper{$%s$}\n" % (
-                        description, np.round(confidence[1], rounding)
+                        description, np.round(median + upper, 9)
                     )
                 )
                 macros += (
                     "\\def\\%slower{$%s$}\n" % (
-                        description, np.round(confidence[0], rounding))
+                        description, np.round(median - low, 9)
+                    )
                 )
         return macros
 
@@ -563,7 +577,7 @@ class Read(object):
                 f.writelines([table])
 
     def generate_latex_macros(
-        self, parameter_dict=None, save_to_file=None, rounding=2
+        self, parameter_dict=None, save_to_file=None, rounding="smart"
     ):
         """Generate a list of latex macros for each parameter in the result
         file
