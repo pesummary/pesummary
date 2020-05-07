@@ -270,7 +270,7 @@ class PESummary(GWRead, CorePESummary):
 
     def to_lalinference(
         self, outdir="./", labels=None, overwrite=False,
-        sampler="lalinference_nest", dat=False
+        sampler="lalinference_nest", dat=False, filenames=None
     ):
         """Save a PESummary metafile as a lalinference hdf5 file
 
@@ -285,9 +285,12 @@ class PESummary(GWRead, CorePESummary):
         sampler: str
             The sampler which you wish to store in the result file. This may
             either be 'lalinference_nest' or 'lalinference_mcmc'
-        dat: Bool
+        dat: Bool, optional
             If True, a single or multiple LALInference posterior_samples.dat
             files are created
+        filenames: dict, optional
+            Filenames you wish to use for each analysis. Key is the analysis label
+            and item is the file name. Default is "lalinference_{label}.{extension}"
         """
         from pesummary.gw.file.formats.lalinference import write_to_file
         import h5py
@@ -302,11 +305,19 @@ class PESummary(GWRead, CorePESummary):
                     )
         else:
             labels = self.labels
+        if filenames is not None:
+            if not all(label in filenames.keys() for label in labels):
+                raise ValueError(
+                    "Please provide a filename for all labels"
+                )
+        else:
+            filenames = {label: None for label in labels}
 
         for num, label in enumerate(labels):
             write_to_file(
                 self.samples_dict[label], outdir=outdir, label=label,
-                overwrite=overwrite, sampler=sampler, dat=dat
+                overwrite=overwrite, sampler=sampler, dat=dat,
+                filename=filenames[label]
             )
 
 
