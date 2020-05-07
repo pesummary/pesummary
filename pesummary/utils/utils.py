@@ -18,6 +18,7 @@ import sys
 import logging
 import contextlib
 import time
+import copy
 import shutil
 
 import numpy as np
@@ -615,6 +616,77 @@ def _check_latex_install():
         rcParams["text.usetex"] = original
     else:
         rcParams["text.usetex"] = False
+
+
+def smart_round(parameters, return_latex=False, return_latex_row=False):
+    """Round a parameter according to the uncertainty. If more than one parameter
+    and uncertainty is passed, each parameter is rounded according to the
+    lowest uncertainty
+
+    Parameters
+    ----------
+    parameter_dictionary: list/np.ndarray
+        list containing the median, upper bound and lower bound for a given parameter
+    return_latex: Bool, optional
+        if True, return as a latex string
+    return_latex_row: Bool, optional
+        if True, return the rounded data as a single row in latex format
+
+    Examples
+    --------
+    >>> data = [1.234, 0.2, 0.1]
+    >>> smart_round(data)
+    [ 1.2  0.2  0.1]
+    >>> data = [
+    ...     [6.093, 0.059, 0.055],
+    ...     [6.104, 0.057, 0.052],
+    ...     [6.08, 0.056, 0.052]
+    ... ]
+    >>> smart_round(data)
+    [[ 6.09  0.06  0.06]
+     [ 6.1   0.06  0.05]
+     [ 6.08  0.06  0.05]]
+    >>> smart_round(data, return_latex=True)
+    6.09^{+0.06}_{-0.06}
+    6.10^{+0.06}_{-0.05}
+    6.08^{+0.06}_{-0.05}
+    >>> data = [
+    ...     [743.25, 43.6, 53.2],
+    ...     [8712.5, 21.5, 35.2],
+    ...     [196.46, 65.2, 12.5]
+    ... ]
+    >>> smart_round(data, return_latex_row=True)
+    740^{+40}_{-50} & 8710^{+20}_{-40} & 200^{+70}_{-10}
+    >>> data = [
+    ...     [743.25, 43.6, 53.2],
+    ...     [8712.5, 21.5, 35.2],
+    ...     [196.46, 65.2, 8.2]
+    ... ]
+    >>> smart_round(data, return_latex_row=True)
+    743^{+44}_{-53} & 8712^{+22}_{-35} & 196^{+65}_{-8}
+    """
+    rounded = copy.deepcopy(np.atleast_2d(parameters))
+    lowest_uncertainty = np.min(np.abs(parameters))
+    rounding = int(-1 * np.floor(np.log10(lowest_uncertainty)))
+    for num, _ in enumerate(rounded):
+        rounded[num] = [np.round(value, rounding) for value in rounded[num]]
+    if return_latex or return_latex_row:
+        if rounding > 0:
+            _format = "%.{}f".format(rounding)
+        else:
+            _format = "%.f"
+        string = "{0}^{{+{0}}}_{{-{0}}}".format(_format)
+        latex = [string % (value[0], value[1], value[2]) for value in rounded]
+        if return_latex:
+            for ll in latex:
+                print(ll)
+        else:
+            print(" & ".join(latex))
+        return ""
+    elif np.array(parameters).ndim == 1:
+        return rounded[0]
+    else:
+        return rounded
 
 
 def gelman_rubin(samples, decimal=5):
