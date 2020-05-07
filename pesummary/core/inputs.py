@@ -639,6 +639,10 @@ class _Input(object):
                                 self.add_to_prior_dict(
                                     "{}/{}".format(key, label), []
                                 )
+                            elif label not in pp[key].keys():
+                                self.add_to_prior_dict(
+                                    "{}/{}".format(key, label), []
+                                )
                             else:
                                 self.add_to_prior_dict(
                                     "{}/{}".format(key, label), pp[key][label]
