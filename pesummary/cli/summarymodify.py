@@ -310,11 +310,18 @@ def _modify_kwargs(data, kwargs=None):
         dictionary of kwargs showing the label as key and kwarg:value as the
         item
     """
-    def add_to_meta_data(data, string):
+    from pesummary.core.file.formats.base_read import Read
+
+    def add_to_meta_data(data, label, string):
         kwarg, value = string.split(":")
-        if "other" not in data[label]["meta_data"].keys():
+        try:
+            _group, = Read.paths_to_key(kwarg, data[label]["meta_data"])
+            group = _group[0]
+        except ValueError:
+            group = "other"
+        if group == "other" and group not in data[label]["meta_data"].keys():
             data[label]["meta_data"]["other"] = {}
-        data[label]["meta_data"]["other"][kwarg] = value
+        data[label]["meta_data"][group][kwarg] = value
         return data
 
     message = "Unable to find label '{}' in the metafile. Unable to modify kwargs"
@@ -323,9 +330,9 @@ def _modify_kwargs(data, kwargs=None):
         if check:
             if isinstance(item, list):
                 for _item in item:
-                    data = add_to_meta_data(data, _item)
+                    data = add_to_meta_data(data, label, _item)
             else:
-                data = add_to_meta_data(data, item)
+                data = add_to_meta_data(data, label, item)
     return data
 
 

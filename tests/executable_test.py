@@ -410,31 +410,39 @@ class TestSummaryModify(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
-    def test_modify_kwargs(self):
-        """Test that kwargs are correctly modified
+    def test_modify_kwargs_replace(self):
+        """Test that kwargs are correctly replaced in the meta file
         """
         import h5py
 
         command_line = (
             "summarymodify --webdir .outdir --samples .outdir/test.h5 "
-            "--delimiter / --kwargs replace/nsamples:1000"
+            "--delimiter / --kwargs replace/log_evidence:1000"
         )
         self.launch(command_line)
         modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        original_data = h5py.File(".outdir/test.h5", "r")
         data = h5py.File(".outdir/test.h5", "r")
-        assert "nsamples" in modified_data["replace"]["meta_data"]["other"].keys()
-        assert "other" not in data["replace"]["meta_data"].keys()
-        assert modified_data["replace"]["meta_data"]["other"]["nsamples"][0] == b'1000'
+        assert original_data["replace"]["meta_data"]["sampler"]["log_evidence"][0] != b'1000'
+        assert modified_data["replace"]["meta_data"]["sampler"]["log_evidence"][0] == b'1000'
         modified_data.close()
+        original_data.close()
+
+    def test_modify_kwargs_append(self):
+        """Test that kwargs are correctly added to the result file
+        """
+        import h5py
+
+        original_data = h5py.File(".outdir/test.h5", "r")
+        assert "other" not in original_data["replace"]["meta_data"].keys()
+        original_data.close()
         command_line = (
-            "summarymodify --webdir .outdir "
-            "--samples .outdir/modified_posterior_samples.h5 "
-            "--delimiter / --kwargs replace/nsamples:2000 replace/test:10 "
+            "summarymodify --webdir .outdir --samples .outdir/test.h5 "
+            "--delimiter / --kwargs replace/test:10 "
             "--overwrite"
         )
         self.launch(command_line)
-        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
-        assert modified_data["replace"]["meta_data"]["other"]["nsamples"][0] == b'2000'
+        modified_data = h5py.File(".outdir/test.h5", "r")
         assert modified_data["replace"]["meta_data"]["other"]["test"][0] == b'10'
         modified_data.close()
 
