@@ -30,8 +30,10 @@ class TestSummaryPages(Base):
     def setup(self):
         """Setup the SummaryClassification class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.dirs = [".outdir", ".outdir1", ".outdir2"]
+        for dd in self.dirs:
+            if not os.path.isdir(dd):
+                os.mkdir(dd)
         make_result_file(gw=False, extension="json")
         os.rename(".outdir/test.json", ".outdir/example.json")
         make_result_file(gw=False, extension="hdf5")
@@ -40,8 +42,9 @@ class TestSummaryPages(Base):
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        for dd in self.dirs:
+            if os.path.isdir(dd):
+                shutil.rmtree(dd)
 
     def check_output(self, number=1, mcmc=False):
         """Check the output from the summarypages executable
@@ -134,6 +137,38 @@ class TestSummaryPages(Base):
         )
         self.launch(command_line)
         self.check_output(number=1)
+
+    def test_summarycombine_output(self):
+        """Test on a summarycombine output
+        """
+        from base import make_psd, make_calibration
+
+        make_psd()
+        make_calibration()
+        command_line = (
+            "summarycombine --webdir .outdir1 --samples "
+            ".outdir/example.json --label gw0 "
+            "--calibration L1:.outdir/calibration.dat --gw"
+        )
+        self.launch(command_line)
+        command_line = (
+            "summarycombine --webdir .outdir2 --samples "
+            ".outdir/example.json --label gw1 "
+            "--psd H1:.outdir/psd.dat --gw"
+        )
+        self.launch(command_line)
+        command_line = (
+            "summarycombine --webdir .outdir --gw --samples "
+            ".outdir1/samples/posterior_samples.h5 "
+            ".outdir2/samples/posterior_samples.h5 "
+        )
+        self.launch(command_line)
+        command_line = (
+            "summarypages --webdir .outdir --gw --samples "
+            ".outdir/samples/posterior_samples.h5"
+        )
+        self.launch(command_line)
+        
 
     def test_mcmc(self):
         """Test the `--mcmc_samples` command line argument

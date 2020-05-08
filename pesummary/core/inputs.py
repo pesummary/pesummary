@@ -641,7 +641,7 @@ class _Input(object):
                                 )
                             elif label not in pp[key].keys():
                                 self.add_to_prior_dict(
-                                    "{}/{}".format(key, label), []
+                                    "{}/{}".format(key, label), {}
                                 )
                             else:
                                 self.add_to_prior_dict(
