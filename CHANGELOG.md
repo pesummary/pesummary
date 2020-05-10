@@ -1,3 +1,19 @@
+## 0.5.6 [unreleased]
+
+### Changed
+
+### Added
+
+## 0.5.5 [10/05/2019]
+
+### Changed
+
+- KeyError bug - Fix bug where a KeyError was being raised when initializing
+  the prior dict
+
+### Added
+
+
 ## 0.5.4 [08/05/2019]
 
 ### Changed
