@@ -90,6 +90,7 @@ class Default(GWRead):
                 ind = parameters.index(parameter[0])
                 return ind
             return None
+
         kwargs = {"sampler": {}, "meta_data": {}}
         possible_f_ref = ["f_ref", "fRef", "fref", "fref_template"]
         ind = find_parameter_given_alternatives(parameters, possible_f_ref)
@@ -127,32 +128,18 @@ class Default(GWRead):
         }
 
     @staticmethod
+    def _grab_data_from_hdf5_file(path):
+        """Grab the data stored in an hdf5 file
+        """
+        return CoreDefault._grab_data_from_hdf5_file(
+            path, remove_params=["waveform_approximant"]
+        )
+
+    @staticmethod
     def _grab_data_from_json_file(path):
         """Grab the data stored in a .json file
         """
         return CoreDefault._grab_data_from_json_file(path)
-
-    @staticmethod
-    def _grab_data_from_hdf5_file(path):
-        """Grab the data stored in an hdf5 file
-        """
-        return CoreDefault._grab_data_from_hdf5_file(path, cls=Default)
-
-    @staticmethod
-    def _grab_data_with_deepdish(path):
-        """Grab the data stored in a h5py file with `deepdish`.
-        """
-        return CoreDefault._grab_data_with_deepdish(
-            path, remove_params=["waveform_approximant"]
-        )
-
-    @staticmethod
-    def _grab_data_with_h5py(path):
-        """Grab the data stored in a hdf5 file with `h5py`.
-        """
-        return CoreDefault._grab_data_with_h5py(
-            path, remove_params=["waveform_approximant"]
-        )
 
     @property
     def calibration_data_in_results_file(self):

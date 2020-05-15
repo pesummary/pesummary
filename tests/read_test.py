@@ -624,7 +624,7 @@ class PESummaryFile(BaseRead):
         """
         from pesummary.core.file.read import is_bilby_json_file
 
-        bilby_object = self.result.to_bilby()["label"]
+        bilby_object = self.result.to_bilby(save=False)["label"]
         bilby_object.save_to_file(
             filename=os.path.join(".outdir", "bilby.json"))
         assert is_bilby_json_file(os.path.join(".outdir", "bilby.json"))
@@ -632,7 +632,9 @@ class PESummaryFile(BaseRead):
     def test_to_dat(self):
         """Test the to_dat method
         """
-        self.result.to_dat(outdir=".outdir")
+        self.result.to_dat(
+            outdir=".outdir", filenames={"label": "pesummary_label.dat"}
+        )
         assert os.path.isfile(os.path.join(".outdir", "pesummary_label.dat"))
         data = np.genfromtxt(
             os.path.join(".outdir", "pesummary_label.dat"), names=True)

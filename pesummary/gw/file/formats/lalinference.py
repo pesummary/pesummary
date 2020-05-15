@@ -433,16 +433,18 @@ class LALInference(GWRead):
         return parameters, samples
 
 
-def write_to_file(
-    samples, outdir="./", label=None, filename=None, overwrite=False,
-    sampler="lalinference_nest", dat=False
+def write_lalinference(
+    parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
+    sampler="lalinference_nest", dat=False, **kwargs
 ):
     """Write a set of samples in LALInference file format
 
     Parameters
     ----------
-    samples: pesummary.utils.utils.SamplesDict
-        Dictionary containing the posterior samples
+    parameters: list
+        list of parameters
+    samples: 2d list
+        list of samples. Columns correspond to a given parameter
     outdir: str
         The directory where you would like to write the lalinference file
     label: str
@@ -459,9 +461,12 @@ def write_to_file(
         If True, a LALInference dat file is produced
     """
     from pesummary.gw.file.standard_names import lalinference_map
+    from pesummary.utils.samples_dict import SamplesDict
     import copy
 
     _samples = copy.deepcopy(samples)
+    _parameters = copy.deepcopy(parameters)
+    _samples = SamplesDict(_parameters, np.array(_samples).T.tolist())
     if not filename and not label:
         from time import time
 

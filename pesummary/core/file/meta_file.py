@@ -169,7 +169,7 @@ class _MetaFile(object):
         existing_version=None, existing_label=None, existing_samples=None,
         existing_injection=None, existing_metadata=None, existing_config=None,
         existing_priors={}, existing_metafile=None, outdir=None, existing=None,
-        package_information={}, mcmc_samples=False
+        package_information={}, mcmc_samples=False, filename=None
     ):
         self.data = {}
         self.webdir = webdir
@@ -181,6 +181,7 @@ class _MetaFile(object):
         self.file_versions = file_versions
         self.file_kwargs = file_kwargs
         self.hdf5 = hdf5
+        self.file_name = filename
         self.priors = priors
         self.existing_version = existing_version
         self.existing_labels = existing_label
@@ -215,10 +216,18 @@ class _MetaFile(object):
 
     @property
     def file_name(self):
-        base = "posterior_samples.{}"
-        if self.hdf5:
-            return base.format("h5")
-        return base.format("json")
+        return self._file_name
+
+    @file_name.setter
+    def file_name(self, file_name):
+        if file_name is not None:
+            self._file_name = file_name
+        else:
+            base = "posterior_samples.{}"
+            if self.hdf5:
+                self._file_name = base.format("h5")
+            else:
+                self._file_name = base.format("json")
 
     @property
     def meta_file(self):

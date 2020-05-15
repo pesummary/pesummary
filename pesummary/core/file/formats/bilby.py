@@ -21,6 +21,107 @@ from pesummary import conf
 from pesummary.utils.utils import logger
 
 
+def read_bilby(path):
+    """Grab the parameters and samples in a bilby file
+
+    Parameters
+    ----------
+    path: str
+        path to the result file you wish to read in
+    """
+    from bilby.core.result import read_in_result
+
+    bilby_object = read_in_result(filename=path)
+    posterior = bilby_object.posterior
+    # Drop all non numeric bilby data outputs
+    posterior = posterior.select_dtypes(include=[float, int])
+    parameters = list(posterior.keys())
+    samples = posterior.to_numpy().real
+    injection = bilby_object.injection_parameters
+    if injection is None:
+        injection = {i: j for i, j in zip(
+            parameters, [float("nan")] * len(parameters))}
+    else:
+        for i in parameters:
+            if i not in injection.keys():
+                injection[i] = float("nan")
+
+    if all(i for i in (
+           bilby_object.constraint_parameter_keys,
+           bilby_object.search_parameter_keys,
+           bilby_object.fixed_parameter_keys)):
+        for key in (
+                bilby_object.constraint_parameter_keys
+                + bilby_object.search_parameter_keys
+                + bilby_object.fixed_parameter_keys):
+            if key not in latex_labels:
+                label = bilby_object.get_latex_labels_from_parameter_keys(
+                    [key])[0]
+                latex_labels[key] = label
+    try:
+        extra_kwargs = Bilby.grab_extra_kwargs(bilby_object)
+    except Exception:
+        extra_kwargs = {"sampler": {}, "meta_data": {}}
+    extra_kwargs["sampler"]["nsamples"] = len(samples)
+    try:
+        version = bilby_object.version
+    except Exception as e:
+        version = None
+    prior_samples = Bilby.grab_priors(bilby_object, nsamples=len(samples))
+    return {
+        "parameters": parameters,
+        "samples": samples.tolist(),
+        "injection": injection,
+        "version": version,
+        "kwargs": extra_kwargs,
+        "prior": prior_samples
+    }
+
+
+def write_bilby(
+    parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
+    extension="json", save=True, **kwargs
+):
+    """Write a set of samples to a bilby file
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters
+    samples: 2d list
+        list of samples. Columns correspond to a given parameter
+    outdir: str, optional
+        directory to write the dat file
+    label: str, optional
+        The label of the analysis. This is used in the filename if a filename
+        if not specified
+    filename: str, optional
+        The name of the file that you wish to write
+    overwrite: Bool, optional
+        If True, an existing file of the same name will be overwritten
+    extension: str, optional
+        file extension for the bilby result file. Default json.
+    save: Bool, optional
+        if True, save the bilby object to file
+    """
+    from bilby.core.result import Result
+    from bilby.core.prior import Prior, PriorDict
+    from pandas import DataFrame
+
+    priors = PriorDict()
+    priors.update({parameter: Prior() for parameter in parameters})
+    posterior_data_frame = DataFrame(samples, columns=parameters)
+    bilby_object = Result(
+        search_parameter_keys=parameters, samples=samples, priors=priors,
+        posterior=posterior_data_frame, label="pesummary_%s" % label,
+    )
+    if save:
+        _filename = os.path.join(outdir, filename)
+        bilby_object.save_to_file(filename=_filename, extension=extension)
+    else:
+        return bilby_object
+
+
 class Bilby(Read):
     """PESummary wrapper of `bilby` (https://git.ligo.org/lscsoft/bilby). The
     path_to_results_file argument will be passed directly to
@@ -101,53 +202,7 @@ class Bilby(Read):
     def _grab_data_from_bilby_file(path):
         """Load the results file using the `bilby` library
         """
-        from bilby.core.result import read_in_result
-
-        bilby_object = read_in_result(filename=path)
-        posterior = bilby_object.posterior
-        # Drop all non numeric bilby data outputs
-        posterior = posterior.select_dtypes(include=[float, int])
-        parameters = list(posterior.keys())
-        samples = posterior.to_numpy().real
-        injection = bilby_object.injection_parameters
-        if injection is None:
-            injection = {i: j for i, j in zip(
-                parameters, [float("nan")] * len(parameters))}
-        else:
-            for i in parameters:
-                if i not in injection.keys():
-                    injection[i] = float("nan")
-
-        if all(i for i in (
-               bilby_object.constraint_parameter_keys,
-               bilby_object.search_parameter_keys,
-               bilby_object.fixed_parameter_keys)):
-            for key in (
-                    bilby_object.constraint_parameter_keys
-                    + bilby_object.search_parameter_keys
-                    + bilby_object.fixed_parameter_keys):
-                if key not in latex_labels:
-                    label = bilby_object.get_latex_labels_from_parameter_keys(
-                        [key])[0]
-                    latex_labels[key] = label
-        try:
-            extra_kwargs = Bilby.grab_extra_kwargs(bilby_object)
-        except Exception:
-            extra_kwargs = {"sampler": {}, "meta_data": {}}
-        extra_kwargs["sampler"]["nsamples"] = len(samples)
-        try:
-            version = bilby_object.version
-        except Exception as e:
-            version = None
-        prior_samples = Bilby.grab_priors(bilby_object, nsamples=len(samples))
-        return {
-            "parameters": parameters,
-            "samples": samples,
-            "injection": injection,
-            "version": version,
-            "kwargs": extra_kwargs,
-            "prior": prior_samples
-        }
+        return read_bilby(path)
 
     def add_marginalized_parameters_from_config_file(self, config_file):
         """Search the configuration file and add the marginalized parameters

@@ -277,7 +277,7 @@ class Bilby(GWRead):
             version = None
         return {
             "parameters": parameters,
-            "samples": samples,
+            "samples": samples.tolist(),
             "injection": injection,
             "version": version,
             "kwargs": extra_kwargs,

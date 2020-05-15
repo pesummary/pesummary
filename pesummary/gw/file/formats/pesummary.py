@@ -23,6 +23,39 @@ import numpy as np
 import warnings
 
 
+def write_pesummary(*args, **kwargs):
+    """Write a set of samples to a pesummary file
+
+    Parameters
+    ----------
+    args: tuple
+        either a 2d tuple containing the parameters as first argument and samples
+        as the second argument, or a SamplesDict object containing the samples
+    outdir: str, optional
+        directory to write the dat file
+    label: str, optional
+        The label of the analysis. This is used in the filename if a filename
+        if not specified
+    config: dict, optional
+        configuration file that you wish to save to file
+    injection_data: dict, optional
+        dictionary containing the injection values that you wish to save to file keyed
+        by parameter
+    file_kwargs: dict, optional
+        any kwargs that you wish to save to file
+    mcmc_samples: Bool, optional
+        if True, the set of samples provided are from multiple MCMC chains
+    hdf5: Bool, optional
+        if True, save the pesummary file in hdf5 format
+    kwargs: dict
+        all other kwargs are passed to the pesummary.gw.file.meta_file._GWMetaFile class
+    """
+    from pesummary.core.file.formats.pesummary import write_pesummary as core_write
+    from pesummary.gw.file.meta_file import _GWMetaFile
+
+    return core_write(*args, cls=_GWMetaFile, **kwargs)
+
+
 class PESummary(GWRead, CorePESummary):
     """This class handles the existing posterior_samples.h5 file
 
@@ -224,6 +257,28 @@ class PESummary(GWRead, CorePESummary):
             det_list.append(detectors)
         return det_list
 
+    def write(self, labels="all", **kwargs):
+        """Save the data to file
+
+        Parameters
+        ----------
+        package: str, optional
+            package you wish to use when writing the data
+        kwargs: dict, optional
+            all additional kwargs are passed to the pesummary.io.write function
+        """
+        approximant = {
+            label: self.approximant[num] if self.approximant[num] != {} else
+            None for num, label in enumerate(self.labels)
+        }
+        properties = dict(
+            calibration=self.calibration, psd=self.psd, approximant=approximant,
+            skymap=self.skymap
+        )
+        CorePESummary.write(
+            self, package="gw", labels=labels, cls_properties=properties, **kwargs
+        )
+
     def generate_all_posterior_samples(self, **conversion_kwargs):
         if "no_conversion" in conversion_kwargs.keys():
             no_conversion = conversion_kwargs.pop("no_conversion")
@@ -284,57 +339,19 @@ class PESummary(GWRead, CorePESummary):
             objects[label] = bilby_object
         return objects
 
-    def to_lalinference(
-        self, outdir="./", labels=None, overwrite=False,
-        sampler="lalinference_nest", dat=False, filenames=None
-    ):
-        """Save a PESummary metafile as a lalinference hdf5 file
+    def to_lalinference(self, labels="all", **kwargs):
+        """Convert the samples stored in a PESummary metafile to a .dat file
 
         Parameters
         ----------
-        outdir: str
-            The directory where you would like to write the lalinference file
-        labels: list
-            The labels for the runs that you wish to write to file
-        overwrite: Bool
-            If True, an existing file of the same name will be overwritten
-        sampler: str
-            The sampler which you wish to store in the result file. This may
-            either be 'lalinference_nest' or 'lalinference_mcmc'
-        dat: Bool, optional
-            If True, a single or multiple LALInference posterior_samples.dat
-            files are created
-        filenames: dict, optional
-            Filenames you wish to use for each analysis. Key is the analysis label
-            and item is the file name. Default is "lalinference_{label}.{extension}"
+        labels: list, optional
+            optional list of analyses to save to file
+        kwargs: dict, optional
+            all additional kwargs are passed to the pesummary.io.write function
         """
-        from pesummary.gw.file.formats.lalinference import write_to_file
-        import h5py
-
-        if labels is not None:
-            for label in labels:
-                if label not in self.labels:
-                    raise ValueError(
-                        "The label '{}' does not exist in the metafile".format(
-                            label
-                        )
-                    )
-        else:
-            labels = self.labels
-        if filenames is not None:
-            if not all(label in filenames.keys() for label in labels):
-                raise ValueError(
-                    "Please provide a filename for all labels"
-                )
-        else:
-            filenames = {label: None for label in labels}
-
-        for num, label in enumerate(labels):
-            write_to_file(
-                self.samples_dict[label], outdir=outdir, label=label,
-                overwrite=overwrite, sampler=sampler, dat=dat,
-                filename=filenames[label]
-            )
+        return self.write(
+            labels=labels, file_format="lalinference", **kwargs
+        )
 
 
 class PESummaryDeprecated(PESummary):
