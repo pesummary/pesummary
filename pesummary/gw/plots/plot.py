@@ -460,7 +460,6 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
     from ligo.skymap.kde import Clustered2DSkyKDE, Clustered2Plus1DSkyKDE
     from astropy.time import Time
 
-    fig = plt.figure()
     if dist is not None and distance_map:
         pts = np.column_stack((ra, dec, dist))
         cls = Clustered2Plus1DSkyKDE
@@ -483,6 +482,30 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
     skymap, metadata = io.fits.read_sky_map(
         os.path.join(savedir, "%s_skymap.fits" % (label)), nest=None
     )
+    return _ligo_skymap_plot_from_array(
+        skymap, nsamples=len(ra), downsampled=downsampled
+    )
+
+
+def _ligo_skymap_plot_from_array(skymap, nsamples=None, downsampled=False):
+    """Generate a skymap with `ligo.skymap` based on an array of probabilities
+
+    Parameters
+    ----------
+    skymap: np.array
+        array of probabilities
+    nsamples: int, optional
+        number of samples used
+    downsampled: Bool, optional
+        If True, add a header to the skymap saying that this plot is downsampled
+    """
+    import healpy as hp
+    from ligo.skymap import plot, postprocess, io
+    from ligo.skymap.bayestar import rasterize
+    from ligo.skymap.kde import Clustered2DSkyKDE, Clustered2Plus1DSkyKDE
+    from astropy.time import Time
+
+    fig = plt.figure()
     nside = hp.npix2nside(len(skymap))
     deg2perpix = hp.nside2pixarea(nside, degrees=True)
     probperdeg2 = skymap / deg2perpix
@@ -490,7 +513,7 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
     ax = plt.axes(projection='astro hours mollweide')
     ax.grid(b=True)
     if downsampled:
-        ax.set_title("Downsampled to %s" % (len(ra)), fontdict={'fontsize': 11})
+        ax.set_title("Downsampled to %s" % (nsamples), fontdict={'fontsize': 11})
 
     vmax = probperdeg2.max()
     ax.imshow_hpx((probperdeg2, 'ICRS'), nested=True, vmin=0.,

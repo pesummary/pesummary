@@ -343,6 +343,12 @@ def _add_existing_data(namespace):
                     namespace.calibration[i] = namespace.existing_calibration[i]
                 else:
                     namespace.calibration[i] = {}
+        if hasattr(namespace, "skymap") and namespace.skymap is not None:
+            if i not in list(namespace.skymap.keys()):
+                if i in list(namespace.existing_skymap.keys()):
+                    namespace.skymap[i] = namespace.existing_skymap[i]
+                else:
+                    namespace.skymap[i] = None
         if hasattr(namespace, "maxL_samples"):
             if i not in list(namespace.maxL_samples.keys()):
                 namespace.maxL_samples[i] = {

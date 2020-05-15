@@ -551,6 +551,63 @@ class TestSummaryModify(Base):
         original_data.close()
         modified_data.close()
 
+    def test_store_skymap(self):
+        """Test that multiple skymaps are correctly stored
+        """
+        import astropy_healpix as ah
+        from ligo.skymap.io.fits import write_sky_map
+        import h5py
+
+        nside = 128
+        npix = ah.nside_to_npix(nside)
+        prob = np.random.random(npix)
+        prob /= sum(prob)
+
+        write_sky_map(
+            '.outdir/test.fits', prob,
+            objid='FOOBAR 12345',
+            gps_time=10494.3,
+            creator="test",
+            origin='LIGO Scientific Collaboration',
+        )
+        command_line = (
+            "summarymodify --webdir .outdir --samples .outdir/test.h5 "
+            "--store_skymap replace:.outdir/test.fits"
+        )
+        self.launch(command_line)
+        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        assert "skymap" in modified_data["replace"].keys()
+        np.testing.assert_almost_equal(
+            modified_data["replace"]["skymap"]["data"], prob
+        )
+        assert modified_data["replace"]["skymap"]["meta_data"]["gps_time"][0] == 10494.3
+        _creator = modified_data["replace"]["skymap"]["meta_data"]["creator"][0]
+        if isinstance(_creator, bytes):
+            _creator = _creator.decode("utf-8")
+        assert _creator == "test"
+
+        command_line = (
+            "summarymodify --webdir .outdir "
+            "--samples .outdir/modified_posterior_samples.h5 "
+            "--store_skymap replace:.outdir/test.fits --force_replace"
+        )
+        self.launch(command_line)
+        command_line = (
+            "summarypages --webdir .outdir/webpage --gw --no_conversion "
+            "--samples .outdir/modified_posterior_samples.h5"
+        )
+        self.launch(command_line)
+        data = h5py.File(".outdir/webpage/samples/posterior_samples.h5", "r")
+        np.testing.assert_almost_equal(data["replace"]["skymap"]["data"], prob)
+        data.close()
+        with pytest.raises(ValueError):
+            command_line = (
+                "summarymodify --webdir .outdir "
+                "--samples .outdir/modified_posterior_samples.h5 "
+                "--store_skymap replace:.outdir/test.fits"
+            )
+            self.launch(command_line)
+
     def test_modify(self):
         """Test the `summarymodify` script
         """

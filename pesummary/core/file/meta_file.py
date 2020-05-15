@@ -87,6 +87,7 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
     numeric_types = (float, int, np.number)
     string_types = (str, bytes)
     SOFTLINK = False
+
     if isinstance(value, array_types):
         import math
 
@@ -117,6 +118,8 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
         data = np.array([value], dtype="S")
     elif isinstance(value, numeric_types):
         data = np.array([value])
+    elif isinstance(value, (bool, np.bool_)):
+        data = np.array([str(value)], dtype="S")
     elif value == {}:
         data = np.array(np.array("NaN"))
     elif inspect.isclass(value) or inspect.isfunction(value):

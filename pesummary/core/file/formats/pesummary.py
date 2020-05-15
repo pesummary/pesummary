@@ -314,8 +314,10 @@ class PESummary(Read):
         for key in config_dict.keys():
             config[key] = config_dict[key]
 
-        with open("%s/%s" % (outdir, filename), "w") as configfile:
+        _filename = "%s/%s" % (outdir, filename)
+        with open(_filename, "w") as configfile:
             config.write(configfile)
+        return _filename
 
     def write_config_to_file(self, label, outdir="./"):
         """Write the config file stored as a dictionary to file
