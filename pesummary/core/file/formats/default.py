@@ -80,8 +80,9 @@ class Default(Read):
     def _grab_data_from_dat_file(path):
         """Grab the data stored in a .dat file
         """
-        parameters, samples = Read._grab_params_and_samples_from_dat_file(
-            path)
+        from pesummary.core.file.formats.dat import read_dat
+
+        parameters, samples = read_dat(path)
         injection = {i: float("nan") for i in parameters}
         return {
             "parameters": parameters, "samples": samples, "injection": injection
@@ -91,104 +92,21 @@ class Default(Read):
     def _grab_data_from_json_file(path):
         """Grab the data stored in a .json file
         """
-        parameters, samples = Read._grab_params_and_samples_from_json_file(
-            path
-        )
+        from pesummary.core.file.formats.json import read_json
+
+        parameters, samples = read_json(path)
         injection = {i: float("nan") for i in parameters}
         return {
             "parameters": parameters, "samples": samples, "injection": injection
         }
 
     @staticmethod
-    def _grab_data_from_hdf5_file(path, cls=None):
+    def _grab_data_from_hdf5_file(path, remove_params=[]):
         """Grab the data stored in an hdf5 file
         """
-        if cls is None:
-            cls = Default
-        try:
-            return getattr(cls, "_grab_data_with_deepdish")(path)
-        except Exception:
-            return getattr(cls, "_grab_data_with_h5py")(path)
+        from pesummary.core.file.formats.hdf5 import read_hdf5
 
-    @staticmethod
-    def _grab_data_with_deepdish(path, remove_params=None):
-        """Grab the data stored in a h5py file with `deepdish`.
-        """
-        import deepdish
-
-        f = deepdish.io.load(path)
-        path_to_results, = Read.paths_to_key("posterior", f)
-        if path_to_results[0] == []:
-            path_to_results, = Read.paths_to_key("posterior_samples", f)
-        path_to_results = path_to_results[0]
-        reduced_f, = Read.load_recursively(path_to_results, f)
-        parameters = [i for i in reduced_f.keys()]
-        if remove_params is not None:
-            for param in remove_params:
-                if param in parameters:
-                    parameters.remove(param)
-        data = np.zeros([len(reduced_f[parameters[0]]), len(parameters)])
-        for num, par in enumerate(parameters):
-            for key, i in enumerate(reduced_f[par]):
-                data[key][num] = float(np.real(i))
-        data = data.tolist()
-        for num, par in enumerate(parameters):
-            if par == "logL":
-                parameters[num] = "log_likelihood"
-        injection = {i: float("nan") for i in parameters}
-        return {
-            "parameters": parameters, "samples": data, "injection": injection
-        }
-
-    @staticmethod
-    def _grab_data_with_h5py(path, remove_params=None):
-        """Grab the data stored in a hdf5 file with `h5py`.
-        """
-        import h5py
-        import copy
-
-        path_to_samples = Read.guess_path_to_samples(path)
-
-        f = h5py.File(path, 'r')
-        c1 = isinstance(f[path_to_samples], h5py._hl.group.Group)
-        if c1 and "parameter_names" not in f[path_to_samples].keys():
-            original_parameters = [i for i in f[path_to_samples].keys()]
-            if remove_params is not None:
-                parameters = [
-                    i for i in original_parameters if i not in remove_params
-                ]
-            else:
-                parameters = copy.deepcopy(original_parameters)
-            n_samples = len(f[path_to_samples][parameters[0]])
-            samples = [
-                [float(f[path_to_samples][original_parameters.index(i)][num])
-                 for i in parameters] for num in range(n_samples)
-            ]
-            cond1 = "loglr" not in parameters or "log_likelihood" not in \
-                parameters
-            cond2 = "likelihood_stats" in f.keys() and "loglr" in \
-                f["likelihood_stats"]
-            if cond1 and cond2:
-                parameters.append("log_likelihood")
-                for num, i in enumerate(samples):
-                    samples[num].append(float(f["likelihood_stats/loglr"][num]))
-        elif c1:
-            original_parameters = [
-                i.decode("utf-8") if isinstance(i, bytes) else i for i in
-                f[path_to_samples]["parameter_names"]
-            ]
-            if remove_params is not None:
-                parameters = [
-                    i for i in original_parameters if i not in remove_params
-                ]
-            else:
-                parameters = copy.deepcopy(original_parameters)
-            samples = np.array(f[path_to_samples]["samples"])
-        elif isinstance(f[path_to_samples], h5py._hl.dataset.Dataset):
-            parameters = f[path_to_samples].dtype.names
-            samples = [[float(i[parameters.index(j)]) for j in parameters] for
-                       i in f[path_to_samples]]
-        f.close()
+        parameters, samples = read_hdf5(path, remove_params=remove_params)
         injection = {i: float("nan") for i in parameters}
         return {
             "parameters": parameters, "samples": samples, "injection": injection

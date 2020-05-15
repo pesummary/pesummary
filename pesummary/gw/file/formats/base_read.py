@@ -575,24 +575,12 @@ class GWRead(Read):
             if kwargs.get("return_kwargs", False):
                 self.extra_kwargs = data[2]
 
-    def to_lalinference(
-        self, outdir="./", label=None, filename=None, overwrite=False,
-        sampler="lalinference_nest", dat=False
-    ):
+    def to_lalinference(self, **kwargs):
         """Save the PESummary results file object to a lalinference hdf5 file
 
         Parameters
         ----------
-        outdir: str
-            path to the directory where you would like to save the results file
-        label: str
-            the label of the result file
-        dat: Bool
-            if True, a LALInference posterior_samples.dat file is created
+        kwargs: dict
+            all kwargs are passed to the pesummary.io.write.write function
         """
-        from pesummary.gw.file.formats.lalinference import write_to_file
-
-        write_to_file(
-            self.samples_dict, outdir=outdir, label=label, filename=filename,
-            overwrite=overwrite, sampler=sampler, dat=dat
-        )
+        return self.write(file_format="lalinference", package="gw", **kwargs)

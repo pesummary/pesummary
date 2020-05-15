@@ -35,6 +35,120 @@ deprecation_warning = (
 )
 
 
+def write_pesummary(
+    *args, cls=None, outdir="./", label=None, config=None, injection_data=None,
+    file_kwargs=None, file_versions=None, mcmc_samples=False, hdf5=True, **kwargs
+):
+    """Write a set of samples to a pesummary file
+
+    Parameters
+    ----------
+    args: tuple
+        either a 2d tuple containing the parameters as first argument and samples
+        as the second argument, or a SamplesDict object containing the samples
+    cls: class, optional
+        PESummary metafile class to use
+    outdir: str, optional
+        directory to write the dat file
+    label: str, optional
+        The label of the analysis. This is used in the filename if a filename
+        if not specified
+    config: dict, optional
+        configuration file that you wish to save to file
+    injection_data: dict, optional
+        dictionary containing the injection values that you wish to save to file keyed
+        by parameter
+    file_kwargs: dict, optional
+        any kwargs that you wish to save to file
+    file_versions: dict, optional
+        version of the data you wish to save to file
+    mcmc_samples: Bool, optional
+        if True, the set of samples provided are from multiple MCMC chains
+    hdf5: Bool, optional
+        if True, save the pesummary file in hdf5 format
+    kwargs: dict
+        all other kwargs are passed to the pesummary.core.file.meta_file._MetaFile class
+    """
+    from pesummary.utils.utils import _default_filename
+    from pesummary.core.file.meta_file import _MetaFile
+
+    if cls is None:
+        cls = _MetaFile
+
+    default_label = "dataset"
+    if label is None:
+        labels = [default_label]
+    elif not isinstance(label, str):
+        raise ValueError("label must be a string")
+    else:
+        labels = [label]
+
+    if isinstance(args[0], MultiAnalysisSamplesDict):
+        labels = args[0].keys()
+        samples = args[0]
+    elif isinstance(args[0], (SamplesDict, MCMCSamplesDict)):
+        _samples = args[0]
+        if isinstance(args[0], SamplesDict):
+            mcmc_samples = False
+        else:
+            mcmc_samples = True
+    else:
+        _parameters, _samples = args
+        _samples = np.array(_samples).T
+        if mcmc_samples:
+            _samples = MCMCSamplesDict(_parameters, _samples)
+        elif len(_samples.shape) != 2:
+            raise ValueError(
+                "samples must be a 2 dimensional array. If you wish to save more "
+                "than one analysis to file, please provide the samples as a "
+                "pesummary.utils.samples_dict.MultiAnalysisSamplesDict object. If "
+                "you wish to save mcmc chains to file, please add the "
+                "mcmc_samples=True argument"
+            )
+        else:
+            _samples = SamplesDict(_parameters, _samples)
+
+        try:
+            samples = {labels[0]: _samples}
+        except NameError:
+            pass
+
+    if file_kwargs is None:
+        file_kwargs = {label: {} for label in labels}
+    elif not all(label in file_kwargs.keys() for label in labels):
+        file_kwargs = {label: file_kwargs for label in labels}
+    if file_versions is None or isinstance(file_versions, str):
+        file_versions = {label: "No version information found" for label in labels}
+    elif not all(label in file_versions.keys() for label in labels):
+        file_versions = {label: file_versions for label in labels}
+
+    if injection_data is None:
+        injection_data = {
+            label: {
+                param: float("nan") for param in samples[label].keys()
+            } for label in samples.keys()
+        }
+    elif not all(label in injection_data.keys() for label in labels):
+        injection_data = {label: injection_data for label in labels}
+
+    if config is None:
+        config = [None for label in labels]
+    elif isinstance(config, dict):
+        config = [config]
+    obj = cls(
+        samples, labels, config, injection_data, file_versions, file_kwargs,
+        mcmc_samples=mcmc_samples, outdir=outdir, hdf5=hdf5, **kwargs
+    )
+    obj.make_dictionary()
+    if not hdf5:
+        obj.save_to_json(obj.data, obj.meta_file)
+    else:
+        obj.save_to_hdf5(
+            obj.data, obj.labels, obj.samples, obj.meta_file,
+            mcmc_samples=mcmc_samples
+        )
+
+
 class PESummary(Read):
     """This class handles the existing posterior_samples.h5 file
 
@@ -337,52 +451,119 @@ class PESummary(Read):
             filename="%s_config.ini" % (label)
         )
 
-    def to_bilby(self):
-        """Convert a PESummary metafile to a bilby results object
+    def _labels_for_write(self, labels):
+        """Check the input labels and raise an exception if the label does not exist
+        in the file
+
+        Parameters
+        ----------
+        labels: list
+            list of labels that you wish to check
         """
-        from bilby.core.result import Result
-        from bilby.core.prior import Prior, PriorDict
-        from pandas import DataFrame
+        if labels == "all":
+            labels = list(self.labels)
+        elif not all(label in self.labels for label in labels):
+            for label in labels:
+                if label not in self.labels:
+                    raise ValueError(
+                        "The label {} is not present in the file".format(label)
+                    )
+        return labels
 
-        objects = dict()
-        for num, label in enumerate(self.labels):
-            priors = PriorDict()
-            logger.warn(
-                "No prior information is known so setting it to a default")
-            priors.update({parameter: Prior() for parameter in self.parameters[num]})
-            posterior_data_frame = DataFrame(
-                self.samples[num], columns=self.parameters[num])
-            bilby_object = Result(
-                search_parameter_keys=self.parameters[num],
-                posterior=posterior_data_frame, label="pesummary_%s" % label,
-                samples=self.samples[num], priors=priors)
-            objects[label] = bilby_object
-        return objects
+    @staticmethod
+    def write(
+        self, package="core", labels="all", cls_properties=None, filenames=None,
+        _return=False, **kwargs
+    ):
+        """Save the data to file
 
-    def to_dat(self, label="all", outdir="./"):
+        Parameters
+        ----------
+        package: str, optional
+            package you wish to use when writing the data
+        labels: list, optional
+            optional list of analyses to save to file
+        cls_properties: dict, optional
+            optional dictionary of class properties you wish to pass as kwargs to the
+            write function. Keys are the properties name and value is the property
+        filenames: dict, optional
+            dictionary of filenames keyed by analysis label
+        kwargs: dict, optional
+            all additional kwargs are passed to the pesummary.io.write function
+        """
+        from pesummary.io import write
+
+        if kwargs.get("filename", None) is not None:
+            raise ValueError(
+                "filename is not a valid kwarg for the PESummary class. If you wish "
+                "to provide a filename, please provide one for each analysis in the "
+                "form of a dictionary with kwargs 'filenames'"
+            )
+        labels = self._labels_for_write(labels)
+        _files = {}
+        for num, label in enumerate(labels):
+            ind = self.labels.index(label)
+            if cls_properties is not None:
+                for prop in cls_properties:
+                    try:
+                        kwargs[prop] = {label: cls_properties[prop][label]}
+                    except (KeyError, TypeError):
+                        try:
+                            kwargs[prop] = cls_properties[prop][ind]
+                        except (KeyError, TypeError):
+                            kwargs[prop] = None
+            priors = getattr(self, "priors", {label: None})
+            if not len(priors):
+                priors = {}
+            elif label not in priors.keys():
+                priors = {}
+            else:
+                priors = priors[label]
+            if filenames is None:
+                filename = None
+            elif isinstance(filenames, dict):
+                filename = filenames[label]
+            else:
+                filename = filenames
+            _files[label] = write(
+                self.parameters[ind], self.samples[ind], package=package,
+                file_versions=self.input_version[ind], label=label,
+                file_kwargs=self.extra_kwargs[ind], priors=priors,
+                config=getattr(self, "config", {label: None})[label],
+                injection_data=getattr(self, "injection_dict", {label: None}),
+                filename=filename, **kwargs
+            )
+        if _return:
+            return _files
+
+    def to_bilby(self, labels="all", **kwargs):
+        """Convert a PESummary metafile to a bilby results object
+
+        Parameters
+        ----------
+        labels: list, optional
+            optional list of analyses to save to file
+        kwargs: dict, optional
+            all additional kwargs are passed to the pesummary.io.write function
+        """
+        return self.write(
+            self, labels=labels, package="core", file_format="bilby",
+            _return=True, **kwargs
+        )
+
+    def to_dat(self, labels="all", **kwargs):
         """Convert the samples stored in a PESummary metafile to a .dat file
 
         Parameters
         ----------
-        label: str, optional
-            the label of the analysis that you wish to save. By default, all
-            samples in the metafile will be saved to seperate files
-        outdir: str, optional
-            path indicating where you would like to configuration file to be
-            saved. Default is current working directory
+        labels: list, optional
+            optional list of analyses to save to file
+        kwargs: dict, optional
+            all additional kwargs are passed to the pesummary.io.write function
         """
-        if label != "all" and label not in list(self.labels) and label is not None:
-            raise ValueError("The label %s does not exist." % label)
-        if label == "all" or label is None:
-            labels = list(self.labels)
-        else:
-            labels = [label]
-        for num, label in enumerate(labels):
-            ind = self.labels.index(label)
-            np.savetxt(
-                "%s/pesummary_%s.dat" % (outdir, label), self.samples[ind],
-                delimiter="\t", header="\t".join(self.parameters[ind]),
-                comments='')
+        return self.write(
+            self, labels=labels, package="core", file_format="dat", **kwargs
+        )
 
     def to_latex_table(self, labels="all", parameter_dict=None, save_to_file=None):
         """Make a latex table displaying the data in the result file.

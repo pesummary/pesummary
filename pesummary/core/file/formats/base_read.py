@@ -390,35 +390,34 @@ class Read(object):
         """
         return function(injection_file)
 
-    def to_dat(self, outdir="./", label=None):
+    def write(self, package="core", **kwargs):
+        """Save the data to file
+
+        Parameters
+        ----------
+        package: str, optional
+            package you wish to use when writing the data
+        kwargs: dict, optional
+            all additional kwargs are passed to the pesummary.io.write function
+        """
+        from pesummary.io import write
+
+        return write(
+            self.parameters, self.samples, package=package,
+            file_versions=self.input_version, file_kwargs=self.extra_kwargs,
+            **kwargs
+        )
+
+    def to_dat(self, **kwargs):
         """Save the PESummary results file object to a dat file
 
         Parameters
         ----------
-        outdir: str
-            path to the directory where you would like to save the results file
-        label: str
-            the label of the result file
+        kwargs: dict
+            all kwargs passed to the pesummary.core.file.formats.dat.write_dat
+            function
         """
-        import os
-
-        if not label:
-            from time import time
-
-            label = round(time())
-
-        if os.path.isfile("%s/pesummary_%s.dat" % (outdir, label)):
-            raise Exception("The file '%s/pesummary_%s.dat' already exists." % (
-                outdir, label))
-
-        try:
-            np.savetxt(
-                "%s/pesummary_%s.dat" % (outdir, label), self.samples,
-                delimiter="\t", header="\t".join(self.parameters),
-                comments='')
-        except Exception:
-            raise Exception("Please make sure you have write permission in "
-                            "%s" % (outdir))
+        return self.write(file_format="dat", **kwargs)
 
     @staticmethod
     def latex_table(samples, parameter_dict=None, labels=None):

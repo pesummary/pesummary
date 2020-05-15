@@ -810,5 +810,59 @@ def get_matplotlib_backend(parallel=False):
     return backend
 
 
+def _default_filename(default_filename, label=None):
+    """Return a default filename
+
+    Parameters
+    ----------
+    default_filename: str, optional
+        the default filename to use if a filename is not provided. default_filename
+        must be a formattable string with one empty argument for a label
+    label: str, optional
+        The label of the analysis. This is used in the filename
+    """
+    if not label:
+        from time import time
+
+        filename = default_filename.format(round(time()))
+    else:
+        filename = default_filename.format(label)
+    return filename
+
+
+def check_filename(
+    default_filename="pesummary_{}.dat", outdir="./", label=None, filename=None,
+    overwrite=False
+):
+    """Check to see if a file exists. If no filename is provided, a default
+    filename is checked
+
+    Parameters
+    ----------
+    default_filename: str, optional
+        the default filename to use if a filename is not provided. default_filename
+        must be a formattable string with one empty argument for a label
+    outdir: str, optional
+        directory to write the dat file
+    label: str, optional
+        The label of the analysis. This is used in the filename if a filename
+        if not specified
+    filename: str, optional
+        The name of the file that you wish to write
+    overwrite: Bool, optional
+        If True, an existing file of the same name will be overwritten
+    """
+    if not filename:
+        filename = _default_filename(default_filename, label=label)
+    _file = os.path.join(outdir, filename)
+    if os.path.isfile(_file) and not overwrite:
+        raise FileExistsError(
+            "The file '{}' already exists in the directory {}".format(
+                filename, outdir
+            )
+        )
+    return _file
+
+
 setup_logger()
 logger = logging.getLogger('PESummary')

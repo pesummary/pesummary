@@ -41,7 +41,8 @@ class _GWMetaFile(_MetaFile):
         existing_config=None, existing_injection=None,
         existing_metadata=None, priors={}, outdir=None, existing=None,
         existing_priors={}, existing_metafile=None, package_information={},
-        mcmc_samples=False, skymap=None, existing_skymap=None
+        mcmc_samples=False, skymap=None, existing_skymap=None,
+        filename=None
     ):
         self.calibration = calibration
         self.psds = psd
@@ -61,8 +62,12 @@ class _GWMetaFile(_MetaFile):
             existing_config=existing_config, existing_priors=existing_priors,
             outdir=outdir, package_information=package_information,
             existing=existing, existing_metafile=existing_metafile,
-            mcmc_samples=mcmc_samples
+            mcmc_samples=mcmc_samples, filename=filename
         )
+        if self.calibration is None:
+            self.calibration = {label: {} for label in self.labels}
+        if self.psds is None:
+            self.psds = {label: {} for label in self.labels}
 
     def _make_dictionary(self):
         """Generate a single dictionary which stores all information
