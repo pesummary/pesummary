@@ -41,7 +41,7 @@ class _GWMetaFile(_MetaFile):
         existing_config=None, existing_injection=None,
         existing_metadata=None, priors={}, outdir=None, existing=None,
         existing_priors={}, existing_metafile=None, package_information={},
-        mcmc_samples=False
+        mcmc_samples=False, skymap=None, existing_skymap=None
     ):
         self.calibration = calibration
         self.psds = psd
@@ -49,6 +49,8 @@ class _GWMetaFile(_MetaFile):
         self.existing_psd = existing_psd
         self.existing_calibration = existing_calibration
         self.existing_approximant = existing_approximant
+        self.skymap = skymap
+        self.existing_skymap = existing_skymap
         super(_GWMetaFile, self).__init__(
             samples, labels, config, injection_data, file_versions,
             file_kwargs, webdir=webdir, result_files=result_files, hdf5=hdf5,
@@ -86,6 +88,15 @@ class _GWMetaFile(_MetaFile):
                 self.data[label]["approximant"] = self.approximant[label]
             else:
                 self.data[label]["approximant"] = {}
+            if self.skymap is not None and len(self.skymap):
+                if self.skymap[label] is not None:
+                    self.data[label]["skymap"] = {
+                        "data": self.skymap[label],
+                        "meta_data": {
+                            key: item for key, item in
+                            self.skymap[label].meta_data.items()
+                        }
+                    }
 
     @staticmethod
     def save_to_hdf5(
@@ -147,7 +158,8 @@ class GWMetaFile(GWPostProcessing):
             existing_priors=existing_priors, existing=existing,
             existing_metafile=existing_metafile, approximant=self.approximant,
             package_information=self.package_information,
-            mcmc_samples=self.mcmc_samples
+            mcmc_samples=self.mcmc_samples, skymap=self.skymap,
+            existing_skymap=self.existing_skymap
         )
         meta_file.make_dictionary()
         if not self.hdf5:

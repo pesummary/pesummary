@@ -65,7 +65,11 @@ class _GWInput(_Input):
                         ifo: Calibration(f.calibration[i][ifo]) for ifo in
                         f.calibration[i].keys()
                     }
-
+        skymap = {i: None for i in labels}
+        if hasattr(f, "skymap") and f.skymap is not None and f.skymap != {}:
+            for i in labels:
+                if len(f.skymap[i]):
+                    skymap[i] = f.skymap[i]
         data.update(
             {
                 "approximant": {
@@ -74,7 +78,8 @@ class _GWInput(_Input):
                     )
                 },
                 "psd": psd,
-                "calibration": calibration
+                "calibration": calibration,
+                "skymap": skymap
             }
         )
         return data
@@ -252,6 +257,15 @@ class _GWInput(_Input):
             detector = detectors
         logger.debug("The detector network is %s" % (detector))
         self._detectors = detector
+
+    @property
+    def skymap(self):
+        return self._skymap
+
+    @skymap.setter
+    def skymap(self, skymap):
+        if not hasattr(self, "_skymap"):
+            self._skymap = {i: None for i in self.labels}
 
     @property
     def calibration(self):
@@ -773,13 +787,16 @@ class GWInput(_GWInput, Input):
             self.existing_approximant = self.existing_data["approximant"]
             self.existing_psd = self.existing_data["psd"]
             self.existing_calibration = self.existing_data["calibration"]
+            self.existing_skymap = self.existing_data["skymap"]
         else:
             self.existing_approximant = None
             self.existing_psd = None
             self.existing_calibration = None
+            self.existing_skymap = None
         self.approximant = self.opts.approximant
         self.gracedb = self.opts.gracedb
         self.detectors = None
+        self.skymap = None
         self.calibration = self.opts.calibration
         self.psd = self.opts.psd
         self.nsamples_for_skymap = self.opts.nsamples_for_skymap
@@ -940,14 +957,17 @@ class GWPostProcessing(PostProcessing):
             self.existing_approximant = self.inputs.existing_approximant
             self.existing_psd = self.inputs.existing_psd
             self.existing_calibration = self.inputs.existing_calibration
+            self.existing_skymap = self.inputs.existing_skymap
         else:
             self.existing_approximant = None
             self.existing_psd = None
             self.existing_calibration = None
+            self.existing_skymap = None
         self.publication_kwargs = self.inputs.publication_kwargs
         self.approximant = self.inputs.approximant
         self.gracedb = self.inputs.gracedb
         self.detectors = self.inputs.detectors
+        self.skymap = self.inputs.skymap
         self.calibration = self.inputs.calibration
         self.psd = self.inputs.psd
         self.nsamples_for_skymap = self.inputs.nsamples_for_skymap

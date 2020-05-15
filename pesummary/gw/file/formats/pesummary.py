@@ -56,6 +56,9 @@ class PESummary(GWRead, CorePESummary):
     calibration: dict
         dictionary containing the calibration posterior samples keyed by
         the analysis label
+    skymap: dict
+        dictionary containing the skymap probabilities keyed by the analysis
+        label
     prior: dict
         dictionary containing the prior samples for each analysis
     weights: dict
@@ -159,6 +162,16 @@ class PESummary(GWRead, CorePESummary):
                 }
             except (KeyError, AttributeError):
                 pass
+        if "skymap" in self.data.keys():
+            from pesummary.gw.file.skymap import SkyMap
+
+            try:
+                self.skymap = {
+                    label: SkyMap(skymap["data"], skymap["meta_data"])
+                    for label, skymap in self.data["skymap"].items()
+                }
+            except (KeyError, AttributeError):
+                self.skymap = self.data["skymap"]
 
     @staticmethod
     def _grab_data_from_dictionary(dictionary):
@@ -169,7 +182,7 @@ class PESummary(GWRead, CorePESummary):
         )
 
         approx_list = list()
-        psd_dict, cal_dict = {}, {}
+        psd_dict, cal_dict, skymap_dict = {}, {}, {}
         psd, cal = None, None
         for num, label in enumerate(stored_data["labels"]):
             data, = GWRead.load_recursively(label, dictionary)
@@ -177,6 +190,8 @@ class PESummary(GWRead, CorePESummary):
                 psd_dict[label] = data["psds"]
             if "calibration_envelope" in data.keys():
                 cal_dict[label] = data["calibration_envelope"]
+            if "skymap" in data.keys():
+                skymap_dict[label] = data["skymap"]
             if "approximant" in data.keys():
                 approx_list.append(data["approximant"])
             else:
@@ -184,6 +199,7 @@ class PESummary(GWRead, CorePESummary):
         stored_data["approximant"] = approx_list
         stored_data["calibration"] = cal_dict
         stored_data["psd"] = psd_dict
+        stored_data["skymap"] = skymap_dict
         return stored_data
 
     @property

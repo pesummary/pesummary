@@ -16,7 +16,7 @@
 import importlib
 
 
-def read(path, package="gw", file_format=None):
+def read(path, package="gw", file_format=None, skymap=False):
     """Read in a results file.
 
     Parameters
@@ -28,6 +28,12 @@ def read(path, package="gw", file_format=None):
     file_format: str
         the file format you wish to use. Default None. If None, the read
         function loops through all possible options
+    skymap: Bool, optional
+        if True, path is the path to a fits file generated with `ligo.skymap`
     """
+    if skymap:
+        from pesummary.gw.file.skymap import SkyMap
+
+        return SkyMap.from_fits(path)
     module = importlib.import_module("pesummary.{}.file.read".format(package))
     return getattr(module, "read")(path, file_format=file_format)

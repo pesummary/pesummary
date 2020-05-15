@@ -54,7 +54,8 @@ class _PlotGeneration(_BasePlotGeneration):
         existing_approximant=None, existing_psd=None, existing_calibration=None,
         existing_weights=None, weights=None, disable_comparison=False,
         linestyles=None, disable_interactive=False, disable_corner=False,
-        publication_kwargs={}, multi_process=1, mcmc_samples=False
+        publication_kwargs={}, multi_process=1, mcmc_samples=False,
+        skymap=None, existing_skymap=None
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -79,6 +80,10 @@ class _PlotGeneration(_BasePlotGeneration):
         self.detectors = detectors
         self.maxL_samples = maxL_samples
         self.gwdata = gwdata
+        if skymap is None:
+            skymap = {label: None for label in self.labels}
+        self.skymap = skymap
+        self.existing_skymap = skymap
         self.calibration = calibration
         self.existing_calibration = existing_calibration
         self.psd = psd
@@ -261,7 +266,7 @@ class _PlotGeneration(_BasePlotGeneration):
             self.weights[label]
         )
 
-        if SKYMAP and not self.no_ligo_skymap:
+        if SKYMAP and not self.no_ligo_skymap and self.skymap[label] is None:
             from pesummary.utils.utils import RedirectLogger
 
             logger.info("Launching subprocess to generate skymap plot with "
@@ -279,6 +284,8 @@ class _PlotGeneration(_BasePlotGeneration):
                 process.start()
                 PID = process.pid
             self._ligo_skymap_PID[label] = PID
+        elif SKYMAP and not self.no_ligo_skymap:
+            self._ligo_skymap_array_plot(self.savedir, self.skymap[label], label)
 
     @staticmethod
     @no_latex_plot
@@ -341,6 +348,24 @@ class _PlotGeneration(_BasePlotGeneration):
         _PlotGeneration.save(
             fig, os.path.join(savedir, "{}_skymap".format(label))
         )
+
+    @staticmethod
+    @no_latex_plot
+    def _ligo_skymap_array_plot(savedir, skymap, label):
+        """Generate a skymap based on skymap probability array already generated with
+        `ligo.skymap`
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        skymap: np.ndarray
+            array of skymap probabilities
+        label: str
+            the label corresponding to the results file
+        """
+        fig = gw._ligo_skymap_plot_from_array(skymap)
+        _PlotGeneration.save(fig, os.path.join(savedir, "{}_skymap".format(label)))
 
     def waveform_fd_plot(self, label):
         """Generate a frequency domain waveform plot for a given result file

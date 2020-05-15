@@ -760,7 +760,7 @@ class page(Base):
             for i in sidebar:
                 self.add_content("<input type='checkbox' name='type' "
                                  "value='{}' id='{}' style='text-align: center; margin: 0 5px 0;'"
-                                 ">{}<br>\n".format(i, i, i, i), indent=2)
+                                 ">{}<br>\n".format(i, i, i), indent=2)
         self.add_content("</div>")
         self.add_content("<div class='row justify-content-center'>")
         self.add_content(

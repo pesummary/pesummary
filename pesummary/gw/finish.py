@@ -73,12 +73,15 @@ class GWFinishingTouches(FinishingTouches):
                 ), shell=True
             )
             ess.wait()
-            self.save_skymap_data_to_metafile(
+            self.save_skymap_stats_to_metafile(
                 label, os.path.join(samples_dir, "{}_skymap_stats.dat".format(label))
             )
+            self.save_skymap_data_to_metafile(
+                label, os.path.join(samples_dir, "{}_skymap.fits".format(label))
+            )
 
-    def save_skymap_data_to_metafile(self, label, filename):
-        """Save the skymap data to the PESummary metafile
+    def save_skymap_stats_to_metafile(self, label, filename):
+        """Save the skymap statistics to the PESummary metafile
 
         Parameters
         ----------
@@ -95,6 +98,27 @@ class GWFinishingTouches(FinishingTouches):
             "--delimiter / --kwargs {} --overwrite".format(
                 self.webdir, os.path.join(self.webdir, "samples", "posterior_samples.h5"),
                 " ".join(["{}/{}:{}".format(label, key, skymap_data[key]) for key in keys])
+            )
+        )
+        ess = subprocess.Popen(command_line, shell=True)
+        ess.wait()
+
+    def save_skymap_data_to_metafile(self, label, filename):
+        """Save the skymap data to the PESummary metafile
+
+        Parameters
+        ----------
+        label: str
+            the label of the analysis that the skymap corresponds to
+        filename: str
+            name of the fits file that contains the skymap for label
+        """
+        logger.info("Adding ligo.skymap data to the metafile")
+        command_line = (
+            "summarymodify --webdir {} --samples {} "
+            "--store_skymap {}:{} --overwrite".format(
+                self.webdir, os.path.join(self.webdir, "samples", "posterior_samples.h5"),
+                label, filename
             )
         )
         ess = subprocess.Popen(command_line, shell=True)

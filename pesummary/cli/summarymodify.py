@@ -100,6 +100,21 @@ class _Input(_GWInput):
             )
 
     @property
+    def store_skymap(self):
+        return self._store_skymap
+
+    @store_skymap.setter
+    def store_skymap(self, store_skymap):
+        self._store_skymap = store_skymap
+        if store_skymap is not None and isinstance(store_skymap, dict):
+            self._store_skymap = store_skymap
+        elif store_skymap is not None:
+            raise InputError(
+                "Please provide the label and path to skymap with '--store_skymap "
+                "label:path/to/skymap.fits`"
+            )
+
+    @property
     def samples(self):
         return self._samples
 
@@ -191,8 +206,10 @@ class Input(_Input):
         self.kwargs = self.opts.kwargs
         self.replace_posterior = self.opts.replace_posterior
         self.remove_posterior = self.opts.remove_posterior
+        self.store_skymap = self.opts.store_skymap
         self.hdf5 = not self.opts.save_to_json
         self.overwrite = self.opts.overwrite
+        self.force_replace = self.opts.force_replace
         self.data = None
 
 
@@ -249,6 +266,17 @@ def command_line():
         help=("Remove a posterior distribution for a given label. Syntax: "
               "--remove_posterior label:a where a is the posterior you wish to remove"),
         default=None
+    )
+    parser.add_argument(
+        "--store_skymap", nargs='+', action=DelimiterSplitAction,
+        help=("Store the contents of a fits file in the metafile. Syntax: "
+              "--store_skymap label:path/to/skymap.fits"),
+        default=None
+    )
+    parser.add_argument(
+        "--force_replace", action="store_true", default=False,
+        help=("Override the ValueError raised if the data is already stored in the "
+              "result file")
     )
     return parser
 
@@ -403,6 +431,44 @@ def _remove_posterior(data, kwargs=None):
     return data
 
 
+def _store_skymap(data, kwargs=None, replace=False):
+    """Store a skymap in the metafile
+
+    Parameters
+    ----------
+    data: dict
+        dictionary containing the data
+    kwargs: dict
+        dictionary of kwargs showing the label as key and posterior as the item
+    replace: dict
+        replace a skymap already stored in the result file
+    """
+    from pesummary.io import read
+
+    message = "Unable to find label '{}' in the metafile. Unable to store skymap"
+    for label, path in kwargs.items():
+        check = _check_label(data, label, message.format(label))
+        if check:
+            skymap = read(path, skymap=True)
+            if "skymap" not in data[label].keys():
+                data[label]["skymap"] = {}
+            if "meta_data" not in data[label]["skymap"].keys():
+                data[label]["skymap"]["meta_data"] = {}
+            if "data" in data[label]["skymap"].keys() and not replace:
+                raise ValueError(
+                    "Skymap already found in result file for {}. If you wish to replace "
+                    "the skymap, add the command line argument '--force_replace".format(
+                        label
+                    )
+                )
+            elif "data" in data[label]["skymap"].keys():
+                logger.warn("Replacing skymap data for {}".format(label))
+            data[label]["skymap"]["data"] = skymap
+            for key in skymap.meta_data:
+                data[label]["skymap"]["meta_data"][key] = skymap.meta_data[key]
+    return data
+
+
 def modify(data, function, **kwargs):
     """Modify the data according to a given function
 
@@ -420,6 +486,7 @@ def modify(data, function, **kwargs):
         "kwargs": _modify_kwargs,
         "add_posterior": _modify_posterior,
         "rm_posterior": _remove_posterior,
+        "skymap": _store_skymap,
     }
     return func_map[function](data, **kwargs)
 
@@ -447,6 +514,10 @@ def main(args=None):
         modified_data = modify(args.data, "add_posterior", kwargs=args.replace_posterior)
     if args.remove_posterior is not None:
         modified_data = modify(args.data, "rm_posterior", kwargs=args.remove_posterior)
+    if args.store_skymap is not None:
+        modified_data = modify(
+            args.data, "skymap", kwargs=args.store_skymap, replace=args.force_replace
+        )
     logger.info(
         "Saving the modified data to '{}'".format(meta_file)
     )
