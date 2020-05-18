@@ -29,9 +29,9 @@ import h5py
 
 from tqdm import tqdm as Basetqdm
 
-CACHE_DIR = os.path.expanduser(
-    os.path.join("~", ".cache", "pesummary", "style")
-)
+CACHE_DIR = os.path.expanduser(os.path.join("~", ".cache", "pesummary"))
+STYLE_CACHE = os.path.join(CACHE_DIR, "style")
+LOG_CACHE = os.path.join(CACHE_DIR, "log")
 
 
 class _tqdm(Basetqdm):
@@ -256,25 +256,31 @@ def setup_logger():
     """
     import tempfile
 
-    if not os.path.isdir(".tmp/pesummary"):
-        os.makedirs(".tmp/pesummary")
-    dirpath = tempfile.mkdtemp(dir=".tmp/pesummary")
-    level = 'INFO'
-    if "-v" in sys.argv or "--verbose" in sys.argv:
-        level = 'DEBUG'
+    def get_console_handler(stream_level="INFO"):
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(level=getattr(logging, stream_level))
+        console_handler.setFormatter(FORMATTER)
+        return console_handler
 
-    FORMAT = _logger_format()
+    def get_file_handler(log_file):
+        file_handler = logging.FileHandler(log_file, mode='w')
+        file_handler.setLevel(level=logging.DEBUG)
+        file_handler.setFormatter(FORMATTER)
+        return file_handler
+
+    make_dir(LOG_CACHE)
+    dirpath = tempfile.mkdtemp(dir=LOG_CACHE)
+    stream_level = 'INFO'
+    if "-v" in sys.argv or "--verbose" in sys.argv:
+        stream_level = 'DEBUG'
+
+    FORMATTER = logging.Formatter(_logger_format(), datefmt='%Y-%m-%d  %H:%M:%S')
+    LOG_FILE = '%s/pesummary.log' % (dirpath)
     logger = logging.getLogger('PESummary')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('%s/pesummary.log' % (dirpath), mode='w')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel('INFO')
-    formatter = logging.Formatter(FORMAT, datefmt='%Y-%m-%d  %H:%M:%S')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+    logger.setLevel(level=logging.DEBUG)
+    logger.addHandler(get_console_handler(stream_level=stream_level))
+    logger.addHandler(get_file_handler(LOG_FILE))
+    return logger, LOG_FILE
 
 
 def remove_tmp_directories():
@@ -767,16 +773,16 @@ def make_cache_style_file(style_file):
     style_file: str
         path to the style file that you wish to use when plotting
     """
-    make_dir(CACHE_DIR)
+    make_dir(STYLE_CACHE)
     shutil.copyfile(
-        style_file, os.path.join(CACHE_DIR, "matplotlib_rcparams.sty")
+        style_file, os.path.join(STYLE_CACHE, "matplotlib_rcparams.sty")
     )
 
 
 def get_matplotlib_style_file():
     """Return the path to the matplotlib style file that you wish to use
     """
-    style_file = os.path.join(CACHE_DIR, "matplotlib_rcparams.sty")
+    style_file = os.path.join(STYLE_CACHE, "matplotlib_rcparams.sty")
     if not os.path.isfile(style_file):
         from pesummary import conf
 
@@ -864,5 +870,5 @@ def check_filename(
     return _file
 
 
-setup_logger()
+_, LOG_FILE = setup_logger()
 logger = logging.getLogger('PESummary')
