@@ -26,7 +26,7 @@ import numpy as np
 
 import pesummary
 from pesummary import conf
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, LOG_FILE
 from pesummary.core.webpage import webpage
 
 
@@ -1010,13 +1010,12 @@ class _WebpageGeneration(object):
         )
         html_file.make_banner(approximant="Logging", key="Logging")
         path = pesummary.__file__[:-12]
-        log_file = glob(".tmp/pesummary/*/pesummary.log")
-        if len(log_file) == 0:
+        log_file = LOG_FILE
+        if not os.path.isfile(log_file):
             log_file = ".tmp/pesummary/no_log_information.log"
             with open(log_file, "w") as f:
                 f.writelines(["No log information stored"])
-        else:
-            log_file = log_file[0]
+
         with open(log_file, 'r') as f:
             contents = f.read()
         html_file.make_container()
