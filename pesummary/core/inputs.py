@@ -1412,7 +1412,6 @@ class Input(_Input):
         if True, interactive plots are not produced
     """
     def __init__(self, opts, ignore_copy=False, extra_options=None):
-        logger.info("Command line arguments: %s" % (opts))
         self.opts = opts
         self.style_file = self.opts.style_file
         self.result_files = self.opts.samples

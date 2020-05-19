@@ -193,6 +193,7 @@ def add_dynamic_argparse(
         )
     args, unknown = parser.parse_known_args(args=command_line)
     existing_namespace.__dict__.update(vars(args))
+    return args, unknown
 
 
 def add_dynamic_PSD_to_namespace(existing_namespace, command_line=None):
@@ -205,7 +206,7 @@ def add_dynamic_PSD_to_namespace(existing_namespace, command_line=None):
     command_line: str, optional
         The command line which you are passing. Default None
     """
-    add_dynamic_argparse(
+    return add_dynamic_argparse(
         existing_namespace, "--*_psd", command_line=command_line
     )
 
@@ -220,7 +221,7 @@ def add_dynamic_calibration_to_namespace(existing_namespace, command_line=None):
     command_line: str, optional
         The command line which you are passing. Default None
     """
-    add_dynamic_argparse(
+    return add_dynamic_argparse(
         existing_namespace, "--*_calibration", example="--{}_calibration",
         command_line=command_line
     )
