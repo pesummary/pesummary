@@ -192,18 +192,11 @@ class _PublicGWWebpageGeneration(GWPostProcessing):
 def main(args=None):
     """Top level interface for `summarypages`
     """
-    from pesummary.core.command_line import command_line
-    from pesummary.gw.command_line import (
-        insert_gwspecific_option_group, add_dynamic_PSD_to_namespace,
-        add_dynamic_calibration_to_namespace
-    )
+    from pesummary.gw.parser import parser
     from pesummary.utils import functions
 
-    parser = command_line()
-    insert_gwspecific_option_group(parser)
-    opts, unknown = parser.parse_known_args(args=args)
-    add_dynamic_PSD_to_namespace(opts)
-    add_dynamic_calibration_to_namespace(opts)
+    _parser = parser()
+    opts, unknown = _parser.parse_known_args(args=args)
     func = functions(opts)
     args = func["input"](opts)
     from .summaryplots import PlotGeneration

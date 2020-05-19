@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 # Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -15,23 +13,28 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.gw.parser import parser
-from pesummary.utils import functions
+from pesummary.core.parser import parser as core_parser
+from pesummary.gw.command_line import (
+    insert_gwspecific_option_group, add_dynamic_PSD_to_namespace,
+    add_dynamic_calibration_to_namespace
+)
 
 
-__doc__ = """This executable is used to combine multiple result files into a
-single PESummary metafile"""
+class parser(core_parser):
+    """Class to handle parsing command line arguments
 
-
-def main(args=None):
-    """Top level interface for `summarycombine`
+    Attributes
+    ----------
+    dynamic_argparse: list
+        list of dynamic argparse methods
     """
-    _parser = parser()
-    opts, unknown = _parser.parse_known_args(args=args)
-    func = functions(opts)
-    args = func["input"](opts)
-    func["MetaFile"](args)
+    def __init__(self):
+        super(parser, self).__init__()
+        insert_gwspecific_option_group(self._parser)
 
-
-if __name__ == "__main__":
-    main()
+    @property
+    def dynamic_argparse(self):
+        return [
+            add_dynamic_PSD_to_namespace,
+            add_dynamic_calibration_to_namespace
+        ]
