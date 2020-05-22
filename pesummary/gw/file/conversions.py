@@ -53,7 +53,6 @@ DEFAULT_SEOBFLAGS = {
 }
 
 
-@np.vectorize
 @array_input
 def _z_from_dL_exact(luminosity_distance, cosmology):
     """Return the redshift given samples for the luminosity distance
@@ -63,19 +62,28 @@ def _z_from_dL_exact(luminosity_distance, cosmology):
     )
 
 
-def z_from_dL_exact(luminosity_distance, cosmology="Planck15"):
+def z_from_dL_exact(luminosity_distance, cosmology="Planck15", multi_process=1):
     """Return the redshift given samples for the luminosity distance
     """
     from pesummary.gw.cosmology import get_cosmology
+    import multiprocessing
 
     logger.warning("Estimating the exact redshift for every luminosity "
                    "distance. This may take a few minutes.")
     cosmo = get_cosmology(cosmology)
-    return _z_from_dL_exact(luminosity_distance, cosmo)
+    args = np.array(
+        [luminosity_distance, [cosmo] * len(luminosity_distance)],
+        dtype=object
+    ).T
+    with multiprocessing.Pool(multi_process) as pool:
+        z = pool.starmap(_z_from_dL_exact, args)
+    return z
 
 
 @array_input
-def z_from_dL_approx(luminosity_distance, N=100, cosmology="Planck15"):
+def z_from_dL_approx(
+    luminosity_distance, N=100, cosmology="Planck15", **kwargs
+):
     """Return the approximate redshift given samples for the luminosity
     distance. This technique uses interpolation to estimate the redshift
     """
@@ -1665,7 +1673,9 @@ class _Conversion(object):
     def _z_from_dL(self):
         samples = self.specific_parameter_samples("luminosity_distance")
         func = getattr(_Redshift, self.redshift_method)
-        redshift = func(samples, cosmology=self.cosmology)
+        redshift = func(
+            samples, cosmology=self.cosmology, multi_process=self.multi_process
+        )
         self.extra_kwargs["meta_data"]["cosmology"] = self.cosmology
         self.append_data("redshift", redshift)
 
