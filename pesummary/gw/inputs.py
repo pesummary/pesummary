@@ -409,7 +409,9 @@ class _GWInput(_Input):
     def evolve_spins(self, evolve_spins):
         self._evolve_spins = evolve_spins
         if evolve_spins:
-            logger.info("Evolving spins up to the Schwarzschild ISCO frequency")
+            logger.info(
+                "Spins will be evolved up to the Schwarzschild ISCO frequency"
+            )
             self._evolve_spins = 6. ** -0.5
 
     @property

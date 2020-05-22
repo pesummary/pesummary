@@ -13,6 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+tidal_params = ["lambda_1", "lambda_2", "delta_lambda", "lambda_tilde"]
 
 lalinference_map = {
     "h1_cplx_snr_amp": "H1_matched_filter_abs_snr",
