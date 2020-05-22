@@ -1230,6 +1230,10 @@ class _Conversion(object):
     force_non_evolved: Bool, optional
         force non evolved remnant quantities to be calculated when evolved quantities
         already exist in the input. Default False
+    force_remnant_computation: Bool, optional
+        force remnant quantities to be calculated for systems that include
+        tidal deformability parameters where BBH fits may not be applicable.
+        Default False.
     regenerate: list, optional
         list of posterior distributions that you wish to regenerate
     return_dict: Bool, optional
@@ -1281,6 +1285,7 @@ class _Conversion(object):
         redshift_method = kwargs.get("redshift_method", "approx")
         cosmology = kwargs.get("cosmology", "Planck15")
         force_non_evolved = kwargs.get("force_non_evolved", False)
+        force_remnant = kwargs.get("force_remnant_computation", False)
         if redshift_method not in ["approx", "exact"]:
             raise ValueError(
                 "'redshift_method' can either be 'approx' corresponding to "
@@ -1331,6 +1336,7 @@ class _Conversion(object):
                     )
                 )
             evolve_spins = False
+
         if f_low is not None and "f_low" in extra_kwargs["meta_data"].keys():
             logger.warn(
                 base_replace.format(
@@ -1366,7 +1372,7 @@ class _Conversion(object):
         obj.__init__(
             parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
             waveform_fits, multi_process, regenerate, redshift_method,
-            cosmology, force_non_evolved
+            cosmology, force_non_evolved, force_remnant
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -1384,7 +1390,7 @@ class _Conversion(object):
     def __init__(
         self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
         waveform_fits, multi_process, regenerate, redshift_method,
-        cosmology, force_non_evolved
+        cosmology, force_non_evolved, force_remnant
     ):
         self.parameters = parameters
         self.samples = samples
@@ -1396,10 +1402,39 @@ class _Conversion(object):
         self.redshift_method = redshift_method
         self.cosmology = cosmology
         self.force_non_evolved = force_non_evolved
+        self.has_tidal = self._check_for_tidal_parameters()
+        self.compute_remnant = True
+        if force_remnant and self.has_tidal:
+            logger.warn(
+                "Posterior samples for tidal deformability found in the "
+                "posterior table. Applying BBH remnant fits to this system. "
+                "This may not give sensible results."
+            )
+        elif self.has_tidal:
+            if evolve_spins:
+                msg = (
+                    "Not applying spin evolution as tidal parameters found "
+                    "in the posterior table."
+                )
+                logger.info(msg)
+            logger.debug(
+                "Skipping remnant calculations as tidal deformability "
+                "parameters found in the posterior table."
+            )
+            self.compute_remnant = False
         if self.regenerate is not None:
             for param in self.regenerate:
                 self.remove_posterior(param)
         self.generate_all_posterior_samples(evolve_spins=evolve_spins)
+
+    def _check_for_tidal_parameters(self):
+        """Check to see if any tidal parameters are stored in the table
+        """
+        from pesummary.gw.file.standard_names import tidal_params
+
+        if any(param in self.parameters for param in tidal_params):
+            return True
+        return False
 
     def remove_posterior(self, parameter):
         if parameter in self.parameters:
@@ -2060,7 +2095,9 @@ class _Conversion(object):
 
     def generate_all_posterior_samples(self, evolve_spins=False):
         logger.debug("Starting to generate all derived posteriors")
-        evolve_condition = True if evolve_spins else False
+        evolve_condition = (
+            True if evolve_spins and self.compute_remnant else False
+        )
         if "cos_theta_jn" in self.parameters and "theta_jn" not in self.parameters:
             self._cos_angle("theta_jn", reverse=True)
         if "cos_iota" in self.parameters and "iota" not in self.parameters:
@@ -2189,7 +2226,6 @@ class _Conversion(object):
             evolve_suffix = "_non_evolved"
             final_spin_params = ["a_1", "a_2"]
             non_precessing_NR_params = ["spin_1z", "spin_2z"]
-            evolve_condition = True if evolve_spins else False
             if evolve_condition:
                 final_spin_params += [
                     "tilt_1_evolved", "tilt_2_evolved", "phi_12_evolved"
@@ -2219,7 +2255,7 @@ class _Conversion(object):
             condition_final_mass = check_for_evolved_parameter(
                 evolve_suffix, "final_mass", self.parameters
             )
-            if self.NRSurrogate or self.waveform_fit:
+            if (self.NRSurrogate or self.waveform_fit) and self.compute_remnant:
                 parameters = []
                 _default = ["final_mass", "final_spin"]
                 if self.NRSurrogate:
@@ -2242,7 +2278,7 @@ class _Conversion(object):
                 if all(i in self.parameters for i in non_precessing_NR_params):
                     if condition_peak_luminosity or self.force_non_evolved:
                         self._peak_luminosity_of_merger(evolved=evolve_condition)
-            else:
+            elif self.compute_remnant:
                 if all(i in self.parameters for i in final_spin_params):
                     if condition_final_spin or self.force_non_evolved:
                         self._final_spin_of_merger(evolved=evolve_condition)
