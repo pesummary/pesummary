@@ -30,13 +30,18 @@ class Calibration(np.ndarray):
             )
         return obj
 
-    def save_to_file(self, file_name):
+    def save_to_file(self, file_name, comments="#", delimiter=conf.delimiter):
         """Save the calibration data to file
 
         Parameters
         ----------
         file_name: str
             name of the file name that you wish to use
+        comments: str, optional
+            String that will be prepended to the header and footer strings, to
+            mark them as comments. Default is '#'.
+        delimiter: str, optional
+            String or character separating columns.
         """
         check_file_exists_and_rename(file_name)
         header = [
@@ -44,8 +49,8 @@ class Calibration(np.ndarray):
             "-1 Sigma Phase", "+1 Sigma Mag", "+1 Sigma Phase"
         ]
         np.savetxt(
-            file_name, self, delimiter=conf.delimiter,
-            header=conf.delimiter.join(header), comments=""
+            file_name, self, delimiter=delimiter, comments=comments,
+            header=delimiter.join(header)
         )
 
     def __array_finalize__(self, obj):
