@@ -71,9 +71,9 @@ class Bounded_1d_kde(kde):
         out_of_bounds = np.zeros(pts.shape[0], dtype='bool')
 
         if self.xlow is not None:
-            out_of_bounds[pts[:, 0] < self.xlow] = True
+            out_of_bounds[pts < self.xlow] = True
         if self.xhigh is not None:
-            out_of_bounds[pts[:, 0] > self.xhigh] = True
+            out_of_bounds[pts > self.xhigh] = True
 
         results = self.evaluate(pts)
         results[out_of_bounds] = 0.

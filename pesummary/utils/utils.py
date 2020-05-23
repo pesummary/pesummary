@@ -742,12 +742,29 @@ def kolmogorov_smirnov_test(samples, decimal=5):
     return np.round(stats.ks_2samp(*samples)[1], decimal)
 
 
-def jension_shannon_divergence(samples, decimal=5):
+def jension_shannon_divergence(
+    samples, kde=stats.gaussian_kde, decimal=5, base=np.e, **kwargs
+):
+    """Calculate the JS divergence between two sets of samples
+
+    Parameters
+    ----------
+    samples: list
+        2d list containing the samples drawn from two pdfs
+    kde: func
+        function to use when calculating the kde of the samples
+    decimal: int, float
+        number of decimal places to round the JS divergence to
+    base: float, optional
+        optional base to use for the scipy.stats.entropy function. Default
+        np.e
+    kwargs: dict
+        all kwargs are passed to the kde function
+    """
     try:
-        kernel = [stats.gaussian_kde(i) for i in samples]
+        kernel = [kde(i, **kwargs) for i in samples]
     except np.linalg.LinAlgError:
         return float("nan")
-    a, b = kernel
     x = np.linspace(
         np.min([np.min(i) for i in samples]),
         np.max([np.max(i) for i in samples]),
@@ -759,8 +776,8 @@ def jension_shannon_divergence(samples, decimal=5):
     a /= a.sum()
     b /= b.sum()
     m = 1. / 2 * (a + b)
-    kl_forward = stats.entropy(a, qk=m)
-    kl_backward = stats.entropy(b, qk=m)
+    kl_forward = stats.entropy(a, qk=m, base=base)
+    kl_backward = stats.entropy(b, qk=m, base=base)
     return np.round(kl_forward / 2. + kl_backward / 2., decimal)
 
 
