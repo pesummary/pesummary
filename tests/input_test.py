@@ -336,7 +336,7 @@ class TestInput(object):
         assert list(self.inputs.psd["example"].keys()) == ["H1"]
         np.testing.assert_almost_equal(
             self.inputs.psd["example"]["H1"],
-            [[1.00, 3.44], [2.00, 5.66]]
+            [[1.00, 3.44], [2.00, 5.66], [3.00, 4.56], [4.00, 9.83]]
         )
 
     def test_calibration(self):
@@ -376,7 +376,7 @@ class TestInput(object):
         assert list(inputs.psd["test2"].keys()) == ["V1"]
         np.testing.assert_almost_equal(
             inputs.psd["test"]["L1"],
-            [[1.00, 3.44], [2.00, 5.66]]
+            [[1.00, 3.44], [2.00, 5.66], [3.00, 4.56], [4.00, 9.83]]
         )
 
     def test_IFO_from_file_name(self):

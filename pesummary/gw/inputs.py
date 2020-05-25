@@ -539,6 +539,9 @@ class _GWInput(_Input):
             "generated and the PSD data will not be added to the metafile."
         )
         try:
+            f = np.genfromtxt(file)
+            return PSD(f)
+        except ValueError:
             f = np.genfromtxt(file, skip_footer=2)
             return PSD(f)
         except FileNotFoundError:
