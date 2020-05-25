@@ -431,7 +431,8 @@ class TestPostProcessing(object):
 
     def test_injection_data(self):
         assert sorted(list(self.postprocessing.injection_data["example"].keys())) == sorted([
-            'a_1', 'a_2', 'H1_optimal_snr', 'log_likelihood', 'mass_1', "network_optimal_snr"])
+            'a_1', 'a_2', 'H1_optimal_snr', 'log_likelihood', 'mass_1', "network_optimal_snr",
+            "spin_1z", "spin_2z"])
 
     def test_maxL_samples(self):
         assert self.postprocessing.maxL_samples["example"]["mass_1"] == 20.0
@@ -449,7 +450,7 @@ class TestPostProcessing(object):
         postprocessing = GWPostProcessing(inputs)
         assert sorted(postprocessing.same_parameters) == sorted([
             'a_1', 'a_2', 'H1_optimal_snr', 'log_likelihood', 'mass_1',
-            "network_optimal_snr"])
+            "network_optimal_snr", "spin_1z", "spin_2z"])
 
     def test_psd_labels(self):
         assert list(self.postprocessing.psd.keys()) == ["example"]
