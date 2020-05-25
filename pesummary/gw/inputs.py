@@ -29,7 +29,9 @@ class _GWInput(_Input):
     """Super class to handle gw specific command line inputs
     """
     @staticmethod
-    def grab_data_from_metafile(existing_file, webdir, compare=None, **kwargs):
+    def grab_data_from_metafile(
+        existing_file, webdir, compare=None, nsamples=None, **kwargs
+    ):
         """Grab data from an existing PESummary metafile
 
         Parameters
@@ -44,7 +46,7 @@ class _GWInput(_Input):
         """
         data = _Input.grab_data_from_metafile(
             existing_file, webdir, compare=compare, read_function=GWRead,
-            **kwargs
+            nsamples=nsamples, **kwargs
         )
         f = GWRead(existing_file)
 
@@ -133,7 +135,8 @@ class _GWInput(_Input):
 
     @staticmethod
     def grab_data_from_file(
-        file, label, config=None, injection=None, file_format=None, **kwargs
+        file, label, config=None, injection=None, file_format=None,
+        nsamples=None, **kwargs
     ):
         """Grab data from a result file containing posterior samples
 
@@ -153,7 +156,8 @@ class _GWInput(_Input):
         """
         data = _Input.grab_data_from_file(
             file, label, config=config, injection=injection,
-            read_function=GWRead, file_format=file_format, **kwargs
+            read_function=GWRead, file_format=file_format, nsamples=nsamples,
+            **kwargs
         )
         return data
 

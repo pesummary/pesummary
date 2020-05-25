@@ -103,6 +103,19 @@ class BaseRead(object):
         result = function(path, file_format=file_format)
         assert isinstance(result, _class)
 
+    def test_downsample(self):
+        """Test the .downsample method
+        """
+        old_samples_dict = self.result.samples_dict
+        nsamples = 50
+        self.result.downsample(nsamples)
+        assert self.result.samples_dict.number_of_samples == nsamples
+        for param in self.parameters:
+            assert all(
+                samp in old_samples_dict[param] for samp in
+                self.result.samples_dict[param]
+            )
+
 
 class GWBaseRead(BaseRead):
     """Base class to test the GWRead specific functions
@@ -252,6 +265,11 @@ class TestCoreJsonFile(BaseRead):
 
         super(TestCoreJsonFile, self).test_file_format_read(self.path, "json", Default)
 
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestCoreJsonFile, self).test_downsample()
+
 
 class TestCoreHDF5File(BaseRead):
     """Class to test loading in an HDF5 file with the core Read function
@@ -320,6 +338,11 @@ class TestCoreHDF5File(BaseRead):
 
         super(TestCoreHDF5File, self).test_file_format_read(self.path, "hdf5", Default)
 
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestCoreHDF5File, self).test_downsample()
+
 
 class TestCoreDatFile(BaseRead):
     """Class to test loading in an dat file with the core Read function
@@ -387,6 +410,11 @@ class TestCoreDatFile(BaseRead):
         from pesummary.core.file.formats.default import Default
 
         super(TestCoreDatFile, self).test_file_format_read(self.path, "dat", Default)
+
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestCoreDatFile, self).test_downsample()
 
 
 class BilbyFile(BaseRead):
@@ -508,6 +536,11 @@ class TestCoreJsonBilbyFile(BilbyFile):
         """
         super(TestCoreJsonBilbyFile, self).test_file_format_read(self.path, "bilby")
 
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestCoreJsonBilbyFile, self).test_downsample()
+
 
 class TestCoreHDF5BilbyFile(BilbyFile):
     """Class to test loading in a bilby hdf5 file with the core Read function
@@ -573,6 +606,11 @@ class TestCoreHDF5BilbyFile(BilbyFile):
         """Test that when the file_format is specified, that correct class is used
         """
         super(TestCoreHDF5BilbyFile, self).test_file_format_read(self.path, "bilby")
+
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestCoreHDF5BilbyFile, self).test_downsample()
 
 
 class PESummaryFile(BaseRead):
@@ -641,6 +679,20 @@ class PESummaryFile(BaseRead):
             os.path.join(".outdir", "pesummary_label.dat"), names=True)
         assert all(i in self.parameters for i in list(data.dtype.names))
         assert all(i in list(data.dtype.names) for i in self.parameters)
+
+    def test_downsample(self):
+        """Test the .downsample method
+        """
+        old_samples_dict = self.result.samples_dict
+        nsamples = 50
+        self.result.downsample(nsamples)
+        for num, label in enumerate(self.result.labels):
+            assert self.result.samples_dict[label].number_of_samples == nsamples
+            for param in self.parameters[num]:
+                assert all(
+                    samp in old_samples_dict[label][param] for samp in
+                    self.result.samples_dict[label][param]
+                )
 
 
 class TestCoreJsonPESummaryFile(PESummaryFile):
@@ -714,6 +766,11 @@ class TestCoreJsonPESummaryFile(PESummaryFile):
         """
         pass
 
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestCoreJsonPESummaryFile, self).test_downsample()
+
 
 class TestCoreHDF5PESummaryFile(PESummaryFile):
     """Class to test loading in a PESummary hdf5 file with the core Read
@@ -785,6 +842,11 @@ class TestCoreHDF5PESummaryFile(PESummaryFile):
         """Test that when the file_format is specified, that correct class is used
         """
         pass
+
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestCoreHDF5PESummaryFile, self).test_downsample()
 
 
 class TestGWDatFile(GWBaseRead):
@@ -859,6 +921,11 @@ class TestGWDatFile(GWBaseRead):
 
         super(TestGWDatFile, self).test_file_format_read(self.path, "dat", Default)
 
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestGWDatFile, self).test_downsample()
+
 
 class TestGWHDF5File(GWBaseRead):
     """Class to test loading in an HDF5 file with the gw Read function
@@ -932,6 +999,11 @@ class TestGWHDF5File(GWBaseRead):
 
         super(TestGWHDF5File, self).test_file_format_read(self.path, "hdf5", Default)
 
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestGWHDF5File, self).test_downsample()
+
 
 class TestGWJsonFile(GWBaseRead):
     """Class to test loading in an json file with the gw Read function
@@ -1004,6 +1076,11 @@ class TestGWJsonFile(GWBaseRead):
         from pesummary.gw.file.formats.default import Default
 
         super(TestGWJsonFile, self).test_file_format_read(self.path, "json", Default)
+
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestGWJsonFile, self).test_downsample()
 
 
 class TestGWJsonBilbyFile(GWBaseRead):
@@ -1086,6 +1163,11 @@ class TestGWJsonBilbyFile(GWBaseRead):
 
         super(TestGWJsonBilbyFile, self).test_file_format_read(self.path, "bilby", Bilby)
 
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestGWJsonBilbyFile, self).test_downsample()
+
 
 class TestGWLALInferenceFile(GWBaseRead):
     """Class to test loading in a LALInference file with the gw Read function
@@ -1162,3 +1244,8 @@ class TestGWLALInferenceFile(GWBaseRead):
         super(TestGWLALInferenceFile, self).test_file_format_read(
             self.path, "lalinference", LALInference
         )
+
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestGWLALInferenceFile, self).test_downsample()

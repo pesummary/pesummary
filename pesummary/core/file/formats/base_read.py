@@ -42,6 +42,8 @@ class Read(object):
 
     Methods
     -------
+    downsample:
+        downsample the posterior samples stored in the result file
     to_dat:
         save the posterior samples to a .dat file
     to_latex_table:
@@ -99,6 +101,8 @@ class Read(object):
         """
         self.data = self.load_from_function(
             function, self.path_to_results_file, **kwargs)
+        self.parameters = self.data["parameters"]
+        self.samples = self.data["samples"]
         if "mcmc_samples" in self.data.keys():
             self.mcmc_samples = self.data["mcmc_samples"]
         if "injection" in self.data.keys():
@@ -137,14 +141,6 @@ class Read(object):
             self.weights = self.check_for_weights(
                 self.data["parameters"], self.data["samples"]
             )
-
-    @property
-    def parameters(self):
-        return self.data["parameters"]
-
-    @property
-    def samples(self):
-        return self.data["samples"]
 
     @property
     def samples_dict(self):
@@ -407,6 +403,24 @@ class Read(object):
             file_versions=self.input_version, file_kwargs=self.extra_kwargs,
             **kwargs
         )
+
+    def downsample(self, number):
+        """Downsample the posterior samples stored in the result file
+        """
+        from pesummary.utils.utils import resample_posterior_distribution
+
+        if number > self.samples_dict.number_of_samples:
+            raise ValueError(
+                "Failed to downsample the posterior samples to {} because "
+                "there are only {} samples stored in the file.".format(
+                    number, self.samples_dict.number_of_samples
+                )
+            )
+        _samples = np.array(resample_posterior_distribution(
+            np.array(self.samples).T, number
+        ))
+        self.samples = _samples.T.tolist()
+        self.extra_kwargs["sampler"]["nsamples"] = number
 
     def to_dat(self, **kwargs):
         """Save the PESummary results file object to a dat file
