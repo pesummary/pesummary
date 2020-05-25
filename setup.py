@@ -18,6 +18,7 @@ import warnings
 from distutils import log
 from pathlib import Path
 
+import versioneer
 from setuptools import setup
 from setuptools.command import (
     build_py,
@@ -27,7 +28,7 @@ from setuptools.command import (
 # tell python we're in setup.py
 builtins._PESUMMARY_SETUP = True
 
-version = "0.5.5"
+version = versioneer.get_version()
 version_file = Path("pesummary") / ".version"
 
 
@@ -55,6 +56,7 @@ def write_version_file(version):
 
     with version_file.open("w") as f:
         f.writelines(["# pesummary version information\n\n"])
+        f.writelines(["version = %s\n" % (version)])
         f.writelines(["last_release = %s\n" % (git_info.last_version)])
         f.writelines(["\ngit_hash = %s\n" % (git_info.hash)])
         f.writelines(["git_author = %s\n" % (git_info.author)])
@@ -97,8 +99,8 @@ setup(name='pesummary',
       url='https://git.ligo.org/lscsoft/pesummary',
       download_url='https://git.ligo.org/lscsoft/pesummary',
       cmdclass={
-          "sdist": VersionedSdist,
-          "build_py": VersionedBuildPy,
+           "sdist": VersionedSdist,
+           "build_py": VersionedBuildPy,
       },
       install_requires=[
           'numpy>=1.15.4',

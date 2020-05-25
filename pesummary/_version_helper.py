@@ -131,29 +131,25 @@ def get_version_information(short=False):
     short: Bool
         If True, only return the version. If False, return git hash
     """
-    version_file = Path(__file__).parent / ".version"
+    from ._version import get_versions
 
-    string = ""
-    try:
-        with open(version_file, "r") as f:
-            f = f.readlines()
-            f = [i.strip() for i in f]
-
-        version = [i.split("= ")[1] for i in f if "last_release" in i][0]
-        hash = [i.split("= ")[1] for i in f if "git_hash" in i][0]
-        status = [i.split("= ")[1] for i in f if "git_status" in i][0]
-        if short:
-            string += "%s" % (version)
-        else:
-            string += "%s: %s %s" % (version, status, hash)
-    except IndexError:
-        print("No version information found")
-    except FileNotFoundError as exc:
-        # if we're inside setup.py, then the file not existing is ok
+    version = get_versions()['version']
+    if short:
+        version_file = Path(__file__).parent / ".version"
         try:
-            if _PESUMMARY_SETUP:
-                return
-        except NameError:
-            pass
-        raise
-    return string
+            with open(version_file, "r") as f:
+                f = f.readlines()
+                f = [i.strip() for i in f]
+
+            version = [i.split("= ")[1] for i in f if "last_release" in i][0]
+        except IndexError:
+            print("No version information found")
+        except FileNotFoundError as exc:
+            # if we're inside setup.py, then the file not existing is ok
+            try:
+                if _PESUMMARY_SETUP:
+                    return
+            except NameError:
+                pass
+            raise
+    return version
