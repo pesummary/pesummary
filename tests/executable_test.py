@@ -108,7 +108,7 @@ class TestSummaryPages(Base):
         f = read(".outdir/samples/posterior_samples.h5")
         psd = np.genfromtxt(".outdir/psd.dat")
         calibration = np.genfromtxt(".outdir/calibration.dat")
-        np.testing.assert_almost_equal(f.psd["test"]["H1"], psd[:-2])
+        np.testing.assert_almost_equal(f.psd["test"]["H1"], psd)
         np.testing.assert_almost_equal(
             f.priors["calibration"]["test"]["L1"], calibration
         )
