@@ -17,6 +17,7 @@ import os
 import socket
 import shutil
 from glob import glob
+import numpy as np
 
 from pesummary.core.webpage import webpage
 
@@ -201,3 +202,51 @@ class TestPage(object):
         assert len(soup.find_all("div", class_="carousel-item")) == 1
         assert len(soup.find_all("div", class_="modal-lg")) == 1
         assert len(soup.find_all("div", class_="carousel")) == 1
+
+
+class TestWebpage(object):
+    """
+    """
+    def setup(self):
+        """
+        """
+        from pesummary.gw.webpage.main import _WebpageGeneration
+
+        self.labels = ["one", "two"]
+        self.samples = {
+            label: {
+                param: np.random.uniform(0.2, 1.0, 1000) for param in
+                ["chirp_mass", "mass_ratio"]
+            } for label in self.labels
+        }
+        self.webpage = _WebpageGeneration(
+            webdir=".outdir", labels=self.labels, samples=self.samples,
+            pepredicates_probs={label: None for label in self.labels},
+            same_parameters=["chirp_mass", "mass_ratio"]
+        )
+
+    def test_comparison_stats(self):
+        """
+        """
+        from scipy.spatial.distance import jensenshannon
+        from pesummary.utils.utils import jension_shannon_divergence
+        from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+
+        comparison_stats = self.webpage.comparison_stats
+        for param in ['chirp_mass', 'mass_ratio']:
+            if param == "chirp_mass":
+                xlow = 0.
+                xhigh = None
+            else:
+                xlow = 0.
+                xhigh = 1.
+            js = comparison_stats[param][1][0][1]
+            samples = [
+                self.samples[label][param] for label in self.labels
+            ]
+            x = np.linspace(np.min(samples), np.max(samples), 100)
+            _js = jensenshannon(
+                Bounded_1d_kde(samples[0], xlow=xlow, xhigh=xhigh)(x),
+                Bounded_1d_kde(samples[1], xlow=xlow, xhigh=xhigh)(x)
+            )**2
+            np.testing.assert_almost_equal(js, _js, 5)

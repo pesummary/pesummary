@@ -26,7 +26,7 @@ import numpy as np
 
 import pesummary
 from pesummary import conf
-from pesummary.utils.utils import logger, LOG_FILE
+from pesummary.utils.utils import logger, LOG_FILE, jension_shannon_divergence
 from pesummary.core.webpage import webpage
 
 
@@ -187,14 +187,12 @@ class _WebpageGeneration(object):
         """
         data = {
             i: self._generate_comparison_statistics(
-                [self.samples[j][i] for j in self.labels]
+                i, [self.samples[j][i] for j in self.labels]
             ) for i in self.same_parameters
         }
         return data
 
-        return data
-
-    def _generate_comparison_statistics(self, samples):
+    def _generate_comparison_statistics(self, param, samples):
         """Generate comparison statistics for a set of samples
 
         Parameters
@@ -203,9 +201,7 @@ class _WebpageGeneration(object):
             list of samples for each result file
         """
         from scipy.stats import gaussian_kde
-        from pesummary.utils.utils import (
-            kolmogorov_smirnov_test, jension_shannon_divergence
-        )
+        from pesummary.utils.utils import kolmogorov_smirnov_test
 
         rows = range(len(samples))
         columns = range(len(samples))
@@ -217,11 +213,24 @@ class _WebpageGeneration(object):
         ]
         js = [
             [
-                jension_shannon_divergence([samples[i], samples[j]]) for
-                i in rows
+                self._jension_shannon_divergence(param, [samples[i], samples[j]])
+                for i in rows
             ] for j in columns
         ]
         return [ks, js]
+
+    def _jension_shannon_divergence(self, param, samples):
+        """Return the Jensen Shannon divergence between two sets of samples
+
+        Parameters
+        ----------
+        param: str
+            The parameter that the samples belong to
+        samples: list
+            2d list containing the samples you wish to calculate the Jensen
+            Shannon divergence between
+        """
+        return jension_shannon_divergence([samples[0], samples[1]])
 
     @staticmethod
     def get_executable(executable):
