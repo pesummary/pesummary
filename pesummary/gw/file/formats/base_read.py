@@ -94,6 +94,8 @@ class GWRead(Read):
         self.data = {
             "parameters": parameters, "samples": samples
         }
+        self.parameters = self.data["parameters"]
+        self.samples = self.data["samples"]
         self.data["injection"] = data["injection"]
         if "version" in data.keys() and data["version"] is not None:
             self.input_version = data["version"]
@@ -570,8 +572,8 @@ class GWRead(Read):
                 self.parameters, self.samples, extra_kwargs=self.extra_kwargs,
                 return_dict=False, **kwargs
             )
-            self.data["parameters"] = data[0]
-            self.data["samples"] = data[1]
+            self.parameters = data[0]
+            self.samples = data[1]
             if kwargs.get("return_kwargs", False):
                 self.extra_kwargs = data[2]
 

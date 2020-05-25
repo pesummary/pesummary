@@ -72,7 +72,8 @@ class _Input(object):
 
     @staticmethod
     def grab_data_from_metafile(
-        existing_file, webdir, compare=None, read_function=Read, **kwargs
+        existing_file, webdir, compare=None, read_function=Read,
+        nsamples=None, **kwargs
     ):
         """Grab data from an existing PESummary metafile
 
@@ -87,11 +88,15 @@ class _Input(object):
             wish to compare
         read_function: func, optional
             PESummary function to use to read in the existing file
+        nsamples: int, optional
+            Number of samples to use. Default all available samples
         kwargs: dict
             All kwargs are passed to the `generate_all_posterior_samples`
             method
         """
         f = read_function(existing_file)
+        if nsamples is not None:
+            f.downsample(nsamples)
         if not f.mcmc_samples:
             f.generate_all_posterior_samples(**kwargs)
             labels = f.labels
@@ -192,7 +197,7 @@ class _Input(object):
     @staticmethod
     def grab_data_from_file(
         file, label, config=None, injection=None, read_function=Read,
-        file_format=None, **kwargs
+        file_format=None, nsamples=None, **kwargs
     ):
         """Grab data from a result file containing posterior samples
 
@@ -219,6 +224,8 @@ class _Input(object):
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
 
+        if nsamples is not None:
+            f.downsample(nsamples)
         f.generate_all_posterior_samples(**kwargs)
         if injection:
             f.add_injection_parameters_from_file(injection)
@@ -778,27 +785,12 @@ class _Input(object):
 
     @nsamples.setter
     def nsamples(self, nsamples):
+        self._nsamples = nsamples
         if nsamples is not None:
-            samples_lengths = [
-                self.samples[key].number_of_samples for key in
-                self.samples.keys()
-            ]
-            for num, label in enumerate(self.samples):
-                if int(nsamples) < samples_lengths[num]:
-                    self.samples[label] = self.samples[label].downsample(
-                        int(nsamples)
-                    )
-                    self.file_kwargs[label]["sampler"]["nsamples"] = int(
-                        nsamples
-                    )
-                else:
-                    logger.warn(
-                        "Failed to downsample {} to {} because {} is greater "
-                        "than the number of samples in the file. Igorning and "
-                        "and using all available samples".format(
-                            self.result_files[num], int(nsamples), int(nsamples)
-                        )
-                    )
+            logger.info(
+                "{} samples will be used for each result file".format(nsamples)
+            )
+            self._nsamples = int(nsamples)
 
     @property
     def priors(self):
@@ -975,13 +967,14 @@ class _Input(object):
         if self.is_pesummary_metafile(file):
             existing_data = self.grab_data_from_metafile(
                 file, self.webdir, compare=self.compare_results,
-                **grab_data_kwargs
+                nsamples=self.nsamples, **grab_data_kwargs
             )
             return existing_data
         else:
             data = self.grab_data_from_file(
                 file, label, config=config, injection=injection,
-                file_format=file_format, **grab_data_kwargs
+                file_format=file_format, nsamples=self.nsamples,
+                **grab_data_kwargs
             )
             return data
 
@@ -1466,11 +1459,11 @@ class Input(_Input):
         self.kde_plot = self.opts.kde_plot
         self.priors = self.opts.prior_file
         self.file_format = self.opts.file_format
+        self.nsamples = self.opts.nsamples
         self.samples = self.opts.samples
         self.ignore_parameters = self.opts.ignore_parameters
         self.burnin_method = self.opts.burnin_method
         self.burnin = self.opts.burnin
-        self.nsamples = self.opts.nsamples
         self.custom_plotting = self.opts.custom_plotting
         self.email = self.opts.email
         self.dump = self.opts.dump

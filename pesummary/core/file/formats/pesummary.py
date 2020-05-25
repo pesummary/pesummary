@@ -203,7 +203,6 @@ class PESummary(Read):
     def __init__(self, path_to_results_file):
         super(PESummary, self).__init__(path_to_results_file)
         self.load(self._grab_data_from_pesummary_file, **self.load_kwargs)
-        self.samples_dict = None
 
     @property
     def load_kwargs(self):
@@ -374,10 +373,6 @@ class PESummary(Read):
 
     @property
     def samples_dict(self):
-        return self._samples_dict
-
-    @samples_dict.setter
-    def samples_dict(self, samples_dict):
         if self.mcmc_samples:
             outdict = MCMCSamplesDict(
                 self.parameters[0], [np.array(i).T for i in self.samples[0]]
@@ -396,7 +391,7 @@ class PESummary(Read):
                         self.parameters[idx], np.array(self.samples[idx]).T
                     ) for idx, label in enumerate(self.labels)
             })
-        self._samples_dict = outdict
+        return outdict
 
     @property
     def injection_dict(self):
@@ -550,6 +545,27 @@ class PESummary(Read):
             self, labels=labels, package="core", file_format="bilby",
             _return=True, **kwargs
         )
+
+    def downsample(self, number):
+        """Downsample the posterior samples stored in the result file
+        """
+        from pesummary.utils.utils import resample_posterior_distribution
+
+        _samples = []
+        for num, samp in enumerate(self.samples):
+            label = self.labels[num]
+            if number > self.samples_dict[label].number_of_samples:
+                raise ValueError(
+                    "Failed to downsample the posterior samples for {} because "
+                    "there are only {} samples stored in the file.".format(
+                        label, self.samples_dict[label].number_of_samples
+                    )
+                )
+            _samples.append(np.array(resample_posterior_distribution(
+                np.array(samp).T, number
+            )).T.tolist())
+            self.extra_kwargs[num]["sampler"]["nsamples"] = number
+        self.samples = _samples
 
     def to_dat(self, labels="all", **kwargs):
         """Convert the samples stored in a PESummary metafile to a .dat file

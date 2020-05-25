@@ -135,6 +135,8 @@ class PESummary(GWRead, CorePESummary):
         data = self.load_from_function(
             function, self.path_to_results_file, **kwargs)
         self.data = data
+        self.parameters = self.data["parameters"]
+        self.samples = self.data["samples"]
         if "mcmc_samples" in data.keys():
             self.mcmc_samples = data["mcmc_samples"]
         if "version" in data.keys() and data["version"] is not None:
@@ -303,8 +305,8 @@ class PESummary(GWRead, CorePESummary):
             converted_samples.append(data[1])
             if kwargs.get("return_kwargs", False):
                 converted_kwargs.append(data[2])
-        self.data["parameters"] = converted_params
-        self.data["samples"] = converted_samples
+        self.parameters = converted_params
+        self.samples = converted_samples
         if converted_kwargs != []:
             self.extra_kwargs = {
                 label: converted_kwargs[num] for num, label in enumerate(
