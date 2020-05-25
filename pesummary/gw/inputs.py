@@ -105,7 +105,8 @@ class _GWInput(_Input):
                     multi_process=self.opts.multi_process,
                     redshift_method=self.redshift_method,
                     cosmology=self.cosmology,
-                    no_conversion=self.no_conversion
+                    no_conversion=self.no_conversion,
+                    add_zero_spin=True
                 ))
             return kwargs
         except IndexError:
@@ -125,7 +126,8 @@ class _GWInput(_Input):
                     multi_process=self.opts.multi_process,
                     redshift_method=self.redshift_method,
                     cosmology=self.cosmology,
-                    no_conversion=self.no_conversion
+                    no_conversion=self.no_conversion,
+                    add_zero_spin=True
                 ))
             return kwargs
 

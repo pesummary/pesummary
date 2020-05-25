@@ -18,6 +18,7 @@ import numpy as np
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.utils import logger
 from pesummary.utils.decorators import array_input
+from pesummary import conf
 
 try:
     import lalsimulation
@@ -1234,6 +1235,9 @@ class _Conversion(object):
         force remnant quantities to be calculated for systems that include
         tidal deformability parameters where BBH fits may not be applicable.
         Default False.
+    add_zero_spin: Bool, optional
+        if no spins are present in the posterior table, add spins with 0 value.
+        Default False.
     regenerate: list, optional
         list of posterior distributions that you wish to regenerate
     return_dict: Bool, optional
@@ -1372,7 +1376,8 @@ class _Conversion(object):
         obj.__init__(
             parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
             waveform_fits, multi_process, regenerate, redshift_method,
-            cosmology, force_non_evolved, force_remnant
+            cosmology, force_non_evolved, force_remnant,
+            kwargs.get("add_zero_spin", False)
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -1390,7 +1395,7 @@ class _Conversion(object):
     def __init__(
         self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
         waveform_fits, multi_process, regenerate, redshift_method,
-        cosmology, force_non_evolved, force_remnant
+        cosmology, force_non_evolved, force_remnant, add_zero_spin
     ):
         self.parameters = parameters
         self.samples = samples
@@ -1402,6 +1407,15 @@ class _Conversion(object):
         self.redshift_method = redshift_method
         self.cosmology = cosmology
         self.force_non_evolved = force_non_evolved
+        self.non_precessing = False
+        if not any(param in self.parameters for param in conf.precessing_angles):
+            self.non_precessing = True
+        if self.non_precessing and evolve_spins:
+            logger.info(
+                "Spin evolution is trivial for a non-precessing system. No additional "
+                "transformation required."
+            )
+            evolve_spins = False
         self.has_tidal = self._check_for_tidal_parameters()
         self.compute_remnant = True
         if force_remnant and self.has_tidal:
@@ -1425,6 +1439,7 @@ class _Conversion(object):
         if self.regenerate is not None:
             for param in self.regenerate:
                 self.remove_posterior(param)
+        self.add_zero_spin = add_zero_spin
         self.generate_all_posterior_samples(evolve_spins=evolve_spins)
 
     def _check_for_tidal_parameters(self):
@@ -1866,9 +1881,11 @@ class _Conversion(object):
 
     @staticmethod
     def _evolved_vs_non_evolved_parameter(
-        parameter, evolved=False, core_param=False
+        parameter, evolved=False, core_param=False, non_precessing=False
     ):
-        if evolved and core_param:
+        if non_precessing:
+            base_string = ""
+        elif evolved and core_param:
             base_string = "_evolved"
         elif evolved:
             base_string = ""
@@ -1910,10 +1927,10 @@ class _Conversion(object):
                     samples.append(ss)
         else:
             spin_1z = self._evolved_vs_non_evolved_parameter(
-                "spin_1z", evolved=evolved, core_param=True
+                "spin_1z", evolved=evolved, core_param=True, non_precessing=True
             )
             spin_2z = self._evolved_vs_non_evolved_parameter(
-                "spin_2z", evolved=evolved, core_param=True
+                "spin_2z", evolved=evolved, core_param=True, non_precessing=True
             )
             samples = self.specific_parameter_samples([
                 "mass_1", "mass_2", spin_1z, spin_2z
@@ -1928,13 +1945,13 @@ class _Conversion(object):
 
     def _peak_luminosity_of_merger(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
-            "peak_luminosity", evolved=evolved
+            "peak_luminosity", evolved=evolved, non_precessing=self.non_precessing
         )
         spin_1z_param = self._evolved_vs_non_evolved_parameter(
-            "spin_1z", evolved=evolved, core_param=True
+            "spin_1z", evolved=evolved, core_param=True, non_precessing=self.non_precessing
         )
         spin_2z_param = self._evolved_vs_non_evolved_parameter(
-            "spin_2z", evolved=evolved, core_param=True
+            "spin_2z", evolved=evolved, core_param=True, non_precessing=self.non_precessing
         )
 
         samples = self.specific_parameter_samples([
@@ -2008,13 +2025,15 @@ class _Conversion(object):
 
     def _final_mass_of_merger(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
-            "final_mass", evolved=evolved
+            "final_mass", evolved=evolved, non_precessing=self.non_precessing
         )
         spin_1z_param = self._evolved_vs_non_evolved_parameter(
-            "spin_1z", evolved=evolved, core_param=True
+            "spin_1z", evolved=evolved, core_param=True,
+            non_precessing=self.non_precessing
         )
         spin_2z_param = self._evolved_vs_non_evolved_parameter(
-            "spin_2z", evolved=evolved, core_param=True
+            "spin_2z", evolved=evolved, core_param=True,
+            non_precessing=self.non_precessing
         )
         samples = self.specific_parameter_samples([
             "mass_1", "mass_2", spin_1z_param, spin_2z_param
@@ -2027,7 +2046,7 @@ class _Conversion(object):
 
     def _final_mass_source(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
-            "final_mass", evolved=evolved
+            "final_mass", evolved=evolved, non_precessing=self.non_precessing
         )
         samples = self.specific_parameter_samples([param, "redshift"])
         final_mass_source = _source_from_detector(
@@ -2037,7 +2056,7 @@ class _Conversion(object):
 
     def _final_spin_of_merger(self, non_precessing=False, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
-            "final_spin", evolved=evolved
+            "final_spin", evolved=evolved, non_precessing=self.non_precessing
         )
         samples = self._precessing_vs_non_precessing_parameters(
             non_precessing=non_precessing, evolved=evolved
@@ -2050,10 +2069,10 @@ class _Conversion(object):
 
     def _radiated_energy(self, evolved=False):
         param = self._evolved_vs_non_evolved_parameter(
-            "radiated_energy", evolved=evolved
+            "radiated_energy", evolved=evolved, non_precessing=self.non_precessing
         )
         final_mass_param = self._evolved_vs_non_evolved_parameter(
-            "final_mass_source", evolved=evolved
+            "final_mass_source", evolved=evolved, non_precessing=self.non_precessing
         )
         samples = self.specific_parameter_samples([
             "total_mass_source", final_mass_param
@@ -2108,30 +2127,28 @@ class _Conversion(object):
             self._cos_angle("tilt_2", reverse=True)
         spin_magnitudes = ["a_1", "a_2"]
         angles = ["phi_jl", "tilt_1", "tilt_2", "phi_12"]
-        if all(i in self.parameters for i in spin_magnitudes):
-            if all(i not in self.parameters for i in angles):
-                self.parameters.append("tilt_1")
-                self.parameters.append("tilt_2")
+        cartesian = ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
+        cond1 = all(i in self.parameters for i in spin_magnitudes)
+        cond2 = all(i in self.parameters for i in angles)
+        cond3 = all(i in self.parameters for i in cartesian)
+        if cond1 and not cond2:
+            self.parameters.append("tilt_1")
+            self.parameters.append("tilt_2")
+            for num, i in enumerate(self.samples):
+                self.samples[num].append(
+                    np.arccos(np.sign(i[self.parameters.index("a_1")])))
+                self.samples[num].append(
+                    np.arccos(np.sign(i[self.parameters.index("a_2")])))
+            ind_a1 = self.parameters.index("a_1")
+            ind_a2 = self.parameters.index("a_2")
+            for num, i in enumerate(self.samples):
+                self.samples[num][ind_a1] = abs(self.samples[num][ind_a1])
+                self.samples[num][ind_a2] = abs(self.samples[num][ind_a2])
+        elif not cond1 and not cond2 and not cond3 and self.add_zero_spin:
+            parameters = ["a_1", "a_2", "spin_1z", "spin_2z"]
+            for param in parameters:
+                self.parameters.append(param)
                 for num, i in enumerate(self.samples):
-                    self.samples[num].append(
-                        np.arccos(np.sign(i[self.parameters.index("a_1")])))
-                    self.samples[num].append(
-                        np.arccos(np.sign(i[self.parameters.index("a_2")])))
-                ind_a1 = self.parameters.index("a_1")
-                ind_a2 = self.parameters.index("a_2")
-                for num, i in enumerate(self.samples):
-                    self.samples[num][ind_a1] = abs(self.samples[num][ind_a1])
-                    self.samples[num][ind_a2] = abs(self.samples[num][ind_a2])
-        if not all(i in self.parameters for i in spin_magnitudes):
-            cartesian = [
-                "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y",
-                "spin_2z"
-            ]
-            if not all(i in self.parameters for i in cartesian):
-                self.parameters.append("a_1")
-                self.parameters.append("a_2")
-                for num, i in enumerate(self.samples):
-                    self.samples[num].append(0)
                     self.samples[num].append(0)
         self._check_parameters()
         if "cos_theta_jn" in self.parameters and "theta_jn" not in self.parameters:
@@ -2304,7 +2321,7 @@ class _Conversion(object):
             self._comoving_distance_from_z()
 
         evolve_suffix = "_non_evolved"
-        if evolve_condition or self.NRSurrogate or self.waveform_fit:
+        if evolve_condition or self.NRSurrogate or self.waveform_fit or self.non_precessing:
             evolve_suffix = ""
             evolve_condition = True
         if "redshift" in self.parameters:

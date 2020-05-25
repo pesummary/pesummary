@@ -126,8 +126,8 @@ class GWBaseRead(BaseRead):
         super(GWBaseRead, self).test_injection_parameters(true)
         self.result.add_injection_parameters_from_file("./tests/main_injection.xml")
         true = {
-            'mass_1': 53.333333, 'mass_2': 26.666667, 'a_1': 0,
-            'a_2': 0, 'tilt_1': float('nan'), 'tilt_2': float('nan'),
+            'mass_1': 53.333333, 'mass_2': 26.666667, 'a_1': float('nan'),
+            'a_2': float('nan'), 'tilt_1': float('nan'), 'tilt_2': float('nan'),
             'phi_jl': float('nan'), 'phi_12': float('nan'), 'psi': 1.75,
             'theta_jn': float('nan'), 'ra': float('nan'), 'dec': 1.949725,
             'luminosity_distance': 139.76429, 'geocent_time': float('nan'),
@@ -139,6 +139,7 @@ class GWBaseRead(BaseRead):
             'total_mass_source': 77.605309, 'chirp_mass_source': 31.474869}
         assert all(i in list(true.keys()) for i in self.parameters)
         for i in true.keys():
+            print(i, true[i], self.result.injection_parameters[i])
             if math.isnan(true[i]):
                 assert math.isnan(self.result.injection_parameters[i])
             else:
