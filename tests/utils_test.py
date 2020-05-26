@@ -22,6 +22,7 @@ import copy
 import pesummary
 import pesummary.cli as cli
 from pesummary.utils import utils
+from pesummary.utils.tqdm import tqdm
 from pesummary.utils.samples_dict import (
     Array, SamplesDict, MCMCSamplesDict, MultiAnalysisSamplesDict
 )
@@ -219,14 +220,6 @@ class TestUtils(object):
         """Test the get_version_information method
         """
         assert isinstance(get_version_information(), str)
-
-
-def test_logger():
-    with LogCapture() as l:
-        utils.logger.info("info")
-        utils.logger.warning("warning")
-    l.check(("PESummary", "INFO", "info"),
-            ("PESummary", "WARNING", "warning"),)
 
 
 class TestGelmanRubin(object):
@@ -563,6 +556,41 @@ class TestArray(object):
         )
 
 
+class TestTQDM(object):
+    """Test the pesummary.utils.tqdm.tqdm class
+    """
+    def setup(self):
+        self._range = range(100)
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_basic_iterator(self):
+        """Test that the core functionality of the tqdm class remains
+        """
+        for j in tqdm(self._range):
+            _ = j*j
+
+    def test_interaction_with_logger(self):
+        """Test that tqdm interacts nicely with logger
+        """
+        from pesummary.utils.utils import logger, LOG_FILE
+
+        with open("./.outdir/test.dat", "w") as f:
+            for j in tqdm(self._range, logger=logger, file=f):
+                _ = j*j
+
+        with open("./.outdir/test.dat", "r") as f:
+            lines = f.readlines()
+            assert "PESummary" in lines[-1]
+            assert "INFO" in lines[-1]
+        
+
 def test_jensen_shannon_divergence():
     """Test that the `jension_shannon_divergence` method returns the same
     values as the scipy function
@@ -587,7 +615,6 @@ def test_jensen_shannon_divergence():
     )
 
 
-
 def test_make_cache_style_file():
     """Test that the `make_cache_style_file` works as expected
     """
@@ -602,6 +629,14 @@ def test_make_cache_style_file():
         lines = f.readlines()
     assert len(lines) == 1
     assert lines[0] == "test : 10"
+
+
+def test_logger():
+    with LogCapture() as l:
+        utils.logger.info("info")
+        utils.logger.warning("warning")
+    l.check(("PESummary", "INFO", "info"),
+            ("PESummary", "WARNING", "warning"),)
 
 
 def make_cache_style_file(style_file):

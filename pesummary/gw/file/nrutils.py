@@ -797,7 +797,8 @@ def NRSur_fit(
             f_low=f_low, f_ref=f_ref[num], approximant=approximant,
             extra_params_dict=kwargs
         ) for num in iterator(
-            range(len(mass_1)), desc=description, tqdm=True, total=len(mass_1)
+            range(len(mass_1)), desc=description, tqdm=True, total=len(mass_1),
+            logger=logger
         )
     ]
     nr_fits = {key: np.array([dic[key] for dic in _fits]) for key in _fits[0]}

@@ -801,14 +801,14 @@ def _final_from_initial(
                         _wrapper_return_final_mass_and_final_spin_from_waveform,
                         args
                     ), tqdm=True, desc="Evaluating {} fit".format(approximant),
-                    logger_output=True, total=len(mass_1)
+                    logger=logger, total=len(mass_1)
                 )
             )).T
     else:
         final_mass, final_spin = [], []
         _iterator = iterator(
             range(kwargs["nsamples"]), tqdm=True, total=len(mass_1),
-            desc="Evaluating {} fit".format(approximant)
+            desc="Evaluating {} fit".format(approximant), logger=logger
         )
         for i in _iterator:
             data = _wrapper_return_final_mass_and_final_spin_from_waveform(
@@ -1869,7 +1869,8 @@ class _Conversion(object):
         tilt_1_evolved, tilt_2_evolved, phi_12_evolved = evolve_spins(
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5], samples[6], f_low, samples[7][0],
-            approximant, final_velocity=final_velocity
+            approximant, final_velocity=final_velocity,
+            multi_process=self.multi_process
         )
         spin_1z_evolved = samples[2] * np.cos(tilt_1_evolved)
         spin_2z_evolved = samples[3] * np.cos(tilt_2_evolved)

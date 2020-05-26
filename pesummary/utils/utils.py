@@ -27,37 +27,9 @@ from scipy.interpolate import interp1d
 from scipy import stats
 import h5py
 
-from tqdm import tqdm as Basetqdm
-
 CACHE_DIR = os.path.expanduser(os.path.join("~", ".cache", "pesummary"))
 STYLE_CACHE = os.path.join(CACHE_DIR, "style")
 LOG_CACHE = os.path.join(CACHE_DIR, "log")
-
-
-class _tqdm(Basetqdm):
-
-    @property
-    def format_dict(self):
-        """Public API for read-only member access."""
-        return dict(
-            n=self.n, total=self.total,
-            elapsed=self._time() - self.start_t
-            if hasattr(self, 'start_t') else 0,
-            asctime=time.strftime("%Y-%m-%d  %H:%M:%S"),
-            ncols=self.dynamic_ncols(self.fp)
-            if self.dynamic_ncols else self.ncols,
-            prefix=self.desc, ascii=self.ascii, unit=self.unit,
-            unit_scale=self.unit_scale,
-            rate=1 / self.avg_time if self.avg_time else None,
-            bar_format=self.bar_format, postfix=self.postfix,
-            unit_divisor=self.unit_divisor)
-
-
-def trange(*args, **kwargs):
-    """
-    A shortcut for tqdm(range(*args), **kwargs).
-    """
-    return _tqdm(range(*args), **kwargs)
 
 
 def resample_posterior_distribution(posterior, nsamples):
@@ -288,7 +260,6 @@ def remove_tmp_directories():
     """
     import shutil
     from glob import glob
-    import time
 
     directories = glob(".tmp/pesummary/*")
 
@@ -579,8 +550,8 @@ def unzip(zip_file, outdir=".", overwrite=False):
 
 
 def iterator(
-    iterable, desc="", tqdm=False, logger_output=True, total=None,
-    logger_name="PESummary"
+    iterable, desc=None, logger=None, tqdm=False, total=None, file=None,
+    bar_format=None
 ):
     """Return either a tqdm iterator, if tqdm installed, or a simple range
 
@@ -598,20 +569,22 @@ def iterator(
         total length of iterable
     logger_name: str, optional
         name of the logger you wish to use
+    file: str, optional
+        path to file that you wish to write the output to
     """
+    from pesummary.utils.tqdm import tqdm
     if tqdm:
         try:
             FORMAT, DESC = None, None
-            if logger_output:
-                data = {"name": logger_name, "levelname": "INFO",
-                        "message": desc, "asctime": "{asctime}"}
-                FORMAT = _logger_format() % (data) + (
-                    ' | {percentage:3.0f}% | {n_fmt}/{total_fmt} | {elapsed}'
+            if bar_format is None:
+                FORMAT = (
+                    '{desc} | {percentage:3.0f}% | {n_fmt}/{total_fmt} | {elapsed}'
                 )
-            elif len(desc):
+            if desc is not None:
                 DESC = desc
-            return _tqdm(
-                iterable, total=total, desc=DESC, bar_format=FORMAT
+            return tqdm(
+                iterable, total=total, logger=logger, desc=DESC, file=file,
+                bar_format=FORMAT,
             )
         except ImportError:
             return iterable
@@ -845,9 +818,7 @@ def _default_filename(default_filename, label=None):
         The label of the analysis. This is used in the filename
     """
     if not label:
-        from time import time
-
-        filename = default_filename.format(round(time()))
+        filename = default_filename.format(round(time.time()))
     else:
         filename = default_filename.format(label)
     return filename
