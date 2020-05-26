@@ -484,7 +484,14 @@ def write_lalinference(
     reverse_map = {item: key for key, item in lalinference_map.items()}
     no_key = []
     for param in _samples.keys():
-        if param in reverse_map.keys():
+        if param in reverse_map.keys() and reverse_map[param] in _samples.keys():
+            logger.warn(
+                "The LALInference name for '{}' is '{}'. '{}' already found "
+                "in the posterior table. Keeping both entries".format(
+                    param, reverse_map[param], reverse_map[param]
+                )
+            )
+        elif param in reverse_map.keys():
             _samples[reverse_map[param]] = _samples.pop(param)
         elif param not in lalinference_map.keys():
             no_key.append(param)
