@@ -164,7 +164,7 @@ class GWMetaFile(GWPostProcessing):
             existing_metafile=existing_metafile, approximant=self.approximant,
             package_information=self.package_information,
             mcmc_samples=self.mcmc_samples, skymap=self.skymap,
-            existing_skymap=self.existing_skymap
+            existing_skymap=self.existing_skymap, filename=self.filename
         )
         meta_file.make_dictionary()
         if not self.hdf5:

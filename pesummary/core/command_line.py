@@ -480,6 +480,10 @@ def _pesummary_metafile_command_line_options(parser):
         "--save_to_json", action="store_true", default=False,
         help="save the meta file in json format"
     )
+    pesummary_group.add_argument(
+        "--posterior_samples_filename", dest="filename", default=None,
+        help="name of the posterior samples metafile that is produced"
+    )
     return pesummary_group
 
 
