@@ -102,10 +102,10 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir .outdir --samples .outdir/example.json "
             "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
-            "--labels test"
+            "--labels test --posterior_samples_filename example.h5"
         )
         self.launch(command_line)
-        f = read(".outdir/samples/posterior_samples.h5")
+        f = read(".outdir/samples/example.h5")
         psd = np.genfromtxt(".outdir/psd.dat")
         calibration = np.genfromtxt(".outdir/calibration.dat")
         np.testing.assert_almost_equal(f.psd["test"]["H1"], psd)

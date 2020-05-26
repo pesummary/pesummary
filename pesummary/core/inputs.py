@@ -284,14 +284,24 @@ class _Input(object):
         self._existing_metafile = existing_metafile
         if not os.path.isdir(os.path.join(self.existing, "samples")):
             raise InputError("Please provide a valid existing directory")
-        files = glob(
-            os.path.join(self.existing, "samples", "posterior_samples*")
-        )
-        if len(files) == 0:
+        _dir = os.path.join(self.existing, "samples")
+        files = glob(os.path.join(_dir, "posterior_samples*"))
+        dir_content = glob(os.path.join(_dir, "*.h5"))
+        dir_content.extend(glob(os.path.join(_dir, "*.json")))
+        dir_content.extend(glob(os.path.join(_dir, "*.hdf5")))
+        if len(files) == 0 and len(dir_content):
+            files = dir_content
+            logger.warn(
+                "Unable to find a 'posterior_samples*' file in the existing "
+                "directory. Using '{}' as the existing metafile".format(
+                    dir_content[0]
+                )
+            )
+        elif len(files) == 0:
             raise InputError(
                 "Unable to find an existing metafile in the existing webdir"
             )
-        if len(files) > 1:
+        elif len(files) > 1:
             raise InputError(
                 "Multiple metafiles in the existing directory. Please either "
                 "run the `summarycombine_metafile` executable to combine the "
@@ -328,6 +338,23 @@ class _Input(object):
             style_file = default
         make_cache_style_file(style_file)
         self._style_file = style_file
+
+    @property
+    def filename(self):
+        return self._filename
+
+    @filename.setter
+    def filename(self, filename):
+        self._filename = filename
+        if filename is not None:
+            if "/" in filename:
+                logger.warn("")
+                filename = filename.split("/")[-1]
+            if os.path.isfile(os.path.join(self.webdir, "samples", filename)):
+                logger.warn(
+                    "A file with filename '{}' already exists in the samples "
+                    "directory '{}'. This will be overwritten"
+                )
 
     @property
     def user(self):
@@ -1441,6 +1468,7 @@ class Input(_Input):
         self.user = self.opts.user
         self.webdir = self.opts.webdir
         self.baseurl = self.opts.baseurl
+        self.filename = self.opts.filename
         self.mcmc_samples = self.opts.mcmc_samples
         self.labels = self.opts.labels
         self.weights = {i: None for i in self.labels}
@@ -1553,6 +1581,7 @@ class PostProcessing(object):
     """
     def __init__(self, inputs, colors="default"):
         self.inputs = inputs
+        self.filename = self.inputs.filename
         self.result_files = self.inputs.result_files
         self.existing = self.inputs.existing
         self.compare_results = self.inputs.compare_results

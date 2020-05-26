@@ -503,7 +503,7 @@ class MetaFile(PostProcessing):
             existing_priors=self.existing_priors,
             existing_metafile=self.existing_metafile,
             package_information=self.package_information,
-            mcmc_samples=self.mcmc_samples
+            mcmc_samples=self.mcmc_samples, filename=self.filename
         )
         meta_file.make_dictionary()
         if not self.hdf5:
