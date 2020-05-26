@@ -151,19 +151,19 @@ lalinference:
     - schedule
     - pushes
 
-bilby:
-  stage: consequences
-  image: python:3.6
-  script:
-    - *pesummary_install
-    - curl https://raw.githubusercontent.com/lscsoft/bilby/master/examples/gw_examples/injection_examples/fast_tutorial.py -o fast_tutorial.py
-    - sed -i '/result.plot_corner()/d' ./fast_tutorial.py
-    - sed -i 's/result = bilby.run_sampler(/result = bilby.run_sampler(dlogz=1000, /' ./fast_tutorial.py
-    - python fast_tutorial.py
-    - summarypages --webdir ./outdir/webpage --samples ./outdir/fast_tutorial_result.json --gw
-  only:
-    - schedule
-    - pushes
+##bilby:
+##  stage: consequences
+##  image: python:3.6
+##  script:
+##    - *pesummary_install
+##    - curl https://raw.githubusercontent.com/lscsoft/bilby/master/examples/gw_examples/injection_examples/fast_tutorial.py -o fast_tutorial.py
+##    - sed -i '/result.plot_corner()/d' ./fast_tutorial.py
+##    - sed -i 's/result = bilby.run_sampler(/result = bilby.run_sampler(dlogz=1000, /' ./fast_tutorial.py
+##    - python fast_tutorial.py
+##    - summarypages --webdir ./outdir/webpage --samples ./outdir/fast_tutorial_result.json --gw
+##  only:
+##    - schedule
+##    - pushes
 
 GW190412:
   stage: consequences
@@ -213,7 +213,7 @@ pages:
     - documentation
     - python3.6-core
     - python3.6-gw
-    - bilby
+    ##- bilby
     - lalinference
   script:
     - mkdir public/
