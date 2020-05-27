@@ -1,10 +1,34 @@
-## 0.5.6 [unreleased]
+## 0.5.6 [27/05/2020]
 
 ### Changed
 
+- Parallelize spin evolution - allow the spin evolution calculation to run on
+  multiple cpu's to speed up the evaluation
+- Versioneer - utilize the `versioneer` package to keep track of versions
+- Downsample - downsample the result file prior to passing to the conversion
+  suite
+- rename non-precessing remnant fits - rename the `{}_non_evolved` quantities to
+  `{}` for non-precessing remnant properties.
+- Bounded 1d KDEs for JS divergence - use the Bounded_1d_kde function for
+  JS divergences calculated for the `gw` package
+- BBH remnant fits - only apply BBH remnant fits to BBH systems. This can be
+  forced with the `force_remnant_computation` kwarg to the `Conversion` class
+- Parallelize redshift computation - Allow the exact redshift method to run on
+  multiple cpus to speed up the computation
+
 ### Added
 
-## 0.5.5 [11/05/2019]
+- Add more options to the PSD and Calibration `save_to_file` method
+- Add new parser function to handle unknown command line arguments provided to
+  `summarypages`
+- Add a `write` method to easily transform posterior samples between multiple
+  file formats
+- Store `ligo.skymap` data in the metafile and add a new class to handle this
+  data
+- Allow the user to specify the name of the metafile produced with the
+  `--posterior_samples_filename` command line argument
+
+## 0.5.5 [11/05/2020]
 
 ### Changed
 
@@ -14,7 +38,7 @@
 ### Added
 
 
-## 0.5.4 [08/05/2019]
+## 0.5.4 [08/05/2020]
 
 ### Changed
 
