@@ -126,7 +126,7 @@ class TestSummaryPages(Base):
         self.launch(command_line)
         f = read(".outdir/samples/posterior_samples.h5")
         assert "gracedb" in f.extra_kwargs[0]["meta_data"]
-        assert "G17864" == f.extra_kwargs[0]["meta_data"]["gracedb"]
+        assert "G17864" == f.extra_kwargs[0]["meta_data"]["gracedb"]["id"]
 
     def test_single(self):
         """Test on a single input
