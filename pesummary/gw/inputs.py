@@ -229,14 +229,34 @@ class _GWInput(_Input):
     def gracedb(self, gracedb):
         self._gracedb = gracedb
         if gracedb is not None:
+            from pesummary.gw.gracedb import get_gracedb_data, HTTPError
             first_letter = gracedb[0]
             if first_letter != "G" and first_letter != "g" and first_letter != "S":
                 raise InputError(
                     "Invalid GraceDB ID passed. The GraceDB ID must be of the "
                     "form G0000 or S0000"
                 )
+            _error = (
+                "Unable to download data from Gracedb because {}. Only storing "
+                "the GraceDB ID in the metafile"
+            )
+            try:
+                logger.info(
+                    "Downloading {} from gracedb for {}".format(
+                        ", ".join(self.gracedb_data), gracedb
+                    )
+                )
+                json = get_gracedb_data(gracedb, info=self.gracedb_data)
+                json["id"] = gracedb
+            except HTTPError as e:
+                logger.warn(_error.format(e))
+                json = {"id": gracedb}
+            except RuntimeError as e:
+                logger.warn(_error.format(e))
+                json = {"id": gracedb}
+
             for label in self.labels:
-                self.file_kwargs[label]["meta_data"]["gracedb"] = gracedb
+                self.file_kwargs[label]["meta_data"]["gracedb"] = json
 
     @property
     def detectors(self):
@@ -805,6 +825,7 @@ class GWInput(_GWInput, Input):
             self.existing_calibration = None
             self.existing_skymap = None
         self.approximant = self.opts.approximant
+        self.gracedb_data = self.opts.gracedb_data
         self.gracedb = self.opts.gracedb
         self.detectors = None
         self.skymap = None

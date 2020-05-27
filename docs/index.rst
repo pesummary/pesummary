@@ -109,6 +109,7 @@ for details:
     cli/summarycombine
     cli/summarydetchar
     cli/summarymodify
+    cli/summarygracedb
     cli/summarypages
     cli/summarypageslw
     cli/summarypipe

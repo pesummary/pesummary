@@ -28,9 +28,10 @@ class parser(core_parser):
     dynamic_argparse: list
         list of dynamic argparse methods
     """
-    def __init__(self):
-        super(parser, self).__init__()
-        insert_gwspecific_option_group(self._parser)
+    def __init__(self, existing_parser=None):
+        super(parser, self).__init__(existing_parser=existing_parser)
+        if existing_parser is None:
+            insert_gwspecific_option_group(self._parser)
 
     @property
     def dynamic_argparse(self):
