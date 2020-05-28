@@ -326,7 +326,7 @@ class Read(object):
         """
         dat_file = np.genfromtxt(path, names=True)
         parameters = [i for i in dat_file.dtype.names]
-        samples = [list(x) for x in dat_file]
+        samples = np.atleast_2d(dat_file.tolist())
         return parameters, samples
 
     def generate_all_posterior_samples(self, **kwargs):
@@ -373,7 +373,26 @@ class Read(object):
         """
         self.data[0], self.data[1] = function(self.parameters, self.samples, config_file)
 
-    def _add_injection_parameters_from_file(self, injection_file, function):
+    def add_injection_parameters_from_file(self, injection_file, **kwargs):
+        """
+        """
+        self.injection_parameters = self._add_injection_parameters_from_file(
+            injection_file, self._grab_injection_parameters_from_file,
+            **kwargs
+        )
+
+    def _grab_injection_parameters_from_file(self, path, **kwargs):
+        """
+        """
+        from pesummary.core.file.injection import Injection
+
+        data = Injection.read(path, **kwargs).samples_dict
+        for i in self.parameters:
+            if i not in data.keys():
+                data[i] = float("nan")
+        return data
+
+    def _add_injection_parameters_from_file(self, injection_file, function, **kwargs):
         """Add the injection parameters from file
 
         Parameters
@@ -384,7 +403,7 @@ class Read(object):
             funcion you wish to use to extract the information from the
             injection file
         """
-        return function(injection_file)
+        return function(injection_file, **kwargs)
 
     def write(self, package="core", **kwargs):
         """Save the data to file

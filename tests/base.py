@@ -236,6 +236,27 @@ def make_calibration(outdir="./.outdir"):
     )
 
 
+def make_injection_file(
+    outdir="./.outdir", extension="json", return_filename=True,
+    return_injection_dict=True
+):
+    """
+    """
+    import os
+    from pesummary.io import write
+
+    filename = os.path.join(outdir, "injection.{}".format(extension))
+    parameters = gw_parameters()
+    samples = np.array([[np.random.random()] for i in range(len(parameters))]).T
+    write(parameters, samples, filename=filename, file_format=extension)
+    args = []
+    if return_filename:
+        args.append(filename)
+    if return_injection_dict:
+        args.append({param: samples[0][num] for num, param in enumerate(parameters)})
+    return args
+
+
 def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False,
                      lalinference=False, pesummary=False, pesummary_label="label",
                      config=None, psd=None, calibration=None):

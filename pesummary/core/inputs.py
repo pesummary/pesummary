@@ -228,7 +228,9 @@ class _Input(object):
             f.downsample(nsamples)
         f.generate_all_posterior_samples(**kwargs)
         if injection:
-            f.add_injection_parameters_from_file(injection)
+            f.add_injection_parameters_from_file(
+                injection, conversion_kwargs=kwargs
+            )
         parameters = f.parameters
         samples = np.array(f.samples).T
         DataFrame = {label: SamplesDict(parameters, samples)}

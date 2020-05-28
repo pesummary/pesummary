@@ -77,13 +77,17 @@ def read_json(path):
     if "content" in list(reduced_data.keys()):
         reduced_data = reduced_data["content"]
     parameters = list(reduced_data.keys())
-
+    reduced_data = {
+        j: list([reduced_data[j]]) if not isinstance(reduced_data[j], list) else
+        reduced_data[j] for j in parameters
+    }
     samples = [
         [
             reduced_data[j][i] if not isinstance(reduced_data[j][i], dict)
             else reduced_data[j][i]["real"] for j in parameters
         ] for i in range(len(reduced_data[parameters[0]]))
     ]
+    print(parameters, samples)
     return parameters, samples
 
 

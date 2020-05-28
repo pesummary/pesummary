@@ -280,12 +280,6 @@ class LALInference(GWRead):
             "kwargs": extra_kwargs
         }
 
-    def add_injection_parameters_from_file(self, injection_file):
-        """
-        """
-        self.injection_parameters = self._add_injection_parameters_from_file(
-            injection_file, self._grab_injection_parameters_from_file)
-
     def add_fixed_parameters_from_config_file(self, config_file):
         """Search the conifiguration file and add fixed parameters to the
         list of parameters and samples

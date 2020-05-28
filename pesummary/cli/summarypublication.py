@@ -203,6 +203,7 @@ def make_2d_contour_plot(opts):
             linestyles=linestyles, gridsize=gridsize
         )
         current_xlow, current_xhigh = plt.xlim()
+        current_ylow, current_yhigh = plt.ylim()
         keys = opts.publication_kwargs.keys()
         if "xlow" in keys and "xhigh" in keys:
             plt.xlim(
@@ -215,6 +216,17 @@ def make_2d_contour_plot(opts):
             plt.xlim([current_xlow, float(opts.publication_kwargs["xhigh"])])
         elif "xlow" in keys:
             plt.xlim([float(opts.publication_kwargs["xlow"]), current_xhigh])
+        if "ylow" in keys and "yhigh" in keys:
+            plt.ylim(
+                [
+                    float(opts.publication_kwargs["ylow"]),
+                    float(opts.publication_kwargs["yhigh"])
+                ]
+            )
+        elif "yhigh" in keys:
+            plt.ylim([current_ylow, float(opts.publication_kwargs["yhigh"])])
+        elif "ylow" in keys:
+            plt.ylim([float(opts.publication_kwargs["ylow"]), current_yhigh])
         fig.savefig("%s/2d_contour_plot_%s" % (opts.webdir, "_and_".join(i)))
         plt.close()
 

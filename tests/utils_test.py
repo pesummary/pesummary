@@ -23,6 +23,7 @@ import pesummary
 import pesummary.cli as cli
 from pesummary.utils import utils
 from pesummary.utils.tqdm import tqdm
+from pesummary.utils.dict import Dict
 from pesummary.utils.samples_dict import (
     Array, SamplesDict, MCMCSamplesDict, MultiAnalysisSamplesDict
 )
@@ -637,6 +638,35 @@ def test_logger():
         utils.logger.warning("warning")
     l.check(("PESummary", "INFO", "info"),
             ("PESummary", "WARNING", "warning"),)
+
+
+class TestDict(object):
+    """Class to test the NestedDict object
+    """
+    def test_initiate(self):
+        """Initiate the Dict class
+        """
+        from pesummary.gw.file.psd import PSD
+
+        x = Dict(
+            {"a": [[10, 20], [10, 20]]}, value_class=PSD,
+            value_columns=["value", "value2"]
+        )
+        assert list(x.keys()) == ["a"]
+        np.testing.assert_almost_equal(x["a"], [[10, 20], [10, 20]])
+        assert isinstance(x["a"], PSD)
+        np.testing.assert_almost_equal(x["a"].value, [10, 10])
+        np.testing.assert_almost_equal(x["a"].value2, [20, 20])
+
+        x = Dict(
+            ["a"], [[[10, 20], [10, 20]]], value_class=PSD,
+            value_columns=["value", "value2"]
+        )
+        assert list(x.keys()) == ["a"]
+        np.testing.assert_almost_equal(x["a"], [[10, 20], [10, 20]])
+        assert isinstance(x["a"], PSD)
+        np.testing.assert_almost_equal(x["a"].value, [10, 10])
+        np.testing.assert_almost_equal(x["a"].value2, [20, 20])
 
 
 def make_cache_style_file(style_file):
