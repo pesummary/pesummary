@@ -87,7 +87,6 @@ def read_json(path):
             else reduced_data[j][i]["real"] for j in parameters
         ] for i in range(len(reduced_data[parameters[0]]))
     ]
-    print(parameters, samples)
     return parameters, samples
 
 
