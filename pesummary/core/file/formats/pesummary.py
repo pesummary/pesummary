@@ -117,6 +117,7 @@ def write_pesummary(
         file_kwargs = {label: {} for label in labels}
     elif not all(label in file_kwargs.keys() for label in labels):
         file_kwargs = {label: file_kwargs for label in labels}
+
     if file_versions is None or isinstance(file_versions, str):
         file_versions = {label: "No version information found" for label in labels}
     elif not all(label in file_versions.keys() for label in labels):

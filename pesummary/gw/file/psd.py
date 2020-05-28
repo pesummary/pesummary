@@ -17,6 +17,77 @@ import os
 import numpy as np
 from pesummary import conf
 from pesummary.utils.utils import logger, check_file_exists_and_rename
+from pesummary.utils.dict import Dict
+
+
+class PSDDict(Dict):
+    """Class to handle a dictionary of PSDs
+
+    Parameters
+    ----------
+    detectors: list
+        list of detectors
+    data: nd list
+        list of psd samples for each detector. First column is frequencies,
+        second column is strains
+
+    Attributes
+    ----------
+    detectors: list
+        list of detectors stored in the dictionary
+
+    Methods
+    -------
+    plot:
+        Generate a plot based on the psd samples stored
+
+    Examples
+    --------
+    >>> from pesummary.gw.file.psd import PSDDict
+    >>> detectors = ["H1", "V1"]
+    >>> psd_data = [
+    ...     [[0.00000e+00, 2.50000e-01],
+    ...      [1.25000e-01, 2.50000e-01],
+    ...      [2.50000e-01, 2.50000e-01]],
+    ...     [[0.00000e+00, 2.50000e-01],
+    ...      [1.25000e-01, 2.50000e-01],
+    ...      [2.50000e-01, 2.50000e-01]]
+    ... ]
+    >>> psd_dict = PSDDict(detectors, psd_data)
+    >>> psd_data = {
+    ...     "H1": [[0.00000e+00, 2.50000e-01],
+    ...            [1.25000e-01, 2.50000e-01],
+    ...            [2.50000e-01, 2.50000e-01]],
+    ...     "V1": [[0.00000e+00, 2.50000e-01],
+    ...            [1.25000e-01, 2.50000e-01],
+    ...            [2.50000e-01, 2.50000e-01]]
+    ... }
+    >>> psd_dict = PSDDict(psd_data)
+    """
+    def __init__(self, *args):
+        super(PSDDict, self).__init__(
+            *args, value_class=PSD, value_columns=["frequencies", "strains"]
+        )
+
+    @property
+    def detectors(self):
+        return list(self.keys())
+
+    def plot(self, **kwargs):
+        """Generate a plot to display the PSD data stored in PSDDict
+
+        Parameters
+        ----------
+        **kwargs: dict
+            all additional kwargs are passed to
+            pesummary.gw.plots.plot._psd_plot
+        """
+        from pesummary.gw.plots.plot import _psd_plot
+
+        _detectors = self.detectors
+        frequencies = [self[IFO].frequencies for IFO in _detectors]
+        strains = [self[IFO].strains for IFO in _detectors]
+        return _psd_plot(frequencies, strains, labels=_detectors, **kwargs)
 
 
 class PSD(np.ndarray):

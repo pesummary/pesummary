@@ -161,13 +161,13 @@ class PESummary(GWRead, CorePESummary):
         if "config" in self.data.keys():
             self.config = self.data["config"]
         if "psd" in self.data.keys():
-            from pesummary.gw.file.psd import PSD
+            from pesummary.gw.file.psd import PSDDict
 
             try:
                 self.psd = {
-                    label: {
-                        ifo: PSD(value) for ifo, value in psd_data.items()
-                    } for label, psd_data in self.data["psd"].items()
+                    label: PSDDict(
+                        {ifo: value for ifo, value in psd_data.items()}
+                    ) for label, psd_data in self.data["psd"].items()
                 }
             except (KeyError, AttributeError):
                 self.psd = self.data["psd"]

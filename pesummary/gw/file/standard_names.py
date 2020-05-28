@@ -124,6 +124,11 @@ bilby_map = {
     "cos_theta_jn": "cos_theta_jn",
 }
 
+pycbc_map = {
+    "mchirp": "chirp_mass",
+    "coa_phase": "phase",
+}
+
 pesummary_map = {
     "V1_optimal_snr": "V1_optimal_snr",
     "E1_optimal_snr": "E1_optimal_snr",

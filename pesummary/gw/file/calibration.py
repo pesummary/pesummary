@@ -17,6 +17,43 @@ import os
 import numpy as np
 from pesummary import conf
 from pesummary.utils.utils import logger, check_file_exists_and_rename
+from pesummary.utils.dict import Dict
+
+
+class CalibrationDict(Dict):
+    """Class to handle a dictionary of calibration data
+
+    Parameters
+    ----------
+    detectors: list
+        list of detectors
+    data: nd list
+        list of calibration samples for each detector. Each of the columns
+        should represent Frequency, Median Mag, Phase (Rad), -1 Sigma Mag,
+        -1 Sigma Phase, +1 Sigma Mag, +1 Sigma Phase
+
+    Attributes
+    ----------
+    detectors: list
+        list of detectors stored in the dictionary
+
+    Methods
+    -------
+    plot:
+        Generate a plot based on the calibration samples stored
+    """
+    def __init__(self, *args):
+        _columns = [
+            "frequencies", "magnitude", "phase", "magnitude_lower",
+            "phase_lower", "magnitude_upper", "phase_upper"
+        ]
+        super(CalibrationDict, self).__init__(
+            *args, value_class=Calibration, value_columns=_columns
+        )
+
+    @property
+    def detectors(self):
+        return list(self.keys())
 
 
 class Calibration(np.ndarray):

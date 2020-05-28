@@ -28,6 +28,7 @@ def read_dat(path):
     """
     dat_file = np.genfromtxt(path, names=True)
     parameters = [i for i in dat_file.dtype.names]
+    dat_file = np.atleast_1d(dat_file)
     samples = [list(x) for x in dat_file]
     return parameters, samples
 

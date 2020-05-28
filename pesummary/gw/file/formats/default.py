@@ -147,12 +147,6 @@ class Default(GWRead):
         """
         return None
 
-    def add_injection_parameters_from_file(self, injection_file):
-        """
-        """
-        self.injection_parameters = self._add_injection_parameters_from_file(
-            injection_file, self._grab_injection_parameters_from_file)
-
     def add_marginalized_parameters_from_config_file(self, config_file):
         """Search the configuration file and add the marginalized parameters
         to the list of parameters and samples

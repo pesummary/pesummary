@@ -172,14 +172,14 @@ class GWRead(Read):
                 inj_samples[i] = float("nan")
         return inj_samples
 
-    def _grab_injection_parameters_from_file(self, injection_file):
-        extension = injection_file.split(".")[-1]
-        func_map = {"xml": self._grab_injection_data_from_xml_file,
-                    "hdf5": self._grab_injection_data_from_hdf5_file,
-                    "h5": self._grab_injection_data_from_hdf5_file,
-                    "gz": self._unzip_injection_file}
-        data = func_map[extension](injection_file)
-        return self.convert_injection_parameters(data)
+    def _grab_injection_parameters_from_file(self, injection_file, **kwargs):
+        from pesummary.gw.file.injection import GWInjection
+
+        inj_samples = GWInjection.read(injection_file, **kwargs).samples_dict
+        for i in self.parameters:
+            if i not in list(inj_samples.keys()):
+                inj_samples[i] = float("nan")
+        return inj_samples
 
     def _unzip_injection_file(self, injection_file):
         """Unzip the injection file and extract injection parameters from
