@@ -998,8 +998,8 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
             strains[num] = ss[ind]
         plt.loglog(i, strains[num], color=colors[num], label=labels[num])
     ax.tick_params(which="both", bottom=True, length=3, width=1)
-    ax.set_xlabel(r"Frequency $[Hz]$")
-    ax.set_ylabel(r"Power Spectral Density [$strain^{2}/\mathrm{Hz}$]")
+    ax.set_xlabel(r"Frequency $[\mathrm{Hz}]$")
+    ax.set_ylabel(r"Power Spectral Density [$\mathrm{strain}^{2}/\mathrm{Hz}$]")
     plt.legend(loc="best")
     plt.tight_layout()
     return fig
