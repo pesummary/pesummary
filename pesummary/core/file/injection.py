@@ -27,7 +27,7 @@ class Injection(SamplesDict):
     samples: nd list
         list of samples for each parameter
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, conversion_kwargs={}, **kwargs):
         super(Injection, self).__init__(*args, **kwargs)
 
     @classmethod
