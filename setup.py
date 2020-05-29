@@ -20,10 +20,6 @@ from pathlib import Path
 
 import versioneer
 from setuptools import setup
-from setuptools.command import (
-    build_py,
-    sdist,
-)
 
 # tell python we're in setup.py
 builtins._PESUMMARY_SETUP = True
@@ -68,6 +64,9 @@ def write_version_file(version):
     return ".version"
 
 
+cmdclass = versioneer.get_cmdclass()
+
+
 class _VersionedCommand(object):
     def run(self):
         log.info("generating {}".format(version_file))
@@ -80,11 +79,11 @@ class _VersionedCommand(object):
         super().run()
 
 
-class VersionedSdist(_VersionedCommand, sdist.sdist):
+class VersionedSdist(_VersionedCommand, cmdclass["sdist"]):
     pass
 
 
-class VersionedBuildPy(_VersionedCommand, build_py.build_py):
+class VersionedBuildPy(_VersionedCommand, cmdclass["build_py"]):
     pass
 
 
