@@ -715,7 +715,7 @@ def kolmogorov_smirnov_test(samples, decimal=5):
     return np.round(stats.ks_2samp(*samples)[1], decimal)
 
 
-def jension_shannon_divergence(
+def jensen_shannon_divergence(
     samples, kde=stats.gaussian_kde, decimal=5, base=np.e, **kwargs
 ):
     """Calculate the JS divergence between two sets of samples

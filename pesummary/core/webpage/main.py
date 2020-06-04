@@ -26,7 +26,7 @@ import numpy as np
 
 import pesummary
 from pesummary import conf
-from pesummary.utils.utils import logger, LOG_FILE, jension_shannon_divergence
+from pesummary.utils.utils import logger, LOG_FILE, jensen_shannon_divergence
 from pesummary.core.webpage import webpage
 
 
@@ -213,13 +213,13 @@ class _WebpageGeneration(object):
         ]
         js = [
             [
-                self._jension_shannon_divergence(param, [samples[i], samples[j]])
+                self._jensen_shannon_divergence(param, [samples[i], samples[j]])
                 for i in rows
             ] for j in columns
         ]
         return [ks, js]
 
-    def _jension_shannon_divergence(self, param, samples):
+    def _jensen_shannon_divergence(self, param, samples):
         """Return the Jensen Shannon divergence between two sets of samples
 
         Parameters
@@ -230,7 +230,7 @@ class _WebpageGeneration(object):
             2d list containing the samples you wish to calculate the Jensen
             Shannon divergence between
         """
-        return jension_shannon_divergence([samples[0], samples[1]])
+        return jensen_shannon_divergence([samples[0], samples[1]])
 
     @staticmethod
     def get_executable(executable):

@@ -593,7 +593,7 @@ class TestTQDM(object):
         
 
 def test_jensen_shannon_divergence():
-    """Test that the `jension_shannon_divergence` method returns the same
+    """Test that the `jensen_shannon_divergence` method returns the same
     values as the scipy function
     """
     from scipy.spatial.distance import jensenshannon
@@ -606,12 +606,12 @@ def test_jensen_shannon_divergence():
     x = np.linspace(np.min(samples), np.max(samples), 100)
     kde = [stats.gaussian_kde(i)(x) for i in samples]
     _scipy = jensenshannon(*kde)**2
-    _pesummary = utils.jension_shannon_divergence(samples, decimal=9)
+    _pesummary = utils.jensen_shannon_divergence(samples, decimal=9)
     np.testing.assert_almost_equal(_scipy, _pesummary)
 
     from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
 
-    _pesummary = utils.jension_shannon_divergence(
+    _pesummary = utils.jensen_shannon_divergence(
         samples, decimal=9, kde=Bounded_1d_kde, xlow=4.5, xhigh=5.5
     )
 
