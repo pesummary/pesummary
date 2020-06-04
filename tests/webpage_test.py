@@ -229,7 +229,7 @@ class TestWebpage(object):
         """
         """
         from scipy.spatial.distance import jensenshannon
-        from pesummary.utils.utils import jension_shannon_divergence
+        from pesummary.utils.utils import jensen_shannon_divergence
         from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
 
         comparison_stats = self.webpage.comparison_stats

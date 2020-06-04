@@ -22,7 +22,7 @@ from pesummary.core.webpage import webpage
 from pesummary.core.webpage.main import _WebpageGeneration as _CoreWebpageGeneration
 from pesummary.core.webpage.main import PlotCaption
 from pesummary.gw.file.standard_names import descriptive_names
-from pesummary.utils.utils import logger, jension_shannon_divergence
+from pesummary.utils.utils import logger, jensen_shannon_divergence
 from pesummary import conf
 
 
@@ -156,7 +156,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.psd_path = {"other": os.path.join("..", "psds")}
         self.calibration_path = {"other": os.path.join("..", "calibration")}
 
-    def _jension_shannon_divergence(self, param, samples):
+    def _jensen_shannon_divergence(self, param, samples):
         """Return the Jensen Shannon divergence between two sets of samples
 
         Parameters
@@ -171,7 +171,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         from pesummary.gw.plots.plot import _return_bounds
 
         xlow, xhigh = _return_bounds(param, samples, comparison=True)
-        return jension_shannon_divergence(
+        return jensen_shannon_divergence(
             [samples[0], samples[1]], kde=Bounded_1d_kde, xlow=xlow,
             xhigh=xhigh
         )

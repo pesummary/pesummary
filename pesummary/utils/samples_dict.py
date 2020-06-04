@@ -735,7 +735,7 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
     -------
     js_divergence: float
         Return the JS divergence between two posterior distributions for a
-        given parameter. See pesummary.utils.utils.jension_shannon_divergence
+        given parameter. See pesummary.utils.utils.jensen_shannon_divergence
     ks_statistic: float
         Return the KS statistic between two posterior distributions for a
         given parameter. See pesummary.utils.utils.kolmogorov_smirnov_test
@@ -765,9 +765,9 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         decimal: int
             number of decimal places to keep when rounding
         """
-        from pesummary.utils.utils import jension_shannon_divergence
+        from pesummary.utils.utils import jensen_shannon_divergence
 
-        return jension_shannon_divergence(
+        return jensen_shannon_divergence(
             self.samples(parameter), decimal=decimal
         )
 
