@@ -402,6 +402,49 @@ class TestGWSummaryCombine_Metafiles(_SummaryCombine_Metafiles):
         super(TestGWSummaryCombine_Metafiles, self).check_output(gw=True)
 
 
+class TestSummaryCombine(Base):
+    """Test the `summarycombine` executable
+    """
+    def setup(self):
+        """Setup the SummaryCombine class
+        """
+        self.dirs = [".outdir"]
+        for dd in self.dirs:
+            if not os.path.isdir(dd):
+                os.mkdir(dd)
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        for dd in self.dirs:
+            if os.path.isdir(dd):
+                shutil.rmtree(dd)
+
+    def test_disable_prior_sampling(self):
+        """Test that the code skips prior sampling when the appropiate flag
+        is provided to the `summarypages` executable
+        """
+        from pesummary.io import read
+
+        make_result_file(bilby=True, gw=False)
+        os.rename(".outdir/test.json", ".outdir/bilby.json")
+        command_line = (
+            "summarycombine --webdir .outdir --samples .outdir/bilby.json "
+            "--labels core0"
+        )
+        self.launch(command_line)
+        f = read(".outdir/samples/posterior_samples.h5")
+        assert len(f.priors["samples"]["core0"])
+
+        command_line = (
+            "summarycombine --webdir .outdir --samples .outdir/bilby.json "
+            "--disable_prior_sampling --labels core0"
+        )
+        self.launch(command_line)
+        f = read(".outdir/samples/posterior_samples.h5")
+        assert not len(f.priors["samples"]["core0"])
+
+
 class TestSummaryReview(Base):
     """Test the `summaryreview` executable
     """

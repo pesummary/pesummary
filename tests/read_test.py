@@ -486,7 +486,7 @@ class BilbyFile(BaseRead):
         """Test that the priors are correctly extracted from the bilby result
         file
         """
-        for param, prior in self.result.priors.items():
+        for param, prior in self.result.priors["samples"].items():
             assert isinstance(prior, np.ndarray)
         f = read_function(self.path, disable_prior=True)
         assert not hasattr(f, "priors")
@@ -1216,11 +1216,11 @@ class TestGWJsonBilbyFile(GWBaseRead):
         file
         """
         assert "final_mass_source_non_evolved" not in self.result.parameters
-        for param, prior in self.result.priors.items():
+        for param, prior in self.result.priors["samples"].items():
             assert isinstance(prior, np.ndarray)
-        assert "final_mass_source_non_evolved" in self.result.priors.keys()
+        assert "final_mass_source_non_evolved" in self.result.priors["samples"].keys()
         f = read_function(self.path, disable_prior_conversion=True)
-        assert "final_mass_source_non_evolved" not in f.priors.keys()
+        assert "final_mass_source_non_evolved" not in f.priors["samples"].keys()
         f = read_function(self.path, disable_prior=True)
         assert not hasattr(f, "priors")
 

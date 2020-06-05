@@ -125,8 +125,8 @@ class GWRead(Read):
                     key: val for key, val in i.items()
                 } for i in self.injection_parameters
             ]
-        if "prior" in data.keys() and data["prior"] != {}:
-            priors = data["prior"]
+        if "prior" in data.keys() and data["prior"]["samples"] != {}:
+            priors = data["prior"]["samples"]
             default_parameters = list(priors.keys())
             default_samples = [
                 [priors[parameter][i] for parameter in default_parameters] for i
@@ -136,11 +136,11 @@ class GWRead(Read):
                 default_parameters, default_samples
             )
             if not kwargs.get("disable_prior_conversion", False):
-                self.priors = con._Conversion(
+                self.priors = {"samples": con._Conversion(
                     parameters, samples, extra_kwargs=self.extra_kwargs
-                )
+                )}
             else:
-                self.priors = SamplesDict(parameters, samples)
+                self.priors = {"samples": SamplesDict(parameters, samples)}
         if "weights" in self.data.keys():
             self.weights = self.data["weights"]
         else:

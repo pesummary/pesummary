@@ -98,7 +98,7 @@ def read_bilby(
     }
     if not disable_prior:
         prior_samples = Bilby.grab_priors(bilby_object, nsamples=len(samples))
-        data["prior"] = prior_samples
+        data["prior"] = {"samples": prior_samples}
     return data
 
 
