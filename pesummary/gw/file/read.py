@@ -81,7 +81,10 @@ GW_JSON_LOAD = {
 GW_DEFAULT = {"default": Default.load_file}
 
 
-def read(path, HDF5_LOAD=GW_HDF5_LOAD, JSON_LOAD=GW_JSON_LOAD, file_format=None):
+def read(
+    path, HDF5_LOAD=GW_HDF5_LOAD, JSON_LOAD=GW_JSON_LOAD, file_format=None,
+    **kwargs
+):
     """Read in a results file.
 
     Parameters
@@ -96,8 +99,10 @@ def read(path, HDF5_LOAD=GW_HDF5_LOAD, JSON_LOAD=GW_JSON_LOAD, file_format=None)
         dictionary containing possible methods for loading a JSON file. Key
         is a function which returns True or False depending on whether the input
         file belongs to that class of objects, value is the load function
+    **kwargs: dict, optional
+        all additional kwargs are passed directly to the load_file class method
     """
     return CoreRead(
         path, HDF5_LOAD=GW_HDF5_LOAD, JSON_LOAD=GW_JSON_LOAD, DEFAULT=GW_DEFAULT,
-        file_format=file_format
+        file_format=file_format, **kwargs
     )

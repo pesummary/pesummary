@@ -207,7 +207,7 @@ CORE_DEFAULT_LOAD = {
 DEFAULT_FORMATS = ["default", "dat", "json", "hdf5", "h5", "txt"]
 
 
-def _read(path, load_options, default=CORE_DEFAULT_LOAD):
+def _read(path, load_options, default=CORE_DEFAULT_LOAD, **load_kwargs):
     """Try and load a result file according to multiple options
 
     Parameters
@@ -220,14 +220,14 @@ def _read(path, load_options, default=CORE_DEFAULT_LOAD):
     for check, load in load_options.items():
         if check(path):
             try:
-                return load(path)
+                return load(path, **load_kwargs)
             except ImportError as e:
                 logger.warn(
                     "Failed due to import error: {}. Using default load".format(
                         e
                     )
                 )
-                return default["default"](path)
+                return default["default"](path, **load_kwargs)
             except Exception as e:
                 logger.info(
                     "Failed to read in {} with the {} class because {}".format(
@@ -241,7 +241,7 @@ def _read(path, load_options, default=CORE_DEFAULT_LOAD):
                 path, ", ".join([function.__name__ for function in load_options.keys()])
             )
         )
-    return default["default"](path)
+    return default["default"](path, **load_kwargs)
 
 
 def _file_format(file_format, options):
@@ -278,7 +278,7 @@ def _file_format(file_format, options):
 
 def read(
     path, HDF5_LOAD=CORE_HDF5_LOAD, JSON_LOAD=CORE_JSON_LOAD,
-    DEFAULT=CORE_DEFAULT_LOAD, file_format=None
+    DEFAULT=CORE_DEFAULT_LOAD, file_format=None, **kwargs
 ):
     """Read in a results file.
 
@@ -289,15 +289,17 @@ def read(
     format: str
         the file format you wish to use. Default None. If None, the read
         function loops through all possible options
+    **kwargs: dict, optional
+        all additional kwargs are passed directly to the load_file class method
     """
     path = os.path.expanduser(path)
     extension = Read.extension_from_path(path)
 
     if extension in ["hdf5", "h5", "hdf"]:
         options = _file_format(file_format, HDF5_LOAD)
-        return _read(path, options, default=DEFAULT)
+        return _read(path, options, default=DEFAULT, **kwargs)
     elif extension == "json":
         options = _file_format(file_format, JSON_LOAD)
-        return _read(path, options, default=DEFAULT)
+        return _read(path, options, default=DEFAULT, **kwargs)
     else:
-        return DEFAULT["default"](path)
+        return DEFAULT["default"](path, **kwargs)

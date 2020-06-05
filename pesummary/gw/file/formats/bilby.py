@@ -27,17 +27,16 @@ class Bilby(GWRead):
     `bilby.core.result.read_in_result`. All functions therefore use `bilby`
     methods and requires `bilby` to be installed.
 
-    Attributes
-    ----------
-    path_to_results_file: str
-        path to the results file that you wish to read in with `bilby`.
-    kwargs: dict
-        additional arguments that will be passed directly to `bilby`
-
     Parameters
     ----------
     path_to_results_file: str
-        path to the results file you wish to load
+        path to the results file that you wish to read in with `bilby`.
+    disable_prior: Bool, optional
+        if True, do not collect prior samples from the `bilby` result file.
+        Default False
+    disable_prior_conversion: Bool, optional
+        if True, disable the conversion module from deriving alternative prior
+        distributions. Default False
 
     Attributes
     ----------
@@ -72,14 +71,15 @@ class Bilby(GWRead):
         sampled distributions
     """
     def __init__(self, path_to_results_file, **kwargs):
-        super(Bilby, self).__init__(path_to_results_file)
-        self.load(self._grab_data_from_bilby_file)
+        super(Bilby, self).__init__(path_to_results_file, **kwargs)
+        print(kwargs)
+        self.load(self._grab_data_from_bilby_file, **kwargs)
 
     @classmethod
-    def load_file(cls, path):
+    def load_file(cls, path, **kwargs):
         if not os.path.isfile(path):
             raise Exception("%s does not exist" % (path))
-        return cls(path)
+        return cls(path, **kwargs)
 
     @staticmethod
     def grab_priors(bilby_object, nsamples=5000):
@@ -217,72 +217,19 @@ class Bilby(GWRead):
         return strain_data
 
     @staticmethod
-    def _grab_data_from_bilby_file(path):
+    def _grab_data_from_bilby_file(path, disable_prior=False, **kwargs):
         """
         Load the results file using the `bilby` library
 
         Complex matched filter SNRs are stored in the result file.
         The amplitude and angle are extracted here.
         """
-        from bilby.core.result import read_in_result
+        from pesummary.core.file.formats.bilby import read_bilby
 
-        bilby_object = read_in_result(filename=path)
-        posterior = bilby_object.posterior
-        _original_keys = posterior.keys()
-        for key in _original_keys:
-            for snr in ["matched_filter_snr", "optimal_snr"]:
-                if snr in key and any(np.iscomplex(posterior[key])):
-                    posterior[key + "_amp"] = abs(posterior[key])
-                    posterior[key + "_angle"] = np.angle(posterior[key])
-                    posterior[key] = np.real(posterior[key])
-                elif snr in key:
-                    posterior[key] = np.real(posterior[key])
-        # Drop all non numeric bilby data outputs
-        posterior = posterior.select_dtypes(include=[float, int])
-        parameters = list(posterior.keys())
-        samples = posterior.to_numpy().real
-        injection = bilby_object.injection_parameters
-        if injection is None:
-            injection = {i: j for i, j in zip(
-                parameters, [float("nan")] * len(parameters))}
-        else:
-            for key in injection.keys():
-                if not isinstance(injection[key], str):
-                    injection[key] = float(injection[key])
-            for i in parameters:
-                if i not in injection.keys():
-                    injection[i] = float("nan")
-        if all(i for i in (
-               bilby_object.constraint_parameter_keys,
-               bilby_object.search_parameter_keys,
-               bilby_object.fixed_parameter_keys)):
-            for key in (
-                    bilby_object.constraint_parameter_keys
-                    + bilby_object.search_parameter_keys
-                    + bilby_object.fixed_parameter_keys):
-                if key not in GWlatex_labels:
-                    label = bilby_object.get_latex_labels_from_parameter_keys(
-                        [key])[0]
-                    GWlatex_labels[key] = label
-        try:
-            extra_kwargs = Bilby.grab_extra_kwargs(bilby_object)
-        except Exception:
-            extra_kwargs = {"sampler": {}, "meta_data": {}}
-        extra_kwargs["sampler"]["nsamples"] = len(samples)
-        prior_samples = Bilby.grab_priors(bilby_object, nsamples=len(samples))
-        data = {}
-        try:
-            version = bilby_object.version
-        except Exception as e:
-            version = None
-        return {
-            "parameters": parameters,
-            "samples": samples.tolist(),
-            "injection": injection,
-            "version": version,
-            "kwargs": extra_kwargs,
-            "prior": prior_samples
-        }
+        return read_bilby(
+            path, disable_prior=disable_prior, latex_dict=GWlatex_labels,
+            complex_params=["matched_filter_snr", "optimal_snr"], **kwargs
+        )
 
     def add_marginalized_parameters_from_config_file(self, config_file):
         """Search the configuration file and add the marginalized parameters

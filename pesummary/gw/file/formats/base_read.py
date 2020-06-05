@@ -18,6 +18,7 @@ from scipy.interpolate import interp1d
 from pesummary.gw.file.standard_names import standard_names
 from pesummary.core.file.formats.base_read import Read
 from pesummary.utils.utils import logger
+from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.decorators import open_config
 from pesummary.gw.file import conversions as con
 
@@ -65,8 +66,8 @@ class GWRead(Read):
         generate all posterior distributions that may be derived from
         sampled distributions
     """
-    def __init__(self, path_to_results_file):
-        super(GWRead, self).__init__(path_to_results_file)
+    def __init__(self, path_to_results_file, **kwargs):
+        super(GWRead, self).__init__(path_to_results_file, **kwargs)
 
     def load(self, function, **kwargs):
         """Load a results file according to a given function
@@ -134,9 +135,12 @@ class GWRead(Read):
             parameters, samples = self.translate_parameters(
                 default_parameters, default_samples
             )
-            self.priors = con._Conversion(
-                parameters, samples, extra_kwargs=self.extra_kwargs
-            )
+            if not kwargs.get("disable_prior_conversion", False):
+                self.priors = con._Conversion(
+                    parameters, samples, extra_kwargs=self.extra_kwargs
+                )
+            else:
+                self.priors = SamplesDict(parameters, samples)
         if "weights" in self.data.keys():
             self.weights = self.data["weights"]
         else:

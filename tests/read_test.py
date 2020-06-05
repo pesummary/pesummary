@@ -482,6 +482,16 @@ class BilbyFile(BaseRead):
 
         super(BilbyFile, self).test_file_format_read(path, file_format, Bilby)
 
+    def test_priors(self, read_function=Read):
+        """Test that the priors are correctly extracted from the bilby result
+        file
+        """
+        for param, prior in self.result.priors.items():
+            assert isinstance(prior, np.ndarray)
+        f = read_function(self.path, disable_prior=True)
+        assert not hasattr(f, "priors")
+        
+
 
 class TestCoreJsonBilbyFile(BilbyFile):
     """Class to test loading in a bilby json file with the core Read function
@@ -553,6 +563,13 @@ class TestCoreJsonBilbyFile(BilbyFile):
         """
         super(TestCoreJsonBilbyFile, self).test_downsample()
 
+    def test_priors(self):
+        """Test that the priors are correctly extracted from the bilby result
+        file
+        """
+        super(TestCoreJsonBilbyFile, self).test_priors()
+
+
 
 class TestCoreHDF5BilbyFile(BilbyFile):
     """Class to test loading in a bilby hdf5 file with the core Read function
@@ -623,6 +640,12 @@ class TestCoreHDF5BilbyFile(BilbyFile):
         """Test that the posterior table is correctly downsampled
         """
         super(TestCoreHDF5BilbyFile, self).test_downsample()
+
+    def test_priors(self):
+        """Test that the priors are correctly extracted from the bilby result
+        file
+        """
+        super(TestCoreHDF5BilbyFile, self).test_priors(read_function=Read)
 
 
 class PESummaryFile(BaseRead):
@@ -1187,6 +1210,19 @@ class TestGWJsonBilbyFile(GWBaseRead):
         """Test that the posterior table is correctly downsampled
         """
         super(TestGWJsonBilbyFile, self).test_downsample()
+
+    def test_priors(self, read_function=GWRead):
+        """Test that the priors are correctly extracted from the bilby result
+        file
+        """
+        assert "final_mass_source_non_evolved" not in self.result.parameters
+        for param, prior in self.result.priors.items():
+            assert isinstance(prior, np.ndarray)
+        assert "final_mass_source_non_evolved" in self.result.priors.keys()
+        f = read_function(self.path, disable_prior_conversion=True)
+        assert "final_mass_source_non_evolved" not in f.priors.keys()
+        f = read_function(self.path, disable_prior=True)
+        assert not hasattr(f, "priors")
 
 
 class TestGWLALInferenceFile(GWBaseRead):
