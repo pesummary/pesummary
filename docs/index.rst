@@ -53,6 +53,14 @@ Reading a result file
 
     read
 
+PESummary metafile
+++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    core/read_pesummary
+
 Manipulating posterior samples
 ++++++++++++++++++++++++++++++
 
@@ -62,6 +70,7 @@ Manipulating posterior samples
     core/Array
     core/SamplesDict
     core/MCMCSamplesDict
+    core/MultiAnalysisSamplesDict
 
 Customisation
 +++++++++++++
@@ -128,6 +137,14 @@ Tutorials
 
 Specific to Gravitational Waves
 -------------------------------
+
+PESummary metafile
+++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    gw/read_pesummary
 
 Parameter definitions
 +++++++++++++++++++++
