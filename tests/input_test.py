@@ -279,6 +279,18 @@ class TestInput(object):
 
     def test_gracedb(self):
         assert self.inputs.gracedb == "Grace"
+        parser = command_line()
+        insert_gwspecific_option_group(parser)
+        default_arguments = [
+            "--approximant", "IMRPhenomPv2",
+            "--webdir", "./.outdir",
+            "--samples", "./tests/files/bilby_example.h5",
+            "--email", "albert.einstein@ligo.org",
+            "--gracedb", "Mock",
+            "--labels", "example"]
+        opts = parser.parse_args(default_arguments)
+        inputs = GWInput(opts)
+        assert inputs.gracedb is None
 
     def test_detectors(self):
         assert self.inputs.detectors == {"example": "H1"}
