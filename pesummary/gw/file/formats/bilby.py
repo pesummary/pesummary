@@ -72,7 +72,6 @@ class Bilby(GWRead):
     """
     def __init__(self, path_to_results_file, **kwargs):
         super(Bilby, self).__init__(path_to_results_file, **kwargs)
-        print(kwargs)
         self.load(self._grab_data_from_bilby_file, **kwargs)
 
     @classmethod

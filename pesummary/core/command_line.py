@@ -415,6 +415,10 @@ def _prior_command_line_arguments(parser):
         "--prior_file", dest="prior_file", nargs='+', default=None,
         help="File containing for the prior samples for a given label"
     )
+    prior_group.add_argument(
+        "--disable_prior_sampling", action="store_true",
+        help="Skip generating prior samples using bilby", default=False
+    )
     return prior_group
 
 

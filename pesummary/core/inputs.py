@@ -197,7 +197,7 @@ class _Input(object):
     @staticmethod
     def grab_data_from_file(
         file, label, config=None, injection=None, read_function=Read,
-        file_format=None, nsamples=None, **kwargs
+        file_format=None, nsamples=None, disable_prior_sampling=False, **kwargs
     ):
         """Grab data from a result file containing posterior samples
 
@@ -220,7 +220,9 @@ class _Input(object):
             Dictionary of keyword arguments fed to the
             `generate_all_posterior_samples` method
         """
-        f = read_function(file, file_format=file_format)
+        f = read_function(
+            file, file_format=file_format, disable_prior=disable_prior_sampling
+        )
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
 
@@ -249,9 +251,9 @@ class _Input(object):
                 parameters, [float("nan")] * len(parameters))}
         version = f.input_version
         if hasattr(f, "priors"):
-            priors = f.priors
+            priors = {key: {label: item} for key, item in f.priors.items()}
         else:
-            priors = []
+            priors = {label: []}
         if hasattr(f, "weights"):
             weights = f.weights
         else:
@@ -261,7 +263,7 @@ class _Input(object):
             "injection_data": {label: injection},
             "file_version": {label: version},
             "file_kwargs": {label: kwargs},
-            "prior": {label: priors},
+            "prior": priors,
             "weights": {label: weights}
         }
 
@@ -1003,6 +1005,7 @@ class _Input(object):
             data = self.grab_data_from_file(
                 file, label, config=config, injection=injection,
                 file_format=file_format, nsamples=self.nsamples,
+                disable_prior_sampling=self.disable_prior_sampling,
                 **grab_data_kwargs
             )
             return data
@@ -1488,6 +1491,7 @@ class Input(_Input):
                 setattr(self, opt, getattr(self.opts, opt))
         self.kde_plot = self.opts.kde_plot
         self.priors = self.opts.prior_file
+        self.disable_prior_sampling = self.opts.disable_prior_sampling
         self.file_format = self.opts.file_format
         self.nsamples = self.opts.nsamples
         self.samples = self.opts.samples
