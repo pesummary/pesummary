@@ -232,10 +232,12 @@ class _GWInput(_Input):
             from pesummary.gw.gracedb import get_gracedb_data, HTTPError
             first_letter = gracedb[0]
             if first_letter != "G" and first_letter != "g" and first_letter != "S":
-                raise InputError(
+                logger.warn(
                     "Invalid GraceDB ID passed. The GraceDB ID must be of the "
-                    "form G0000 or S0000"
+                    "form G0000 or S0000. Ignoring input."
                 )
+                self._gracedb = None
+                return
             _error = (
                 "Unable to download data from Gracedb because {}. Only storing "
                 "the GraceDB ID in the metafile"
