@@ -1,0 +1,36 @@
+label
+    -> posterior_samples            Dataset
+    -> config_file                  Group
+        -> [section]                Group
+            -> key                  Dataset
+    -> priors                       Group
+        -> samples                  Dataset
+    -> injection_data               Dataset
+    -> meta_data                    Group
+        -> meta_data                Group
+            ->                      Dataset
+        -> sampler                  Group
+            ->                      Dataset
+    -> version                      Dataset
+
+label2                              Group
+    -> posterior_samples            Dataset
+    -> config_file                  Group
+        -> [section]                Group
+            -> key                  Dataset
+    -> priors                       Group
+        -> samples                  Dataset
+    -> injection_data               Dataset
+    -> meta_data                    Group
+        -> meta_data                Group
+            ->                      Dataset
+        -> sampler                  Group
+            ->                      Dataset
+    -> version                      Dataset
+
+...
+
+version                             Group
+    -> environment                  Dataset
+    -> packages                     Dataset
+    -> pesummary                    Dataset

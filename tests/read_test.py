@@ -104,7 +104,10 @@ class BaseRead(object):
         assert isinstance(result, _class)
 
     def test_downsample(self):
-        """Test the .downsample method
+        """Test the .downsample method. This includes testing that the
+        .downsample method downsamples to the specified number of samples,
+        that it only takes samples that are currently in the posterior
+        table and that it maintains concurrent samples.
         """
         old_samples_dict = self.result.samples_dict
         nsamples = 50
@@ -115,6 +118,13 @@ class BaseRead(object):
                 samp in old_samples_dict[param] for samp in
                 self.result.samples_dict[param]
             )
+        for num in range(nsamples):
+            samp_inds = [
+                old_samples_dict[param].tolist().index(
+                    self.result.samples_dict[param][num]
+                ) for param in self.parameters
+            ]
+            assert len(set(samp_inds)) == 1
 
 
 class GWBaseRead(BaseRead):
@@ -695,6 +705,14 @@ class PESummaryFile(BaseRead):
                     samp in old_samples_dict[label][param] for samp in
                     self.result.samples_dict[label][param]
                 )
+            for idx in range(nsamples):
+                samp_inds = [
+                    old_samples_dict[label][param].tolist().index(
+                        self.result.samples_dict[label][param][idx]
+                    ) for param in self.parameters[num]
+                ]
+                assert len(set(samp_inds)) == 1
+            
 
 
 class TestCoreJsonPESummaryFile(PESummaryFile):

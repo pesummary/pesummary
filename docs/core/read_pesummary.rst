@@ -141,10 +141,15 @@ Loading all data for a specific run without PESummary
 -----------------------------------------------------
 
 Of course, you do not have to use PESummary to load in the data from a
-PESummary metafile. Below we show how to extract the data using the core
-`JSON` and `h5py` python libraries:
+PESummary metafile. The core `JSON` and `h5py` python libraries can be
+used. The PESummary file has the following data structure:
 
-.. literalinclude:: ../../../../examples/extract_information_without_pesummary.py
+.. literalinclude:: ../../../examples/core/pesummary_data_structure.txt
+
+Below we show how to extract the data using the core `JSON` and `h5py` python
+libraries:
+
+.. literalinclude:: ../../../examples/extract_information_without_pesummary.py
     :language: python
     :linenos:
 
