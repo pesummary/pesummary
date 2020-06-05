@@ -54,8 +54,8 @@ class Default(GWRead):
         generate all posterior distributions that may be derived from
         sampled distributions
     """
-    def __init__(self, path_to_results_file):
-        super(Default, self).__init__(path_to_results_file)
+    def __init__(self, path_to_results_file, **kwargs):
+        super(Default, self).__init__(path_to_results_file, **kwargs)
 
         func_map = {"json": self._grab_data_from_json_file,
                     "dat": self._grab_data_from_dat_file,
@@ -75,10 +75,10 @@ class Default(GWRead):
             )
 
     @classmethod
-    def load_file(cls, path):
+    def load_file(cls, path, **kwargs):
         if not os.path.isfile(path):
             raise FileNotFoundError("%s does not exist" % (path))
-        return cls(path)
+        return cls(path, **kwargs)
 
     @staticmethod
     def grab_extra_kwargs(parameters, samples):

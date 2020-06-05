@@ -38,17 +38,17 @@ class GWTC1(GWRead):
     path_to_results_file: str
         path to the results file you wish to load in with `GWTC1`
     """
-    def __init__(self, path_to_results_file, injection_file=None):
-        super(GWTC1, self).__init__(path_to_results_file)
+    def __init__(self, path_to_results_file, injection_file=None, **kwargs):
+        super(GWTC1, self).__init__(path_to_results_file, **kwargs)
         self.load(self._grab_data_from_GWTC1_file)
 
     @classmethod
-    def load_file(cls, path, injection_file=None):
+    def load_file(cls, path, injection_file=None, **kwargs):
         if not os.path.isfile(path):
             raise IOError("%s does not exist" % (path))
         if injection_file and not os.path.isfile(injection_file):
             raise IOError("%s does not exist" % (path))
-        return cls(path, injection_file=injection_file)
+        return cls(path, injection_file=injection_file, **kwargs)
 
     @staticmethod
     def grab_extra_kwargs(path):

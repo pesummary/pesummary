@@ -21,18 +21,39 @@ from pesummary import conf
 from pesummary.utils.utils import logger
 
 
-def read_bilby(path):
+def read_bilby(
+    path, disable_prior=False, complex_params=[], latex_dict=latex_labels,
+    **kwargs
+):
     """Grab the parameters and samples in a bilby file
 
     Parameters
     ----------
     path: str
         path to the result file you wish to read in
+    disable_prior: Bool, optional
+        if True, do not collect prior samples from the `bilby` result file.
+        Default False
+    complex_params: list, optional
+        list of parameters stored in the bilby result file which are complex
+        and you wish to store the `amplitude` and `angle` as seperate
+        posterior distributions
+    latex_dict: dict, optional
+        list of latex labels for each parameter
     """
     from bilby.core.result import read_in_result
 
     bilby_object = read_in_result(filename=path)
     posterior = bilby_object.posterior
+    _original_keys = posterior.keys()
+    for key in _original_keys:
+        for param in complex_params:
+            if param in key and any(np.iscomplex(posterior[key])):
+                posterior[key + "_amp"] = abs(posterior[key])
+                posterior[key + "_angle"] = np.angle(posterior[key])
+                posterior[key] = np.real(posterior[key])
+            elif param in key:
+                posterior[key] = np.real(posterior[key])
     # Drop all non numeric bilby data outputs
     posterior = posterior.select_dtypes(include=[float, int])
     parameters = list(posterior.keys())
@@ -54,10 +75,10 @@ def read_bilby(path):
                 bilby_object.constraint_parameter_keys
                 + bilby_object.search_parameter_keys
                 + bilby_object.fixed_parameter_keys):
-            if key not in latex_labels:
+            if key not in latex_dict:
                 label = bilby_object.get_latex_labels_from_parameter_keys(
                     [key])[0]
-                latex_labels[key] = label
+                latex_dict[key] = label
     try:
         extra_kwargs = Bilby.grab_extra_kwargs(bilby_object)
     except Exception:
@@ -67,15 +88,18 @@ def read_bilby(path):
         version = bilby_object.version
     except Exception as e:
         version = None
-    prior_samples = Bilby.grab_priors(bilby_object, nsamples=len(samples))
-    return {
+
+    data = {
         "parameters": parameters,
         "samples": samples.tolist(),
         "injection": injection,
         "version": version,
-        "kwargs": extra_kwargs,
-        "prior": prior_samples
+        "kwargs": extra_kwargs
     }
+    if not disable_prior:
+        prior_samples = Bilby.grab_priors(bilby_object, nsamples=len(samples))
+        data["prior"] = prior_samples
+    return data
 
 
 def write_bilby(
@@ -128,10 +152,13 @@ class Bilby(Read):
     `bilby.core.result.read_in_result`. All functions therefore use `bilby`
     methods and requires `bilby` to be installed.
 
-    Attributes
+    Parameters
     ----------
     path_to_results_file: str
         path to the results file that you wish to read in with `bilby`.
+    disable_prior: Bool, optional
+        if True, do not collect prior samples from the `bilby` result file.
+        Default False
 
     Attributes
     ----------
@@ -160,15 +187,15 @@ class Bilby(Read):
     generate_latex_macros:
         generate a set of latex macros for the stored posterior samples
     """
-    def __init__(self, path_to_results_file):
-        super(Bilby, self).__init__(path_to_results_file)
-        self.load(self._grab_data_from_bilby_file)
+    def __init__(self, path_to_results_file, **kwargs):
+        super(Bilby, self).__init__(path_to_results_file, **kwargs)
+        self.load(self._grab_data_from_bilby_file, **kwargs)
 
     @classmethod
-    def load_file(cls, path):
+    def load_file(cls, path, **kwargs):
         if not os.path.isfile(path):
             raise Exception("%s does not exist" % (path))
-        return cls(path)
+        return cls(path, **kwargs)
 
     @staticmethod
     def grab_priors(bilby_object, nsamples=5000):
@@ -199,10 +226,10 @@ class Bilby(Read):
         return kwargs
 
     @staticmethod
-    def _grab_data_from_bilby_file(path):
+    def _grab_data_from_bilby_file(path, **kwargs):
         """Load the results file using the `bilby` library
         """
-        return read_bilby(path)
+        return read_bilby(path, **kwargs)
 
     def add_marginalized_parameters_from_config_file(self, config_file):
         """Search the configuration file and add the marginalized parameters

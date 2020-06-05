@@ -92,17 +92,17 @@ class LALInference(GWRead):
         generate all posterior distributions that may be derived from
         sampled distributions
     """
-    def __init__(self, path_to_results_file, injection_file=None):
-        super(LALInference, self).__init__(path_to_results_file)
+    def __init__(self, path_to_results_file, injection_file=None, **kwargs):
+        super(LALInference, self).__init__(path_to_results_file, **kwargs)
         self.load(self._grab_data_from_lalinference_file)
 
     @classmethod
-    def load_file(cls, path, injection_file=None):
+    def load_file(cls, path, injection_file=None, **kwargs):
         if not os.path.isfile(path):
             raise IOError("%s does not exist" % (path))
         if injection_file and not os.path.isfile(injection_file):
             raise IOError("%s does not exist" % (path))
-        return cls(path, injection_file=injection_file)
+        return cls(path, injection_file=injection_file, **kwargs)
 
     @staticmethod
     def guess_path_to_sampler(path):

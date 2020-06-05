@@ -51,7 +51,7 @@ class Read(object):
     generate_latex_macros:
         generate a set of latex macros for the stored posterior samples
     """
-    def __init__(self, path_to_results_file):
+    def __init__(self, path_to_results_file, **kwargs):
         self.path_to_results_file = path_to_results_file
         self.mcmc_samples = False
         self.extension = self.extension_from_path(self.path_to_results_file)
