@@ -358,11 +358,15 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 row.append(np.round(self.key_data[i][j]["mean"], 3))
                 row.append(np.round(self.key_data[i][j]["median"], 3))
                 row.append(np.round(self.key_data[i][j]["std"], 3))
+                row.append(np.round(self.key_data[i][j]["5th percentile"], 3))
+                row.append(np.round(self.key_data[i][j]["95th percentile"], 3))
                 contents.append(row)
 
             html_file.make_table(
-                headings=[" ", "maxL", "mean", "median", "std"],
-                contents=contents, heading_span=1
+                headings=[
+                    " ", "maxL", "mean", "median", "std", "5th percentile",
+                    "95th percentile"
+                ], contents=contents, heading_span=1
             )
             html_file.export(
                 "summary_information_{}.csv".format(i)
