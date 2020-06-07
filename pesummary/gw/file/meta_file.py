@@ -42,7 +42,7 @@ class _GWMetaFile(_MetaFile):
         existing_metadata=None, priors={}, outdir=None, existing=None,
         existing_priors={}, existing_metafile=None, package_information={},
         mcmc_samples=False, skymap=None, existing_skymap=None,
-        filename=None
+        filename=None, external_hdf5_links=False
     ):
         self.calibration = calibration
         self.psds = psd
@@ -62,7 +62,8 @@ class _GWMetaFile(_MetaFile):
             existing_config=existing_config, existing_priors=existing_priors,
             outdir=outdir, package_information=package_information,
             existing=existing, existing_metafile=existing_metafile,
-            mcmc_samples=mcmc_samples, filename=filename
+            mcmc_samples=mcmc_samples, filename=filename,
+            external_hdf5_links=external_hdf5_links
         )
         if self.calibration is None:
             self.calibration = {label: {} for label in self.labels}
@@ -105,13 +106,15 @@ class _GWMetaFile(_MetaFile):
 
     @staticmethod
     def save_to_hdf5(
-        data, labels, samples, meta_file, no_convert=False, mcmc_samples=False
+        data, labels, samples, meta_file, no_convert=False, mcmc_samples=False,
+        external_hdf5_links=False
     ):
         """Save the metafile as a hdf5 file
         """
         _MetaFile.save_to_hdf5(
             data, labels, samples, meta_file, no_convert=no_convert,
-            extra_keys=CORE_HDF5_KEYS, mcmc_samples=mcmc_samples
+            extra_keys=CORE_HDF5_KEYS, mcmc_samples=mcmc_samples,
+            external_hdf5_links=external_hdf5_links
         )
 
 
@@ -164,7 +167,8 @@ class GWMetaFile(GWPostProcessing):
             existing_metafile=existing_metafile, approximant=self.approximant,
             package_information=self.package_information,
             mcmc_samples=self.mcmc_samples, skymap=self.skymap,
-            existing_skymap=self.existing_skymap, filename=self.filename
+            existing_skymap=self.existing_skymap, filename=self.filename,
+            external_hdf5_links=self.external_hdf5_links
         )
         meta_file.make_dictionary()
         if not self.hdf5:
@@ -172,7 +176,8 @@ class GWMetaFile(GWPostProcessing):
         else:
             meta_file.save_to_hdf5(
                 meta_file.data, meta_file.labels, meta_file.samples,
-                meta_file.meta_file, mcmc_samples=meta_file.mcmc_samples
+                meta_file.meta_file, mcmc_samples=meta_file.mcmc_samples,
+                external_hdf5_links=meta_file.external_hdf5_links
             )
         meta_file.save_to_dat()
         meta_file.write_marginalized_posterior_to_dat()

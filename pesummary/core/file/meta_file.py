@@ -114,6 +114,15 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
         hdf5_file["/".join(current_path + [key])] = h5py.SoftLink(
             value.split("softlink:")[1]
         )
+    elif isinstance(value, string_types[0]) and "external:" in value:
+        import h5py
+
+        SOFTLINK = True
+        substring = value.split("external:")[1]
+        _file, _path = substring.split("|")
+        hdf5_file["/".join(current_path + [key])] = h5py.ExternalLink(
+            _file, _path
+        )
     elif isinstance(value, string_types):
         data = np.array([value], dtype="S")
     elif isinstance(value, numeric_types):
@@ -169,7 +178,8 @@ class _MetaFile(object):
         existing_version=None, existing_label=None, existing_samples=None,
         existing_injection=None, existing_metadata=None, existing_config=None,
         existing_priors={}, existing_metafile=None, outdir=None, existing=None,
-        package_information={}, mcmc_samples=False, filename=None
+        package_information={}, mcmc_samples=False, filename=None,
+        external_hdf5_links=False
     ):
         self.data = {}
         self.webdir = webdir
@@ -182,6 +192,7 @@ class _MetaFile(object):
         self.file_kwargs = file_kwargs
         self.hdf5 = hdf5
         self.file_name = filename
+        self.external_hdf5_links = external_hdf5_links
         self.priors = priors
         self.existing_version = existing_version
         self.existing_labels = existing_label
@@ -427,9 +438,30 @@ class _MetaFile(object):
             )
 
     @staticmethod
+    def _seperate_dictionary_for_external_links(
+            data, labels, sub_file_name="_{label}.h5"
+    ):
+        """
+        """
+        _data = copy.deepcopy(data)
+        sub_file_data = {
+            label: {label: _data[label], "version": _data["version"]} for
+            label in labels
+        }
+        meta_file_data = {
+            key: item for key, item in _data.items() if key not in labels
+        }
+        for label in labels:
+            meta_file_data[label] = "external:{}|{}".format(
+                sub_file_name.format(label=label), label
+            )
+        return meta_file_data, sub_file_data
+
+    @staticmethod
     def save_to_hdf5(
         data, labels, samples, meta_file, no_convert=False,
-        extra_keys=DEFAULT_HDF5_KEYS, mcmc_samples=False
+        extra_keys=DEFAULT_HDF5_KEYS, mcmc_samples=False,
+        external_hdf5_links=False
     ):
         """Save the metafile as a hdf5 file
         """
@@ -444,10 +476,31 @@ class _MetaFile(object):
                 data[label][key] = _MetaFile._convert_posterior_samples_to_numpy(
                     samples[label], mcmc_samples=mcmc_samples
                 )
-        with h5py.File(meta_file, "w") as f:
-            recursively_save_dictionary_to_hdf5_file(
-                f, data, extra_keys=extra_keys + labels
+        if external_hdf5_links:
+            from pathlib import Path
+
+            _dir = Path(meta_file).parent
+            name = "_{label}.h5"
+            _subfile = os.path.join(_dir, name)
+            meta_file_data, sub_file_data = (
+                _MetaFile._seperate_dictionary_for_external_links(
+                    data, labels, sub_file_name=name
+                )
             )
+            for label in labels:
+                with h5py.File(_subfile.format(label=label), "w") as f:
+                    recursively_save_dictionary_to_hdf5_file(
+                        f, sub_file_data[label], extra_keys=extra_keys + [label]
+                    )
+            with h5py.File(meta_file, "w") as f:
+                recursively_save_dictionary_to_hdf5_file(
+                    f, meta_file_data, extra_keys=extra_keys
+                )
+        else:
+            with h5py.File(meta_file, "w") as f:
+                recursively_save_dictionary_to_hdf5_file(
+                    f, data, extra_keys=extra_keys + labels
+                )
 
     def save_to_dat(self):
         """Save the samples to a .dat file
@@ -503,7 +556,8 @@ class MetaFile(PostProcessing):
             existing_priors=self.existing_priors,
             existing_metafile=self.existing_metafile,
             package_information=self.package_information,
-            mcmc_samples=self.mcmc_samples, filename=self.filename
+            mcmc_samples=self.mcmc_samples, filename=self.filename,
+            external_hdf5_links=self.external_hdf5_links
         )
         meta_file.make_dictionary()
         if not self.hdf5:
@@ -511,7 +565,8 @@ class MetaFile(PostProcessing):
         else:
             meta_file.save_to_hdf5(
                 meta_file.data, meta_file.labels, meta_file.samples,
-                meta_file.meta_file, mcmc_samples=meta_file.mcmc_samples
+                meta_file.meta_file, mcmc_samples=meta_file.mcmc_samples,
+                external_hdf5_links=meta_file.external_hdf5_links
             )
         meta_file.save_to_dat()
         meta_file.write_marginalized_posterior_to_dat()

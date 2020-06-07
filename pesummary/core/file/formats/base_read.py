@@ -285,12 +285,16 @@ class Read(object):
         f.close()
         if len(paths) == 1:
             return paths[0]
-        else:
+        elif len(paths) > 1:
             raise ValueError(
                 "Found multiple posterior sample tables in '{}': {}. Not sure "
                 "which to load.".format(
                     path, ", ".join(paths)
                 )
+            )
+        else:
+            raise ValueError(
+                "Unable to find a posterior samples table in '{}'".format(path)
             )
 
     @staticmethod

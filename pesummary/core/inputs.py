@@ -867,6 +867,20 @@ class _Input(object):
                     "be done".format(python_file, e)
                 )
 
+    @property
+    def external_hdf5_links(self):
+        return self._external_hdf5_links
+
+    @external_hdf5_links.setter
+    def external_hdf5_links(self, external_hdf5_links):
+        self._external_hdf5_links = external_hdf5_links
+        if not self.hdf5 and self.external_hdf5_links:
+            logger.warn(
+                "You can only apply external hdf5 links when saving the meta "
+                "file in hdf5 format. Turning external hdf5 links off."
+            )
+            self._external_hdf5_links = False
+
     def add_to_prior_dict(self, path, data):
         """Add priors to the prior dictionary
 
@@ -1502,6 +1516,7 @@ class Input(_Input):
         self.email = self.opts.email
         self.dump = self.opts.dump
         self.hdf5 = not self.opts.save_to_json
+        self.external_hdf5_links = self.opts.external_hdf5_links
         self.palette = self.opts.palette
         self.include_prior = self.opts.include_prior
         self.colors = self.opts.colors
@@ -1631,6 +1646,7 @@ class PostProcessing(object):
         self.email = self.inputs.email
         self.dump = self.inputs.dump
         self.hdf5 = self.inputs.hdf5
+        self.external_hdf5_links = self.inputs.external_hdf5_links
         self.file_version = self.inputs.file_version
         self.file_kwargs = self.inputs.file_kwargs
         self.palette = self.inputs.palette

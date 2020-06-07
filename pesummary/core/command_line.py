@@ -488,6 +488,13 @@ def _pesummary_metafile_command_line_options(parser):
         "--posterior_samples_filename", dest="filename", default=None,
         help="name of the posterior samples metafile that is produced"
     )
+    pesummary_group.add_argument(
+        "--external_hdf5_links", action="store_true", default=False,
+        help=(
+            "save each analysis as a seperate hdf5 file and connect them to "
+            "the meta file through external links"
+        )
+    )
     return pesummary_group
 
 

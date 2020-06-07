@@ -444,6 +444,41 @@ class TestSummaryCombine(Base):
         f = read(".outdir/samples/posterior_samples.h5")
         assert not len(f.priors["samples"]["core0"])
 
+    def test_external_hdf5_links(self):
+        """Test that seperate hdf5 files are made when the
+        `--external_hdf5_links` command line is passed
+        """
+        from pesummary.gw.file.read import read
+        from base import make_psd, make_calibration
+
+        make_result_file(gw=True, extension="json")
+        os.rename(".outdir/test.json", ".outdir/example.json")
+        make_psd()
+        make_calibration()
+        command_line = (
+            "summarycombine --webdir .outdir --samples "
+            ".outdir/example.json --label gw0 --external_hdf5_links --gw "
+            "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
+            "--no_conversion"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(
+            os.path.join(".outdir", "samples", "posterior_samples.h5")
+        )
+        assert os.path.isfile(
+            os.path.join(".outdir", "samples", "_gw0.h5")
+        )
+        f = read(".outdir/samples/posterior_samples.h5")
+        g = read(".outdir/example.json")
+        h = read(".outdir/samples/_gw0.h5")
+        np.testing.assert_almost_equal(f.samples[0], g.samples)
+        np.testing.assert_almost_equal(f.samples[0], h.samples[0])
+        np.testing.assert_almost_equal(f.psd["gw0"]["H1"], h.psd["gw0"]["H1"])
+        np.testing.assert_almost_equal(
+            f.priors["calibration"]["gw0"]["L1"],
+            h.priors["calibration"]["gw0"]["L1"]
+        )
+
 
 class TestSummaryReview(Base):
     """Test the `summaryreview` executable

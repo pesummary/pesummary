@@ -153,6 +153,18 @@ libraries:
     :language: python
     :linenos:
 
+Common Errors
+-------------
+
+When created, the user may specify if they wish to store each analysis as a
+sub hdf5 file. This means that each analysis is stored as a seperate PESummary
+metafile and they are connected to the main hdf5 file through external links.
+If you find that your PESummary file cannot be read in with the `pesummary.io`
+module, it is likely that sub files are not in the correct location. In order
+to successfully read in the result file, the sub files need to be in the same
+location as the main PESummary metafile and have name `'_{label}.h5'`. The
+sub files can be downloaded directly from the webpage.
+
 `pesummary.core.file.formats.pesummary`
 ---------------------------------------
 
