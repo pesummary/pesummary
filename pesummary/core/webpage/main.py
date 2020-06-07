@@ -118,7 +118,8 @@ class _WebpageGeneration(object):
         existing_metafile=None, existing_file_kwargs=None,
         existing_weights=None, add_to_existing=False, notes=None,
         disable_comparison=False, disable_interactive=False,
-        package_information={"packages": []}, mcmc_samples=False
+        package_information={"packages": []}, mcmc_samples=False,
+        external_hdf5_links=False
     ):
         self.webdir = webdir
         self.samples = samples
@@ -143,6 +144,7 @@ class _WebpageGeneration(object):
         self.make_interactive = not disable_interactive
         self.package_information = package_information
         self.mcmc_samples = mcmc_samples
+        self.external_hdf5_links = external_hdf5_links
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -1109,25 +1111,47 @@ class _WebpageGeneration(object):
         metafile = (
             "posterior_samples.json" if not self.hdf5 else "posterior_samples.h5"
         )
-        html_file.make_table(
-            headings=headings,
-            contents=[
-                [
-                    base_string.format(
-                        "The complete metafile containing all information "
-                        "about the analysis",
-                        self.results_path["other"] + metafile
-                    )
-                ], [
-                    (
-                        "Information about reading this metafile can be seen "
-                        " <a href={}>here</a>".format(
-                            "https://lscsoft.docs.ligo.org/pesummary/"
-                            "stable_docs/data/reading_the_metafile.html"
+
+        metafile_row = [
+            [
+                base_string.format(
+                    "The complete metafile containing all information "
+                    "about the analysis",
+                    self.results_path["other"] + metafile
+                )
+            ]
+        ]
+        if self.external_hdf5_links:
+            string = ""
+            for label in self.labels:
+                string += (
+                    "The hdf5 sub file for {} can be downloaded "
+                    "<a href={} download>here</a>. ".format(
+                        label, self.results_path["other"] + "_{}.h5".format(
+                            label
                         )
                     )
+                )
+            metafile_row += [
+                [
+                    "The complete metafile uses external hdf5 links. Each "
+                    "analysis is therefore stored in seperate meta files. "
+                    "{}".format(string)
                 ]
-            ],
+            ]
+        metafile_row += [
+            [
+                (
+                    "Information about reading this metafile can be seen "
+                    " <a href={}>here</a>".format(
+                        "https://lscsoft.docs.ligo.org/pesummary/"
+                        "stable_docs/data/reading_the_metafile.html"
+                    )
+                )
+            ]
+        ]
+        html_file.make_table(
+            headings=headings, contents=metafile_row,
             accordian=False, style=style.format("1em", "1em")
         )
         for num, i in enumerate(self.labels):
