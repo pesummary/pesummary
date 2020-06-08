@@ -32,7 +32,8 @@ DEFAULT_HDF5_KEYS = ["version"]
 
 
 def recursively_save_dictionary_to_hdf5_file(
-        f, dictionary, current_path=None, extra_keys=DEFAULT_HDF5_KEYS
+        f, dictionary, current_path=None, extra_keys=DEFAULT_HDF5_KEYS,
+        compression=None
 ):
     """Recursively save a dictionary to a hdf5 file
 
@@ -44,6 +45,9 @@ def recursively_save_dictionary_to_hdf5_file(
         dictionary of data
     current_path: optional, str
         string to indicate the level to save the data in the hdf5 file
+    compression: int, optional
+        optional filter to apply for compression. If you do not want to
+        apply compression, compression = None. Default None.
     """
     def _safe_create_hdf5_group(hdf5_file, key):
         if key not in hdf5_file.keys():
@@ -59,12 +63,17 @@ def recursively_save_dictionary_to_hdf5_file(
             if k not in f["/" + "/".join(current_path)].keys():
                 f["/".join(current_path)].create_group(k)
             path = current_path + [k]
-            recursively_save_dictionary_to_hdf5_file(f, v, path, extra_keys=extra_keys)
+            recursively_save_dictionary_to_hdf5_file(
+                f, v, path, extra_keys=extra_keys, compression=compression
+            )
         else:
-            create_hdf5_dataset(key=k, value=v, hdf5_file=f, current_path=current_path)
+            create_hdf5_dataset(
+                key=k, value=v, hdf5_file=f, current_path=current_path,
+                compression=compression
+            )
 
 
-def create_hdf5_dataset(key, value, hdf5_file, current_path):
+def create_hdf5_dataset(key, value, hdf5_file, current_path, compression=None):
     """
     Create a hdf5 dataset in place
 
@@ -81,6 +90,9 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
         hdf5 file object
     current_path: str
         Current string withing the hdf5 file
+    compression: int, optional
+        optional filter to apply for compression. If you do not want to
+        apply compression, compression = None. Default None.
     """
     error_message = "Cannot process {}={} from list with type {} for hdf5"
     array_types = (list, pesummary.utils.samples_dict.Array, np.ndarray)
@@ -138,7 +150,13 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path):
     else:
         raise TypeError(error_message.format(key, value, type(value)))
     if not SOFTLINK:
-        hdf5_file["/".join(current_path)].create_dataset(key, data=data)
+        if compression is not None:
+            kwargs = {"compression": "gzip", "compression_opts": compression}
+        else:
+            kwargs = {}
+        hdf5_file["/".join(current_path)].create_dataset(
+            key, data=data, **kwargs
+        )
 
 
 class PESummaryJsonEncoder(json.JSONEncoder):
@@ -179,7 +197,7 @@ class _MetaFile(object):
         existing_injection=None, existing_metadata=None, existing_config=None,
         existing_priors={}, existing_metafile=None, outdir=None, existing=None,
         package_information={}, mcmc_samples=False, filename=None,
-        external_hdf5_links=False
+        external_hdf5_links=False, hdf5_compression=None
     ):
         self.data = {}
         self.webdir = webdir
@@ -193,6 +211,7 @@ class _MetaFile(object):
         self.hdf5 = hdf5
         self.file_name = filename
         self.external_hdf5_links = external_hdf5_links
+        self.hdf5_compression = hdf5_compression
         self.priors = priors
         self.existing_version = existing_version
         self.existing_labels = existing_label
@@ -461,7 +480,7 @@ class _MetaFile(object):
     def save_to_hdf5(
         data, labels, samples, meta_file, no_convert=False,
         extra_keys=DEFAULT_HDF5_KEYS, mcmc_samples=False,
-        external_hdf5_links=False
+        external_hdf5_links=False, compression=None
     ):
         """Save the metafile as a hdf5 file
         """
@@ -490,16 +509,19 @@ class _MetaFile(object):
             for label in labels:
                 with h5py.File(_subfile.format(label=label), "w") as f:
                     recursively_save_dictionary_to_hdf5_file(
-                        f, sub_file_data[label], extra_keys=extra_keys + [label]
+                        f, sub_file_data[label], extra_keys=extra_keys + [label],
+                        compression=compression
                     )
             with h5py.File(meta_file, "w") as f:
                 recursively_save_dictionary_to_hdf5_file(
-                    f, meta_file_data, extra_keys=extra_keys
+                    f, meta_file_data, extra_keys=extra_keys,
+                    compression=compression
                 )
         else:
             with h5py.File(meta_file, "w") as f:
                 recursively_save_dictionary_to_hdf5_file(
-                    f, data, extra_keys=extra_keys + labels
+                    f, data, extra_keys=extra_keys + labels,
+                    compression=compression
                 )
 
     def save_to_dat(self):
@@ -557,7 +579,8 @@ class MetaFile(PostProcessing):
             existing_metafile=self.existing_metafile,
             package_information=self.package_information,
             mcmc_samples=self.mcmc_samples, filename=self.filename,
-            external_hdf5_links=self.external_hdf5_links
+            external_hdf5_links=self.external_hdf5_links,
+            hdf5_compression=self.hdf5_compression
         )
         meta_file.make_dictionary()
         if not self.hdf5:
@@ -566,7 +589,8 @@ class MetaFile(PostProcessing):
             meta_file.save_to_hdf5(
                 meta_file.data, meta_file.labels, meta_file.samples,
                 meta_file.meta_file, mcmc_samples=meta_file.mcmc_samples,
-                external_hdf5_links=meta_file.external_hdf5_links
+                external_hdf5_links=meta_file.external_hdf5_links,
+                compression=meta_file.hdf5_compression
             )
         meta_file.save_to_dat()
         meta_file.write_marginalized_posterior_to_dat()
