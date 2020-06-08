@@ -359,9 +359,9 @@ class PESummary(GWRead, CorePESummary):
 class PESummaryDeprecated(PESummary):
     """
     """
-    def __init__(self, path_to_results_file):
+    def __init__(self, path_to_results_file, **kwargs):
         warnings.warn(deprecation_warning)
-        super(PESummaryDeprecated, self).__init__(path_to_results_file)
+        super(PESummaryDeprecated, self).__init__(path_to_results_file, **kwargs)
 
     @property
     def load_kwargs(self):

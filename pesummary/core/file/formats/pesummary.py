@@ -201,8 +201,8 @@ class PESummary(Read):
     write_config_to_file:
         write the config file stored in the result file to file
     """
-    def __init__(self, path_to_results_file):
-        super(PESummary, self).__init__(path_to_results_file)
+    def __init__(self, path_to_results_file, **kwargs):
+        super(PESummary, self).__init__(path_to_results_file, **kwargs)
         self.load(self._grab_data_from_pesummary_file, **self.load_kwargs)
 
     @property
@@ -210,7 +210,7 @@ class PESummary(Read):
         return dict()
 
     @classmethod
-    def load_file(cls, path):
+    def load_file(cls, path, **kwargs):
         if os.path.isdir(path):
             files = glob(path + "/*")
             if "home.html" in files:
@@ -221,7 +221,7 @@ class PESummary(Read):
                     "the directory %s" % (path + "/samples"))
         if not os.path.isfile(path):
             raise FileNotFoundError("%s does not exist" % path)
-        return cls(path)
+        return cls(path, **kwargs)
 
     @staticmethod
     def _grab_data_from_pesummary_file(path, **kwargs):
@@ -681,9 +681,9 @@ class PESummary(Read):
 class PESummaryDeprecated(PESummary):
     """
     """
-    def __init__(self, path_to_results_file):
+    def __init__(self, path_to_results_file, **kwargs):
         warnings.warn(deprecation_warning)
-        super(PESummaryDeprecated, self).__init__(path_to_results_file)
+        super(PESummaryDeprecated, self).__init__(path_to_results_file, **kwargs)
 
     @property
     def load_kwargs(self):

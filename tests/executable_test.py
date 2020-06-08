@@ -834,3 +834,43 @@ class TestSummaryRecreate(Base):
                     pass
                 else:
                     assert original_config[b][key] == item
+
+
+class TestSummaryCompare(Base):
+    """Test the SummaryCompare executable
+    """
+    def setup(self):
+        """Setup the SummaryCompare class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_example_in_docs(self):
+        """Test that the code runs for the example in the docs
+        """
+        import numpy as np
+        from pesummary.io import write
+
+        parameters = ["a", "b", "c", "d"]
+        data = np.random.random([100, 4])
+        write(
+            parameters, data, file_format="dat", outdir=".outdir",
+            filename="example1.dat"
+        )
+        parameters2 = ["a", "b", "c", "d", "e"]
+        data2 = np.random.random([100, 5])
+        write(
+            parameters2, data2, file_format="json", outdir=".outdir",
+            filename="example2.json"
+        )
+        command_line = (
+            "summarycompare --samples .outdir/example1.dat "
+            ".outdir/example2.json --properties_to_compare posterior_samples -v"
+        )
+        self.launch(command_line)
