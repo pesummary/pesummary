@@ -10,6 +10,9 @@ label                               Group
     -> injection_data               Dataset
     -> meta_data                    Group
         -> meta_data                Group
+            -> gracedb              Group
+                -> id               Dataset
+                ->                  Dataset
             ->                      Dataset
         -> sampler                  Group
             ->                      Dataset
@@ -35,6 +38,9 @@ label2                              Group
     -> injection_data               Dataset
     -> meta_data                    Group
         -> meta_data                Group
+            -> gracedb              Group
+                -> id               Dataset
+                ->                  Dataset
             ->                      Dataset
         -> sampler                  Group
             ->                      Dataset
