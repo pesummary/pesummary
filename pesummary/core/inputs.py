@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Charlie Hoy <charlie.hoy@ligo.org>
+# Copyrigh (C) 2019 Charlie Hoy <charlie.hoy@ligo.org>
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -881,6 +881,20 @@ class _Input(object):
             )
             self._external_hdf5_links = False
 
+    @property
+    def hdf5_compression(self):
+        return self._hdf5_compression
+
+    @hdf5_compression.setter
+    def hdf5_compression(self, hdf5_compression):
+        self._hdf5_compression = hdf5_compression
+        if not self.hdf5 and hdf5_compression is not None:
+            logger.warn(
+                "You can only apply compression when saving the meta "
+                "file in hdf5 format. Turning compression off."
+            )
+            self._hdf5_compression = None
+
     def add_to_prior_dict(self, path, data):
         """Add priors to the prior dictionary
 
@@ -1517,6 +1531,7 @@ class Input(_Input):
         self.dump = self.opts.dump
         self.hdf5 = not self.opts.save_to_json
         self.external_hdf5_links = self.opts.external_hdf5_links
+        self.hdf5_compression = self.opts.hdf5_compression
         self.palette = self.opts.palette
         self.include_prior = self.opts.include_prior
         self.colors = self.opts.colors
@@ -1647,6 +1662,7 @@ class PostProcessing(object):
         self.dump = self.inputs.dump
         self.hdf5 = self.inputs.hdf5
         self.external_hdf5_links = self.inputs.external_hdf5_links
+        self.hdf5_compression = self.inputs.hdf5_compression
         self.file_version = self.inputs.file_version
         self.file_kwargs = self.inputs.file_kwargs
         self.palette = self.inputs.palette

@@ -495,6 +495,14 @@ def _pesummary_metafile_command_line_options(parser):
             "the meta file through external links"
         )
     )
+    pesummary_group.add_argument(
+        "--hdf5_compression", dest="hdf5_compression", default=None, type=int,
+        help=(
+            "compress each dataset with a particular compression filter. "
+            "Filter must be integer between 0 and 9. Only applies to meta "
+            "files stored in hdf5 format. Default, no compression applied"
+        )
+    )
     return pesummary_group
 
 

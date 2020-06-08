@@ -479,6 +479,40 @@ class TestSummaryCombine(Base):
             h.priors["calibration"]["gw0"]["L1"]
         )
 
+    def test_compression(self):
+        """Test that the metafile is reduced in size when the datasets are
+        compressed with maximum compression level
+        """
+        from pesummary.gw.file.read import read
+        from base import make_psd, make_calibration
+
+        make_result_file(gw=True, extension="json")
+        os.rename(".outdir/test.json", ".outdir/example.json")
+        make_psd()
+        make_calibration()
+        command_line = (
+            "summarycombine --webdir .outdir --samples "
+            ".outdir/example.json --label gw0 --no_conversion --gw "
+            "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
+        )
+        self.launch(command_line)
+        original_size = os.stat("./.outdir/samples/posterior_samples.h5").st_size 
+        command_line = (
+            "summarycombine --webdir .outdir --samples "
+            ".outdir/example.json --label gw0 --no_conversion --gw "
+            "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
+            "--hdf5_compression 9 --posterior_samples_filename posterior_samples2.h5"
+        )
+        self.launch(command_line)
+        compressed_size = os.stat("./.outdir/samples/posterior_samples2.h5").st_size
+        assert compressed_size < original_size
+
+        f = read("./.outdir/samples/posterior_samples.h5")
+        g = read("./.outdir/samples/posterior_samples2.h5")
+        posterior_samples = f.samples[0]
+        posterior_samples2 = g.samples[0]
+        np.testing.assert_almost_equal(posterior_samples, posterior_samples2)
+
 
 class TestSummaryReview(Base):
     """Test the `summaryreview` executable
