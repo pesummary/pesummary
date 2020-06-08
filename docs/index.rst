@@ -116,6 +116,7 @@ for details:
     cli/summaryclassification
     cli/summaryclean
     cli/summarycombine
+    cli/summarycompare
     cli/summarydetchar
     cli/summarymodify
     cli/summarygracedb
