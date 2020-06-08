@@ -115,8 +115,8 @@ class GWFinishingTouches(FinishingTouches):
         """
         logger.info("Adding ligo.skymap data to the metafile")
         command_line = (
-            "summarymodify --webdir {} --samples {} "
-            "--store_skymap {}:{} --overwrite".format(
+            "summarymodify --webdir {} --samples {} --delimiter / "
+            "--store_skymap {}/{} --overwrite".format(
                 self.webdir, os.path.join(self.webdir, "samples", "posterior_samples.h5"),
                 label, filename
             )
