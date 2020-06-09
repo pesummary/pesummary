@@ -272,13 +272,15 @@ class PESummary(Read):
         labels = list(dictionary.keys())
         if "version" in labels:
             labels.remove("version")
+        if "history" in labels:
+            labels.remove("history")
 
         parameter_list, sample_list, inj_list, ver_list = [], [], [], []
         meta_data_list, weights_list = [], []
         prior_dict, config_dict = {}, {}
         mcmc_samples = False
         for num, label in enumerate(labels):
-            if label == "version":
+            if label == "version" or label == "history":
                 continue
             data, = Read.load_recursively(label, dictionary)
             if "mcmc_chains" in data.keys():

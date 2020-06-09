@@ -14,7 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.core.command_line import command_line
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, command_line_arguments
 
 
 class parser(object):
@@ -39,6 +39,14 @@ class parser(object):
     @property
     def dynamic_argparse(self):
         return []
+
+    @property
+    def prog(self):
+        return self._parser.prog
+
+    @property
+    def command_line(self):
+        return self.prog + " " + " ".join(command_line_arguments())
 
     @staticmethod
     def intersection(a, b):

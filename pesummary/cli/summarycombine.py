@@ -16,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.gw.parser import parser
-from pesummary.utils import functions
+from pesummary.utils import functions, history_dictionary
 
 
 __doc__ = """This executable is used to combine multiple result files into a
@@ -30,7 +30,11 @@ def main(args=None):
     opts, unknown = _parser.parse_known_args(args=args)
     func = functions(opts)
     args = func["input"](opts)
-    func["MetaFile"](args)
+    _history = history_dictionary(
+        program=_parser.prog, creator=args.user,
+        command_line=_parser.command_line
+    )
+    func["MetaFile"](args, history=_history)
 
 
 if __name__ == "__main__":
