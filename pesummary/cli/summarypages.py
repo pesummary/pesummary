@@ -196,7 +196,7 @@ def main(args=None):
     """Top level interface for `summarypages`
     """
     from pesummary.gw.parser import parser
-    from pesummary.utils import functions
+    from pesummary.utils import functions, history_dictionary
 
     _parser = parser()
     opts, unknown = _parser.parse_known_args(args=args)
@@ -206,7 +206,11 @@ def main(args=None):
 
     plotting_object = PlotGeneration(args, gw=gw_results_file(opts))
     WebpageGeneration(args, gw=gw_results_file(opts))
-    func["MetaFile"](args)
+    _history = history_dictionary(
+        program=_parser.prog, creator=args.user,
+        command_line=_parser.command_line
+    )
+    func["MetaFile"](args, history=_history)
     if gw_results_file(opts):
         kwargs = dict(ligo_skymap_PID=plotting_object.ligo_skymap_PID)
     else:

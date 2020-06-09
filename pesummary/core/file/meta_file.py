@@ -28,7 +28,7 @@ from pesummary.utils.decorators import open_config
 from pesummary import conf
 
 
-DEFAULT_HDF5_KEYS = ["version"]
+DEFAULT_HDF5_KEYS = ["version", "history"]
 
 
 def recursively_save_dictionary_to_hdf5_file(
@@ -150,7 +150,7 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path, compression=None):
     else:
         raise TypeError(error_message.format(key, value, type(value)))
     if not SOFTLINK:
-        if compression is not None:
+        if compression is not None and len(data) > conf.compression_min_length:
             kwargs = {"compression": "gzip", "compression_opts": compression}
         else:
             kwargs = {}
@@ -197,7 +197,7 @@ class _MetaFile(object):
         existing_injection=None, existing_metadata=None, existing_config=None,
         existing_priors={}, existing_metafile=None, outdir=None, existing=None,
         package_information={}, mcmc_samples=False, filename=None,
-        external_hdf5_links=False, hdf5_compression=None
+        external_hdf5_links=False, hdf5_compression=None, history=None
     ):
         self.data = {}
         self.webdir = webdir
@@ -212,6 +212,11 @@ class _MetaFile(object):
         self.file_name = filename
         self.external_hdf5_links = external_hdf5_links
         self.hdf5_compression = hdf5_compression
+        self.history = history
+        if self.history is None:
+            from pesummary.utils.utils import history_dictionary
+
+            self.history = history_dictionary(creator='')
         self.priors = priors
         self.existing_version = existing_version
         self.existing_labels = existing_label
@@ -283,6 +288,7 @@ class _MetaFile(object):
         }
         dictionary["version"] = self.package_information
         dictionary["version"]["pesummary"] = [__version__]
+        dictionary["history"] = self.history
         for num, label in enumerate(self.labels):
             parameters = self.samples[label].keys()
             samples = np.array([self.samples[label][i] for i in parameters]).T
@@ -464,8 +470,10 @@ class _MetaFile(object):
         """
         _data = copy.deepcopy(data)
         sub_file_data = {
-            label: {label: _data[label], "version": _data["version"]} for
-            label in labels
+            label: {
+                label: _data[label], "version": _data["version"],
+                "history": _data["history"]
+            } for label in labels
         }
         meta_file_data = {
             key: item for key, item in _data.items() if key not in labels
@@ -561,7 +569,7 @@ class MetaFile(PostProcessing):
     """This class handles the creation of a metafile storing all information
     from the analysis
     """
-    def __init__(self, inputs):
+    def __init__(self, inputs, history=None):
         from pesummary.utils.utils import logger
 
         super(MetaFile, self).__init__(inputs)
@@ -580,7 +588,7 @@ class MetaFile(PostProcessing):
             package_information=self.package_information,
             mcmc_samples=self.mcmc_samples, filename=self.filename,
             external_hdf5_links=self.external_hdf5_links,
-            hdf5_compression=self.hdf5_compression
+            hdf5_compression=self.hdf5_compression, history=history
         )
         meta_file.make_dictionary()
         if not self.hdf5:

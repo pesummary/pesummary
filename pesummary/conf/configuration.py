@@ -27,6 +27,10 @@ burnin_method = "burnin_by_step_number"
 # delimiter to use when saving files to dat with np.savetxt
 delimiter = "\t"
 
+# Minimum length of h5 dataset for compression. Compressing small datasets can
+# lead to an increased file size
+compression_min_length = 1
+
 # Plot 1d kdes rather than 1d histograms
 kde_plot = False
 

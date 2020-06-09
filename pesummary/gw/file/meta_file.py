@@ -42,7 +42,8 @@ class _GWMetaFile(_MetaFile):
         existing_metadata=None, priors={}, outdir=None, existing=None,
         existing_priors={}, existing_metafile=None, package_information={},
         mcmc_samples=False, skymap=None, existing_skymap=None,
-        filename=None, external_hdf5_links=False, hdf5_compression=None
+        filename=None, external_hdf5_links=False, hdf5_compression=None,
+        history=None
     ):
         self.calibration = calibration
         self.psds = psd
@@ -64,7 +65,7 @@ class _GWMetaFile(_MetaFile):
             existing=existing, existing_metafile=existing_metafile,
             mcmc_samples=mcmc_samples, filename=filename,
             external_hdf5_links=external_hdf5_links,
-            hdf5_compression=hdf5_compression
+            hdf5_compression=hdf5_compression, history=history
         )
         if self.calibration is None:
             self.calibration = {label: {} for label in self.labels}
@@ -123,7 +124,7 @@ class GWMetaFile(GWPostProcessing):
     """This class handles the creation of a metafile storing all information
     from the analysis
     """
-    def __init__(self, inputs):
+    def __init__(self, inputs, history=None):
         super(GWMetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
         if self.add_to_existing:
@@ -170,7 +171,7 @@ class GWMetaFile(GWPostProcessing):
             mcmc_samples=self.mcmc_samples, skymap=self.skymap,
             existing_skymap=self.existing_skymap, filename=self.filename,
             external_hdf5_links=self.external_hdf5_links,
-            hdf5_compression=self.hdf5_compression
+            hdf5_compression=self.hdf5_compression, history=history
         )
         meta_file.make_dictionary()
         if not self.hdf5:

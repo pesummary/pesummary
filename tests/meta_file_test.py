@@ -293,7 +293,9 @@ class TestMetaFile(object):
         """Test the parameters stored in the metafile
         """
         for num, data in enumerate([self.json_file, self.hdf5_file]):
-            assert list(data.keys()) == self.input_labels + ["version"]
+            assert sorted(list(data.keys())) == sorted(
+                self.input_labels + ["version", "history"]
+            )
             if num == 0:
                 assert list(
                     sorted(data["EXP1"]["posterior_samples"].keys())) == [
@@ -354,7 +356,9 @@ class TestMetaFile(object):
         """Test the meta data stored in the metafile
         """
         for num, data in enumerate([self.json_file, self.hdf5_file]):
-            assert list(data.keys()) == self.input_labels + ["version"]
+            assert sorted(list(data.keys())) == sorted(
+                self.input_labels + ["version", "history"]
+            )
             assert sorted(
                 list(data["EXP1"]["meta_data"].keys())) == ["meta_data", "sampler"]
             assert all(
@@ -400,7 +404,9 @@ class TestMetaFile(object):
         """Test the psd is stored in the metafile
         """
         for data in [self.json_file, self.hdf5_file]:
-            assert list(data.keys()) == self.input_labels + ["version"]
+            assert sorted(list(data.keys())) == sorted(
+                self.input_labels + ["version", "history"]
+            )
             assert list(
                 data["EXP1"]["psds"].keys()) == ["H1"]
             for i, j in zip(self.psds["EXP1"]["H1"], data["EXP1"]["psds"]["H1"]):
@@ -411,7 +417,9 @@ class TestMetaFile(object):
         """Test the calibration envelope is stored in the metafile
         """
         for data in [self.json_file, self.hdf5_file]:
-            assert list(data.keys()) == self.input_labels + ["version"]
+            assert sorted(list(data.keys())) == sorted(
+                self.input_labels + ["version", "history"]
+            )
             assert list(
                 data["EXP1"]["calibration_envelope"].keys()) == ["H1"]
             for i, j in zip(self.calibration["EXP1"]["H1"], data["EXP1"]["calibration_envelope"]["H1"]):
@@ -431,7 +439,9 @@ class TestMetaFile(object):
             config_data.append(config)
 
         for num, data in enumerate([self.json_file, self.hdf5_file]):
-            assert list(data.keys()) == self.input_labels + ["version"]
+            assert sorted(list(data.keys())) == sorted(
+                self.input_labels + ["version", "history"]
+            )
             assert all(
                 i == j for i, j in zip(
                     sorted(list(config_data[0].sections())),
@@ -485,6 +495,8 @@ class TestMetaFile(object):
         """Test the injection data stored in the metafile
         """
         for data in [self.json_file, self.hdf5_file]:
-            assert list(data.keys()) == self.input_labels + ["version"]
+            assert sorted(list(data.keys())) == sorted(
+                self.input_labels + ["version", "history"]
+            )
             for num, i in enumerate(list(self.input_injection["EXP1"].keys())):
                 assert self.input_injection["EXP1"][i] == data["EXP1"]["injection_data"]["injection_values"][num]
