@@ -743,34 +743,38 @@ class _WebpageGeneration(object):
             html_file.make_modal_carousel(images=images, unique_id=unique_id)
         path = self.image_path["other"]
         if self.comparison_stats is not None:
-            rows = range(len(self.labels))
-            base = (
-                "margin-top:{}em; margin-bottom:{}em; background-color:#FFFFFF; "
-                "box-shadow: 0 0 5px grey;"
-            )
-            style_ks = base.format(5, 1)
-            style_js = base.format(0, 5)
+            for _num, _key in enumerate(["KS_test", "JS_test"]):
+                if _key == "KS_test":
+                    html_file.make_banner(
+                        approximant="KS test", key="ks_test",
+                        _style="font-size: 26px;"
+                    )
+                else:
+                    html_file.make_banner(
+                        approximant="JS test", key="js_test",
+                        _style="font-size: 26px;"
+                    )
+                _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+                _class = "row justify-content-center"
+                html_file.make_container(style=_style)
+                html_file.make_div(4, _class=_class, _style=None)
 
-            table_contents = {
-                i: [
-                    [self.labels[j]] + self.comparison_stats[i][0][j] for j in
-                    rows
-                ] for i in self.same_parameters
-            }
-            html_file.make_table(
-                headings=[" "] + self.labels, contents=table_contents,
-                heading_span=1, accordian_header="KS test total", style=style_ks
-            )
-            table_contents = {
-                i: [
-                    [self.labels[j]] + self.comparison_stats[i][1][j] for j in
-                    rows
-                ] for i in self.same_parameters
-            }
-            html_file.make_table(
-                headings=[" "] + self.labels, contents=table_contents,
-                heading_span=1, accordian_header="JS test total", style=style_js
-            )
+                rows = range(len(self.labels))
+                table_contents = {
+                    i: [
+                        [self.labels[j]] + self.comparison_stats[i][_num][j] for
+                        j in rows
+                    ] for i in self.same_parameters
+                }
+                _headings = [" "] + self.labels
+                html_file.make_table(
+                    headings=_headings, format="table-hover scroll-table",
+                    heading_span=1, contents=table_contents, accordian=False,
+                    scroll_table=True
+                )
+                html_file.end_div(4)
+                html_file.end_container()
+                html_file.export("{}_total.csv".format(_key))
         html_file.make_footer(user=self.user, rundir=self.webdir)
 
         for num, i in enumerate(self.same_parameters):
@@ -792,23 +796,35 @@ class _WebpageGeneration(object):
                 contents=contents, rows=1, columns=2, code="changeimage"
             )
             if self.comparison_stats is not None:
-                table_contents = [
-                    [self.labels[j]] + self.comparison_stats[i][0][j]
-                    for j in rows
-                ]
-                html_file.make_table(
-                    headings=[" "] + self.labels, contents=table_contents,
-                    heading_span=1, accordian_header="KS test", style=style_ks
-                )
-                table_contents = [
-                    [self.labels[j]] + self.comparison_stats[i][1][j]
-                    for j in rows
-                ]
-                html_file.make_table(
-                    headings=[" "] + self.labels, contents=table_contents,
-                    heading_span=1, accordian_header="JS divergence test",
-                    style=style_js
-                )
+                for _num, _key in enumerate(["KS_test", "JS_test"]):
+                    if _key == "KS_test":
+                        html_file.make_banner(
+                            approximant="KS test", key="ks_test",
+                            _style="font-size: 26px;"
+                        )
+                    else:
+                        html_file.make_banner(
+                            approximant="JS test", key="js_test",
+                            _style="font-size: 26px;"
+                        )
+                    _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+                    _class = "row justify-content-center"
+                    html_file.make_container(style=_style)
+                    html_file.make_div(4, _class=_class, _style=None)
+
+                    table_contents = [
+                        [self.labels[j]] + self.comparison_stats[i][_num][j]
+                        for j in rows
+                    ]
+                    _headings = [" "] + self.labels
+                    html_file.make_table(
+                        headings=_headings, format="table-hover",
+                        heading_span=1, contents=table_contents, accordian=False
+                    )
+                    html_file.end_div(4)
+                    html_file.end_container()
+                    html_file.export("{}_{}.csv".format(_key, i))
+
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
         html_file = self.setup_page(

@@ -110,8 +110,8 @@ class table_of_images(Base):
             self.make_div(6, _class="row", _style=None)
             for idx, i in enumerate(self.content):
                 if self.autoscale:
-                    width = str(1400 / len(i))
-                    captions_margin_left = str(-1400. / (8 * len(i)))
+                    width = str(1350 / len(i))
+                    captions_margin_left = str(-1350. / (9.5 * len(i)))
                 self.make_div(8, _class="column", _style="padding-left: 1em;")
                 for num, j in enumerate(i):
                     _id = j.split("/")[-1][:-4]
@@ -126,7 +126,9 @@ class table_of_images(Base):
                     self.add_content("</a>\n", indent=6)
                     if self.cli or self.captions:
                         self.add_content("<div class='row justify-content-center'>", indent=6)
-                        self.add_content("<div class='col-sm-4'>", indent=6)
+                        self.add_content(
+                            "<div class='col-sm-{}'>".format(len(i) + 1), indent=6
+                        )
                     if self.cli:
                         self.add_content("<button value='test' class='btn "
                                          "btn-info btn-xs' style='cursor: pointer' "
@@ -142,7 +144,10 @@ class table_of_images(Base):
                             )
                         else:
                             _style = None
-                        self.make_div(6, _class="col-sm-4", _style=_style)
+                        self.make_div(
+                            6, _class="col-sm-{}".format(len(i) + 1),
+                            _style=_style
+                        )
                         self.add_content("<button value='test' class='btn "
                                          "btn-info btn-xs' style='cursor: pointer' "
                                          "data-toggle='popover' "
