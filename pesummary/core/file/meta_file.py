@@ -111,6 +111,8 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path, compression=None):
             data = np.array(np.vstack(value))
         elif isinstance(value[0], (tuple, np.record, np.recarray)):
             data = value
+        elif all(isinstance(_value, (bool, np.bool_)) for _value in value):
+            data = np.array([str(_value) for _value in value], dtype="S")
         elif isinstance(value[0], np.void) and value.dtype.names:
             data = value
         elif math.isnan(value[0]):

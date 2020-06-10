@@ -183,6 +183,15 @@ def twod_contour_plots(
     ax1.set_xlabel(latex_labels[parameters[0]])
     ax1.set_ylabel(latex_labels[parameters[1]])
 
+    _limits = lambda prop, ind: getattr(np, prop)(
+        [getattr(np, prop)(i[ind]) for i in samples]
+    )
+    _xlow, _xhigh = _limits("min", 0), _limits("max", 0)
+    _ylow, _yhigh = _limits("min", 1), _limits("max", 1)
+    _maximum = np.max([np.max(i) for i in samples])
+    ax1.set_xlim(0.9 * _xlow, 1.1 * _xhigh)
+    ax1.set_ylim(0.9 * _ylow, 1.1 * _yhigh)
+
     ncols = number_of_columns_for_legend(labels)
     legend = plt.legend(
         handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
@@ -253,16 +262,16 @@ def spin_distribution_plots(parameters, samples, label, color, colorbar=False):
 
     spin1 = samples[parameters.index("a_1")]
     spin2 = samples[parameters.index("a_2")]
-    theta1 = samples[parameters.index("tilt_1")]
-    theta2 = samples[parameters.index("tilt_2")]
+    costheta1 = samples[parameters.index("cos_tilt_1")]
+    costheta2 = samples[parameters.index("cos_tilt_2")]
 
-    pts = np.array([spin1, theta1]).T
+    pts = np.array([spin1, costheta1]).T
     selected_indices = np.random.choice(len(pts), len(pts) // 2, replace=False)
     kde_sel = np.zeros(len(pts), dtype=bool)
     kde_sel[selected_indices] = True
     kde_pts = pts[kde_sel]
     spin1 = Bounded_2d_kde(kde_pts, xlow=0, xhigh=.99, ylow=-1, yhigh=1)
-    pts = np.array([spin2, theta2]).T
+    pts = np.array([spin2, costheta2]).T
     selected_indices = np.random.choice(len(pts), len(pts) // 2, replace=False)
     kde_sel = np.zeros(len(pts), dtype=bool)
     kde_sel[selected_indices] = True
