@@ -828,7 +828,7 @@ class _PlotGeneration(_BasePlotGeneration):
         error_message = (
             "Failed to generate a spin disk plot for %s because {}"
         )
-        parameters = ["a_1", "a_2", "tilt_1", "tilt_2"]
+        parameters = ["a_1", "a_2", "cos_tilt_1", "cos_tilt_2"]
         for num, label in enumerate(self.labels):
             if not all(i in self.samples[label].keys() for i in parameters):
                 logger.warn(
