@@ -25,6 +25,7 @@ from pesummary.gw.file.conversions import (
     tilt_angles_and_phi_12_from_spin_vectors_and_L
 )
 from pesummary.utils.utils import iterator, logger
+from pesummary.utils.exceptions import EvolveSpinError
 
 
 def evolve_spins(
@@ -82,10 +83,12 @@ def evolve_spins(
         getattr(lalsimulation, approximant)
     )
     if spinfreq_enum == SIM_INSPIRAL_SPINS_CASEBYCASE:
-        raise ValueError(
+        _msg = (
             "Unable to evolve spins as '{}' does not have a set frequency "
             "at which the spins are defined".format(approximant)
         )
+        logger.warn(_msg)
+        raise EvolveSpinError(_msg)
     f_start = float(np.where(
         np.array(spinfreq_enum == SIM_INSPIRAL_SPINS_FLOW), f_low, f_ref
     ))
