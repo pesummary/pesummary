@@ -316,10 +316,28 @@ class page(Base):
                 "passed result file")
         elif key == "sampler_kwargs":
             self.add_content(
-                "Sampler information extracted from the result file")
+                "Sampler information extracted from each result file")
         elif key == "meta_data":
             self.add_content(
-                "Meta data extracted from the result file")
+                "Meta data extracted from each result file")
+        elif key == "summary_table":
+            self.add_content(
+                "Table summarising the key data for each posterior "
+                "distribution."
+            )
+        elif key == "ks_test":
+            self.add_content(
+                "Table summarising the Kolmogorov-Smirnov p-values for each "
+                "posterior distribution. 0 means the samples from analysis A "
+                "are not drawn from analysis B, and 1 means the samples from "
+                "analysis A are drawn from analysis B"
+            )
+        elif key == "js_test":
+            self.add_content(
+                "Table summarising the Jensen-Shannon divergence for each "
+                "posterior distributions. 0 means the distributions are "
+                "identical and 1 means maximal divergence"
+            )
         elif key == "command_line":
             if link is not None:
                 self.add_content(
@@ -508,7 +526,8 @@ class page(Base):
 
     def make_table(self, headings=None, contents=None, heading_span=1,
                    colors=None, accordian_header="Summary Table",
-                   accordian=True, format="table-striped table-sm", **kwargs):
+                   accordian=True, format="table-striped table-sm",
+                   sticky_header=False, scroll_table=False, **kwargs):
         """Generate a table in bootstrap format.
 
         Parameters
@@ -522,6 +541,32 @@ class page(Base):
         colors: list, optional
             list of colors for the table columns
         """
+        if sticky_header:
+            self.add_content(
+                "<style>\n"
+                ".header-fixed > tbody > tr > td,\n"
+                ".header-fixed > thead > tr > th {\n"
+            )
+            self.add_content("    width: {width}%;\n".format(
+                width=100. / len(headings)
+            ))
+            self.add_content(
+                "    float: left;\n}\n</style>"
+            )
+
+        if scroll_table:
+            self.add_content(
+                "<style>\n"
+                ".scroll-table tbody, tr, th {\n"
+                "    width: 100%;\n"
+                "    float: left;\n}\n"
+                ".scroll-table td {\n"
+            )
+            self.add_content("    width: {}%;\n".format(100 / len(headings)))
+            self.add_content(
+                "    float: left;\n}\n</style>"
+            )
+
         if accordian:
             label = accordian_header.replace(" ", "_")
             self.make_container(style=kwargs.get("style", None))
@@ -588,27 +633,32 @@ class page(Base):
             if heading_span > 1:
                 self.add_content("<table class='table table-sm'>\n", indent=22)
             else:
-                self.add_content("<table class='table table-striped table-sm'>\n", indent=24)
-            self.add_content("<thead>\n", indent=26)
+                self.add_content(
+                    "<table class='table %s' style='max-width:1400px'>\n" % (format),
+                    indent=24
+                )
+            self.add_content("<tbody>\n", indent=26)
             for j in contents.keys():
                 self.add_content("<tr bgcolor='#F0F0F0'>\n", indent=28)
                 self.add_content(
-                    "<th colspan='{}' class='text-center'>"
+                    "<th colspan='{}' style='width: 100%' class='text-center'>"
                     "{}</th>\n".format(len(contents[j][0]), j), indent=30)
                 self.add_content("</tr>\n", indent=28)
                 self.add_content("<tr>\n", indent=28)
                 for i in headings:
                     self.add_content(
-                        "<th colspan='{}' class='text-center'>"
-                        "{}</th>\n".format(heading_span, i), indent=30)
+                        "<td colspan='{}' class='text-center'>"
+                        "{}</td>\n".format(heading_span, i), indent=30)
                 self.add_content("</tr>\n", indent=28)
 
                 for num, i in enumerate(contents[j]):
                     self.add_content("<tr>\n", indent=28)
                     for j in i:
-                        self.add_content("<td>{}</td>\n".format(j), indent=30)
+                        self.add_content(
+                            "<td>{}</td>\n".format(j), indent=30
+                        )
                     self.add_content("</tr>\n", indent=28)
-                self.add_content("</tbody>\n", indent=26)
+            self.add_content("</tbody>\n", indent=26)
             self.add_content("</table>\n", indent=24)
             self.end_div(indent=20)
 

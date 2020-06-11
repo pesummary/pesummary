@@ -228,16 +228,18 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         if self.make_comparison:
             if not all(self.approximant[i] is not None for i in self.labels):
                 image_contents = []
-                image_contents.append(
-                    os.path.join(path, "compare_time_domain_waveforms.png")
-                )
-                image_contents = [image_contents]
-                unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
-                html_file.make_table_of_images(
-                    contents=image_contents, unique_id=unique_id
-                )
-                images = [y for x in image_contents for y in x]
-                html_file.make_modal_carousel(images=images, unique_id=unique_id)
+                _plot = os.path.join(path, "compare_time_domain_waveforms.png")
+                if os.path.isfile(_plot):
+                    image_contents.append(_plot)
+                    image_contents = [image_contents]
+                    unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
+                    html_file.make_table_of_images(
+                        contents=image_contents, unique_id=unique_id
+                    )
+                    images = [y for x in image_contents for y in x]
+                    html_file.make_modal_carousel(
+                        images=images, unique_id=unique_id
+                    )
 
         for i in self.labels:
             html_file.make_banner(approximant=i, key=i)
@@ -272,44 +274,47 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             )
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images, unique_id=unique_id)
-            if self.file_kwargs[i]["sampler"] != {}:
+
+        for _key in ["sampler", "meta_data"]:
+            if _key == "sampler":
                 html_file.make_banner(
                     approximant="Sampler kwargs", key="sampler_kwargs",
                     _style="font-size: 26px;"
                 )
-                _style = "margin-top:3em; margin-bottom:5em;"
-                html_file.make_container(style=_style)
-                _class = "row justify-content-center"
-                html_file.make_div(4, _class=_class, _style=None)
-                keys = list(self.file_kwargs[i]["sampler"].keys())
-                table_contents = [
-                    [self.file_kwargs[i]["sampler"][key] for key in keys]
-                ]
-                html_file.make_table(
-                    headings=keys, format="table-hover", contents=table_contents,
-                    heading_span=1, accordian=False
-                )
-                html_file.end_div(4)
-                html_file.end_container()
-            if self.file_kwargs[i]["meta_data"] != {}:
+            else:
                 html_file.make_banner(
                     approximant="Meta data", key="meta_data",
-                    _style="font-size: 26px; margin-top: -3em"
+                    _style="font-size: 26px;"
                 )
-                _style = "margin-top:3em; margin-bottom:5em;"
-                html_file.make_container(style=_style)
-                _class = "row justify-content-center"
-                html_file.make_div(4, _class=_class, _style=None)
-                keys = list(self.file_kwargs[i]["meta_data"].keys())
-                table_contents = [
-                    [self.file_kwargs[i]["meta_data"][key] for key in keys]
-                ]
-                html_file.make_table(
-                    headings=keys, format="table-hover", contents=table_contents,
-                    heading_span=1, accordian=False
-                )
-                html_file.end_div(4)
-                html_file.end_container()
+            _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+            _class = "row justify-content-center"
+            html_file.make_container(style=_style)
+            html_file.make_div(4, _class=_class, _style=None)
+
+            base_label = self.labels[0]
+            total_keys = list(self.file_kwargs[base_label][_key].keys())
+            if len(self.labels) > 1:
+                for _label in self.labels[1:]:
+                    total_keys += [
+                        key for key in self.file_kwargs[_label][_key].keys()
+                        if key not in total_keys
+                    ]
+            _headings = ["label"] + total_keys
+            table_contents = [
+                [i] + [
+                    self.file_kwargs[i][_key][key] if key in
+                    self.file_kwargs[i][_key].keys() else "-" for key in
+                    total_keys
+                ] for i in self.labels
+            ]
+            html_file.make_table(
+                headings=_headings, format="table-hover", heading_span=1,
+                contents=table_contents, accordian=False
+            )
+            html_file.end_div(4)
+            html_file.end_container()
+            html_file.export("{}.csv".format(_key))
+
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
@@ -324,7 +329,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
             html_file.make_table_of_images(
                 contents=images, cli=cli, unique_id=unique_id,
-                captions=captions
+                captions=captions, autoscale=True
             )
             images = [y for x in images for y in x]
             html_file.make_modal_carousel(images=images, unique_id=unique_id)
@@ -350,6 +355,15 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 images = [y for x in image_contents for y in x]
                 html_file.make_modal_carousel(images=images, unique_id=unique_id)
 
+            html_file.make_banner(
+                approximant="Summary Table", key="summary_table",
+                _style="font-size: 26px;"
+            )
+            _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+            _class = "row justify-content-center"
+            html_file.make_container(style=_style)
+            html_file.make_div(4, _class=_class, _style=None)
+
             key_data = self.key_data
             contents = []
             for j in self.samples[i].keys():
@@ -365,10 +379,13 @@ class _WebpageGeneration(_CoreWebpageGeneration):
 
             html_file.make_table(
                 headings=[
-                    " ", "maxL", "mean", "median", "std", "5th percentile",
+                    "posterior", "maxL", "mean", "median", "std", "5th percentile",
                     "95th percentile"
-                ], contents=contents, heading_span=1
+                ], contents=contents, heading_span=1, accordian=False,
+                format="table-hover header-fixed", sticky_header=True
             )
+            html_file.end_div(4)
+            html_file.end_container()
             html_file.export(
                 "summary_information_{}.csv".format(i)
             )
@@ -714,15 +731,15 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             [
                 base_string.format("1d_posterior_mass_1"),
                 base_string.format("1d_posterior_mass_2"),
-                base_string.format("1d_posterior_a_1"),
             ], [
+                base_string.format("1d_posterior_a_1"),
                 base_string.format("1d_posterior_a_2"),
-                base_string.format("skymap"),
-                base_string.format("waveform"),
+                base_string.format("1d_posterior_chi_eff")
             ], [
                 base_string.format("1d_posterior_iota"),
+                base_string.format("skymap"),
+                base_string.format("waveform"),
                 base_string.format("1d_posterior_luminosity_distance"),
-                base_string.format("1d_posterior_chi_eff")
             ]
         ]
         executable = self.get_executable("summaryplots")
@@ -737,17 +754,17 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             [
                 general_cli.format("1d_histogram", "--parameter mass_1"),
                 general_cli.format("1d_histgram", "--parameter mass_2"),
-                general_cli.format("1d_histogram", "--parameter a_1"),
             ], [
+                general_cli.format("1d_histogram", "--parameter a_1"),
                 general_cli.format("1d_histogram", "--parameter a_2"),
-                general_cli.format("skymap", ""),
-                general_cli.format("waveform", ""),
+                general_cli.format("1d_histogram", "--parameter chi_eff")
             ], [
                 general_cli.format("1d_histogram", "--parameter iota"),
+                general_cli.format("skymap", ""),
+                general_cli.format("waveform", ""),
                 general_cli.format(
                     "1d_histogram", "--parameter luminosity_distance"
                 ),
-                general_cli.format("1d_histogram", "--parameter chi_eff")
             ]
         ]
 
@@ -759,14 +776,14 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             [
                 caption_1d_histogram.format(posterior_name("mass_1")),
                 caption_1d_histogram.format(posterior_name("mass_2")),
-                caption_1d_histogram.format(posterior_name("a_1")),
             ], [
+                caption_1d_histogram.format(posterior_name("a_1")),
                 caption_1d_histogram.format(posterior_name("a_2")),
-                PlotCaption("skymap"), PlotCaption("frequency_waveform"),
+                caption_1d_histogram.format(posterior_name("chi_eff"))
             ], [
                 caption_1d_histogram.format(posterior_name("iota")),
-                caption_1d_histogram.format(posterior_name("luminosity_distance")),
-                caption_1d_histogram.format(posterior_name("chi_eff"))
+                PlotCaption("skymap"), PlotCaption("frequency_waveform"),
+                caption_1d_histogram.format(posterior_name("luminosity_distance"))
             ]
         ]
         return image_contents, cli, captions
