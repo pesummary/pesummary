@@ -1,3 +1,36 @@
+## 0.6.0 [11/06/2020]
+
+### Changed
+
+- HTML tables - tidy up how the tables are displayed in the html pages
+- store_skymap delimiter - change the delimiter for the store_skymap job in
+  `pesummary.gw.finish` from `:` to `|`
+- Mock GraceDB events - prevent `InputError` from being raised when a mock
+  gracedb ID is provided
+- Requirements - Update `tqdm` requirements
+
+### Added
+
+- Add a history field to the metafile which contains information about
+  when the file was created, who created it, and the command line used to
+  create the file
+- Add a new `summarycompare` executable which compares the contents of two
+  result files
+- Allow for hdf5 datasets to be compressed with the `--hdf5_compression`
+  command line argument
+- Allow for each analysis to be saved as seperate PESummary metafiles but
+  connected to each other through a single PESummary metafile with external hdf5
+  links when the `--external_hdf5_links` command line argument is provided
+- Add 5th and 95th percentiles to the summarytables shown on the result files
+  homepage
+- Add gracedb module which allows for information to be downloaded from gracedb.
+- Add the `--gracedb_data` command line argument which allows the user to
+  specify what information is downloaded from gracedb and stored in the metafile
+- Allow for extra kwargs to be passed to the `pesummary.io.read.read` function
+  to prevent prior samples from being collected (applicable to `bilby` result
+  files) for example.
+
+
 ## 0.5.6 [27/05/2020]
 
 ### Changed
