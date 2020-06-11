@@ -444,10 +444,12 @@ class PESummary(Read):
         """
         if label not in list(self.config.keys()):
             raise ValueError("The label %s does not exist." % label)
+
+        filename = "%s_config.ini" % (label)
         self.save_config_dictionary_to_file(
-            self.config[label], outdir=outdir,
-            filename="%s_config.ini" % (label)
+            self.config[label], outdir=outdir, filename=filename
         )
+        return os.path.join(outdir, filename)
 
     def _labels_for_write(self, labels):
         """Check the input labels and raise an exception if the label does not exist
