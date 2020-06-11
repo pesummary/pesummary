@@ -18,6 +18,7 @@ import numpy as np
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.utils import logger
 from pesummary.utils.decorators import array_input
+from pesummary.utils.exceptions import EvolveSpinError
 from pesummary import conf
 
 try:
@@ -1862,9 +1863,12 @@ class _Conversion(object):
         f_low = self._retrieve_f_low()
         approximant = self._retrieve_approximant()
         if not hasattr(lalsimulation, approximant):
-            logger.warning('Not evolving spins: approximant {0} unknown to lalsimulation'.format(approximant))
-            raise AttributeError
-
+            _msg = (
+                'Not evolving spins: approximant {0} unknown to '
+                'lalsimulation'.format(approximant)
+            )
+            logger.warn(_msg)
+            raise EvolveSpinError(_msg)
         parameters = ["tilt_1", "tilt_2", "phi_12", "spin_1z", "spin_2z"]
         samples = self.specific_parameter_samples(
             ["mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2",
@@ -2260,8 +2264,10 @@ class _Conversion(object):
                 if all(i in self.parameters for i in evolve_spins_params):
                     try:
                         self._evolve_spins(final_velocity=evolve_spins)
-                    except AttributeError:
-                        # Raised when approximant is unknown to lalsimulation
+                    except EvolveSpinError:
+                        # Raised when approximant is unknown to lalsimulation or
+                        # lalsimulation.SimInspiralGetSpinFreqFromApproximant is
+                        # equal to lalsimulation.SIM_INSPIRAL_SPINS_CASEBYCASE
                         evolve_condition = False
                 else:
                     evolve_condition = False
