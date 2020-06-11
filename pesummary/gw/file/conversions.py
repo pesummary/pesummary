@@ -1861,6 +1861,10 @@ class _Conversion(object):
 
         f_low = self._retrieve_f_low()
         approximant = self._retrieve_approximant()
+        if not hasattr(lalsimulation, approximant):
+            logger.warning('Not evolving spins: approximant {0} unknown to lalsimulation'.format(approximant))
+            raise AttributeError
+
         parameters = ["tilt_1", "tilt_2", "phi_12", "spin_1z", "spin_2z"]
         samples = self.specific_parameter_samples(
             ["mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2",
@@ -2254,7 +2258,11 @@ class _Conversion(object):
                 evolve_suffix = "_evolved"
                 evolve_spins_params = ["tilt_1", "tilt_2", "phi_12"]
                 if all(i in self.parameters for i in evolve_spins_params):
-                    self._evolve_spins(final_velocity=evolve_spins)
+                    try:
+                        self._evolve_spins(final_velocity=evolve_spins)
+                    except AttributeError:
+                        # Raised when approximant is unknown to lalsimulation
+                        evolve_condition = False
                 else:
                     evolve_condition = False
             else:
