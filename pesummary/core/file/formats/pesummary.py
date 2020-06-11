@@ -421,7 +421,7 @@ class PESummary(Read):
         config.optionxform = str
         if config_dict is None:
             logger.warn("No config data found. Unable to write to file")
-            return
+            return None
 
         for key in config_dict.keys():
             config[key] = config_dict[key]
@@ -445,11 +445,11 @@ class PESummary(Read):
         if label not in list(self.config.keys()):
             raise ValueError("The label %s does not exist." % label)
 
-        filename = "%s_config.ini" % (label)
-        self.save_config_dictionary_to_file(
-            self.config[label], outdir=outdir, filename=filename
+        _filename = self.save_config_dictionary_to_file(
+            self.config[label], outdir=outdir,
+            filename="%s_config.ini" % (label)
         )
-        return os.path.join(outdir, filename)
+        return _filename
 
     def _labels_for_write(self, labels):
         """Check the input labels and raise an exception if the label does not exist
