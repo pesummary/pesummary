@@ -114,11 +114,12 @@ class GWFinishingTouches(FinishingTouches):
             name of the fits file that contains the skymap for label
         """
         logger.info("Adding ligo.skymap data to the metafile")
+        _delimiter = ":" if ":" not in label else ","
         command_line = (
-            "summarymodify --webdir {} --samples {} --delimiter | "
-            "--store_skymap {}|{} --overwrite".format(
+            "summarymodify --webdir {} --samples {} --delimiter {} "
+            "--store_skymap {}{}{} --overwrite".format(
                 self.webdir, os.path.join(self.webdir, "samples", "posterior_samples.h5"),
-                label, filename
+                _delimiter, label, _delimiter, filename
             )
         )
         ess = subprocess.Popen(command_line, shell=True)
