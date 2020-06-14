@@ -187,6 +187,16 @@ GW190425:
     - schedule
     - pushes
 
+GWTC1:
+  stage: consequences
+  image: python:3.6
+  script:
+    - *pesummary_install
+    - curl -O https://dcc.ligo.org/public/0157/P1800370/004/GWTC-1_sample_release.tar.gz
+    - tar -xf GWTC-1_sample_release.tar.gz
+    - python tests/existing_file.py -f GWTC-1_sample_release/GW150914_GWTC-1.hdf5 -t pesummary.gw.file.formats.GWTC1.GWTC1
+    - summarypages --webdir ./GWTC1 --no_ligo_skymap --samples GWTC-1_sample_release/GW150914_GWTC-1.hdf5 GWTC-1_sample_release/GW170817_GWTC-1.hdf5 --path_to_samples None IMRPhenomPv2NRT_highSpin_posterior --labels GW150914 GW170817 --gw
+
 build_examples:
   stage: deploy
   image: python:3.6

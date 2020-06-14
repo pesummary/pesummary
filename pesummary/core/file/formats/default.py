@@ -62,7 +62,7 @@ class Default(Read):
 
         self.load_function = func_map[self.extension]
         try:
-            self.load(self.load_function)
+            self.load(self.load_function, **kwargs)
         except Exception as e:
             raise Exception(
                 "Failed to read data for file %s because: %s" % (
@@ -77,7 +77,7 @@ class Default(Read):
         return cls(path, **kwargs)
 
     @staticmethod
-    def _grab_data_from_dat_file(path):
+    def _grab_data_from_dat_file(path, **kwargs):
         """Grab the data stored in a .dat file
         """
         from pesummary.core.file.formats.dat import read_dat
@@ -89,24 +89,28 @@ class Default(Read):
         }
 
     @staticmethod
-    def _grab_data_from_json_file(path):
+    def _grab_data_from_json_file(path, path_to_samples=None, **kwargs):
         """Grab the data stored in a .json file
         """
         from pesummary.core.file.formats.json import read_json
 
-        parameters, samples = read_json(path)
+        parameters, samples = read_json(path, path_to_samples=path_to_samples)
         injection = {i: float("nan") for i in parameters}
         return {
             "parameters": parameters, "samples": samples, "injection": injection
         }
 
     @staticmethod
-    def _grab_data_from_hdf5_file(path, remove_params=[]):
+    def _grab_data_from_hdf5_file(
+        path, remove_params=[], path_to_samples=None, **kwargs
+    ):
         """Grab the data stored in an hdf5 file
         """
         from pesummary.core.file.formats.hdf5 import read_hdf5
 
-        parameters, samples = read_hdf5(path, remove_params=remove_params)
+        parameters, samples = read_hdf5(
+            path, remove_params=remove_params, path_to_samples=path_to_samples
+        )
         injection = {i: float("nan") for i in parameters}
         return {
             "parameters": parameters, "samples": samples, "injection": injection

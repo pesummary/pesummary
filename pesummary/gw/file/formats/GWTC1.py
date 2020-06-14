@@ -75,12 +75,14 @@ class GWTC1(GWRead):
         return {}
 
     @staticmethod
-    def _grab_data_from_GWTC1_file(path):
+    def _grab_data_from_GWTC1_file(path, path_to_samples=None, **kwargs):
         """
         """
         f = h5py.File(path, 'r')
         keys = list(f.keys())
-        if "Overall_posterior" in keys or "overall_posterior" in keys:
+        if path_to_samples is not None:
+            data = f[path_to_samples]
+        elif "Overall_posterior" in keys or "overall_posterior" in keys:
             data = \
                 f["overall_posterior"] if "overall_posterior" in keys else \
                 f["Overall_posterior"]
@@ -98,14 +100,16 @@ class GWTC1(GWRead):
         prior_samples = GWTC1.grab_priors(f)
         version = None
         f.close()
-        return {
+        data = {
             "parameters": parameters,
             "samples": samples,
             "injection": None,
             "version": version,
-            "kwargs": extra_kwargs,
-            "prior": prior_samples
+            "kwargs": extra_kwargs
         }
+        if len(prior_samples):
+            data["prior"] = {"samples": prior_samples}
+        return data
 
     @property
     def calibration_data_in_results_file(self):

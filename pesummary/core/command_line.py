@@ -320,6 +320,15 @@ def _samples_command_line_arguments(parser):
             "analysis"
         )
     )
+    sample_group.add_argument(
+        "--path_to_samples", default=None, nargs="+", help=(
+            "Path to the posterior samples stored in the result file. If "
+            "None, pesummary will search for a 'posterior' or "
+            "'posterior_samples' group. If more than one result file is "
+            "passed, and only the third file requires a path_to_samples "
+            "provide --path_to_samples None None path/to/samples"
+        )
+    )
     return sample_group
 
 
