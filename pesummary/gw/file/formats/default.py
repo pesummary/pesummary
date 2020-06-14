@@ -66,7 +66,7 @@ class Default(GWRead):
 
         self.load_function = func_map[self.extension]
         try:
-            self.load(self.load_function)
+            self.load(self.load_function, **kwargs)
         except Exception as e:
             raise Exception(
                 "Failed to read data for file %s because: %s" % (
@@ -103,7 +103,7 @@ class Default(GWRead):
         return kwargs
 
     @staticmethod
-    def _grab_data_from_dat_file(path):
+    def _grab_data_from_dat_file(path, **kwargs):
         """Grab the data stored in a .dat file
         """
         data = CoreDefault._grab_data_from_dat_file(path)
@@ -128,18 +128,21 @@ class Default(GWRead):
         }
 
     @staticmethod
-    def _grab_data_from_hdf5_file(path):
+    def _grab_data_from_hdf5_file(path, path_to_samples=None, **kwargs):
         """Grab the data stored in an hdf5 file
         """
         return CoreDefault._grab_data_from_hdf5_file(
-            path, remove_params=["waveform_approximant"]
+            path, remove_params=["waveform_approximant"],
+            path_to_samples=path_to_samples, **kwargs
         )
 
     @staticmethod
-    def _grab_data_from_json_file(path):
+    def _grab_data_from_json_file(path, path_to_samples=None, **kwargs):
         """Grab the data stored in a .json file
         """
-        return CoreDefault._grab_data_from_json_file(path)
+        return CoreDefault._grab_data_from_json_file(
+            path, path_to_samples=path_to_samples, **kwargs
+        )
 
     @property
     def calibration_data_in_results_file(self):

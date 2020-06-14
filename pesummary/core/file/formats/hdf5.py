@@ -34,7 +34,7 @@ def read_hdf5(path, **kwargs):
         return _read_hdf5_with_h5py(path, **kwargs)
 
 
-def _read_hdf5_with_deepdish(path, remove_params=None):
+def _read_hdf5_with_deepdish(path, remove_params=None, path_to_samples=None):
     """Grab the parameters and samples in a .hdf5 file with deepdish
 
     Parameters
@@ -47,19 +47,20 @@ def _read_hdf5_with_deepdish(path, remove_params=None):
     import deepdish
 
     f = deepdish.io.load(path)
-    try:
-        path_to_results, = Read.paths_to_key("posterior", f)
-        path_to_results = path_to_results[0]
-    except ValueError:
+    if path_to_samples is None:
         try:
-            path_to_results, = Read.paths_to_key("posterior_samples", f)
-            path_to_results = path_to_results[0]
+            path_to_samples, = Read.paths_to_key("posterior", f)
+            path_to_samples = path_to_samples[0]
         except ValueError:
-            raise ValueError(
-                "Unable to find a 'posterior' or 'posterior_samples' group in the "
-                "file '{}'".format(path)
-            )
-    reduced_f, = Read.load_recursively(path_to_results, f)
+            try:
+                path_to_samples, = Read.paths_to_key("posterior_samples", f)
+                path_to_samples = path_to_samples[0]
+            except ValueError:
+                raise ValueError(
+                    "Unable to find a 'posterior' or 'posterior_samples' group "
+                    "in the file '{}'".format(path)
+                )
+    reduced_f, = Read.load_recursively(path_to_samples, f)
     parameters = [i for i in reduced_f.keys()]
     if remove_params is not None:
         for param in remove_params:
@@ -76,7 +77,7 @@ def _read_hdf5_with_deepdish(path, remove_params=None):
     return parameters, data
 
 
-def _read_hdf5_with_h5py(path, remove_params=None):
+def _read_hdf5_with_h5py(path, remove_params=None, path_to_samples=None):
     """Grab the parameters and samples in a .hdf5 file with h5py
 
     Parameters
@@ -89,7 +90,8 @@ def _read_hdf5_with_h5py(path, remove_params=None):
     import h5py
     import copy
 
-    path_to_samples = Read.guess_path_to_samples(path)
+    if path_to_samples is None:
+        path_to_samples = Read.guess_path_to_samples(path)
 
     f = h5py.File(path, 'r')
     c1 = isinstance(f[path_to_samples], h5py._hl.group.Group)

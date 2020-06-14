@@ -46,7 +46,7 @@ class PESummaryJsonEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def read_json(path):
+def read_json(path, path_to_samples=None):
     """Grab the parameters and samples in a .json file
 
     Parameters
@@ -59,21 +59,22 @@ def read_json(path):
 
     with open(path, "r") as f:
         data = json.load(f)
-    try:
-        path, = Read.paths_to_key("posterior", data)
-        path = path[0]
-        path += "/posterior"
-    except ValueError:
+    if not path_to_samples:
         try:
-            path, = Read.paths_to_key("posterior_samples", data)
-            path = path[0]
-            path += "/posterior_samples"
+            path_to_samples, = Read.paths_to_key("posterior", data)
+            path_to_samples = path_to_samples[0]
+            path_to_samples += "/posterior"
         except ValueError:
-            raise ValueError(
-                "Unable to find a 'posterior' or 'posterior_samples' group in the "
-                "file '{}'".format(path)
-            )
-    reduced_data, = Read.load_recursively(path, data)
+            try:
+                path_to_samples, = Read.paths_to_key("posterior_samples", data)
+                path_to_samples = path_to_samples[0]
+                path_to_samples += "/posterior_samples"
+            except ValueError:
+                raise ValueError(
+                    "Unable to find a 'posterior' or 'posterior_samples' group "
+                    "in the file '{}'".format(path_to_samples)
+                )
+    reduced_data, = Read.load_recursively(path_to_samples, data)
     if "content" in list(reduced_data.keys()):
         reduced_data = reduced_data["content"]
     parameters = list(reduced_data.keys())

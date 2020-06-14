@@ -324,8 +324,15 @@ class _GWInput(_Input):
                 else:
                     self.add_to_prior_dict("calibration", {})
             for num, i in enumerate(self.result_files):
-                f = GWRead(i)
-                calibration_data = f.calibration_data_in_results_file
+                try:
+                    f = GWRead(i)
+                    calibration_data = f.calibration_data_in_results_file
+                except Exception:
+                    logger.warn(
+                        "Failed to extract calibration data from the result "
+                        "file: {}".format(i)
+                    )
+                    calibration_data = None
                 labels = list(self.samples.keys())
                 if calibration_data is None:
                     data[labels[num]] = {

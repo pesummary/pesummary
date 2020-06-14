@@ -197,7 +197,8 @@ class _Input(object):
     @staticmethod
     def grab_data_from_file(
         file, label, config=None, injection=None, read_function=Read,
-        file_format=None, nsamples=None, disable_prior_sampling=False, **kwargs
+        file_format=None, nsamples=None, disable_prior_sampling=False,
+        path_to_samples=None, **kwargs
     ):
         """Grab data from a result file containing posterior samples
 
@@ -221,7 +222,8 @@ class _Input(object):
             `generate_all_posterior_samples` method
         """
         f = read_function(
-            file, file_format=file_format, disable_prior=disable_prior_sampling
+            file, file_format=file_format, disable_prior=disable_prior_sampling,
+            path_to_samples=path_to_samples
         )
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
@@ -824,6 +826,32 @@ class _Input(object):
             self._nsamples = int(nsamples)
 
     @property
+    def path_to_samples(self):
+        return self._path_to_samples
+
+    @path_to_samples.setter
+    def path_to_samples(self, path_to_samples):
+        self._path_to_samples = path_to_samples
+        if path_to_samples is None:
+            self._path_to_samples = {label: None for label in self.labels}
+        elif len(path_to_samples) != len(self.labels):
+            raise InputError(
+                "Please provide a path for all result files passed. If "
+                "two result files are passed, and only one requires the "
+                "path_to_samples arguement, please pass --path_to_samples "
+                "None path/to/samples"
+            )
+        else:
+            _paths = {}
+            for num, path in enumerate(path_to_samples):
+                _label = self.labels[num]
+                if path.lower() == "none":
+                    _paths[_label] = None
+                else:
+                    _paths[_label] = path
+            self._path_to_samples = _paths
+
+    @property
     def priors(self):
         return self._priors
 
@@ -1034,6 +1062,7 @@ class _Input(object):
                 file, label, config=config, injection=injection,
                 file_format=file_format, nsamples=self.nsamples,
                 disable_prior_sampling=self.disable_prior_sampling,
+                path_to_samples=self.path_to_samples[label],
                 **grab_data_kwargs
             )
             return data
@@ -1520,6 +1549,7 @@ class Input(_Input):
         self.kde_plot = self.opts.kde_plot
         self.priors = self.opts.prior_file
         self.disable_prior_sampling = self.opts.disable_prior_sampling
+        self.path_to_samples = self.opts.path_to_samples
         self.file_format = self.opts.file_format
         self.nsamples = self.opts.nsamples
         self.samples = self.opts.samples
