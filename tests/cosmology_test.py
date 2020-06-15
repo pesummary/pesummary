@@ -1,4 +1,4 @@
-from pesummary.gw.cosmology import get_cosmology
+from pesummary.gw.cosmology import get_cosmology, available_cosmologies
 import pytest
 
 
@@ -33,3 +33,17 @@ class TestCosmology(object):
             astropy_cosmology = getattr(cosmology, cosmo)
             for key, value in vars(_cosmo).items():
                 assert vars(astropy_cosmology)[key] == value
+
+    def test_Riess2019_H0(self):
+        """Test that the Riess2019 H0 cosmology is correct
+        """
+        riess_H0 = 74.03
+        for cosmo in available_cosmologies:
+            if "riess" not in cosmo:
+                continue
+            _cosmo = get_cosmology(cosmology=cosmo)
+            base_cosmo = cosmo.split("_with_riess2019_h0")[0]
+            _base_cosmo = get_cosmology(cosmology=base_cosmo)
+            assert _cosmo.H0.value == riess_H0
+            for key in ["Om0", "Ode0"]:
+                assert getattr(_base_cosmo, key) == getattr(_cosmo, key)
