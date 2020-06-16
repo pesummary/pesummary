@@ -553,7 +553,7 @@ class PESummary(Read):
         kwargs: dict, optional
             all additional kwargs are passed to the pesummary.io.write function
         """
-        return self.write(
+        return PESummary.write(
             self, labels=labels, package="core", file_format="bilby",
             _return=True, **kwargs
         )
@@ -589,7 +589,7 @@ class PESummary(Read):
         kwargs: dict, optional
             all additional kwargs are passed to the pesummary.io.write function
         """
-        return self.write(
+        return PESummary.write(
             self, labels=labels, package="core", file_format="dat", **kwargs
         )
 
