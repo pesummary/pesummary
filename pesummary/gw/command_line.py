@@ -82,6 +82,9 @@ def insert_gwspecific_option_group(parser):
                           default=False)
     gw_group.add_argument("--gracedb", dest="gracedb",
                           help="gracedb of the event", default=None)
+    gw_group.add_argument("--gracedb_server", dest="gracedb_server",
+                          help="service url to use when accessing gracedb",
+                          default=None)
     gw_group.add_argument("--gracedb_data", dest="gracedb_data",
                           help=("data you wish to download from gracedb and "
                                 "store in the metafile"), nargs='+',

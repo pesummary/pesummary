@@ -23,6 +23,7 @@ from pesummary.gw.file.calibration import Calibration
 from pesummary.utils.exceptions import InputError
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.utils import logger
+from pesummary import conf
 
 
 class _GWInput(_Input):
@@ -175,7 +176,6 @@ class _GWInput(_Input):
     @cosmology.setter
     def cosmology(self, cosmology):
         from pesummary.gw.cosmology import available_cosmologies
-        from pesummary import conf
 
         if cosmology.lower() not in available_cosmologies:
             logger.warn(
@@ -222,6 +222,20 @@ class _GWInput(_Input):
                     break
 
     @property
+    def gracedb_server(self):
+        return self._gracedb_server
+
+    @gracedb_server.setter
+    def gracedb_server(self, gracedb_server):
+        if gracedb_server is None:
+            self._gracedb_server = conf.gracedb_server
+        else:
+            logger.debug(
+                "Using '{}' as the GraceDB server".format(gracedb_server)
+            )
+            self._gracedb_server = gracedb_server
+
+    @property
     def gracedb(self):
         return self._gracedb
 
@@ -248,12 +262,12 @@ class _GWInput(_Input):
                         ", ".join(self.gracedb_data), gracedb
                     )
                 )
-                json = get_gracedb_data(gracedb, info=self.gracedb_data)
+                json = get_gracedb_data(
+                    gracedb, info=self.gracedb_data,
+                    service_url=self.gracedb_server
+                )
                 json["id"] = gracedb
-            except HTTPError as e:
-                logger.warn(_error.format(e))
-                json = {"id": gracedb}
-            except RuntimeError as e:
+            except (HTTPError, RuntimeError) as e:
                 logger.warn(_error.format(e))
                 json = {"id": gracedb}
 
@@ -834,6 +848,7 @@ class GWInput(_GWInput, Input):
             self.existing_calibration = None
             self.existing_skymap = None
         self.approximant = self.opts.approximant
+        self.gracedb_server = self.opts.gracedb_server
         self.gracedb_data = self.opts.gracedb_data
         self.gracedb = self.opts.gracedb
         self.detectors = None

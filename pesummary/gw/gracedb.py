@@ -15,11 +15,13 @@
 from ligo.gracedb.rest import GraceDb
 from ligo.gracedb.exceptions import HTTPError
 from pesummary.utils.utils import logger
+from pesummary import conf
 
-client = GraceDb()
 
-
-def get_gracedb_data(gracedb_id, superevent=False, info=None, json=None):
+def get_gracedb_data(
+    gracedb_id, superevent=False, info=None, json=None,
+    service_url=conf.gracedb_server
+):
     """Grab data from GraceDB for a specific event.
 
     Parameters
@@ -33,7 +35,10 @@ def get_gracedb_data(gracedb_id, superevent=False, info=None, json=None):
         retrieve
     json: dict, optional
         data that you have already downloaded from gracedb
+    service_url: str, optional
+        service url you wish to use when accessing data from GraceDB
     """
+    client = GraceDb(service_url=service_url)
     if json is None and superevent:
         json = client.superevent(gracedb_id).json()
     elif json is None:

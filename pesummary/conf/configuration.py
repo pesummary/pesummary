@@ -96,3 +96,6 @@ gw_extrinsic_corner_parameters = ["luminosity_distance", "psi", "ra", "dec"]
 
 # Cosmology to use when calculating redshift
 cosmology = "Planck15"
+
+# GraceDB service url to use
+gracedb_server = "https://gracedb.ligo.org/api/"
