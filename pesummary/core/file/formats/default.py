@@ -58,7 +58,8 @@ class Default(Read):
                     "txt": self._grab_data_from_dat_file,
                     "hdf5": self._grab_data_from_hdf5_file,
                     "h5": self._grab_data_from_hdf5_file,
-                    "hdf": self._grab_data_from_hdf5_file}
+                    "hdf": self._grab_data_from_hdf5_file,
+                    "prior": self._grab_data_from_prior_file}
 
         self.load_function = func_map[self.extension]
         try:
@@ -86,6 +87,21 @@ class Default(Read):
         injection = {i: float("nan") for i in parameters}
         return {
             "parameters": parameters, "samples": samples, "injection": injection
+        }
+
+    @staticmethod
+    def _grab_data_from_prior_file(path, **kwargs):
+        """Grab the data stored in a .prior file
+        """
+        from pesummary.core.file.formats.bilby import prior_samples_from_file
+
+        samples = prior_samples_from_file(path, **kwargs)
+        parameters = samples.parameters
+        analytic = samples.analytic
+        injection = {i: float("nan") for i in parameters}
+        return {
+            "parameters": parameters, "samples": samples.samples.T.tolist(),
+            "injection": injection, "analytic": analytic
         }
 
     @staticmethod

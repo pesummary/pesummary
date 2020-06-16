@@ -19,6 +19,7 @@ from pesummary.core.file.formats.base_read import Read
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary import conf
 from pesummary.utils.utils import logger
+from bilby.core.result import Result
 
 
 def read_bilby(
@@ -99,12 +100,15 @@ def read_bilby(
     if not disable_prior:
         prior_samples = Bilby.grab_priors(bilby_object, nsamples=len(samples))
         data["prior"] = {"samples": prior_samples}
+        if len(prior_samples):
+            data["prior"]["analytic"] = prior_samples.analytic
     return data
 
 
 def write_bilby(
     parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
-    extension="json", save=True, **kwargs
+    extension="json", save=True, analytic_priors=None, cls=Result,
+    meta_data=None, **kwargs
 ):
     """Write a set of samples to a bilby file
 
@@ -128,15 +132,18 @@ def write_bilby(
     save: Bool, optional
         if True, save the bilby object to file
     """
-    from bilby.core.result import Result
     from bilby.core.prior import Prior, PriorDict
     from pandas import DataFrame
 
-    priors = PriorDict()
-    priors.update({parameter: Prior() for parameter in parameters})
+    if analytic_priors is not None:
+        priors = PriorDict._get_from_json_dict(analytic_priors)
+        search_parameters = priors.keys()
+    else:
+        priors = {param: Prior() for param in parameters}
+        search_parameters = parameters
     posterior_data_frame = DataFrame(samples, columns=parameters)
-    bilby_object = Result(
-        search_parameter_keys=parameters, samples=samples, priors=priors,
+    bilby_object = cls(
+        search_parameter_keys=search_parameters, samples=samples, priors=priors,
         posterior=posterior_data_frame, label="pesummary_%s" % label,
     )
     if save:
@@ -144,6 +151,53 @@ def write_bilby(
         bilby_object.save_to_file(filename=_filename, extension=extension)
     else:
         return bilby_object
+
+
+def prior_samples_from_file(path, nsamples=5000):
+    """Return a dict of prior samples from a `bilby` prior file
+
+    Parameters
+    ----------
+    path: str
+        path to a `bilby` prior file
+    nsamples: int, optional
+        number of samples to draw from a prior file. Default 5000
+    """
+    from bilby.core.prior import PriorDict
+
+    _prior = PriorDict(filename=path)
+    samples = _prior.sample(size=nsamples)
+    return _bilby_prior_dict_to_pesummary_samples_dict(samples, prior=_prior)
+
+
+def prior_samples_from_bilby_object(bilby_object, nsamples=5000):
+    """Return a dict of prior samples from a `bilby.core.result.Result`
+    object
+
+    Parameters
+    ----------
+    bilby_object: bilby.core.result.Result
+        a bilby.core.result.Result object you wish to draw prior samples from
+    nsamples: int, optional
+        number of samples to draw from a prior file. Default 5000
+    """
+    samples = bilby_object.priors.sample(size=nsamples)
+    return _bilby_prior_dict_to_pesummary_samples_dict(
+        samples, prior=bilby_object.priors
+    )
+
+
+def _bilby_prior_dict_to_pesummary_samples_dict(samples, prior=None):
+    """Return a pesummary.utils.samples_dict.SamplesDict object from a bilby
+    priors dict
+    """
+    from pesummary.utils.samples_dict import SamplesDict
+
+    _samples = SamplesDict(samples)
+    if prior is not None:
+        analytic = {key: str(item) for key, item in prior.items()}
+        setattr(_samples, "analytic", analytic)
+    return _samples
 
 
 class Bilby(Read):
@@ -201,16 +255,13 @@ class Bilby(Read):
     def grab_priors(bilby_object, nsamples=5000):
         """Draw samples from the prior functions stored in the bilby file
         """
-        from pesummary.utils.samples_dict import Array
-
-        f = bilby_object
         try:
-            samples = f.priors.sample(size=nsamples)
-            priors = {key: Array(samples[key]) for key in samples}
+            return prior_samples_from_bilby_object(
+                bilby_object, nsamples=nsamples
+            )
         except Exception as e:
             logger.info("Failed to draw prior samples because {}".format(e))
-            priors = {}
-        return priors
+            return {}
 
     @staticmethod
     def grab_extra_kwargs(bilby_object):

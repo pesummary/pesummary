@@ -993,7 +993,7 @@ class _Input(object):
 
         prior_dict = {}
         if priors is not None:
-            prior_dict = {"samples": {}}
+            prior_dict = {"samples": {}, "analytic": {}}
             for i in priors:
                 if not os.path.isfile(i):
                     raise InputError("The file {} does not exist".format(i))
@@ -1006,17 +1006,27 @@ class _Input(object):
                 data = Read(priors[0])
                 for i in self.labels:
                     prior_dict["samples"][i] = data.samples_dict
+                    try:
+                        prior_dict["analytic"][i] = data.analytic
+                    except AttributeError:
+                        continue
             elif len(priors) != len(self.labels):
                 raise InputError(
                     "Please provide a prior file for each result file"
                 )
             else:
                 for num, i in enumerate(priors):
+                    if i.lower() == "none":
+                        continue
                     logger.info(
                         "Assigning {} to {}".format(self.labels[num], i)
                     )
                     data = Read(priors[num])
                     prior_dict["samples"][self.labels[num]] = data.samples_dict
+                    try:
+                        prior_dict["analytic"][self.labels[num]] = data.analytic
+                    except AttributeError:
+                        continue
         return prior_dict
 
     @property

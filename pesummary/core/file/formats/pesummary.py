@@ -15,6 +15,7 @@
 
 from glob import glob
 import os
+import copy
 
 import h5py
 import json
@@ -513,8 +514,14 @@ class PESummary(Read):
                         except (KeyError, TypeError):
                             kwargs[prop] = None
             priors = getattr(self, "priors", {label: None})
+            if "analytic" in priors.keys() and label in priors["analytic"].keys():
+                kwargs.update({"analytic_priors": priors["analytic"][label]})
             if not len(priors):
                 priors = {}
+            elif all(label in value.keys() for value in priors.values()):
+                priors = {key: item[label] for key, item in priors.items()}
+            elif "samples" in priors.keys() and label in priors["samples"].keys():
+                priors = {"samples": {label: priors["samples"][label]}}
             elif label not in priors.keys():
                 priors = {}
             else:

@@ -314,32 +314,15 @@ class PESummary(GWRead, CorePESummary):
                 )
             }
 
-    def to_bilby(self):
+    def to_bilby(self, labels="all", **kwargs):
         """Convert a PESummary metafile to a bilby results object
         """
         from bilby.gw.result import CompactBinaryCoalescenceResult
-        from bilby.core.prior import Prior, PriorDict
-        from pandas import DataFrame
 
-        objects = dict()
-        for num, label in enumerate(self.labels):
-            priors = PriorDict()
-            logger.warn(
-                "No prior information is known so setting it to a default")
-            priors.update({parameter: Prior() for parameter in self.parameters[num]})
-            posterior_data_frame = DataFrame(
-                self.samples[num], columns=self.parameters[num])
-            meta_data = {
-                "likelihood": {
-                    "waveform_arguments": {
-                        "waveform_approximant": self.approximant[num]},
-                    "interferometers": self.detectors[num]}}
-            bilby_object = CompactBinaryCoalescenceResult(
-                search_parameter_keys=self.parameters[num],
-                posterior=posterior_data_frame, label="pesummary_%s" % label,
-                samples=self.samples[num], priors=priors, meta_data=meta_data)
-            objects[label] = bilby_object
-        return objects
+        return CorePESummary.write(
+            self, labels=labels, package="core", file_format="bilby",
+            _return=True, cls=CompactBinaryCoalescenceResult, **kwargs
+        )
 
     def to_lalinference(self, labels="all", **kwargs):
         """Convert the samples stored in a PESummary metafile to a .dat file
