@@ -63,11 +63,18 @@ class TestSummaryPages(Base):
             )
         )
 
+
     def test_prior_input(self):
         """Check that `summarypages` works when a prior file is passed from
         the command line
         """
         import importlib
+        import pkg_resources
+
+        path = pkg_resources.resource_filename("bilby", "gw")
+        bilby_prior_file = os.path.join(
+            path, "prior_files", "GW150914.prior"
+        )
 
         for package in ["core", "gw"]:
             gw = True if package == "gw" else False
@@ -76,20 +83,29 @@ class TestSummaryPages(Base):
             )
             make_result_file(gw=gw, extension="json")
             os.rename(".outdir/test.json", ".outdir/prior.json")
-            command_line = (
-                "summarypages --webdir .outdir --samples .outdir/example.json "
-                "--prior_file .outdir/prior.json --labels test"
-            )
-            command_line += " --gw" if gw else ""
-            self.launch(command_line)
-            f = module.read(".outdir/samples/posterior_samples.h5")
-            stored = f.priors["samples"]["test"]
-            f = module.read(".outdir/prior.json")
-            original = f.samples_dict
-            for param in original.keys():
-                np.testing.assert_almost_equal(
-                    original[param], stored[param]
+            for _file in [".outdir/prior.json", bilby_prior_file]:
+                command_line = (
+                    "summarypages --webdir .outdir --samples .outdir/example.json "
+                    "--labels test --prior_file {}".format(_file)
                 )
+                command_line += " --gw" if gw else ""
+                self.launch(command_line)
+                f = module.read(".outdir/samples/posterior_samples.h5")
+                if _file != bilby_prior_file:
+                    stored = f.priors["samples"]["test"]
+                    f = module.read(_file)
+                    original = f.samples_dict
+                    for param in original.keys():
+                        np.testing.assert_almost_equal(
+                            original[param], stored[param]
+                        )
+                else:
+                    from bilby.core.prior import PriorDict
+
+                    analytic = f.priors["analytic"]["test"]
+                    bilby_prior = PriorDict(filename=bilby_prior_file)
+                    for param, value in bilby_prior.items():
+                        assert analytic[param] == str(value)
 
     def test_calibration_and_psd(self):
         """Test that the calibration and psd files are passed appropiately

@@ -131,6 +131,8 @@ class Read(object):
             self.extra_kwargs["sampler"]["nsamples"] = len(self.data["samples"])
         if "prior" in self.data.keys():
             self.priors = self.data["prior"]
+        if "analytic" in self.data.keys():
+            self.analytic = self.data["analytic"]
         if "labels" in self.data.keys():
             self.labels = self.data["labels"]
         if "config" in self.data.keys():

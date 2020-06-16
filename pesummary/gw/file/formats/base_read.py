@@ -125,22 +125,26 @@ class GWRead(Read):
                     key: val for key, val in i.items()
                 } for i in self.injection_parameters
             ]
-        if "prior" in data.keys() and data["prior"]["samples"] != {}:
-            priors = data["prior"]["samples"]
-            default_parameters = list(priors.keys())
-            default_samples = [
-                [priors[parameter][i] for parameter in default_parameters] for i
-                in range(len(priors[default_parameters[0]]))
-            ]
-            parameters, samples = self.translate_parameters(
-                default_parameters, default_samples
-            )
-            if not kwargs.get("disable_prior_conversion", False):
-                self.priors = {"samples": con._Conversion(
-                    parameters, samples, extra_kwargs=self.extra_kwargs
-                )}
-            else:
-                self.priors = {"samples": SamplesDict(parameters, samples)}
+        if "prior" in data.keys():
+            self.priors = data["prior"]
+            if data["prior"]["samples"] != {}:
+                priors = data["prior"]["samples"]
+                default_parameters = list(priors.keys())
+                default_samples = [
+                    [priors[parameter][i] for parameter in default_parameters]
+                    for i in range(len(priors[default_parameters[0]]))
+                ]
+                parameters, samples = self.translate_parameters(
+                    default_parameters, default_samples
+                )
+                if not kwargs.get("disable_prior_conversion", False):
+                    self.priors["samples"] = con._Conversion(
+                        parameters, samples, extra_kwargs=self.extra_kwargs
+                    )
+                else:
+                    self.priors["samples"] = SamplesDict(parameters, samples)
+        if "analytic" in data.keys():
+            self.analytic = data["analytic"]
         if "weights" in self.data.keys():
             self.weights = self.data["weights"]
         else:
