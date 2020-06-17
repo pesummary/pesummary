@@ -71,7 +71,7 @@ class _GWInput(_Input):
         skymap = {i: None for i in labels}
         if hasattr(f, "skymap") and f.skymap is not None and f.skymap != {}:
             for i in labels:
-                if len(f.skymap[i]):
+                if i in f.skymap.keys() and len(f.skymap[i]):
                     skymap[i] = f.skymap[i]
         data.update(
             {
