@@ -19,7 +19,6 @@ from pesummary.core.file.formats.base_read import Read
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary import conf
 from pesummary.utils.utils import logger
-from bilby.core.result import Result
 
 
 def read_bilby(
@@ -107,7 +106,7 @@ def read_bilby(
 
 def write_bilby(
     parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
-    extension="json", save=True, analytic_priors=None, cls=Result,
+    extension="json", save=True, analytic_priors=None, cls=None,
     meta_data=None, **kwargs
 ):
     """Write a set of samples to a bilby file
@@ -132,9 +131,12 @@ def write_bilby(
     save: Bool, optional
         if True, save the bilby object to file
     """
+    from bilby.core.result import Result
     from bilby.core.prior import Prior, PriorDict
     from pandas import DataFrame
 
+    if cls is None:
+        cls = Result
     if analytic_priors is not None:
         priors = PriorDict._get_from_json_dict(analytic_priors)
         search_parameters = priors.keys()
