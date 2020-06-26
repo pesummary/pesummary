@@ -529,6 +529,54 @@ class TestSummaryCombine(Base):
         posterior_samples2 = g.samples[0]
         np.testing.assert_almost_equal(posterior_samples, posterior_samples2)
 
+    def test_seed(self):
+        """Test that the samples stored in the metafile are identical for two
+        runs if the random seed is the same
+        """
+        from pesummary.gw.file.read import read
+
+        make_result_file(gw=True, extension="json")
+        os.rename(".outdir/test.json", ".outdir/example.json")
+        command_line = (
+            "summarycombine --webdir .outdir --samples "
+            ".outdir/example.json --label gw0 --no_conversion --gw "
+            "--nsamples 10 --seed 1000"
+        )
+        self.launch(command_line)
+        original = read(".outdir/samples/posterior_samples.h5")
+        command_line = (
+            "summarycombine --webdir .outdir --samples "
+            ".outdir/example.json --label gw0 --no_conversion --gw "
+            "--nsamples 10 --seed 2000"
+        )
+        self.launch(command_line)
+        new = read(".outdir/samples/posterior_samples.h5")
+        try:
+            np.testing.assert_almost_equal(
+                original.samples[0], new.samples[0]
+            )
+            raise AssertionError("Failed")
+        except AssertionError:
+            pass
+
+        command_line = (
+            "summarycombine --webdir .outdir --samples "
+            ".outdir/example.json --label gw0 --no_conversion --gw "
+            "--nsamples 10 --seed 1000"
+        )
+        self.launch(command_line)
+        original = read(".outdir/samples/posterior_samples.h5")
+        command_line = (
+            "summarycombine --webdir .outdir --samples "
+            ".outdir/example.json --label gw0 --no_conversion --gw "
+            "--nsamples 10 --seed 1000"
+        )
+        self.launch(command_line)
+        new = read(".outdir/samples/posterior_samples.h5")
+        np.testing.assert_almost_equal(
+            original.samples[0], new.samples[0]
+        )
+
 
 class TestSummaryReview(Base):
     """Test the `summaryreview` executable

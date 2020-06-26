@@ -270,6 +270,15 @@ class _Input(object):
         }
 
     @property
+    def seed(self):
+        return self._seed
+
+    @seed.setter
+    def seed(self, seed):
+        np.random.seed(seed)
+        self._seed = seed
+
+    @property
     def existing(self):
         return self._existing
 
@@ -1505,6 +1514,7 @@ class Input(_Input):
     """
     def __init__(self, opts, ignore_copy=False, extra_options=None):
         self.opts = opts
+        self.seed = self.opts.seed
         self.style_file = self.opts.style_file
         self.result_files = self.opts.samples
         self.meta_file = False
