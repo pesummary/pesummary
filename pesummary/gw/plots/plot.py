@@ -428,7 +428,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
 
 
 def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
-                      downsampled=False, label="pesummary",
+                      downsampled=False, label="pesummary", time=None,
                       distance_map=True, multi_resolution=True, **kwargs):
     """Plot the sky location of the source for a given approximant using the
     ligo.skymap package
@@ -476,6 +476,13 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
     if dist is not None:
         hpmap.meta["distmean"] = float(np.mean(dist))
         hpmap.meta["diststd"] = float(np.std(dist))
+    if time is not None:
+        if isinstance(time, (float, int)):
+            _time = time
+        else:
+            _time = np.mean(time)
+        hpmap.meta["gps_time"] = _time
+
     io.write_sky_map(
         os.path.join(savedir, "%s_skymap.fits" % (label)), hpmap, nest=True
     )
