@@ -31,6 +31,7 @@ from seaborn.utils import iqr, categorical_order, remove_na
 from seaborn.algorithms import bootstrap
 from seaborn.palettes import color_palette, husl_palette, light_palette, dark_palette
 from seaborn.axisgrid import FacetGrid, _facet_docs
+from scipy.stats import gaussian_kde
 
 
 class ViolinPlotter(_ViolinPlotter):
@@ -40,8 +41,10 @@ class ViolinPlotter(_ViolinPlotter):
                  bw="scott", cut=2, scale="area", scale_hue=True, gridsize=100,
                  width=.8, inner="box", split=False, dodge=True, orient=None,
                  linewidth=None, color=None, palette=None, saturation=.75,
-                 ax=None, outer=None, **kwargs):
+                 ax=None, outer=None, kde=gaussian_kde, kde_kwargs={}, **kwargs):
         self.multi_color = False
+        self.kde = kde
+        self.kde_kwargs = kde_kwargs
         self.establish_variables(x, y, hue, data, orient, order, hue_order)
         self.establish_colors(color, palette, saturation)
         self.estimate_densities(bw, cut, scale, scale_hue, gridsize)
@@ -166,6 +169,130 @@ class ViolinPlotter(_ViolinPlotter):
     def _flatten_string(string):
         """Remove the trailing white space from a string"""
         return string.lstrip(" ")
+
+    def estimate_densities(self, bw, cut, scale, scale_hue, gridsize):
+        """Find the support and density for all of the data."""
+        # Initialize data structures to keep track of plotting data
+        if self.hue_names is None:
+            support = []
+            density = []
+            counts = np.zeros(len(self.plot_data))
+            max_density = np.zeros(len(self.plot_data))
+        else:
+            support = [[] for _ in self.plot_data]
+            density = [[] for _ in self.plot_data]
+            size = len(self.group_names), len(self.hue_names)
+            counts = np.zeros(size)
+            max_density = np.zeros(size)
+
+        for i, group_data in enumerate(self.plot_data):
+
+            # Option 1: we have a single level of grouping
+            # --------------------------------------------
+
+            if self.plot_hues is None:
+
+                # Strip missing datapoints
+                kde_data = remove_na(group_data)
+
+                # Handle special case of no data at this level
+                if kde_data.size == 0:
+                    support.append(np.array([]))
+                    density.append(np.array([1.]))
+                    counts[i] = 0
+                    max_density[i] = 0
+                    continue
+
+                # Handle special case of a single unique datapoint
+                elif np.unique(kde_data).size == 1:
+                    support.append(np.unique(kde_data))
+                    density.append(np.array([1.]))
+                    counts[i] = 1
+                    max_density[i] = 0
+                    continue
+
+                # Fit the KDE and get the used bandwidth size
+                kde, bw_used = self.fit_kde(kde_data, bw)
+
+                # Determine the support grid and get the density over it
+                support_i = self.kde_support(kde_data, bw_used, cut, gridsize)
+                density_i = kde(support_i)
+                # Update the data structures with these results
+                support.append(support_i)
+                density.append(density_i)
+                counts[i] = kde_data.size
+                max_density[i] = density_i.max()
+
+            # Option 2: we have nested grouping by a hue variable
+            # ---------------------------------------------------
+
+            else:
+                for j, hue_level in enumerate(self.hue_names):
+
+                    # Handle special case of no data at this category level
+                    if not group_data.size:
+                        support[i].append(np.array([]))
+                        density[i].append(np.array([1.]))
+                        counts[i, j] = 0
+                        max_density[i, j] = 0
+                        continue
+
+                    # Select out the observations for this hue level
+                    hue_mask = self.plot_hues[i] == hue_level
+
+                    # Strip missing datapoints
+                    kde_data = remove_na(group_data[hue_mask])
+
+                    # Handle special case of no data at this level
+                    if kde_data.size == 0:
+                        support[i].append(np.array([]))
+                        density[i].append(np.array([1.]))
+                        counts[i, j] = 0
+                        max_density[i, j] = 0
+                        continue
+
+                    # Handle special case of a single unique datapoint
+                    elif np.unique(kde_data).size == 1:
+                        support[i].append(np.unique(kde_data))
+                        density[i].append(np.array([1.]))
+                        counts[i, j] = 1
+                        max_density[i, j] = 0
+                        continue
+
+                    # Fit the KDE and get the used bandwidth size
+                    kde, bw_used = self.fit_kde(kde_data, bw)
+
+                    # Determine the support grid and get the density over it
+                    support_ij = self.kde_support(kde_data, bw_used,
+                                                  cut, gridsize)
+                    density_ij = kde(support_ij)
+
+                    # Update the data structures with these results
+                    support[i].append(support_ij)
+                    density[i].append(density_ij)
+                    counts[i, j] = kde_data.size
+                    max_density[i, j] = density_ij.max()
+
+        # Scale the height of the density curve.
+        # For a violinplot the density is non-quantitative.
+        # The objective here is to scale the curves relative to 1 so that
+        # they can be multiplied by the width parameter during plotting.
+
+        if scale == "area":
+            self.scale_area(density, max_density, scale_hue)
+
+        elif scale == "width":
+            self.scale_width(density)
+
+        elif scale == "count":
+            self.scale_count(density, counts, scale_hue)
+
+        else:
+            raise ValueError("scale method '{}' not recognized".format(scale))
+
+        # Set object attributes that will be used while plotting
+        self.support = support
+        self.density = density
 
     def draw_violins(self, ax):
         """Draw the violins onto `ax`."""
@@ -368,6 +495,21 @@ class ViolinPlotter(_ViolinPlotter):
                         elif self.inner.startswith("point"):
                             self.draw_points(ax, violin_data, i + offsets[j])
 
+    def fit_kde(self, x, bw):
+        """Estimate a KDE for a vector of data with flexible bandwidth."""
+        kde = self.kde(x, bw_method=bw, **self.kde_kwargs)
+
+        # Extract the numeric bandwidth from the KDE object
+        bw_used = kde.factor
+
+        # At this point, bw will be a numeric scale factor.
+        # To get the actual bandwidth of the kernel, we multiple by the
+        # unbiased standard deviation of the data, which we will use
+        # elsewhere to compute the range of the support.
+        bw_used = bw_used * x.std(ddof=1)
+
+        return kde, bw_used
+
     def annotate_axes(self, ax):
         """Add descriptive labels to an Axes object."""
         if self.orient == "v":
@@ -503,12 +645,13 @@ def violinplot(x=None, y=None, hue=None, data=None, order=None, hue_order=None,
                bw="scott", cut=2, scale="area", scale_hue=True, gridsize=100,
                width=.8, inner="box", split=False, dodge=True, orient=None,
                linewidth=None, color=None, palette=None, saturation=.75,
-               ax=None, outer=None, **kwargs):
+               ax=None, outer=None, kde=gaussian_kde, kde_kwargs={}, **kwargs):
 
     plotter = ViolinPlotter(x, y, hue, data, order, hue_order,
                             bw, cut, scale, scale_hue, gridsize,
                             width, inner, split, dodge, orient, linewidth,
-                            color, palette, saturation, outer=outer)
+                            color, palette, saturation, outer=outer,
+                            kde=kde, kde_kwargs=kde_kwargs)
 
     if ax is None:
         ax = plt.gca()

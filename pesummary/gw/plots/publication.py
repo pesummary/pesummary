@@ -204,7 +204,7 @@ def twod_contour_plots(
     return fig
 
 
-def violin_plots(parameter, samples, labels, latex_labels):
+def violin_plots(parameter, samples, labels, latex_labels, cut=0, **kwargs):
     """Generate violin plots for a set of parameters and samples
 
     Parameters
@@ -220,8 +220,9 @@ def violin_plots(parameter, samples, labels, latex_labels):
     """
     logger.debug("Generating violin plots for %s" % (parameter))
     fig, ax1 = plt.subplots(nrows=1, ncols=1)
-    ax1 = violin.violinplot(data=samples, palette="pastel", inner="line", cut=0,
-                            outer="percent: 90", scale="width")
+    ax1 = violin.violinplot(data=samples, palette="pastel", inner="line",
+                            outer="percent: 90", scale="width", cut=cut,
+                            **kwargs)
     ax1.set_xticklabels(labels)
     for label in ax1.get_xmajorticklabels():
         label.set_rotation(30)
