@@ -271,13 +271,22 @@ class _PlotGeneration(_BasePlotGeneration):
 
             logger.info("Launching subprocess to generate skymap plot with "
                         "ligo.skymap")
+            try:
+                _time = samples["geocent_time"]
+            except KeyError:
+                logger.warn(
+                    "Unable to find 'geocent_time' in the posterior table for {}. "
+                    "The ligo.skymap fits file will therefore not store the "
+                    "DATE_OBS field in the header".format(label)
+                )
+                _time = None
             with RedirectLogger("ligo.skymap", level="DEBUG") as redirector:
                 process = mp.Process(
                     target=self._ligo_skymap_plot,
                     args=[
                         self.savedir, samples["ra"], samples["dec"],
-                        samples["luminosity_distance"], label,
-                        self.nsamples_for_skymap, self.webdir,
+                        samples["luminosity_distance"], _time,
+                        label, self.nsamples_for_skymap, self.webdir,
                         self.multi_threading_for_skymap
                     ]
                 )
@@ -312,7 +321,7 @@ class _PlotGeneration(_BasePlotGeneration):
 
     @staticmethod
     @no_latex_plot
-    def _ligo_skymap_plot(savedir, ra, dec, dist, label, nsamples_for_skymap,
+    def _ligo_skymap_plot(savedir, ra, dec, dist, time, label, nsamples_for_skymap,
                           webdir, multi_threading_for_skymap):
         """Generate a skymap plot for a given set of samples using the
         ligo.skymap package
@@ -327,6 +336,8 @@ class _PlotGeneration(_BasePlotGeneration):
             array containing the samples for declination
         dist: pesummary.utils.utils.Array
             array containing the samples for luminosity distance
+        time: pesummary.utils.utils.Array
+            array containing the samples for the geocentric time of merger
         label: str
             the label corresponding to the results file
         nsamples_for_skymap: int
@@ -343,7 +354,7 @@ class _PlotGeneration(_BasePlotGeneration):
         fig = gw._ligo_skymap_plot(
             ra, dec, dist=dist, savedir=os.path.join(webdir, "samples"),
             nprocess=multi_threading_for_skymap, downsampled=downsampled,
-            label=label
+            label=label, time=time
         )
         _PlotGeneration.save(
             fig, os.path.join(savedir, "{}_skymap".format(label))
