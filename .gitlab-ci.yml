@@ -42,7 +42,7 @@ python-3.6:
   script:
     - export USER=albert.einstein
     - *pesummary_install
-    - coverage run -m pytest tests --ignore tests/workflow_test.py
+    - coverage run -m pytest tests --ignore tests/workflow_test.py --ignore tests/ligo_skymap_test.py
     - coverage report
     - coverage html
     - coverage-badge -o coverage_badge.svg -f
@@ -58,7 +58,7 @@ python-3.7:
   script:
     - export USER=albert.einstein
     - *pesummary_install
-    - pytest tests --ignore tests/workflow_test.py
+    - pytest tests --ignore tests/workflow_test.py --ignore tests/ligo_skymap_test.py
 
 style:
   stage: test
@@ -124,6 +124,16 @@ python3.7-gw:
   script:
     - *pesummary_install
     - pytest -k "GW or gw" tests/workflow_test.py
+
+ligo_skymap:
+  stage: consequences
+  image: python:3.6
+  script:
+    - *pesummary_install
+    - pytest tests/ligo_skymap_test.py
+  only:
+    - schedule
+    - pushes
 
 lalinference:
   stage: consequences

@@ -14,7 +14,90 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import numpy as np
-from pesummary.utils.utils import check_file_exists_and_rename
+from pesummary.utils.utils import check_file_exists_and_rename, Empty
+from pesummary import conf
+from pesummary.utils.dict import Dict
+
+
+class SkyMapDict(Dict):
+    """Class to handle a dictionary of skymaps
+
+    Parameters
+    ----------
+    labels: list
+        list of labels for each skymap
+    data: nd list
+        list of skymap probabilities for each analysis
+    **kwargs: dict
+        All other kwargs are turned into properties of the class. Key
+        is the name of the property
+
+    Attributes
+    ----------
+    labels: list
+        list of labels stored in the dictionary
+
+    Methods
+    -------
+    plot:
+        Generate a plot based on the skymap samples stored
+
+    Examples
+    --------
+    >>> skymap_1 = SkyMap.from_fits("skymap.fits")
+    >>> skymap_2 = SkyMap.from_fits("skymap_2.fits")
+    >>> skymap_dict = SkyMapDict(
+    ...     ["one", "two"], [skymap_1, skymap_2]
+    ... )
+    >>> skymap_dict = SkyMapDict(
+    ...     {"one": skymap_1, "two": skymap_2}
+    ... )
+    """
+    def __init__(self, *args, **kwargs):
+        super(SkyMapDict, self).__init__(*args, value_class=Empty, **kwargs)
+
+    @property
+    def labels(self):
+        return list(self.keys())
+
+    def plot(self, labels="all", colors=None, show_probability_map=False, **kwargs):
+        """Generate a plot to compare the skymaps stored in the SkyMapDict
+
+        Parameters
+        ----------
+        labels: list, optional
+            list of analyses you wish to compare. Default all.
+        **kwargs: dict
+            all additional kwargs are passed to
+            pesummary.gw.plots.plot._
+        """
+        from pesummary.gw.plots.plot import (
+            _ligo_skymap_comparion_plot_from_array
+        )
+
+        _labels = self.labels
+        if labels != "all" and isinstance(labels, list):
+            _labels = []
+            for label in labels:
+                if label not in self.labels:
+                    raise ValueError(
+                        "No skymap for '{}' is stored in the dictionary. "
+                        "The list of available analyses are: {}".format(
+                            label, ", ".join(self.labels)
+                        )
+                    )
+                _labels.append(label)
+        skymaps = [self[key] for key in _labels]
+        if colors is None:
+            colors = list(conf.colorcycle)
+
+        if show_probability_map:
+            show_probability_map = _labels.index(show_probability_map)
+
+        return _ligo_skymap_comparion_plot_from_array(
+            skymaps, colors, _labels, show_probability_map=show_probability_map,
+            **kwargs
+        )
 
 
 class SkyMap(np.ndarray):

@@ -14,6 +14,38 @@ already present.
 
 .. _documentation: https://lscsoft.docs.ligo.org/ligo.skymap/quickstart/install.html
 
+A `ligo.skymap` skymap is produced automatically with the `summarypages`
+executable if the `ligo.skymap` package is installed. The `fits` file can then
+be downloaded directly from the webpages, or accessed from the meta file itself.
+To produce a skymap from the probability array stored in the meta file, we may
+run,
+
+.. code-block:: python
+
+    >>> from pesummary.io import read
+    >>> f = read('posterior_samples.h5')
+    >>> label = f.labels[0]
+    >>> fig = f.skymap[label].plot(contour=[50, 90])
+    >>> fig.savefig('skymap.png')
+
+
+If more than one skymap is stored in the meta file, a comparison plot can
+be produced by running,
+
+.. code-block:: python
+
+    >>> from pesummary.io import read
+    >>> f = read('posterior_samples.h5')
+    >>> labels = f.labels[:2]
+    >>> fig = f.skymap.plot(
+    ...     colors=["k", "r"], contour=[90], show_probability_map=labels[0],
+    ...     labels=labels
+    ... )
+    >>> fig.savefig('skymap_comparison.png')
+
+If, however, the skymap data is not stored in the meta file, a skymap can be
+produced by following the instructions below.
+=======
 Generating a fits file with the `ligo.skymap` executables
 ---------------------------------------------------------
 

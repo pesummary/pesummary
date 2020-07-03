@@ -859,6 +859,13 @@ def check_filename(
     return _file
 
 
+class Empty(object):
+    """Define an empty class which simply returns the input
+    """
+    def __new__(self, *args):
+        return args[0]
+
+
 def history_dictionary(program=None, creator=conf.user, command_line=None):
     """Create a dictionary containing useful information about the origin of
     a PESummary data product
