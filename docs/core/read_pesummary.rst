@@ -42,6 +42,10 @@ specific run` below.
 Loading the posterior samples for a specific run
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+All posterior samples are stored in a
+`pesummary.utils.samples_dict.MultiAnalysisSamplesDict`
+object. For details about the `MultiAnalysisSamplesDict` class, see
+`MultiAnalysisSamplesDict class <MultiAnalysisSamplesDict.html>`_.
 If, for example, you wanted to extract the posterior samples for the 'EXP1'
 analysis, this can be done with the following:
 

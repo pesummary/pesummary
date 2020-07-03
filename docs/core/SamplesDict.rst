@@ -76,3 +76,14 @@ samples,
     >>> discard = samplesdict.discard_samples(3)
     >>> discard
     {'a': Array([4, 5, 6]), 'b': Array([3, 2, 1])}
+
+The `SamplesDict` class also provides the ability to plot the posterior samples
+directly. This can be achieved through the `plot()` method. For example, if we
+want to plot the samples as a KDE, we can run,
+
+.. code-block:: python
+
+    >>> import matplotlib.pyplot as plt
+    >>> parameter = "a"
+    >>> fig = samplesdict.plot(parameter, type="hist", kde=True)
+    >>> plt.show()

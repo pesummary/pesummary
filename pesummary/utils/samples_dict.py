@@ -18,6 +18,7 @@ import numpy as np
 from pesummary.utils.utils import resample_posterior_distribution, logger
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.gw.plots.latex_labels import GWlatex_labels
+from pesummary import conf
 import importlib
 
 latex_labels.update(GWlatex_labels)
@@ -468,6 +469,10 @@ class _MultiDimensionalSamplesDict(dict):
                 enumerate(samples)
             ]
         self.parameters = parameters
+        self.latex_labels = {
+            param: latex_labels[param] if param in latex_labels.keys() else
+            param for param in self.total_list_of_parameters
+        }
 
     @property
     def T(self):
@@ -526,6 +531,22 @@ class _MultiDimensionalSamplesDict(dict):
     @property
     def minimum_number_of_samples(self):
         return np.min([length for length in self.number_of_samples.values()])
+
+    @property
+    def total_list_of_parameters(self):
+        if isinstance(self.parameters, dict):
+            _parameters = [item for item in self.parameters.values()]
+            _flat_parameters = [
+                item for sublist in _parameters for item in sublist
+            ]
+        elif isinstance(self.parameters, list):
+            if np.array(self.parameters).ndim > 1:
+                _flat_parameters = [
+                    item for sublist in self.parameters for item in sublist
+                ]
+            else:
+                _flat_parameters = self.parameters
+        return list(set(_flat_parameters))
 
     def samples(self, parameter):
         if self.transpose:
@@ -752,6 +773,85 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             *args, labels=labels, transpose=transpose
         )
         self.name = MultiAnalysisSamplesDict
+
+    def plot(
+        self, *args, type="hist", labels="all", colors=None, **kwargs
+    ):
+        """Generate a plot for the posterior samples stored in
+        MultiDimensionalSamplesDict
+
+        Parameters
+        ----------
+        *args: tuple
+            all arguments are passed to the plotting function
+        type: str
+            name of the plot you wish to make
+        labels: list
+            list of analyses that you wish to include in the plot
+        colors: list
+            list of colors to use for each analysis
+        **kwargs: dict
+            all additional kwargs are passed to the plotting function
+        """
+        plotting_map = {
+            "hist": self._marginalized_posterior
+        }
+        if type not in plotting_map.keys():
+            raise NotImplementedError(
+                "The {} method is not currently implemented. The allowed "
+                "plotting methods are {}".format(
+                    type, ", ".join(plotting_map.keys())
+                )
+            )
+
+        if labels == "all":
+            labels = self.labels
+        elif isinstance(labels, list):
+            for label in labels:
+                if label not in self.labels:
+                    raise ValueError(
+                        "'{}' is not a stored analysis. The available analyses "
+                        "are: '{}'".format(label, ", ".join(self.labels))
+                    )
+        else:
+            raise ValueError(
+                "Please provide a list of analyses that you wish to plot"
+            )
+        if colors is None:
+            colors = list(conf.colorcycle)
+
+        kwargs["labels"] = labels
+        kwargs["colors"] = colors
+        return plotting_map[type](*args, **kwargs)
+
+    def _marginalized_posterior(
+        self, parameter, module="core", labels="all", colors=None, **kwargs
+    ):
+        """Wrapper for the
+        `pesummary.core.plots.plot._1d_comparison_histogram_plot` or
+        `pesummary.gw.plots.plot._comparison_1d_histogram_plot`
+
+        Parameters
+        ----------
+        parameter: str
+            name of the parameter you wish to plot
+        module: str, optional
+            module you wish to use for the plotting
+        labels: list
+            list of analyses that you wish to include in the plot
+        colors: list
+            list of colors to use for each analysis
+        **kwargs: dict
+            all additional kwargs are passed to the
+            `_1d_comparison_histogram_plot` function
+        """
+        module = importlib.import_module(
+            "pesummary.{}.plots.plot".format(module)
+        )
+        return getattr(module, "_1d_comparison_histogram_plot")(
+            parameter, [self[label][parameter] for label in labels],
+            colors, self.latex_labels[parameter], labels, **kwargs
+        )
 
     def js_divergence(self, parameter, decimal=5):
         """Return the JS divergence between the posterior samples for

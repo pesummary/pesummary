@@ -86,3 +86,15 @@ easier to manipulate and compare the stored analyses,
     0.55198
     >>> samplesdict.ks_statistic("b")
     0.00016
+
+The `MultiAnalysisSamplesDict` class also provides the ability to plot the
+posterior samples directly. This can be achieved through the `plot()` method.
+For example, if we want to make a comparison plot, comparing `analysis_1`
+and `analysis_2` samples and plot them as a KDE, we can run,
+
+.. code-block:: python
+
+    >>> import matplotlib.pyplot as plt
+    >>> parameter = "a"
+    >>> fig = samplesdict.plot(parameter, type="hist", labels=["analysis_1", "analysis_2"], kde=True)
+    >>> plt.show()
