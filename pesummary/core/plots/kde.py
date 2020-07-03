@@ -43,7 +43,7 @@ def _scipy_univariate_kde(data, bw, gridsize, cut, clip, xlow=None, xhigh=None):
         try:
             x_grid = np.linspace(xlow - 10e-10, xhigh + 10e-10, 10**3)
             kde = Bounded_1d_kde(data, bw_method=bw, xlow=xlow, xhigh=xhigh)
-            post_grid = kde(np.atleast_2d(x_grid).T)
+            post_grid = kde(np.atleast_1d(x_grid).T)
             return x_grid, post_grid
         except TypeError:
             logger.warn(
