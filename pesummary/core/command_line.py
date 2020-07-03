@@ -382,6 +382,10 @@ def _plotting_command_line_arguments(parser):
         "--style_file", dest="style_file", default=None,
         help="Style file you wish to use when generating plots"
     )
+    plot_group.add_argument(
+        "--add_to_corner", dest="add_to_corner", default=None,
+        nargs="+", help="Parameters you wish to include in the corner plot"
+    )
     return plot_group
 
 

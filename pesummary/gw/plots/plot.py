@@ -174,7 +174,7 @@ def _1d_comparison_histogram_plot(param, samples, colors,
     )
 
 
-def _make_corner_plot(samples, latex_labels, **kwargs):
+def _make_corner_plot(samples, latex_labels, corner_parameters=None, **kwargs):
     """Generate the corner plots for a given approximant
 
     Parameters
@@ -192,9 +192,11 @@ def _make_corner_plot(samples, latex_labels, **kwargs):
     """
     from pesummary.core.plots.plot import _make_corner_plot
 
+    if corner_parameters is None:
+        corner_parameters = conf.gw_corner_parameters
+
     return _make_corner_plot(
-        samples, latex_labels, corner_parameters=conf.gw_corner_parameters,
-        **kwargs
+        samples, latex_labels, corner_parameters=corner_parameters, **kwargs
     )
 
 
