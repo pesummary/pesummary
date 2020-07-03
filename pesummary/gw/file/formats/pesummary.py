@@ -198,13 +198,13 @@ class PESummary(GWRead, CorePESummary):
             except (KeyError, AttributeError):
                 pass
         if "skymap" in self.data.keys():
-            from pesummary.gw.file.skymap import SkyMap
+            from pesummary.gw.file.skymap import SkyMapDict, SkyMap
 
             try:
-                self.skymap = {
+                self.skymap = SkyMapDict({
                     label: SkyMap(skymap["data"], skymap["meta_data"])
                     for label, skymap in self.data["skymap"].items()
-                }
+                })
             except (KeyError, AttributeError):
                 self.skymap = self.data["skymap"]
 

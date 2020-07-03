@@ -25,8 +25,13 @@ class Dict(dict):
         Class you wish to use for the nested dictionary
     value_columns: list, optional
         Names for each column in value_class to be stored as properties
+    **kwargs: dict
+        All other kwargs are turned into properties of the class. Key
+        is the name of the property
     """
-    def __init__(self, *args, value_class=np.ndarray, value_columns=None):
+    def __init__(
+        self, *args, value_class=np.ndarray, value_columns=None, **kwargs
+    ):
         super(Dict, self).__init__()
         if isinstance(args[0], dict):
             data = args[0]
@@ -41,3 +46,5 @@ class Dict(dict):
                 if len(value_columns) == self[key].shape[1]:
                     for num, col in enumerate(value_columns):
                         setattr(self[key], col, np.array(self[key].T[num]))
+        for key, item in kwargs.items():
+            setattr(self, key, item)

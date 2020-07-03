@@ -494,7 +494,10 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
     )
 
 
-def _ligo_skymap_plot_from_array(skymap, nsamples=None, downsampled=False):
+def _ligo_skymap_plot_from_array(
+    skymap, nsamples=None, downsampled=False, contour=[50, 90],
+    annotate=True, ax=None, colors="k"
+):
     """Generate a skymap with `ligo.skymap` based on an array of probabilities
 
     Parameters
@@ -505,40 +508,116 @@ def _ligo_skymap_plot_from_array(skymap, nsamples=None, downsampled=False):
         number of samples used
     downsampled: Bool, optional
         If True, add a header to the skymap saying that this plot is downsampled
+    contour: list, optional
+        list of contours to be plotted on the skymap. Default 50, 90
+    annotate: Bool, optional
+        If True, annotate the figure by adding the 90% and 50% sky areas
+        by default
+    ax: matplotlib.axes._subplots.AxesSubplot, optional
+        Existing axis to add the plot to
+    colors: str/list
+        colors to use for the contours
     """
     import healpy as hp
-    from ligo.skymap import plot, postprocess, io
+    from ligo.skymap import plot, io
     from ligo.skymap.bayestar import rasterize
     from ligo.skymap.kde import Clustered2DSkyKDE, Clustered2Plus1DSkyKDE
     from astropy.time import Time
 
-    fig = plt.figure()
+    if ax is None:
+        fig = plt.figure()
+        ax = plt.axes(projection='astro hours mollweide')
+        ax.grid(b=True)
+
     nside = hp.npix2nside(len(skymap))
     deg2perpix = hp.nside2pixarea(nside, degrees=True)
     probperdeg2 = skymap / deg2perpix
 
-    ax = plt.axes(projection='astro hours mollweide')
-    ax.grid(b=True)
     if downsampled:
         ax.set_title("Downsampled to %s" % (nsamples), fontdict={'fontsize': 11})
 
     vmax = probperdeg2.max()
     ax.imshow_hpx((probperdeg2, 'ICRS'), nested=True, vmin=0.,
                   vmax=vmax, cmap="cylon")
-    cls = 100 * postprocess.find_greedy_credible_levels(skymap)
-    cs = ax.contour_hpx((cls, 'ICRS'), nested=True, colors='k',
-                        linewidths=0.5, levels=[50, 90])
-    plt.clabel(cs, fmt=r'%g\%%', fontsize=6, inline=True)
-    text = []
-    pp = np.round([50, 90]).astype(int)
-    ii = np.round(
-        np.searchsorted(np.sort(cls), [50, 90]) * deg2perpix).astype(int)
-    for i, p in zip(ii, pp):
-        text.append(u'{:d}% area: {:d} deg²'.format(p, i, grouping=True))
-    ax.text(1, 1.05, '\n'.join(text), transform=ax.transAxes, ha='right',
-            fontsize=10)
+    cls, cs = _ligo_skymap_contours(ax, skymap, contour=contour, colors=colors)
+    if annotate:
+        text = []
+        pp = np.round(contour).astype(int)
+        ii = np.round(
+            np.searchsorted(np.sort(cls), contour) * deg2perpix).astype(int)
+        for i, p in zip(ii, pp):
+            text.append(u'{:d}% area: {:d} deg²'.format(p, i, grouping=True))
+        ax.text(1, 1.05, '\n'.join(text), transform=ax.transAxes, ha='right',
+                fontsize=10)
     plot.outline_text(ax)
+    if ax is None:
+        return fig
+    else:
+        return ax
+
+
+def _ligo_skymap_comparion_plot_from_array(
+    skymaps, colors, labels, contour=[50, 90], show_probability_map=False
+):
+    """Generate a skymap with `ligo.skymap` based which compares arrays of
+    probabilities
+
+    Parameters
+    ----------
+    skymaps: list
+        list of skymap probabilities
+    colors: list
+        list of colors to use for each skymap
+    labels: list
+        list of labels associated with each skymap
+    contour: list, optional
+        contours you wish to display on the comparison plot
+    show_probability_map: int, optional
+        the index of the skymap you wish to show the probability
+        map for. Default False
+    """
+    from ligo.skymap import plot
+
+    ncols = number_of_columns_for_legend(labels)
+    fig = plt.figure()
+    ax = plt.axes(projection='astro hours mollweide')
+    ax.grid(b=True)
+    for num, skymap in enumerate(skymaps):
+        if isinstance(show_probability_map, int) and show_probability_map == num:
+            ax = _ligo_skymap_plot_from_array(
+                skymap, nsamples=None, downsampled=False, contour=contour,
+                annotate=False, ax=ax, colors=colors[num]
+            )
+        cls, cs = _ligo_skymap_contours(
+            ax, skymap, contour=contour, colors=colors[num]
+        )
+        cs.collections[0].set_label(labels[num])
+    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
+               mode="expand", ncol=ncols)
     return fig
+
+
+def _ligo_skymap_contours(ax, skymap, contour=[50, 90], colors='k'):
+    """Plot contours on a ligo.skymap skymap
+
+    Parameters
+    ----------
+    ax: matplotlib.axes._subplots.AxesSubplot, optional
+        Existing axis to add the plot to
+    skymap: np.array
+        array of probabilities
+    contour: list
+        list contours you wish to plot
+    colors: str/list
+        colors to use for the contours
+    """
+    from ligo.skymap import postprocess
+
+    cls = 100 * postprocess.find_greedy_credible_levels(skymap)
+    cs = ax.contour_hpx((cls, 'ICRS'), nested=True, colors=colors,
+                        linewidths=0.5, levels=contour)
+    plt.clabel(cs, fmt=r'%g\%%', fontsize=6, inline=True)
+    return cls, cs
 
 
 def _default_skymap_plot(ra, dec, weights=None, **kwargs):
