@@ -75,7 +75,8 @@ class _PlotGeneration(object):
         injection_data=None, colors=None, custom_plotting=None,
         add_to_existing=False, priors={}, include_prior=False, weights=None,
         disable_comparison=False, linestyles=None, disable_interactive=False,
-        multi_process=1, mcmc_samples=False, disable_corner=False
+        multi_process=1, mcmc_samples=False, disable_corner=False,
+        corner_params=None
     ):
         self.package = "core"
         self.webdir = webdir
@@ -98,6 +99,7 @@ class _PlotGeneration(object):
         self.linestyles = linestyles
         self.make_interactive = not disable_interactive
         self.make_corner = not disable_corner
+        self.corner_params = corner_params
         self.multi_process = multi_process
         self.pool = self.setup_pool()
         self.make_comparison = (
@@ -337,11 +339,12 @@ class _PlotGeneration(object):
         else:
             samples = self.samples[label]
         self._corner_plot(
-            self.savedir, label, samples, latex_labels, self.webdir
+            self.savedir, label, samples, latex_labels, self.webdir,
+            self.corner_params
         )
 
     @staticmethod
-    def _corner_plot(savedir, label, samples, latex_labels, webdir):
+    def _corner_plot(savedir, label, samples, latex_labels, webdir, params):
         """Generate a corner plot for a given set of samples
 
         Parameters
@@ -362,7 +365,9 @@ class _PlotGeneration(object):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            fig, params, data = core._make_corner_plot(samples, latex_labels)
+            fig, params, data = core._make_corner_plot(
+                samples, latex_labels, corner_parameters=params
+            )
             _PlotGeneration.save(
                 fig, os.path.join(
                     savedir, "corner", "{}_all_density_plots".format(

@@ -56,7 +56,7 @@ class _PlotGeneration(_BasePlotGeneration):
         existing_weights=None, weights=None, disable_comparison=False,
         linestyles=None, disable_interactive=False, disable_corner=False,
         publication_kwargs={}, multi_process=1, mcmc_samples=False,
-        skymap=None, existing_skymap=None
+        skymap=None, existing_skymap=None, corner_params=None
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -71,7 +71,7 @@ class _PlotGeneration(_BasePlotGeneration):
             include_prior=include_prior, weights=weights,
             disable_comparison=disable_comparison, linestyles=linestyles,
             disable_interactive=disable_interactive, disable_corner=disable_corner,
-            multi_process=multi_process
+            multi_process=multi_process, corner_params=corner_params
         )
         self.package = "gw"
         self.file_kwargs = file_kwargs
@@ -166,7 +166,7 @@ class _PlotGeneration(_BasePlotGeneration):
             self.try_to_make_a_plot("spin_disk")
 
     @staticmethod
-    def _corner_plot(savedir, label, samples, latex_labels, webdir):
+    def _corner_plot(savedir, label, samples, latex_labels, webdir, params):
         """Generate a corner plot for a given set of samples
 
         Parameters
@@ -186,7 +186,9 @@ class _PlotGeneration(_BasePlotGeneration):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            fig, params, data = gw._make_corner_plot(samples, latex_labels)
+            fig, params, data = gw._make_corner_plot(
+                samples, latex_labels, corner_parameters=params
+            )
             plt.savefig(
                 os.path.join(
                     savedir, "corner", "{}_all_density_plots.png".format(

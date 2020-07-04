@@ -1222,6 +1222,45 @@ class _Input(object):
             )
 
     @property
+    def add_to_corner(self):
+        return self._add_to_corner
+
+    @add_to_corner.setter
+    def add_to_corner(self, add_to_corner):
+        self._add_to_corner = self._set_corner_params(add_to_corner)
+
+    def _set_corner_params(self, corner_params):
+        cls = self.__class__.__name__
+        if corner_params is not None:
+            for label in self.labels:
+                _not_included = [
+                    param for param in corner_params if param not in
+                    self.samples[label].keys()
+                ]
+                if len(_not_included) == len(corner_params) and cls == "Input":
+                    logger.warn(
+                        "None of the chosen corner parameters are "
+                        "included in the posterior table for '{}'. Using "
+                        "all available parameters for the corner plot".format(
+                            label
+                        )
+                    )
+                    corner_params = None
+                    break
+                elif len(_not_included):
+                    logger.warn(
+                        "The following parameters are not included in the "
+                        "posterior table for '{}': {}. Not adding to corner "
+                        "plot".format(label, ", ".join(_not_included))
+                    )
+        elif cls == "Input":
+            logger.debug(
+                "Using all parameters stored in the result file for the "
+                "corner plots. This may take some time."
+            )
+        return corner_params
+
+    @property
     def notes(self):
         return self._notes
 
@@ -1577,6 +1616,7 @@ class Input(_Input):
         self.burnin_method = self.opts.burnin_method
         self.burnin = self.opts.burnin
         self.custom_plotting = self.opts.custom_plotting
+        self.add_to_corner = self.opts.add_to_corner
         self.email = self.opts.email
         self.dump = self.opts.dump
         self.hdf5 = not self.opts.save_to_json
@@ -1708,6 +1748,7 @@ class PostProcessing(object):
         self.samples = self.inputs.samples
         self.priors = self.inputs.priors
         self.custom_plotting = self.inputs.custom_plotting
+        self.corner_params = self.inputs.add_to_corner
         self.email = self.inputs.email
         self.dump = self.inputs.dump
         self.hdf5 = self.inputs.hdf5

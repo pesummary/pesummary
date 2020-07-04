@@ -169,6 +169,27 @@ class _GWInput(_Input):
                 label: {} for label in self.labels
             }
 
+    def _set_corner_params(self, corner_params):
+        corner_params = super(_GWInput, self)._set_corner_params(corner_params)
+        if corner_params is None:
+            logger.debug(
+                "Using the default corner parameters: {}".format(
+                    ", ".join(conf.gw_corner_parameters)
+                )
+            )
+        else:
+            _corner_params = corner_params
+            corner_params = list(set(conf.gw_corner_parameters + corner_params))
+            for param in _corner_params:
+                _data = self.samples
+                if not all(param in _data[label].keys() for label in self.labels):
+                    corner_params.remove(param)
+            logger.debug(
+                "Generating a corner plot with the following "
+                "parameters: {}".format(", ".join(corner_params))
+            )
+        return corner_params
+
     @property
     def cosmology(self):
         return self._cosmology
