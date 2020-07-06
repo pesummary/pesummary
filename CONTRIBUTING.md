@@ -128,6 +128,7 @@ commands,
 ```bash
 $ cd pesummary
 $ pip install optional_requirements.txt
+$ cd pesummary
 $ covarage run -m pytest tests/
 $ coverage html
 ```

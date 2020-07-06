@@ -4,7 +4,7 @@ import glob
 import subprocess
 import numpy as np
 
-from base import make_result_file, get_list_of_plots, get_list_of_files
+from .base import make_result_file, get_list_of_plots, get_list_of_files
 import pytest
 from pesummary.utils.exceptions import InputError
 import importlib
@@ -111,7 +111,7 @@ class TestSummaryPages(Base):
         """Test that the calibration and psd files are passed appropiately
         """
         from pesummary.gw.file.read import read
-        from base import make_psd, make_calibration
+        from .base import make_psd, make_calibration
 
         make_psd()
         make_calibration()
@@ -157,7 +157,7 @@ class TestSummaryPages(Base):
     def test_summarycombine_output(self):
         """Test on a summarycombine output
         """
-        from base import make_psd, make_calibration
+        from .base import make_psd, make_calibration
 
         make_psd()
         make_calibration()
@@ -465,7 +465,7 @@ class TestSummaryCombine(Base):
         `--external_hdf5_links` command line is passed
         """
         from pesummary.gw.file.read import read
-        from base import make_psd, make_calibration
+        from .base import make_psd, make_calibration
 
         make_result_file(gw=True, extension="json")
         os.rename(".outdir/test.json", ".outdir/example.json")
@@ -500,7 +500,7 @@ class TestSummaryCombine(Base):
         compressed with maximum compression level
         """
         from pesummary.gw.file.read import read
-        from base import make_psd, make_calibration
+        from .base import make_psd, make_calibration
 
         make_result_file(gw=True, extension="json")
         os.rename(".outdir/test.json", ".outdir/example.json")

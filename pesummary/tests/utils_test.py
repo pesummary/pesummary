@@ -195,7 +195,7 @@ class TestUtils(object):
     def test_gw_results_file(self):
         """Test the gw_results_file method
         """
-        from base import namespace
+        from .base import namespace
 
         opts = namespace({"gw": True, "psd": True})
         assert utils.gw_results_file(opts)
@@ -205,7 +205,7 @@ class TestUtils(object):
     def test_functions(self):
         """Test the functions method
         """
-        from base import namespace
+        from .base import namespace
 
         opts = namespace({"gw": True, "psd": True})
         funcs = utils.functions(opts)

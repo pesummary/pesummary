@@ -83,40 +83,49 @@ def get_list_of_files(gw=False, number=1):
     return sorted(html)
 
 
-def get_list_of_plots(gw=False, number=1, mcmc=False):
+def get_list_of_plots(
+    gw=False, number=1, mcmc=False, label=None, outdir=".outdir",
+    comparison=True, psd=False, calibration=False
+):
     """Return a list of plots that should be generated from a typical workflow
     """
     if not gw:
         import string
 
         parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
-        label = "core"
+        if label is None:
+            label = "core"
     else:
         parameters = gw_parameters()
-        label = "gw"
+        if label is None:
+            label = "gw"
 
     plots = []
     for num in range(number):
         for i in ["sample_evolution", "autocorrelation", "1d_posterior", "cdf"]:
             for j in parameters:
-                plots.append("./.outdir/plots/%s%s_%s_%s.png" % (label, num, i, j))
+                plots.append("./%s/plots/%s%s_%s_%s.png" % (outdir, label, num, i, j))
         if mcmc:
             for j in parameters:
-                plots.append("./.outdir/plots/%s%s_1d_posterior_%s_combined.png" % (label, num, j))
-    if number > 1:
+                plots.append("./%s/plots/%s%s_1d_posterior_%s_combined.png" % (outdir, label, num, j))
+        if psd:
+            plots.append("./%s/plots/%s%s_psd_plot.png" % (outdir, label, num))
+        if calibration:
+            plots.append("./%s/plots/%s%s_calibration_plot.png" % (outdir, label, num))
+    if number > 1 and comparison:
         for i in ["1d_posterior", "boxplot", "cdf"]:
             for j in parameters:
-                plots.append("./.outdir/plots/combined_%s_%s.png" % (i, j))
+                plots.append("./%s/plots/combined_%s_%s.png" % (outdir, i, j))
 
     if gw:
         for num in range(number):
-            plots.append("./.outdir/plots/gw%s_skymap.png" % (num))
-            plots.append("./.outdir/plots/gw%s_default_pepredicates.png" % (num))
-            plots.append("./.outdir/plots/gw%s_default_pepredicates_bar.png" % (num))
-            plots.append("./.outdir/plots/gw%s_population_pepredicates.png" % (num))
-            plots.append("./.outdir/plots/gw%s_population_pepredicates_bar.png" % (num))
-        if number > 1:
-            plots.append("./.outdir/plots/combined_skymap.png")
+            plots.append("./%s/plots/%s%s_skymap.png" % (outdir, label, num))
+            plots.append("./%s/plots/%s%s_default_pepredicates.png" % (outdir, label, num))
+            plots.append("./%s/plots/%s%s_default_pepredicates_bar.png" % (outdir, label, num))
+            plots.append("./%s/plots/%s%s_population_pepredicates.png" % (outdir, label, num))
+            plots.append("./%s/plots/%s%s_population_pepredicates_bar.png" % (outdir, label, num))
+        if number > 1 and comparison:
+            plots.append("./%s/plots/combined_skymap.png" % (outdir))
         
     return sorted(plots)
 

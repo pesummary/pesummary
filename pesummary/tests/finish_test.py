@@ -17,7 +17,7 @@ import shutil
 import os
 import pytest
 
-from base import make_argparse
+from .base import make_argparse
 from pesummary.core.finish import FinishingTouches
 
 

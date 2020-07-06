@@ -2,7 +2,7 @@ import os
 import shutil
 import numpy as np
 
-from base import make_result_file
+from .base import make_result_file
 import pesummary
 from pesummary.gw.file.read import read as GWRead
 from pesummary.core.file.read import read as Read
@@ -134,7 +134,7 @@ class GWBaseRead(BaseRead):
         """Test the parameter property
         """
         super(GWBaseRead, self).test_parameters(true, pesummary=pesummary)
-        from base import gw_parameters
+        from .base import gw_parameters
         full_parameters = gw_parameters()
 
         self.result.generate_all_posterior_samples()
