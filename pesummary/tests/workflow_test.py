@@ -3,8 +3,8 @@ import shutil
 import glob
 import numpy as np
 
-from base import make_argparse, get_list_of_plots, get_list_of_files
-from base import read_result_file
+from .base import make_argparse, get_list_of_plots, get_list_of_files
+from .base import read_result_file
 from pesummary.utils.utils import functions
 from pesummary.cli.summarypages import WebpageGeneration
 from pesummary.cli.summaryplots import PlotGeneration

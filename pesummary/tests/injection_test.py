@@ -16,7 +16,7 @@
 import os
 import shutil
 import numpy as np
-from base import make_injection_file
+from .base import make_injection_file
 from pesummary.gw.file.injection import GWInjection
 
 

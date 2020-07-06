@@ -12,29 +12,19 @@ stages:
   python setup.py sdist
   pip install dist/*.tar.gz
 
-basic:
+executables:
   stage: test
   image: python:3.6
   script:
     - *pesummary_install
-    - summarypages --help
-    - summaryplots --help
-    - summarymodify --help
-    - summarypublication --help
-    - summaryclassification --help
-    - summaryclean --help
-    - summaryrecreate --help
-    - summaryreview --help
-    - summarycombine --help
-    - summarydetchar --help
-    - summaryversion --help
-    - summarypageslw --help
-    - summarypipe --help
-    - python -c "import pesummary"
-    - python -c "import pesummary.core"
-    - python -c "import pesummary.gw"
-    - python -c "import pesummary.utils"
-    - python -c "import pesummary.cli"
+    - bash ci/test.sh --type executables
+
+imports:
+  stage: test
+  image: python:3.6
+  script:
+    - *pesummary_install
+    - bash ci/test.sh --type imports
 
 python-3.6:
   stage: test
@@ -42,15 +32,12 @@ python-3.6:
   script:
     - export USER=albert.einstein
     - *pesummary_install
-    - coverage run -m pytest tests --ignore tests/workflow_test.py --ignore tests/ligo_skymap_test.py
-    - coverage report
-    - coverage html
-    - coverage-badge -o coverage_badge.svg -f
+    - bash ci/test.sh --type tests --ignore tests/workflow_test.py --ignore tests/ligo_skymap_test.py --coverage
 
   artifacts:
     paths:
-      - htmlcov/
-      - coverage_badge.svg
+      - pesummary/htmlcov/
+      - pesummary/coverage_badge.svg
 
 python-3.7:
   stage: test
@@ -58,14 +45,14 @@ python-3.7:
   script:
     - export USER=albert.einstein
     - *pesummary_install
-    - pytest tests --ignore tests/workflow_test.py --ignore tests/ligo_skymap_test.py
+    - bash ci/test.sh --type tests --ignore tests/workflow_test.py --ignore tests/ligo_skymap_test.py
 
 style:
   stage: test
   image: python:3.6
   script:
     - pip install flake8
-    - flake8 . 
+    - bash ci/test.sh --type style
 
 documentation:
   stage: test
@@ -86,51 +73,55 @@ python3.6-core:
   dependencies:
     - python-3.6
     - style
-    - basic
+    - executables
+    - imports
   image: python:3.6
   script:
     - *pesummary_install
-    - pytest -k "Core or core" tests/workflow_test.py
+    - bash ci/test.sh --type workflow -k "Core or core"
 
 python3.7-core:
   stage: workflow
   dependencies:
     - python-3.7
     - style
-    - basic
+    - executables
+    - imports
   image: python:3.7
   script:
     - *pesummary_install
-    - pytest -k "Core or core" tests/workflow_test.py
+    - bash ci/test.sh --type workflow -k "Core or core"
 
 python3.6-gw:
   stage: workflow
   dependencies:
     - python-3.6
     - style
-    - basic
+    - executables
+    - imports
   image: python:3.6
   script:
     - *pesummary_install
-    - pytest -k "GW or gw" tests/workflow_test.py
+    - bash ci/test.sh --type workflow -k "GW or gw"
 
 python3.7-gw:
   stage: workflow
   dependencies:
     - python-3.7
     - style
-    - basic
+    - executables
+    - imports
   image: python:3.7
   script:
     - *pesummary_install
-    - pytest -k "GW or gw" tests/workflow_test.py
+    - bash ci/test.sh --type workflow -k "GW or gw"
 
 ligo_skymap:
   stage: consequences
   image: python:3.6
   script:
     - *pesummary_install
-    - pytest tests/ligo_skymap_test.py
+    - bash ci/test.sh --type skymap
   only:
     - schedule
     - pushes
@@ -142,21 +133,7 @@ lalinference:
     - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
   script:
     - *pesummary_install
-    - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
-    - mkdir -p lalinference/test/
-    - mkdir -p lalinference/lib
-    - curl https://git.ligo.org/charlie.hoy/lalsuite/raw/master/lalinference/lib/lalinference_pipe_example.ini -o lalinference_pipe_example.ini
-    - mv lalinference_pipe_example.ini lalinference/lib
-    - curl https://git.ligo.org/charlie.hoy/lalsuite/raw/master/lalinference/test/lalinference_nestedSampling_integration_test.sh -o fast_tutorial.sh
-    - mv fast_tutorial.sh lalinference/test
-    - curl https://git.ligo.org/charlie.hoy/lalsuite/raw/master/lalinference/test/injection_standard.xml -o injection_standard.xml
-    - mv injection_standard.xml lalinference/test
-    - path=`which lalinference_pipe`
-    - base=`python -c "print('/'.join('${path}'.split('/')[:-2]))"`
-    - sed -i "s;s|/home/albert.einstein/opt/lalsuite/| |;s|/home/albert.einstein/opt/lalsuite/|${base}|;" lalinference/test/fast_tutorial.sh
-    - sed -i "s;tolerance=20;tolerance=500;" lalinference/test/fast_tutorial.sh
-    - sed -i "s;cbcBayesPostProc;summarypages;" lalinference/lib/lalinference_pipe_example.ini
-    - bash lalinference/test/fast_tutorial.sh
+    - bash ci/test.sh --type lalinference
   only:
     - schedule
     - pushes
@@ -166,11 +143,7 @@ lalinference:
 ##  image: python:3.6
 ##  script:
 ##    - *pesummary_install
-##    - curl https://raw.githubusercontent.com/lscsoft/bilby/master/examples/gw_examples/injection_examples/fast_tutorial.py -o fast_tutorial.py
-##    - sed -i '/result.plot_corner()/d' ./fast_tutorial.py
-##    - sed -i 's/result = bilby.run_sampler(/result = bilby.run_sampler(dlogz=1000, /' ./fast_tutorial.py
-##    - python fast_tutorial.py
-##    - summarypages --webdir ./outdir/webpage --samples ./outdir/fast_tutorial_result.json --gw
+##    - bash ci/test.sh --type bilby
 ##  only:
 ##    - schedule
 ##    - pushes
@@ -180,8 +153,7 @@ GW190412:
   image: python:3.6
   script:
     - *pesummary_install
-    - curl https://dcc.ligo.org/public/0163/P190412/009/posterior_samples.h5 -o GW190412_posterior_samples.h5
-    - python tests/existing_file.py -f GW190412_posterior_samples.h5
+    - bash ci/test.sh --type GW190412
   only:
     - schedule
     - pushes
@@ -191,8 +163,7 @@ GW190425:
   image: python:3.6
   script:
     - *pesummary_install
-    - curl https://dcc.ligo.org/public/0165/P2000026/001/GW190425_posterior_samples.h5 -o GW190425_posterior_samples.h5
-    - python tests/existing_file.py -f GW190425_posterior_samples.h5
+    - bash ci/test.sh --type GW190425
   only:
     - schedule
     - pushes
@@ -202,10 +173,7 @@ GWTC1:
   image: python:3.6
   script:
     - *pesummary_install
-    - curl -O https://dcc.ligo.org/public/0157/P1800370/004/GWTC-1_sample_release.tar.gz
-    - tar -xf GWTC-1_sample_release.tar.gz
-    - python tests/existing_file.py -f GWTC-1_sample_release/GW150914_GWTC-1.hdf5 -t pesummary.gw.file.formats.GWTC1.GWTC1
-    - summarypages --webdir ./GWTC1 --no_ligo_skymap --samples GWTC-1_sample_release/GW150914_GWTC-1.hdf5 GWTC-1_sample_release/GW170817_GWTC-1.hdf5 --path_to_samples None IMRPhenomPv2NRT_highSpin_posterior --labels GW150914 GW170817 --gw
+    - bash ci/test.sh --type GWTC1
 
 build_examples:
   stage: deploy
@@ -237,8 +205,8 @@ pages:
     - lalinference
   script:
     - mkdir public/
-    - mv htmlcov/ public/
-    - mv /builds/lscsoft/pesummary/coverage_badge.svg public/
+    - mv pesummary/htmlcov/ public/
+    - mv /builds/lscsoft/pesummary/pesummary/coverage_badge.svg public/
     - mv docs/_build/html/* public/
   artifacts:
     paths:
