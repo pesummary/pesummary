@@ -28,6 +28,11 @@ from scipy import stats
 import h5py
 from pesummary import conf
 
+try:
+    from coloredlogs import ColoredFormatter as LogFormatter
+except ImportError:
+    LogFormatter = logging.Formatter
+
 CACHE_DIR = os.path.expanduser(os.path.join("~", ".cache", "pesummary"))
 STYLE_CACHE = os.path.join(CACHE_DIR, "style")
 LOG_CACHE = os.path.join(CACHE_DIR, "log")
@@ -247,7 +252,7 @@ def setup_logger():
     if "-v" in sys.argv or "--verbose" in sys.argv:
         stream_level = 'DEBUG'
 
-    FORMATTER = logging.Formatter(_logger_format(), datefmt='%Y-%m-%d  %H:%M:%S')
+    FORMATTER = LogFormatter(_logger_format(), datefmt='%Y-%m-%d  %H:%M:%S')
     LOG_FILE = '%s/pesummary.log' % (dirpath)
     logger = logging.getLogger('PESummary')
     logger.setLevel(level=logging.DEBUG)
