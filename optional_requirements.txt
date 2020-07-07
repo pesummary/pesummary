@@ -1,4 +1,5 @@
 pytest
+coloredlogs
 coverage
 coverage-badge
 beautifulsoup4
