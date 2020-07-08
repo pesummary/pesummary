@@ -40,10 +40,10 @@ def get_probabilities(samples):
         with RedirectLogger("p_astro", level="DEBUG") as redirector:
             data = PAstro.classifications(samples)
     except ImportError:
-        logger.warn(default_error.format("'p_astro' is not installed"))
+        logger.warning(default_error.format("'p_astro' is not installed"))
         data = None
     except Exception as e:
-        logger.warn(default_error.format("%s" % (e)))
+        logger.warning(default_error.format("%s" % (e)))
         data = None
     return data
 
@@ -123,7 +123,7 @@ class PAstro(object):
         try:
             return PAstro._classifications(p_astro_samples)
         except KeyError:
-            logger.warn(
+            logger.warning(
                 "Failed to generate 'em_bright' probabilities after "
                 "reweighting to a population prior because there were no "
                 "samples after reweighting"

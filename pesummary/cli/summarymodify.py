@@ -315,7 +315,7 @@ def _modify_labels(data, labels=None):
     """
     for existing, new in labels.items():
         if existing not in data.keys():
-            logger.warn(
+            logger.warning(
                 "Unable to find label '{}' in the root of the metafile. "
                 "Checking inside the groups".format(existing)
             )
@@ -462,7 +462,7 @@ def _store_skymap(data, kwargs=None, replace=False):
                     )
                 )
             elif "data" in data[label]["skymap"].keys():
-                logger.warn("Replacing skymap data for {}".format(label))
+                logger.warning("Replacing skymap data for {}".format(label))
             data[label]["skymap"]["data"] = skymap
             for key in skymap.meta_data:
                 data[label]["skymap"]["meta_data"][key] = skymap.meta_data[key]

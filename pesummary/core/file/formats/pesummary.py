@@ -421,7 +421,7 @@ class PESummary(Read):
         config = configparser.ConfigParser()
         config.optionxform = str
         if config_dict is None:
-            logger.warn("No config data found. Unable to write to file")
+            logger.warning("No config data found. Unable to write to file")
             return None
 
         for key in config_dict.keys():
@@ -632,7 +632,7 @@ class PESummary(Read):
         if save_to_file is None:
             print(table)
         elif os.path.isfile("{}".format(save_to_file)):
-            logger.warn(
+            logger.warning(
                 "File {} already exists. Printing to stdout".format(save_to_file)
             )
             print(table)

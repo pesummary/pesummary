@@ -12,11 +12,14 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+set -e
+
 _executables=($(ls pesummary/cli/summary*))
 executables=()
 for i in ${_executables[@]}; do
     executables+=(`python -c "print('${i}'.split('/')[-1].split('.py')[0])"`);
 done
+echo ${executables[@]}
 for i in ${executables[@]}; do
-    eval '${executables[i]} --help';
+    eval '${i} --help';
 done

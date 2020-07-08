@@ -1,4 +1,5 @@
 pytest
+pytest-cov
 coloredlogs
 coverage
 coverage-badge

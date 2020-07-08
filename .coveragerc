@@ -1,2 +1,3 @@
 [run]
 source = ./pesummary
+omit = pesummary/tests/*

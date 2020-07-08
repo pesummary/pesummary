@@ -87,7 +87,7 @@ def evolve_spins(
             "Unable to evolve spins as '{}' does not have a set frequency "
             "at which the spins are defined".format(approximant)
         )
-        logger.warn(_msg)
+        logger.warning(_msg)
         raise EvolveSpinError(_msg)
     f_start = float(np.where(
         np.array(spinfreq_enum == SIM_INSPIRAL_SPINS_FLOW), f_low, f_ref

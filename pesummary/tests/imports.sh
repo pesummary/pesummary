@@ -12,11 +12,15 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+set -e
+
 mkdir .tmp
 cd .tmp
 modules=($(python -c "import pkgutil; import pesummary; print(' '.join([modname for _, modname, _ in pkgutil.walk_packages(path=pesummary.__path__, prefix=pesummary.__name__+'.')]))"))
 for mod in ${modules[@]}; do
-    python -c "import ${mod}";
+    if [[ ${mod} != *"pesummary.tests"* ]]; then
+        python -c "import ${mod}";
+    fi
 done
 cd ..
 rm -r .tmp

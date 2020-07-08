@@ -13,6 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os
 import json
 import subprocess
 import sys
@@ -22,7 +23,15 @@ from pathlib import Path
 class GitInformation(object):
     """Helper class to handle the git information
     """
-    def __init__(self):
+    def __init__(self, directory=None):
+        if directory is None and not os.path.isdir(".git"):
+            raise TypeError(
+                "Not a git repository. Unable to get git information"
+            )
+        elif directory is None:
+            directory = "."
+        cwd = os.getcwd()
+        os.chdir(directory)
         self.last_commit_info = self.get_last_commit_info()
         self.last_version = self.get_last_version()
         self.hash = self.last_commit_info[0]
@@ -30,6 +39,7 @@ class GitInformation(object):
         self.status = self.get_status()
         self.builder = self.get_build_name()
         self.build_date = self.get_build_date()
+        os.chdir(cwd)
 
     def call(self, arguments):
         """Launch a subprocess to run the bash command

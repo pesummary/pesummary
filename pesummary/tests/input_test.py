@@ -25,7 +25,7 @@ from pesummary.gw.command_line import (
     insert_gwspecific_option_group, add_dynamic_PSD_to_namespace,
     add_dynamic_calibration_to_namespace
 )
-from .base import make_result_file, gw_parameters
+from .base import make_result_file, gw_parameters, data_dir
 
 import numpy as np
 import h5py
@@ -442,7 +442,7 @@ class TestInput(object):
         assert os.path.isfile(
             "./.outdir/samples/js/combine_corner.js") == False
         self.replace_existing_argument("--webdir", "./.outdir/samples")
-        self.add_argument(["--config", "tests/files/config_lalinference.ini"])
+        self.add_argument(["--config", data_dir + "/config_lalinference.ini"])
         self.inputs.copy_files()
         assert os.path.isfile(
             "./.outdir/samples/js/combine_corner.js") == True

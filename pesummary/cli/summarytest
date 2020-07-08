@@ -1,4 +1,5 @@
-set -e
+#!/usr/bin/env bash
+
 # Copyright (C) 2019 Charlie Hoy <charlie.hoy@ligo.org>
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,12 +15,35 @@ set -e
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+set -e
+
 PWD=`pwd`
 SCRIPT_DIR=`dirname "${BASH_SOURCE[0]}"`
 COVERAGE="False"
 EXPRESSION="False"
-ALLOWED=(executables imports tests workflow skymap bilby lalinference GW190412 GW190425 GW190814 GWTC1 style)
+PYTEST_CONFIG="None"
+PESUMMARY_DIR=`python -c 'import pesummary; from pathlib import Path; print(Path(pesummary.__file__).parent.parent)'`
+ALLOWED=(executables imports tests workflow skymap bilby lalinference GW190412 GW190425 GWTC1)
 IGNORE=()
+
+USAGE="usage: summarytest [--help]
+                      [--type]
+                      [--coverage]
+                      [--ignore]
+                      [--expression]
+                      [--pytest_config]
+
+This script will run the testing suite in pesummary
+
+optional arguments:
+    -h, --help       Show this help message and exit
+    --type           The test you wish to run. Available tests are: ${ALLOWED[@]}
+    --coverage       Generate a coverage report for the testing suite
+    --ignore         Testing scripts you wish to ignore
+    --expression     Run tests which contain names that match the given string
+                     expression
+    --pytest_config  Path to configuration file to use with pytest
+"
 
 for i in "$@"; do
     case $i in
@@ -39,6 +63,13 @@ for i in "$@"; do
         EXPRESSION="$2"
         shift 2
         ;;
+        --pytest_config)
+        PYTEST_CONFIG="$2"
+        shift 2
+        ;;
+        -h|--help)
+        echo "${USAGE}"
+        exit
     esac
 done
 
@@ -58,25 +89,23 @@ if [[ ${VALID} == "False" ]]; then
     exit 1
 fi
 
-
-cd ${SCRIPT_DIR}
-cd ../
-
+cd ${PESUMMARY_DIR}
 
 if [[ ${RUN} == "executables" ]]; then
     bash pesummary/tests/executables.sh
 elif [[ ${RUN} == "imports" ]]; then
     bash pesummary/tests/imports.sh
-elif [[ ${RUN} == "style" ]]; then
-    flake8 .
 elif [[ ${RUN} == "tests" ]]; then
-    cd pesummary
-    if [[ ${COVERAGE} == "True" ]]; then
-        COMMAND="coverage run -m "
-    else
-        COMMAND=""
+    mkdir -p _tmp
+    cd _tmp
+    COMMAND+="pytest --pyargs pesummary.tests "
+    if [[ ${PYTEST_CONFIG} != "None" ]]; then
+        COMMAND+="-c ${PYTEST_CONFIG} "
     fi
-    COMMAND+="pytest tests "
+    if [[ ${COVERAGE} == "True" ]]; then
+        _DIR=`python -c "print('/'.join('${PYTEST_CONFIG}'.split('/')[:-1]))"`
+        COMMAND+="--cov=pesummary --cov-report html:${_DIR}/htmlcov --cov-report term:skip-covered "
+    fi
     for ignore in ${IGNORE[@]}; do
         COMMAND+="--ignore ${ignore} "
     done
@@ -86,19 +115,21 @@ elif [[ ${RUN} == "tests" ]]; then
     echo ${COMMAND}
     eval ${COMMAND}
     if  [[ ${COVERAGE} == "True" ]]; then
-        coverage report
-        coverage html
-        coverage-badge -o coverage_badge.svg -f
+        coverage-badge -o ${_DIR}/coverage_badge.svg -f
     fi
     cd ..
 elif [[ ${RUN} == "workflow" ]]; then
-    cd pesummary
+    mkdir -p _tmp
+    cd _tmp
     if [[ ${COVERAGE} == "True" ]]; then
         COMMAND="coverage run -m "
     else
         COMMAND=""
     fi
-    COMMAND+="pytest tests/workflow_test.py "
+    COMMAND+="pytest --pyargs pesummary.tests.workflow_test "
+    if [[ ${PYTEST_CONFIG} != "None" ]]; then
+        COMMAND+="-c ${PYTEST_CONFIG} "
+    fi
     if [[ ${EXPRESSION} != "False" ]]; then
         COMMAND+="-k '${EXPRESSION}' "
     fi
@@ -106,8 +137,9 @@ elif [[ ${RUN} == "workflow" ]]; then
     eval ${COMMAND}
     cd ..
 elif [[ ${RUN} == "skymap" ]]; then
-    cd pesummary
-    pytest tests/ligo_skymap_test.py
+    mkdir -p _tmp
+    cd _tmp
+    pytest --pyargs pesummary.tests.ligo_skymap_test
     cd ..
 elif [[ ${RUN} == "lalinference" ]]; then
     cd pesummary

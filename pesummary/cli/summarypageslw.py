@@ -96,7 +96,7 @@ class LWInput(_GWInput):
                 list(self.samples[label].keys())
             ]
             if len(not_included_params) != 0:
-                logger.warn(
+                logger.warning(
                     "The parameters {} are not in the file {}. They will not "
                     "be included in the final pages".format(
                         ", ".join(not_included_params), self.result_files[num]

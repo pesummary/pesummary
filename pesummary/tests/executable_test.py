@@ -4,7 +4,7 @@ import glob
 import subprocess
 import numpy as np
 
-from .base import make_result_file, get_list_of_plots, get_list_of_files
+from .base import make_result_file, get_list_of_plots, get_list_of_files, data_dir
 import pytest
 from pesummary.utils.exceptions import InputError
 import importlib
@@ -833,7 +833,7 @@ class TestSummaryRecreate(Base):
             os.mkdir(".outdir")
         config = configparser.ConfigParser()
         config.optionxform = str
-        config.read("tests/files/config_lalinference.ini")
+        config.read(data_dir + "/config_lalinference.ini")
         config_dictionary = dict(config._sections)
         config_dictionary["paths"]["webdir"] = (
             "./{}/webdir".format(os.environ["USER"])
@@ -867,7 +867,7 @@ class TestSummaryRecreate(Base):
         config = configparser.ConfigParser()
         config.read(os.path.join(".outdir", "recreate", "config.ini"))
         original_config = configparser.ConfigParser()
-        original_config.read("tests/files/config_lalinference.ini")
+        original_config.read(data_dir + "/config_lalinference.ini")
         for a, b in zip(
           sorted(config.sections()), sorted(original_config.sections())
         ):
@@ -882,7 +882,7 @@ class TestSummaryRecreate(Base):
         config = configparser.ConfigParser()
         config.read(os.path.join(".outdir_modify", "recreate", "config.ini"))
         original_config = configparser.ConfigParser()
-        original_config.read("tests/files/config_lalinference.ini")
+        original_config.read(data_dir + "/config_lalinference.ini")
         for a, b in zip(
           sorted(config.sections()), sorted(original_config.sections())
         ):

@@ -132,6 +132,8 @@ setup(name='pesummary',
           'pesummary.core': ['js/*.js', 'css/*.css'],
           'pesummary.conf': ['matplotlib_rcparams.sty'],
           'pesummary.gw.plots': ['cylon.csv'],
+          'pesummary.tests': ['*.sh', '*.ini', '*.xml', 'files/*.ini',
+                              'files/*.txt'],
       },
       entry_points={
           'console_scripts': [
@@ -151,10 +153,12 @@ setup(name='pesummary',
               'summaryrecreate=pesummary.cli.summaryrecreate:main',
               'summaryreview=pesummary.cli.summaryreview:main',
               'summaryversion=pesummary.cli.summaryversion:main']},
+      scripts=['pesummary/cli/summarytest'],
       classifiers=[
           "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
-          "Programming Language :: Python :: 3.7"],
+          "Programming Language :: Python :: 3.7",
+          "Programming Language :: Python :: 3.8"],
       license='MIT',
       long_description=readme,
       long_description_content_type='text/markdown')

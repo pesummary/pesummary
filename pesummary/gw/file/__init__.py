@@ -24,10 +24,10 @@ def check_IERS():
         iers.conf.auto_download = True
         iers_a = iers.IERS_Auto.open()
     except Exception:
-        logger.warn("Unable to download latest IERS data. The bundled IERS-B "
-                    "data which covers the time range from 1962 to just before "
-                    "the astropy release dat will be used. Any transformations "
-                    "outside of this range will not be allowed.")
+        logger.warning("Unable to download latest IERS data. The bundled IERS-B "
+                       "data which covers the time range from 1962 to just before "
+                       "the astropy release dat will be used. Any transformations "
+                       "outside of this range will not be allowed.")
         iers.conf.auto_download = False
 
 

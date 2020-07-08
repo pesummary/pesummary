@@ -60,7 +60,7 @@ def get_gracedb_data(
             if _info in json.keys():
                 data[_info] = json[_info]
             else:
-                logger.warn(
+                logger.warning(
                     "Unable to find any information for '{}'".format(_info)
                 )
         return data

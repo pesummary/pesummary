@@ -277,7 +277,7 @@ class _PlotGeneration(_BasePlotGeneration):
             try:
                 _time = samples["geocent_time"]
             except KeyError:
-                logger.warn(
+                logger.warning(
                     "Unable to find 'geocent_time' in the posterior table for {}. "
                     "The ligo.skymap fits file will therefore not store the "
                     "DATE_OBS field in the header".format(label)
@@ -723,7 +723,7 @@ class _PlotGeneration(_BasePlotGeneration):
                     i in self.samples[j].keys() for i in plot
                 ) for j in self.labels
             ):
-                logger.warn(
+                logger.warning(
                     "Failed to generate 2d contour plots for {} because {} are not "
                     "common in all result files".format(
                         " and ".join(plot), " and ".join(plot)
@@ -790,7 +790,7 @@ class _PlotGeneration(_BasePlotGeneration):
 
         for plot in violin_plots:
             if not all(plot in self.samples[j].keys() for j in self.labels):
-                logger.warn(
+                logger.warning(
                     "Failed to generate violin plots for {} because {} is not "
                     "common in all result files".format(plot, plot)
                 )
@@ -854,7 +854,7 @@ class _PlotGeneration(_BasePlotGeneration):
         parameters = ["a_1", "a_2", "cos_tilt_1", "cos_tilt_2"]
         for num, label in enumerate(self.labels):
             if not all(i in self.samples[label].keys() for i in parameters):
-                logger.warn(
+                logger.warning(
                     "Failed to generate spin disk plots because {} are not "
                     "common in all result files".format(
                         " and ".join(parameters)

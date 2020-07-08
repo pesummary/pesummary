@@ -306,7 +306,7 @@ class _Input(object):
         dir_content.extend(glob(os.path.join(_dir, "*.hdf5")))
         if len(files) == 0 and len(dir_content):
             files = dir_content
-            logger.warn(
+            logger.warning(
                 "Unable to find a 'posterior_samples*' file in the existing "
                 "directory. Using '{}' as the existing metafile".format(
                     dir_content[0]
@@ -334,7 +334,7 @@ class _Input(object):
     def style_file(self, style_file):
         default = conf.style_file
         if style_file is not None and not os.path.isfile(style_file):
-            logger.warn(
+            logger.warning(
                 "The file '{}' does not exist. Resorting to default".format(
                     style_file
                 )
@@ -363,10 +363,10 @@ class _Input(object):
         self._filename = filename
         if filename is not None:
             if "/" in filename:
-                logger.warn("")
+                logger.warning("")
                 filename = filename.split("/")[-1]
             if os.path.isfile(os.path.join(self.webdir, "samples", filename)):
-                logger.warn(
+                logger.warning(
                     "A file with filename '{}' already exists in the samples "
                     "directory '{}'. This will be overwritten"
                 )
@@ -474,7 +474,7 @@ class _Input(object):
                 )
             for num, i in enumerate(labels):
                 if "." in i:
-                    logger.warn(
+                    logger.warning(
                         "Replacing the label {} by {} to make it compatible "
                         "with the html pages".format(i, i.replace(".", "_"))
                     )
@@ -561,7 +561,7 @@ class _Input(object):
         if file_format is None:
             self._file_format = [None] * len(self.labels)
         elif len(file_format) == 1 and len(file_format) != len(self.labels):
-            logger.warn(
+            logger.warning(
                 "Only one file format specified. Assuming all files are of this format"
             )
             self._file_format = [file_format] * len(self.labels)
@@ -674,7 +674,7 @@ class _Input(object):
                         for key in pp.keys():
                             if key in self.priors.keys():
                                 if label in self.priors[key].keys():
-                                    logger.warn(
+                                    logger.warning(
                                         "Replacing the prior file for {} "
                                         "with the prior file stored in "
                                         "the result file".format(
@@ -753,7 +753,7 @@ class _Input(object):
             from pesummary.core.file import mcmc
 
             if burnin_method not in mcmc.algorithms:
-                logger.warn(
+                logger.warning(
                     "Unrecognised burnin method: {}. Resorting to the default: "
                     "{}".format(burnin_method, conf.burnin_method)
                 )
@@ -792,7 +792,7 @@ class _Input(object):
         if self.burnin_method is not None:
             arguments, kwargs = [], {}
             if burnin != 0 and self.burnin_method == "burnin_by_step_number":
-                logger.warn(
+                logger.warning(
                     "The first {} samples have been requested to be removed "
                     "as burnin, but the burnin method has been chosen to be "
                     "burnin_by_step_number. Changing method to "
@@ -891,7 +891,7 @@ class _Input(object):
                 if len(methods) > 0:
                     self._custom_plotting = [path_to_python_file, python_file]
                 else:
-                    logger.warn(
+                    logger.warning(
                         "No __single_plots__ or __comparison_plots__ in {}. "
                         "If you wish to use custom plotting, then please "
                         "add the variable :__single_plots__ and/or "
@@ -899,7 +899,7 @@ class _Input(object):
                         "will be done"
                     )
             except ModuleNotFoundError as e:
-                logger.warn(
+                logger.warning(
                     "Failed to import {} because {}. No custom plotting will "
                     "be done".format(python_file, e)
                 )
@@ -912,7 +912,7 @@ class _Input(object):
     def external_hdf5_links(self, external_hdf5_links):
         self._external_hdf5_links = external_hdf5_links
         if not self.hdf5 and self.external_hdf5_links:
-            logger.warn(
+            logger.warning(
                 "You can only apply external hdf5 links when saving the meta "
                 "file in hdf5 format. Turning external hdf5 links off."
             )
@@ -926,7 +926,7 @@ class _Input(object):
     def hdf5_compression(self, hdf5_compression):
         self._hdf5_compression = hdf5_compression
         if not self.hdf5 and hdf5_compression is not None:
-            logger.warn(
+            logger.warning(
                 "You can only apply compression when saving the meta "
                 "file in hdf5 format. Turning compression off."
             )
@@ -1007,7 +1007,7 @@ class _Input(object):
                 if not os.path.isfile(i):
                     raise InputError("The file {} does not exist".format(i))
             if len(priors) != len(self.labels) and len(priors) == 1:
-                logger.warn(
+                logger.warning(
                     "You have only specified a single prior file for {} result "
                     "files. Assuming the same prior file for all result "
                     "files".format(len(self.labels))
@@ -1159,7 +1159,7 @@ class _Input(object):
                 self._colors = colors[:number]
                 return
             elif len(colors) != number:
-                logger.warn(
+                logger.warning(
                     "Number of colors does not match the number of labels. "
                     "Using default colors"
                 )
@@ -1192,7 +1192,7 @@ class _Input(object):
                     self._linestyles = linestyles[:len(self.colors)]
                     return
                 else:
-                    logger.warn(
+                    logger.warning(
                         "Number of linestyles does not match the number of "
                         "labels. Using default linestyles"
                     )
@@ -1215,7 +1215,7 @@ class _Input(object):
     def disable_corner(self, disable_corner):
         self._disable_corner = disable_corner
         if disable_corner:
-            logger.warn(
+            logger.warning(
                 "No corner plot will be produced. This will reduce overall "
                 "runtime but does mean that the interactive corner plot feature "
                 "on the webpages will no longer work"
@@ -1238,7 +1238,7 @@ class _Input(object):
                     self.samples[label].keys()
                 ]
                 if len(_not_included) == len(corner_params) and cls == "Input":
-                    logger.warn(
+                    logger.warning(
                         "None of the chosen corner parameters are "
                         "included in the posterior table for '{}'. Using "
                         "all available parameters for the corner plot".format(
@@ -1248,7 +1248,7 @@ class _Input(object):
                     corner_params = None
                     break
                 elif len(_not_included):
-                    logger.warn(
+                    logger.warning(
                         "The following parameters are not included in the "
                         "posterior table for '{}': {}. Not adding to corner "
                         "plot".format(label, ", ".join(_not_included))
@@ -1276,12 +1276,12 @@ class _Input(object):
                 with open(notes, "r") as f:
                     self._notes = f.read()
             except FileNotFoundError:
-                logger.warn(
+                logger.warning(
                     "No such file or directory called {}. Custom notes will "
                     "not be added to the summarypages".format(notes)
                 )
             except IOError as e:
-                logger.warn(
+                logger.warning(
                     "Failed to read {}. Unable to put notes on "
                     "summarypages".format(notes)
                 )
@@ -1322,7 +1322,7 @@ class _Input(object):
         if publication_kwargs != {}:
             allowed_kwargs = ["gridsize"]
             if not any(i in publication_kwargs.keys() for i in allowed_kwargs):
-                logger.warn(
+                logger.warning(
                     "Currently the only allowed publication kwargs are {}. "
                     "Ignoring other inputs.".format(
                         ", ".join(allowed_kwargs)
@@ -1345,13 +1345,13 @@ class _Input(object):
                     )
                 ]
                 if removed_parameters == []:
-                    logger.warn(
+                    logger.warning(
                         "Failed to remove any parameters from {}".format(
                             self.result_files[num]
                         )
                     )
                 else:
-                    logger.warn(
+                    logger.warning(
                         "Removing parameters: {} from {}".format(
                             ", ".join(removed_parameters),
                             self.result_files[num]

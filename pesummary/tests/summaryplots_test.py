@@ -23,7 +23,7 @@ from pesummary.gw.inputs import GWInput
 from pesummary.cli.summaryplots import _GWPlotGeneration as GWPlotGeneration
 from pesummary.gw.file.meta_file import GWMetaFile
 from pesummary.cli.summarypages import _GWWebpageGeneration as GWWebpageGeneration
-from .base import make_result_file, get_list_of_plots
+from .base import make_result_file, get_list_of_plots, data_dir
 
 import pytest
 
@@ -59,7 +59,7 @@ class TestPlotGeneration(object):
             "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir_bilby",
             "--samples", "./.outdir_bilby/bilby_example.h5",
-            "--config", "./tests/files/config_bilby.ini",
+            "--config", data_dir + "/config_bilby.ini",
             "--psd", "./.outdir_bilby/psd.dat",
             "--calibration", "./.outdir_bilby/calibration.dat",
             "--labels", "H10", "--no_ligo_skymap"]
@@ -91,7 +91,7 @@ class TestPlotGeneration(object):
             "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir_lalinference",
             "--samples", "./.outdir_lalinference/lalinference_example.h5",
-            "--config", "./tests/files/config_lalinference.ini",
+            "--config", data_dir + "/config_lalinference.ini",
             "--labels", "H10", "--no_ligo_skymap"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)

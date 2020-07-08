@@ -387,9 +387,9 @@ class LALInference(GWRead):
                             samples[num].append(float(j[ind]))
                             del j[ind]
                     else:
-                        logger.warn("You have marginalized over time and "
-                                    "there are no time samples. Manually "
-                                    "setting time to 100000s")
+                        logger.warning("You have marginalized over time and "
+                                       "there are no time samples. Manually "
+                                       "setting time to 100000s")
                         parameters.append("geocent_time")
                         for num, j in enumerate(samples):
                             samples[num].append(float(100000))
@@ -402,9 +402,9 @@ class LALInference(GWRead):
                             samples[num].append(float(j[ind]))
                             del j[ind]
                     else:
-                        logger.warn("You have marginalized over phase and "
-                                    "there are no phase samples. Manually "
-                                    "setting the phase to be 0")
+                        logger.warning("You have marginalized over phase and "
+                                       "there are no phase samples. Manually "
+                                       "setting the phase to be 0")
                         parameters.append("phase")
                         for num, j in enumerate(samples):
                             samples[num].append(float(0))
@@ -417,9 +417,9 @@ class LALInference(GWRead):
                             samples[num].append(float(j[ind]))
                             del j[ind]
                     else:
-                        logger.warn("You have marginalized over distance and "
-                                    "there are no distance samples. Manually "
-                                    "setting distance to 100Mpc")
+                        logger.warning("You have marginalized over distance and "
+                                       "there are no distance samples. Manually "
+                                       "setting distance to 100Mpc")
                         parameters.append("luminosity_distance")
                         for num, j in enumerate(samples):
                             samples[num].append(float(100.0))
@@ -477,9 +477,9 @@ def write_lalinference(
         )
     reverse_map = {item: key for key, item in lalinference_map.items()}
     no_key = []
-    for param in _samples.keys():
-        if param in reverse_map.keys() and reverse_map[param] in _samples.keys():
-            logger.warn(
+    for param in _parameters:
+        if param in reverse_map.keys() and reverse_map[param] in _parameters:
+            logger.warning(
                 "The LALInference name for '{}' is '{}'. '{}' already found "
                 "in the posterior table. Keeping both entries".format(
                     param, reverse_map[param], reverse_map[param]

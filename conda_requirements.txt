@@ -1,0 +1,20 @@
+astropy >=3.2.3
+corner
+deepdish
+gwpy
+h5py
+ligo.skymap
+matplotlib-base
+numpy >=1.15.4
+p_astro
+pandas <1.0.0a0
+pepredicates >=0.0.2
+plotly
+pygments
+pytables
+python-lal
+python-lalsimulation >=2.0.0
+python-lalinference
+scipy
+seaborn
+statsmodels

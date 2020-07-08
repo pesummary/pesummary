@@ -113,7 +113,7 @@ class _GWInput(_Input):
                 ))
             return kwargs
         except IndexError:
-            logger.warn(
+            logger.warning(
                 "Unable to find an f_ref, f_low and approximant for each "
                 "label. Using and f_ref={}, f_low={} and approximant={} "
                 "for all result files".format(
@@ -199,7 +199,7 @@ class _GWInput(_Input):
         from pesummary.gw.cosmology import available_cosmologies
 
         if cosmology.lower() not in available_cosmologies:
-            logger.warn(
+            logger.warning(
                 "Unrecognised cosmology: {}. Using {} as default".format(
                     cosmology, conf.cosmology
                 )
@@ -218,7 +218,7 @@ class _GWInput(_Input):
         if not hasattr(self, "_approximant"):
             approximant_list = {i: {} for i in self.labels}
             if approximant is None:
-                logger.warn(
+                logger.warning(
                     "No approximant passed. Waveform plots will not be "
                     "generated"
                 )
@@ -235,7 +235,7 @@ class _GWInput(_Input):
             for num, i in enumerate(self._approximant.keys()):
                 if self._approximant[i] == {}:
                     if num == 0:
-                        logger.warn(
+                        logger.warning(
                             "No approximant passed. Waveform plots will not be "
                             "generated"
                         )
@@ -267,7 +267,7 @@ class _GWInput(_Input):
             from pesummary.gw.gracedb import get_gracedb_data, HTTPError
             first_letter = gracedb[0]
             if first_letter != "G" and first_letter != "g" and first_letter != "S":
-                logger.warn(
+                logger.warning(
                     "Invalid GraceDB ID passed. The GraceDB ID must be of the "
                     "form G0000 or S0000. Ignoring input."
                 )
@@ -289,7 +289,7 @@ class _GWInput(_Input):
                 )
                 json["id"] = gracedb
             except (HTTPError, RuntimeError) as e:
-                logger.warn(_error.format(e))
+                logger.warning(_error.format(e))
                 json = {"id": gracedb}
 
             for label in self.labels:
@@ -363,7 +363,7 @@ class _GWInput(_Input):
                     f = GWRead(i)
                     calibration_data = f.calibration_data_in_results_file
                 except Exception:
-                    logger.warn(
+                    logger.warning(
                         "Failed to extract calibration data from the result "
                         "file: {}".format(i)
                     )
@@ -427,7 +427,7 @@ class _GWInput(_Input):
             ]
             if not all(i > self._nsamples_for_skymap for i in number_of_samples):
                 min_arg = np.argmin(number_of_samples)
-                logger.warn(
+                logger.warning(
                     "You have specified that you would like to use {} "
                     "samples to generate the skymap but the file {} only "
                     "has {} samples. Reducing the number of samples to "
@@ -457,7 +457,7 @@ class _GWInput(_Input):
                         )
             else:
                 if len(gwdata) > 1:
-                    logger.warn(
+                    logger.warning(
                         "Multiple files passed. Only using {}".format(
                             gwdata[0]
                         )
@@ -724,7 +724,7 @@ class _GWInput(_Input):
                 if i.lower() != "none" and not os.path.isfile(i):
                     raise InputError("The file {} does not exist".format(i))
             if len(priors) != len(self.labels) and len(priors) == 1:
-                logger.warn(
+                logger.warning(
                     "You have only specified a single prior file for {} result "
                     "files. Assuming the same prior file for all result "
                     "files".format(len(self.labels))

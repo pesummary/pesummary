@@ -188,7 +188,7 @@ def main(args=None):
     if opts.webdir:
         make_dir(opts.webdir)
     else:
-        logger.warn(
+        logger.warning(
             "No webdir given so plots will not be generated and "
             "classifications will be shown in stdout rather than saved to file"
         )

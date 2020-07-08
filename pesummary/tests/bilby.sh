@@ -12,6 +12,8 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+set -e
+
 curl https://raw.githubusercontent.com/lscsoft/bilby/master/examples/gw_examples/injection_examples/fast_tutorial.py -o fast_tutorial.py
 sed -i '/result.plot_corner()/d' ./fast_tutorial.py
 sed -i 's/result = bilby.run_sampler(/result = bilby.run_sampler(dlogz=1000, /' ./fast_tutorial.py
