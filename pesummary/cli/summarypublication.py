@@ -127,7 +127,7 @@ def read_samples(result_files):
                 parameters.append(f.parameters)
                 samples.append(f.samples)
         except Exception:
-            logger.warn(
+            logger.warning(
                 "Failed to read '{}'. Data will not be added to the "
                 "plots".format(i)
             )
@@ -178,7 +178,7 @@ def make_2d_contour_plot(opts):
                 all(k in j for k in i)
             ]
             files = [opts.samples[j] for j in idxs]
-            logger.warn(
+            logger.warning(
                 "Removing {} from 2d contour plot because the parameters {} are "
                 "not in the result file".format(
                     " and ".join(files), " and ".join(i)
@@ -246,7 +246,7 @@ def make_violin_plot(opts):
         if not all(i in j for j in parameters):
             idxs = [num for num, j in enumerate(parameters) if i not in j]
             files = [opts.samples[j] for j in idxs]
-            logger.warn(
+            logger.warning(
                 "Removing {} from violin plot because the parameter {} does "
                 "not exist in the result file".format(
                     " and ".join(files), i
@@ -293,8 +293,11 @@ def make_spin_disk_plot(opts):
                 opts.webdir, opts.labels[num]))
             plt.close()
         except Exception as e:
-            logger.warn("Failed to generate a spin disk plot for %s because %s" % (
-                        opts.labels[num], e))
+            logger.warning(
+                "Failed to generate a spin disk plot for %s because %s" % (
+                    opts.labels[num], e
+                )
+            )
             continue
 
 
@@ -309,7 +312,7 @@ def make_population_scatter_plot(opts):
             xerr, yerr = {}, {}
         for num, label in enumerate(opts.labels):
             if not all(i in parameters[num] for i in opts.parameters):
-                logger.warn(
+                logger.warning(
                     "'{}' does not include samples for '{}' and/or '{}'. This "
                     "analysis will not be added to the plot".format(
                         label, opts.parameters[0], opts.parameters[1]

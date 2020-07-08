@@ -2,7 +2,7 @@ import os
 import shutil
 import numpy as np
 
-from .base import make_result_file
+from .base import make_result_file, testing_dir
 import pesummary
 from pesummary.gw.file.read import read as GWRead
 from pesummary.core.file.read import read as Read
@@ -147,7 +147,7 @@ class GWBaseRead(BaseRead):
         import math
 
         super(GWBaseRead, self).test_injection_parameters(true)
-        self.result.add_injection_parameters_from_file("./tests/main_injection.xml", conversion=False)
+        self.result.add_injection_parameters_from_file(testing_dir + "/main_injection.xml", conversion=False)
         true = {
             'dec': [1.949725], 'geocent_time': [1186741861], 'spin_2x': [0.],
             'spin_2y': [0.], 'spin_2z': [0.], 'luminosity_distance': [139.7643],

@@ -16,7 +16,7 @@
 import os
 import shutil
 import numpy as np
-from .base import make_injection_file
+from .base import make_injection_file, testing_dir
 from pesummary.gw.file.injection import GWInjection
 
 
@@ -39,7 +39,7 @@ class TestInjection(object):
         """
         """
         if extension == "xml":
-            ff = "tests/main_injection.xml"
+            ff = testing_dir + "/main_injection.xml"
             data = {
                 'dec': [1.949725], 'geocent_time': [1186741861],
                 'spin_2x': [0.0], 'spin_2y': [0.0], 'spin_2z': [0.0],

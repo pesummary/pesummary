@@ -38,7 +38,7 @@ def _number_of_negative_steps(samples, logger_level="debug"):
         in parameters
     ]
     if not len(step_param):
-        logger.warn(
+        logger.warning(
             "Unable to find a step number in the MCMCSamplesDict object. "
             "Aborting discard"
         )

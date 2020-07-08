@@ -20,6 +20,7 @@ from glob import glob
 import numpy as np
 
 from pesummary.core.webpage import webpage
+from .base import data_dir
 
 from bs4 import BeautifulSoup
 
@@ -136,7 +137,7 @@ class TestPage(object):
 
     @pytest.mark.parametrize('language', [('ini'),]) 
     def test_code_block(self, language):
-        with open("tests/files/example.ini", 'r') as f:
+        with open(data_dir + "/example.ini", 'r') as f:
             contents = f.read()
         styles = self.html.make_code_block(language='ini', contents=contents)
         with open('./.outdir/example_config.css', 'w') as f:

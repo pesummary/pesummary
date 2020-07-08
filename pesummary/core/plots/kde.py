@@ -46,7 +46,7 @@ def _scipy_univariate_kde(data, bw, gridsize, cut, clip, xlow=None, xhigh=None):
             post_grid = kde(np.atleast_1d(x_grid).T)
             return x_grid, post_grid
         except TypeError:
-            logger.warn(
+            logger.warning(
                 "Failed to produce bounded 1d kde plot. Reverting to standard"
             )
     try:

@@ -177,7 +177,7 @@ def compare(samples, properties_to_compare=COMPARISON_PROPERTIES):
             data
         ]
         if False in _data:
-            logger.warn(
+            logger.warning(
                 "Unable to compare the property '{}' because not all files "
                 "share this property".format(prop)
             )

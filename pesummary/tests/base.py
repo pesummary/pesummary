@@ -1,4 +1,5 @@
 import numpy as np
+from pathlib import Path
 from pesummary.core.command_line import command_line
 from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.gw.inputs import GWInput
@@ -165,7 +166,7 @@ def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
             default_args.append("gw1")
     default_args.append("--config")
     for i in range(number):
-        default_args.append("./tests/example_config.ini")
+        default_args.append(testing_dir + "/example_config.ini")
     opts = parser.parse_args(default_args)
     if gw:
         func = GWInput
@@ -395,3 +396,7 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
             )
             f.close()
     return parameters, data
+
+
+testing_dir = str(Path(__file__).parent)
+data_dir = str(Path(__file__).parent / "files")

@@ -613,7 +613,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     except KeyError:
                         table_contents[1].append("-")
                         table_contents[1].append("-")
-                        logger.warn(
+                        logger.warning(
                             "Failed to add 'em_bright' probabilities for population "
                             "reweighted prior"
                         )

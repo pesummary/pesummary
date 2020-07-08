@@ -487,7 +487,7 @@ class Read(object):
             data = copy.deepcopy(parameter_dict)
             for param in parameter_dict.keys():
                 if not all(param in samples_dict.keys() for samples_dict in samples):
-                    logger.warn(
+                    logger.warning(
                         "{} not in list of parameters. Not adding to "
                         "table".format(param)
                     )
@@ -538,7 +538,7 @@ class Read(object):
             data = copy.deepcopy(parameter_dict)
             for param in parameter_dict.keys():
                 if not all(param in samples_dict.keys() for samples_dict in samples):
-                    logger.warn(
+                    logger.warning(
                         "{} not in list of parameters. Not generating "
                         "macro".format(param)
                     )
@@ -606,7 +606,7 @@ class Read(object):
         if save_to_file is None:
             print(table)
         elif os.path.isfile("{}".format(save_to_file)):
-            logger.warn(
+            logger.warning(
                 "File {} already exists. Printing to stdout".format(save_to_file)
             )
             print(table)

@@ -24,6 +24,7 @@ from pesummary.gw.file import meta_file
 from pesummary.gw.file.meta_file import _GWMetaFile
 from pesummary.gw.inputs import GWInput
 from pesummary.utils.samples_dict import SamplesDict, Array
+from .base import data_dir
 
 
 def test_recursively_save_dictionary_to_hdf5_file():
@@ -255,11 +256,11 @@ class TestMetaFile(object):
         self.input_file_kwargs = {"EXP1": {
             "sampler": {"flow": 10}, "meta_data": {"samplerate": 10}
         }}
-        self.input_config = ["./tests/files/config_lalinference.ini"]
-        psd_data = GWInput.extract_psd_data_from_file("./tests/files/psd_file.txt")
+        self.input_config = [data_dir + "/config_lalinference.ini"]
+        psd_data = GWInput.extract_psd_data_from_file(data_dir + "/psd_file.txt")
         self.psds = {"EXP1": {"H1": psd_data}}
         calibration_data = GWInput.extract_calibration_data_from_file(
-            "./tests/files/calibration_envelope.txt")
+            data_dir + "/calibration_envelope.txt")
         self.calibration = {"EXP1": {"H1": calibration_data}}
 
         object = _GWMetaFile(

@@ -85,7 +85,7 @@ class GWRead(Read):
             data["parameters"], data["samples"]
         )
         if "log_likelihood" not in parameters:
-            logger.warn(
+            logger.warning(
                 "Failed to find 'log_likelihood' in result file. Setting "
                 "every sample to have log_likelihood 0"
             )
@@ -456,11 +456,11 @@ class GWRead(Read):
             theta_jn = True
         if theta_jn:
             if "theta_jn" not in names and "inclination" in parameters:
-                logger.warn("Because the spin angles are in your list of "
-                            "parameters, the angle 'inclination' probably "
-                            "refers to 'theta_jn'. If this is a mistake, "
-                            "please change the definition of 'inclination' to "
-                            "'iota' in your results file")
+                logger.warning("Because the spin angles are in your list of "
+                               "parameters, the angle 'inclination' probably "
+                               "refers to 'theta_jn'. If this is a mistake, "
+                               "please change the definition of 'inclination' to "
+                               "'iota' in your results file")
                 index = parameters.index("inclination")
                 parameters[index] = "theta_jn"
         else:

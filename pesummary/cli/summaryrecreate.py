@@ -239,7 +239,7 @@ class _Input(object):
                     )
                     self.settings_to_change[label][name] = filename
         else:
-            logger.warn(
+            logger.warning(
                 "No {} data found in the file. Using the {}s stored in the "
                 "configuration file".format(attribute, attribute)
             )
@@ -274,7 +274,7 @@ class _Input(object):
                             config_data, path, item
                         )
                     except ValueError:
-                        logger.warn(
+                        logger.warning(
                             "Unable to change '{}' to '{}' in the config "
                             "file".format(key, item)
                         )

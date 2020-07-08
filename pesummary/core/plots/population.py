@@ -51,7 +51,7 @@ def scatter_plot(
             xx[analysis] = sample_dict[analysis][parameters[0]]
             yy[analysis] = sample_dict[analysis][parameters[1]]
         else:
-            logger.warn(
+            logger.warning(
                 "'{}' does not include samples for '{}' and/or '{}'. This "
                 "analysis will not be added to the plot".format(
                     analysis, parameters[0], parameters[1]

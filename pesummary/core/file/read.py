@@ -222,7 +222,7 @@ def _read(path, load_options, default=CORE_DEFAULT_LOAD, **load_kwargs):
             try:
                 return load(path, **load_kwargs)
             except ImportError as e:
-                logger.warn(
+                logger.warning(
                     "Failed due to import error: {}. Using default load".format(
                         e
                     )
@@ -236,7 +236,7 @@ def _read(path, load_options, default=CORE_DEFAULT_LOAD, **load_kwargs):
                 )
                 continue
     if len(load_options):
-        logger.warn(
+        logger.warning(
             "Using the default load because {} failed the following checks: {}".format(
                 path, ", ".join([function.__name__ for function in load_options.keys()])
             )

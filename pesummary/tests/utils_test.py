@@ -40,7 +40,7 @@ class TestGitInformation(object):
     def setup(self):
         """Setup the TestGitInformation class
         """
-        self.git = GitInformation()
+        self.git = GitInformation(directory="/builds/lscsoft/pesummary/")
 
     def test_last_commit_info(self):
         """Test the last_commit_info property

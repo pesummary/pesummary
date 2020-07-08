@@ -48,12 +48,12 @@ def get_classifications(samples):
             "default": data[0], "population": data[1]
         }
     except ImportError:
-        logger.warn(
+        logger.warning(
             default_error.format("'PEPredicates' is not installed")
         )
         classifications = None
     except Exception as e:
-        logger.warn(default_error.format("%s" % (e)))
+        logger.warning(default_error.format("%s" % (e)))
         classifications = None
     return classifications
 

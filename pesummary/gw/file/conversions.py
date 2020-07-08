@@ -785,7 +785,7 @@ def _final_from_initial(
     if multi_process is not None and multi_process[0] != 1:
         _multi_process = multi_process[0]
         if approximant.lower() in ["seobnrv4p", "seobnrv4phm"]:
-            logger.warn(
+            logger.warning(
                 "Ignoring passed 'mode' and 'seob_flags' options. Defaults "
                 "must be used with multiprocessing. If you wish to use custom "
                 "options, please set `multi_process=None`"
@@ -1320,7 +1320,7 @@ class _Conversion(object):
             )
         if not evolve_spins and (NRSurrogate or waveform_fits):
             if "eob" in approximant or NRSurrogate:
-                logger.warn(
+                logger.warning(
                     "Only evolved spin remnant quantities are returned by the "
                     "{} fits.".format(
                         "NRSurrogate" if NRSurrogate else approximant
@@ -1328,14 +1328,14 @@ class _Conversion(object):
                 )
         elif evolve_spins and (NRSurrogate or waveform_fits):
             if "eob" in approximant or NRSurrogate:
-                logger.warn(
+                logger.warning(
                     "The {} fits already evolve the spins. Therefore "
                     "additional spin evolution will not be performed.".format(
                         "NRSurrogate" if NRSurrogate else approximant
                     )
                 )
             else:
-                logger.warn(
+                logger.warning(
                     "The {} fits are not applied with spin evolution.".format(
                         approximant
                     )
@@ -1343,7 +1343,7 @@ class _Conversion(object):
             evolve_spins = False
 
         if f_low is not None and "f_low" in extra_kwargs["meta_data"].keys():
-            logger.warn(
+            logger.warning(
                 base_replace.format(
                     "f_low", extra_kwargs["meta_data"]["f_low"], f_low
                 )
@@ -1352,7 +1352,7 @@ class _Conversion(object):
         elif f_low is not None:
             extra_kwargs["meta_data"]["f_low"] = f_low
         if approximant is not None and "approximant" in extra_kwargs["meta_data"].keys():
-            logger.warn(
+            logger.warning(
                 base_replace.format(
                     "approximant", extra_kwargs["meta_data"]["approximant"],
                     approximant
@@ -1362,7 +1362,7 @@ class _Conversion(object):
         elif approximant is not None:
             extra_kwargs["meta_data"]["approximant"] = approximant
         if f_ref is not None and "f_ref" in extra_kwargs["meta_data"].keys():
-            logger.warn(
+            logger.warning(
                 base_replace.format(
                     "f_ref", extra_kwargs["meta_data"]["f_ref"], f_ref
                 )
@@ -1420,7 +1420,7 @@ class _Conversion(object):
         self.has_tidal = self._check_for_tidal_parameters()
         self.compute_remnant = True
         if force_remnant and self.has_tidal:
-            logger.warn(
+            logger.warning(
                 "Posterior samples for tidal deformability found in the "
                 "posterior table. Applying BBH remnant fits to this system. "
                 "This may not give sensible results."
@@ -1559,7 +1559,7 @@ class _Conversion(object):
                 "reference_frequency", [float(extra_kwargs["f_ref"])] * nsamples
             )
         else:
-            logger.warn(
+            logger.warning(
                 "Could not find reference_frequency in input file. Using 20Hz "
                 "as default")
             self.append_data("reference_frequency", [20.] * nsamples)
@@ -1607,8 +1607,10 @@ class _Conversion(object):
             spin_components.append("phase")
             samples.append(self.specific_parameter_samples("phase"))
         else:
-            logger.warn("Phase it not given, we will be assuming that a "
-                        "reference phase of 0 to calculate all the spin angles")
+            logger.warning(
+                "Phase it not given, we will be assuming that a "
+                "reference phase of 0 to calculate all the spin angles"
+            )
             samples.append([0] * len(samples[0]))
         angles = spin_angles(
             samples[0], samples[1], samples[2], samples[3], samples[4],
@@ -1659,8 +1661,10 @@ class _Conversion(object):
             angles.append("phase")
             samples.append(self.specific_parameter_samples("phase"))
         else:
-            logger.warn("Phase it not given, we will be assuming that a "
-                        "reference phase of 0 to calculate all the spin angles")
+            logger.warning(
+                "Phase it not given, we will be assuming that a "
+                "reference phase of 0 to calculate all the spin angles"
+            )
             samples.append([0] * len(samples[0]))
         spin_components = component_spins(
             samples[0], samples[1], samples[2], samples[3], samples[4],
@@ -1867,7 +1871,7 @@ class _Conversion(object):
                 'Not evolving spins: approximant {0} unknown to '
                 'lalsimulation'.format(approximant)
             )
-            logger.warn(_msg)
+            logger.warning(_msg)
             raise EvolveSpinError(_msg)
         parameters = ["tilt_1", "tilt_2", "phi_12", "spin_1z", "spin_2z"]
         samples = self.specific_parameter_samples(
@@ -2003,7 +2007,7 @@ class _Conversion(object):
         else:
             delta_t = 1. / 4096
             if "seob" in approximant.lower():
-                logger.warn(
+                logger.warning(
                     "Could not find 'delta_t' in the meta data. Using {} as "
                     "default.".format(delta_t)
                 )
@@ -2116,8 +2120,10 @@ class _Conversion(object):
                         ind = np.argwhere(np.array(samples[0]) <= 0.)
                     else:
                         ind = np.argwhere(np.array(samples[0]) < 0.)
-                    logger.warn("Removing %s samples because they have unphysical "
-                                "values (%s < 0)" % (len(ind), i))
+                    logger.warning(
+                        "Removing %s samples because they have unphysical "
+                        "values (%s < 0)" % (len(ind), i)
+                    )
                     for i in np.arange(len(ind) - 1, -1, -1):
                         self.samples.remove(list(np.array(self.samples)[ind[i][0]]))
 
@@ -2366,8 +2372,10 @@ class _Conversion(object):
             try:
                 self._time_in_each_ifo()
             except Exception as e:
-                logger.warn("Failed to generate posterior samples for the time in each "
-                            "detector because %s" % (e))
+                logger.warning(
+                    "Failed to generate posterior samples for the time in each "
+                    "detector because %s" % (e)
+                )
         if any("_matched_filter_snr_angle" in i for i in self.parameters):
             if any("_matched_filter_abs_snr" in i for i in self.parameters):
                 self._ifo_snr()

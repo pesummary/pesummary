@@ -79,7 +79,7 @@ def check_file_exists_and_rename(file_name):
         old_file = "{}_old".format(file_name)
         while os.path.isfile(old_file):
             old_file += "_old"
-        logger.warn(
+        logger.warning(
             "The file '{}' already exists. Renaming the existing file to "
             "{} and saving the data to the requested file name".format(
                 file_name, old_file
