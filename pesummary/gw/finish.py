@@ -18,9 +18,11 @@ import os
 import time
 import numpy as np
 
+from pesummary.core.parser import convert_dict_to_namespace
 from pesummary.core.finish import FinishingTouches
 from pesummary.gw.inputs import PostProcessing
 from pesummary.utils.utils import logger
+from pesummary.cli.summarymodify import _main, command_line
 
 
 class GWFinishingTouches(FinishingTouches):
@@ -93,15 +95,15 @@ class GWFinishingTouches(FinishingTouches):
         logger.info("Adding ligo.skymap statistics to the metafile")
         skymap_data = np.genfromtxt(filename, names=True, skip_header=True)
         keys = skymap_data.dtype.names
-        command_line = (
-            "summarymodify --webdir {} --samples {} "
-            "--delimiter / --kwargs {} --overwrite".format(
-                self.webdir, os.path.join(self.webdir, "samples", "posterior_samples.h5"),
-                " ".join(["{}/{}:{}".format(label, key, skymap_data[key]) for key in keys])
-            )
-        )
-        ess = subprocess.Popen(command_line, shell=True)
-        ess.wait()
+
+        _dict = {
+            "webdir": self.webdir,
+            "samples": [os.path.join(self.webdir, "samples", "posterior_samples.h5")],
+            "kwargs": {label: ["{}:{}".format(key, float(skymap_data[key])) for key in keys]},
+            "overwrite": True
+        }
+        opts = convert_dict_to_namespace(_dict, add_defaults=command_line())
+        _main(opts)
 
     def save_skymap_data_to_metafile(self, label, filename):
         """Save the skymap data to the PESummary metafile
@@ -114,13 +116,11 @@ class GWFinishingTouches(FinishingTouches):
             name of the fits file that contains the skymap for label
         """
         logger.info("Adding ligo.skymap data to the metafile")
-        _delimiter = ":" if ":" not in label else ","
-        command_line = (
-            "summarymodify --webdir {} --samples {} --delimiter {} "
-            "--store_skymap {}{}{} --overwrite".format(
-                self.webdir, os.path.join(self.webdir, "samples", "posterior_samples.h5"),
-                _delimiter, label, _delimiter, filename
-            )
-        )
-        ess = subprocess.Popen(command_line, shell=True)
-        ess.wait()
+
+        _dict = {
+            "webdir": self.webdir,
+            "samples": [os.path.join(self.webdir, "samples", "posterior_samples.h5")],
+            "overwrite": True, "store_skymap": {label: filename}
+        }
+        opts = convert_dict_to_namespace(_dict, add_defaults=command_line())
+        _main(opts)

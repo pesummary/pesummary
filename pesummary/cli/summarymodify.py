@@ -491,11 +491,9 @@ def modify(data, function, **kwargs):
     return func_map[function](data, **kwargs)
 
 
-def main(args=None):
+def _main(opts):
     """
     """
-    parser = command_line()
-    opts = parser.parse_args(args=args)
     args = Input(opts)
     if not args.overwrite:
         meta_file = os.path.join(
@@ -528,6 +526,14 @@ def main(args=None):
         )
     else:
         _GWMetaFile.save_to_json(modified_data, meta_file)
+
+
+def main(args=None):
+    """
+    """
+    parser = command_line()
+    opts = parser.parse_args(args=args)
+    return _main(opts)
 
 
 if __name__ == "__main__":

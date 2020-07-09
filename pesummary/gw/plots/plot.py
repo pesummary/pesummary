@@ -20,7 +20,7 @@ from pesummary.utils.utils import (
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.core.plots.kde import kdeplot
-from pesummary.core.plots.figure import figure, subplots
+from pesummary.core.plots.figure import figure, subplots, ExistingFigure
 from pesummary import conf
 
 import os
@@ -492,7 +492,7 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
     )
     return _ligo_skymap_plot_from_array(
         skymap, nsamples=len(ra), downsampled=downsampled
-    )
+    )[0]
 
 
 def _ligo_skymap_plot_from_array(
@@ -551,10 +551,7 @@ def _ligo_skymap_plot_from_array(
         ax.text(1, 1.05, '\n'.join(text), transform=ax.transAxes, ha='right',
                 fontsize=10)
     plot.outline_text(ax)
-    if ax is None:
-        return fig
-    else:
-        return ax
+    return ExistingFigure(fig), ax
 
 
 def _ligo_skymap_comparion_plot_from_array(
@@ -585,7 +582,7 @@ def _ligo_skymap_comparion_plot_from_array(
     ax.grid(b=True)
     for num, skymap in enumerate(skymaps):
         if isinstance(show_probability_map, int) and show_probability_map == num:
-            ax = _ligo_skymap_plot_from_array(
+            _, ax = _ligo_skymap_plot_from_array(
                 skymap, nsamples=None, downsampled=False, contour=contour,
                 annotate=False, ax=ax, colors=colors[num]
             )

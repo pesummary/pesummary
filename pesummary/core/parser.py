@@ -82,3 +82,24 @@ class parser(object):
                 )
             )
         return opts, unknown
+
+
+def convert_dict_to_namespace(dictionary, add_defaults=None):
+    """Convert a dictionary to an argparse.Namespace object
+
+    Parameters
+    ----------
+    dictionary: dict
+        dictionary you wish to convert to an argparse.Namespace object
+    """
+    from argparse import Namespace
+
+    _namespace = Namespace()
+    for key, item in dictionary.items():
+        setattr(_namespace, key, item)
+    if add_defaults is not None:
+        _opts = add_defaults.parse_args(args="")
+        for key in vars(_opts):
+            if key not in dictionary.keys():
+                setattr(_namespace, key, add_defaults.get_default(key))
+    return _namespace
