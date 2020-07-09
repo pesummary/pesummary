@@ -14,10 +14,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import numpy as np
-from pesummary.utils.utils import logger, get_matplotlib_backend
-import matplotlib
-matplotlib.use(get_matplotlib_backend())
-import matplotlib.pyplot as plt
+from pesummary.core.plots.figure import figure
+from pesummary.utils.utils import logger
 
 
 def scatter_plot(
@@ -42,7 +40,7 @@ def scatter_plot(
     yerr: dict
         same structure as sample_dict, but dictionary storing error in y
     """
-    fig = plt.figure()
+    fig, ax = figure(gca=True)
     runs = list(sample_dict.keys())
 
     xx, yy, xxerr, yyerr = {}, {}, {}, {}
@@ -69,12 +67,12 @@ def scatter_plot(
     yerrdata = np.array([yyerr[key] if key in yyerr.keys() else [0, 0] for key in keys])
 
     if xerr is not None or yerr is not None:
-        plt.errorbar(
+        ax.errorbar(
             xdata, ydata, color=colors, xerr=xerrdata.T, yerr=yerrdata.T, linestyle=" "
         )
     else:
-        plt.scatter(xdata, ydata, color=colors)
-    plt.xlabel(latex_labels[parameters[0]], fontsize=16)
-    plt.ylabel(latex_labels[parameters[1]], fontsize=16)
-    plt.tight_layout()
+        ax.scatter(xdata, ydata, color=colors)
+    ax.set_xlabel(latex_labels[parameters[0]], fontsize=16)
+    ax.set_ylabel(latex_labels[parameters[1]], fontsize=16)
+    fig.tight_layout()
     return fig

@@ -22,7 +22,6 @@ from pesummary.gw.plots import detchar
 from pesummary.utils.exceptions import InputError
 from pesummary.utils.utils import make_dir, logger
 from pesummary.core.command_line import DictionaryAction
-import matplotlib.pyplot as plt
 import argparse
 
 
@@ -103,7 +102,7 @@ def make_spectrogram_plot(opts):
                 opts.webdir, "spectrogram_{}.png".format(det)
             )
         )
-        plt.close()
+        fig.close()
 
 
 def make_omegascan_plot(opts):
@@ -122,7 +121,7 @@ def make_omegascan_plot(opts):
                 opts.webdir, "omegascan_{}.png".format(det)
             )
         )
-        plt.close()
+        fig.close()
 
 
 def main(args=None):

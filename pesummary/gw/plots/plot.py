@@ -15,17 +15,16 @@
 
 from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, _check_latex_install,
-    get_matplotlib_style_file, get_matplotlib_backend
+    get_matplotlib_style_file
 )
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.core.plots.kde import kdeplot
+from pesummary.core.plots.figure import figure, subplots
 from pesummary import conf
 
 import os
-import matplotlib
-matplotlib.use(get_matplotlib_backend())
-import matplotlib.pyplot as plt
+import matplotlib.style
 import matplotlib.lines as mlines
 import corner
 import numpy as np
@@ -35,7 +34,7 @@ from astropy.time import Time
 from gwpy.timeseries import TimeSeries
 from gwpy.plot.colors import GW_OBSERVATORY_COLORS
 
-plt.style.use(get_matplotlib_style_file())
+matplotlib.style.use(get_matplotlib_style_file())
 _check_latex_install()
 
 from lal import MSUN_SI, PC_SI
@@ -342,20 +341,20 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     h_cross = h_cross.data.data
     h_plus = h_plus[:len(frequency_array)]
     h_cross = h_cross[:len(frequency_array)]
-    fig = plt.figure()
+    fig, ax = figure(gca=True)
     colors = [GW_OBSERVATORY_COLORS[i] for i in detectors]
     for num, i in enumerate(detectors):
         ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
                                 maxL_params["psi"], maxL_params["geocent_time"])
-        plt.plot(frequency_array, abs(h_plus * ar[0] + h_cross * ar[1]),
-                 color=colors[num], linewidth=1.0, label=i)
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel(r"Frequency $[Hz]$")
-    plt.ylabel(r"Strain")
-    plt.grid(b=True)
-    plt.legend(loc="best")
-    plt.tight_layout()
+        ax.plot(frequency_array, abs(h_plus * ar[0] + h_cross * ar[1]),
+                color=colors[num], linewidth=1.0, label=i)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(r"Frequency $[Hz]$")
+    ax.set_ylabel(r"Strain")
+    ax.grid(b=True)
+    ax.legend(loc="best")
+    fig.tight_layout()
     return fig
 
 
@@ -388,7 +387,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
     frequency_array = np.arange(minimum_frequency, maximum_frequency,
                                 delta_frequency)
 
-    fig = plt.figure()
+    fig, ax = figure(gca=True)
     for num, i in enumerate(maxL_params_list):
         if math.isnan(i["mass_1"]):
             continue
@@ -417,15 +416,15 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
         h_cross = h_cross[:len(frequency_array)]
         ar = __antenna_response("H1", i["ra"], i["dec"], i["psi"],
                                 i["geocent_time"])
-        plt.plot(frequency_array, abs(h_plus * ar[0] + h_cross * ar[1]),
-                 color=colors[num], label=labels[num], linewidth=2.0)
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.grid(b=True)
-    plt.legend(loc="best")
-    plt.xlabel(r"Frequency $[Hz]$")
-    plt.ylabel(r"Strain")
-    plt.tight_layout()
+        ax.plot(frequency_array, abs(h_plus * ar[0] + h_cross * ar[1]),
+                color=colors[num], label=labels[num], linewidth=2.0)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.grid(b=True)
+    ax.legend(loc="best")
+    ax.set_xlabel(r"Frequency $[Hz]$")
+    ax.set_ylabel(r"Strain")
+    fig.tight_layout()
     return fig
 
 
@@ -527,8 +526,8 @@ def _ligo_skymap_plot_from_array(
     from astropy.time import Time
 
     if ax is None:
-        fig = plt.figure()
-        ax = plt.axes(projection='astro hours mollweide')
+        fig = figure(gca=False)
+        ax = fig.add_subplot(111, projection='astro hours mollweide')
         ax.grid(b=True)
 
     nside = hp.npix2nside(len(skymap))
@@ -581,8 +580,8 @@ def _ligo_skymap_comparion_plot_from_array(
     from ligo.skymap import plot
 
     ncols = number_of_columns_for_legend(labels)
-    fig = plt.figure()
-    ax = plt.axes(projection='astro hours mollweide')
+    fig = figure(gca=False)
+    ax = fig.add_subplot(111, projection='astro hours mollweide')
     ax.grid(b=True)
     for num, skymap in enumerate(skymaps):
         if isinstance(show_probability_map, int) and show_probability_map == num:
@@ -594,8 +593,8 @@ def _ligo_skymap_comparion_plot_from_array(
             ax, skymap, contour=contour, colors=colors[num]
         )
         cs.collections[0].set_label(labels[num])
-    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
-               mode="expand", ncol=ncols)
+    ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
+              mode="expand", ncol=ncols)
     return fig
 
 
@@ -618,7 +617,7 @@ def _ligo_skymap_contours(ax, skymap, contour=[50, 90], colors='k'):
     cls = 100 * postprocess.find_greedy_credible_levels(skymap)
     cs = ax.contour_hpx((cls, 'ICRS'), nested=True, colors=colors,
                         linewidths=0.5, levels=contour)
-    plt.clabel(cs, fmt=r'%g\%%', fontsize=6, inline=True)
+    ax.clabel(cs, fmt=r'%g\%%', fontsize=6, inline=True)
     return cls, cs
 
 
@@ -636,9 +635,11 @@ def _default_skymap_plot(ra, dec, weights=None, **kwargs):
     """
     ra = [-i + np.pi for i in ra]
     logger.debug("Generating the sky map plot")
-    fig = plt.figure()
-    ax = plt.subplot(111, projection="mollweide",
-                     facecolor=(1.0, 0.939165516411, 0.880255669068))
+    fig, ax = figure(gca=True)
+    ax = fig.add_subplot(
+        111, projection="mollweide",
+        facecolor=(1.0, 0.939165516411, 0.880255669068)
+    )
     ax.cla()
     ax.set_title("Preliminary", fontdict={'fontsize': 11})
     ax.grid(b=True)
@@ -690,9 +691,9 @@ def _default_skymap_plot(ra, dec, weights=None, **kwargs):
                          Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]), ])
 
     ax.pcolormesh(X2, Y2, H2.T, vmin=0., vmax=H2.T.max(), cmap="cylon")
-    cs = plt.contour(X2, Y2, H2.T, V, colors="k", linewidths=0.5)
+    cs = ax.contour(X2, Y2, H2.T, V, colors="k", linewidths=0.5)
     fmt = {l: s for l, s in zip(cs.levels, [r"$90\%$", r"$50\%$"])}
-    plt.clabel(cs, fmt=fmt, fontsize=8, inline=True)
+    ax.clabel(cs, fmt=fmt, fontsize=8, inline=True)
     text = []
     for i, j in zip(cs.collections, [90, 50]):
         area = 0.
@@ -736,9 +737,11 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
     """
     ra_list = [[-i + np.pi for i in j] for j in ra_list]
     logger.debug("Generating the sky map comparison plot")
-    fig = plt.figure()
-    ax = plt.subplot(111, projection="mollweide",
-                     facecolor=(1.0, 0.939165516411, 0.880255669068))
+    fig = figure(gca=False)
+    ax = fig.add_subplot(
+        111, projection="mollweide",
+        facecolor=(1.0, 0.939165516411, 0.880255669068)
+    )
     ax.cla()
     ax.grid(b=True)
     ax.set_xticklabels([
@@ -784,11 +787,11 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
                              X1[-1] + np.array([1, 2]) * np.diff(X1[-2:]), ])
         Y2 = np.concatenate([Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]), Y1,
                              Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]), ])
-        CS = plt.contour(X2, Y2, H2.T, V, colors=colors[num], linewidths=2.0)
+        CS = ax.contour(X2, Y2, H2.T, V, colors=colors[num], linewidths=2.0)
         CS.collections[0].set_label(labels[num])
     ncols = number_of_columns_for_legend(labels)
-    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
-               mode="expand", ncol=ncols)
+    ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
+              mode="expand", ncol=ncols)
     xticks = np.arange(-np.pi, np.pi + np.pi / 6, np.pi / 4)
     ax.set_xticks(xticks)
     ax.set_yticks([-np.pi / 3, -np.pi / 6, 0, np.pi / 6, np.pi / 3])
@@ -905,11 +908,11 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
             numerator += sum(i**2 for i in ar[i])
             denominator += SNR[i]**2
         N[ind[1]][ind[0]] = (((numerator / denominator)**0.5))
-    fig = plt.figure()
-    ax = plt.subplot(111, projection="hammer")
+    fig = figure(gca=False)
+    ax = fig.add_subplot(111, projection="hammer")
     ax.cla()
     ax.grid(b=True)
-    plt.pcolormesh(X, Y, N)
+    ax.pcolormesh(X, Y, N)
     ax.set_xticklabels([
         r"$22^{h}$", r"$20^{h}$", r"$18^{h}$", r"$16^{h}$", r"$14^{h}$",
         r"$12^{h}$", r"$10^{h}$", r"$8^{h}$", r"$6^{h}$", r"$4^{h}$",
@@ -964,7 +967,7 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
         phase, 0.0, 0.0, 0.0, delta_t, minimum_frequency,
         kwargs.get("f_ref", 10.), None, approx)
 
-    fig = plt.figure()
+    fig, ax = figure(gca=True)
     colors = [GW_OBSERVATORY_COLORS[i] for i in detectors]
     for num, i in enumerate(detectors):
         ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
@@ -972,14 +975,14 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
         h_t = h_plus.data.data * ar[0] + h_cross.data.data * ar[1]
         h_t = TimeSeries(h_t[:], dt=h_plus.deltaT, t0=h_plus.epoch)
         h_t.times = [float(np.array(i)) + t_start for i in h_t.times]
-        plt.plot(h_t.times, h_t,
-                 color=colors[num], linewidth=1.0, label=i)
-        plt.xlim([t_start - 3, t_start + 0.5])
-    plt.xlabel(r"Time $[s]$")
-    plt.ylabel(r"Strain")
-    plt.grid(b=True)
-    plt.legend(loc="best")
-    plt.tight_layout()
+        ax.plot(h_t.times, h_t,
+                color=colors[num], linewidth=1.0, label=i)
+        ax.set_xlim([t_start - 3, t_start + 0.5])
+    ax.set_xlabel(r"Time $[s]$")
+    ax.set_ylabel(r"Strain")
+    ax.grid(b=True)
+    ax.legend(loc="best")
+    fig.tight_layout()
     return fig
 
 
@@ -1009,7 +1012,7 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
     delta_t = 1. / 4096.
     minimum_frequency = kwargs.get("f_min", 5.)
 
-    fig = plt.figure()
+    fig, ax = figure(gca=True)
     for num, i in enumerate(maxL_params_list):
         if math.isnan(i["mass_1"]):
             continue
@@ -1043,14 +1046,14 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
         h_t = TimeSeries(h_t[:], dt=h_plus.deltaT, t0=h_plus.epoch)
         h_t.times = [float(np.array(i)) + t_start for i in h_t.times]
 
-        plt.plot(h_t.times, h_t,
-                 color=colors[num], label=labels[num], linewidth=2.0)
-    plt.xlabel(r"Time $[s]$")
-    plt.ylabel(r"Strain")
-    plt.xlim([t_start - 3, t_start + 0.5])
-    plt.grid(b=True)
-    plt.legend(loc="best")
-    plt.tight_layout()
+        ax.plot(h_t.times, h_t,
+                color=colors[num], label=labels[num], linewidth=2.0)
+    ax.set_xlabel(r"Time $[s]$")
+    ax.set_ylabel(r"Strain")
+    ax.set_xlim([t_start - 3, t_start + 0.5])
+    ax.grid(b=True)
+    ax.legend(loc="best")
+    fig.tight_layout()
     return fig
 
 
@@ -1070,7 +1073,7 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
     fmin: optional, float
         starting frequency of the plot
     """
-    fig, ax = plt.subplots(1, 1)
+    fig, ax = figure(gca=True)
     if not colors and all(i in GW_OBSERVATORY_COLORS.keys() for i in labels):
         colors = [GW_OBSERVATORY_COLORS[i] for i in labels]
     elif not colors:
@@ -1084,12 +1087,12 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
             ind = np.argwhere(ff >= fmin)
             i = ff[ind]
             strains[num] = ss[ind]
-        plt.loglog(i, strains[num], color=colors[num], label=labels[num])
+        ax.loglog(i, strains[num], color=colors[num], label=labels[num])
     ax.tick_params(which="both", bottom=True, length=3, width=1)
     ax.set_xlabel(r"Frequency $[\mathrm{Hz}]$")
     ax.set_ylabel(r"Power Spectral Density [$\mathrm{strain}^{2}/\mathrm{Hz}$]")
-    plt.legend(loc="best")
-    plt.tight_layout()
+    ax.legend(loc="best")
+    fig.tight_layout()
     return fig
 
 
@@ -1144,7 +1147,7 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         }
         return data_dict
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    fig, (ax1, ax2) = subplots(2, 1, sharex=True, gca=False)
     if not colors and all(i in GW_OBSERVATORY_COLORS.keys() for i in ifos):
         colors = [GW_OBSERVATORY_COLORS[i] for i in ifos]
     elif not colors:
@@ -1188,9 +1191,10 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
                 prior_data["phase"]["lower"], color=colors[num], alpha=0.2
             )
 
-    plt.xscale('log')
-    plt.xlabel(r"Frequency $[Hz]$")
-    plt.tight_layout()
+    ax1.set_xscale('log')
+    ax2.set_xscale('log')
+    ax2.set_xlabel(r"Frequency $[Hz]$")
+    fig.tight_layout()
     return fig
 
 
@@ -1207,7 +1211,7 @@ def _strain_plot(strain, maxL_params, **kwargs):
     logger.debug("Generating the strain plot")
     from pesummary.gw.file.conversions import time_in_each_ifo
 
-    fig = plt.figure()
+    fig, ax = figure(gca=True)
     time = maxL_params["geocent_time"]
     delta_t = 1. / 4096.
     minimum_frequency = kwargs.get("f_min", 5.)
@@ -1267,17 +1271,17 @@ def _strain_plot(strain, maxL_params, **kwargs):
             pass
         max_strain = np.max(strain_data_crop).value
 
-        plt.subplot(len(strain.keys()), 1, num + 1)
-        plt.plot(strain_data_crop, color='grey', alpha=0.75, label="data")
-        plt.plot(h_t_time, color='orange', label="template")
-        plt.xlim([ifo_time - 0.1, ifo_time + 0.06])
+        _, ax = subplots(len(strain.keys()), 1, num + 1)
+        ax.plot(strain_data_crop, color='grey', alpha=0.75, label="data")
+        ax.plot(h_t_time, color='orange', label="template")
+        ax.set_xlim([ifo_time - 0.1, ifo_time + 0.06])
         if not math.isnan(max_strain):
-            plt.ylim([-max_strain * 1.5, max_strain * 1.5])
-        plt.ylabel("Whitened %s strain" % (key), fontsize=8)
-        plt.grid(False)
-        plt.legend(loc="best", prop={'size': 8})
-    plt.xlabel("Time $[s]$", fontsize=16)
-    plt.tight_layout()
+            ax.set_ylim([-max_strain * 1.5, max_strain * 1.5])
+        ax.set_ylabel("Whitened %s strain" % (key), fontsize=8)
+        ax.grid(False)
+        ax.legend(loc="best", prop={'size': 8})
+    ax._set_xlabel("Time $[s]$", fontsize=16)
+    fig.tight_layout()
     return fig
 
 
@@ -1313,8 +1317,8 @@ def _classification_plot(classification):
     rcParams["ytick.labelsize"] = 12
     probs, names = zip(
         *sorted(zip(classification.values(), classification.keys())))
-    with plt.style.context('seaborn-white'):
-        fig, ax = plt.subplots(figsize=(2.5, 2))
+    with matplotlib.style.context('seaborn-white'):
+        fig, ax = figure(figsize=(2.5, 2), gca=True)
         ax.barh(names, probs)
         for i, prob in enumerate(probs):
             ax.annotate(_format_prob(prob), (0, i), (4, 0),

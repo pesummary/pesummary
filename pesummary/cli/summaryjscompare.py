@@ -9,21 +9,23 @@ statistic with uncertainty estimated by bootstrapping.
 import argparse
 from collections import namedtuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import binom
+import matplotlib
+import matplotlib.style
 
 from pesummary.io import read
 from pesummary.core.parser import parser as pesummary_parser
 from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+from pesummary.core.plots.figure import figure
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.tqdm import tqdm
 from pesummary.utils.utils import jensen_shannon_divergence
 from pesummary.utils.utils import _check_latex_install, get_matplotlib_style_file, logger
 
-plt.style.use(get_matplotlib_style_file())
+matplotlib.style.use(get_matplotlib_style_file())
 _check_latex_install()
 
 
@@ -134,7 +136,7 @@ def pp_plot(event, resultA, resultB, labelA, labelB, main_keys, nsamples, js_dat
     The JS divergence for each pair of samples is shown in legend.
     """
     # Creating dict where ks_data for each event will be saved
-    fig, ax = plt.subplots(figsize=(6, 5))
+    fig, ax = figure(figsize=(6, 5), gca=True)
     for key_index, key in enumerate(main_keys):
 
         # Check the key exists in both sets of samples
@@ -170,10 +172,10 @@ def pp_plot(event, resultA, resultB, labelA, labelB, main_keys, nsamples, js_dat
     ax.set_ylabel(f"{labelA} CDF - {labelB} CDF")
     ax.set_xlim(0, 1)
     ax.legend(loc="upper right", ncol=4, fontsize=6)
-    plt.title(r"{} N samples={:.0f}".format(event, nsamples))
-    plt.grid()
+    ax.set_title(r"{} N samples={:.0f}".format(event, nsamples))
+    ax.grid()
     fig.tight_layout()
-    plt.savefig("{}-comparison-{}-{}.png".format(event, labelA, labelB))
+    fig.savefig("{}-comparison-{}-{}.png".format(event, labelA, labelB))
 
 
 def parse_cmd_line():

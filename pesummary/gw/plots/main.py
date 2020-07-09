@@ -20,6 +20,7 @@ import os
 from pesummary.core.plots.main import _PlotGeneration as _BasePlotGeneration
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.core.plots import interactive
+from pesummary.core.plots.figure import figure
 from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.utils import (
@@ -32,7 +33,6 @@ from pesummary import conf
 
 import matplotlib
 matplotlib.use(get_matplotlib_backend(parallel=True))
-import matplotlib.pyplot as plt
 import multiprocessing as mp
 import numpy as np
 
@@ -189,14 +189,14 @@ class _PlotGeneration(_BasePlotGeneration):
             fig, params, data = gw._make_corner_plot(
                 samples, latex_labels, corner_parameters=params
             )
-            plt.savefig(
+            fig.savefig(
                 os.path.join(
                     savedir, "corner", "{}_all_density_plots.png".format(
                         label
                     )
                 )
             )
-            plt.close()
+            fig.close()
             combine_corner = open(
                 os.path.join(webdir, "js", "combine_corner.js")
             )
@@ -232,19 +232,19 @@ class _PlotGeneration(_BasePlotGeneration):
             new_file.writelines(combine_corner)
             new_file.close()
             fig = gw._make_source_corner_plot(samples, latex_labels)
-            plt.savefig(
+            fig.savefig(
                 os.path.join(
                     savedir, "corner", "{}_sourceframe.png".format(label)
                 )
             )
-            plt.close()
+            fig.close()
             fig = gw._make_extrinsic_corner_plot(samples, latex_labels)
-            plt.savefig(
+            fig.savefig(
                 os.path.join(
                     savedir, "corner", "{}_extrinsic.png".format(label)
                 )
             )
-            plt.close()
+            fig.close()
 
     def skymap_plot(self, label):
         """Generate a skymap plot for a given result file

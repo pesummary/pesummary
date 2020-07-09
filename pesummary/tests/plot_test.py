@@ -62,20 +62,83 @@ class TestPlot(object):
         fil = [i.strip().split() for i in fil]
         return [float(i[1]) for i in fil]
 
-    @pytest.mark.parametrize("param, samples, latex_label", [("mass1",
-        Array([10,20,30,40]), r"$m_{1}$"),])
-    def test_1d_histogram_plot(self, param, samples, latex_label):
-        fig = plot._1d_histogram_plot(param, samples, latex_label)
+    @pytest.mark.parametrize("param, samples", [("mass_1",
+        Array([10, 20, 30, 40])),])
+    def test_autocorrelation_plot(self, param, samples):
+        fig = plot._autocorrelation_plot(param, samples)
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    @pytest.mark.parametrize("param, samples", [("mass_1",
+        [Array([10, 20, 30, 40]), Array([10, 20, 30, 40])]), ])
+    def test_autocorrelation_plot_mcmc(self, param, samples):
+        fig = plot._autocorrelation_plot_mcmc(param, samples)
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    @pytest.mark.parametrize("param, samples, latex_label", [("mass_1",
+        Array([10, 20, 30, 40]), r"$m_{1}$"),])
+    def test_sample_evolution_plot(self, param, samples, latex_label):
+        fig = plot._sample_evolution_plot(param, samples, latex_label)
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    @pytest.mark.parametrize("param, samples, latex_label", [("mass_1",
+        [Array([10, 20, 30, 40]), Array([10, 20, 30, 40])], r"$m_{1}$"), ])
+    def test_sample_evolution_plot_mcmc(self, param, samples, latex_label):
+        fig = plot._autocorrelation_plot_mcmc(param, samples, latex_label)
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    @pytest.mark.parametrize("param, samples, latex_label", [("mass_1",
+        Array([10, 20, 30, 40]), r"$m_{1}$"),])
+    def test_1d_cdf_plot(self, param, samples, latex_label):
+        fig = plot._1d_cdf_plot(param, samples, latex_label)
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    @pytest.mark.parametrize("param, samples, latex_label", [("mass_1",
+        [Array([10, 20, 30, 40]), Array([10, 20, 30, 40])], r"$m_{1}$"), ])
+    def test_1d_cdf_plot_mcmc(self, param, samples, latex_label):
+        fig = plot._1d_cdf_plot_mcmc(param, samples, latex_label)
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     @pytest.mark.parametrize("param, samples, colors, latex_label, labels",
         [("mass1", [[10,20,30,40], [1,2,3,4]],
         ["b", "r"], r"$m_{1}$", "approx1"),])
-    def test_1d_comparison_plot(self, param, samples, colors,
-                                latex_label, labels):
-        fig = plot._1d_comparison_histogram_plot(param, samples, colors,
-                                                 latex_label, labels)
+    def test_1d_cdf_comparison_plot(self, param, samples, colors,
+                                    latex_label, labels):
+        fig = plot._1d_cdf_comparison_plot(param, samples, colors,
+                                           latex_label, labels)
         assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    @pytest.mark.parametrize("param, samples, latex_label", [("mass1",
+        Array([10,20,30,40]), r"$m_{1}$"),])
+    def test_1d_histogram_plot(self, param, samples, latex_label):
+        for module in [plot, gwplot]:
+            fig = getattr(module, "_1d_histogram_plot")(param, samples, latex_label)
+            assert isinstance(fig, matplotlib.figure.Figure) == True
+            fig = getattr(module, "_1d_histogram_plot")(param, samples, latex_label, kde=True)
+            assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    @pytest.mark.parametrize("param, samples, latex_label",
+        [("mass1", [[10,20,30,40], [1,2,3,4]], r"$m_{1}$"),])
+    def test_1d_histogram_plot_mcmc(self, param, samples, latex_label):
+        for module in [plot, gwplot]:
+            fig = getattr(module, "_1d_histogram_plot_mcmc")(param, samples, latex_label)
+            assert isinstance(fig, matplotlib.figure.Figure) == True
+            fig = getattr(module, "_1d_histogram_plot_mcmc")(param, samples, latex_label)
+            assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    @pytest.mark.parametrize("param, samples, colors, latex_label, labels",
+        [("mass1", [[10,20,30,40], [1,2,3,4]],
+        ["b", "r"], r"$m_{1}$", "approx1"),])
+    def test_1d_comparison_histogram_plot(self, param, samples, colors,
+                                          latex_label, labels):
+        for module in [plot, gwplot]:
+            fig = getattr(module, "_1d_comparison_histogram_plot")(
+                param, samples, colors, latex_label, labels
+            )
+            assert isinstance(fig, matplotlib.figure.Figure) == True
+            fig = getattr(module, "_1d_comparison_histogram_plot")(
+                param, samples, colors, latex_label, labels, kde=True
+            )
+            assert isinstance(fig, matplotlib.figure.Figure) == True
 
     @pytest.mark.parametrize("param, samples, colors, latex_label, labels",
         [("mass1", [[10,20,30,40], [1,2,3,4]],
@@ -225,3 +288,89 @@ class TestPlot(object):
         ]]
         fig = gwplot._calibration_envelope_plot(frequencies, calibration, ifos)
         assert isinstance(fig, matplotlib.figure.Figure) == True
+
+    def test_classification_plot(self):
+        classifications = {"BBH": 0.95, "NSBH": 0.05}
+        fig = gwplot._classification_plot(classifications)
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+
+
+class TestPopulation(object):
+    """Class to test the `pesummary.core.plot.population` module
+    """
+    def test_scatter_plot(self):
+        from pesummary.core.plots.population import scatter_plot
+
+        parameters = ["a", "b"]
+        sample_dict = {"one": {"a": 10, "b": 20}, "two": {"a": 15, "b": 5}}
+        latex_labels = {"a": "a", "b": "b"}
+        fig = scatter_plot(parameters, sample_dict, latex_labels)
+        assert isinstance(fig, matplotlib.figure.Figure)
+        fig = scatter_plot(
+            parameters, sample_dict, latex_labels, xerr=sample_dict,
+            yerr=sample_dict
+        )
+        assert isinstance(fig, matplotlib.figure.Figure)
+
+
+class TestDetchar(object):
+    """Class to test the `pesummary.gw.plot.detchar` module
+    """
+    def test_spectrogram(self):
+        from gwpy.timeseries.core import TimeSeriesBase
+        from pesummary.gw.plots.detchar import spectrogram
+
+        strain = {"H1": TimeSeriesBase(np.random.normal(size=200), x0=0, dx=1)}
+        fig = spectrogram(strain)
+        assert isinstance(fig["H1"], matplotlib.figure.Figure)
+
+    def test_omegascan(self):
+        from gwpy.timeseries.core import TimeSeriesBase
+        from pesummary.gw.plots.detchar import omegascan
+
+        strain = {"H1": TimeSeriesBase(np.random.normal(size=200), x0=0, dx=1)}
+        fig = omegascan(strain, 0)
+        assert isinstance(fig["H1"], matplotlib.figure.Figure)
+
+
+class TestPublication(object):
+    """Class to test the `pesummary.gw.plots.publication` module
+    """
+    def test_twod_contour_plots(self):
+        from pesummary.gw.plots.publication import twod_contour_plots
+
+        parameters = ["a", "b"]
+        samples = [[
+            np.random.uniform(0., 3000, 1000),
+            np.random.uniform(0., 3000, 1000)
+        ]]
+        labels = ["a", "b"]
+        fig = twod_contour_plots(
+            parameters, samples, labels, {"a": "a", "b": "b"}
+        )
+        assert isinstance(fig, matplotlib.figure.Figure)
+
+    def test_violin(self):
+        from pesummary.gw.plots.publication import violin_plots
+
+        parameter = "a"
+        samples = [
+            np.random.uniform(0., 3000, 1000),
+            np.random.uniform(0., 3000, 1000)
+        ]
+        labels = ["a"]
+        fig = violin_plots(parameter, samples, labels, {"a": "a", "b": "b"})
+        assert isinstance(fig, matplotlib.figure.Figure)
+
+    def test_spin_distribution_plots(self):
+        from pesummary.gw.plots.publication import spin_distribution_plots
+
+        parameters = ["a_1", "a_2", "cos_tilt_1", "cos_tilt_2"]
+        samples = [
+            np.random.uniform(0, 1, 1000), np.random.uniform(0, 1, 1000),
+            np.random.uniform(-1, 1, 1000), np.random.uniform(-1, 1, 1000)
+        ]
+        label = "test"
+        color = "r"
+        fig = spin_distribution_plots(parameters, samples, label, color)
+        assert isinstance(fig, matplotlib.figure.Figure)

@@ -13,10 +13,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from pesummary.core.plots.figure import figure
 from pesummary.utils.utils import logger, get_matplotlib_backend
 import matplotlib
 matplotlib.use(get_matplotlib_backend())
-import matplotlib.pyplot as plt
 
 
 def spectrogram(
@@ -41,7 +41,7 @@ def spectrogram(
     figs = {}
     for num, key in enumerate(list(strain.keys())):
         logger.debug("Generating a spectrogram for {}".format(key))
-        figs[key] = plt.figure(figsize=(12, 6))
+        figs[key], ax = figure(figsize=(12, 6), gca=True)
         try:
             try:
                 specgram = strain[key].spectrogram(
@@ -49,13 +49,12 @@ def spectrogram(
                 ) ** (1 / 2.)
             except Exception as e:
                 specgram = strain[key].spectrogram(strain[key].duration / 2.)
-            plt.pcolormesh(specgram, vmin=vmin, vmax=vmax, norm='log', cmap=cmap)
-            plt.ylim(ylim)
-            plt.ylabel(r'Frequency [$Hz$]')
-            ax = plt.gca()
+            ax.pcolormesh(specgram, vmin=vmin, vmax=vmax, norm='log', cmap=cmap)
+            ax.set_ylim(ylim)
+            ax.set_ylabel(r'Frequency [$Hz$]')
             ax.set_yscale('log')
             ax.set_xscale('minutes', epoch=strain[key].times[0])
-            cbar = plt.colorbar()
+            cbar = figs[key].colorbar()
             cbar.set_label(r"ASD [strain/$\sqrt{Hz}$]")
         except Exception as e:
             logger.info(
@@ -101,18 +100,17 @@ def omegascan(
                 )
             except Exception as e:
                 qtransform = strain[key].q_transform(gps=gps, logf=True)
-            figs[key] = plt.figure(figsize=(12, 6))
-            plt.pcolormesh(qtransform, vmin=vmin, vmax=vmax, cmap=cmap)
-            plt.ylim(ylim)
-            plt.ylabel(r'Frequency [$Hz$]')
-            ax = plt.gca()
+            figs[key], ax = figure(figsize=(12, 6), gca=True)
+            ax.pcolormesh(qtransform, vmin=vmin, vmax=vmax, cmap=cmap)
+            ax.set_ylim(ylim)
+            ax.set_ylabel(r'Frequency [$Hz$]')
             ax.set_xscale('seconds', epoch=gps)
             ax.set_yscale('log')
-            cbar = plt.colorbar()
+            cbar = figs[key].colorbar()
             cbar.set_label("Signal-to-noise ratio")
         except Exception as e:
             logger.info(
                 "Failed to generate an omegascan for {} because {}".format(key, e)
             )
-            figs[key] = plt.figure(figsize=(12, 6))
+            figs[key] = figure(figsize=(12, 6), gca=False)
     return figs
