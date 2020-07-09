@@ -1170,7 +1170,7 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
             frequency, calibration_data["amplitude"]["lower"], color=colors[num],
             linestyle="-"
         )
-        ax1.set_ylabel(r"Amplitude deviation $[\%]$")
+        ax1.set_ylabel(r"Amplitude deviation $[\%]$", fontsize=10)
         ax1.legend(loc="best")
         ax2.plot(
             frequency, calibration_data["phase"]["upper"], color=colors[num],
@@ -1180,7 +1180,7 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
             frequency, calibration_data["phase"]["lower"], color=colors[num],
             linestyle="-"
         )
-        ax2.set_ylabel(r"Phase deviation $[\degree]$")
+        ax2.set_ylabel(r"Phase deviation $[\degree]$", fontsize=10)
         if prior != []:
             ax1.fill_between(
                 frequency, prior_data["amplitude"]["upper"],
