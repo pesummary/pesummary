@@ -129,8 +129,6 @@ def make_plots(
     probs: dict
         Dictionary of classification probabilities
     """
-    import matplotlib.pyplot as plt
-
     if webdir is None:
         webdir = "./"
 
@@ -147,7 +145,7 @@ def make_plots(
 
             if prior == "default" or prior == "both":
                 fig = _classification_plot(probs[num]["default"])
-                plt.savefig(
+                fig.savefig(
                     os.path.join(
                         webdir,
                         "{}_default_pepredicates_bar.png".format(label)
@@ -155,7 +153,7 @@ def make_plots(
                 )
             if prior == "population" or prior == "both":
                 fig = _classification_plot(probs[num]["population"])
-                plt.savefig(
+                fig.savefig(
                     os.path.join(
                         webdir,
                         "{}_population_pepredicates_bar.png".format(label)
@@ -166,14 +164,14 @@ def make_plots(
                 fig = PEPredicates.plot(
                     f.samples, f.parameters, population_prior=False
                 )
-                plt.savefig(
+                fig.savefig(
                     os.path.join(
                         webdir, "{}_default_pepredicates.png".format(label)
                     )
                 )
             if prior == "population" or prior == "both":
                 fig = PEPredicates.plot(f.samples, f.parameters)
-                plt.savefig(
+                fig.savefig(
                     os.path.join(
                         webdir, "{}_population_pepredicates.png".format(label)
                     )

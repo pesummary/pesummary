@@ -24,7 +24,6 @@ from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import make_dir, logger
 from pesummary.core.command_line import DictionaryAction
 import argparse
-import matplotlib.pyplot as plt
 import seaborn
 import numpy as np
 
@@ -198,37 +197,37 @@ def make_2d_contour_plot(opts):
             opts.publication_kwargs["gridsize"] if "gridsize" in
             opts.publication_kwargs.keys() else 100
         )
-        fig = pub.twod_contour_plots(
+        fig, ax = pub.twod_contour_plots(
             i, twod_samples, opts.labels, latex_labels, colors=colors,
-            linestyles=linestyles, gridsize=gridsize
+            linestyles=linestyles, gridsize=gridsize, return_ax=True
         )
-        current_xlow, current_xhigh = plt.xlim()
-        current_ylow, current_yhigh = plt.ylim()
+        current_xlow, current_xhigh = ax.xlim()
+        current_ylow, current_yhigh = ax.ylim()
         keys = opts.publication_kwargs.keys()
         if "xlow" in keys and "xhigh" in keys:
-            plt.xlim(
+            ax.set_xlim(
                 [
                     float(opts.publication_kwargs["xlow"]),
                     float(opts.publication_kwargs["xhigh"])
                 ]
             )
         elif "xhigh" in keys:
-            plt.xlim([current_xlow, float(opts.publication_kwargs["xhigh"])])
+            ax.set_xlim([current_xlow, float(opts.publication_kwargs["xhigh"])])
         elif "xlow" in keys:
-            plt.xlim([float(opts.publication_kwargs["xlow"]), current_xhigh])
+            ax.set_xlim([float(opts.publication_kwargs["xlow"]), current_xhigh])
         if "ylow" in keys and "yhigh" in keys:
-            plt.ylim(
+            ax.set_ylim(
                 [
                     float(opts.publication_kwargs["ylow"]),
                     float(opts.publication_kwargs["yhigh"])
                 ]
             )
         elif "yhigh" in keys:
-            plt.ylim([current_ylow, float(opts.publication_kwargs["yhigh"])])
+            ax.set_ylim([current_ylow, float(opts.publication_kwargs["yhigh"])])
         elif "ylow" in keys:
-            plt.ylim([float(opts.publication_kwargs["ylow"]), current_yhigh])
+            ax.set_ylim([float(opts.publication_kwargs["ylow"]), current_yhigh])
         fig.savefig("%s/2d_contour_plot_%s" % (opts.webdir, "_and_".join(i)))
-        plt.close()
+        fig.close()
 
 
 def make_violin_plot(opts):
@@ -261,7 +260,7 @@ def make_violin_plot(opts):
                        enumerate(samples)]
             fig = pub.violin_plots(i, samples, opts.labels, latex_labels)
             fig.savefig("%s/violin_plot_%s.png" % (opts.webdir, i))
-            plt.close()
+            fig.close()
         except Exception:
             logger.info("Failed to generate a violin plot for %s" % (i))
             continue
@@ -291,7 +290,7 @@ def make_spin_disk_plot(opts):
                 colors[num])
             fig.savefig("%s/spin_disk_plot_%s.png" % (
                 opts.webdir, opts.labels[num]))
-            plt.close()
+            fig.close()
         except Exception as e:
             logger.warning(
                 "Failed to generate a spin disk plot for %s because %s" % (
@@ -348,7 +347,7 @@ def make_population_scatter_plot(opts):
         fig.savefig("{}/event_scatter_plot_{}.png".format(
             opts.webdir, "_and_".join(opts.parameters)
         ))
-        plt.close()
+        fig.close()
 
 
 def main(args=None):

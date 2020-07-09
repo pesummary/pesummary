@@ -16,6 +16,7 @@
 import functools
 import copy
 import numpy as np
+from pesummary.utils.utils import logger
 
 
 def open_config(index=0):
@@ -80,6 +81,25 @@ def no_latex_plot(func):
         original_tex = rcParams["text.usetex"]
         rcParams["text.usetex"] = False
         value = func(*args, **kwargs)
+        rcParams["text.usetex"] = original_tex
+        return value
+    return wrapper_function
+
+
+def try_latex_plot(func):
+    """
+    """
+    @functools.wraps(func)
+    def wrapper_function(*args, **kwargs):
+        from matplotlib import rcParams
+
+        original_tex = rcParams["text.usetex"]
+        try:
+            value = func(*args, **kwargs)
+        except RuntimeError:
+            logger.debug("Unable to use latex. Turning off for this plot")
+            rcParams["text.usetex"] = False
+            value = func(*args, **kwargs)
         rcParams["text.usetex"] = original_tex
         return value
     return wrapper_function

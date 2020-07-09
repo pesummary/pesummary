@@ -18,9 +18,9 @@ from pesummary.utils.utils import (
 )
 import matplotlib
 matplotlib.use(get_matplotlib_backend())
-import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import seaborn
+from pesummary.core.plots.figure import figure
 from pesummary.gw.plots import violin
 from pesummary.gw.plots.bounded_2d_kde import Bounded_2d_kde
 from pesummary.gw.plots.bounds import default_bounds
@@ -103,7 +103,7 @@ def estimate_2d_posterior(samples, xlow=None, xhigh=None, ylow=None,
 
 def twod_contour_plots(
     parameters, samples, labels, latex_labels, colors=None, linestyles=None,
-    gridsize=100
+    gridsize=100, return_ax=False
 ):
     """Generate 2d contour plots for a set of samples for given parameters
 
@@ -118,6 +118,8 @@ def twod_contour_plots(
     latex_labels: dict
         dictionary of latex labels
     """
+    from matplotlib.patches import Polygon
+
     logger.debug("Generating 2d contour plots for %s" % ("_and_".join(parameters)))
     if colors is None:
         palette = seaborn.color_palette(palette="pastel", n_colors=len(samples))
@@ -125,7 +127,7 @@ def twod_contour_plots(
         palette = colors
     if linestyles is None:
         linestyles = ["-"] * len(samples)
-    fig, ax1 = plt.subplots(nrows=1, ncols=1)
+    fig, ax1 = figure(gca=True)
     transform = xlow = xhigh = ylow = yhigh = None
     handles = []
     for num, i in enumerate(samples):
@@ -178,7 +180,7 @@ def twod_contour_plots(
         )
     if all("mass_1" in i or "mass_2" in i for i in parameters):
 
-        reg = plt.Polygon([[0, 0], [0, 1000], [1000, 1000]], color='gray', alpha=0.75)
+        reg = Polygon([[0, 0], [0, 1000], [1000, 1000]], color='gray', alpha=0.75)
         ax1.add_patch(reg)
     ax1.set_xlabel(latex_labels[parameters[0]])
     ax1.set_ylabel(latex_labels[parameters[1]])
@@ -193,14 +195,16 @@ def twod_contour_plots(
     ax1.set_ylim(0.9 * _ylow, 1.1 * _yhigh)
 
     ncols = number_of_columns_for_legend(labels)
-    legend = plt.legend(
+    legend = ax1.legend(
         handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
         handlelength=3, ncol=ncols, mode="expand", borderaxespad=0.
     )
     for num, legobj in enumerate(legend.legendHandles):
         legobj.set_linewidth(1.75)
         legobj.set_linestyle(linestyles[num])
-    plt.tight_layout()
+    fig.tight_layout()
+    if return_ax:
+        return fig, ax1
     return fig
 
 
@@ -219,15 +223,14 @@ def violin_plots(parameter, samples, labels, latex_labels, cut=0, **kwargs):
         dictionary of latex labels
     """
     logger.debug("Generating violin plots for %s" % (parameter))
-    fig, ax1 = plt.subplots(nrows=1, ncols=1)
-    ax1 = violin.violinplot(data=samples, palette="pastel", inner="line",
-                            outer="percent: 90", scale="width", cut=cut,
-                            **kwargs)
+    fig, ax1 = figure(gca=True)
+    ax1 = violin.violinplot(data=samples, palette="pastel", inner="line", cut=0,
+                            outer="percent: 90", scale="width", ax=ax1, **kwargs)
     ax1.set_xticklabels(labels)
     for label in ax1.get_xmajorticklabels():
         label.set_rotation(30)
     ax1.set_ylabel(latex_labels[parameter])
-    plt.tight_layout()
+    fig.tight_layout()
     return fig
 
 
@@ -312,7 +315,7 @@ def spin_distribution_plots(parameters, samples, label, color, colorbar=False):
         tick_formatter1=tick_formatter1,
         tick_formatter2=None)
 
-    fig = plt.figure(figsize=(6, 6))
+    fig = figure(figsize=(6, 6), gca=False)
     ax1 = floating_axes.FloatingSubplot(fig, rect, grid_helper=grid_helper)
     fig.add_subplot(ax1)
 
@@ -399,11 +402,11 @@ def spin_distribution_plots(parameters, samples, label, color, colorbar=False):
 
     # Event name top, spin labels bottom
     if label is not None:
-        title = plt.text(0.16, 1.25, label, fontsize=18, horizontalalignment='center')
-    S1_label = plt.text(1.25, -1.15, r'$c{S}_{1}/(Gm_1^2)$', fontsize=14)
-    S2_label = plt.text(-.5, -1.15, r'$c{S}_{2}/(Gm_2^2)$', fontsize=14)
-    plt.subplots_adjust(wspace=0.295)
-    ax3 = plt.axes([0.22, 0.05, 0.55, 0.02])
+        title = ax1.text(0.16, 1.25, label, fontsize=18, horizontalalignment='center')
+    S1_label = ax1.text(1.25, -1.15, r'$c{S}_{1}/(Gm_1^2)$', fontsize=14)
+    S2_label = ax1.text(-.5, -1.15, r'$c{S}_{2}/(Gm_2^2)$', fontsize=14)
+    fig.subplots_adjust(wspace=0.295)
+    ax3 = fig.add_axes([0.22, 0.05, 0.55, 0.02])
     if colorbar:
         cbar = fig.colorbar(
             p, cax=ax3, orientation="horizontal", pad=0.2, shrink=0.5,

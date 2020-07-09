@@ -31,6 +31,7 @@ from astropy import units as u
 import numpy as np
 from scipy import stats
 import pytest
+import matplotlib
 
 from ligo.skymap.io.hdf5 import read_samples, write_samples
 from ligo.skymap.tool.tests import run_entry_point

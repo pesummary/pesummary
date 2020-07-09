@@ -20,6 +20,7 @@ except ImportError:
 
 import numpy as np
 import pandas as pd
+from pesummary.core.plots.figure import ExistingFigure
 from pesummary.utils.utils import logger
 
 
@@ -192,5 +193,5 @@ class PEPredicates(object):
                   "BNS": pep.is_BNS(psamps_resamples),
                   "NSBH": pep.is_NSBH(psamps_resamples),
                   "MassGap": pep.is_MG(psamps_resamples)}
-        fig = pep.plot_predicates(ptable, psamps_resamples)
+        fig = ExistingFigure(pep.plot_predicates(ptable, psamps_resamples))
         return fig

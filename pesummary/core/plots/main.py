@@ -25,7 +25,6 @@ from pesummary.core.plots import interactive
 
 import matplotlib
 matplotlib.use(get_matplotlib_backend(parallel=True))
-import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -169,7 +168,7 @@ class _PlotGeneration(object):
             name += ".%s" % (format)
         fig.savefig(name, format=format)
         if close:
-            plt.close()
+            fig.close()
 
     @property
     def _total_number_of_labels(self):
@@ -324,7 +323,9 @@ class _PlotGeneration(object):
         except Exception as e:
             logger.info(message.format(e))
         finally:
-            plt.close()
+            from matplotlib import pyplot
+
+            pyplot.close()
 
     def corner_plot(self, label):
         """Generate a corner plot for a given result file
