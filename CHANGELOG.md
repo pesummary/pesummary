@@ -1,3 +1,45 @@
+## 0.7.0 [09/07/2020]
+
+### Changed
+
+- `matplotlib.pyplot` calls - remove all `matplotlib.pyplot` calls from the
+  `pesummary.core.plots.plot` and `pesummary.gw.plots.plot` modules. All
+  `matplotlib.pyplot` calls are now in `pesummary.core.plots.figure`.
+- Modify `ligo.skymap` fits header - add `DATE_OBS` to the ligo.skymap fits file
+
+### Added
+
+- Allow the user to easy generate comparison histogram plots, corner plots
+  and skymap comparison plots from the 
+  `pesummary.utils.samples_dict.MultiAnalysisSamplesDict`,
+  `pesummary.utils.samples_dict.SamplesDict` and
+  `pesummary.gw.file.skymap.SkyMapDict` objects
+- Add tests for python3.8
+- Use colored logs for console logging if `coloredlogs` is installed
+- Move all tests inside the `pesummary` package so they are included in the
+  tarball
+- Allow the user to specify which parameters they wish to include in the
+  corner plot via the `--add_to_corner` command line argument. If the `core`
+  package is used, only these parameters are used, defaulting to all parameters
+  if None provided. If the `gw` package is used, the parameters are added to the
+  default `gw` corner parameters
+- Allow for violin plots to use `Bounded_1d_kde`s rather than the default
+  `gaussian_kde`.
+- Allow the user to specify a random seed with the `--seed` command line
+  argument. This ensures reproducability.
+- Allow for a `bilby` prior file to be read in and stored in the pesummary
+  metafile.
+- Allow the user to specify the `gracedb` service url they wish to use. This is
+  via the `--gracedb_server` command line argument
+- Add the Reiss H0 cosmology to the `pesummary.gw.cosmology` module. All
+  available cosmologies can use the Reiss H0 cosmology by adding the
+  `_with_Riess2019_H0`
+- Allow the user to specify the path to samples` when more than one posterior
+  table is located in the file. This can be done with the `path_to_samples`
+  kwarg in the `pesummary.io.read` function or the `--path_to_samples` command
+  line argument
+
+
 ## 0.6.0 [11/06/2020]
 
 ### Changed
