@@ -358,6 +358,7 @@ release:
 
 pages:
   stage: deploy
+  image: python:3.6
   dependencies:
     - tarball
     - executables
