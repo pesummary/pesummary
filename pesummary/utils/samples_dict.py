@@ -314,7 +314,8 @@ class SamplesDict(dict):
         plotting_map = {
             "marginalized_posterior": self._marginalized_posterior,
             "skymap": self._skymap,
-            "hist": self._marginalized_posterior
+            "hist": self._marginalized_posterior,
+            "corner": self._corner
         }
         if type not in plotting_map.keys():
             raise NotImplementedError(
@@ -363,6 +364,33 @@ class SamplesDict(dict):
             dist = None
 
         return _ligo_skymap_plot(self["ra"], self["dec"], dist=dist, **kwargs)
+
+    def _corner(self, module="core", parameters=None, **kwargs):
+        """Wrapper for the `pesummary.core.plots.plot._make_corner_plot` or
+        `pesummary.gw.plots.plot._make_corner_plot` function
+
+        Parameters
+        ----------
+        module: str, optional
+            module you wish to use for the plotting
+        **kwargs: dict
+            all additional kwargs are passed to the `_make_corner_plot`
+            function
+        """
+        module = importlib.import_module(
+            "pesummary.{}.plots.plot".format(module)
+        )
+        _parameters = None
+        if parameters is not None:
+            _parameters = [param for param in parameters if param in self.keys()]
+            if not len(_parameters):
+                raise ValueError(
+                    "None of the chosen parameters are in the posterior "
+                    "samples table. Please choose other parameters to plot"
+                )
+        return getattr(module, "_make_corner_plot")(
+            self, self.latex_labels, corner_parameters=_parameters, **kwargs
+        )[0]
 
 
 class _MultiDimensionalSamplesDict(dict):
