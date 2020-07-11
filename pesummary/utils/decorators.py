@@ -87,7 +87,8 @@ def no_latex_plot(func):
 
 
 def try_latex_plot(func):
-    """
+    """Try to make a latex plot, if RuntimeError raised, turn latex off
+    and try again
     """
     @functools.wraps(func)
     def wrapper_function(*args, **kwargs):
@@ -101,6 +102,25 @@ def try_latex_plot(func):
             rcParams["text.usetex"] = False
             value = func(*args, **kwargs)
         rcParams["text.usetex"] = original_tex
+        return value
+    return wrapper_function
+
+
+def tmp_directory(func):
+    """Make a temporary directory run the function from within that
+    directory. Change directory back again after the function has finished
+    running
+    """
+    @functools.wraps(func)
+    def wrapper_function(*args, **kwargs):
+        import tempfile
+        import os
+
+        current_dir = os.getcwd()
+        with tempfile.TemporaryDirectory(dir="./") as path:
+            os.chdir(path)
+            value = func(*args, **kwargs)
+            os.chdir(current_dir)
         return value
     return wrapper_function
 

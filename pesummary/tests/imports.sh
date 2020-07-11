@@ -19,7 +19,7 @@ cd .tmp
 modules=($(python -c "import pkgutil; import pesummary; print(' '.join([modname for _, modname, _ in pkgutil.walk_packages(path=pesummary.__path__, prefix=pesummary.__name__+'.')]))"))
 for mod in ${modules[@]}; do
     if [[ ${mod} != *"pesummary.tests"* ]]; then
-        python -c "import ${mod}";
+        python -c "print('Importing: %s' % ('${mod}')); import ${mod}";
     fi
 done
 cd ..
