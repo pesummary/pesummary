@@ -14,7 +14,9 @@
 
 set -e
 
-_executables=($(ls pesummary/cli/summary*))
+SCRIPT_DIR=`dirname "${BASH_SOURCE[0]}"`
+
+_executables=($(ls ${SCRIPT_DIR}/../cli/summary*))
 executables=()
 for i in ${_executables[@]}; do
     executables+=(`python -c "print('${i}'.split('/')[-1].split('.py')[0])"`);

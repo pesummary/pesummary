@@ -152,12 +152,8 @@ python-3.6:
     - mkdir _testing
     - cd _testing
     - export PESUMMARY_TESTING_DIR=`python -c "import pkg_resources; print(pkg_resources.resource_filename('pesummary', 'tests'))"`
-    - summarytest --type tests --ignore ${PESUMMARY_TESTING_DIR}/workflow_test.py --ignore ${PESUMMARY_TESTING_DIR}/ligo_skymap_test.py --pytest_config ${BASE}/setup.cfg
+    - summarytest --type tests --ignore ${PESUMMARY_TESTING_DIR}/workflow_test.py ${PESUMMARY_TESTING_DIR}/ligo_skymap_test.py --pytest_config ${BASE}/setup.cfg
     - cd ${BASE}
-  artifacts:
-    paths:
-      - htmlcov/
-      - coverage_badge.svg
 
 
 python-3.7:
@@ -175,7 +171,7 @@ python-3.7:
     - mkdir _testing
     - cd _testing
     - export PESUMMARY_TESTING_DIR=`python -c "import pkg_resources; print(pkg_resources.resource_filename('pesummary', 'tests'))"`
-    - summarytest --type tests --ignore ${PESUMMARY_TESTING_DIR}/workflow_test.py --ignore ${PESUMMARY_TESTING_DIR}/ligo_skymap_test.py --coverage --pytest_config ${BASE}/setup.cfg
+    - summarytest --type tests --output ${BASE} --ignore ${PESUMMARY_TESTING_DIR}/workflow_test.py ${PESUMMARY_TESTING_DIR}/ligo_skymap_test.py --coverage --pytest_config ${BASE}/setup.cfg
     - cd ${BASE}
   artifacts:
     paths:
@@ -198,7 +194,7 @@ python-3.8:
     - mkdir _testing
     - cd _testing
     - export PESUMMARY_TESTING_DIR=`python -c "import pkg_resources; print(pkg_resources.resource_filename('pesummary', 'tests'))"`
-    - summarytest --pytest_config ${BASE}/setup.cfg --type tests --ignore ${PESUMMARY_TESTING_DIR}/workflow_test.py --ignore ${PESUMMARY_TESTING_DIR}/ligo_skymap_test.py --ignore ${PESUMMARY_TESTING_DIR}/conversion_test.py
+    - summarytest --pytest_config ${BASE}/setup.cfg --type tests --ignore ${PESUMMARY_TESTING_DIR}/workflow_test.py ${PESUMMARY_TESTING_DIR}/ligo_skymap_test.py ${PESUMMARY_TESTING_DIR}/conversion_test.py
 
 
 core-workflow-3.6:
