@@ -2,7 +2,7 @@
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
+# option) any later version
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,18 +13,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+_IFOS = ["H1", "L1", "V1", "K1", "E1"]
 tidal_params = ["lambda_1", "lambda_2", "delta_lambda", "lambda_tilde"]
 
+
 lalinference_map = {
-    "h1_cplx_snr_amp": "H1_matched_filter_abs_snr",
-    "h1_cplx_snr_arg": "H1_matched_filter_snr_angle",
-    "h1_optimal_snr": "H1_optimal_snr",
-    "l1_cplx_snr_amp": "L1_matched_filter_abs_snr",
-    "l1_cplx_snr_arg": "L1_matched_filter_snr_angle",
-    "l1_optimal_snr": "L1_optimal_snr",
-    "v1_cplx_snr_amp": "V1_matched_filter_abs_snr",
-    "v1_cplx_snr_arg": "V1_matched_filter_snr_angle",
-    "v1_optimal_snr": "V1_optimal_snr",
     "logl": "log_likelihood",
     "logprior": "log_prior",
     "matched_filter_snr": "network_matched_filter_snr",
@@ -72,6 +65,19 @@ lalinference_map = {
     "e_rad_evol_avg": "radiated_energy",
 }
 
+
+for detector in _IFOS:
+    lalinference_map["{}_cplx_snr_amp".format(detector.lower())] = (
+        "{}_matched_filter_abs_snr".format(detector)
+    )
+    lalinference_map["{}_cplx_snr_arg".format(detector.lower())] = (
+        "{}_matched_filter_snr_angle".format(detector)
+    )
+    lalinference_map["{}_optimal_snr".format(detector.lower())] = (
+        "{}_optimal_snr".format(detector)
+    )
+
+
 bilby_map = {
     "chirp_mass": "chirp_mass",
     "mass_ratio": "mass_ratio",
@@ -111,12 +117,6 @@ bilby_map = {
     "mass_2_source": "mass_2_source",
     "chirp_mass_source": "chirp_mass_source",
     "total_mass_source": "total_mass_source",
-    "H1_optimal_snr": "H1_optimal_snr",
-    "L1_optimal_snr": "L1_optimal_snr",
-    "H1_matched_filter_snr_abs": "H1_matched_filter_snr_abs",
-    "H1_matched_filter_snr_angle": "H1_matched_filter_snr_angle",
-    "L1_matched_filter_snr_abs": "L1_matched_filter_snr_abs",
-    "L1_matched_filter_snr_angle": "L1_matched_filter_snr_angle",
     "lambda_1": "lambda_1",
     "lambda_2": "lambda_2",
     "lambda_tilde": "lambda_tilde",
@@ -124,22 +124,26 @@ bilby_map = {
     "cos_theta_jn": "cos_theta_jn",
 }
 
+
+for detector in _IFOS:
+    bilby_map["{}_matched_filter_snr_abs".format(detector)] = (
+        "{}_matched_filter_snr_abs".format(detector)
+    )
+    bilby_map["{}_matched_filter_snr_angle".format(detector)] = (
+        "{}_matched_filter_snr_angle".format(detector)
+    )
+    bilby_map["{}_optimal_snr".format(detector)] = (
+        "{}_optimal_snr".format(detector)
+    )
+
+
 pycbc_map = {
     "mchirp": "chirp_mass",
     "coa_phase": "phase",
 }
 
+
 pesummary_map = {
-    "V1_optimal_snr": "V1_optimal_snr",
-    "E1_optimal_snr": "E1_optimal_snr",
-    "L1_matched_filter_snr": "L1_matched_filter_snr",
-    "H1_matched_filter_snr": "H1_matched_filter_snr",
-    "V1_matched_filter_snr": "V1_matched_filter_snr",
-    "E1_matched_filter_snr": "E1_matched_filter_snr",
-    "V1_matched_filter_snr_abs": "V1_matched_filter_snr_abs",
-    "E1_matched_filter_snr_abs": "E1_matched_filter_snr_abs",
-    "V1_matched_filter_snr_angle": "V1_matched_filter_snr_angle",
-    "E1_matched_filter_snr_angle": "E1_matched_filter_snr_angle",
     "chirp_mass_source": "chirp_mass_source",
     "delta_lambda": "delta_lambda",
     "spin_1z": "spin_1z",
@@ -156,6 +160,22 @@ pesummary_map = {
     "final_kick": "final_kick"
 }
 
+
+for detector in _IFOS:
+    pesummary_map["{}_matched_filter_snr".format(detector)] = (
+        "{}_matched_filter_snr".format(detector)
+    )
+    pesummary_map["{}_matched_filter_snr_abs".format(detector)] = (
+        "{}_matched_filter_snr_abs".format(detector)
+    )
+    pesummary_map["{}_matched_filter_snr_angle".format(detector)] = (
+        "{}_matched_filter_snr_angle".format(detector)
+    )
+    pesummary_map["{}_optimal_snr".format(detector)] = (
+        "{}_optimal_snr".format(detector)
+    )
+
+
 other_map = {
     "logL": "log_likelihood",
     "lnL": "log_likelihood",
@@ -164,25 +184,6 @@ other_map = {
     "theta_1l": "tilt_1",
     "tilt_spin2": "tilt_2",
     "theta_2l": "tilt_2",
-    "l1_matched_filter_snr": "L1_matched_filter_snr",
-    "h1_matched_filter_snr": "H1_matched_filter_snr",
-    "v1_matched_filter_snr": "V1_matched_filter_snr",
-    "H1_cplx_snr_amp": "H1_matched_filter_abs_snr",
-    "H1_matched_filter_abs_snr": "H1_matched_filter_abs_snr",
-    "H1_matched_filter_snr_amp": "H1_matched_filter_abs_snr",
-    "L1_cplx_snr_amp": "L1_matched_filter_abs_snr",
-    "L1_matched_filter_abs_snr": "L1_matched_filter_abs_snr",
-    "L1_matched_filter_snr_amp": "L1_matched_filter_abs_snr",
-    "V1_cplx_snr_amp": "V1_matched_filter_abs_snr",
-    "V1_matched_filter_abs_snr": "V1_matched_filter_abs_snr",
-    "V1_matched_filter_snr_amp": "V1_matched_filter_abs_snr",
-    "E1_cplx_snr_amp": "E1_matched_filter_abs_snr",
-    "E1_matched_filter_abs_snr": "E1_matched_filter_abs_snr",
-    "E1_matched_filter_snr_amp": "E1_matched_filter_abs_snr",
-    "H1_cplx_snr_arg": "H1_matched_filter_snr_angle",
-    "L1_cplx_snr_arg": "L1_matched_filter_snr_angle",
-    "V1_cplx_snr_arg": "V1_matched_filter_snr_angle",
-    "E1_cplx_snr_arg": "E1_matched_filter_snr_angle",
     "chirpmass_source": "chirp_mass_source",
     "chirp_mass_source": "chirp_mass_source",
     "mass1": "mass_1",
@@ -236,16 +237,6 @@ other_map = {
     "delta_lambda_tilde": "delta_lambda",
     "logPrior": "log_prior",
     "weight": "weights",
-    "V1_optimal_snr": "V1_optimal_snr",
-    "E1_optimal_snr": "E1_optimal_snr",
-    "L1_matched_filter_snr": "L1_matched_filter_snr",
-    "H1_matched_filter_snr": "H1_matched_filter_snr",
-    "V1_matched_filter_snr": "V1_matched_filter_snr",
-    "E1_matched_filter_snr": "E1_matched_filter_snr",
-    "V1_matched_filter_snr_abs": "V1_matched_filter_snr_abs",
-    "E1_matched_filter_snr_abs": "E1_matched_filter_snr_abs",
-    "V1_matched_filter_snr_angle": "V1_matched_filter_snr_angle",
-    "E1_matched_filter_snr_angle": "E1_matched_filter_snr_angle",
     "delta_lambda": "delta_lambda",
     "peak_luminosity": "peak_luminosity",
     "final_mass": "final_mass",
@@ -263,6 +254,33 @@ other_map = {
 }
 
 
+for detector in _IFOS:
+    other_map["{}_cplx_snr_arg".format(detector)] = (
+        "{}_matched_filter_snr_angle".format(detector)
+    )
+    other_map["{}_cplx_snr_amp".format(detector)] = (
+        "{}_matched_filter_abs_snr".format(detector)
+    )
+    other_map["{}_matched_filter_abs_snr".format(detector)] = (
+        "{}_matched_filter_abs_snr".format(detector)
+    )
+    other_map["{}_matched_filter_snr_amp".format(detector)] = (
+        "{}_matched_filter_abs_snr".format(detector)
+    )
+    other_map["{}_matched_filter_snr".format(detector.lower())] = (
+        "{}_matched_filter_snr".format(detector)
+    )
+    other_map["{}_matched_filter_snr".format(detector)] = (
+        "{}_matched_filter_snr".format(detector)
+    )
+    other_map["{}_matched_filter_snr_abs".format(detector)] = (
+        "{}_matched_filter_snr_abs".format(detector)
+    )
+    other_map["{}_matched_filter_snr_angle".format(detector)] = (
+        "{}_matched_filter_snr_angle".format(detector)
+    )
+
+
 standard_names = {}
 standard_names.update(lalinference_map)
 standard_names.update(bilby_map)
@@ -270,52 +288,55 @@ standard_names.update(other_map)
 
 
 descriptive_names = {
-    "log_likelihood": "Log Likelihood",
+    "log_likelihood": (
+        "the logarithm of the likelihood"
+    ),
     "tilt_1": (
-        "the angle between the total orbital angular momentum, L, and the "
-        "primary spin, S1"
+        "the zenith angle between the total orbital angular momentum, L, and "
+        "the primary spin, S1"
     ),
     "tilt_2": (
-        "the angle between the total orbital angular momentum, L, and the "
-        "secondary spin, S2"
+        "the zenith angle between the total orbital angular momentum, L, and "
+        "the secondary spin, S2"
     ),
     "cos_tilt_1": (
-        "the cosine of the angle between the total orbital angular momentum, "
-        "L, and the primary spin, S1"
+        "the cosine of the zenith angle between the total orbital angular "
+        "momentum, L, and the primary spin, S1"
     ),
     "cos_tilt_2": (
-        "the cosine of the angle between the total orbital angular momentum, "
-        "L, and the primary spin, S2"
+        "the cosine of the zenith angle between the total orbital angular "
+        "momentum, L, and the secondary spin, S2"
     ),
-    "redshift": "the redshift",
-    "L1_optimal_snr": "",
-    "H1_optimal_snr": "",
-    "V1_optimal_snr": "",
-    "E1_optimal_snr": "",
-    "network_optimal_snr": "",
-    "L1_matched_filter_snr": "",
-    "H1_matched_filter_snr": "",
-    "V1_matched_filter_snr": "",
-    "E1_matched_filter_snr": "",
-    "network_matched_filter_snr": "",
-    "H1_matched_filter_abs_snr": "",
-    "H1_matched_filter_snr_abs": "",
-    "L1_matched_filter_abs_snr": "",
-    "L1_matched_filter_snr_abs": "",
-    "V1_matched_filter_abs_snr": "",
-    "V1_matched_filter_snr_abs": "",
-    "E1_matched_filter_abs_snr": "",
-    "E1_matched_filter_snr_abs": "",
-    "H1_matched_filter_snr_angle": "",
-    "L1_matched_filter_snr_angle": "",
-    "V1_matched_filter_snr_angle": "",
-    "E1_matched_filter_snr_angle": "",
-    "chirp_mass_source": "",
-    "symmetric_mass_ratio": "",
-    "mass_1": "the mass of the heavier object in the binary",
-    "mass_2": "the mass of the lighter object in the binary",
-    "ra": "the right ascension of the source",
-    "dec": "the declination of the source",
+    "redshift": (
+        "the redshift depending on specified cosmology"
+    ),
+    "network_optimal_snr": (
+        "the optimal signal to noise ratio in the gravitational wave detector "
+        "network"
+    ),
+    "network_matched_filter_snr": (
+        "the matched filter signal to noise ratio in the gravitational wave "
+        "detector network"
+    ),
+    "chirp_mass_source": (
+        "the source-frame chirp mass"
+    ),
+    "symmetric_mass_ratio": (
+        "a definition of mass ratio which is independent of the identity of "
+        "the primary/secondary object"
+    ),
+    "mass_1": (
+        "the detector-frame (redshifted) mass of the heavier object"
+    ),
+    "mass_2": (
+        "the detector-frame (redshifted) mass of the lighter object"
+    ),
+    "ra": (
+        "the right ascension of the source"
+    ),
+    "dec": (
+        "the declination of the source"
+    ),
     "iota": (
         "the angle between the total orbital angular momentum, L, and the "
         "line of sight, N"
@@ -324,28 +345,77 @@ descriptive_names = {
         "the cosine of the angle between the total orbital angular momentum, L "
         ", and the line of sight, N"
     ),
-    "mass_2_source": "the source mass of the lighter object in the binary",
-    "mass_1_source": "the source mass of the heavier object in the binary",
-    "phi_1": "",
-    "phi_2": "",
-    "psi": "",
-    "phi_12": "",
-    "phi_jl": "",
-    "a_1": "",
-    "spin_1x": "",
-    "spin_1y": "",
-    "spin_1z": "",
-    "a_2": "",
-    "spin_2x": "",
-    "spin_2y": "",
-    "spin_2z": "",
-    "chi_p": "",
-    "phase": "",
-    "luminosity_distance": "the luminosity distance of the source",
-    "chirp_mass": "",
-    "chi_eff": "",
-    "total_mass_source": "the total mass of the binary in the source frame",
-    "total_mass": "the total mass of the binary",
+    "mass_2_source": (
+        "the source mass of the lighter object in the binary"
+    ),
+    "mass_1_source": (
+        "the source mass of the heavier object in the binary"
+    ),
+    "phi_1": (
+        "the azimuthal angle of the spin vector of the primary object"
+    ),
+    "phi_2": (
+        "the azimuthal angle of the spin vector of the secondary object"
+    ),
+    "psi": (
+        "the polarization angle of the source"
+    ),
+    "phi_12": (
+        "the difference between the azimuthal angles of the individual spin "
+        "vectors of the primary and secondary objects"
+    ),
+    "phi_jl": (
+        "the difference between total and orbital angular momentum azimuthal "
+        "angles"
+    ),
+    "a_1": (
+        "the dimensionless spin magnitude of the primary object"
+    ),
+    "spin_1x": (
+        "the xth component of the primary objects spin in Euclidean coordinates"
+    ),
+    "spin_1y": (
+        "the yth component of the primary objects spin in Euclidean coordinates"
+    ),
+    "spin_1z": (
+        "the zth component of the primary objects spin in Euclidean coordinates"
+    ),
+    "a_2": (
+        "the dimensionless spin magnitude of the secondary object"
+    ),
+    "spin_2x": (
+        "the xth component of the secondary objects spin in Euclidean "
+        "coordinates"
+    ),
+    "spin_2y": (
+        "the yth component of the secondary objects spin in Euclidean "
+        "coordinates"
+    ),
+    "spin_2z": (
+        "the zth component of the secondary objects spin in Euclidean "
+        "coordinates"
+    ),
+    "chi_p": (
+        "the effective precession spin parameter"
+    ),
+    "phase": (
+        "the binary phase defined at a given reference frequency"
+    ),
+    "luminosity_distance": (
+        "the luminosity distance of the source"
+    ),
+    "chirp_mass": (
+        "the detector-frame chirp mass"
+    ),
+    "chi_eff": (
+        "the effective inspiral spin parameter"
+    ),
+    "total_mass_source": (
+        "the source-frame combined mass of the primary and secondary masses "
+    ),
+    "total_mass": (
+        "the detector-frame combined mass of the primary and secondary masses "
+    ),
     "mass_ratio": (
         "the ratio of the binary component masses. We use the convention that "
         "the mass ratio is always less than 1"
@@ -355,7 +425,9 @@ descriptive_names = {
         "convention is mass ratio less than 1, but here the inverted mass ratio "
         "is always bigger than 1"
     ),
-    "geocent_time": "",
+    "geocent_time": (
+        "the GPS merger time at the geocenter"
+    ),
     "theta_jn": (
         "the angle between the total angular momentum, J, and the line of "
         "sight, N"
@@ -364,24 +436,98 @@ descriptive_names = {
         "the cosine of the angle between the total angular momentum, J, and "
         "the line of sight, N"
     ),
-    "reference_frequency": "",
-    "H1_time": "",
-    "L1_time": "",
-    "V1_time": "",
-    "a_1_azimuthal": "",
-    "a_1_polar": "",
-    "a_2_azimuthal": "",
-    "a_2_polar": "",
-    "lambda_1": "",
-    "lambda_2": "",
-    "lambda_tilde": "",
-    "delta_lambda": "",
-    "peak_luminosity": "",
-    "peak_luminosity_non_evolved": "",
-    "final_mass": "",
-    "final_mass_non_evolved": "",
-    "final_spin": "",
-    "final_spin_non_evolved": "",
-    "radiated_energy": "",
-    "radiated_energy_non_evolved": "",
+    "reference_frequency": (
+        "the frequency at which the frequency dependent parameters are defined"
+    ),
+    "a_1_azimuthal": (
+        "the azimuthal spin angle of the primary object"
+    ),
+    "a_1_polar": (
+        "the polar spin angle of the primary object"
+    ),
+    "a_2_azimuthal": (
+        "the azimuthal spin angle of the secondary object"
+    ),
+    "a_2_polar": (
+        "the polar spin angle of the secondary object"
+    ),
+    "lambda_1": (
+        "the dimensionless tidal deformability of the primary object"
+    ),
+    "lambda_2": (
+        "the dimensionless tidal deformability of the secondary object"
+    ),
+    "lambda_tilde": (
+        "the combined dimensionless tidal deformability"
+    ),
+    "delta_lambda": (
+        "the relative difference in the combined tidal deformability"
+    ),
+    "peak_luminosity": (
+        "the peak gravitational wave luminosity estimated using the spins "
+        "evolved to the ISCO frequency"
+    ),
+    "peak_luminosity_non_evolved": (
+        "the peak gravitational wave luminosity estimated using the spins "
+        "defined at the reference frequency"
+    ),
+    "final_mass": (
+        "the detector-frame remnant mass estimated using the spins evolved to "
+        "the ISCO frequency"
+    ),
+    "final_mass_source": (
+        "the source-frame remnant mass estimated using the spins evolved to "
+        "the ISCO frequency"
+    ),
+    "final_mass_non_evolved": (
+        "the detector-frame remnant mass estimated using the spins evolved to "
+        "the ISCO frequency"
+    ),
+    "final_mass_source_non_evolved": (
+        "the source-frame remnant mass estimated using the spins defined at "
+        "the reference frequency"
+    ),
+    "final_spin": (
+        "the spin of the remnant object estimated using the spins evolved to "
+        "the ISCO frequency"
+    ),
+    "final_spin_non_evolved": (
+        "the spin of the remnant object estimated using the spins defined at "
+        "the reference frequency"
+    ),
+    "radiated_energy": (
+        "the energy radiated in gravitational waves. Defined as the difference "
+        "between the source total and source remnant mass. The source remnant "
+        "mass was estimated using the spins evolved at the ISCO frequency"
+    ),
+    "radiated_energy_non_evolved": (
+        "the energy radiated in gravitational waves. Defined as the difference "
+        "between the source total and source remant mass. The source remnant "
+        "mass was estimated using the spins defined at the reference frequency"
+    ),
 }
+
+for detector in _IFOS:
+    descriptive_names["{}_optimal_snr".format(detector)] = (
+        "the optimal signal to noise ratio in the %s gravitational wave "
+        "detector" % (detector)
+    )
+    descriptive_names["{}_matched_filter_snr".format(detector)] = (
+        "the real component of the complex matched filter signal to noise "
+        "ratio in the %s gravitational wave detector" % (detector)
+    )
+    descriptive_names["{}_matched_filter_abs_snr".format(detector)] = (
+        "the absolute value of the complex matched filter signal to noise "
+        "ratio in the %s gravitational wave detector" % (detector)
+    )
+    descriptive_names["{}_matched_filter_snr_abs".format(detector)] = (
+        "the absolute value of the complex matched filter signal to noise "
+        "ratio in the %s gravitational wave detector" % (detector)
+    )
+    descriptive_names["{}_matched_filter_snr_angle".format(detector)] = (
+        "the angle of the complex component of the matched filter signal to "
+        "noise ratio in the %s gravitational wave detector" % (detector)
+    )
+    descriptive_names["{}_time".format(detector)] = (
+        "the GPS merger time at the %s gravitational wave detector" % (detector)
+    )
