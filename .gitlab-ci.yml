@@ -126,9 +126,8 @@ documentation:
   image: python:3.6
   needs:
     - tarball
-  before_script:
-    - pip install -r optional_requirements.txt
   script:
+    - pip install pesummary-*.tar.*
     - cd docs
     - make clean
     - bash build_docs.sh
