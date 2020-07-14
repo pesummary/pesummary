@@ -286,6 +286,11 @@ class SamplesDict(dict):
             likelihoods = likelihoods[discard_samples:]
         else:
             likelihoods = None
+        if "log_prior" in self.parameters:
+            priors = self.samples[self.parameters.index("log_prior")]
+            priors = priors[discard_samples:]
+        else:
+            priors = None
         if any(i in self.parameters for i in ["weights", "weight"]):
             ind = (
                 self.parameters.index("weights") if "weights" in self.parameters
@@ -296,7 +301,8 @@ class SamplesDict(dict):
             weights = None
         for key, val in zip(self.parameters, self.samples):
             self[key] = Array(
-                val[discard_samples:], likelihood=likelihoods, weights=weights
+                val[discard_samples:], likelihood=likelihoods, prior=priors,
+                weights=weights
             )
 
     def plot(self, *args, type="marginalized_posterior", **kwargs):
@@ -933,14 +939,17 @@ class Array(np.ndarray):
     mean: float
         mean of the input array
     """
-    __slots__ = ["standard_deviation", "minimum", "maximum", "maxL", "weights"]
+    __slots__ = [
+        "standard_deviation", "minimum", "maximum", "maxL", "maxP", "weights"
+    ]
 
-    def __new__(cls, input_array, likelihood=None, weights=None):
+    def __new__(cls, input_array, likelihood=None, prior=None, weights=None):
         obj = np.asarray(input_array).view(cls)
         obj.standard_deviation = np.std(obj)
         obj.minimum = np.min(obj)
         obj.maximum = np.max(obj)
         obj.maxL = cls._maxL(obj, likelihood)
+        obj.maxP = cls._maxP(obj, log_likelihood=likelihood, log_prior=prior)
         obj.weights = weights
         return obj
 
@@ -952,12 +961,13 @@ class Array(np.ndarray):
         return (pickled_state[0], pickled_state[1], new_state)
 
     def __setstate__(self, state):
-        self.standard_deviation = state[-5]
-        self.minimum = state[-4]
-        self.maximum = state[-3]
-        self.maxL = state[-2]
+        self.standard_deviation = state[-6]
+        self.minimum = state[-5]
+        self.maximum = state[-4]
+        self.maxL = state[-3]
+        self.maxP = state[-2]
         self.weights = state[-1]
-        super(Array, self).__setstate__(state[0:-5])
+        super(Array, self).__setstate__(state[0:-6])
 
     def average(self, type="mean"):
         """Return the average of the array
@@ -1023,6 +1033,27 @@ class Array(np.ndarray):
         return None
 
     @staticmethod
+    def _maxP(array, log_likelihood=None, log_prior=None):
+        """Return the maximum posterior value of the array
+
+        Parameters
+        ----------
+        array: np.ndarray
+            input array
+        log_likelihood: np.ndarray, optional
+            log likelihoods associated with each sample
+        log_prior: np.ndarray, optional
+            log prior associated with each sample
+        """
+        if any(param is None for param in [log_likelihood, log_prior]):
+            return None
+        likelihood = np.array(log_likelihood)
+        prior = np.array(log_prior)
+        posterior = likelihood + prior
+        ind = np.argmax(posterior)
+        return array[ind]
+
+    @staticmethod
     def percentile(array, weights=None, percentile=None):
         """Compute the Nth percentile of a set of weighted samples
 
@@ -1081,4 +1112,5 @@ class Array(np.ndarray):
         self.minimum = getattr(obj, 'minimum', None)
         self.maximum = getattr(obj, 'maximum', None)
         self.maxL = getattr(obj, 'maxL', None)
+        self.maxP = getattr(obj, 'maxP', None)
         self.weights = getattr(obj, 'weights', None)

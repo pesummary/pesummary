@@ -22,7 +22,7 @@ from pesummary.core.webpage import webpage
 from pesummary.core.webpage.main import _WebpageGeneration as _CoreWebpageGeneration
 from pesummary.core.webpage.main import PlotCaption
 from pesummary.gw.file.standard_names import descriptive_names
-from pesummary.utils.utils import logger, jensen_shannon_divergence
+from pesummary.utils.utils import logger, jensen_shannon_divergence, safe_round
 from pesummary import conf
 
 
@@ -369,18 +369,18 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             for j in self.samples[i].keys():
                 row = []
                 row.append(j)
-                row.append(np.round(self.key_data[i][j]["maxL"], 3))
-                row.append(np.round(self.key_data[i][j]["mean"], 3))
-                row.append(np.round(self.key_data[i][j]["median"], 3))
-                row.append(np.round(self.key_data[i][j]["std"], 3))
-                row.append(np.round(self.key_data[i][j]["5th percentile"], 3))
-                row.append(np.round(self.key_data[i][j]["95th percentile"], 3))
+                row.append(safe_round(self.key_data[i][j]["maxL"], 3))
+                row.append(safe_round(self.key_data[i][j]["maxP"], 3))
+                row.append(safe_round(self.key_data[i][j]["mean"], 3))
+                row.append(safe_round(self.key_data[i][j]["median"], 3))
+                row.append(safe_round(self.key_data[i][j]["5th percentile"], 3))
+                row.append(safe_round(self.key_data[i][j]["95th percentile"], 3))
                 contents.append(row)
 
             html_file.make_table(
                 headings=[
-                    "posterior", "maxL", "mean", "median", "std", "5th percentile",
-                    "95th percentile"
+                    "posterior", "maxL", "maxP", "mean", "median",
+                    "5th percentile", "95th percentile"
                 ], contents=contents, heading_span=1, accordian=False,
                 format="table-hover header-fixed", sticky_header=True
             )
