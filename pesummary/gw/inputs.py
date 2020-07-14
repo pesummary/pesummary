@@ -1093,6 +1093,8 @@ class GWPostProcessing(PostProcessing):
                 return data.standard_deviation
             elif not multiple and _type == "maxL":
                 return data.maxL
+            elif not multiple and _type == "maxP":
+                return data.maxP
             elif not multiple and _type == "5th percentile":
                 return data.confidence_interval(percentile=5)
             elif not multiple and _type == "95th percentile":
@@ -1120,8 +1122,8 @@ class GWPostProcessing(PostProcessing):
                     _type: smart_average(
                         val[j], multiple=self.mcmc_samples, _type=_type
                     ) for _type in [
-                        "mean", "median", "std", "maxL", "5th percentile",
-                        "95th percentile"
+                        "mean", "median", "std", "maxL", "maxP",
+                        "5th percentile", "95th percentile"
                     ]
                 } for j in val.keys()
             } for key, val in self.samples.items()

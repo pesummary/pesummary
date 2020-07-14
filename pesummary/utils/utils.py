@@ -680,6 +680,25 @@ def smart_round(parameters, return_latex=False, return_latex_row=False):
         return rounded
 
 
+def safe_round(a, decimals=0, **kwargs):
+    """Try and round an array to the given number of decimals. If an exception
+    is raised, return the original array
+
+    Parameters
+    ----------
+    a: np.ndarray
+        array you wish to round
+    decimals: int
+        the number of decimals you wish to round too
+    **kwargs: dict
+        all kwargs are passed to numpy.round
+    """
+    try:
+        return np.round(a, decimals=decimals, **kwargs)
+    except Exception:
+        return a
+
+
 def gelman_rubin(samples, decimal=5):
     """Return an approximation to the Gelman-Rubin statistic (see Gelman, A. and
      Rubin, D. B., Statistical Science, Vol 7, No. 4, pp. 457--511 (1992))
