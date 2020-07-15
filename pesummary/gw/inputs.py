@@ -408,7 +408,7 @@ class _GWInput(_Input):
                         if psd_data != {} and psd_data is not None:
                             data[label] = {
                                 ifo: self.extract_psd_data_from_file(
-                                    psd_data[ifo]
+                                    psd_data[ifo], IFO=ifo
                                 ) for ifo in psd_data.keys()
                             }
             self._psd = data
@@ -592,7 +592,7 @@ class _GWInput(_Input):
         self._pastro_probs = probabilities
 
     @staticmethod
-    def extract_psd_data_from_file(file):
+    def extract_psd_data_from_file(file, IFO=None):
         """Return the data stored in a psd file
 
         Parameters
@@ -607,11 +607,7 @@ class _GWInput(_Input):
             "generated and the PSD data will not be added to the metafile."
         )
         try:
-            f = np.genfromtxt(file)
-            return PSD(f)
-        except ValueError:
-            f = np.genfromtxt(file, skip_footer=2)
-            return PSD(f)
+            return PSD.read(file, IFO=IFO)
         except FileNotFoundError:
             logger.info(
                 general.format("the file {} does not exist".format(file))
@@ -622,7 +618,7 @@ class _GWInput(_Input):
             return {}
 
     @staticmethod
-    def extract_calibration_data_from_file(file):
+    def extract_calibration_data_from_file(file, **kwargs):
         """Return the data stored in a calibration file
 
         Parameters
@@ -693,17 +689,19 @@ class _GWInput(_Input):
                 )
             for idx in range(len(input[keys[0]])):
                 data[self.labels[idx]] = {
-                    i: executable(input[i][idx]) for i in list(keys)
+                    i: executable(input[i][idx], IFO=i) for i in list(keys)
                 }
         elif isinstance(input, dict):
             for i in self.labels:
                 data[i] = {
-                    j: executable(input[j]) for j in list(input.keys())
+                    j: executable(input[j], IFO=j) for j in list(input.keys())
                 }
         elif isinstance(input, list):
             for i in self.labels:
                 data[i] = {
-                    self.get_ifo_from_file_name(j): executable(j) for j in input
+                    self.get_ifo_from_file_name(j): executable(
+                        j, IFO=self.get_ifo_from_file_name(j)
+                    ) for j in input
                 }
         else:
             raise InputError(

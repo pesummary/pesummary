@@ -16,6 +16,7 @@
 import os
 import numpy as np
 from pesummary import conf
+from pesummary.core.file.formats.base_read import Read
 from pesummary.utils.utils import logger, check_file_exists_and_rename
 from pesummary.utils.dict import Dict
 
@@ -100,6 +101,75 @@ class PSD(np.ndarray):
                 "Invalid input data. See the docs for instructions"
             )
         return obj
+
+    @classmethod
+    def read(cls, path_to_file, **kwargs):
+        """Read in a file and initialize the PSD class
+
+        Parameters
+        ----------
+        path_to_file: str
+            the path to the file you wish to load
+        **kwargs: dict
+            all kwargs are passed to the read methods
+        """
+        mapping = {
+            "dat": PSD.read_from_dat,
+            "txt": PSD.read_from_dat,
+            "xml": PSD.read_from_xml,
+        }
+        if not os.path.isfile(path_to_file):
+            raise FileNotFoundError(
+                "The file '{}' does not exist".format(path_to_file)
+            )
+        extension = Read.extension_from_path(path_to_file)
+        if ".xml.gz" in path_to_file:
+            return cls(mapping["xml"](path_to_file, **kwargs))
+        elif extension not in mapping.keys():
+            raise NotImplementedError(
+                "Unable to read in a PSD with format '{}'. The allowed formats "
+                "are: {}".format(extension, ", ".join(list(mapping.keys())))
+            )
+        return cls(mapping[extension](path_to_file, **kwargs))
+
+    @staticmethod
+    def read_from_dat(path_to_file, IFO=None, **kwargs):
+        """Read in a dat file and return a numpy array containing the data
+
+        Parameters
+        ----------
+        path_to_file: str
+            the path to the file you wish to load
+        **kwargs: dict
+            all kwargs are passed to the numpy.genfromtxt method
+        """
+        try:
+            data = np.genfromtxt(path_to_file, **kwargs)
+            return data
+        except ValueError:
+            data = np.genfromtxt(path_to_file, skip_footer=2, **kwargs)
+            return data
+
+    @staticmethod
+    def read_from_xml(path_to_file, IFO=None, **kwargs):
+        """Read in an xml file and return a numpy array containing the data
+
+        Parameters
+        ----------
+        path_to_file: str
+            the path to the file you wish to load
+        IFO: str, optional
+            name of the dataset that you wish to load
+        **kwargs: dict
+            all kwargs are passed to the
+            gwpy.frequencyseries.FrequencySeries.read method
+        """
+        from gwpy.frequencyseries import FrequencySeries
+
+        data = FrequencySeries.read(path_to_file, name=IFO, **kwargs)
+        frequencies = np.array(data.frequencies)
+        strains = np.array(data)
+        return np.vstack([frequencies, strains]).T
 
     def save_to_file(self, file_name, comments="#", delimiter=conf.delimiter):
         """Save the calibration data to file
