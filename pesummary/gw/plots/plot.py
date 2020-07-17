@@ -247,6 +247,37 @@ def _make_extrinsic_corner_plot(samples, latex_labels, **kwargs):
     )[0]
 
 
+def _make_comparison_corner_plot(
+    samples, latex_labels, corner_parameters=None, colors=conf.corner_colors,
+    **kwargs
+):
+    """Generate a corner plot which contains multiple datasets
+
+    Parameters
+    ----------
+    samples: dict
+        nested dictionary containing the label as key and SamplesDict as item
+        for each dataset you wish to plot
+    latex_labels: dict
+        dictionary of latex labels for each parameter
+    corner_parameters: list, optional
+        corner parameters you wish to include in the plot
+    colors: list, optional
+        unique colors for each dataset
+    **kwargs: dict
+        all kwargs are passed to `corner.corner`
+    """
+    from pesummary.core.plots.plot import _make_comparison_corner_plot
+
+    if corner_parameters is None:
+        corner_parameters = conf.gw_corner_parameters
+
+    return _make_comparison_corner_plot(
+        samples, latex_labels, corner_parameters=corner_parameters,
+        colors=colors, **kwargs
+    )
+
+
 def __antenna_response(name, ra, dec, psi, time_gps):
     """Calculate the antenna response function
 

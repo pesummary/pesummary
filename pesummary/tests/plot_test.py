@@ -260,6 +260,30 @@ class TestPlot(object):
         fig = gwplot._make_extrinsic_corner_plot(samples, latex_labels) 
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
+    def test_comparison_corner_plot(self):
+        latex_labels = {"luminosity_distance": r"$d_{L}$",
+                        "dec": r"$\delta$",
+                        "a_2": r"$a_{2}$", "a_1": r"$a_{1}$",
+                        "geocent_time": r"$t$", "phi_jl": r"$\phi_{JL}$",
+                        "psi": r"$\Psi$", "ra": r"$\alpha$", "phase": r"$\psi$",
+                        "mass_2": r"$m_{2}$", "mass_1": r"$m_{1}$",
+                        "phi_12": r"$\phi_{12}$", "tilt_2": r"$t_{1}$",
+                        "iota": r"$\iota$", "tilt_1": r"$t_{1}$",
+                        "chi_p": r"$\chi_{p}$", "chirp_mass": r"$\mathcal{M}$",
+                        "mass_ratio": r"$q$", "symmetric_mass_ratio": r"$\eta$",
+                        "total_mass": r"$M$", "chi_eff": r"$\chi_{eff}$"}
+        samples = [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]]*21
+        samples = [np.random.random(21).tolist() for i in range(21)]
+        params = list(latex_labels.keys())
+        _samples = {
+            i: samples[num] for num, i in enumerate(params)}
+        _samples = {"one": _samples, "two": _samples}
+        fig = gwplot._make_comparison_corner_plot(
+            _samples, latex_labels, corner_parameters=params
+        )
+        assert isinstance(fig, matplotlib.figure.Figure) == True
+        fig.close()
+
     def test_sensitivity_plot(self):
         maxL_params = {"approximant": "IMRPhenomPv2", "mass_1": 10., "mass_2": 5.,
                        "iota": 1., "phi_jl": 0., "tilt_1": 0., "tilt_2": 0.,
@@ -358,7 +382,7 @@ class TestPublication(object):
             np.random.uniform(0., 3000, 1000),
             np.random.uniform(0., 3000, 1000)
         ]
-        labels = ["a"]
+        labels = ["a", "b"]
         fig = violin_plots(parameter, samples, labels, {"a": "a", "b": "b"})
         assert isinstance(fig, matplotlib.figure.Figure)
 

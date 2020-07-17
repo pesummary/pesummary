@@ -56,6 +56,9 @@ class SamplesDict(dict):
         Number of samples stored in the SamplesDict object
     latex_labels: dict
         Dictionary of latex labels for each parameter
+    available_plots: list
+        list of plots which the user may user to display the contained posterior
+        samples
 
     Methods
     -------
@@ -216,6 +219,19 @@ class SamplesDict(dict):
     def number_of_samples(self):
         return len(self[self.parameters[0]])
 
+    @property
+    def plotting_map(self):
+        return {
+            "marginalized_posterior": self._marginalized_posterior,
+            "skymap": self._skymap,
+            "hist": self._marginalized_posterior,
+            "corner": self._corner
+        }
+
+    @property
+    def available_plots(self):
+        return list(self.plotting_map.keys())
+
     def to_pandas(self):
         """Convert a SamplesDict object to a pandas dataframe
         """
@@ -317,20 +333,14 @@ class SamplesDict(dict):
         **kwargs: dict
             all additional kwargs are passed to the plotting function
         """
-        plotting_map = {
-            "marginalized_posterior": self._marginalized_posterior,
-            "skymap": self._skymap,
-            "hist": self._marginalized_posterior,
-            "corner": self._corner
-        }
-        if type not in plotting_map.keys():
+        if type not in self.plotting_map.keys():
             raise NotImplementedError(
                 "The {} method is not currently implemented. The allowed "
                 "plotting methods are {}".format(
-                    type, ", ".join(plotting_map.keys())
+                    type, ", ".join(self.available_plots)
                 )
             )
-        return plotting_map[type](*args, **kwargs)
+        return self.plotting_map[type](*args, **kwargs)
 
     def _marginalized_posterior(self, parameter, module="core", **kwargs):
         """Wrapper for the `pesummary.core.plots.plot._1d_histogram_plot` or
@@ -785,6 +795,9 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         Total number of samples stored across the multiple analyses
     minimum_number_of_samples: int
         The number of samples in the smallest analysis
+    available_plots: list
+        list of plots which the user may user to display the contained posterior
+        samples
 
     Methods
     -------
@@ -808,6 +821,17 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         )
         self.name = MultiAnalysisSamplesDict
 
+    @property
+    def plotting_map(self):
+        return {
+            "hist": self._marginalized_posterior,
+            "corner": self._corner
+        }
+
+    @property
+    def available_plots(self):
+        return list(self.plotting_map.keys())
+
     def plot(
         self, *args, type="hist", labels="all", colors=None, **kwargs
     ):
@@ -827,14 +851,11 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         **kwargs: dict
             all additional kwargs are passed to the plotting function
         """
-        plotting_map = {
-            "hist": self._marginalized_posterior
-        }
-        if type not in plotting_map.keys():
+        if type not in self.plotting_map.keys():
             raise NotImplementedError(
                 "The {} method is not currently implemented. The allowed "
                 "plotting methods are {}".format(
-                    type, ", ".join(plotting_map.keys())
+                    type, ", ".join(self.available_plots)
                 )
             )
 
@@ -856,7 +877,7 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
 
         kwargs["labels"] = labels
         kwargs["colors"] = colors
-        return plotting_map[type](*args, **kwargs)
+        return self.plotting_map[type](*args, **kwargs)
 
     def _marginalized_posterior(
         self, parameter, module="core", labels="all", colors=None, **kwargs
@@ -885,6 +906,40 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         return getattr(module, "_1d_comparison_histogram_plot")(
             parameter, [self[label][parameter] for label in labels],
             colors, self.latex_labels[parameter], labels, **kwargs
+        )
+
+    def _corner(self, module="core", labels="all", parameters=None, **kwargs):
+        """Wrapper for the `pesummary.core.plots.plot._make_comparison_corner_plot`
+        or `pesummary.gw.plots.plot._make_comparison_corner_plot` function
+
+        Parameters
+        ----------
+        module: str, optional
+            module you wish to use for the plotting
+        labels: list
+            list of analyses that you wish to include in the plot
+        **kwargs: dict
+            all additional kwargs are passed to the `_make_comparison_corner_plot`
+            function
+        """
+        module = importlib.import_module(
+            "pesummary.{}.plots.plot".format(module)
+        )
+        _samples = {label: self[label] for label in labels}
+        _parameters = None
+        if parameters is not None:
+            _parameters = [
+                param for param in parameters if all(
+                    param in posterior for posterior in _samples.values()
+                )
+            ]
+            if not len(_parameters):
+                raise ValueError(
+                    "None of the chosen parameters are in all of the posterior "
+                    "samples tables. Please choose other parameters to plot"
+                )
+        return getattr(module, "_make_comparison_corner_plot")(
+            _samples, self.latex_labels, corner_parameters=_parameters, **kwargs
         )
 
     def js_divergence(self, parameter, decimal=5):

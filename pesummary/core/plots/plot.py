@@ -511,7 +511,9 @@ def _comparison_box_plot(param, samples, colors, latex_label, labels):
     return fig
 
 
-def _make_corner_plot(samples, latex_labels, corner_parameters=None, **kwargs):
+def _make_corner_plot(
+    samples, latex_labels, corner_parameters=None, parameters=None, **kwargs
+):
     """Generate the corner plots for a given approximant
 
     Parameters
@@ -530,7 +532,8 @@ def _make_corner_plot(samples, latex_labels, corner_parameters=None, **kwargs):
     logger.debug("Generating the corner plot")
     # set the default kwargs
     default_kwargs = conf.corner_kwargs
-    parameters = list(samples.keys())
+    if parameters is None:
+        parameters = list(samples.keys())
     if corner_parameters is not None:
         included_parameters = [i for i in parameters if i in corner_parameters]
     else:
@@ -538,6 +541,7 @@ def _make_corner_plot(samples, latex_labels, corner_parameters=None, **kwargs):
     xs = np.zeros([len(included_parameters), len(samples[parameters[0]])])
     for num, i in enumerate(included_parameters):
         xs[num] = samples[i]
+    default_kwargs.update(kwargs)
     default_kwargs['range'] = [1.0] * len(included_parameters)
     default_kwargs["labels"] = [latex_labels[i] for i in included_parameters]
 
@@ -563,3 +567,60 @@ def _make_corner_plot(samples, latex_labels, corner_parameters=None, **kwargs):
         "x0": location[0][0], "y0": location[0][0]
     }
     return _figure, included_parameters, data
+
+
+def _make_comparison_corner_plot(
+    samples, latex_labels, corner_parameters=None, colors=conf.corner_colors,
+    **kwargs
+):
+    """Generate a corner plot which contains multiple datasets
+
+    Parameters
+    ----------
+    samples: dict
+        nested dictionary containing the label as key and SamplesDict as item
+        for each dataset you wish to plot
+    latex_labels: dict
+        dictionary of latex labels for each parameter
+    corner_parameters: list, optional
+        corner parameters you wish to include in the plot
+    colors: list, optional
+        unique colors for each dataset
+    **kwargs: dict
+        all kwargs are passed to `corner.corner`
+    """
+    parameters = corner_parameters
+    if corner_parameters is None:
+        _parameters = [list(_samples.keys()) for _samples in samples.values()]
+        parameters = [
+            i for i in _parameters[0] if all(
+                i in _params for _params in _parameters
+            )
+        ]
+    if len(samples.keys()) > len(colors):
+        raise ValueError("Please provide a unique color for each dataset")
+
+    hist_kwargs = kwargs.get("hist_kwargs", dict())
+    hist_kwargs["density"] = True
+    lines = []
+    for num, (label, posterior) in enumerate(samples.items()):
+        lines.append(mlines.Line2D([], [], color=colors[num], label=label))
+        _samples = {
+            param: value for param, value in posterior.items() if param in
+            parameters
+        }
+        hist_kwargs["color"] = colors[num]
+        kwargs.update({"hist_kwargs": hist_kwargs})
+        if num == 0:
+            fig, _, _ = _make_corner_plot(
+                _samples, latex_labels, corner_parameters=corner_parameters,
+                parameters=parameters, color=colors[num], **kwargs
+            )
+        else:
+            fig, _, _ = _make_corner_plot(
+                _samples, latex_labels, corner_parameters=corner_parameters,
+                fig=fig, parameters=parameters, color=colors[num], **kwargs
+            )
+    fig.legend(handles=lines, loc="upper right")
+    lines = []
+    return fig

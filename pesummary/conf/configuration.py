@@ -61,10 +61,13 @@ bayes_factor = "bayes_factor"
 log_noise_evidence = "ln_noise_evidence"
 log_prior_volume = "ln_prior_volume"
 
+# corner.corner colors
+corner_colors = ['#0072C1', '#b30909', '#8809b3', '#b37a09']
+
 # corner.corner default kwargs
 corner_kwargs = dict(
     bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
-    title_kwargs=dict(fontsize=16), color='#0072C1',
+    title_kwargs=dict(fontsize=16), color=corner_colors[0],
     truth_color='tab:orange', quantiles=[0.16, 0.84],
     levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.)),
     plot_density=False, plot_datapoints=True, fill_contours=True,
