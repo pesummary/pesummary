@@ -87,3 +87,9 @@ want to plot the samples as a KDE, we can run,
     >>> parameter = "a"
     >>> fig = samplesdict.plot(parameter, type="hist", kde=True)
     >>> plt.show()
+
+To see the full list of available plots, you can run:
+
+.. code-block:: python
+
+    >>> samplesdict.available_plots

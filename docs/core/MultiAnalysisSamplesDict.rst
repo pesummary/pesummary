@@ -98,3 +98,19 @@ and `analysis_2` samples and plot them as a KDE, we can run,
     >>> parameter = "a"
     >>> fig = samplesdict.plot(parameter, type="hist", labels=["analysis_1", "analysis_2"], kde=True)
     >>> plt.show()
+
+or if we wanted to make a corner plot which compares a subset of the
+`analysis_1` and `analysis_2` samples, we can run,
+
+.. code-block:: python
+
+    >>> import matplotlib.pyplot as plt
+    >>> parameters = ["a", "b"]
+    >>> fig = samplesdict.plot(type="corner", labels=["analysis_1", "analysis_2"], parameters=parameters)
+    >>> plt.show()
+
+To see the full list of available plots, you can run:
+
+.. code-block:: python
+
+    >>> samplesdict.available_plots
