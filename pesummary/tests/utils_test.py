@@ -556,6 +556,14 @@ class TestArray(object):
             [np.percentile(array, 5), np.percentile(array, 95)]
         )
 
+    def test_weighted_percentile(self):
+        x = np.random.normal(100, 20, 10000)
+        weights = np.array([np.random.randint(100) for _ in range(10000)])
+        array = Array(x, weights=weights)
+        numpy = np.percentile(np.repeat(x, weights), 90)
+        pesummary = array.confidence_interval(percentile=90)
+        np.testing.assert_almost_equal(numpy, pesummary, 6)
+
 
 class TestTQDM(object):
     """Test the pesummary.utils.tqdm.tqdm class

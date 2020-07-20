@@ -1125,19 +1125,20 @@ class Array(np.ndarray):
             return np.percentile(array, percentile)
 
         array, weights = np.array(array), np.array(weights)
-        percentile_type = percentile
+        _type = percentile
         if not isinstance(percentile, (list, np.ndarray)):
-            percentile = [float(percentile)]
+            percentile = np.array([float(percentile)])
         percentile = np.array([float(i) for i in percentile])
-        if not all(i < 1 for i in percentile):
-            percentile *= 0.01
         ind_sorted = np.argsort(array)
         sorted_data = array[ind_sorted]
         sorted_weights = weights[ind_sorted]
-        Sn = np.cumsum(sorted_weights)
-        Pn = (Sn - 0.5 * sorted_weights) / Sn[-1]
-        data = np.interp(percentile, Pn, sorted_data)
-        if isinstance(percentile_type, (int, float, np.float64, np.float32)):
+        Sn = 100 * sorted_weights.cumsum() / sorted_weights.sum()
+        data = np.zeros_like(percentile)
+        for num, p in enumerate(percentile):
+            inds = np.argwhere(Sn >= p)[0]
+            data[num] = np.interp(percentile, Sn[inds], sorted_data[inds])[0]
+
+        if isinstance(_type, (int, float, np.int, np.float64, np.float32)):
             return float(data[0])
         return data
 
