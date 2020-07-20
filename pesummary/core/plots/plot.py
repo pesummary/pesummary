@@ -409,7 +409,7 @@ def _1d_histogram_plot_mcmc(
 
 def _1d_comparison_histogram_plot(
     param, samples, colors, latex_label, labels, kde=False, linestyles=None,
-    xlow=None, xhigh=None
+    xlow=None, xhigh=None, max_vline=1
 ):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
@@ -439,8 +439,12 @@ def _1d_comparison_histogram_plot(
     fig, ax = figure(figsize=(8, 6), gca=True)
     handles = []
     for num, i in enumerate(samples):
-        if np.ptp(i) == 0:
-            ax.axvline(i[0], color=colors[num], label=labels[num])
+        if len(set(i)) <= max_vline:
+            for _ind, _sample in enumerate(set(i)):
+                _label = None
+                if _ind == 0:
+                    _label = labels[num]
+                ax.axvline(_sample, color=colors[num], label=_label)
         elif not kde:
             ax.hist(i, histtype="step", bins=50, color=colors[num],
                     label=labels[num], linewidth=2.5, density=True,

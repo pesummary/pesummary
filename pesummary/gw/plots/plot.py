@@ -141,7 +141,7 @@ def _1d_histogram_plot_mcmc(
 
 def _1d_comparison_histogram_plot(param, samples, colors,
                                   latex_label, labels, kde=False,
-                                  linestyles=None):
+                                  linestyles=None, max_vline=2):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
 
@@ -169,7 +169,8 @@ def _1d_comparison_histogram_plot(param, samples, colors,
     xlow, xhigh = _return_bounds(param, samples, comparison=True)
     return _1d_comparison_histogram_plot(
         param, samples, colors, latex_label, labels, kde=kde,
-        linestyles=linestyles, xlow=xlow, xhigh=xhigh
+        linestyles=linestyles, xlow=xlow, xhigh=xhigh,
+        max_vline=max_vline
     )
 
 
