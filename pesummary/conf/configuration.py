@@ -81,7 +81,7 @@ gw_corner_parameters = [
     "tilt_1", "chi_p", "chirp_mass", "mass_ratio", "symmetric_mass_ratio",
     "total_mass", "chi_eff", "redshift", "mass_1_source", "mass_2_source",
     "total_mass_source", "chirp_mass_source", "lambda_1", "lambda_2",
-    "delta_lambda", "lambda_tilde"
+    "delta_lambda", "lambda_tilde", "log_likelihood"
 ]
 
 # Parameters to use for GW source frame corner plot
