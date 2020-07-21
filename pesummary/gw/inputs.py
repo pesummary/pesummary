@@ -13,7 +13,7 @@
 # Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
-
+import math
 import numpy as np
 import pesummary
 from pesummary.core.inputs import _Input, Input, PostProcessing
@@ -1126,4 +1126,10 @@ class GWPostProcessing(PostProcessing):
                 } for j in val.keys()
             } for key, val in self.samples.items()
         }
+        for key, val in self.samples.items():
+            for j in val.keys():
+                _inj = self.injection_data[key][j]
+                key_data[key][j]["injected"] = (
+                    _inj[0] if not math.isnan(_inj) else _inj
+                )
         return key_data
