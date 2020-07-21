@@ -604,7 +604,14 @@ def _check_latex_install():
 
     original = rcParams['text.usetex']
     if find_executable("latex") is not None:
-        rcParams["text.usetex"] = original
+        try:
+            from matplotlib.texmanager import TexManager
+
+            texmanager = TexManager()
+            texmanager.make_dvi(r"$mass_{1}$", 12)
+            rcParams["text.usetex"] = original
+        except RuntimeError:
+            rcParams["text.usetex"] = False
     else:
         rcParams["text.usetex"] = False
 
