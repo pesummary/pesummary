@@ -15,6 +15,7 @@
 
 import os
 import uuid
+import math
 import numpy as np
 
 import pesummary
@@ -366,6 +367,15 @@ class _WebpageGeneration(_CoreWebpageGeneration):
 
             key_data = self.key_data
             contents = []
+            headings = [
+                "posterior", "maxL", "maxP", "mean", "median",
+                "5th percentile", "95th percentile"
+            ]
+            _injection = not all(
+                math.isnan(_data["injected"]) for _data in self.key_data[i].values()
+            )
+            if _injection:
+                headings.append("injected")
             for j in self.samples[i].keys():
                 row = []
                 row.append(j)
@@ -375,14 +385,14 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 row.append(safe_round(self.key_data[i][j]["median"], 3))
                 row.append(safe_round(self.key_data[i][j]["5th percentile"], 3))
                 row.append(safe_round(self.key_data[i][j]["95th percentile"], 3))
+                if _injection:
+                    row.append(safe_round(self.key_data[i][j]["injected"], 3))
                 contents.append(row)
 
             html_file.make_table(
-                headings=[
-                    "posterior", "maxL", "maxP", "mean", "median",
-                    "5th percentile", "95th percentile"
-                ], contents=contents, heading_span=1, accordian=False,
-                format="table-hover header-fixed", sticky_header=True
+                headings=headings, contents=contents, heading_span=1,
+                accordian=False, format="table-hover header-fixed",
+                sticky_header=True
             )
             html_file.end_div(4)
             html_file.end_container()
