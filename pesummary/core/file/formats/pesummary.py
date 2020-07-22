@@ -17,6 +17,7 @@ from glob import glob
 import os
 import copy
 
+import math
 import h5py
 import json
 import numpy as np
@@ -311,7 +312,13 @@ class PESummary(Read):
                     ]
             parameter_list.append(parameters)
             if "injection_data" in data.keys():
-                inj = data["injection_data"]["injection_values"].copy()
+                old_format = (h5py._hl.group.Group, dict)
+                _injection_data = data["injection_data"]
+                if not isinstance(_injection_data, old_format):
+                    parameters = [j for j in _injection_data.dtype.names]
+                    inj = np.array(_injection_data.tolist())
+                else:
+                    inj = data["injection_data"]["injection_values"].copy()
 
                 def parse_injection_value(_value):
                     if isinstance(_value, (list, np.ndarray)):
