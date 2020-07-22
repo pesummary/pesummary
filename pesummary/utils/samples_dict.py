@@ -232,17 +232,19 @@ class SamplesDict(dict):
     def available_plots(self):
         return list(self.plotting_map.keys())
 
-    def to_pandas(self):
+    def to_pandas(self, **kwargs):
         """Convert a SamplesDict object to a pandas dataframe
         """
         from pandas import DataFrame
 
-        return DataFrame(self)
+        return DataFrame(self, **kwargs)
 
-    def to_structured_array(self):
+    def to_structured_array(self, **kwargs):
         """Convert a SamplesDict object to a structured numpy array
         """
-        return self.to_pandas().to_records(index=False, column_dtypes=np.float)
+        return self.to_pandas(**kwargs).to_records(
+            index=False, column_dtypes=np.float
+        )
 
     def pop(self, parameter):
         """Delete a parameter from the SamplesDict

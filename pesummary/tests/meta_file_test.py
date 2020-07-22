@@ -499,5 +499,9 @@ class TestMetaFile(object):
             assert sorted(list(data.keys())) == sorted(
                 self.input_labels + ["version", "history"]
             )
-            for num, i in enumerate(list(self.input_injection["EXP1"].keys())):
-                assert self.input_injection["EXP1"][i] == data["EXP1"]["injection_data"]["injection_values"][num]
+            if data == self.json_file:
+                for num, i in enumerate(list(self.input_injection["EXP1"].keys())):
+                    assert self.input_injection["EXP1"][i] == data["EXP1"]["injection_data"]["samples"][num]
+            else:
+                for num, i in enumerate(list(self.input_injection["EXP1"].keys())):
+                    assert self.input_injection["EXP1"][i] == data["EXP1"]["injection_data"][i]

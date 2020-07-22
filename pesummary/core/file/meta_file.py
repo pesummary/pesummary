@@ -298,7 +298,8 @@ class _MetaFile(object):
                 "parameter_names": list(parameters), "samples": samples.tolist()
             }
             dictionary[label]["injection_data"] = {
-                "injection_values": [
+                "parameters": list(parameters),
+                "samples": [
                     self.injection_data[label][i] for i in parameters
                 ]
             }
@@ -361,7 +362,9 @@ class _MetaFile(object):
         )
 
     @staticmethod
-    def _convert_posterior_samples_to_numpy(dictionary, mcmc_samples=False):
+    def _convert_posterior_samples_to_numpy(
+        dictionary, mcmc_samples=False, index=None
+    ):
         """Convert the posterior samples from a column-major dictionary
         to a row-major numpy array
 
@@ -394,7 +397,7 @@ class _MetaFile(object):
             return {
                 key: item.to_structured_array() for key, item in data.items()
             }
-        return samples.to_structured_array()
+        return samples.to_structured_array(index=index)
 
     @staticmethod
     def _create_softlinks(dictionary):
@@ -504,6 +507,15 @@ class _MetaFile(object):
             for label in labels:
                 data[label][key] = _MetaFile._convert_posterior_samples_to_numpy(
                     samples[label], mcmc_samples=mcmc_samples
+                )
+                data[label]["injection_data"] = \
+                    _MetaFile._convert_posterior_samples_to_numpy(
+                        SamplesDict({
+                            param: samp for param, samp in zip(
+                                data[label]["injection_data"]["parameters"],
+                                data[label]["injection_data"]["samples"]
+                            )
+                        }), index=[0]
                 )
         if external_hdf5_links:
             from pathlib import Path
