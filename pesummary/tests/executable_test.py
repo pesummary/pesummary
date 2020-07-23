@@ -938,3 +938,48 @@ class TestSummaryCompare(Base):
             ".outdir/example2.json --properties_to_compare posterior_samples -v"
         )
         self.launch(command_line)
+
+
+class TestSummaryJSCompare(Base):
+    """Test the `summaryjscompare` executable
+    """
+    def setup(self):
+        """Setup the SummaryJSCompare class
+        """
+        self.dirs = [".outdir"]
+        for dd in self.dirs:
+            if not os.path.isdir(dd):
+                os.mkdir(dd)
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        for dd in self.dirs:
+            if os.path.isdir(dd):
+                shutil.rmtree(dd)
+
+    def test_runs_on_core_file(self):
+        """Test that the code successfully generates a plot for 2 core result files
+        """
+        make_result_file(bilby=True, gw=False)
+        os.rename(".outdir/test.json", ".outdir/bilby.json")
+        make_result_file(bilby=True, gw=False)
+        os.rename(".outdir/test.json", ".outdir/bilby2.json")
+        command_line = (
+            "summaryjscompare --event test-bilby1-bilby2 --main_keys  a b c d --webdir .outdir --samples .outdir/bilby.json "
+            ".outdir/bilby2.json --labels bilby_1 bilby_2"
+        )
+        self.launch(command_line)
+
+    def test_runs_on_gw_file(self):
+        """Test that the code successfully generates a plot for 2 gw result files
+        """
+        make_result_file(bilby=True, gw=True)
+        os.rename(".outdir/test.json", ".outdir/bilby.json")
+        make_result_file(lalinference=True)
+        os.rename(".outdir/test.hdf5", ".outdir/lalinference.hdf5")
+        command_line = (
+            "summaryjscompare --event test-bilby-lalinf --main_keys mass_1 mass_2 a_1 a_2 --webdir .outdir --samples .outdir/bilby.json "
+            ".outdir/lalinference.hdf5 --labels bilby lalinf"
+        )
+        self.launch(command_line)
