@@ -10,10 +10,12 @@ import argparse
 from collections import namedtuple
 
 import numpy as np
+import os
 import pandas as pd
 from scipy.stats import binom
 import matplotlib
 import matplotlib.style
+import matplotlib.pyplot as plt
 
 from pesummary.io import read
 from pesummary.core.parser import parser as pesummary_parser
@@ -21,6 +23,7 @@ from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
 from pesummary.core.plots.figure import figure
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.gw.plots.latex_labels import GWlatex_labels
+from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.tqdm import tqdm
 from pesummary.utils.utils import jensen_shannon_divergence
 from pesummary.utils.utils import _check_latex_install, get_matplotlib_style_file, logger
@@ -31,7 +34,7 @@ _check_latex_install()
 
 def load_data(data_file):
     """ Read in a data file and return samples dictionary """
-    f = read(data_file, package="gw")
+    f = read(data_file, package="gw", disable_prior=True)
     return f.samples_dict
 
 
@@ -69,7 +72,7 @@ def js_bootstrap(key, resultA, resultB, nsamples, ntests):
         bootA = np.random.choice(samplesA, size=nsamples, replace=False)
         bootB = np.random.choice(samplesB, size=nsamples, replace=False)
         js_array[j] = np.nan_to_num(
-            np.power(jensen_shannon_divergence([bootA, bootB], kde=Bounded_1d_kde, xlow=xlow, xhigh=xhigh), 2)
+            jensen_shannon_divergence([bootA, bootB], kde=Bounded_1d_kde, xlow=xlow, xhigh=xhigh)
         )
     return js_array
 
@@ -129,7 +132,7 @@ def calculate_CI(len_samples, confidence_level=0.95, n_points=1001):
     return x_values, upper, lower
 
 
-def pp_plot(event, resultA, resultB, labelA, labelB, main_keys, nsamples, js_data):
+def pp_plot(event, resultA, resultB, labelA, labelB, main_keys, nsamples, js_data, webdir):
     """
     Produce PP plot between sampleA and samplesB
     for a set of paramaters (main keys) for a given event.
@@ -137,12 +140,16 @@ def pp_plot(event, resultA, resultB, labelA, labelB, main_keys, nsamples, js_dat
     """
     # Creating dict where ks_data for each event will be saved
     fig, ax = figure(figsize=(6, 5), gca=True)
+
+    latex_labels.update(GWlatex_labels)
     for key_index, key in enumerate(main_keys):
 
         # Check the key exists in both sets of samples
         if key not in resultA or key not in resultB:
             logger.debug(f"Missing key {key}")
             continue
+        # Get minimum number of samples to use
+        nsamples = min([nsamples, len(resultA[key]), len(resultB[key])])
 
         # Resample to nsamples
         lp = np.random.choice(resultA[key], size=nsamples, replace=False)
@@ -152,12 +159,15 @@ def pp_plot(event, resultA, resultB, labelA, labelB, main_keys, nsamples, js_dat
         xhist, yhist = bin_series_and_calc_cdf(bp, lp)
 
         summary = js_data[key]
-        logger.debug(key, summary.median, summary.minus, summary.plus)
+        logger.debug(f"JS {key}: {summary.median}, {summary.minus}, {summary.plus}")
         fmt = "{{0:{0}}}".format(".5f").format
+
+        if key not in list(latex_labels.keys()):
+            latex_labels[key] = key.replace("_", " ")
         ax.plot(
             xhist,
             yhist - xhist,
-            label=GWlatex_labels[key]
+            label=latex_labels[key]
             + r" ${{{0}}}_{{-{1}}}^{{+{2}}}$".format(fmt(summary.median), fmt(summary.minus), fmt(summary.plus)),
             linewidth=1,
             linestyle="-",
@@ -175,14 +185,14 @@ def pp_plot(event, resultA, resultB, labelA, labelB, main_keys, nsamples, js_dat
     ax.set_title(r"{} N samples={:.0f}".format(event, nsamples))
     ax.grid()
     fig.tight_layout()
-    fig.savefig("{}-comparison-{}-{}.png".format(event, labelA, labelB))
+    plt.savefig(os.path.join(webdir, "{}-comparison-{}-{}.png".format(event, labelA, labelB)))
 
 
-def parse_cmd_line():
+def parse_cmd_line(args=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--event", type=str, required=True, help="Label, e.g. the event name")
     parser.add_argument(
-        "-r", "--results", type=str, nargs=2, help=("Paths to a pair of results files to compare."),
+        "-r", "--samples", type=str, nargs=2, help=("Paths to a pair of results files to compare."),
     )
     parser.add_argument("-l", "--labels", type=str, nargs=2, help="Pair of labels for each result file")
     parser.add_argument(
@@ -210,14 +220,17 @@ def parse_cmd_line():
         "--nsamples", type=int, default=10000, required=False, help="Number of samples to use",
     )
     parser.add_argument("--random-seed", type=int, default=150914)
+    parser.add_argument(
+        "--webdir", type=str, default=".", required=False, help="Path to webdirectory where plots will be saved"
+    )
 
     _parser = pesummary_parser(existing_parser=parser)
-    args, unknown = _parser.parse_known_args()
+    args, unknown = _parser.parse_known_args(args=args)
     return args
 
 
-def main():
-    args = parse_cmd_line()
+def main(args=None):
+    args = parse_cmd_line(args=args)
 
     # Set random seed
     np.random.seed(seed=args.random_seed)
@@ -226,9 +239,9 @@ def main():
     main_keys = args.main_keys
 
     # Read in the results and labels
-    resultA = load_data(args.results[0])
+    resultA = load_data(args.samples[0])
     labelA = args.labels[0]
-    resultB = load_data(args.results[1])
+    resultB = load_data(args.samples[1])
     labelB = args.labels[1]
 
     logger.debug("Evaluating JS divergence..")
@@ -238,9 +251,7 @@ def main():
         js[:, i] = js_bootstrap(key, resultA, resultB, args.nsamples, ntests=args.ntests,)
         js_data[key] = calc_median_error(js[:, i])
     logger.debug("Making pp-plot..")
-    pp_plot(
-        args.event, resultA, resultB, labelA, labelB, main_keys, args.nsamples, js_data=js_data,
-    )
+    pp_plot(args.event, resultA, resultB, labelA, labelB, main_keys, args.nsamples, js_data=js_data, webdir=args.webdir)
 
 
 if __name__ == "__main__":
