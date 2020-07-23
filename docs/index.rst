@@ -140,12 +140,21 @@ Specific to Gravitational Waves
 -------------------------------
 
 PESummary metafile
-++++++++++++++++
+++++++++++++++++++
 
 .. toctree::
     :maxdepth: 1
 
     gw/read_pesummary
+
+GW specific helper classes
+++++++++++++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    gw/psd
+    gw/calibration
 
 Parameter definitions
 +++++++++++++++++++++

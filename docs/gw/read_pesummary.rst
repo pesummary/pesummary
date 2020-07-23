@@ -37,41 +37,34 @@ a specific run by running:
 .. code-block:: python
 
     >>> calibration_data = data.priors["calibration"]["EXP1"]
-    >>> IFOs = list(calibration_data.keys())
-    >>> calibration_envelope = {
-    ...     i: np.array(
-    ...         [tuple(j) for j in calibration_data[i]], dtype=[
-    ...             ("Frequency", "f"),
-    ...             ("Median Mag", "f"),
-    ...             ("Phase (Rad)", "f"),
-    ...             ("-1 Sigma Mag", "f"),
-    ...             ("-1 Sigma Phase", "f"),
-    ...             ("+1 Sigma Mag", "f"),
-    ...             ("+1 Sigma Phase", "f")
-    ...         ]
-    ...     ) for i in IFOs
-    ... }
+    >>> IFOs = calibration_data.detectors
+    >>> IFO = IFOs[0]
+    >>> frequency = calibration_data[IFO].frequencies
+    >>> median_mag = calibration_data[IFO].magnitude
+    >>> mag_lower = calibration_data[IFO].magnitude_lower
 
+
+For more details see the `Calibration class <calibration.html>`_ tutorial.
 
 Loading the psd for a specific run
 ----------------------------------
 
 If passed from the command line, the psds that were used during the analysis
-is also stored in the PESummary metafile. You can extract it for a specific run
-by running:
+are also stored in the PESummary metafile. You can extract it for a specific
+analysis by running:
 
 .. code-block:: python
 
     >>> psd = data.psd["EXP1"]
-    >>> IFOs = list(psd.keys())
-    >>> psd_data = {
-    ...     i: np.array(
-    ...         [tuple(j) for j in psd[i]], dtype=[
-    ...             ("Frequency", "f"),
-    ...             ("Strain", "f")
-    ...         ]
-    ...     ) for i in IFOs
-    ... }
+    >>> print(type(psd))
+    <class 'pesummary.gw.file.psd.PSDDict'>
+    >>> IFOs = psd.detectors
+    >>> IFO = IFOs[0]
+    >>> frequency = psd[IFO].frequencies
+    >>> strains = psd[IFO].strains
+
+
+For more details see the `PSD class <psd.html>`_ tutorial.
 
 
 Converting file format
