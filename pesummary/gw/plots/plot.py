@@ -650,7 +650,7 @@ def _ligo_skymap_contours(ax, skymap, contour=[50, 90], colors='k'):
     return cls, cs
 
 
-def _default_skymap_plot(ra, dec, weights=None, **kwargs):
+def _default_skymap_plot(ra, dec, weights=None, injection=None, **kwargs):
     """Plot the default sky location of the source for a given approximant
 
     Parameters
@@ -721,6 +721,11 @@ def _default_skymap_plot(ra, dec, weights=None, **kwargs):
 
     ax.pcolormesh(X2, Y2, H2.T, vmin=0., vmax=H2.T.max(), cmap="cylon")
     cs = ax.contour(X2, Y2, H2.T, V, colors="k", linewidths=0.5)
+    if injection is not None:
+        ax.scatter(
+            -injection[0] + np.pi, injection[1], marker="*",
+            color=conf.injection_color, edgecolors='k', linewidth=1.75, s=100
+        )
     fmt = {l: s for l, s in zip(cs.levels, [r"$90\%$", r"$50\%$"])}
     ax.clabel(cs, fmt=fmt, fontsize=8, inline=True)
     text = []

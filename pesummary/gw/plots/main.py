@@ -266,7 +266,8 @@ class _PlotGeneration(_BasePlotGeneration):
             samples = self.samples[label]
         self._skymap_plot(
             self.savedir, samples["ra"], samples["dec"], label,
-            self.weights[label]
+            self.weights[label],
+            [self.injection_data[label]["ra"], self.injection_data[label]["dec"]]
         )
 
         if SKYMAP and not self.no_ligo_skymap and self.skymap[label] is None:
@@ -301,7 +302,7 @@ class _PlotGeneration(_BasePlotGeneration):
 
     @staticmethod
     @no_latex_plot
-    def _skymap_plot(savedir, ra, dec, label, weights):
+    def _skymap_plot(savedir, ra, dec, label, weights, injection=None):
         """Generate a skymap plot for a given set of samples
 
         Parameters
@@ -316,8 +317,14 @@ class _PlotGeneration(_BasePlotGeneration):
             the label corresponding to the results file
         weights: list
             list of weights for the samples
+        injection: list, optional
+            list containing the injected value of ra and dec
         """
-        fig = gw._default_skymap_plot(ra, dec, weights)
+        import math
+
+        if injection is not None and any(math.isnan(inj) for inj in injection):
+            injection = None
+        fig = gw._default_skymap_plot(ra, dec, weights, injection=injection)
         _PlotGeneration.save(
             fig, os.path.join(savedir, "{}_skymap".format(label))
         )
