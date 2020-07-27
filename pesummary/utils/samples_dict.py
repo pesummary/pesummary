@@ -827,7 +827,8 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
     def plotting_map(self):
         return {
             "hist": self._marginalized_posterior,
-            "corner": self._corner
+            "corner": self._corner,
+            "triangle": self._triangle
         }
 
     @property
@@ -908,6 +909,40 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         return getattr(module, "_1d_comparison_histogram_plot")(
             parameter, [self[label][parameter] for label in labels],
             colors, self.latex_labels[parameter], labels, **kwargs
+        )
+
+    def _triangle(self, parameters, labels="all", **kwargs):
+        """Wrapper for the `pesummary.core.plots.publication.triangle_plot`
+        function
+
+        Parameters
+        ----------
+        labels: list
+            list of analyses that you wish to include in the plot
+        **kwargs: dict
+            all additional kwargs are passed to the `triangle_plot` function
+        """
+        from pesummary.core.plots.publication import triangle_plot
+
+        samples = [self[label] for label in labels]
+        if len(parameters) > 2:
+            raise ValueError("Function is only 2d")
+        condition = set(
+            label for num, label in enumerate(labels) for param in parameters if
+            param not in samples[num].keys()
+        )
+        if len(condition):
+            raise ValueError(
+                "{} and {} are not available for the following "
+                " analyses: {}".format(
+                    parameters[0], parameters[1], ", ".join(condition)
+                )
+            )
+        return triangle_plot(
+            [_samples[parameters[0]] for _samples in samples],
+            [_samples[parameters[1]] for _samples in samples],
+            xlabel=self.latex_labels[parameters[0]],
+            ylabel=self.latex_labels[parameters[1]], labels=labels, **kwargs
         )
 
     def _corner(self, module="core", labels="all", parameters=None, **kwargs):

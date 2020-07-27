@@ -1,0 +1,190 @@
+# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import numpy as np
+from matplotlib import gridspec
+from scipy.stats import gaussian_kde
+import corner
+
+from pesummary.core.plots.figure import figure
+from pesummary import conf
+
+
+def _triangle_axes(
+    figsize=(8, 8), width_ratios=[4, 1], height_ratios=[1, 4], wspace=0.0,
+    hspace=0.0,
+):
+    """Initialize the axes for a 2d triangle plot
+
+    Parameters
+    ----------
+    figsize: tuple, optional
+        figure size you wish to use. Default (8, 8)
+    width_ratios: list, optional
+        ratio of widths for the triangular axis. Default 4:1
+    height_ratios: list, optional
+        ratio of heights for the triangular axis. Default 1:4
+    wspace: float, optional
+        horizontal space between the axis. Default 0.0
+    hspace: float, optional
+        vertical space between the axis. Default 0.0
+    """
+    high1d = 1.0
+    fig = figure(figsize=figsize, gca=False)
+    gs = gridspec.GridSpec(
+        2, 2, width_ratios=width_ratios, height_ratios=height_ratios,
+        wspace=wspace, hspace=hspace
+    )
+    ax1, ax3, ax4 = (
+        fig.add_subplot(gs[0]), fig.add_subplot(gs[2]), fig.add_subplot(gs[3])
+    )
+    ax1.minorticks_on()
+    ax3.minorticks_on()
+    ax4.minorticks_on()
+    ax1.xaxis.set_ticklabels([])
+    ax4.yaxis.set_ticklabels([])
+    return fig, ax1, ax3, ax4
+
+
+def triangle_plot(
+    x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
+    fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
+    xlabel=None, ylabel=None, fontsize=12, linestyles=None,
+    linewidths=None, plot_density=True, percentiles=None, fig_kwargs={},
+    labels=None
+):
+    """Generate a triangular plot made of 3 axis. One central axis showing the
+    2d marginalized posterior and two smaller axes showing the marginalized 1d
+    posterior distribution
+
+    Parameters
+    ----------
+    x: list
+        list of samples for the x axis
+    y: list
+        list of samples for the y axis
+    kde: Bool/func, optional
+        kde to use for smoothing the 1d marginalized posterior distribution. If
+        you do not want to use KDEs, simply pass kde=False. Default
+        scipy.stats.gaussian_kde
+    npoints: int, optional
+        number of points to use for the 1d kde
+    kde_kwargs: dict, optional
+        optional kwargs which are passed directly to the kde function
+    fill: Bool, optional
+        whether or not to fill the 1d posterior distributions
+    fill_alpha: float, optional
+        alpha to use for fill
+    levels: list, optional
+        levels you wish to use for the 2d contours
+    smooth: float, optional
+        how much smoothing you wish to use for the 2d contours
+    colors: list, optional
+        list of colors you wish to use for each analysis
+    xlabel: str, optional
+        xlabel you wish to use for the plot
+    ylabel: str, optional
+        ylabel you wish to use for the plot
+    fontsize: int, optional
+        fontsize you wish to use labels
+    linestyles: list, optional
+        linestyles you wish to use for each analysis
+    linewidths: list, optional
+        linewidths you wish to use for each analysis
+    plot_density: Bool, optional
+        whether or not to plot the density on the 2d contour. Default True
+    percentiles: list, optional
+        percentiles you wish to plot. Default None
+    fig_kwargs: dict, optional
+        optional kwargs passed directly to the _triangle_axes function
+    labels: list, optional
+        label associated with each set of samples
+    """
+    fig, ax1, ax3, ax4 = _triangle_axes(**fig_kwargs)
+    if not isinstance(x[0], (list, np.ndarray)):
+        x, y = np.atleast_2d(x), np.atleast_2d(y)
+    _base_error = "Please provide {} for each analysis"
+    if len(colors) < len(x):
+        raise ValueError(_base_error.format("a single color"))
+    if linestyles is None:
+        linestyles = ["-"] * len(x)
+    elif len(linestyles) < len(x):
+        raise ValueError(_base_error.format("a single linestyle"))
+    if linewidths is None:
+        linewidths = [None] * len(x)
+    elif len(linewidths) < len(x):
+        raise ValueError(_base_error.format("a single linewidth"))
+    if labels is None:
+        labels = [None] * len(x)
+    elif len(labels) != len(x):
+        raise ValueError(_base_error.format("a label"))
+
+    xlow = np.min([np.min(_x) for _x in x])
+    xhigh = np.max([np.max(_x) for _x in x])
+    ylow = np.min([np.min(_y) for _y in y])
+    yhigh = np.max([np.max(_y) for _y in y])
+    for num in range(len(x)):
+        plot_kwargs = dict(
+            color=colors[num], linewidth=linewidths[num],
+            linestyle=linestyles[num]
+        )
+        if kde:
+            _kde = kde(x[num], **kde_kwargs)
+            _x = np.linspace(xlow, xhigh, npoints)
+            _y = _kde(_x)
+            ax1.plot(_x, _y, **plot_kwargs)
+            if fill:
+                ax1.fill_between(_x, 0, _y, alpha=fill_alpha, **plot_kwargs)
+            if percentiles is not None:
+                _percentiles = np.percentile(x[num], percentiles)
+                ax1.axvline(_percentiles[0], **plot_kwargs)
+                ax1.axvline(_percentiles[1], **plot_kwargs)
+            _y = np.linspace(ylow, yhigh, npoints)
+            _kde = kde(y[num], **kde_kwargs)
+            _x = _kde(_y)
+            ax4.plot(_x, _y, label=labels[num], **plot_kwargs)
+            if fill:
+                ax4.fill_betweenx(_y, 0, _x, alpha=fill_alpha, **plot_kwargs)
+            if percentiles is not None:
+                _percentiles = np.percentile(y[num], percentiles)
+                ax4.axhline(_percentiles[0], **plot_kwargs)
+                ax4.axhline(_percentiles[1], **plot_kwargs)
+        else:
+            if fill:
+                histtype = "stepfilled"
+            else:
+                histtype = "step"
+            ax1.hist(x[num], histtype=histtype, **plot_kwargs)
+            ax4.hist(
+                y[num], histtype=histtype, orientation="horizontal",
+                **plot_kwargs
+            )
+        corner.hist2d(
+            x[num], y[num], bins=300, ax=ax3, levels=levels, smooth=smooth,
+            range=[[xlow, xhigh], [ylow, yhigh]], color=colors[num],
+            plot_density=True, contour_kwargs=dict(
+                linestyles=[linestyles[num]], linewidths=linewidths[num]
+            )
+        )
+    if xlabel is not None:
+        ax3.set_xlabel(xlabel, fontsize=fontsize)
+    if ylabel is not None:
+        ax3.set_ylabel(ylabel, fontsize=fontsize)
+    if not all(label is None for label in labels):
+        ax3.legend(
+            *ax4.get_legend_handles_labels(), loc="best", frameon=False,
+            fontsize=fontsize
+        )
+    return fig, ax1, ax3, ax4
