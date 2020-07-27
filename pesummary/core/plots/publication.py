@@ -47,15 +47,16 @@ def _triangle_axes(
         2, 2, width_ratios=width_ratios, height_ratios=height_ratios,
         wspace=wspace, hspace=hspace
     )
-    ax1, ax3, ax4 = (
-        fig.add_subplot(gs[0]), fig.add_subplot(gs[2]), fig.add_subplot(gs[3])
+    ax1, ax2, ax3, ax4 = (
+        fig.add_subplot(gs[0]), fig.add_subplot(gs[1]), fig.add_subplot(gs[2]),
+        fig.add_subplot(gs[3])
     )
     ax1.minorticks_on()
     ax3.minorticks_on()
     ax4.minorticks_on()
     ax1.xaxis.set_ticklabels([])
     ax4.yaxis.set_ticklabels([])
-    return fig, ax1, ax3, ax4
+    return fig, ax1, ax2, ax3, ax4
 
 
 def triangle_plot(
@@ -67,7 +68,7 @@ def triangle_plot(
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
-    posterior distribution
+    posterior distribution (above and to the right of central axis)
 
     Parameters
     ----------
@@ -112,7 +113,74 @@ def triangle_plot(
     labels: list, optional
         label associated with each set of samples
     """
-    fig, ax1, ax3, ax4 = _triangle_axes(**fig_kwargs)
+    fig, ax1, ax2, ax3, ax4 = _triangle_axes(**fig_kwargs)
+    ax2.axis("off")
+    return _triangle_plot(
+        fig, [ax1, ax3, ax4], x, y, kde=kde, npoints=npoints, smooth=smooth,
+        kde_kwargs=kde_kwargs, fill=fill, fill_alpha=fill_alpha, levels=levels,
+        colors=colors, linestyles=linestyles, linewidths=linewidths,
+        plot_density=plot_density, percentiles=percentiles, fig_kwargs=fig_kwargs,
+        labels=labels, xlabel=xlabel, ylabel=ylabel, fontsize=fontsize
+    )
+
+
+def _triangle_plot(
+    fig, axes, x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
+    fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
+    xlabel=None, ylabel=None, fontsize=12, linestyles=None,
+    linewidths=None, plot_density=True, percentiles=None, fig_kwargs={},
+    labels=None
+):
+    """Base function to generate a triangular plot
+
+    Parameters
+    ----------
+    fig: matplotlib.figure.Figure
+        figure on which to make the plots
+    axes: list
+        list of subplots associated with the figure
+    x: list
+        list of samples for the x axis
+    y: list
+        list of samples for the y axis
+    kde: Bool/func, optional
+        kde to use for smoothing the 1d marginalized posterior distribution. If
+        you do not want to use KDEs, simply pass kde=False. Default
+        scipy.stats.gaussian_kde
+    npoints: int, optional
+        number of points to use for the 1d kde
+    kde_kwargs: dict, optional
+        optional kwargs which are passed directly to the kde function
+    fill: Bool, optional
+        whether or not to fill the 1d posterior distributions
+    fill_alpha: float, optional
+        alpha to use for fill
+    levels: list, optional
+        levels you wish to use for the 2d contours
+    smooth: float, optional
+        how much smoothing you wish to use for the 2d contours
+    colors: list, optional
+        list of colors you wish to use for each analysis
+    xlabel: str, optional
+        xlabel you wish to use for the plot
+    ylabel: str, optional
+        ylabel you wish to use for the plot
+    fontsize: int, optional
+        fontsize you wish to use labels
+    linestyles: list, optional
+        linestyles you wish to use for each analysis
+    linewidths: list, optional
+        linewidths you wish to use for each analysis
+    plot_density: Bool, optional
+        whether or not to plot the density on the 2d contour. Default True
+    percentiles: list, optional
+        percentiles you wish to plot. Default None
+    fig_kwargs: dict, optional
+        optional kwargs passed directly to the _triangle_axes function
+    labels: list, optional
+        label associated with each set of samples
+    """
+    ax1, ax3, ax4 = axes
     if not isinstance(x[0], (list, np.ndarray)):
         x, y = np.atleast_2d(x), np.atleast_2d(y)
     _base_error = "Please provide {} for each analysis"
@@ -188,3 +256,87 @@ def triangle_plot(
             fontsize=fontsize
         )
     return fig, ax1, ax3, ax4
+
+
+def reverse_triangle_plot(
+    x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
+    fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
+    xlabel=None, ylabel=None, fontsize=12, linestyles=None,
+    linewidths=None, plot_density=True, percentiles=None, fig_kwargs={},
+    labels=None
+):
+    """Generate a triangular plot made of 3 axis. One central axis showing the
+    2d marginalized posterior and two smaller axes showing the marginalized 1d
+    posterior distribution (below and to the left of central axis). Only two
+    axes are plotted, each below the 1d marginalized posterior distribution
+
+    Parameters
+    ----------
+    x: list
+        list of samples for the x axis
+    y: list
+        list of samples for the y axis
+    kde: Bool/func, optional
+        kde to use for smoothing the 1d marginalized posterior distribution. If
+        you do not want to use KDEs, simply pass kde=False. Default
+        scipy.stats.gaussian_kde
+    npoints: int, optional
+        number of points to use for the 1d kde
+    kde_kwargs: dict, optional
+        optional kwargs which are passed directly to the kde function
+    fill: Bool, optional
+        whether or not to fill the 1d posterior distributions
+    fill_alpha: float, optional
+        alpha to use for fill
+    levels: list, optional
+        levels you wish to use for the 2d contours
+    smooth: float, optional
+        how much smoothing you wish to use for the 2d contours
+    colors: list, optional
+        list of colors you wish to use for each analysis
+    xlabel: str, optional
+        xlabel you wish to use for the plot
+    ylabel: str, optional
+        ylabel you wish to use for the plot
+    fontsize: int, optional
+        fontsize you wish to use labels
+    linestyles: list, optional
+        linestyles you wish to use for each analysis
+    linewidths: list, optional
+        linewidths you wish to use for each analysis
+    plot_density: Bool, optional
+        whether or not to plot the density on the 2d contour. Default True
+    percentiles: list, optional
+        percentiles you wish to plot. Default None
+    fig_kwargs: dict, optional
+        optional kwargs passed directly to the _triangle_axes function
+    labels: list, optional
+        label associated with each set of samples
+    """
+    fig, ax1, ax2, ax3, ax4 = _triangle_axes(
+        width_ratios=[1, 4], height_ratios=[4, 1]
+    )
+    ax3.axis("off")
+    fig, ax4, ax2, ax1 = _triangle_plot(
+        fig, [ax4, ax2, ax1], x, y, kde=kde, npoints=npoints, smooth=smooth,
+        kde_kwargs=kde_kwargs, fill=fill, fill_alpha=fill_alpha, levels=levels,
+        colors=colors, linestyles=linestyles, linewidths=linewidths,
+        plot_density=plot_density, percentiles=percentiles, fig_kwargs=fig_kwargs,
+        labels=labels
+    )
+    ax2.axis("off")
+    ax4.spines['right'].set_visible(False)
+    ax4.spines['top'].set_visible(False)
+    ax4.spines['left'].set_visible(False)
+    ax4.set_yticks([])
+
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['bottom'].set_visible(False)
+    ax1.set_xticks([])
+
+    if xlabel is not None:
+        ax4.set_xlabel(xlabel, fontsize=fontsize)
+    if ylabel is not None:
+        ax1.set_ylabel(ylabel, fontsize=fontsize)
+    return fig, ax1, ax2, ax4
