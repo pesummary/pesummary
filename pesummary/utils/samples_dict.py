@@ -828,7 +828,8 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         return {
             "hist": self._marginalized_posterior,
             "corner": self._corner,
-            "triangle": self._triangle
+            "triangle": self._triangle,
+            "reverse_triangle": self._reverse_triangle
         }
 
     @property
@@ -911,19 +912,17 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             colors, self.latex_labels[parameter], labels, **kwargs
         )
 
-    def _triangle(self, parameters, labels="all", **kwargs):
-        """Wrapper for the `pesummary.core.plots.publication.triangle_plot`
-        function
+    def _base_triangle(self, parameters, labels="all"):
+        """Check that the parameters are valid for the different triangle
+        plots available
 
         Parameters
         ----------
+        parameters: list
+            list of parameters they wish to study
         labels: list
             list of analyses that you wish to include in the plot
-        **kwargs: dict
-            all additional kwargs are passed to the `triangle_plot` function
         """
-        from pesummary.core.plots.publication import triangle_plot
-
         samples = [self[label] for label in labels]
         if len(parameters) > 2:
             raise ValueError("Function is only 2d")
@@ -938,7 +937,48 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
                     parameters[0], parameters[1], ", ".join(condition)
                 )
             )
+        return samples
+
+    def _triangle(self, parameters, labels="all", **kwargs):
+        """Wrapper for the `pesummary.core.plots.publication.triangle_plot`
+        function
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters they wish to study
+        labels: list
+            list of analyses that you wish to include in the plot
+        **kwargs: dict
+            all additional kwargs are passed to the `triangle_plot` function
+        """
+        from pesummary.core.plots.publication import triangle_plot
+
+        samples = self._base_triangle(parameters, labels=labels)
         return triangle_plot(
+            [_samples[parameters[0]] for _samples in samples],
+            [_samples[parameters[1]] for _samples in samples],
+            xlabel=self.latex_labels[parameters[0]],
+            ylabel=self.latex_labels[parameters[1]], labels=labels, **kwargs
+        )
+
+    def _reverse_triangle(self, parameters, labels="all", **kwargs):
+        """Wrapper for the `pesummary.core.plots.publication.reverse_triangle_plot`
+        function
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters they wish to study
+        labels: list
+            list of analyses that you wish to include in the plot
+        **kwargs: dict
+            all additional kwargs are passed to the `triangle_plot` function
+        """
+        from pesummary.core.plots.publication import reverse_triangle_plot
+
+        samples = self._base_triangle(parameters, labels=labels)
+        return reverse_triangle_plot(
             [_samples[parameters[0]] for _samples in samples],
             [_samples[parameters[1]] for _samples in samples],
             xlabel=self.latex_labels[parameters[0]],

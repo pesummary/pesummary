@@ -411,3 +411,16 @@ class TestPublication(object):
             linestyles=["-", "--"], percentiles=[5, 95]
         )
         assert isinstance(fig, matplotlib.figure.Figure)
+
+    def test_reverse_triangle(self):
+        from pesummary.core.plots.publication import reverse_triangle_plot
+        import numpy as np
+
+        x = [np.random.normal(10, i, 1000) for i in [2, 3]]
+        y = [np.random.normal(10, i, 1000) for i in [2, 2.5]]
+
+        fig, _, _, _ = reverse_triangle_plot(
+            x, y, fill_alpha=0.2, xlabel=r"$x$", ylabel=r"$y$",
+            linestyles=["-", "--"], percentiles=[5, 95]
+        )
+        assert isinstance(fig, matplotlib.figure.Figure)
