@@ -13,6 +13,7 @@ core tutorials
 
     core/tutorials/latex.rst
     core/tutorials/make_your_own_page_from_metafile
+    core/tutorials/plotting_from_metafile
 
 gw tutorials
 ------------
@@ -25,3 +26,4 @@ gw tutorials
     gw/tutorials/GWTC1_plots
     gw/tutorials/population_scatter_plot_GWTC-1
     gw/tutorials/public_pages
+    gw/tutorials/plotting_from_metafile
