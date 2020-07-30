@@ -225,7 +225,8 @@ class SamplesDict(dict):
             "marginalized_posterior": self._marginalized_posterior,
             "skymap": self._skymap,
             "hist": self._marginalized_posterior,
-            "corner": self._corner
+            "corner": self._corner,
+            "spin_disk": self._spin_disk
         }
 
     @property
@@ -382,6 +383,27 @@ class SamplesDict(dict):
             dist = None
 
         return _ligo_skymap_plot(self["ra"], self["dec"], dist=dist, **kwargs)
+
+    def _spin_disk(self, **kwargs):
+        """Wrapper for the `pesummary.gw.plots.publication.spin_distribution_plots`
+        function
+        """
+        from pesummary.gw.plots.publication import spin_distribution_plots
+
+        required = ["a_1", "a_2", "cos_tilt_1", "cos_tilt_2"]
+        if not all(param in self.keys() for param in required):
+            raise ValueError(
+                "The spin disk plot requires samples for the following "
+                "parameters: {}".format(", ".join(required))
+            )
+        samples = [self[param] for param in required]
+        if kwargs.get("color", None) is not None:
+            color = kwargs["color"]
+        else:
+            color = list(conf.colorcycle)[0]
+        return spin_distribution_plots(
+            required, samples, None, color, **kwargs
+        )
 
     def _corner(self, module="core", parameters=None, **kwargs):
         """Wrapper for the `pesummary.core.plots.plot._make_corner_plot` or
