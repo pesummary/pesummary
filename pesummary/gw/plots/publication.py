@@ -412,5 +412,5 @@ def spin_distribution_plots(parameters, samples, label, color, colorbar=False):
             p, cax=ax3, orientation="horizontal", pad=0.2, shrink=0.5,
             label='posterior probability per pixel'
         )
-    bbox_extra_artists = [title, S1_label, S2_label]
+    # bbox_extra_artists = [title, S1_label, S2_label]
     return fig
