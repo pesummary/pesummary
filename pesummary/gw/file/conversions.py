@@ -15,7 +15,6 @@
 
 import numpy as np
 
-from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.utils import logger
 from pesummary.utils.decorators import array_input
 from pesummary.utils.exceptions import EvolveSpinError
@@ -1264,6 +1263,8 @@ class _Conversion(object):
     >>> samples = [[10, 5], [20, 8]]
     """
     def __new__(cls, *args, **kwargs):
+        from pesummary.utils.samples_dict import SamplesDict
+
         obj = super(_Conversion, cls).__new__(cls)
         base_replace = (
             "'{}': {} already found in the result file. Overwriting with "

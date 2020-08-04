@@ -84,7 +84,8 @@ class GWRead(Read):
         parameters, samples = self.translate_parameters(
             data["parameters"], data["samples"]
         )
-        if "log_likelihood" not in parameters:
+        _add_likelihood = kwargs.get("add_zero_likelihood", True)
+        if "log_likelihood" not in parameters and _add_likelihood:
             logger.warning(
                 "Failed to find 'log_likelihood' in result file. Setting "
                 "every sample to have log_likelihood 0"

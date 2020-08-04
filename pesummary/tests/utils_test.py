@@ -20,6 +20,7 @@ import numpy as np
 import copy
 
 import pesummary
+from pesummary.io import write
 import pesummary.cli as cli
 from pesummary.utils import utils
 from pesummary.utils.tqdm import tqdm
@@ -274,6 +275,18 @@ class TestSamplesDict(object):
         self.samples = [
             np.random.uniform(10, 0.5, 100), np.random.uniform(200, 10, 100)
         ]
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        write(
+            self.parameters, np.array(self.samples).T, outdir=".outdir",
+            filename="test.dat", file_format="dat"
+        )
+
+    def teardown(self):
+        """Remove the files created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
 
     def test_initalize(self):
         """Test that the two ways to initialize the SamplesDict class are
@@ -292,6 +305,10 @@ class TestSamplesDict(object):
         np.testing.assert_almost_equal(base.samples, other.samples)
         assert sorted(list(base.keys())) == sorted(list(other.keys()))
         np.testing.assert_almost_equal(base.samples, self.samples)
+        class_method = SamplesDict.from_file(
+            ".outdir/test.dat", add_zero_likelihood=False
+        )
+        np.testing.assert_almost_equal(class_method.samples, self.samples)
 
     def test_properties(self):
         """Test that the properties of the SamplesDict class are correct
@@ -323,9 +340,22 @@ class TestMultiAnalysisSamplesDict(object):
         self.parameters = ["a", "b"]
         self.samples = [
             [np.random.uniform(10, 0.5, 100), np.random.uniform(100, 10, 100)],
-            [np.random.uniform(5, 0.5, 100), np.random.uniform(80, 10, 100)]
+            [np.random.uniform(5, 0.5, 100), np.random.uniform(80, 10, 100)],
         ]
         self.labels = ["one", "two"]
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        for num, _samples in enumerate(self.samples):
+            write(
+                self.parameters, np.array(_samples).T, outdir=".outdir",
+                filename="test_{}.dat".format(num + 1), file_format="dat"
+            )
+
+    def teardown(self):
+        """Remove the files created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
 
     def test_initalize(self):
         """Test the different ways to initalize the class
@@ -348,29 +378,35 @@ class TestMultiAnalysisSamplesDict(object):
         np.testing.assert_almost_equal(
             dataframe["two"]["b"], self.samples[1][1]
         )
-        other = MCMCSamplesDict({
+        _other = MCMCSamplesDict({
             label: {
                 param: self.samples[num][idx] for idx, param in enumerate(
                     self.parameters
                 )
             } for num, label in enumerate(self.labels)
         })
-        assert sorted(other.keys()) == sorted(dataframe.keys())
-        assert sorted(other["one"].keys()) == sorted(
-            dataframe["one"].keys()
+        class_method = MultiAnalysisSamplesDict.from_files(
+            {'one': ".outdir/test_1.dat", 'two': ".outdir/test_2.dat"},
+            add_zero_likelihood=False
         )
-        np.testing.assert_almost_equal(
-            other["one"]["a"], dataframe["one"]["a"]
-        )
-        np.testing.assert_almost_equal(
-            other["one"]["b"], dataframe["one"]["b"]
-        )
-        np.testing.assert_almost_equal(
-            other["two"]["a"], dataframe["two"]["a"]
-        )
-        np.testing.assert_almost_equal(
-            other["two"]["b"], dataframe["two"]["b"]
-        )
+        for other in [_other, class_method]:
+            assert sorted(other.keys()) == sorted(dataframe.keys())
+            assert sorted(other["one"].keys()) == sorted(
+                dataframe["one"].keys()
+            )
+            np.testing.assert_almost_equal(
+                other["one"]["a"], dataframe["one"]["a"]
+            )
+            np.testing.assert_almost_equal(
+                other["one"]["b"], dataframe["one"]["b"]
+            )
+            np.testing.assert_almost_equal(
+                other["two"]["a"], dataframe["two"]["a"]
+            )
+            np.testing.assert_almost_equal(
+                other["two"]["b"], dataframe["two"]["b"]
+            )
+        
 
     def test_different_samples_for_different_analyses(self):
         """Test that nothing breaks when different samples have different parameters

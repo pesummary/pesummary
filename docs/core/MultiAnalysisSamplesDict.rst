@@ -61,6 +61,34 @@ as key, and posterior samples stored as the items,
     6       70.000000      6.000000
     7       80.000000      7.000000
 
+Alternatively, it may be initialized with a dictionary containing the path to
+multiple result files containing posterior samples and a label for each analysis,
+
+.. code-block:: python
+
+    >>> samplesdict = MultiAnalysisSamplesDict.from_files(
+    ...     {
+    ...         "analysis_1": "path_to_analysis_1.hdf5",
+    ...         "analysis_2": "path_to_analysis_2.dat"
+    ...     }
+    ... )
+
+This `classmethod` simply calls the `read function <read.html>`_ for each file
+and initializes the class with the parameters and samples that are already
+stored.
+
+Finally, you may also initialize this class with `SamplesDict <SamplesDict.html>`_
+instances,
+
+.. code-block:: python
+
+    >>> from pesummary.io import read
+    >>> f = read("path_to_analysis_1.hdf5")
+    >>> g = read("path_to_analysis_2.dat")
+    >>> samplesdict = MultiAnalysisSamplesDict(
+    ...     {"analysis_1": f.samples_dict, "analysis_2": g.samples_dict}
+    ... )
+
 Using the MultiAnalysisSamplesDict properties
 ---------------------------------------------
 

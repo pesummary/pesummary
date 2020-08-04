@@ -16,6 +16,7 @@
 import copy
 import numpy as np
 from pesummary.utils.utils import resample_posterior_distribution, logger
+from pesummary.utils.decorators import docstring_subfunction
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary import conf
@@ -62,6 +63,8 @@ class SamplesDict(dict):
 
     Methods
     -------
+    from_file:
+        Initialize the SamplesDict class with the contents of a file
     to_pandas:
         Convert the SamplesDict object to a pandas DataFrame
     to_structured_array:
@@ -182,6 +185,21 @@ class SamplesDict(dict):
                     string, [i] + [item[i] for key, item in self.items()]
                 )
         return string
+
+    @classmethod
+    def from_file(cls, filename, **kwargs):
+        """Initialize the SamplesDict class with the contents of a result file
+
+        Parameters
+        ----------
+        filename: str
+            path to the result file you wish to load.
+        **kwargs: dict
+            all kwargs are passed to the pesummary.io.read function
+        """
+        from pesummary.io import read
+
+        return read(filename, **kwargs).samples_dict
 
     @property
     def maxL(self):
@@ -324,6 +342,14 @@ class SamplesDict(dict):
                 weights=weights
             )
 
+    @docstring_subfunction([
+        'pesummary.core.plots.plot._1d_histogram_plot',
+        'pesummary.gw.plots.plot._1d_histogram_plot',
+        'pesummary.gw.plots.plot._ligo_skymap_plot',
+        'pesummary.gw.plots.publication.spin_distribution_plots',
+        'pesummary.core.plots.plot._make_corner_plot',
+        'pesummary.gw.plots.plot._make_corner_plot'
+    ])
     def plot(self, *args, type="marginalized_posterior", **kwargs):
         """Generate a plot for the posterior samples stored in SamplesDict
 
@@ -825,6 +851,9 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
 
     Methods
     -------
+    from_files:
+        Initialize the MultiAnalysisSamplesDict class with the contents of
+        multiple files
     js_divergence: float
         Return the JS divergence between two posterior distributions for a
         given parameter. See pesummary.utils.utils.jensen_shannon_divergence
@@ -845,6 +874,44 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         )
         self.name = MultiAnalysisSamplesDict
 
+    @classmethod
+    def from_files(cls, filenames, **kwargs):
+        """Initialize the MultiAnalysisSamplesDict class with the contents of
+        multiple result files
+
+        Parameters
+        ----------
+        filenames: dict
+            dictionary containing the path to the result file you wish to load
+            as the item and a label associated with each result file as the key
+        **kwargs: dict
+            all kwargs are passed to the pesummary.io.read function
+        """
+        from pesummary.io import read
+        from pesummary.core.inputs import _Input
+
+        samples = {}
+        for label, filename in filenames.items():
+            _samples = read(filename, **kwargs).samples_dict
+            if _Input.is_pesummary_metafile(filename):
+                _stored_labels = _samples.keys()
+                cond1 = any(
+                    _label in filenames.keys() for _label in _stored_labels
+                )
+                cond2 = any(
+                    _label in samples.keys() for _label in _stored_labels
+                )
+                if cond1 or cond2:
+                    raise ValueError(
+                        "One or more of the labels stored in the PESummary "
+                        "meta file matches another label. Please provide unique "
+                        "labels for each dataset"
+                    )
+                samples.update(_samples)
+            else:
+                samples[label] = _samples
+        return cls(samples)
+
     @property
     def plotting_map(self):
         return {
@@ -858,6 +925,12 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
     def available_plots(self):
         return list(self.plotting_map.keys())
 
+    @docstring_subfunction([
+        'pesummary.core.plots.plot._1d_comparison_histogram_plot',
+        'pesummary.gw.plots.plot._1d_comparison_histogram_plot',
+        'pesummary.core.plots.publication.triangle_plot',
+        'pesummary.core.plots.publication.reverse_triangle_plot'
+    ])
     def plot(
         self, *args, type="hist", labels="all", colors=None, **kwargs
     ):

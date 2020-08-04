@@ -16,7 +16,6 @@ from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, _check_latex_install,
     get_matplotlib_style_file, gelman_rubin
 )
-from pesummary.utils.samples_dict import Array
 from pesummary.core.plots.kde import kdeplot
 from pesummary.core.plots.figure import figure, subplots, ExistingFigure
 from pesummary import conf
@@ -321,6 +320,8 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
     histtype: str, optional
         histogram type to use when plotting
     """
+    from pesummary.utils.samples_dict import Array
+
     logger.debug("Generating the 1d histogram plot for %s" % (param))
     samples = Array(samples)
     if fig is None:
