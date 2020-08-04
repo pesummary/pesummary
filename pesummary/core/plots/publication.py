@@ -62,9 +62,9 @@ def _triangle_axes(
 def triangle_plot(
     x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
     fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
-    xlabel=None, ylabel=None, fontsize=12, linestyles=None,
-    linewidths=None, plot_density=True, percentiles=None, fig_kwargs={},
-    labels=None
+    xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
+    linestyles=None, linewidths=None, plot_density=True, percentiles=None,
+    fig_kwargs={}, labels=None
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -98,8 +98,9 @@ def triangle_plot(
         xlabel you wish to use for the plot
     ylabel: str, optional
         ylabel you wish to use for the plot
-    fontsize: int, optional
-        fontsize you wish to use labels
+    fontsize: dict, optional
+        dictionary giving the fontsize for the labels and legend. Default
+        {'legend': 12, 'label': 12}
     linestyles: list, optional
         linestyles you wish to use for each analysis
     linewidths: list, optional
@@ -127,9 +128,9 @@ def triangle_plot(
 def _triangle_plot(
     fig, axes, x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
     fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
-    xlabel=None, ylabel=None, fontsize=12, linestyles=None,
-    linewidths=None, plot_density=True, percentiles=None, fig_kwargs={},
-    labels=None
+    xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
+    linestyles=None, linewidths=None, plot_density=True, percentiles=None,
+    fig_kwargs={}, labels=None
 ):
     """Base function to generate a triangular plot
 
@@ -165,8 +166,9 @@ def _triangle_plot(
         xlabel you wish to use for the plot
     ylabel: str, optional
         ylabel you wish to use for the plot
-    fontsize: int, optional
-        fontsize you wish to use labels
+    fontsize: dict, optional
+        dictionary giving the fontsize for the labels and legend. Default
+        {'legend': 12, 'label': 12}
     linestyles: list, optional
         linestyles you wish to use for each analysis
     linewidths: list, optional
@@ -242,18 +244,18 @@ def _triangle_plot(
         corner.hist2d(
             x[num], y[num], bins=300, ax=ax3, levels=levels, smooth=smooth,
             range=[[xlow, xhigh], [ylow, yhigh]], color=colors[num],
-            plot_density=True, contour_kwargs=dict(
+            plot_density=plot_density, contour_kwargs=dict(
                 linestyles=[linestyles[num]], linewidths=linewidths[num]
             )
         )
     if xlabel is not None:
-        ax3.set_xlabel(xlabel, fontsize=fontsize)
+        ax3.set_xlabel(xlabel, fontsize=fontsize["label"])
     if ylabel is not None:
-        ax3.set_ylabel(ylabel, fontsize=fontsize)
+        ax3.set_ylabel(ylabel, fontsize=fontsize["label"])
     if not all(label is None for label in labels):
         ax3.legend(
             *ax4.get_legend_handles_labels(), loc="best", frameon=False,
-            fontsize=fontsize
+            fontsize=fontsize["legend"]
         )
     return fig, ax1, ax3, ax4
 
@@ -261,9 +263,9 @@ def _triangle_plot(
 def reverse_triangle_plot(
     x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
     fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
-    xlabel=None, ylabel=None, fontsize=12, linestyles=None,
-    linewidths=None, plot_density=True, percentiles=None, fig_kwargs={},
-    labels=None
+    xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
+    linestyles=None, linewidths=None, plot_density=True, percentiles=None,
+    fig_kwargs={}, labels=None
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -298,8 +300,9 @@ def reverse_triangle_plot(
         xlabel you wish to use for the plot
     ylabel: str, optional
         ylabel you wish to use for the plot
-    fontsize: int, optional
-        fontsize you wish to use labels
+    fontsize: dict, optional
+        dictionary giving the fontsize for the labels and legend. Default
+        {'legend': 12, 'label': 12}
     linestyles: list, optional
         linestyles you wish to use for each analysis
     linewidths: list, optional
@@ -322,7 +325,7 @@ def reverse_triangle_plot(
         kde_kwargs=kde_kwargs, fill=fill, fill_alpha=fill_alpha, levels=levels,
         colors=colors, linestyles=linestyles, linewidths=linewidths,
         plot_density=plot_density, percentiles=percentiles, fig_kwargs=fig_kwargs,
-        labels=labels
+        labels=labels, fontsize=fontsize
     )
     ax2.axis("off")
     ax4.spines['right'].set_visible(False)
@@ -336,7 +339,7 @@ def reverse_triangle_plot(
     ax1.set_xticks([])
 
     if xlabel is not None:
-        ax4.set_xlabel(xlabel, fontsize=fontsize)
+        ax4.set_xlabel(xlabel, fontsize=fontsize["label"])
     if ylabel is not None:
-        ax1.set_ylabel(ylabel, fontsize=fontsize)
+        ax1.set_ylabel(ylabel, fontsize=fontsize["label"])
     return fig, ax1, ax2, ax4
