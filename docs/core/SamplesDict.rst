@@ -30,6 +30,15 @@ of samples for each parameter,
     4       5.000000       2.000000
     5       6.000000       1.000000
 
+Alternatively, it may be initialized with the path to a result file containing
+posterior samples,
+
+.. code-block:: python
+
+    >>> samplesdict = SamplesDict.from_file("path_to_file.hdf5")
+
+This `classmethod` simply calls the `read function <read.html>`_ and
+initializes the class with the parameters and samples that are already stored.
 
 Using the SamplesDict properties
 --------------------------------

@@ -171,3 +171,37 @@ def array_input(func):
             return new_value
         return value
     return wrapper_function
+
+
+def docstring_subfunction(*args):
+    """Edit the docstring of a function to show the docstrings of subfunctions
+    """
+    def wrapper_function(func):
+        import importlib
+
+        original_docstring = func.__doc__
+        if isinstance(args[0], list):
+            original_docstring += "\n\nSubfunctions:\n"
+            for subfunction in args[0]:
+                _subfunction = subfunction.split(".")
+                module = ".".join(_subfunction[:-1])
+                function = _subfunction[-1]
+                module = importlib.import_module(module)
+                original_docstring += "\n{}{}".format(
+                    subfunction + "\n" + "-" * len(subfunction) + "\n",
+                    getattr(module, function).__doc__
+                )
+        else:
+            _subfunction = args[0].split(".")
+            module = ".".join(_subfunction[:-1])
+            function = _subfunction[-1]
+            module = importlib.import_module(module)
+            original_docstring += (
+                "\n\nSubfunctions:\n\n{}{}".format(
+                    args[0] + "\n" + "-" * len(args[0]) + "\n",
+                    getattr(module, function).__doc__
+                )
+            )
+        func.__doc__ = original_docstring
+        return func
+    return wrapper_function
