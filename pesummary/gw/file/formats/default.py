@@ -132,7 +132,7 @@ class Default(GWRead):
     def _grab_data_from_prior_file(path, **kwargs):
         """Grab data stored in a .prior file
         """
-        return CoreDefault._grab_data_from_prior_file(path, **kwargs)
+        return CoreDefault._grab_data_from_prior_file(path, module="gw", **kwargs)
 
     @staticmethod
     def _grab_data_from_hdf5_file(path, path_to_samples=None, **kwargs):
