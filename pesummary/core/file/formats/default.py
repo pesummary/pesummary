@@ -90,12 +90,17 @@ class Default(Read):
         }
 
     @staticmethod
-    def _grab_data_from_prior_file(path, **kwargs):
+    def _grab_data_from_prior_file(path, module="core", **kwargs):
         """Grab the data stored in a .prior file
         """
-        from pesummary.core.file.formats.bilby import prior_samples_from_file
+        import importlib
 
-        samples = prior_samples_from_file(path, **kwargs)
+        module = importlib.import_module(
+            "pesummary.{}.file.formats.bilby".format(module)
+        )
+        func = getattr(module, "prior_samples_from_file")
+
+        samples = func(path, **kwargs)
         parameters = samples.parameters
         analytic = samples.analytic
         injection = {i: float("nan") for i in parameters}

@@ -155,19 +155,23 @@ def write_bilby(
         return bilby_object
 
 
-def prior_samples_from_file(path, nsamples=5000):
+def prior_samples_from_file(path, cls="PriorDict", nsamples=5000):
     """Return a dict of prior samples from a `bilby` prior file
 
     Parameters
     ----------
     path: str
         path to a `bilby` prior file
+    cls: str, optional
+        class you wish to read in the prior file
     nsamples: int, optional
         number of samples to draw from a prior file. Default 5000
     """
-    from bilby.core.prior import PriorDict
+    from bilby.core import prior
 
-    _prior = PriorDict(filename=path)
+    if isinstance(cls, str):
+        cls = getattr(prior, cls)
+    _prior = cls(filename=path)
     samples = _prior.sample(size=nsamples)
     return _bilby_prior_dict_to_pesummary_samples_dict(samples, prior=_prior)
 

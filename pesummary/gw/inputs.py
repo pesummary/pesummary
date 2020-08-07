@@ -265,6 +265,8 @@ class _GWInput(_Input):
         self._gracedb = gracedb
         if gracedb is not None:
             from pesummary.gw.gracedb import get_gracedb_data, HTTPError
+            from json.decoder import JSONDecodeError
+
             first_letter = gracedb[0]
             if first_letter != "G" and first_letter != "g" and first_letter != "S":
                 logger.warning(
@@ -288,7 +290,7 @@ class _GWInput(_Input):
                     service_url=self.gracedb_server
                 )
                 json["id"] = gracedb
-            except (HTTPError, RuntimeError) as e:
+            except (HTTPError, RuntimeError, JSONDecodeError) as e:
                 logger.warning(_error.format(e))
                 json = {"id": gracedb}
 

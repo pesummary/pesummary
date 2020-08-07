@@ -21,6 +21,28 @@ from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.utils import logger
 
 
+def prior_samples_from_file(path, cls="BBHPriorDict", nsamples=5000):
+    """Return a dict of prior samples from a `bilby` prior file
+
+    Parameters
+    ----------
+    path: str
+        path to a `bilby` prior file
+    cls: str, optional
+        class you wish to read in the prior file
+    nsamples: int, optional
+        number of samples to draw from a prior file. Default 5000
+    """
+    from pesummary.core.file.formats.bilby import (
+        prior_samples_from_file as _prior_samples_from_file
+    )
+    from bilby.gw import prior
+
+    if isinstance(cls, str):
+        cls = getattr(prior, cls)
+    return _prior_samples_from_file(path, cls=cls, nsamples=nsamples)
+
+
 class Bilby(GWRead):
     """PESummary wrapper of `bilby` (https://git.ligo.org/lscsoft/bilby). The
     path_to_results_file argument will be passed directly to
