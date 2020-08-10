@@ -136,6 +136,15 @@ Tutorials
 
     tutorials
 
+Helper classes
+++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    core/bounded_kdes
+    utils/condition_prior
+
 Specific to Gravitational Waves
 -------------------------------
 

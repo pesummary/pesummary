@@ -452,7 +452,8 @@ class RedirectLogger(object):
 
 
 def draw_conditioned_prior_samples(
-    samples_dict, prior_samples_dict, conditioned, xlow, xhigh, N
+    samples_dict, prior_samples_dict, conditioned, xlow, xhigh, N=100,
+    nsamples=1000
 ):
     """Return a prior_dict that is conditioned on certain parameters
 
@@ -468,13 +469,15 @@ def draw_conditioned_prior_samples(
         dictionary of lower bounds for each parameter
     xhigh: dict
         dictionary of upper bounds for each parameter
-    N: int
-        number of points to use within the grid
+    N: int, optional
+        number of points to use within the grid. Default 100
+    nsamples: int, optional
+        number of samples to draw. Default 1000
     """
     for param in conditioned:
         indices = _draw_conditioned_prior_samples(
             prior_samples_dict[param], samples_dict[param], xlow[param],
-            xhigh[param], N
+            xhigh[param], xN=N, N=nsamples
         )
         for key, val in prior_samples_dict.items():
             prior_samples_dict[key] = val[indices]
