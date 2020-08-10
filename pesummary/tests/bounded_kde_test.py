@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde, bounded_1d_kde
 from pesummary.gw.plots.bounded_2d_kde import Bounded_2d_kde
 from scipy.stats import gaussian_kde
 import numpy as np
@@ -32,6 +32,9 @@ class TestBounded_kde(object):
         assert bounded(9.45) == 0.
         assert scipy(10.55) != 0.
         assert bounded(10.55) == 0.
+        bounded = bounded_1d_kde(samples, xlow=x_low, xhigh=x_high, method="Transform")
+        assert bounded(10.55) == 0.
+        assert bounded(9.45) == 0
 
     def test_bounded_2d_kde(self):
         samples = np.array([

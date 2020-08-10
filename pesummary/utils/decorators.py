@@ -205,3 +205,12 @@ def docstring_subfunction(*args):
         func.__doc__ = original_docstring
         return func
     return wrapper_function
+
+
+def deprecation(warning):
+    def wrapper_function(func):
+        import warnings
+
+        warnings.warn(warning)
+        return func
+    return wrapper_function
