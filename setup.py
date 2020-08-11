@@ -45,23 +45,11 @@ def write_version_file(version):
     version: str
         the release version of the code that you are running
     """
-    from pesummary._version_helper import GitInformation, PackageInformation
+    from pesummary._version_helper import make_version_file
 
-    git_info = GitInformation()
-    packages = PackageInformation()
-
-    with version_file.open("w") as f:
-        f.writelines(["# pesummary version information\n\n"])
-        f.writelines(["version = %s\n" % (version)])
-        f.writelines(["last_release = %s\n" % (git_info.last_version)])
-        f.writelines(["\ngit_hash = %s\n" % (git_info.hash)])
-        f.writelines(["git_author = %s\n" % (git_info.author)])
-        f.writelines(["git_status = %s\n" % (git_info.status)])
-        f.writelines(["git_builder = %s\n" % (git_info.builder)])
-        f.writelines(["git_build_date = %s\n\n" % (git_info.build_date)])
-        f.writelines(["# Install information\n\n"])
-        f.writelines(["install_path = %s\n" % (packages.package_dir)])
-    return ".version"
+    return make_version_file(
+        version_file=version_file, version=version, add_install_path=False
+    )
 
 
 cmdclass = versioneer.get_cmdclass()

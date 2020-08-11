@@ -133,6 +133,60 @@ class PackageInformation(GitInformation):
         return sys.prefix
 
 
+def make_version_file(
+    version_file=None, return_string=False, version=None, add_install_path=False
+):
+    """Write a version file
+
+    Parameters
+    ----------
+    version_file: str
+        the path to the version file you wish to write
+    return_sting: Bool, optional
+        if True, return the version file as a string. Default False
+    """
+    git_info = GitInformation()
+    packages = PackageInformation()
+
+    if version is None:
+        from ._version import get_versions
+
+        version = get_versions()['version']
+
+    string = (
+        "# pesummary version information\n\n"
+        "version = %s\nlast_release = %s\n\ngit_hash = %s\n"
+        "git_author = %s\ngit_status = %s\ngit_builder = %s\n"
+        "git_build_date = %s\n\n" % (
+            version, git_info.last_version, git_info.hash,
+            git_info.author, git_info.status, git_info.builder,
+            git_info.build_date
+        )
+    )
+    if add_install_path:
+        string += install_path(return_string=True)
+    if not return_string and version_file is None:
+        raise ValueError("Please provide a version file")
+    elif not return_string:
+        with open(version_file, "w") as f:
+            f.write(string)
+        return version_file
+    return string
+
+
+def install_path(return_string=False):
+    """Return the install path of a package
+    """
+    packages = PackageInformation()
+    install_path = packages.package_dir
+    string = "# Install information\n\ninstall_path = %s\n" % (
+        install_path
+    )
+    if return_string:
+        return string
+    return packages.package_dir
+
+
 def get_version_information(short=False):
     """Grab the version from the .version file
 
