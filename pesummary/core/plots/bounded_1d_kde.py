@@ -56,7 +56,7 @@ def bounded_1d_kde(
         The upper bound of the distribution
     """
     try:
-        return globals()["{}BoundedKDE".format(method)](
+        return _kdes["{}BoundedKDE".format(method)](
             pts, xlow=xlow, xhigh=xhigh, *args, **kwargs
         )
     except KeyError:
@@ -99,7 +99,9 @@ class BoundedKDE(kde):
 class TransformBoundedKDE(BoundedKDE):
     """Represents a one-dimensional Gaussian kernel density estimator
     for a probability distribution function that exists on a bounded
-    domain. The bounds are treated as reflections
+    domain. The bounds are handled by transforming to a new parameter
+    space which is "unbounded" and then generating a KDE (including a Jacobian)
+    in bounded space
 
     Parameters
     ----------
@@ -109,12 +111,25 @@ class TransformBoundedKDE(BoundedKDE):
         The lower bound of the distribution
     xhigh: float
         The upper bound of the distribution
+    transform: str/func, optional
+        The transform you wish to use. Default logit
+    inv_transform: func, optional
+        Inverse function of transform
+    dydx: func, optional
+        Derivateive of transform
+    N: int, optional
+        Number of points to use generating the KDE
+    smooth: float, optional
+        level of smoothing you wish to apply. Default 3
+    apply_smoothing: Bool, optional
+        Whether or not to apply smoothing. Default False
     """
     allowed = ["logit"]
 
     def __init__(
         self, pts, xlow=None, xhigh=None, transform="logit", inv_transform=None,
-        dydx=None, alpha=1.5, N=100, smooth=3, *args, **kwargs
+        dydx=None, alpha=1.5, N=100, smooth=3, apply_smoothing=False, *args,
+        **kwargs
     ):
         import pandas
 
@@ -132,6 +147,7 @@ class TransformBoundedKDE(BoundedKDE):
         self.alpha = alpha
         self.N = N
         self.smooth = smooth
+        self.apply_smoothing = apply_smoothing
 
     @property
     def transform(self):
@@ -147,9 +163,11 @@ class TransformBoundedKDE(BoundedKDE):
                 )
             )
         elif isinstance(transform, str):
-            self.inv_transform = globals()["inverse_transform_{}".format(transform)]
-            self.dydx = globals()["dydx_{}".format(transform)]
-            transform = globals()["transform_{}".format(transform)]
+            self.inv_transform = _default_methods[
+                "inverse_transform_{}".format(transform)
+            ]
+            self.dydx = _default_methods["dydx_{}".format(transform)]
+            transform = _default_methods["transform_{}".format(transform)]
         if not isinstance(transform, str):
             if any(param is None for param in [self.inv_transform, self.dydx]):
                 raise ValueError(
@@ -169,13 +187,15 @@ class TransformBoundedKDE(BoundedKDE):
             return np.zeros_like(pts)
         pts = np.hstack(pts[_args])
         pts = self.transform(np.atleast_1d(pts), self.xlow, self.xhigh)
-        ymin = self.alpha * np.min(pts)
-        ymax = self.alpha * np.max(pts)
+        delta = np.max(pts) - np.min(pts)
+        ymin = np.min(pts) - ((self.alpha - 1.) / 2) * delta
+        ymax = np.max(pts) + ((self.alpha - 1.) / 2) * delta
         y = np.linspace(ymin, ymax, self.N)
         x = self.inv_transform(y, self.xlow, self.xhigh)
         Y = self.evaluate(y) * np.abs(self.dydx(x, self.xlow, self.xhigh))
-        ysmoothed = gaussian_filter1d(Y, sigma=self.smooth)
-        return x, ysmoothed
+        if self.apply_smoothing:
+            Y = gaussian_filter1d(Y, sigma=self.smooth)
+        return x, Y
 
 
 class ReflectionBoundedKDE(BoundedKDE):
@@ -230,3 +250,16 @@ class Bounded_1d_kde(ReflectionBoundedKDE):
     )
     def __init__(self, *args, **kwargs):
         return super(Bounded_1d_kde, self).__init__(*args, **kwargs)
+
+
+_kdes = {
+    "TransformBoundedKDE": TransformBoundedKDE,
+    "ReflectionBoundedKDE": ReflectionBoundedKDE,
+    "Bounded_1d_kde": Bounded_1d_kde
+}
+
+_default_methods = {
+    "transform_logit": transform_logit,
+    "inverse_transform_logit": inverse_transform_logit,
+    "dydx_logit": dydx_logit
+}

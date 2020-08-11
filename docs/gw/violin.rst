@@ -102,7 +102,7 @@ hand side, and the `chi_p` prior on the right hand side (we will utilize the
     >>> samples = split_dataframe(left, right, interested)
     >>> fig = violin_plots(
     ...     parameter, samples, interested, GWlatex_labels, kde=bounded_1d_kde,
-    ...     kde_kwargs={"method": "Transform", "xlow": 0.01, "xhigh": 0.99},
+    ...     kde_kwargs={"method": "Transform", "xlow": 0.01, "xhigh": 0.99, "apply_smoothing": True},
     ...     cut=0, x="label", y="data", hue="side", split=True,
     ...     palette={"right": "pastel", "left": "color: white"}
     ... )
