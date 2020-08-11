@@ -977,7 +977,9 @@ class _WebpageGeneration(object):
         pages: list
             list of pages that you wish to create
         """
-        from pesummary._version_helper import PackageInformation
+        from pesummary._version_helper import (
+            PackageInformation, install_path
+        )
 
         html_file = webpage.open_html(
             web_dir=self.webdir, base_url=self.base_url, html_page="Version"
@@ -989,6 +991,7 @@ class _WebpageGeneration(object):
         path = pesummary.__file__[:-12]
         with open(path + "/.version", 'r') as f:
             contents = f.read()
+        contents += install_path(return_string=True)
         for i in self.labels:
             contents = (
                 "# {} version information\n\n{}_version={}\n\n".format(
