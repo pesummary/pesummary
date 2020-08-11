@@ -217,6 +217,9 @@ class ViolinPlotter(_ViolinPlotter):
                 # Determine the support grid and get the density over it
                 support_i = self.kde_support(kde_data, bw_used, cut, gridsize)
                 density_i = kde(support_i)
+                if np.array(density_i).ndim == 2:
+                    support_i, density_i = density_i
+
                 # Update the data structures with these results
                 support.append(support_i)
                 density.append(density_i)
@@ -261,11 +264,12 @@ class ViolinPlotter(_ViolinPlotter):
 
                     # Fit the KDE and get the used bandwidth size
                     kde, bw_used = self.fit_kde(kde_data, bw)
-
                     # Determine the support grid and get the density over it
                     support_ij = self.kde_support(kde_data, bw_used,
                                                   cut, gridsize)
                     density_ij = kde(support_ij)
+                    if np.array(density_ij).ndim == 2:
+                        support_ij, density_ij = density_ij
 
                     # Update the data structures with these results
                     support[i].append(support_ij)
@@ -498,7 +502,6 @@ class ViolinPlotter(_ViolinPlotter):
     def fit_kde(self, x, bw):
         """Estimate a KDE for a vector of data with flexible bandwidth."""
         kde = self.kde(x, bw_method=bw, **self.kde_kwargs)
-
         # Extract the numeric bandwidth from the KDE object
         bw_used = kde.factor
 
@@ -658,3 +661,43 @@ def violinplot(x=None, y=None, hue=None, data=None, order=None, hue_order=None,
 
     plotter.plot(ax)
     return ax
+
+
+def split_dataframe(left, right, labels, left_label="left", right_label="right"):
+    """Generate a pandas DataFrame containing two sets of distributions -- one
+    set for the left hand side of the violins, and one set for the right hand
+    side of the violins
+
+    Parameters
+    ----------
+    left: np.ndarray
+        array of samples representing the left hand side of the violins
+    right: np.ndarray
+        array of samples representing the right hand side of the violins
+    labels: np.array
+        array containing the label associated with each violin
+    """
+    import pandas
+
+    nviolin = len(left)
+    if len(left) != len(right) != len(labels):
+        raise ValueError("Please ensure that 'left' == 'right' == 'labels'")
+    _left_label = np.array([[left_label] * len(sample) for sample in left])
+    _right_label = np.array([[right_label] * len(sample) for sample in right])
+    _labels = [
+        [label] * (len(left[num]) + len(right[num])) for num, label in
+        enumerate(labels)
+    ]
+    labels = [x for y in _labels for x in y]
+    dataframe = [
+        x for y in [[i, j] for i, j in zip(left, right)] for x in y
+    ]
+    dataframe = [x for y in dataframe for x in y]
+    sides = [
+        x for y in [[i, j] for i, j in zip(_left_label, _right_label)] for x in
+        y
+    ]
+    sides = [x for y in sides for x in y]
+    return pandas.DataFrame(
+        data={"data": dataframe, "side": sides, "label": labels}
+    )
