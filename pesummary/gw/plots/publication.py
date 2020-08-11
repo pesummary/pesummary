@@ -17,7 +17,6 @@ from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, get_matplotlib_backend
 )
 import matplotlib
-matplotlib.use(get_matplotlib_backend())
 import matplotlib.lines as mlines
 import seaborn
 from pesummary.core.plots.figure import figure

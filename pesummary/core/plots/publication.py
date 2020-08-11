@@ -23,8 +23,7 @@ from pesummary import conf
 
 
 def _triangle_axes(
-    figsize=(8, 8), width_ratios=[4, 1], height_ratios=[1, 4], wspace=0.0,
-    hspace=0.0,
+    figsize=(8, 8), width_ratios=[4, 1], height_ratios=[1, 4], wspace=0.0, hspace=0.0,
 ):
     """Initialize the axes for a 2d triangle plot
 
@@ -43,13 +42,12 @@ def _triangle_axes(
     """
     high1d = 1.0
     fig = figure(figsize=figsize, gca=False)
-    gs = gridspec.GridSpec(
-        2, 2, width_ratios=width_ratios, height_ratios=height_ratios,
-        wspace=wspace, hspace=hspace
-    )
+    gs = gridspec.GridSpec(2, 2, width_ratios=width_ratios, height_ratios=height_ratios, wspace=wspace, hspace=hspace)
     ax1, ax2, ax3, ax4 = (
-        fig.add_subplot(gs[0]), fig.add_subplot(gs[1]), fig.add_subplot(gs[2]),
-        fig.add_subplot(gs[3])
+        fig.add_subplot(gs[0]),
+        fig.add_subplot(gs[1]),
+        fig.add_subplot(gs[2]),
+        fig.add_subplot(gs[3]),
     )
     ax1.minorticks_on()
     ax3.minorticks_on()
@@ -60,11 +58,25 @@ def _triangle_axes(
 
 
 def triangle_plot(
-    x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
-    fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
-    xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
-    linestyles=None, linewidths=None, plot_density=True, percentiles=None,
-    fig_kwargs={}, labels=None
+    x,
+    y,
+    kde=gaussian_kde,
+    npoints=100,
+    kde_kwargs={},
+    fill=True,
+    fill_alpha=0.5,
+    levels=[0.9],
+    smooth=7,
+    colors=list(conf.colorcycle),
+    xlabel=None,
+    ylabel=None,
+    fontsize={"legend": 12, "label": 12},
+    linestyles=None,
+    linewidths=None,
+    plot_density=True,
+    percentiles=None,
+    fig_kwargs={},
+    labels=None,
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -117,20 +129,53 @@ def triangle_plot(
     fig, ax1, ax2, ax3, ax4 = _triangle_axes(**fig_kwargs)
     ax2.axis("off")
     return _triangle_plot(
-        fig, [ax1, ax3, ax4], x, y, kde=kde, npoints=npoints, smooth=smooth,
-        kde_kwargs=kde_kwargs, fill=fill, fill_alpha=fill_alpha, levels=levels,
-        colors=colors, linestyles=linestyles, linewidths=linewidths,
-        plot_density=plot_density, percentiles=percentiles, fig_kwargs=fig_kwargs,
-        labels=labels, xlabel=xlabel, ylabel=ylabel, fontsize=fontsize
+        fig,
+        [ax1, ax3, ax4],
+        x,
+        y,
+        kde=kde,
+        npoints=npoints,
+        smooth=smooth,
+        kde_kwargs=kde_kwargs,
+        fill=fill,
+        fill_alpha=fill_alpha,
+        levels=levels,
+        colors=colors,
+        linestyles=linestyles,
+        linewidths=linewidths,
+        plot_density=plot_density,
+        percentiles=percentiles,
+        fig_kwargs=fig_kwargs,
+        labels=labels,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        fontsize=fontsize,
     )
 
 
 def _triangle_plot(
-    fig, axes, x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
-    fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
-    xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
-    linestyles=None, linewidths=None, plot_density=True, percentiles=None,
-    fig_kwargs={}, labels=None
+    fig,
+    axes,
+    x,
+    y,
+    kde=gaussian_kde,
+    npoints=100,
+    kde_kwargs={},
+    fill=True,
+    fill_alpha=0.5,
+    levels=[0.9],
+    smooth=7,
+    colors=list(conf.colorcycle),
+    xlabel=None,
+    ylabel=None,
+    fontsize={"legend": 12, "label": 12},
+    linestyles=None,
+    linewidths=None,
+    plot_density=True,
+    percentiles=None,
+    fig_kwargs={},
+    labels=None,
+    plot_datapoints=False,
 ):
     """Base function to generate a triangular plot
 
@@ -206,10 +251,7 @@ def _triangle_plot(
     ylow = np.min([np.min(_y) for _y in y])
     yhigh = np.max([np.max(_y) for _y in y])
     for num in range(len(x)):
-        plot_kwargs = dict(
-            color=colors[num], linewidth=linewidths[num],
-            linestyle=linestyles[num]
-        )
+        plot_kwargs = dict(color=colors[num], linewidth=linewidths[num], linestyle=linestyles[num])
         if kde:
             _kde = kde(x[num], **kde_kwargs)
             _x = np.linspace(xlow, xhigh, npoints)
@@ -237,35 +279,50 @@ def _triangle_plot(
             else:
                 histtype = "step"
             ax1.hist(x[num], histtype=histtype, **plot_kwargs)
-            ax4.hist(
-                y[num], histtype=histtype, orientation="horizontal",
-                **plot_kwargs
-            )
+            ax4.hist(y[num], histtype=histtype, orientation="horizontal", **plot_kwargs)
         corner.hist2d(
-            x[num], y[num], bins=300, ax=ax3, levels=levels, smooth=smooth,
-            range=[[xlow, xhigh], [ylow, yhigh]], color=colors[num],
-            plot_density=plot_density, contour_kwargs=dict(
-                linestyles=[linestyles[num]], linewidths=linewidths[num]
-            )
+            x[num],
+            y[num],
+            bins=300,
+            ax=ax3,
+            levels=levels,
+            smooth=smooth,
+            range=[[xlow, xhigh], [ylow, yhigh]],
+            color=colors[num],
+            plot_density=plot_density,
+            contour_kwargs=dict(linestyles=[linestyles[num]], linewidths=linewidths[num]),
+            plot_datapoints=plot_datapoints,
         )
     if xlabel is not None:
         ax3.set_xlabel(xlabel, fontsize=fontsize["label"])
     if ylabel is not None:
         ax3.set_ylabel(ylabel, fontsize=fontsize["label"])
     if not all(label is None for label in labels):
-        ax3.legend(
-            *ax4.get_legend_handles_labels(), loc="best", frameon=False,
-            fontsize=fontsize["legend"]
-        )
+        ax3.legend(*ax4.get_legend_handles_labels(), loc="best", frameon=False, fontsize=fontsize["legend"])
     return fig, ax1, ax3, ax4
 
 
 def reverse_triangle_plot(
-    x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
-    fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
-    xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
-    linestyles=None, linewidths=None, plot_density=True, percentiles=None,
-    fig_kwargs={}, labels=None
+    x,
+    y,
+    kde=gaussian_kde,
+    npoints=100,
+    kde_kwargs={},
+    fill=True,
+    fill_alpha=0.5,
+    levels=[0.9],
+    smooth=7,
+    colors=list(conf.colorcycle),
+    xlabel=None,
+    ylabel=None,
+    fontsize={"legend": 12, "label": 12},
+    linestyles=None,
+    linewidths=None,
+    plot_density=True,
+    percentiles=None,
+    fig_kwargs={},
+    labels=None,
+    plot_datapoints=False,
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -316,26 +373,39 @@ def reverse_triangle_plot(
     labels: list, optional
         label associated with each set of samples
     """
-    fig, ax1, ax2, ax3, ax4 = _triangle_axes(
-        width_ratios=[1, 4], height_ratios=[4, 1]
-    )
+    fig, ax1, ax2, ax3, ax4 = _triangle_axes(width_ratios=[1, 4], height_ratios=[4, 1])
     ax3.axis("off")
     fig, ax4, ax2, ax1 = _triangle_plot(
-        fig, [ax4, ax2, ax1], x, y, kde=kde, npoints=npoints, smooth=smooth,
-        kde_kwargs=kde_kwargs, fill=fill, fill_alpha=fill_alpha, levels=levels,
-        colors=colors, linestyles=linestyles, linewidths=linewidths,
-        plot_density=plot_density, percentiles=percentiles, fig_kwargs=fig_kwargs,
-        labels=labels, fontsize=fontsize
+        fig,
+        [ax4, ax2, ax1],
+        x,
+        y,
+        kde=kde,
+        npoints=npoints,
+        smooth=smooth,
+        kde_kwargs=kde_kwargs,
+        fill=fill,
+        fill_alpha=fill_alpha,
+        levels=levels,
+        colors=colors,
+        linestyles=linestyles,
+        linewidths=linewidths,
+        plot_density=plot_density,
+        percentiles=percentiles,
+        fig_kwargs=fig_kwargs,
+        labels=labels,
+        fontsize=fontsize,
+        plot_datapoints=plot_datapoints,
     )
     ax2.axis("off")
-    ax4.spines['right'].set_visible(False)
-    ax4.spines['top'].set_visible(False)
-    ax4.spines['left'].set_visible(False)
+    ax4.spines["right"].set_visible(False)
+    ax4.spines["top"].set_visible(False)
+    ax4.spines["left"].set_visible(False)
     ax4.set_yticks([])
 
-    ax1.spines['right'].set_visible(False)
-    ax1.spines['top'].set_visible(False)
-    ax1.spines['bottom'].set_visible(False)
+    ax1.spines["right"].set_visible(False)
+    ax1.spines["top"].set_visible(False)
+    ax1.spines["bottom"].set_visible(False)
     ax1.set_xticks([])
 
     if xlabel is not None:
