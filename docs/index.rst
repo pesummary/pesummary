@@ -145,6 +145,14 @@ Helper classes
     core/bounded_kdes
     utils/condition_prior
 
+Advanced plotting
++++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    gw/violin
+
 Specific to Gravitational Waves
 -------------------------------
 

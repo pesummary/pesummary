@@ -60,7 +60,6 @@ def bounded_1d_kde(
             pts, xlow=xlow, xhigh=xhigh, *args, **kwargs
         )
     except KeyError:
-
         raise ValueError("Unknown method: {}".format(method))
 
 
@@ -117,9 +116,13 @@ class TransformBoundedKDE(BoundedKDE):
         self, pts, xlow=None, xhigh=None, transform="logit", inv_transform=None,
         dydx=None, alpha=1.5, N=100, smooth=3, *args, **kwargs
     ):
+        import pandas
+
         self.inv_transform = inv_transform
         self.dydx = dydx
         self.transform = transform
+        if isinstance(pts, pandas.core.series.Series):
+            pts = np.array(pts)
         _args = np.hstack(np.argwhere((pts > xlow) & (pts < xhigh)))
         pts = pts[_args]
         transformed_pts = self.transform(pts, xlow, xhigh)

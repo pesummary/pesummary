@@ -376,6 +376,7 @@ class TestPublication(object):
 
     def test_violin(self):
         from pesummary.gw.plots.publication import violin_plots
+        from pesummary.gw.plots.violin import split_dataframe
 
         parameter = "a"
         samples = [
@@ -384,6 +385,16 @@ class TestPublication(object):
         ]
         labels = ["a", "b"]
         fig = violin_plots(parameter, samples, labels, {"a": "a", "b": "b"})
+        assert isinstance(fig, matplotlib.figure.Figure)
+        samples2 = [
+            np.random.uniform(0., 3000, 1000),
+            np.random.uniform(0., 3000, 1000)
+        ]
+        split = split_dataframe(samples, samples2, labels)
+        fig = violin_plots(
+            parameter, split, labels, {"a": "a", "b": "b"},
+            cut=0, x="label", y="data", hue="side", split=True
+        )
         assert isinstance(fig, matplotlib.figure.Figure)
 
     def test_spin_distribution_plots(self):
