@@ -239,7 +239,11 @@ def violin_plots(
     return fig
 
 
-def spin_distribution_plots(parameters, samples, label, color, colorbar=False):
+def spin_distribution_plots(
+    parameters, samples, label, color=None, cmap=None, annotate=False,
+    show_label=True, colorbar=False, vmin=0.,
+    vmax=np.log(1.0 + np.exp(1.) * 3.024)
+):
     """Generate spin distribution plots for a set of parameters and samples
 
     Parameters
@@ -250,8 +254,15 @@ def spin_distribution_plots(parameters, samples, label, color, colorbar=False):
         list of samples for each spin component
     label: str
         the label corresponding to the set of samples
-    color: tuple
-        tuple describing the color to be used for plotting
+    color: str, optioanl
+        color to use for plotting
+    cmap: str, optional
+        cmap to use for plotting. cmap is preferentially chosen over color
+    annotate: Bool, optional
+        if True, label the magnitude and tilt directions
+    show_label: Bool, optional
+        if True, add labels indicating which side of the spin disk corresponds
+        to which binary component
     """
     logger.debug("Generating spin distribution plots for %s" % (label))
     from matplotlib.ticker import FixedLocator, Formatter
@@ -267,7 +278,12 @@ def spin_distribution_plots(parameters, samples, label, color, colorbar=False):
     import mpl_toolkits.axisartist.angle_helper as angle_helper
     from matplotlib.colors import LinearSegmentedColormap
 
-    cmap = colormap_with_fixed_hue(color)
+    if color is not None and cmap is None:
+        cmap = colormap_with_fixed_hue(color)
+    elif color is None and cmap is None:
+        raise ValueError(
+            "Please provide either a single color or a cmap to use for plotting"
+        )
 
     spin1 = samples[parameters.index("a_1")]
     spin2 = samples[parameters.index("a_2")]
@@ -302,8 +318,6 @@ def spin_distribution_plots(parameters, samples, label, color, colorbar=False):
         np.column_stack([RS.ravel() + dr / 2, COSTS.ravel() + dcost / 2]))
     H1 = np.log(1.0 + scale * spin1_PDF)
     H2 = np.log(1.0 + scale * spin2_PDF)
-    vmin = 0.0
-    vmax = np.log(1.0 + scale * 3.024)
 
     rect = 121
 
@@ -408,14 +422,49 @@ def spin_distribution_plots(parameters, samples, label, color, colorbar=False):
     # Event name top, spin labels bottom
     if label is not None:
         title = ax1.text(0.16, 1.25, label, fontsize=18, horizontalalignment='center')
-    S1_label = ax1.text(1.25, -1.15, r'$c{S}_{1}/(Gm_1^2)$', fontsize=14)
-    S2_label = ax1.text(-.5, -1.15, r'$c{S}_{2}/(Gm_2^2)$', fontsize=14)
+    if show_label:
+        S1_label = ax1.text(1.25, -1.15, r'$c{S}_{1}/(Gm_1^2)$', fontsize=14)
+        S2_label = ax1.text(-.5, -1.15, r'$c{S}_{2}/(Gm_2^2)$', fontsize=14)
+    if annotate:
+        scale = 1.0
+        aux_ax2 = ax1.get_aux_axes(tr)
+        txt = aux_ax2.text(
+            50 * scale, 0.35 * scale, r'$\textrm{magnitude}$', fontsize=20,
+            zorder=10
+        )
+        txt = aux_ax2.text(
+            45 * scale, 1.2 * scale, r'$\textrm{tilt}$', fontsize=20, zorder=10
+        )
+        txt = aux_ax2.annotate(
+            "", xy=(55, 1.158 * scale), xycoords='data',
+            xytext=(35, 1.158 * scale), textcoords='data',
+            arrowprops=dict(
+                arrowstyle="->", color="k", shrinkA=2, shrinkB=2, patchA=None,
+                patchB=None, connectionstyle='arc3,rad=-0.16'
+            )
+        )
+        txt.arrow_patch.set_path_effects(
+            [PathEffects.Stroke(linewidth=2, foreground="w"), PathEffects.Normal()]
+        )
+        txt = aux_ax2.annotate(
+            "", xy=(35, 0.55 * scale), xycoords='data',
+            xytext=(150, 0. * scale), textcoords='data',
+            arrowprops=dict(
+                arrowstyle="->", color="k", shrinkA=2, shrinkB=2, patchA=None,
+                patchB=None
+            ), zorder=100
+        )
+        txt.arrow_patch.set_path_effects(
+            [
+                PathEffects.Stroke(linewidth=0.3, foreground="k"),
+                PathEffects.Normal()
+            ]
+        )
     fig.subplots_adjust(wspace=0.295)
-    ax3 = fig.add_axes([0.22, 0.05, 0.55, 0.02])
     if colorbar:
+        ax3 = fig.add_axes([0.22, 0.05, 0.55, 0.02])
         cbar = fig.colorbar(
             p, cax=ax3, orientation="horizontal", pad=0.2, shrink=0.5,
             label='posterior probability per pixel'
         )
-    # bbox_extra_artists = [title, S1_label, S2_label]
     return fig
