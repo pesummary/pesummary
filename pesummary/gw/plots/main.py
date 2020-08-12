@@ -885,7 +885,7 @@ class _PlotGeneration(_BasePlotGeneration):
         ----------
         """
         fig = publication.spin_distribution_plots(
-            parameters, samples, label, color
+            parameters, samples, label, color=color
         )
         _PlotGeneration.save(
             fig, os.path.join(

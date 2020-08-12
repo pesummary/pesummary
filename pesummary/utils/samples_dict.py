@@ -423,13 +423,7 @@ class SamplesDict(dict):
                 "parameters: {}".format(", ".join(required))
             )
         samples = [self[param] for param in required]
-        if kwargs.get("color", None) is not None:
-            color = kwargs["color"]
-        else:
-            color = list(conf.colorcycle)[0]
-        return spin_distribution_plots(
-            required, samples, None, color, **kwargs
-        )
+        return spin_distribution_plots(required, samples, None, **kwargs)
 
     def _corner(self, module="core", parameters=None, **kwargs):
         """Wrapper for the `pesummary.core.plots.plot._make_corner_plot` or
