@@ -817,13 +817,17 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             },
             "spins": {
                 "accept": ["spin", "chi_p", "chi_eff", "a_1", "a_2"],
-                "reject": ["lambda", "final"]
+                "reject": ["lambda", "final", "gamma"]
             },
             "spin_angles": {
                 "accept": ["phi", "tilt"], "reject": []
             },
             "tidal": {
-                "accept": ["lambda"], "reject": []
+                "accept": [
+                    "lambda", "gamma_", "log_pressure",
+                    "spectral_decomposition_gamma_"
+                ],
+                "reject": []
             },
             "location": {
                 "accept": [

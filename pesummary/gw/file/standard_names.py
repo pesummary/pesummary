@@ -53,6 +53,18 @@ lalinference_map = {
     "lambda2": "lambda_2",
     "lambdaT": "lambda_tilde",
     "dLambdaT": "delta_lambda",
+    "logp1": "log_pressure",
+    "gamma1": "gamma_1",
+    "gamma2": "gamma_2",
+    "gamma3": "gamma_3",
+    "SDgamma0": "spectral_decomposition_gamma_0",
+    "SDgamma1": "spectral_decomposition_gamma_1",
+    "SDgamma2": "spectral_decomposition_gamma_2",
+    "SDgamma3": "spectral_decomposition_gamma_3",
+    "sdgamma0": "spectral_decomposition_gamma_0",
+    "sdgamma1": "spectral_decomposition_gamma_1",
+    "sdgamma2": "spectral_decomposition_gamma_2",
+    "sdgamma3": "spectral_decomposition_gamma_3",
     "mf_evol_avg": "final_mass",
     "mf_nonevol": "final_mass_non_evolved",
     "mf_source_evol_avg": "final_mass_source",
@@ -462,6 +474,35 @@ descriptive_names = {
     ),
     "delta_lambda": (
         "the relative difference in the combined tidal deformability"
+    ),
+    "log_pressure": (
+        "the base 10 logarithm of the pressure in Pa at the reference density "
+        "of 10^17.7 kg/m^3"
+    ),
+    "gamma_1": (
+        "the adiabatic index for densities below 10^17.7 kg/m^3"
+    ),
+    "gamma_2": (
+        "the adiabatic index for densities from 10^17.7 kg/m^3 to 10^18 kg/m^3"
+    ),
+    "gamma_3": (
+        "the adiabatic index for densities above 10^18 kg/m^3"
+    ),
+    "spectral_decomposition_gamma_0": (
+        "the 0th expansion coefficient of the spectrally decomposed adiabatic "
+        "index of the EOS"
+    ),
+    "spectral_decomposition_gamma_1": (
+        "the 1st expansion coefficient of the spectrally decomposed adiabatic "
+        "index of the EOS"
+    ),
+    "spectral_decomposition_gamma_2": (
+        "the 2nd expansion coefficient of the spectrally decomposed adiabatic "
+        "index of the EOS"
+    ),
+    "spectral_decomposition_gamma_3": (
+        "the 3rd expansion coefficient of the spectrally decomposed adiabatic "
+        "index of the EOS"
     ),
     "peak_luminosity": (
         "the peak gravitational wave luminosity estimated using the spins "

@@ -15,7 +15,7 @@
 
 import numpy as np
 
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, iterator
 from pesummary.utils.decorators import array_input
 from pesummary.utils.exceptions import EvolveSpinError
 from pesummary import conf
@@ -27,9 +27,11 @@ try:
         SimInspiralTransformPrecessingWvf2PE, DetectorPrefixToLALDetector,
         FLAG_SEOBNRv4P_HAMILTONIAN_DERIVATIVE_NUMERICAL,
         FLAG_SEOBNRv4P_EULEREXT_QNM_SIMPLE_PRECESSION,
-        FLAG_SEOBNRv4P_ZFRAME_L
+        FLAG_SEOBNRv4P_ZFRAME_L, SimNeutronStarEOS4ParameterPiecewisePolytrope,
+        SimNeutronStarRadius, CreateSimNeutronStarFamily,
+        SimNeutronStarLoveNumberK2, SimNeutronStarEOS4ParameterSpectralDecomposition
     )
-    from lal import MSUN_SI, C_SI
+    from lal import MSUN_SI, C_SI, MRSUN_SI
     LALINFERENCE_INSTALL = True
 except ImportError:
     LALINFERENCE_INSTALL = False
@@ -460,6 +462,157 @@ def lambda2_from_lambda1(lambda1, mass1, mass2):
     q = q_from_m1_m2(mass1, mass2)
     lambda2 = lambda1 / q**5
     return lambda2
+
+
+def _lambda1_lambda2_from_eos(eos, mass_1, mass_2):
+    """Return lambda_1 and lambda_2 assuming a given equation of state
+    """
+    fam = CreateSimNeutronStarFamily(eos)
+    _lambda = []
+    for mass in [mass_1, mass_2]:
+        r = SimNeutronStarRadius(mass * MSUN_SI, fam)
+        k = SimNeutronStarLoveNumberK2(mass * MSUN_SI, fam)
+        c = mass * MRSUN_SI / r
+        _lambda.append((2. / 3.) * k / c**5.0)
+    return _lambda
+
+
+def wrapper_for_lambda1_lambda2_polytrope_EOS(args):
+    """Wrapper function to calculate the tidal deformability parameters from the
+    4_parameter_piecewise_polytrope_equation_of_state parameters for a pool
+    of workers
+    """
+    return _lambda1_lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(*args)
+
+
+def _lambda1_lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
+    log_pressure_si, gamma_1, gamma_2, gamma_3, mass_1, mass_2
+):
+    """Wrapper function to calculate the tidal deformability parameters from the
+    4_parameter_piecewise_polytrope_equation_of_state parameters for a pool
+    of workers
+    """
+    eos = SimNeutronStarEOS4ParameterPiecewisePolytrope(
+        log_pressure_si, gamma_1, gamma_2, gamma_3
+    )
+    return _lambda1_lambda2_from_eos(eos, mass_1, mass_2)
+
+
+def wrapper_for_lambda1_lambda2_from_spectral_decomposition(args):
+    """Wrapper function to calculate the tidal deformability parameters from
+    the spectral decomposition parameters for a pool of workers
+    """
+    return _lambda1_lambda2_from_spectral_decomposition(*args)
+
+
+def _lambda1_lambda2_from_spectral_decomposition(
+    spectral_decomposition_gamma_0, spectral_decomposition_gamma_1,
+    spectral_decomposition_gamma_2, spectral_decomposition_gamma_3,
+    mass_1, mass_2
+):
+    """Wrapper function to calculate the tidal deformability parameters from
+    the spectral decomposition parameters for a pool of workers
+    """
+    gammas = [
+        spectral_decomposition_gamma_0, spectral_decomposition_gamma_1,
+        spectral_decomposition_gamma_2, spectral_decomposition_gamma_3
+    ]
+    eos = SimNeutronStarEOS4ParameterSpectralDecomposition(*gammas)
+    return _lambda1_lambda2_from_eos(eos, mass_1, mass_2)
+
+
+@array_input
+def lambda1_lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
+    log_pressure, gamma_1, gamma_2, gamma_3, mass_1, mass_2, multi_process=1
+):
+    """Convert 4 parameter piecewise polytrope EOS parameters to the tidal
+    deformability parameters lambda_1, lambda_2
+    """
+    import multiprocessing
+
+    logger.warn(
+        "Calculating the tidal deformability parameters based on the 4 "
+        "parameter piecewise polytrope equation of state parameters. This may "
+        "take some time"
+    )
+    log_pressure_si = log_pressure - 1.
+    args = np.array(
+        [log_pressure_si, gamma_1, gamma_2, gamma_3, mass_1, mass_2]
+    ).T
+    with multiprocessing.Pool(multi_process[0]) as pool:
+        lambdas = np.array(
+            list(
+                iterator(
+                    pool.imap(wrapper_for_lambda1_lambda2_polytrope_EOS, args),
+                    tqdm=True, logger=logger, total=len(mass_1),
+                    desc="Calculating tidal parameters"
+                )
+            )
+        )
+
+    lambdas = np.array(lambdas).T
+    return lambdas[0], lambdas[1]
+
+
+@array_input
+def lambda1_lambda2_from_spectral_decomposition(
+    spectral_decomposition_gamma_0, spectral_decomposition_gamma_1,
+    spectral_decomposition_gamma_2, spectral_decomposition_gamma_3,
+    mass_1, mass_2, multi_process=1
+):
+    """Convert spectral decomposition parameters to the tidal deformability
+    parameters lambda_1, lambda_2
+    """
+    import multiprocessing
+
+    logger.warn(
+        "Calculating the tidal deformability parameters from the spectral "
+        "decomposition equation of state parameters. This may take some time"
+    )
+    args = np.array(
+        [
+            spectral_decomposition_gamma_0, spectral_decomposition_gamma_1,
+            spectral_decomposition_gamma_2, spectral_decomposition_gamma_3,
+            mass_1, mass_2
+        ]
+    ).T
+    with multiprocessing.Pool(multi_process[0]) as pool:
+        lambdas = np.array(
+            list(
+                iterator(
+                    pool.imap(wrapper_for_lambda1_lambda2_from_spectral_decomposition, args),
+                    tqdm=True, logger=logger, total=len(mass_1),
+                    desc="Calculating tidal parameters"
+                )
+            )
+        )
+
+    lambdas = np.array(lambdas).T
+    return lambdas[0], lambdas[1]
+
+
+@array_input
+def lambda1_from_4_parameter_piecewise_polytrope_equation_of_state(
+    log_pressure, gamma_1, gamma_2, gamma_3, mass_1, mass_2
+):
+    """Convert 4 parameter piecewise polytrope EOS parameters to the tidal
+    deformability parameters lambda_1
+    """
+    return lambda1_lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
+        log_pressure, gamma_1, gamma_2, gamma_3, mass_1, mass_2
+    )[0]
+
+
+@array_input
+def lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
+    log_pressure, gamma_1, gamma_2, gamma_3, mass_1, mass_2
+):
+    """Convert 4 parameter piecewise polytrope EOS parameters to the tidal
+    deformability parameters lambda_2
+    """
+    return lambda1_lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
+        log_pressure, gamma_1, gamma_2, gamma_3, mass_1, mass_2
+    )[1]
 
 
 @array_input
@@ -1802,6 +1955,33 @@ class _Conversion(object):
             samples[0], samples[1], samples[2], samples[3])
         self.append_data("delta_lambda", delta_lambda)
 
+    def _lambda1_lambda2_from_polytrope_EOS(self):
+        samples = self.specific_parameter_samples([
+            "log_pressure", "gamma_1", "gamma_2", "gamma_3", "mass_1", "mass_2"
+        ])
+        lambda_1, lambda_2 = \
+            lambda1_lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
+                *samples, multi_process=self.multi_process
+            )
+        if "lambda_1" not in self.parameters:
+            self.append_data("lambda_1", lambda_1)
+        if "lambda_2" not in self.parameters:
+            self.append_data("lambda_2", lambda_2)
+
+    def _lambda1_lambda2_from_spectral_decomposition_EOS(self):
+        samples = self.specific_parameter_samples([
+            "spectral_decomposition_gamma_0", "spectral_decomposition_gamma_1",
+            "spectral_decomposition_gamma_2", "spectral_decomposition_gamma_3",
+            "mass_1", "mass_2"
+        ])
+        lambda_1, lambda_2 = lambda1_lambda2_from_spectral_decomposition(
+            *samples, multi_process=self.multi_process
+        )
+        if "lambda_1" not in self.parameters:
+            self.append_data("lambda_1", lambda_1)
+        if "lambda_2" not in self.parameters:
+            self.append_data("lambda_2", lambda_2)
+
     def _ifo_snr(self):
         abs_snrs = [
             i for i in self.parameters if "_matched_filter_abs_snr" in i
@@ -2246,6 +2426,17 @@ class _Conversion(object):
             if "chi_p" not in self.parameters:
                 if all(i in self.parameters for i in spin_components):
                     self._chi_p()
+            polytrope_params = ["log_pressure", "gamma_1", "gamma_2", "gamma_3"]
+            if all(param in self.parameters for param in polytrope_params):
+                if "lambda_1" not in self.parameters or "lambda_2" not in self.parameters:
+                    self._lambda1_lambda2_from_polytrope_EOS()
+            spectral_params = [
+                "spectral_decomposition_gamma_{}".format(num) for num in
+                np.arange(4)
+            ]
+            if all(param in self.parameters for param in spectral_params):
+                if "lambda_1" not in self.parameters or "lambda_2" not in self.parameters:
+                    self._lambda1_lambda2_from_spectral_decomposition_EOS()
             if "lambda_tilde" in self.parameters and "lambda_1" not in self.parameters:
                 self._lambda1_from_lambda_tilde()
             if "lambda_2" not in self.parameters and "lambda_1" in self.parameters:
