@@ -66,7 +66,8 @@ def triangle_plot(
     fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
     xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
     linestyles=None, linewidths=None, plot_density=True,
-    percentiles=None, fig_kwargs={}, labels=None, **kwargs
+    percentiles=None, percentile_plot=None, fig_kwargs={}, labels=None,
+    rangex=None, rangey=None, grid=False, **kwargs
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -92,8 +93,10 @@ def triangle_plot(
         alpha to use for fill
     levels: list, optional
         levels you wish to use for the 2d contours
-    smooth: float, optional
-        how much smoothing you wish to use for the 2d contours
+    smooth: dict/float, optional
+        how much smoothing you wish to use for the 2d contours. If you wish
+        to use different smoothing for different contours, then provide a dict
+        with keys given by the label
     colors: list, optional
         list of colors you wish to use for each analysis
     xlabel: str, optional
@@ -111,10 +114,18 @@ def triangle_plot(
         whether or not to plot the density on the 2d contour. Default True
     percentiles: list, optional
         percentiles you wish to plot. Default None
+    percentile_plot: list, optional
+        list of analyses to plot percentiles. Default all analyses
     fig_kwargs: dict, optional
         optional kwargs passed directly to the _triangle_axes function
     labels: list, optional
         label associated with each set of samples
+    rangex: tuple, optional
+        range over which to plot the x axis
+    rangey: tuple, optional
+        range over which to plot the y axis
+    grid: Bool, optional
+        if True, show a grid on all axes. Default False
     **kwargs: dict
         all additional kwargs are passed to the corner.hist2d function
     """
@@ -126,7 +137,8 @@ def triangle_plot(
         levels=levels, colors=colors, linestyles=linestyles,
         linewidths=linewidths, plot_density=plot_density,
         percentiles=percentiles, fig_kwargs=fig_kwargs, labels=labels,
-        xlabel=xlabel, ylabel=ylabel, fontsize=fontsize, **kwargs
+        xlabel=xlabel, ylabel=ylabel, fontsize=fontsize, rangex=rangex,
+        rangey=rangey, percentile_plot=percentile_plot, grid=grid, **kwargs
     )
 
 
@@ -135,7 +147,8 @@ def _triangle_plot(
     fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
     xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
     linestyles=None, linewidths=None, plot_density=True, percentiles=None,
-    fig_kwargs={}, labels=None, plot_datapoints=False, **kwargs
+    percentile_plot=None, fig_kwargs={}, labels=None, plot_datapoints=False,
+    rangex=None, rangey=None, grid=False, **kwargs
 ):
     """Base function to generate a triangular plot
 
@@ -163,8 +176,10 @@ def _triangle_plot(
         alpha to use for fill
     levels: list, optional
         levels you wish to use for the 2d contours
-    smooth: float, optional
-        how much smoothing you wish to use for the 2d contours
+    smooth: dict/float, optional
+        how much smoothing you wish to use for the 2d contours. If you wish
+        to use different smoothing for different contours, then provide a dict
+        with keys given by the label
     colors: list, optional
         list of colors you wish to use for each analysis
     xlabel: str, optional
@@ -182,10 +197,18 @@ def _triangle_plot(
         whether or not to plot the density on the 2d contour. Default True
     percentiles: list, optional
         percentiles you wish to plot. Default None
+    percentile_plot: list, optional
+        list of analyses to plot percentiles. Default all analyses
     fig_kwargs: dict, optional
         optional kwargs passed directly to the _triangle_axes function
     labels: list, optional
         label associated with each set of samples
+    rangex: tuple, optional
+        range over which to plot the x axis
+    rangey: tuple, optional
+        range over which to plot the y axis
+    grid: Bool, optional
+        if True, show a grid on all axes
     **kwargs: dict
         all kwargs are passed to the corner.hist2d function
     """
@@ -212,6 +235,10 @@ def _triangle_plot(
     xhigh = np.max([np.max(_x) for _x in x])
     ylow = np.min([np.min(_y) for _y in y])
     yhigh = np.max([np.max(_y) for _y in y])
+    if rangex is not None:
+        xlow, xhigh = rangex
+    if rangey is not None:
+        ylow, yhigh = rangey
     for num in range(len(x)):
         plot_kwargs = dict(
             color=colors[num], linewidth=linewidths[num],
@@ -225,9 +252,10 @@ def _triangle_plot(
             if fill:
                 ax1.fill_between(_x, 0, _y, alpha=fill_alpha, **plot_kwargs)
             if percentiles is not None:
-                _percentiles = np.percentile(x[num], percentiles)
-                ax1.axvline(_percentiles[0], **plot_kwargs)
-                ax1.axvline(_percentiles[1], **plot_kwargs)
+                if percentile_plot is not None and labels[num] in percentile_plot:
+                    _percentiles = np.percentile(x[num], percentiles)
+                    ax1.axvline(_percentiles[0], **plot_kwargs)
+                    ax1.axvline(_percentiles[1], **plot_kwargs)
             _y = np.linspace(ylow, yhigh, npoints)
             _kde = kde(y[num], **kde_kwargs)
             _x = _kde(_y)
@@ -235,9 +263,10 @@ def _triangle_plot(
             if fill:
                 ax4.fill_betweenx(_y, 0, _x, alpha=fill_alpha, **plot_kwargs)
             if percentiles is not None:
-                _percentiles = np.percentile(y[num], percentiles)
-                ax4.axhline(_percentiles[0], **plot_kwargs)
-                ax4.axhline(_percentiles[1], **plot_kwargs)
+                if percentile_plot is not None and labels[num] in percentile_plot:
+                    _percentiles = np.percentile(y[num], percentiles)
+                    ax4.axhline(_percentiles[0], **plot_kwargs)
+                    ax4.axhline(_percentiles[1], **plot_kwargs)
         else:
             if fill:
                 histtype = "stepfilled"
@@ -248,8 +277,12 @@ def _triangle_plot(
                 y[num], histtype=histtype, orientation="horizontal",
                 **plot_kwargs
             )
+        if isinstance(smooth, dict):
+            _smooth = smooth[labels[num]]
+        else:
+            _smooth = smooth
         corner.hist2d(
-            x[num], y[num], bins=300, ax=ax3, levels=levels, smooth=smooth,
+            x[num], y[num], bins=300, ax=ax3, levels=levels, smooth=_smooth,
             range=[[xlow, xhigh], [ylow, yhigh]], color=colors[num],
             plot_density=plot_density, contour_kwargs=dict(
                 linestyles=[linestyles[num]], linewidths=linewidths[num]
@@ -264,6 +297,9 @@ def _triangle_plot(
             *ax4.get_legend_handles_labels(), loc="best", frameon=False,
             fontsize=fontsize["legend"]
         )
+    ax1.grid(grid)
+    ax3.grid(grid)
+    ax4.grid(grid)
     return fig, ax1, ax3, ax4
 
 
@@ -272,8 +308,8 @@ def reverse_triangle_plot(
     fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
     xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
     linestyles=None, linewidths=None, plot_density=True,
-    percentiles=None, fig_kwargs={}, labels=None, plot_datapoints=False,
-    **kwargs
+    percentiles=None, percentile_plot=None, fig_kwargs={}, labels=None,
+    plot_datapoints=False, rangex=None, rangey=None, grid=False, **kwargs
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -300,8 +336,10 @@ def reverse_triangle_plot(
         alpha to use for fill
     levels: list, optional
         levels you wish to use for the 2d contours
-    smooth: float, optional
-        how much smoothing you wish to use for the 2d contours
+    smooth: dict/float, optional
+        how much smoothing you wish to use for the 2d contours. If you wish
+        to use different smoothing for different contours, then provide a dict
+        with keys given by the label
     colors: list, optional
         list of colors you wish to use for each analysis
     xlabel: str, optional
@@ -319,10 +357,16 @@ def reverse_triangle_plot(
         whether or not to plot the density on the 2d contour. Default True
     percentiles: list, optional
         percentiles you wish to plot. Default None
+    percentile_plot: list, optional
+        list of analyses to plot percentiles. Default all analyses
     fig_kwargs: dict, optional
         optional kwargs passed directly to the _triangle_axes function
     labels: list, optional
         label associated with each set of samples
+    rangex: tuple, optional
+        range over which to plot the x axis
+    rangey: tuple, optional
+        range over which to plot the y axis
     **kwargs: dict
         all kwargs are passed to the corner.hist2d function
     """
@@ -336,7 +380,8 @@ def reverse_triangle_plot(
         levels=levels, colors=colors, linestyles=linestyles,
         linewidths=linewidths, plot_density=plot_density,
         percentiles=percentiles, fig_kwargs=fig_kwargs, labels=labels,
-        fontsize=fontsize, plot_datapoints=plot_datapoints, **kwargs
+        fontsize=fontsize, plot_datapoints=plot_datapoints, rangex=rangex,
+        rangey=rangey, percentile_plot=percentile_plot, **kwargs
     )
     ax2.axis("off")
     ax4.spines["right"].set_visible(False)
