@@ -103,7 +103,15 @@ GWlatex_labels = {
     "radiated_energy_non_evolved": (
         r"$E_{\mathrm{rad}}^{\mathrm{nonevol}} [M_{\odot}]$"
     ),
-    "final_kick": r"$v_{\mathrm{final}} [\mathrm{km\;s^{-1}}]$"
+    "final_kick": r"$v_{\mathrm{final}} [\mathrm{km\;s^{-1}}]$",
+    "log_pressure": r"$\log{\mathcal{P}}$",
+    "gamma_1": r"$\Gamma_{1}$",
+    "gamma_2": r"$\Gamma_{2}$",
+    "gamma_3": r"$\Gamma_{3}$",
+    "spectral_decomposition_gamma_0": r"$\gamma_{0}$",
+    "spectral_decomposition_gamma_1": r"$\gamma_{1}$",
+    "spectral_decomposition_gamma_2": r"$\gamma_{2}$",
+    "spectral_decomposition_gamma_3": r"$\gamma_{3}$",
 }
 
 public_GWlatex_labels = {"mass_1": r"$m_{1}^{det} [M_{\odot}]$",
