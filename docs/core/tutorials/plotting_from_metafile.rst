@@ -37,6 +37,17 @@ Now, lets make a histogram showing the posterior distribution for `a`:
 
 .. image:: ./examples/MultiAnalysisHistogram.png
 
+Alternatively, if you prefer to see this displayed as a violin plot,
+
+.. code-block:: python
+
+    >>> fig = samples.plot("a", type="violin", palette="colorblind", latex_labels={"a": "a"})
+    >>> fig.show()
+
+.. image:: ./examples/violin.png
+
+To see how the prior can also be added to this plot see `Violin plots <../../gw/violin.html>`_
+
 Alternatively, a corner plot can be generated for a subset of parameters:
 
 .. code-block:: python
