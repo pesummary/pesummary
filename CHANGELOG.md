@@ -1,3 +1,32 @@
+## 0.8.0 [13/08/2020]
+
+### Changed
+
+- Install path - write install path at runtime
+- Injection data - store injection data as numpy structured array in the
+  pesummary metafile
+- `summarytest` - make `summarytest` an entry point
+
+### Added
+
+- Allow for the user to convert the 4PolyEOS and 4SpectralDecomp parameters
+  to `lambda_1` and `lambda_2`
+- Adding functionality to generate a split violin plot
+- Add multiple methods for how the `Bounded_1d_kde` treats the domain walls
+- Allow for the user to specify the bilby `PriorDict` class when loading a bilby
+  prior file
+- Add class methods to make it easy to initialise SamplesDict classes from a
+  file
+- Add further documentation to explain how to generate plots from the loaded
+  PESummary result file
+- Add injected value to default skymap if an injection has been performed
+- Add injection quantities to summary table if they are present
+- Allow the user to specify the corner parameters they wish to see. This is done
+  with the `--add_to_corner` command line argument
+- Allow the user to pass a `psd.xml.gz` file to the `summarypages` executable.
+  This can be done with `--psd H1:psd.xml.gz L1:psd.xml.gz` for example.
+- Add maxP quantity to the summary table
+
 ## 0.7.0 [09/07/2020]
 
 ### Changed
