@@ -35,8 +35,19 @@ subset of the analyses stored in the metafile,
 
 .. image:: ./examples/MultiAnalysisHistogram.png
 
+Alternatively, if you prefer to see this displayed as a violin plot,
+
+.. code-block:: python
+
+    >>> fig = samples.plot("mass_1", type="violin", palette="colorblind", labels=labels_of_interest)
+    >>> fig.show()
+
+.. image:: ./examples/violin.png
+
+To see how the prior can also be added to this plot see `Violin plots <../violin.html>`_
+
 Alternatively, a comparison corner plot can be generated for a subset of
-parameters:
+parameters,
 
 .. code-block:: python
 
@@ -77,8 +88,17 @@ course, the `SamplesDict` class can also be used for plotting:
 
 Which shows additional information.
 
-As this is a gravitational wave result file, we may also generate plots showing
-the PSD used in the analysis,
+As this is a gravitational wave result file, we may also generate plots which
+show the spin distribution of each component. This can be generated with,
+
+.. code-block:: python
+
+    >>> fig = one.plot(type="spin_disk", annotate=True, show_label=True, cmap="Blues")
+    >>> fig.show()
+
+.. image:: ./examples/spin_disk.png
+
+We may also generate plots showing the PSD used in the analysis,
 
 .. code-block:: python
 

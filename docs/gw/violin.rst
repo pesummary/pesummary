@@ -109,3 +109,14 @@ hand side, and the `chi_p` prior on the right hand side (we will utilize the
     >>> plt.show()
 
 .. image:: ./examples/GW190412_violin.png
+
+Alternatively, for this case, the same plot can be generated in only 4 lines by
+using the `.plot() method <./tutorials/plotting_from_metafile.html>`_.
+
+.. code-block:: python
+
+    >>> f = read("GW190412_posterior_samples.h5")
+    >>> posterior = f.samples_dict
+    >>> parameter = "chi_p"
+    >>> fig = posterior.plot(parameter, type="violin", kde=bounded_1d_kde, kde_kwargs={"method": "Transform", "xlow": 0.01, "xhigh": 0.99, "apply_smoothing": True}, labels=["SEOBNRv4PHM", "IMRPhenomPv3HM", "combined"], priors=f.priors["samples"])
+    >>> plt.show()

@@ -912,7 +912,8 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             "hist": self._marginalized_posterior,
             "corner": self._corner,
             "triangle": self._triangle,
-            "reverse_triangle": self._reverse_triangle
+            "reverse_triangle": self._reverse_triangle,
+            "violin": self._violin
         }
 
     @property
@@ -1072,6 +1073,79 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             [_samples[parameters[1]] for _samples in samples],
             xlabel=self.latex_labels[parameters[0]],
             ylabel=self.latex_labels[parameters[1]], labels=labels, **kwargs
+        )
+
+    def _violin(
+        self, parameter, labels="all", priors=None, latex_labels=GWlatex_labels,
+        **kwargs
+    ):
+        """Wrapper for the `pesummary.gw.plots.publication.violin_plots`
+        function
+
+        Parameters
+        ----------
+        parameter: str, optional
+            name of the parameter you wish to generate a violin plot for
+        labels: list
+            list of analyses that you wish to include in the plot
+        priors: MultiAnalysisSamplesDict, optional
+            prior samples for each analysis. If provided, the right hand side
+            of each violin will show the prior
+        latex_labels: dict, optional
+            dictionary containing the latex label associated with parameter
+        **kwargs: dict
+            all additional kwargs are passed to the `violin_plots` function
+        """
+        from pesummary.gw.plots.publication import violin_plots
+
+        _labels = [label for label in labels if parameter in self[label].keys()]
+        if not len(_labels):
+            raise ValueError(
+                "{} is not in any of the posterior samples tables. Please "
+                "choose another parameter to plot".format(parameter)
+            )
+        elif len(_labels) != len(labels):
+            no = list(set(labels) - set(_labels))
+            logger.warn(
+                "Unable to generate a violin plot for {} because {} is not "
+                "in their posterior samples table".format(
+                    " or ".join(no), parameter
+                )
+            )
+        samples = [self[label][parameter] for label in _labels]
+        if priors is not None and not all(
+                label in priors.keys() for label in _labels
+        ):
+            raise ValueError("Please provide prior samples for all labels")
+        elif priors is not None and not all(
+                parameter in priors[label].keys() for label in _labels
+        ):
+            raise ValueError(
+                "Please provide prior samples for {} for all labels".format(
+                    parameter
+                )
+            )
+        elif priors is not None:
+            from pesummary.gw.plots.violin import split_dataframe
+
+            priors = [priors[label][parameter] for label in _labels]
+            samples = split_dataframe(samples, priors, _labels)
+            palette = kwargs.get("palette", None)
+            left, right = "color: white", "pastel"
+            if palette is not None and not isinstance(palette, dict):
+                right = palette
+            elif palette is not None and all(
+                    side in palette.keys() for side in ["left", "right"]
+            ):
+                left, right = palette["left"], palette["right"]
+            kwargs.update(
+                {
+                    "split": True, "x": "label", "y": "data", "hue": "side",
+                    "palette": {"right": right, "left": left}
+                }
+            )
+        return violin_plots(
+            parameter, samples, _labels, latex_labels, **kwargs
         )
 
     def _corner(self, module="core", labels="all", parameters=None, **kwargs):
