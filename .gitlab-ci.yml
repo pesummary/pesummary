@@ -136,6 +136,18 @@ documentation:
       - docs/_build/html/
 
 
+authors:
+  stage: basic
+  image: python:3.6
+  needs:
+    - tarball
+  script:
+    - curl --request POST --form "token=$CI_EXAMPLES_TRIGGER_TOKEN" --form "variables[TYPE]=authors" --form ref=master https://git.ligo.org/api/v4/projects/3386/trigger/pipeline
+  only:
+    refs:
+      - master@lscsoft/pesummary
+
+
 python-3.6:
   stage: test
   image: python:3.6
