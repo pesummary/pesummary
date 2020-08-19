@@ -128,8 +128,8 @@ class TransformBoundedKDE(BoundedKDE):
 
     def __init__(
         self, pts, xlow=None, xhigh=None, transform="logit", inv_transform=None,
-        dydx=None, alpha=1.5, N=100, smooth=3, apply_smoothing=False, *args,
-        **kwargs
+        dydx=None, alpha=1.5, N=100, smooth=3, apply_smoothing=False,
+        weights=None, *args, **kwargs
     ):
         import pandas
 
@@ -140,6 +140,10 @@ class TransformBoundedKDE(BoundedKDE):
             pts = np.array(pts)
         _args = np.hstack(np.argwhere((pts > xlow) & (pts < xhigh)))
         pts = pts[_args]
+        if weights is not None:
+            if isinstance(weights, pandas.core.series.Series):
+                weights = np.array(weights)
+            weights = weights[_args]
         transformed_pts = self.transform(pts, xlow, xhigh)
         super(TransformBoundedKDE, self).__init__(
             transformed_pts, xlow=xlow, xhigh=xhigh, *args, **kwargs
