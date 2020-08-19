@@ -1471,8 +1471,9 @@ class _Input(object):
         from pesummary._version_helper import PackageInformation
         from operator import itemgetter
 
-        package_info = PackageInformation().package_info
-        package_dir = PackageInformation().package_dir
+        _package = PackageInformation()
+        package_info = _package.package_info
+        package_dir = _package.package_dir
         if "build_string" in package_info[0]:  # conda list
             headings = ("name", "version", "channel", "build_string")
         else:  # pip list installed
@@ -1481,7 +1482,10 @@ class _Input(object):
             tuple(pkg[col.lower()] for col in headings) for pkg in
             sorted(package_info, key=itemgetter("name"))
         ], dtype=[(col, "S20") for col in headings]).view(np.recarray)
-        return {"packages": packages, "environment": [package_dir]}
+        return {
+            "packages": packages, "environment": [package_dir],
+            "manager": _package.package_manager
+        }
 
 
 class Input(_Input):

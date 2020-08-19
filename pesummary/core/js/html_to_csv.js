@@ -45,3 +45,37 @@ var csv = [];
 
     download_csv(csv.join("\n"), filename);
 }
+
+function export_table_to_conda(filename) {
+    var csv = [];
+    var pypi = [];
+    var rows = document.querySelectorAll("table tr");
+
+    csv.push("name: pesummary")
+    csv.push("channels:")
+    csv.push("- conda-forge")
+    csv.push("dependencies:")
+    for (var i = 1; i < rows.length; i++) {
+        var row = [], cols = rows[i].querySelectorAll("td, th");
+
+        if (cols[2].innerText === "pypi") {
+            row.push(cols[0].innerText)
+            row.push(cols[1].innerText)
+            pypi.push(row.join("="))
+        } else {
+            for (var j = 0; j < cols.length; j++) {
+                if (j != 2) {
+                    row.push(cols[j].innerText);
+                }
+            }
+            csv.push("- " + row.join("="));
+        }
+    }
+    if (pypi.length != 0) {
+        csv.push("- pip:")
+        for (var j = 0; j < pypi.length; j++) {
+            csv.push("  - " + pypi[j])
+        }
+    }
+    download_csv(csv.join("\n"), filename);
+}
