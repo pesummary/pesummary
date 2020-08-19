@@ -13,11 +13,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.utils.utils import (
-    logger,
-    number_of_columns_for_legend,
-    _check_latex_install,
-    get_matplotlib_style_file,
-    gelman_rubin,
+    logger, number_of_columns_for_legend, _check_latex_install,
+    get_matplotlib_style_file, gelman_rubin,
 )
 from pesummary.core.plots.kde import kdeplot
 from pesummary.core.plots.figure import figure, subplots, ExistingFigure
@@ -35,8 +32,15 @@ from scipy import signal
 matplotlib.style.use(get_matplotlib_style_file())
 _check_latex_install()
 
+_default_legend_kwargs = dict(
+    bbox_to_anchor=(0.0, 1.02, 1.0, 0.102), loc=3, handlelength=3, mode="expand",
+    borderaxespad=0.0,
+)
 
-def _autocorrelation_plot(param, samples, fig=None, color=conf.color, markersize=0.5):
+
+def _autocorrelation_plot(
+    param, samples, fig=None, color=conf.color, markersize=0.5, grid=True
+):
     """Generate the autocorrelation function for a set of samples for a given
     parameter for a given approximant.
 
@@ -50,6 +54,8 @@ def _autocorrelation_plot(param, samples, fig=None, color=conf.color, markersize
         existing figure you wish to use
     color: str, optional
         color you wish to use for the autocorrelation plot
+    grid: Bool, optional
+        if True, plot a grid
     """
     logger.debug("Generating the autocorrelation function for %s" % (param))
     if fig is None:
@@ -62,16 +68,21 @@ def _autocorrelation_plot(param, samples, fig=None, color=conf.color, markersize
     acf = np.fft.ifftshift(signal.fftconvolve(y, x, mode="full"))
     N = np.array(samples).shape[0]
     acf = acf[0:N]
-    ax.plot(acf / acf[0], linestyle=" ", marker="o", markersize=markersize, color=color)
+    ax.plot(
+        acf / acf[0], linestyle=" ", marker="o", markersize=markersize,
+        color=color
+    )
     ax.ticklabel_format(axis="x", style="plain")
     ax.set_xlabel("lag")
     ax.set_ylabel("ACF")
-    ax.grid(b=True)
+    ax.grid(b=grid)
     fig.tight_layout()
     return fig
 
 
-def _autocorrelation_plot_mcmc(param, samples, colorcycle=conf.colorcycle):
+def _autocorrelation_plot_mcmc(
+    param, samples, colorcycle=conf.colorcycle, grid=True
+):
     """Generate the autocorrelation function for a set of samples for a given
     parameter for a given set of mcmc chains
 
@@ -83,15 +94,22 @@ def _autocorrelation_plot_mcmc(param, samples, colorcycle=conf.colorcycle):
         2d array containing a list of samples for param for each mcmc chain
     colorcycle: list, str
         color cycle you wish to use for the different mcmc chains
+    grid: Bool, optional
+        if True, plot a grid
     """
     cycol = cycle(colorcycle)
     fig, ax = figure(gca=True)
     for ss in samples:
-        fig = _autocorrelation_plot(param, ss, fig=fig, markersize=1.25, color=next(cycol))
+        fig = _autocorrelation_plot(
+            param, ss, fig=fig, markersize=1.25, color=next(cycol), grid=grid
+        )
     return fig
 
 
-def _sample_evolution_plot(param, samples, latex_label, inj_value=None, fig=None, color=conf.color, markersize=0.5):
+def _sample_evolution_plot(
+    param, samples, latex_label, inj_value=None, fig=None, color=conf.color,
+    markersize=0.5, grid=True
+):
     """Generate a scatter plot showing the evolution of the samples for a
     given parameter for a given approximant.
 
@@ -109,6 +127,8 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None, fig=None
         existing figure you wish to use
     color: str, optional
         color you wish to use to plot the scatter points
+    grid: Bool, optional
+        if True, plot a grid
     """
     logger.debug("Generating the sample scatter plot for %s" % (param))
     if fig is None:
@@ -116,16 +136,22 @@ def _sample_evolution_plot(param, samples, latex_label, inj_value=None, fig=None
     else:
         ax = fig.gca()
     n_samples = len(samples)
-    ax.plot(range(n_samples), samples, linestyle=" ", marker="o", markersize=markersize, color=color)
+    ax.plot(
+        range(n_samples), samples, linestyle=" ", marker="o",
+        markersize=markersize, color=color
+    )
     ax.ticklabel_format(axis="x", style="plain")
     ax.set_xlabel("samples")
     ax.set_ylabel(latex_label)
-    ax.grid(b=True)
+    ax.grid(b=grid)
     fig.tight_layout()
     return fig
 
 
-def _sample_evolution_plot_mcmc(param, samples, latex_label, inj_value=None, colorcycle=conf.colorcycle):
+def _sample_evolution_plot_mcmc(
+    param, samples, latex_label, inj_value=None, colorcycle=conf.colorcycle,
+    grid=True
+):
     """Generate a scatter plot showing the evolution of the samples in each
     mcmc chain for a given parameter
 
@@ -141,17 +167,23 @@ def _sample_evolution_plot_mcmc(param, samples, latex_label, inj_value=None, col
         value that was injected
     colorcycle: list, str
         color cycle you wish to use for the different mcmc chains
+    grid: Bool, optional
+        if True, plot a grid
     """
     cycol = cycle(colorcycle)
     fig, ax = figure(gca=True)
     for ss in samples:
         fig = _sample_evolution_plot(
-            param, ss, latex_label, inj_value=None, fig=fig, markersize=1.25, color=next(cycol)
+            param, ss, latex_label, inj_value=None, fig=fig, markersize=1.25,
+            color=next(cycol), grid=grid
         )
     return fig
 
 
-def _1d_cdf_plot(param, samples, latex_label, fig=None, color=conf.color, title=True):
+def _1d_cdf_plot(
+    param, samples, latex_label, fig=None, color=conf.color, title=True,
+    grid=True
+):
     """Generate the cumulative distribution function for a given parameter for
     a given approximant.
 
@@ -170,6 +202,8 @@ def _1d_cdf_plot(param, samples, latex_label, fig=None, color=conf.color, title=
     title: Bool, optional
         if True, add a title to the 1d cdf plot showing giving the median
         and symmetric 90% credible intervals
+    grid: Bool, optional
+        if True, plot a grid
     """
     logger.debug("Generating the 1d CDF for %s" % (param))
     if fig is None:
@@ -189,13 +223,15 @@ def _1d_cdf_plot(param, samples, latex_label, fig=None, color=conf.color, title=
     if title:
         ax.set_title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
     ax.plot(sorted_samples, np.linspace(0, 1, len(sorted_samples)), color=color)
-    ax.grid(b=True)
+    ax.grid(b=grid)
     ax.set_ylim([0, 1.05])
     fig.tight_layout()
     return fig
 
 
-def _1d_cdf_plot_mcmc(param, samples, latex_label, colorcycle=conf.colorcycle):
+def _1d_cdf_plot_mcmc(
+    param, samples, latex_label, colorcycle=conf.colorcycle, grid=True
+):
     """Generate the cumulative distribution function for a given parameter
     for a given set of mcmc chains
 
@@ -209,17 +245,25 @@ def _1d_cdf_plot_mcmc(param, samples, latex_label, colorcycle=conf.colorcycle):
         latex label for param
     colorcycle: list, str
         color cycle you wish to use for the different mcmc chains
+    grid: Bool, optional
+        if True, plot a grid
     """
     cycol = cycle(colorcycle)
     fig, ax = figure(gca=True)
     for ss in samples:
-        fig = _1d_cdf_plot(param, ss, latex_label, fig=fig, color=next(cycol), title=False)
+        fig = _1d_cdf_plot(
+            param, ss, latex_label, fig=fig, color=next(cycol), title=False,
+            grid=grid
+        )
     gelman = gelman_rubin(samples)
     ax.set_title("Gelman-Rubin: {}".format(gelman))
     return fig
 
 
-def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels, linestyles=None):
+def _1d_cdf_comparison_plot(
+    param, samples, colors, latex_label, labels, linestyles=None, grid=True,
+    legend_kwargs=_default_legend_kwargs, latex_friendly=False
+):
     """Generate a plot to compare the cdfs for a given parameter for different
     approximants.
 
@@ -237,6 +281,12 @@ def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels, linesty
         latex label for param
     approximant_labels: list, optional
         label to prepend the approximant in the legend
+    grid: Bool, optional
+        if True, plot a grid
+    legend_kwargs: dict, optional
+        optional kwargs to pass to ax.legend()
+    latex_friendly: Bool, optional
+        if True, make the label latex friendly. Default False
     """
     logger.debug("Generating the 1d comparison CDF for %s" % (param))
     if linestyles is None:
@@ -244,53 +294,31 @@ def _1d_cdf_comparison_plot(param, samples, colors, latex_label, labels, linesty
     fig, ax = figure(figsize=(8, 6), gca=True)
     handles = []
     for num, i in enumerate(samples):
-        sorted_samples = copy.deepcopy(samples[num])
-        sorted_samples = sorted(sorted_samples)
-        ax.plot(
-            sorted_samples,
-            np.linspace(0, 1, len(sorted_samples)),
-            color=colors[num],
-            label=labels[num],
-            linestyle=linestyles[num],
+        fig = _1d_cdf_plot(
+            param, i, latex_label, fig=fig, color=colors[num], title=False,
+            grid=grid
         )
+        if latex_friendly:
+            labels = copy.deepcopy(labels)
+            labels[num] = labels[num].replace("_", "\_")
         handles.append(mlines.Line2D([], [], color=colors[num], label=labels[num]))
     ncols = number_of_columns_for_legend(labels)
-    legend = ax.legend(
-        handles=handles,
-        bbox_to_anchor=(0.0, 1.02, 1.0, 0.102),
-        loc=3,
-        handlelength=3,
-        ncol=ncols,
-        mode="expand",
-        borderaxespad=0.0,
-    )
+    legend = ax.legend(handles=handles, ncol=ncols, **legend_kwargs)
     for num, legobj in enumerate(legend.legendHandles):
         legobj.set_linewidth(1.75)
         legobj.set_linestyle(linestyles[num])
     ax.set_xlabel(latex_label)
     ax.set_ylabel("Cumulative Density Function")
-    ax.grid(b=True)
+    ax.grid(b=grid)
     ax.set_ylim([0, 1.05])
     fig.tight_layout()
     return fig
 
 
 def _1d_histogram_plot(
-    param,
-    samples,
-    latex_label,
-    inj_value=None,
-    kde=False,
-    prior=None,
-    weights=None,
-    xlow=None,
-    xhigh=None,
-    fig=None,
-    title=True,
-    color=conf.color,
-    autoscale=True,
-    bins=50,
-    histtype="step",
+    param, samples, latex_label, inj_value=None, kde=False, prior=None,
+    weights=None, xlow=None, xhigh=None, fig=None, title=True, color=conf.color,
+    autoscale=True, bins=50, histtype="step", grid=True
 ):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
@@ -324,6 +352,8 @@ def _1d_histogram_plot(
         number of bins to use for histogram
     histtype: str, optional
         histogram type to use when plotting
+    grid: Bool, optional
+        if True, plot a grid
     """
     from pesummary.utils.samples_dict import Array
 
@@ -337,18 +367,15 @@ def _1d_histogram_plot(
         ax.axvline(samples[0], color=conf.color)
         xlims = ax.get_xlim()
     elif not kde:
-        ax.hist(samples, histtype=histtype, bins=bins, color=color, density=True, linewidth=1.75, weights=weights)
+        ax.hist(
+            samples, histtype=histtype, bins=bins, color=color, density=True,
+            linewidth=1.75, weights=weights
+        )
         xlims = ax.get_xlim()
         if prior is not None:
             ax.hist(
-                prior,
-                color=conf.prior_color,
-                alpha=0.2,
-                edgecolor="w",
-                density=True,
-                linewidth=1.75,
-                histtype="bar",
-                bins=bins,
+                prior, color=conf.prior_color, alpha=0.2, edgecolor="w",
+                density=True, linewidth=1.75, histtype="bar", bins=bins,
             )
     else:
         kwargs = {"shade": True, "alpha_shade": 0.1, "linewidth": 1.0}
@@ -364,7 +391,9 @@ def _1d_histogram_plot(
     ax.set_ylabel("Probability Density")
     percentile = samples.confidence_interval([5, 95])
     if inj_value is not None:
-        ax.axvline(inj_value, color=conf.injection_color, linestyle="-", linewidth=2.5)
+        ax.axvline(
+            inj_value, color=conf.injection_color, linestyle="-", linewidth=2.5
+        )
     ax.axvline(percentile[0], color=color, linestyle="--", linewidth=1.75)
     ax.axvline(percentile[1], color=color, linestyle="--", linewidth=1.75)
     median = samples.average("median")
@@ -373,7 +402,7 @@ def _1d_histogram_plot(
         lower = np.round(median - percentile[0], 2)
         median = np.round(median, 2)
         ax.set_title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
-    ax.grid(b=True)
+    ax.grid(b=grid)
     if autoscale:
         ax.set_xlim(xlims)
     fig.tight_layout()
@@ -381,16 +410,8 @@ def _1d_histogram_plot(
 
 
 def _1d_histogram_plot_mcmc(
-    param,
-    samples,
-    latex_label,
-    inj_value=None,
-    kde=False,
-    prior=None,
-    weights=None,
-    xlow=None,
-    xhigh=None,
-    colorcycle=conf.colorcycle,
+    param, samples, latex_label, inj_value=None, kde=False, prior=None,
+    weights=None, xlow=None, xhigh=None, colorcycle=conf.colorcycle, grid=True
 ):
     """Generate a 1d histogram plot for a given parameter for a given
     set of mcmc chains
@@ -413,24 +434,16 @@ def _1d_histogram_plot_mcmc(
         list of weights for each sample
     colorcycle: list, str
         color cycle you wish to use for the different mcmc chains
+    grid: Bool, optional
+        if True, plot a grid
     """
     cycol = cycle(colorcycle)
     fig, ax = figure(gca=True)
     for ss in samples:
         fig = _1d_histogram_plot(
-            param,
-            ss,
-            latex_label,
-            inj_value=inj_value,
-            kde=kde,
-            prior=prior,
-            weights=weights,
-            xlow=xlow,
-            xhigh=xhigh,
-            fig=fig,
-            color=next(cycol),
-            title=False,
-            autoscale=False,
+            param, ss, latex_label, inj_value=inj_value, kde=kde, prior=prior,
+            weights=weights, xlow=xlow, xhigh=xhigh, fig=fig, color=next(cycol),
+            title=False, autoscale=False, grid=grid
         )
     gelman = gelman_rubin(samples)
     ax.set_title("Gelman-Rubin: {}".format(gelman))
@@ -438,17 +451,9 @@ def _1d_histogram_plot_mcmc(
 
 
 def _1d_comparison_histogram_plot(
-    param,
-    samples,
-    colors,
-    latex_label,
-    labels,
-    kde=False,
-    linestyles=None,
-    xlow=None,
-    xhigh=None,
-    max_vline=1,
-    figsize=(8, 6),
+    param, samples, colors, latex_label, labels, kde=False, linestyles=None,
+    xlow=None, xhigh=None, max_vline=1, figsize=(8, 6), grid=True,
+    legend_kwargs=_default_legend_kwargs, latex_friendly=False
 ):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
@@ -471,6 +476,12 @@ def _1d_comparison_histogram_plot(
         if true, a kde is plotted instead of a histogram
     linestyles: list
         list of linestyles for each set of samples
+    grid: Bool, optional
+        if True, plot a grid
+    legend_kwargs: dict, optional
+        optional kwargs to pass to ax.legend()
+    latex_friendly: Bool, optional
+        if True, make the label latex friendly. Default False
     """
     logger.debug("Generating the 1d comparison histogram plot for %s" % (param))
     if linestyles is None:
@@ -478,6 +489,9 @@ def _1d_comparison_histogram_plot(
     fig, ax = figure(figsize=figsize, gca=True)
     handles = []
     for num, i in enumerate(samples):
+        if latex_friendly:
+            labels = copy.deepcopy(labels)
+            labels[num] = labels[num].replace("_", "\_")
         if len(set(i)) <= max_vline:
             for _ind, _sample in enumerate(set(i)):
                 _label = None
@@ -486,46 +500,42 @@ def _1d_comparison_histogram_plot(
                 ax.axvline(_sample, color=colors[num], label=_label)
         elif not kde:
             ax.hist(
-                i,
-                histtype="step",
-                bins=50,
-                color=colors[num],
-                label=labels[num],
-                linewidth=2.5,
-                density=True,
+                i, histtype="step", bins=50, color=colors[num],
+                label=labels[num], linewidth=2.5, density=True,
                 linestyle=linestyles[num],
             )
         else:
-            kwargs = {"shade": True, "alpha_shade": 0.05, "linewidth": 1.5, "label": labels[num]}
+            kwargs = {
+                "shade": True, "alpha_shade": 0.05, "linewidth": 1.5,
+                "label": labels[num]
+            }
             if xlow is not None or xhigh is not None:
                 kwargs.update({"xlow": xlow, "xhigh": xhigh})
             else:
                 kwargs.update({"clip": [np.min(i), np.max(i)]})
             kdeplot(i, color=colors[num], ax=ax, **kwargs)
-        ax.axvline(x=np.percentile(i, 95), color=colors[num], linestyle="--", linewidth=2.5)
-        ax.axvline(x=np.percentile(i, 5), color=colors[num], linestyle="--", linewidth=2.5)
+        ax.axvline(
+            x=np.percentile(i, 95), color=colors[num], linestyle="--",
+            linewidth=2.5
+        )
+        ax.axvline(
+            x=np.percentile(i, 5), color=colors[num], linestyle="--",
+            linewidth=2.5
+        )
         handles.append(mlines.Line2D([], [], color=colors[num], label=labels[num]))
     ncols = number_of_columns_for_legend(labels)
-    legend = ax.legend(
-        handles=handles,
-        bbox_to_anchor=(0.0, 1.02, 1.0, 0.102),
-        loc=3,
-        handlelength=3,
-        ncol=ncols,
-        mode="expand",
-        borderaxespad=0.0,
-    )
+    legend = ax.legend(handles=handles, ncol=ncols, **legend_kwargs)
     for num, legobj in enumerate(legend.legendHandles):
         legobj.set_linewidth(1.75)
         legobj.set_linestyle(linestyles[num])
     ax.set_xlabel(latex_label)
     ax.set_ylabel("Probability Density")
-    ax.grid(b=True)
+    ax.grid(b=grid)
     fig.tight_layout()
     return fig
 
 
-def _comparison_box_plot(param, samples, colors, latex_label, labels):
+def _comparison_box_plot(param, samples, colors, latex_label, labels, grid=True):
     """Generate a box plot to compare 1d_histograms for a given parameter
 
     Parameters
@@ -542,6 +552,8 @@ def _comparison_box_plot(param, samples, colors, latex_label, labels):
         latex label for param
     approximant_labels: list, optional
         label to prepend the approximant in the legend
+    grid: Bool, optional
+        if True, plot a grid
     """
     logger.debug("Generating the 1d comparison boxplot plot for %s" % (param))
     fig, ax = figure(gca=True)
@@ -554,11 +566,13 @@ def _comparison_box_plot(param, samples, colors, latex_label, labels):
     ax.set_yticks([])
     ax.set_xlabel(latex_label)
     fig.tight_layout()
-    ax.grid(b=True)
+    ax.grid(b=grid)
     return fig
 
 
-def _make_corner_plot(samples, latex_labels, corner_parameters=None, parameters=None, **kwargs):
+def _make_corner_plot(
+    samples, latex_labels, corner_parameters=None, parameters=None, **kwargs
+):
     """Generate the corner plots for a given approximant
 
     Parameters
@@ -605,11 +619,17 @@ def _make_corner_plot(samples, latex_labels, corner_parameters=None, parameters=
         seperation = abs(location[0][0] - location[1][0]) - width
     except IndexError:
         seperation = None
-    data = {"width": width, "height": height, "seperation": seperation, "x0": location[0][0], "y0": location[0][0]}
+    data = {
+        "width": width, "height": height, "seperation": seperation,
+        "x0": location[0][0], "y0": location[0][0]
+    }
     return _figure, included_parameters, data
 
 
-def _make_comparison_corner_plot(samples, latex_labels, corner_parameters=None, colors=conf.corner_colors, **kwargs):
+def _make_comparison_corner_plot(
+    samples, latex_labels, corner_parameters=None, colors=conf.corner_colors,
+    **kwargs
+):
     """Generate a corner plot which contains multiple datasets
 
     Parameters
@@ -629,7 +649,9 @@ def _make_comparison_corner_plot(samples, latex_labels, corner_parameters=None, 
     parameters = corner_parameters
     if corner_parameters is None:
         _parameters = [list(_samples.keys()) for _samples in samples.values()]
-        parameters = [i for i in _parameters[0] if all(i in _params for _params in _parameters)]
+        parameters = [
+            i for i in _parameters[0] if all(i in _params for _params in _parameters)
+        ]
     if len(samples.keys()) > len(colors):
         raise ValueError("Please provide a unique color for each dataset")
 
@@ -638,27 +660,21 @@ def _make_comparison_corner_plot(samples, latex_labels, corner_parameters=None, 
     lines = []
     for num, (label, posterior) in enumerate(samples.items()):
         lines.append(mlines.Line2D([], [], color=colors[num], label=label))
-        _samples = {param: value for param, value in posterior.items() if param in parameters}
+        _samples = {
+            param: value for param, value in posterior.items() if param in
+            parameters
+        }
         hist_kwargs["color"] = colors[num]
         kwargs.update({"hist_kwargs": hist_kwargs})
         if num == 0:
             fig, _, _ = _make_corner_plot(
-                _samples,
-                latex_labels,
-                corner_parameters=corner_parameters,
-                parameters=parameters,
-                color=colors[num],
-                **kwargs
+                _samples, latex_labels, corner_parameters=corner_parameters,
+                parameters=parameters, color=colors[num], **kwargs
             )
         else:
             fig, _, _ = _make_corner_plot(
-                _samples,
-                latex_labels,
-                corner_parameters=corner_parameters,
-                fig=fig,
-                parameters=parameters,
-                color=colors[num],
-                **kwargs
+                _samples, latex_labels, corner_parameters=corner_parameters,
+                fig=fig, parameters=parameters, color=colors[num], **kwargs
             )
     fig.legend(handles=lines, loc="upper right")
     lines = []

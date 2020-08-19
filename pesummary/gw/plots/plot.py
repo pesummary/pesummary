@@ -21,6 +21,7 @@ from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.core.plots.kde import kdeplot
 from pesummary.core.plots.figure import figure, subplots, ExistingFigure
+from pesummary.core.plots.plot import _default_legend_kwargs
 from pesummary import conf
 
 import os
@@ -74,7 +75,7 @@ def _return_bounds(param, samples, comparison=False):
 
 
 def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
-                       prior=None, weights=None, bins=50):
+                       prior=None, weights=None, bins=50, grid=True):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
 
@@ -96,19 +97,21 @@ def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
         list of weights for each sample
     bins: int, optional
         number of bins to use for histogram
+    grid: Bool, optional
+        if True, plot a grid
     """
     from pesummary.core.plots.plot import _1d_histogram_plot
 
     xlow, xhigh = _return_bounds(param, samples)
     return _1d_histogram_plot(
         param, samples, latex_label, inj_value=inj_value, kde=kde, prior=prior,
-        weights=weights, xlow=xlow, xhigh=xhigh, bins=bins
+        weights=weights, xlow=xlow, xhigh=xhigh, bins=bins, grid=grid
     )
 
 
 def _1d_histogram_plot_mcmc(
     param, samples, latex_label, inj_value=None, kde=False, prior=None,
-    weights=None
+    weights=None, grid=True
 ):
     """Generate the 1d histogram plot for a given parameter for set of
     mcmc chains
@@ -129,19 +132,22 @@ def _1d_histogram_plot_mcmc(
         list of prior samples for param
     weights: list
         list of weights for each sample
+    grid: Bool, optional
+        if True, plot a grid
     """
     from pesummary.core.plots.plot import _1d_histogram_plot_mcmc
 
     xlow, xhigh = _return_bounds(param, samples, comparison=True)
     return _1d_histogram_plot_mcmc(
         param, samples, latex_label, inj_value=inj_value, kde=kde, prior=prior,
-        weights=weights, xlow=xlow, xhigh=xhigh
+        weights=weights, xlow=xlow, xhigh=xhigh, grid=grid
     )
 
 
 def _1d_comparison_histogram_plot(param, samples, colors,
                                   latex_label, labels, kde=False,
-                                  linestyles=None, max_vline=2):
+                                  linestyles=None, max_vline=2, grid=True,
+                                  legend_kwargs=_default_legend_kwargs):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
 
@@ -163,6 +169,10 @@ def _1d_comparison_histogram_plot(param, samples, colors,
         if true, a kde is plotted instead of a histogram
     linestyles: list
         list of linestyles for each set of samples
+    grid: Bool, optional
+        if True, plot a grid
+    legend_kwargs: dict, optional
+        optional kwargs to pass to ax.legend()
     """
     from pesummary.core.plots.plot import _1d_comparison_histogram_plot
 
@@ -170,7 +180,7 @@ def _1d_comparison_histogram_plot(param, samples, colors,
     return _1d_comparison_histogram_plot(
         param, samples, colors, latex_label, labels, kde=kde,
         linestyles=linestyles, xlow=xlow, xhigh=xhigh,
-        max_vline=max_vline
+        max_vline=max_vline, grid=grid, legend_kwargs=legend_kwargs
     )
 
 

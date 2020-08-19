@@ -17,6 +17,7 @@ import numpy as np
 from matplotlib import gridspec
 from scipy.stats import gaussian_kde
 import corner
+import copy
 
 from pesummary.core.plots.figure import figure
 from pesummary import conf
@@ -67,7 +68,7 @@ def triangle_plot(
     xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
     linestyles=None, linewidths=None, plot_density=True,
     percentiles=None, percentile_plot=None, fig_kwargs={}, labels=None,
-    rangex=None, rangey=None, grid=False, **kwargs
+    rangex=None, rangey=None, grid=False, latex_friendly=False, **kwargs
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -138,7 +139,8 @@ def triangle_plot(
         linewidths=linewidths, plot_density=plot_density,
         percentiles=percentiles, fig_kwargs=fig_kwargs, labels=labels,
         xlabel=xlabel, ylabel=ylabel, fontsize=fontsize, rangex=rangex,
-        rangey=rangey, percentile_plot=percentile_plot, grid=grid, **kwargs
+        rangey=rangey, percentile_plot=percentile_plot, grid=grid,
+        latex_friendly=latex_friendly, **kwargs
     )
 
 
@@ -148,7 +150,7 @@ def _triangle_plot(
     xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
     linestyles=None, linewidths=None, plot_density=True, percentiles=None,
     percentile_plot=None, fig_kwargs={}, labels=None, plot_datapoints=False,
-    rangex=None, rangey=None, grid=False, **kwargs
+    rangex=None, rangey=None, grid=False, latex_friendly=False, **kwargs
 ):
     """Base function to generate a triangular plot
 
@@ -259,6 +261,9 @@ def _triangle_plot(
             _y = np.linspace(ylow, yhigh, npoints)
             _kde = kde(y[num], **kde_kwargs)
             _x = _kde(_y)
+            if latex_friendly:
+                labels = copy.deepcopy(labels)
+                labels[num] = labels[num].replace("_", "\_")
             ax4.plot(_x, _y, label=labels[num], **plot_kwargs)
             if fill:
                 ax4.fill_betweenx(_y, 0, _x, alpha=fill_alpha, **plot_kwargs)
@@ -309,7 +314,8 @@ def reverse_triangle_plot(
     xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
     linestyles=None, linewidths=None, plot_density=True,
     percentiles=None, percentile_plot=None, fig_kwargs={}, labels=None,
-    plot_datapoints=False, rangex=None, rangey=None, grid=False, **kwargs
+    plot_datapoints=False, rangex=None, rangey=None, grid=False,
+    latex_friendly=False, **kwargs
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -381,7 +387,8 @@ def reverse_triangle_plot(
         linewidths=linewidths, plot_density=plot_density,
         percentiles=percentiles, fig_kwargs=fig_kwargs, labels=labels,
         fontsize=fontsize, plot_datapoints=plot_datapoints, rangex=rangex,
-        rangey=rangey, percentile_plot=percentile_plot, **kwargs
+        rangey=rangey, percentile_plot=percentile_plot,
+        latex_friendly=latex_friendly, **kwargs
     )
     ax2.axis("off")
     ax4.spines["right"].set_visible(False)
