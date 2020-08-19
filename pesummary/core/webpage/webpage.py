@@ -940,7 +940,7 @@ class page(Base):
 
     def export(
         self, filename, csv=True, json=False, shell=False, histogram_dat=None,
-        requirements=False, margin_top="-4em", margin_bottom="5em",
+        requirements=False, conda=False, margin_top="-4em", margin_bottom="5em",
     ):
         """Make a button which to export a html table to csv
 
@@ -973,6 +973,12 @@ class page(Base):
             self.add_content(
                 "<button type='button' onclick='export_table_to_pip(\"{}\")' "
                 "class='btn btn-outline-secondary btn-table'>Export to pip"
+                "</button>".format(basename.format("txt"))
+            )
+        if conda:
+            self.add_content(
+                "<button type='button' onclick='export_table_to_conda(\"{}\")' "
+                "class='btn btn-outline-secondary btn-table'>Export to conda"
                 "</button>".format(basename.format("txt"))
             )
         if json:

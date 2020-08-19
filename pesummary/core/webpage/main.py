@@ -118,8 +118,8 @@ class _WebpageGeneration(object):
         existing_metafile=None, existing_file_kwargs=None,
         existing_weights=None, add_to_existing=False, notes=None,
         disable_comparison=False, disable_interactive=False,
-        package_information={"packages": []}, mcmc_samples=False,
-        external_hdf5_links=False
+        package_information={"packages": [], "manager": "pypi"},
+        mcmc_samples=False, external_hdf5_links=False
     ):
         self.webdir = webdir
         self.samples = samples
@@ -1010,10 +1010,16 @@ class _WebpageGeneration(object):
             contents=[[pp.decode("utf-8") for pp in pkg] for pkg in packages],
             accordian=False, style=style.format("1em", "1em")
         )
-        html_file.export(
-            "requirements.txt", margin_top="1em", csv=False,
-            requirements=True
-        )
+        if self.package_information["manager"] == "conda":
+            html_file.export(
+                "environment.yml", margin_top="1em", csv=False,
+                conda=True
+            )
+        else:
+            html_file.export(
+                "requirements.txt", margin_top="1em", csv=False,
+                requirements=True
+            )
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 

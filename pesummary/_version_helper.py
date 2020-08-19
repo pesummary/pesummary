@@ -112,6 +112,7 @@ class PackageInformation(GitInformation):
         """Return the package information
         """
         if (Path(sys.prefix) / "conda-meta").is_dir():
+            self.package_manager = "conda"
             raw = self.call([
                 "conda",
                 "list",
@@ -119,6 +120,7 @@ class PackageInformation(GitInformation):
                 "--prefix", sys.prefix,
             ])
         else:
+            self.package_manager = "pypi"
             raw = self.call([
                 sys.executable,
                 "-m", "pip",
