@@ -927,7 +927,8 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         'pesummary.core.plots.publication.reverse_triangle_plot'
     ])
     def plot(
-        self, *args, type="hist", labels="all", colors=None, **kwargs
+        self, *args, type="hist", labels="all", colors=None, latex_friendly=True,
+        **kwargs
     ):
         """Generate a plot for the posterior samples stored in
         MultiDimensionalSamplesDict
@@ -942,6 +943,8 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             list of analyses that you wish to include in the plot
         colors: list
             list of colors to use for each analysis
+        latex_friendly: Bool, optional
+            if True, make the labels latex friendly. Default True
         **kwargs: dict
             all additional kwargs are passed to the plotting function
         """
@@ -968,9 +971,12 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             )
         if colors is None:
             colors = list(conf.colorcycle)
+            while len(colors) < len(labels):
+                colors += colors
 
         kwargs["labels"] = labels
         kwargs["colors"] = colors
+        kwargs["latex_friendly"] = latex_friendly
         return self.plotting_map[type](*args, **kwargs)
 
     def _marginalized_posterior(

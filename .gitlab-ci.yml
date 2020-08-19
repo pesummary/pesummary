@@ -165,7 +165,7 @@ python-3.6:
     - export PESUMMARY_TESTING_DIR=`python -c "import pkg_resources; print(pkg_resources.resource_filename('pesummary', 'tests'))"`
     - summarytest --type tests --ignore ${PESUMMARY_TESTING_DIR}/workflow_test.py ${PESUMMARY_TESTING_DIR}/ligo_skymap_test.py --pytest_config ${BASE}/setup.cfg
     - cd ${BASE}
-
+  allow_failure: true
 
 python-3.7:
   stage: test
