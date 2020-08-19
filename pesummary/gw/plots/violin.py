@@ -41,11 +41,14 @@ class ViolinPlotter(_ViolinPlotter):
                  bw="scott", cut=2, scale="area", scale_hue=True, gridsize=100,
                  width=.8, inner="box", split=False, dodge=True, orient=None,
                  linewidth=None, color=None, palette=None, saturation=.75,
-                 ax=None, outer=None, kde=gaussian_kde, kde_kwargs={}, **kwargs):
+                 ax=None, outer=None, kde=gaussian_kde, kde_kwargs={},
+                 weights=None, **kwargs):
         self.multi_color = False
         self.kde = kde
         self.kde_kwargs = kde_kwargs
-        self.establish_variables(x, y, hue, data, orient, order, hue_order)
+        self.establish_variables(
+            x, y, hue, data, orient, order, hue_order, weights=weights
+        )
         self.establish_colors(color, palette, saturation)
         self.estimate_densities(bw, cut, scale, scale_hue, gridsize)
 
@@ -85,6 +88,52 @@ class ViolinPlotter(_ViolinPlotter):
         if linewidth is None:
             linewidth = mpl.rcParams["lines.linewidth"]
         self.linewidth = linewidth
+
+    def establish_variables(self, x, y, hue, data, orient, order, hue_order,
+                            weights=None, **kwargs):
+        """Convert input specification into a common representation."""
+        super(ViolinPlotter, self).establish_variables(
+            x, y, hue, data, orient, order, hue_order, **kwargs
+        )
+        if weights is None:
+            weights_data = []
+            if isinstance(data, pd.DataFrame):
+                colname = None
+                if "weights" in data.columns:
+                    colname = "weights"
+                elif "weight" in data.columns:
+                    colname = "weight"
+                if colname is None:
+                    colname = "weights"
+                    data[colname] = np.ones(len(data))
+                for _data in self.plot_data:
+                    weights_data.append(data[colname][_data.index])
+            else:
+                weights_data = np.ones_like(self.plot_data)
+        else:
+            if hasattr(weights, "shape"):
+                if len(data.shape) != len(weights.shape):
+                    raise ValueError("weights shape must equal data shape")
+                if len(weights.shape) == 1:
+                    if np.isscalar(weights[0]):
+                        weights_data = [weights]
+                    else:
+                        weights_data = list(weights)
+                elif len(weights.shape) == 2:
+                    nr, nc = weights.shape
+                    if nr == 1 or nc == 1:
+                        weights_data = [weights.ravel()]
+                    else:
+                        weights_data = [weights[:, i] for i in range(nc)]
+                else:
+                    error = "weights can have no more than 2 dimensions"
+                    raise ValueError(error)
+            elif np.isscalar(weights[0]):
+                weights_data = [weights]
+            else:
+                weights_data = weights
+            weights_data = [np.asarray(d, np.float) for d in weights_data]
+        self.weights_data = weights_data
 
     def establish_colors(self, color, palette, saturation):
         """Get a list of colors for the main component of the plots."""
@@ -212,7 +261,9 @@ class ViolinPlotter(_ViolinPlotter):
                     continue
 
                 # Fit the KDE and get the used bandwidth size
-                kde, bw_used = self.fit_kde(kde_data, bw)
+                kde, bw_used = self.fit_kde(
+                    kde_data, bw, weights=self.weights_data[i]
+                )
 
                 # Determine the support grid and get the density over it
                 support_i = self.kde_support(kde_data, bw_used, cut, gridsize)
@@ -263,7 +314,9 @@ class ViolinPlotter(_ViolinPlotter):
                         continue
 
                     # Fit the KDE and get the used bandwidth size
-                    kde, bw_used = self.fit_kde(kde_data, bw)
+                    kde, bw_used = self.fit_kde(
+                        kde_data, bw, weights=self.weights_data[i][hue_mask]
+                    )
                     # Determine the support grid and get the density over it
                     support_ij = self.kde_support(kde_data, bw_used,
                                                   cut, gridsize)
@@ -437,7 +490,8 @@ class ViolinPlotter(_ViolinPlotter):
                         else:
                             self.draw_external_range(ax, violin_data,
                                                      support, density, i,
-                                                     ["left", "right"][j])
+                                                     ["left", "right"][j],
+                                                     weights=self.weights_data[i][hue_mask])
 
                         # The box and point interior plots are drawn for
                         # all data at the group level, so we just do that once
@@ -499,9 +553,9 @@ class ViolinPlotter(_ViolinPlotter):
                         elif self.inner.startswith("point"):
                             self.draw_points(ax, violin_data, i + offsets[j])
 
-    def fit_kde(self, x, bw):
+    def fit_kde(self, x, bw, weights=None):
         """Estimate a KDE for a vector of data with flexible bandwidth."""
-        kde = self.kde(x, bw_method=bw, **self.kde_kwargs)
+        kde = self.kde(x, bw_method=bw, weights=weights, **self.kde_kwargs)
         # Extract the numeric bandwidth from the KDE object
         bw_used = kde.factor
 
@@ -584,14 +638,22 @@ class ViolinPlotter(_ViolinPlotter):
                     color=color)
 
     def draw_external_range(self, ax, data, support, density,
-                            center, split=None):
+                            center, split=None, weights=None):
         """Draw lines extending outside of the violin showing given range"""
         width = self.dwidth * np.max(density) * 1.1
 
         if isinstance(self.outer, dict):
             if "percentage" in list(self.outer.keys()):
                 percent = float(self.outer["percentage"])
-                lower, upper = np.percentile(data, [100 - percent, percent])
+                if weights is None:
+                    lower, upper = np.percentile(data, [100 - percent, percent])
+                else:
+                    from pesummary.utils.samples_dict import Array
+
+                    _data = Array(data, weights=weights)
+                    lower, upper = _data.confidence_interval(
+                        [100 - percent, percent]
+                    )
                 h1 = np.min(data[data >= (upper)])
                 h2 = np.max(data[data <= (lower)])
 
@@ -619,7 +681,15 @@ class ViolinPlotter(_ViolinPlotter):
                 percent = float(self._flatten_string(percent))
                 percent += (100 - percent) / 2.
 
-                lower, upper = np.percentile(data, [100 - percent, percent])
+                if weights is None:
+                    lower, upper = np.percentile(data, [100 - percent, percent])
+                else:
+                    from pesummary.utils.samples_dict import Array
+
+                    _data = Array(data, weights=weights)
+                    lower, upper = _data.confidence_interval(
+                        [100 - percent, percent]
+                    )
                 h1 = np.min(data[data >= (upper)])
                 h2 = np.max(data[data <= (lower)])
 
@@ -648,13 +718,14 @@ def violinplot(x=None, y=None, hue=None, data=None, order=None, hue_order=None,
                bw="scott", cut=2, scale="area", scale_hue=True, gridsize=100,
                width=.8, inner="box", split=False, dodge=True, orient=None,
                linewidth=None, color=None, palette=None, saturation=.75,
-               ax=None, outer=None, kde=gaussian_kde, kde_kwargs={}, **kwargs):
+               ax=None, outer=None, kde=gaussian_kde, kde_kwargs={},
+               weights=None, **kwargs):
 
     plotter = ViolinPlotter(x, y, hue, data, order, hue_order,
                             bw, cut, scale, scale_hue, gridsize,
                             width, inner, split, dodge, orient, linewidth,
                             color, palette, saturation, outer=outer,
-                            kde=kde, kde_kwargs=kde_kwargs)
+                            kde=kde, kde_kwargs=kde_kwargs, weights=weights)
 
     if ax is None:
         ax = plt.gca()
@@ -663,7 +734,10 @@ def violinplot(x=None, y=None, hue=None, data=None, order=None, hue_order=None,
     return ax
 
 
-def split_dataframe(left, right, labels, left_label="left", right_label="right"):
+def split_dataframe(
+    left, right, labels, left_label="left", right_label="right",
+    weights_left=None, weights_right=None
+):
     """Generate a pandas DataFrame containing two sets of distributions -- one
     set for the left hand side of the violins, and one set for the right hand
     side of the violins
@@ -698,6 +772,24 @@ def split_dataframe(left, right, labels, left_label="left", right_label="right")
         y
     ]
     sides = [x for y in sides for x in y]
-    return pandas.DataFrame(
+    df = pandas.DataFrame(
         data={"data": dataframe, "side": sides, "label": labels}
     )
+    if all(kwarg is None for kwarg in [weights_left, weights_right]):
+        return df
+
+    left_inds = df["side"][df["side"] == left_label].index
+    right_inds = df["side"][df["side"] == right_label].index
+    if weights_left is not None and weights_right is None:
+        weights_right = [np.ones(len(right[num])) for num in range(nviolin)]
+    elif weights_left is None and weights_right is not None:
+        weights_left = [np.ones(len(left[num])) for num in range(nviolin)]
+    if any(len(kwarg) != nviolin for kwarg in [weights_left, weights_right]):
+        raise ValueError("help")
+
+    weights = [
+        x for y in [[i, j] for i, j in zip(weights_left, weights_right)] for x in y
+    ]
+    weights = [x for y in weights for x in y]
+    df["weights"] = weights
+    return df
