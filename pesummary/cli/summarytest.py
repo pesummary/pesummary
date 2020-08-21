@@ -20,11 +20,12 @@ import pesummary
 from pesummary.utils.utils import logger
 from pesummary.utils.decorators import tmp_directory
 import argparse
+import glob
 from pathlib import Path
 
 ALLOWED = [
     "executables", "imports", "tests", "workflow", "skymap", "bilby",
-    "lalinference", "GW190412", "GW190425", "GWTC1"
+    "lalinference", "GW190412", "GW190425", "GWTC1", "examples"
 ]
 
 PESUMMARY_DIR = Path(pesummary.__file__).parent.parent
@@ -64,6 +65,11 @@ def command_line():
     parser.add_argument(
         "-o", "--output", dest="output", default=".",
         help="Directory to store the output from the testing scripts"
+    )
+    parser.add_argument(
+        "-r", "--repository", dest="repository",
+        default=os.path.join(".", "pesummary"),
+        help="Location of the pesummary repository"
     )
     return parser
 
@@ -230,6 +236,23 @@ def GWTC1(*args, **kwargs):
     return launch(command_line)
 
 
+@tmp_directory
+def examples(*args, repository=os.path.join(".", "pesummary"), **kwargs):
+    """Test that the examples in the `pesummary` repository work
+    """
+    examples_dir = os.path.join(repository, "examples")
+    gw_examples = os.path.join(examples_dir, "gw")
+    shell_scripts = glob.glob(os.path.join(gw_examples, "*.sh"))
+    for script in shell_scripts:
+        command_line = f"bash {script}"
+        launch(command_line)
+    python_scripts = glob.glob(os.path.join(gw_examples, "*.py"))
+    for script in python_scripts:
+        command_line = f"python {script}"
+        launch(command_line)
+    return
+
+
 def main(args=None):
     """Top level interface for `summarytest`
     """
@@ -247,7 +270,7 @@ def main(args=None):
         type_mapping[opts.type](
             coverage=opts.coverage, expression=opts.expression,
             ignore=opts.ignore, pytest_config=opts.pytest_config,
-            output=opts.output
+            output=opts.output, repository=os.path.abspath(opts.repository)
         )
     except subprocess.CalledProcessError as e:
         raise ValueError(

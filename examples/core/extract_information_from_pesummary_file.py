@@ -22,32 +22,3 @@ injection_data = {i: j for i, j in zip(parameters, injection_values)}
 # learn about these arguments
 
 f.write_config_to_file(labels[0], outdir="./outdir")
-
-# Now let us extract the information from the `gw.json` file
-from pesummary.gw.file.read import read as GWread
-
-f = GWread("./gw.json")
-config_data = f.config
-samples = f.samples_dict
-parameters = f.parameters
-labels = f.labels
-priors = f.priors
-injection_values = f.injection_parameters
-injection_data = {i: j for i, j in zip(parameters, injection_values)}
-
-calibration_envelopes = f.calibration
-psds = f.psd
-approximants = f.approximants
-
-# If you would prefer to have the psds and calibration envelopes stored
-# as dat/txt files, you can easily convert them back to their original form
-# by using the `save_to_file` function
-
-psds[labels[0]]["H1"].save_to_file("IFO0_psd.dat")
-calibration_envelopes[labels[0]]["H1"].save_to_file("calibration_H1.txt")
-
-# As GWread is inherited from read, all the same functions
-# can be used for the GWread. For instance, you are able to save the
-# config_data as a valid configuration file by running
-
-f.write_config_to_file(labels[0], outdir="./outdir")
