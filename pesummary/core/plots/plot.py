@@ -628,7 +628,7 @@ def _make_corner_plot(
 
 def _make_comparison_corner_plot(
     samples, latex_labels, corner_parameters=None, colors=conf.corner_colors,
-    **kwargs
+    latex_friendly=True, **kwargs
 ):
     """Generate a corner plot which contains multiple datasets
 
@@ -643,6 +643,8 @@ def _make_comparison_corner_plot(
         corner parameters you wish to include in the plot
     colors: list, optional
         unique colors for each dataset
+    latex_friendly: Bool, optional
+        if True, make the label latex friendly. Default True
     **kwargs: dict
         all kwargs are passed to `corner.corner`
     """
@@ -659,6 +661,9 @@ def _make_comparison_corner_plot(
     hist_kwargs["density"] = True
     lines = []
     for num, (label, posterior) in enumerate(samples.items()):
+        if latex_friendly:
+            label = copy.deepcopy(label)
+            label = label.replace("_", "\_")
         lines.append(mlines.Line2D([], [], color=colors[num], label=label))
         _samples = {
             param: value for param, value in posterior.items() if param in

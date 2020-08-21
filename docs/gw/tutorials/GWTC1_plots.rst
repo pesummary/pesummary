@@ -10,7 +10,7 @@ provided by PESummary.
 
 .. _GWTC1: https://arxiv.org/abs/1811.12907
 
-.. literalinclude:: ../../../../examples/GWTC1_plots.sh
+.. literalinclude:: ../../../../examples/gw/GWTC1_plots.sh
    :language: bash
    :lines: 1-28
    :linenos:
@@ -19,7 +19,7 @@ Now that we have all of the data and all of the variables setup, we can now
 run the `summarypublication` executable and make a 2d bounded contour of the
 mass_1 and mass_2 parameter space
 
-.. literalinclude:: ../../../../examples/GWTC1_plots.sh
+.. literalinclude:: ../../../../examples/gw/GWTC1_plots.sh
     :language: bash
     :lines: 31-37
     :linenos: 
@@ -28,7 +28,7 @@ mass_1 and mass_2 parameter space
 
 Now we can produced a violin plot showing the variation in mass_ratio
 
-.. literalinclude:: ../../../../examples/GWTC1_plots.sh
+.. literalinclude:: ../../../../examples/gw/GWTC1_plots.sh
     :language: bash
     :lines: 40-45
     :linenos:
@@ -38,7 +38,7 @@ Now we can produced a violin plot showing the variation in mass_ratio
 Now we can produce a 2d bounded contour of the theta_jn and luminosity_distance 
 parameter space
 
-.. literalinclude:: ../../../../examples/GWTC1_plots.sh
+.. literalinclude:: ../../../../examples/gw/GWTC1_plots.sh
     :language: bash
     :lines: 48-54
     :linenos:
@@ -48,7 +48,7 @@ parameter space
 Now we can produce a 2d bounded contour of the luminosity_distance chirp_mass
 parameter space
 
-.. literalinclude:: ../../../../examples/GWTC1_plots.sh
+.. literalinclude:: ../../../../examples/gw/GWTC1_plots.sh
     :language: bash
     :lines: 57-63
     :linenos:

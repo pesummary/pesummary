@@ -13,3 +13,6 @@ ligo.skymap
 pepredicates>=0.0.3
 p_astro
 nbformat
+nbsphinx
+jupyter_client
+ipykernel

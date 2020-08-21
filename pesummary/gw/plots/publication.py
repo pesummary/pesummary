@@ -27,6 +27,7 @@ from pesummary.gw.plots.bounds import default_bounds
 from pesummary.gw.plots.cmap import colormap_with_fixed_hue
 from pesummary.gw.file.conversions import mchirp_from_m1_m2, q_from_m1_m2
 import numpy as np
+import copy
 
 seaborn.set(style="whitegrid")
 
@@ -211,7 +212,7 @@ def twod_contour_plots(
 def violin_plots(
     parameter, samples, labels, latex_labels, cut=0,
     _default_kwargs={"palette": "pastel", "inner": "line", "outer": "percent: 90"},
-    **kwargs
+    latex_friendly=True, **kwargs
 ):
     """Generate violin plots for a set of parameters and samples
 
@@ -232,6 +233,10 @@ def violin_plots(
     ax1 = violin.violinplot(
         data=samples, cut=cut, ax=ax1, scale="width", **_default_kwargs
     )
+    if latex_friendly:
+        labels = copy.deepcopy(labels)
+        for num, _ in enumerate(labels):
+            labels[num] = labels[num].replace("_", "\_")
     ax1.set_xticklabels(labels)
     for label in ax1.get_xmajorticklabels():
         label.set_rotation(30)
@@ -430,11 +435,11 @@ def spin_distribution_plots(
         scale = 1.0
         aux_ax2 = ax1.get_aux_axes(tr)
         txt = aux_ax2.text(
-            50 * scale, 0.35 * scale, r'$\textrm{magnitude}$', fontsize=20,
+            50 * scale, 0.35 * scale, r'$\mathrm{magnitude}$', fontsize=20,
             zorder=10
         )
         txt = aux_ax2.text(
-            45 * scale, 1.2 * scale, r'$\textrm{tilt}$', fontsize=20, zorder=10
+            45 * scale, 1.2 * scale, r'$\mathrm{tilt}$', fontsize=20, zorder=10
         )
         txt = aux_ax2.annotate(
             "", xy=(55, 1.158 * scale), xycoords='data',

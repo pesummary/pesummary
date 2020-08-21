@@ -20,11 +20,13 @@ PESummary: The code agnostic Parameter Estimation Summary page builder
       please `click here <../stable_docs/index.html>`_.
 
 PESummary is a collaboration-driven Python package providing tools for
-generating summary pages for all sample generating codes. 
+generating summary pages for all sample generating codes.
 
-PESummary provides a user-friendly, intuitive interface to the common
-LIGO/Virgo samples and allows for the user to reproduce all outputs from the
-LIGO/Virgo Scientific collaboration.
+PESummary provides 2 packages: `core` and `gw`. The `core` package provides all
+of the necessary code for analysing, displaying and comparing data files from
+general inference problems. The `gw` specific package contains GW functionality,
+including converting posterior distributions, deriving event classifications and
+GW specific plots.
 
 First Steps
 +++++++++++
@@ -34,8 +36,19 @@ First Steps
 
     what_is_pesummary
     installation
+    pesummary paper <https://arxiv.org/pdf/2006.06639.pdf>
     citing_pesummary
-    core/making_a_result_file
+
+
+Packages
+++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    core/index
+    gw/index
+
 
 Configuration
 +++++++++++++
@@ -45,161 +58,6 @@ Configuration
 
     conf/configuration
 
-Reading a result file
-+++++++++++++++++++++
-
-.. toctree::
-    :maxdepth: 1
-
-    read
-
-PESummary metafile
-++++++++++++++++
-
-.. toctree::
-    :maxdepth: 1
-
-    core/read_pesummary
-
-Manipulating posterior samples
-++++++++++++++++++++++++++++++
-
-.. toctree::
-    :maxdepth: 1
-
-    core/Array
-    core/SamplesDict
-    core/MCMCSamplesDict
-    core/MultiAnalysisSamplesDict
-
-Customisation
-+++++++++++++
-
-One of the main advantages for using PESummary as your default post-processing
-script is the degree of customisation that is possible. Below we will highlight
-a couple of the main customisation features of PESummary (some have already
-been mentioned and discussed in 'The summary pages' section above).
-
-.. toctree::
-    :maxdepth: 1
-
-    core/custom_plots
-
-Base Summary pages
-++++++++++++++++++
-
-Below we show details about the `summarypages` that are built for the `core`
-module:
-
-.. toctree::
-    :maxdepth: 1
-
-    core/summarypages/corner
-    core/summarypages/config
-    core/summarypages/1d_histogram
-    core/summarypages/interactive
-    core/summarypages/comparison
-    core/summarypages/comparison_interactive
-    core/summarypages/notes
-    core/summarypages/downloads
-    core/summarypages/examples
-
-Executables
-+++++++++++
-
-PESummary boasts several executables to make it even easier to use, see below
-for details:
-
-.. toctree::
-    :maxdepth: 1
-
-    cli/summaryclassification
-    cli/summaryclean
-    cli/summarycombine
-    cli/summarycompare
-    cli/summarydetchar
-    cli/summarymodify
-    cli/summarygracedb
-    cli/summarypages
-    cli/summarypageslw
-    cli/summarypipe
-    cli/summarypublication
-    cli/summaryrecreate
-    cli/summaryreview
-    cli/summaryversion
-
-Tutorials
-+++++++++
-
-.. toctree::
-    :maxdepth: 3
-
-    tutorials
-
-Helper classes
-++++++++++++++
-
-.. toctree::
-    :maxdepth: 1
-
-    core/bounded_kdes
-    utils/condition_prior
-
-Advanced plotting
-+++++++++++++++++
-
-.. toctree::
-    :maxdepth: 1
-
-    gw/violin
-
-Specific to Gravitational Waves
--------------------------------
-
-PESummary metafile
-++++++++++++++++++
-
-.. toctree::
-    :maxdepth: 1
-
-    gw/read_pesummary
-
-GW specific helper classes
-++++++++++++++++++++++++++
-
-.. toctree::
-    :maxdepth: 1
-
-    gw/psd
-    gw/calibration
-
-Parameter definitions
-+++++++++++++++++++++
-
-.. toctree::
-    :maxdepth: 1
-
-    gw/parameters
-
-Converting parameters
-+++++++++++++++++++++
-
-.. toctree::
-    :maxdepth: 1
-
-    gw/Conversion
-
-GW specific summarypages
-++++++++++++++++++++++++
-
-Below we give details about the extra summary pages that are built when we use
-the `gw` module:
-
-.. toctree::
-    :maxdepth: 1
-
-    gw/summarypages/classification
-    gw/summarypages/publication
 
 Indices and tables
 ------------------

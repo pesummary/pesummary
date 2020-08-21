@@ -452,6 +452,33 @@ class SamplesDict(dict):
             self, self.latex_labels, corner_parameters=_parameters, **kwargs
         )[0]
 
+    def classification(self, prior=None):
+        """Return the classification probabilities
+
+        Parameters
+        ----------
+        prior: str, optional
+            prior you wish to use when generating the classification
+            probabilities.
+        """
+        from pesummary.gw.pepredicates import get_classifications
+        from pesummary.gw.p_astro import get_probabilities
+
+        _prior = ["default", "population", None]
+        if prior not in _prior:
+            raise ValueError(
+                "Unrecognised prior. Prior must be either: {}".format(
+                    ", ".join(_prior)
+                )
+            )
+        classifications = get_classifications(self)
+        embright = get_probabilities(self)
+        classifications["default"].update(embright[0])
+        classifications["population"].update(embright[1])
+        if prior is not None:
+            return classifications[prior]
+        return classifications
+
 
 class _MultiDimensionalSamplesDict(dict):
     """Class to store multiple SamplesDict objects
