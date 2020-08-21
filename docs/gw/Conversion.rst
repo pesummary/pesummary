@@ -53,7 +53,7 @@ conversions:
 .. toctree::
     :maxdepth: 1
 
-    conversion/remnant_fits 
+    remnant_fits 
 
 Core conversion functions
 -------------------------

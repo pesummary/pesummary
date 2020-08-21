@@ -67,7 +67,9 @@ def make_public_notebook(
             "As part of this sample release, we are releasing the posterior "
             "samples generated from {} different analyses. The samples for "
             "each analysis is stored in the data file. This data file "
-            "can be read in using the 'pesummary' read function"
+            "can be read in using the 'pesummary' read function".format(
+                len(f.labels)
+            )
         )
     )
     nb.add_cell(text, markdown=True)
@@ -120,7 +122,7 @@ def make_public_notebook(
 
     if len(f.labels) > 1:
         cell = "## Comparing multiple analyses"
-        nb.add_cell(text, markdown=True)
+        nb.add_cell(cell, markdown=True)
         text, cell = samples_dict_plot(
             "samples_dict", plot_args=["'{}'".format(default_parameter)],
             plot_kwargs={"type": "'hist'", "kde": True}, text=(

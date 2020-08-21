@@ -40,7 +40,7 @@ If you would like, you are able to pull the :code:`PESummary` docker image. To d
 
 .. code-block:: console
 
-    $ docker pull 08hoyc/pesummary:v0.1.5
+    $ docker pull 08hoyc/pesummary
 
 Installing PESummary from source
 --------------------------------
@@ -52,7 +52,7 @@ First clone the repository, then install all requirements, then install the soft
 .. code-block:: console
 
    $ source ~/virtualenvs/pesummary_pyenv3.6/bin/activate
-   $ git clone git@git.ligo.org:charlie.hoy/pesummary.git
+   $ git clone git@git.ligo.org:lscsoft/pesummary.git
    $ cd pesummary/
    $ pip install -r requirements.txt
    $ python setup.py install
@@ -70,11 +70,10 @@ The :code:`requirements.txt` file contains all the necessary packages for runnin
 Identifying the version number of your installation
 ---------------------------------------------------
 
-We recommend that you always keep up to date with new releases. If you would like to know what version of :code:`PESummary` you are running,
+We recommend that you always keep up to date with new releases. If you would like to know what version of :code:`PESummary` you are running, you can either find out in a python shell,
 
-.. code:: console
+.. command-output:: python -c "import pesummary; print(pesummary.__version__)"
 
-   $ python -c "import pesummary; print(pesummary.__version__)"
-   0.1.5
+or using the `summaryversion <core/cli/summaryversion.html>`_ executable,
 
-This shows that we are running version 0.1.5.
+.. command-output:: summaryversion

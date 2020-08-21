@@ -109,7 +109,8 @@ class ViolinPlotter(_ViolinPlotter):
                 for _data in self.plot_data:
                     weights_data.append(data[colname][_data.index])
             else:
-                weights_data = np.ones_like(self.plot_data)
+                for _data in self.plot_data:
+                    weights_data.append(np.ones_like(_data))
         else:
             if hasattr(weights, "shape"):
                 if len(data.shape) != len(weights.shape):

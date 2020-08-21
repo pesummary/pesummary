@@ -18,6 +18,7 @@ cache:
 before_script:
   - pip install -r requirements.txt
   - pip install -r optional_requirements.txt
+  - 'apt-get update -y && bash && apt-get -y install pandoc'
   - pip install bilby
   - export USER=albert.einstein
 
@@ -128,6 +129,8 @@ documentation:
     - tarball
   script:
     - pip install pesummary-*.tar.*
+    - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
+    - ipython kernel install --user --name=python3
     - cd docs
     - make clean
     - bash build_docs.sh

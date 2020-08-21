@@ -3,43 +3,96 @@ The read function
 =================
 
 `pesummary` provides functionality to read in nearly all result file formats.
-This is done with the `pesummary.core.file.read.read` function. Below we show
+This is done with the `pesummary.io.read.read` function. Below we show
 how the read function works and some of the functions and properties that it
 includes.
-
-For details about the extra properties there are when reading in a `pesummary`
-result file, see `Reading in a pesummary metafile <read_pesummary.html>`_
 
 Reading a result file
 ---------------------
 
-Below is how you might read in a result file,
+Below, we show how to read in a result file,
 
 .. code-block:: python
 
-    >>> from pesummary.core.file.read import read
-    >>> data = read("example.dat")
-    >>> json_load = read("example.json")
-    >>> hdf5_load = read("example.hdf5")
-    >>> txt_load = read("example.txt")
+    >>> from pesummary.io import read
+    >>> data = read("example.dat", package="core")
+    >>> json_load = read("example.json", package="core")
+    >>> hdf5_load = read("example.hdf5", package="core")
+    >>> txt_load = read("example.txt", package="core")
 
 `pesummary` is able to read in `json`, `dat`, `txt` and `hdf5` file formats.
 
-Manipulating the result file
-----------------------------
+Extracting data
+---------------
 
-Once read in, `pesummary` offers properties and functions to inspect and
-manipulate the result file. Firstly, the stored samples can be inspected through
-the `.samples_dict` property:
+Once read in, `pesummary` offers properties and functions to extract the data
+that is stored in the input file. As `pesummary` is able to read in both a file
+that contains the samples for a single analysis and a `pesummary` metafile
+which is able to store samples from multiple analyses, the way to extract the
+samples is slightly different for the two situations.
+
+For both cases, the stored samples can be inspected through the `.samples_dict`
+property
+
+Single analysis file
+++++++++++++++++++++
+
+When the input file only contains a single analysis, the samples are stored
+All samples are stored in a subclass of the Python builtin dict:
+`pesummary.utils.samples_dict.SamplesDict`,
 
 .. code-block:: python
 
     >>> samples_dict = data.samples_dict
     >>> type(samples_dict)
-    <class 'pesummary.utils.utils.SamplesDict'>
+    <class 'pesummary.utils.samples_dict.SamplesDict'>
+    >>> print(samples_dict.keys())
+    dict_keys(['a', 'b',...])
 
-For details about this `SamplesDict` class see
-`SamplesDict class <SamplesDict.html>`_
+Each marginalized posterior distribution is stored as a subclass of
+`numpy.ndarray`: `pesummary.utils.samples_dict.Array`. For more information
+about the `SamplesDict` class, see the `SamplesDict docs <./SamplesDict.html>`_.
+For more information about the `Array` class, see the
+`Array docs <./Array.html>`_. This structure provides direct access to the
+optimised array functions from `numpy` and the usability and familiarity of
+dictionaries.
+
+PESummary metafile
+++++++++++++++++++
+
+When the input file is a pesummary metafile, this time, the samples are stored
+in a different subclass of the Python builtin dict:
+`pesummary.utils.samples_dict.MultiAnalysisSamplesDict`,
+
+.. code-block:: python
+
+    >>> samples_dict = data.samples_dict
+    >>> type(samples_dict)
+    <class 'pesummary.utils.samples_dict.MultiAnalysisSamplesDict'>
+    >>> print(samples_dict.keys())
+    dict_keys(['analysis_1', 'analysis_2',...])
+    >>> type(samples_dict['analysis_1'])
+    <class 'pesummary.utils.samples_dict.SamplesDict'>
+
+The samples for a given analysis and now assigned a label in order to
+distinguish them from another analysis. The samples for a given analysis are
+stored as a `pesummary.utils.samples_dict.SamplesDict` object. For more
+information about the `MultiAnalysisSamplesDict` class, see the
+`MultiAnalysisSamplesDict socs <./MultiAnalysisSamplesDict.html>`_.
+
+For details about how to extract additional information from the `pesummary`
+metafile, see the
+`extract information from a pesummary file <pesummary_file.html>`_ docs.
+
+Changing file format
+--------------------
+
+We may convert the result file to a different file format by using the
+`.write()` method. For example, we may convert to a `.dat` file with,
+
+.. code-block:: python
+
+    >>> data.write(package="core", file_format="dat", outdir="./", filename="example.dat")
 
 Latex
 -----
@@ -79,14 +132,3 @@ And latex macros may be generated as follows,
     \def\Aupper{$43.04$}
     \def\Alower{$30.04$}
     >>> data.generate_latex_macros(save_to_file="macros.tex", parameter_dict=macros_map)
-
-Changing file format
---------------------
-
-We may convert the result file to a different file format by using the one of
-the inbuild functions. For example, we may convert to a `.dat` file, by using
-the `.to_dat` method,
-
-.. code-block:: python
-
-    >>> data.to_dat(outdir="./", label="my_example")
