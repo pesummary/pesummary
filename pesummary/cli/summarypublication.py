@@ -201,8 +201,8 @@ def make_2d_contour_plot(opts):
             i, twod_samples, opts.labels, latex_labels, colors=colors,
             linestyles=linestyles, gridsize=gridsize, return_ax=True
         )
-        current_xlow, current_xhigh = ax.xlim()
-        current_ylow, current_yhigh = ax.ylim()
+        current_xlow, current_xhigh = ax.get_xlim()
+        current_ylow, current_yhigh = ax.get_ylim()
         keys = opts.publication_kwargs.keys()
         if "xlow" in keys and "xhigh" in keys:
             ax.set_xlim(

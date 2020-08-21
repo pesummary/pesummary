@@ -3,10 +3,17 @@
 # file and then using the `to_latex_table` and the `generate_latex_macros`
 # functions.
 
-from pesummary.gw.file.read import read
+from pesummary.io import read
+import requests
+
+data = requests.get(
+    "https://dcc.ligo.org/public/0168/P2000183/008/GW190814_posterior_samples.h5"
+)
+with open("GW190814_posterior_samples.h5", "wb") as f:
+    f.write(data.content)
 
 # First load in the result file
-f = read("result_file.dat")
+f = read("GW190814_posterior_samples.h5", package="gw")
 
 # Then make a dictionary which maps the parameter to a description that you
 # wish to use in the latex table
@@ -15,17 +22,12 @@ parameter_dict = {
     "mass_2": "Detector-frame secondary mass $m_{2}/M_{\odot}$",
 }
 
-# Now generate the latex table and save it to a file
-f.to_latex_table(
-    parameter_dict=parameter_dict, save_to_file="latex_table.tex"
-)
-
-# If we had a PESummary metafile, then because a single PESummary metafile
-# can contain many runs, we need to specify which analysis we want included
-# in the latex table. This can be done by the following:
+# As a single PESummary metafile can contain many runs, we need to specify which
+# analysis we want included in the latex table. This can be done by the
+# following:
 
 f.to_latex_table(
-    parameter_dict=parameter_dict, labels="example",
+    parameter_dict=parameter_dict, labels=f.labels[0],
     save_to_file="pesummary_latex_table.tex"
 )
 
@@ -33,8 +35,8 @@ f.to_latex_table(
 # by simply passing a list of labels that you wish to include
 
 f.to_latex_table(
-    parameter_dict=parameter_dict, labels=["example1", "example2"],
-    save_to_file="pesummary_latex_table.tex"
+    parameter_dict=parameter_dict, labels=f.labels[:2],
+    save_to_file="pesummary_latex_table_multiple.tex"
 )
 
 # To generate latex macros, we need to generate a similar dictionary, but this
@@ -44,15 +46,10 @@ parameter_dict = {
     "mass_2": "detector_secondary"
 }
 
-# Now generate the latex macros and save it to a file
-f.generate_latex_macros(
-    parameter_dict=parameter_dict, save_to_file="latex_macros.tex"
-)
-
 # If you want to generate macros for more than one run, this can be done by
 # again passing a list of labels that you wish to include
 
 f.generate_latex_macros(
-    parameter_dict=parameter_dict, labels=["example1", "example2"],
+    parameter_dict=parameter_dict, labels=f.labels[:2],
     save_to_file="pesummary_latex_macros.tex"
 )

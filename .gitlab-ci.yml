@@ -139,6 +139,21 @@ documentation:
       - docs/_build/html/
 
 
+examples:
+  stage: basic
+  image: python:3.6
+  needs:
+    - tarball
+  script:
+    - pip install pesummary-*.tar.*
+    - BASE=`pwd`
+    - export PESUMMARY_REPO_DIR=${BASE}
+    - mkdir _testing
+    - cd _testing
+    - summarytest --type examples --repository ${PESUMMARY_REPO_DIR}
+    - cd ${BASE}
+
+
 authors:
   stage: basic
   image: python:3.6
@@ -375,6 +390,7 @@ pages:
     - imports
     - style
     - documentation
+    - examples
     - python-3.6
     - python-3.7
     - python-3.8
