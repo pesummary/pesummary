@@ -1,3 +1,21 @@
+## 0.9.0 [04/09/2020]
+
+### Changed
+
+- `network_matched_filter_snr` - correct the `network_matched_filter_snr`
+  conversion
+- Documentation - reorganize the documentation to make it easier to navigate
+- Violin plots - allow for the user to pass weights to the violin plot function
+
+### Added
+
+- Test that all examples as part of the testing-suite
+- Export the environment to a conda yml file
+- Add a `.AUTHORS` file which documents all those that have contributed to the
+  development of PESummary
+- Add a notebook module which allows for the generation of jupyter notebooks
+
+
 ## 0.8.0 [13/08/2020]
 
 ### Changed
