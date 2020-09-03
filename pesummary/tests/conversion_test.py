@@ -486,6 +486,36 @@ class TestConversions(object):
         assert network[0] == np.sqrt(3) * 2
         assert network[1] == np.sqrt(3) * 3
 
+    def test_network_matched_filter_snr(self):
+        """Samples taken from a lalinference result file
+        """
+        snr_mf_H1 = 7.950207935574794
+        snr_mf_L1 = 19.232672412819483
+        snr_mf_V1 = 3.666438738845737
+        snr_opt_H1 = 9.668043620320788
+        snr_opt_L1 = 19.0826463504282
+        snr_opt_V1 = 3.5578582036515236
+        network = network_matched_filter_snr(
+            [snr_mf_H1, snr_mf_L1, snr_mf_V1],
+            [snr_opt_H1, snr_opt_L1, snr_opt_V1]
+        )
+        np.testing.assert_almost_equal(network, 21.06984787727566)
+        network = network_matched_filter_snr(
+            [[snr_mf_H1] * 2, [snr_mf_L1] * 2, [snr_mf_V1] * 2],
+            [[snr_opt_H1] * 2, [snr_opt_L1] * 2, [snr_opt_V1] * 2]
+        )
+        np.testing.assert_almost_equal(
+            network, [21.06984787727566] * 2
+        )
+        snr_mf_H1 = 7.950207935574794 - 1.004962343498161 * 1j
+        snr_mf_L1 = 19.232672412819483 - 0.4646531569951501 * 1j
+        snr_mf_V1 = 3.666438738845737 - 0.08177741915398137 * 1j
+        network = network_matched_filter_snr(
+            [snr_mf_H1, snr_mf_L1, snr_mf_V1],
+            [snr_opt_H1, snr_opt_L1, snr_opt_V1]
+        )
+        np.testing.assert_almost_equal(network, 21.06984787727566)
+
     def test_full_conversion(self):
         from pesummary.utils.samples_dict import Array
         from pesummary.gw.file.conversions import _Conversion
@@ -510,7 +540,8 @@ class TestConversions(object):
             "phi_jl": [0.25],
             "H1_matched_filter_abs_snr": [10.0],
             "H1_matched_filter_snr_angle": [0.],
-            "H1_matched_filter_snr": [10.0]
+            "H1_matched_filter_snr": [10.0],
+            "H1_optimal_snr": [10.0]
         }
         data = _Conversion(dictionary)
         true_params = [
@@ -547,6 +578,7 @@ class TestConversions(object):
             'H1_matched_filter_abs_snr': Array(dictionary["H1_matched_filter_abs_snr"]),
             'H1_matched_filter_snr_angle': Array(dictionary["H1_matched_filter_snr_angle"]),
             'H1_matched_filter_snr': Array(dictionary["H1_matched_filter_snr"]),
+            'H1_optimal_snr': Array(dictionary["H1_optimal_snr"]),
             'theta_jn': Array(np.arccos(dictionary["cos_theta_jn"])),
             'tilt_1': Array(np.arccos(dictionary["cos_tilt_1"])),
             'tilt_2': Array(np.arccos(dictionary["cos_tilt_2"])),

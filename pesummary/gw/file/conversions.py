@@ -624,6 +624,16 @@ def _ifo_snr(IFO_abs_snr, IFO_snr_angle):
 
 
 @array_input
+def _ifo_snr_from_real_and_imaginary(IFO_real_snr, IFO_imag_snr):
+    """Return the matched filter SNR for a given IFO given samples for the
+    real and imaginary SNR
+    """
+    _complex = IFO_real_snr + IFO_imag_snr * 1j
+    _abs = np.abs(_complex)
+    return _ifo_snr(_abs, np.angle(_complex))
+
+
+@array_input
 def network_snr(snrs):
     """Return the network SNR for N IFOs
 
@@ -633,9 +643,43 @@ def network_snr(snrs):
         list of numpy.array objects containing the snrs samples for a particular
         IFO
     """
-    squares = [i**2 for i in snrs]
+    squares = np.square(snrs)
     network_snr = np.sqrt(np.sum(squares, axis=0))
     return network_snr
+
+
+@array_input
+def network_matched_filter_snr(IFO_matched_filter_snrs, IFO_optimal_snrs):
+    """Return the network matched filter SNR for a given detector network. Code
+    adapted from Christopher Berry's python notebook
+
+    Parameters
+    ----------
+    IFO_matched_filter_snrs: list
+        list of matched filter SNRs for each IFO in the network
+    IFO_optimal_snrs: list
+        list of optimal SNRs
+    """
+    for num, det_snr in enumerate(IFO_matched_filter_snrs):
+        complex_snr = np.iscomplex(det_snr)
+        convert_mf_snr = False
+        try:
+            if complex_snr:
+                convert_mf_snr = True
+        except ValueError:
+            if any(_complex for _complex in complex_snr):
+                convert_mf_snr = True
+        if convert_mf_snr:
+            IFO_matched_filter_snrs[num] = np.real(det_snr)
+    network_optimal_snr = network_snr(IFO_optimal_snrs)
+    network_matched_filter_snr = np.sum(
+        [
+            mf_snr * opt_snr / network_optimal_snr for mf_snr, opt_snr in zip(
+                IFO_matched_filter_snrs, IFO_optimal_snrs
+            )
+        ], axis=0
+    )
+    return network_matched_filter_snr
 
 
 @array_input
@@ -2007,18 +2051,34 @@ class _Conversion(object):
         self.append_data("network_optimal_snr", snr)
 
     def _matched_filter_network_snr(self):
-        snrs = [
+        mf_snrs = sorted([
             i for i in self.parameters if "_matched_filter_snr" in i
             and "_angle" not in i and "_abs" not in i
+        ])
+        opt_snrs = sorted([
+            i for i in self.parameters if "_optimal_snr" in i and "network" not
+            in i
+        ])
+        _mf_detectors = [
+            param.split("_matched_filter_snr")[0] for param in mf_snrs
         ]
-        if len(snrs) == 0:
-            snrs = [
-                i for i in self.parameters if "_matched_filter_snr_abs" in i
-                and "_angle" not in i
-            ]
-        samples = self.specific_parameter_samples(snrs)
-        snr = network_snr(samples)
-        self.append_data("network_matched_filter_snr", snr)
+        _opt_detectors = [
+            param.split("_optimal_snr")[0] for param in opt_snrs
+        ]
+        if _mf_detectors == _opt_detectors:
+            mf_samples = self.specific_parameter_samples(mf_snrs)
+            opt_samples = self.specific_parameter_samples(opt_snrs)
+            snr = network_matched_filter_snr(mf_samples, opt_samples)
+            self.append_data("network_matched_filter_snr", snr)
+        else:
+            logger.warn(
+                "Unable to generate 'network_matched_filter_snr' as "
+                "there is an inconsistency in the detector network based on "
+                "the 'optimal_snrs' and the 'matched_filter_snrs'. We find "
+                "that from the 'optimal_snrs', the detector network is: {} "
+                "while we find from the 'matched_filter_snrs', the detector "
+                "network is: {}".format(_opt_detectors, _mf_detectors)
+            )
 
     def _retrieve_f_low(self):
         extra_kwargs = self.extra_kwargs["meta_data"]
@@ -2574,9 +2634,9 @@ class _Conversion(object):
         if any("_optimal_snr" in i for i in self.parameters):
             if "network_optimal_snr" not in self.parameters:
                 self._optimal_network_snr()
-        if any("_matched_filter_snr" in i for i in self.parameters):
-            if "network_matched_filter_snr" not in self.parameters:
-                self._matched_filter_network_snr()
+            if any("_matched_filter_snr" in i for i in self.parameters):
+                if "network_matched_filter_snr" not in self.parameters:
+                    self._matched_filter_network_snr()
         if "theta_jn" in self.parameters and "cos_theta_jn" not in self.parameters:
             self._cos_angle("cos_theta_jn")
         if "iota" in self.parameters and "cos_iota" not in self.parameters:

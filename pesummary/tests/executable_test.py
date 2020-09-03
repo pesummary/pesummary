@@ -756,7 +756,9 @@ class TestSummaryModify(Base):
         np.testing.assert_almost_equal(
             modified_data["replace"]["skymap"]["data"], prob
         )
-        assert modified_data["replace"]["skymap"]["meta_data"]["gps_time"][0] == 10494.3
+        np.testing.assert_almost_equal(
+            modified_data["replace"]["skymap"]["meta_data"]["gps_time"][0], 10494.3
+        )
         _creator = modified_data["replace"]["skymap"]["meta_data"]["creator"][0]
         if isinstance(_creator, bytes):
             _creator = _creator.decode("utf-8")
