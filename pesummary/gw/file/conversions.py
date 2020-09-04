@@ -1793,10 +1793,10 @@ class _Conversion(object):
         self.append_data("phi_2", phi_2)
 
     def _spin_angles(self):
-        spin_angles = ["theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12",
-                       "a_1", "a_2"]
+        _spin_angles = ["theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12",
+                        "a_1", "a_2"]
         spin_angles_to_calculate = [
-            i for i in spin_angles if i not in self.parameters]
+            i for i in _spin_angles if i not in self.parameters]
         spin_components = [
             "mass_1", "mass_2", "iota", "spin_1x", "spin_1y", "spin_1z",
             "spin_2x", "spin_2y", "spin_2z", "reference_frequency"]
@@ -1816,7 +1816,7 @@ class _Conversion(object):
             samples[10])
 
         for i in spin_angles_to_calculate:
-            ind = spin_angles.index(i)
+            ind = _spin_angles.index(i)
             data = np.array([i[ind] for i in angles])
             self.append_data(i, data)
 

@@ -1,3 +1,11 @@
+## 0.9.1 [04/09/2020]
+
+### Changed
+
+- list index - correct typo in list index
+
+### Added
+
 ## 0.9.0 [04/09/2020]
 
 ### Changed
