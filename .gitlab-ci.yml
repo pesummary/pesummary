@@ -206,6 +206,7 @@ python-3.7:
     paths:
       - htmlcov/
       - coverage_badge.svg
+  allow_failure: true
 
 
 
