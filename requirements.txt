@@ -1,7 +1,7 @@
 numpy>=1.15.4
 h5py
 matplotlib
-seaborn
+seaborn<=0.10.1
 statsmodels
 corner
 tables
