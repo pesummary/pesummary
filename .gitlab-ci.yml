@@ -407,7 +407,6 @@ pages:
     - GW190425
   script:
     - mkdir public/
-    - mv htmlcov/ public/
     - mv /builds/lscsoft/pesummary/coverage_badge.svg public/
     - mv docs/_build/html/* public/
   artifacts:
