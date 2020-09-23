@@ -28,7 +28,7 @@ from pesummary.core.file.formats.base_read import Read
 from pesummary.utils.samples_dict import (
     MCMCSamplesDict, MultiAnalysisSamplesDict, SamplesDict, Array
 )
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, check_file_exists_and_rename
 
 
 deprecation_warning = (
@@ -435,11 +435,12 @@ class PESummary(Read):
             config[key] = config_dict[key]
 
         _filename = "%s/%s" % (outdir, filename)
+        check_file_exists_and_rename(_filename)
         with open(_filename, "w") as configfile:
             config.write(configfile)
         return _filename
 
-    def write_config_to_file(self, label, outdir="./"):
+    def write_config_to_file(self, label, outdir="./", filename=None):
         """Write the config file stored as a dictionary to file
 
         Parameters
@@ -449,13 +450,18 @@ class PESummary(Read):
         outdir: str, optional
             path indicating where you would like to configuration file to be
             saved. Default is current working directory
+        filename: str, optional
+            name of the file you wish to write the config data to. Default
+            '{label}_config.ini'
         """
         if label not in list(self.config.keys()):
             raise ValueError("The label %s does not exist." % label)
 
+        if filename is None:
+            filename = "%s_config.ini" % (label)
+
         _filename = self.save_config_dictionary_to_file(
-            self.config[label], outdir=outdir,
-            filename="%s_config.ini" % (label)
+            self.config[label], outdir=outdir, filename=filename
         )
         return _filename
 
