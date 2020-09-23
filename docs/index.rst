@@ -40,6 +40,15 @@ First Steps
     citing_pesummary
 
 
+Unified input/output
+++++++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    io/write
+    io/read
+
 Packages
 ++++++++
 

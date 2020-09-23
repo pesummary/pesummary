@@ -15,11 +15,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.core.file.formats.pesummary import PESummary
 from pesummary.core.command_line import DelimiterSplitAction
 from pesummary.gw.file.read import read
 from pesummary.utils.utils import logger, make_dir
 from pesummary.utils.exceptions import InputError
+from pesummary.io import write
 
 import subprocess
 import os
@@ -279,8 +279,9 @@ class _Input(object):
                             "file".format(key, item)
                         )
             outdir = os.path.join(self.rundir, label)
-            PESummary.save_config_dictionary_to_file(
-                config_data, outdir=outdir, filename="config.ini"
+            write(
+                config_data, outdir=outdir, filename="config.ini",
+                file_format="ini"
             )
             logger.info("Writing the configuration file to: {}".format(outdir))
             config_files[label] = os.path.join(outdir, "config.ini")

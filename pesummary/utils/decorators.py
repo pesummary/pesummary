@@ -208,9 +208,12 @@ def docstring_subfunction(*args):
 
 
 def deprecation(warning):
-    def wrapper_function(func):
-        import warnings
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper_function(*args, **kwargs):
+            import warnings
 
-        warnings.warn(warning)
-        return func
-    return wrapper_function
+            warnings.warn(warning)
+            return func(*args, **kwargs)
+        return wrapper_function
+    return decorator
