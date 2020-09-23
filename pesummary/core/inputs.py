@@ -162,7 +162,9 @@ class _Input(object):
             config = []
             for i in labels:
                 config_dir = os.path.join(webdir, "config")
-                filename = f.write_config_to_file(i, outdir=config_dir)
+                filename = f.write_config_to_file(
+                    i, outdir=config_dir, _raise=False
+                )
                 config.append(filename)
         else:
             for i in labels:

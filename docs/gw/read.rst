@@ -3,9 +3,9 @@ The read function
 =================
 
 `pesummary` provides functionality to read in nearly all result file formats.
-This is done with the `pesummary.io.read.read` function. Below we show
-how the `gw` read function is different from the `core` implementation. For
-details about the `core` implementation, see the
+This is done with the `pesummary.io.read.read <../io/read.html>`_ function. Below
+we show how the `gw` read function is different from the `core` implementation.
+For details about the `core` implementation, see the
 `core read docs <../core/read.html>`_.
 
 Reading a result file

@@ -15,10 +15,10 @@
 
 from pesummary.gw.file.formats.base_read import GWRead
 from pesummary.core.file.formats.pesummary import (
-    PESummary as CorePESummary, PESummaryDeprecated as CorePESummaryDeprecated,
-    deprecation_warning
+    PESummary as CorePESummary, PESummaryDeprecated as CorePESummaryDeprecated
 )
 from pesummary.utils.utils import logger
+from pesummary.utils.decorators import deprecation
 import numpy as np
 import warnings
 
@@ -342,8 +342,11 @@ class PESummary(GWRead, CorePESummary):
 class PESummaryDeprecated(PESummary):
     """
     """
+    @deprecation(
+        "This file format is out-of-date and may not be supported in future "
+        "releases."
+    )
     def __init__(self, path_to_results_file, **kwargs):
-        warnings.warn(deprecation_warning)
         super(PESummaryDeprecated, self).__init__(path_to_results_file, **kwargs)
 
     @property

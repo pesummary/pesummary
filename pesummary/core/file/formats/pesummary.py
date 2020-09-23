@@ -28,13 +28,8 @@ from pesummary.core.file.formats.base_read import Read
 from pesummary.utils.samples_dict import (
     MCMCSamplesDict, MultiAnalysisSamplesDict, SamplesDict, Array
 )
-from pesummary.utils.utils import logger, check_file_exists_and_rename
-
-
-deprecation_warning = (
-    "This file format is out-of-date and may not be supported in future "
-    "releases."
-)
+from pesummary.utils.utils import logger
+from pesummary.utils.decorators import deprecation
 
 
 def write_pesummary(
@@ -411,36 +406,11 @@ class PESummary(Read):
             enumerate(self.labels)
         }
 
-    @staticmethod
-    def save_config_dictionary_to_file(config_dict, filename, outdir="./"):
-        """Save a dictionary containing the configuration settings to a file
-
-        Parameters
-        ----------
-        config_dict: dict
-            dictionary containing the configuration settings
-        filename: str
-            the name of the file you wish to write to
-        outdir: str, optional
-            path indicating where you would like to configuration file to be
-            saved. Default is current working directory
-        """
-        config = configparser.ConfigParser()
-        config.optionxform = str
-        if config_dict is None:
-            logger.warning("No config data found. Unable to write to file")
-            return None
-
-        for key in config_dict.keys():
-            config[key] = config_dict[key]
-
-        _filename = "%s/%s" % (outdir, filename)
-        check_file_exists_and_rename(_filename)
-        with open(_filename, "w") as configfile:
-            config.write(configfile)
-        return _filename
-
-    def write_config_to_file(self, label, outdir="./", filename=None):
+    @deprecation(
+        "The 'write_config_to_file' method may not be supported in future "
+        "releases. Please use the 'write' method with kwarg 'file_format='ini''"
+    )
+    def write_config_to_file(self, label, outdir="./", filename=None, **kwargs):
         """Write the config file stored as a dictionary to file
 
         Parameters
@@ -454,16 +424,10 @@ class PESummary(Read):
             name of the file you wish to write the config data to. Default
             '{label}_config.ini'
         """
-        if label not in list(self.config.keys()):
-            raise ValueError("The label %s does not exist." % label)
-
-        if filename is None:
-            filename = "%s_config.ini" % (label)
-
-        _filename = self.save_config_dictionary_to_file(
-            self.config[label], outdir=outdir, filename=filename
+        return PESummary.write(
+            self, _config=True, labels=[label], outdir=outdir, overwrite=True,
+            filenames={label: filename}, **kwargs
         )
-        return _filename
 
     def _labels_for_write(self, labels):
         """Check the input labels and raise an exception if the label does not exist
@@ -487,7 +451,7 @@ class PESummary(Read):
     @staticmethod
     def write(
         self, package="core", labels="all", cls_properties=None, filenames=None,
-        _return=False, **kwargs
+        _return=False, _config=False, **kwargs
     ):
         """Save the data to file
 
@@ -531,6 +495,8 @@ class PESummary(Read):
                 kwargs.update({"analytic_priors": priors["analytic"][label]})
             if not len(priors):
                 priors = {}
+            elif label in priors.keys() and priors[label] is None:
+                priors = None
             elif all(label in value.keys() for value in priors.values()):
                 priors = {key: item[label] for key, item in priors.items()}
             elif "samples" in priors.keys() and label in priors["samples"].keys():
@@ -545,14 +511,22 @@ class PESummary(Read):
                 filename = filenames[label]
             else:
                 filename = filenames
-            _files[label] = write(
-                self.parameters[ind], self.samples[ind], package=package,
-                file_versions=self.input_version[ind], label=label,
-                file_kwargs=self.extra_kwargs[ind], priors=priors,
-                config=getattr(self, "config", {label: None})[label],
-                injection_data=getattr(self, "injection_dict", {label: None}),
-                filename=filename, **kwargs
-            )
+
+            if _config or kwargs.get("file_format", "dat") == "ini":
+                kwargs["file_format"] = "ini"
+                _files[label] = write(
+                    getattr(self, "config", {label: None})[label],
+                    filename=filename, **kwargs
+                )
+            else:
+                _files[label] = write(
+                    self.parameters[ind], self.samples[ind], package=package,
+                    file_versions=self.input_version[ind], label=label,
+                    file_kwargs=self.extra_kwargs[ind], priors=priors,
+                    config=getattr(self, "config", {label: None})[label],
+                    injection_data=getattr(self, "injection_dict", {label: None}),
+                    filename=filename, **kwargs
+                )
         if _return:
             return _files
 
@@ -705,8 +679,11 @@ class PESummary(Read):
 class PESummaryDeprecated(PESummary):
     """
     """
+    @deprecation(
+        "This file format is out-of-date and may not be supported in future "
+        "releases."
+    )
     def __init__(self, path_to_results_file, **kwargs):
-        warnings.warn(deprecation_warning)
         super(PESummaryDeprecated, self).__init__(path_to_results_file, **kwargs)
 
     @property

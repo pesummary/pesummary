@@ -14,6 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import importlib
+from pathlib import Path
 
 
 def read(path, package="gw", file_format=None, skymap=False, **kwargs):
@@ -34,9 +35,14 @@ def read(path, package="gw", file_format=None, skymap=False, **kwargs):
         all additional kwargs are passed to the `pesummary.{}.file.read.read`
         function
     """
-    if skymap:
+    extension = Path(path).suffix[1:]
+    if extension == "fits" or skymap:
         from pesummary.gw.file.skymap import SkyMap
 
         return SkyMap.from_fits(path)
+    if extension == "ini" or file_format == "ini":
+        from pesummary.core.file.formats.ini import read_ini
+
+        return read_ini(path)
     module = importlib.import_module("pesummary.{}.file.read".format(package))
     return getattr(module, "read")(path, file_format=file_format, **kwargs)
