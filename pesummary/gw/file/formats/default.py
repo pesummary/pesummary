@@ -63,7 +63,8 @@ class Default(GWRead):
                     "hdf5": self._grab_data_from_hdf5_file,
                     "h5": self._grab_data_from_hdf5_file,
                     "hdf": self._grab_data_from_hdf5_file,
-                    "prior": self._grab_data_from_prior_file}
+                    "prior": self._grab_data_from_prior_file,
+                    "xml": self._grab_data_from_xml_file}
 
         self.load_function = func_map[self.extension]
         try:
@@ -150,6 +151,20 @@ class Default(GWRead):
         return CoreDefault._grab_data_from_json_file(
             path, path_to_samples=path_to_samples, **kwargs
         )
+
+    @staticmethod
+    def _grab_data_from_xml_file(path, **kwargs):
+        """Grab the data stored in an xml file
+        """
+        from pesummary.gw.file.formats.xml import read_xml
+
+        parameters, samples = read_xml(path, **kwargs)
+        injection = {i: float("nan") for i in parameters}
+        extra_kwargs = {"sampler": {"nsamples": len(samples)}, "meta_data": {}}
+        return {
+            "parameters": parameters, "samples": samples,
+            "injection": injection, "kwargs": extra_kwargs
+        }
 
     @property
     def calibration_data_in_results_file(self):
