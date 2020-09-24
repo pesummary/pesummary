@@ -2,7 +2,7 @@ stages:
   - build
   - basic
   - test
-  - workflow
+  - end-to-end
   - consequences
   - deploy
 
@@ -23,7 +23,7 @@ before_script:
   - export USER=albert.einstein
 
 .core_workflow: &core_workflow
-  stage: workflow
+  stage: end-to-end
   needs:
     - tarball
     - executables
@@ -38,7 +38,7 @@ before_script:
 
 
 .gw_workflow: &gw_workflow
-  stage: workflow
+  stage: end-to-end
   needs:
     - tarball
     - executables
@@ -227,32 +227,32 @@ python-3.8:
     - summarytest --pytest_config ${BASE}/setup.cfg --type tests --ignore ${PESUMMARY_TESTING_DIR}/workflow_test.py ${PESUMMARY_TESTING_DIR}/ligo_skymap_test.py ${PESUMMARY_TESTING_DIR}/conversion_test.py
 
 
-core-workflow-3.6:
+python-3.6-core:
   <<: *core_workflow
   image: python:3.6
 
 
-core-workflow-3.7:
+python-3.7-core:
   <<: *core_workflow
   image: python:3.7
 
 
-core-workflow-3.8:
+python-3.8-core:
   <<: *core_workflow
   image: python:3.8
 
 
-gw-workflow-3.6:
+python-3.6-gw:
   <<: *gw_workflow
   image: python:3.6
 
 
-gw-workflow-3.7:
+python-3.7-gw:
   <<: *gw_workflow
   image: python:3.7
 
 
-gw-workflow-3.8:
+python-3.8-gw:
   <<: *gw_workflow
   image: python:3.8
 
@@ -395,12 +395,12 @@ pages:
     - python-3.6
     - python-3.7
     - python-3.8
-    - core-workflow-3.6
-    - core-workflow-3.7
-    - core-workflow-3.8
-    - gw-workflow-3.6
-    - gw-workflow-3.7
-    - gw-workflow-3.8
+    - python-3.6-core
+    - python-3.7-core
+    - python-3.8-core
+    - python-3.6-gw
+    - python-3.7-gw
+    - python-3.8-gw
     ##- bilby
     - lalinference
     - GW190412
