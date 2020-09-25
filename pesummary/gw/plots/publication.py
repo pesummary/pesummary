@@ -22,7 +22,7 @@ import matplotlib.lines as mlines
 import seaborn
 from pesummary.core.plots.figure import figure
 from pesummary.gw.plots import violin
-from pesummary.gw.plots.bounded_2d_kde import Bounded_2d_kde
+from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.gw.plots.cmap import colormap_with_fixed_hue
 from pesummary.gw.file.conversions import mchirp_from_m1_m2, q_from_m1_m2
@@ -42,11 +42,10 @@ def chirp_mass_and_q_from_mass1_mass2(pts):
     """
     pts = np.atleast_2d(pts)
 
-    m1 = pts[:, 0]
-    m2 = pts[:, 1]
+    m1, m2 = pts
     mc = mchirp_from_m1_m2(m1, m2)
     q = q_from_m1_m2(m1, m2)
-    return np.column_stack([mc, q])
+    return np.vstack([mc, q])
 
 
 def estimate_2d_posterior(samples, xlow=None, xhigh=None, ylow=None,
@@ -82,15 +81,15 @@ def estimate_2d_posterior(samples, xlow=None, xhigh=None, ylow=None,
     y_pts = np.linspace(y.min() - deltay, y.max() + deltay, gridsize)
     xx, yy = np.meshgrid(x_pts, y_pts)
 
-    positions = np.column_stack([xx.ravel(), yy.ravel()])
-    pts = np.array([x, y]).T
-    selected_indices = np.random.choice(len(pts), len(pts) // 2, replace=False)
-    kde_sel = np.zeros(len(pts), dtype=bool)
+    positions = np.vstack([xx.ravel(), yy.ravel()])
+    pts = np.array([x, y])
+    selected_indices = np.random.choice(pts.shape[1], pts.shape[1] // 2, replace=False)
+    kde_sel = np.zeros(pts.shape[1], dtype=bool)
     kde_sel[selected_indices] = True
-    kde_pts = transform(pts[kde_sel])
-    untransformed_den_pts = pts[~kde_sel]
+    kde_pts = transform(pts[:, kde_sel])
+    untransformed_den_pts = pts[:, ~kde_sel]
     den_pts = transform(untransformed_den_pts)
-    Nden = den_pts.shape[0]
+    Nden = den_pts.shape[1]
 
     post_kde = Bounded_2d_kde(
         kde_pts, xlow=xlow, xhigh=xhigh, ylow=ylow, yhigh=yhigh)
@@ -163,7 +162,7 @@ def twod_contour_plots(
         Nden = len(den)
         kde_sel = contour_data['kde_sel']
 
-        pts = np.array([i[0], i[1]]).T
+        pts = np.array([i[0], i[1]])
         levels = [0.9]
         zvalues = np.empty(len(levels))
         for i, level in enumerate(levels):
@@ -296,17 +295,17 @@ def spin_distribution_plots(
     costheta1 = samples[parameters.index("cos_tilt_1")]
     costheta2 = samples[parameters.index("cos_tilt_2")]
 
-    pts = np.array([spin1, costheta1]).T
-    selected_indices = np.random.choice(len(pts), len(pts) // 2, replace=False)
-    kde_sel = np.zeros(len(pts), dtype=bool)
+    pts = np.array([spin1, costheta1])
+    selected_indices = np.random.choice(pts.shape[1], pts.shape[1] // 2, replace=False)
+    kde_sel = np.zeros(pts.shape[1], dtype=bool)
     kde_sel[selected_indices] = True
-    kde_pts = pts[kde_sel]
+    kde_pts = pts[:, kde_sel]
     spin1 = Bounded_2d_kde(kde_pts, xlow=0, xhigh=.99, ylow=-1, yhigh=1)
-    pts = np.array([spin2, costheta2]).T
-    selected_indices = np.random.choice(len(pts), len(pts) // 2, replace=False)
-    kde_sel = np.zeros(len(pts), dtype=bool)
+    pts = np.array([spin2, costheta2])
+    selected_indices = np.random.choice(pts.shape[1], pts.shape[1] // 2, replace=False)
+    kde_sel = np.zeros(pts.shape[1], dtype=bool)
     kde_sel[selected_indices] = True
-    kde_pts = pts[kde_sel]
+    kde_pts = pts[:, kde_sel]
     spin2 = Bounded_2d_kde(kde_pts, xlow=0, xhigh=.99, ylow=-1, yhigh=1)
 
     rs = np.linspace(0, .99, 25)
@@ -319,9 +318,9 @@ def spin_distribution_plots(
 
     scale = np.exp(1.0)
     spin1_PDF = spin1(
-        np.column_stack([RS.ravel() + dr / 2, COSTS.ravel() + dcost / 2]))
+        np.vstack([RS.ravel() + dr / 2, COSTS.ravel() + dcost / 2]))
     spin2_PDF = spin2(
-        np.column_stack([RS.ravel() + dr / 2, COSTS.ravel() + dcost / 2]))
+        np.vstack([RS.ravel() + dr / 2, COSTS.ravel() + dcost / 2]))
     H1 = np.log(1.0 + scale * spin1_PDF)
     H2 = np.log(1.0 + scale * spin2_PDF)
 

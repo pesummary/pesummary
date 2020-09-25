@@ -14,9 +14,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde, bounded_1d_kde
-from pesummary.gw.plots.bounded_2d_kde import Bounded_2d_kde
+from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 from scipy.stats import gaussian_kde
 import numpy as np
+import pytest
 
 
 class TestBounded_kde(object):
@@ -47,7 +48,7 @@ class TestBounded_kde(object):
         y_high = 5.5
         scipy = gaussian_kde(samples)
         bounded = Bounded_2d_kde(
-            samples.T, xlow=x_low, xhigh=x_high, ylow=y_low, yhigh=y_high
+            samples, xlow=x_low, xhigh=x_high, ylow=y_low, yhigh=y_high
         )
         assert scipy([9.45, 4.45]) != 0.
         assert bounded([9.45, 4.45]) == 0.
@@ -58,3 +59,7 @@ class TestBounded_kde(object):
         assert bounded([10.55, 4.45]) == 0.
         assert scipy([10.55, 5.55]) != 0.
         assert bounded([10.55, 5.55]) == 0.
+
+        with pytest.raises(AssertionError):
+            np.testing.assert_almost_equal(scipy([[9.45, 10.55], [5., 5.]]),  [0., 0.])
+        np.testing.assert_almost_equal(bounded([[9.45, 10.55], [5., 5.]]), [0., 0.])

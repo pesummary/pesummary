@@ -16,10 +16,10 @@
 import numpy as np
 from matplotlib import gridspec
 from scipy.stats import gaussian_kde
-import corner
 import copy
 
 from pesummary.core.plots.figure import figure
+from .corner import hist2d
 from pesummary import conf
 
 
@@ -68,7 +68,9 @@ def triangle_plot(
     xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
     linestyles=None, linewidths=None, plot_density=True,
     percentiles=None, percentile_plot=None, fig_kwargs={}, labels=None,
-    rangex=None, rangey=None, grid=False, latex_friendly=False, **kwargs
+    rangex=None, rangey=None, grid=False, latex_friendly=False,
+    kde_2d=None, kde_2d_kwargs={}, legend_kwargs={"loc": "best", "frameon": False},
+    **kwargs
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -84,10 +86,15 @@ def triangle_plot(
         kde to use for smoothing the 1d marginalized posterior distribution. If
         you do not want to use KDEs, simply pass kde=False. Default
         scipy.stats.gaussian_kde
+    kde_2d: func, optional
+        kde to use for smoothing the 2d marginalized posterior distribution.
+        default None
     npoints: int, optional
         number of points to use for the 1d kde
     kde_kwargs: dict, optional
         optional kwargs which are passed directly to the kde function
+    kde_2d_kwargs: dict, optional
+        optional kwargs which are passed directly to the 2d kde function
     fill: Bool, optional
         whether or not to fill the 1d posterior distributions
     fill_alpha: float, optional
@@ -127,6 +134,8 @@ def triangle_plot(
         range over which to plot the y axis
     grid: Bool, optional
         if True, show a grid on all axes. Default False
+    legend_kwargs: dict, optional
+        optional kwargs for the legend. Default {"loc": "best", "frameon": False}
     **kwargs: dict
         all additional kwargs are passed to the corner.hist2d function
     """
@@ -140,7 +149,8 @@ def triangle_plot(
         percentiles=percentiles, fig_kwargs=fig_kwargs, labels=labels,
         xlabel=xlabel, ylabel=ylabel, fontsize=fontsize, rangex=rangex,
         rangey=rangey, percentile_plot=percentile_plot, grid=grid,
-        latex_friendly=latex_friendly, **kwargs
+        latex_friendly=latex_friendly, kde_2d=kde_2d, kde_2d_kwargs=kde_2d_kwargs,
+        legend_kwargs=legend_kwargs, **kwargs
     )
 
 
@@ -150,7 +160,8 @@ def _triangle_plot(
     xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
     linestyles=None, linewidths=None, plot_density=True, percentiles=None,
     percentile_plot=None, fig_kwargs={}, labels=None, plot_datapoints=False,
-    rangex=None, rangey=None, grid=False, latex_friendly=False, **kwargs
+    rangex=None, rangey=None, grid=False, latex_friendly=False, kde_2d=None,
+    kde_2d_kwargs={}, legend_kwargs={"loc": "best", "frameon": False}, **kwargs
 ):
     """Base function to generate a triangular plot
 
@@ -168,10 +179,18 @@ def _triangle_plot(
         kde to use for smoothing the 1d marginalized posterior distribution. If
         you do not want to use KDEs, simply pass kde=False. Default
         scipy.stats.gaussian_kde
+    kde_2d: func, optional
+        kde to use for smoothing the 2d marginalized posterior distribution.
+        default None
     npoints: int, optional
         number of points to use for the 1d kde
     kde_kwargs: dict, optional
-        optional kwargs which are passed directly to the kde function
+        optional kwargs which are passed directly to the kde function.
+        kde_kwargs to be passed to the kde on the y axis may be specified
+        by the dictionary entry 'y_axis'. kde_kwargs to be passed to the kde on
+        the x axis may be specified by the dictionary entry 'x_axis'.
+    kde_2d_kwargs: dict, optional
+        optional kwargs which are passed directly to the 2d kde function
     fill: Bool, optional
         whether or not to fill the 1d posterior distributions
     fill_alpha: float, optional
@@ -211,6 +230,8 @@ def _triangle_plot(
         range over which to plot the y axis
     grid: Bool, optional
         if True, show a grid on all axes
+    legend_kwargs: dict, optional
+        optional kwargs for the legend. Default {"loc": "best", "frameon": False}
     **kwargs: dict
         all kwargs are passed to the corner.hist2d function
     """
@@ -247,7 +268,10 @@ def _triangle_plot(
             linestyle=linestyles[num]
         )
         if kde:
-            _kde = kde(x[num], **kde_kwargs)
+            if "x_axis" in kde_kwargs.keys():
+                _kde = kde(x[num], **kde_kwargs["x_axis"])
+            else:
+                _kde = kde(x[num], **kde_kwargs)
             _x = np.linspace(xlow, xhigh, npoints)
             _y = _kde(_x)
             ax1.plot(_x, _y, **plot_kwargs)
@@ -259,7 +283,10 @@ def _triangle_plot(
                     ax1.axvline(_percentiles[0], **plot_kwargs)
                     ax1.axvline(_percentiles[1], **plot_kwargs)
             _y = np.linspace(ylow, yhigh, npoints)
-            _kde = kde(y[num], **kde_kwargs)
+            if "y_axis" in kde_kwargs.keys():
+                _kde = kde(y[num], **kde_kwargs["y_axis"])
+            else:
+                _kde = kde(y[num], **kde_kwargs)
             _x = _kde(_y)
             if latex_friendly:
                 labels = copy.deepcopy(labels)
@@ -286,22 +313,21 @@ def _triangle_plot(
             _smooth = smooth[labels[num]]
         else:
             _smooth = smooth
-        corner.hist2d(
+        hist2d(
             x[num], y[num], bins=300, ax=ax3, levels=levels, smooth=_smooth,
             range=[[xlow, xhigh], [ylow, yhigh]], color=colors[num],
             plot_density=plot_density, contour_kwargs=dict(
                 linestyles=[linestyles[num]], linewidths=linewidths[num]
-            ), plot_datapoints=plot_datapoints, **kwargs
+            ), plot_datapoints=plot_datapoints, kde=kde_2d,
+            kde_kwargs=kde_2d_kwargs, **kwargs
         )
     if xlabel is not None:
         ax3.set_xlabel(xlabel, fontsize=fontsize["label"])
     if ylabel is not None:
         ax3.set_ylabel(ylabel, fontsize=fontsize["label"])
     if not all(label is None for label in labels):
-        ax3.legend(
-            *ax4.get_legend_handles_labels(), loc="best", frameon=False,
-            fontsize=fontsize["legend"]
-        )
+        legend_kwargs["fontsize"] = fontsize["legend"]
+        ax3.legend(*ax4.get_legend_handles_labels(), **legend_kwargs)
     ax1.grid(grid)
     ax3.grid(grid)
     ax4.grid(grid)
@@ -315,7 +341,8 @@ def reverse_triangle_plot(
     linestyles=None, linewidths=None, plot_density=True,
     percentiles=None, percentile_plot=None, fig_kwargs={}, labels=None,
     plot_datapoints=False, rangex=None, rangey=None, grid=False,
-    latex_friendly=False, **kwargs
+    latex_friendly=False, kde_2d=None, kde_2d_kwargs={},
+    legend_kwargs={"loc": "best", "frameon": False}, **kwargs
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -332,10 +359,18 @@ def reverse_triangle_plot(
         kde to use for smoothing the 1d marginalized posterior distribution. If
         you do not want to use KDEs, simply pass kde=False. Default
         scipy.stats.gaussian_kde
+    kde_2d: func, optional
+        kde to use for smoothing the 2d marginalized posterior distribution.
+        default None
     npoints: int, optional
         number of points to use for the 1d kde
     kde_kwargs: dict, optional
-        optional kwargs which are passed directly to the kde function
+        optional kwargs which are passed directly to the kde function.
+        kde_kwargs to be passed to the kde on the y axis may be specified
+        by the dictionary entry 'y_axis'. kde_kwargs to be passed to the kde on
+        the x axis may be specified by the dictionary entry 'x_axis'.
+    kde_2d_kwargs: dict, optional
+        optional kwargs which are passed directly to the 2d kde function
     fill: Bool, optional
         whether or not to fill the 1d posterior distributions
     fill_alpha: float, optional
@@ -373,6 +408,8 @@ def reverse_triangle_plot(
         range over which to plot the x axis
     rangey: tuple, optional
         range over which to plot the y axis
+    legend_kwargs: dict, optional
+        optional kwargs for the legend. Default {"loc": "best", "frameon": False}
     **kwargs: dict
         all kwargs are passed to the corner.hist2d function
     """
@@ -388,7 +425,8 @@ def reverse_triangle_plot(
         percentiles=percentiles, fig_kwargs=fig_kwargs, labels=labels,
         fontsize=fontsize, plot_datapoints=plot_datapoints, rangex=rangex,
         rangey=rangey, percentile_plot=percentile_plot,
-        latex_friendly=latex_friendly, **kwargs
+        latex_friendly=latex_friendly, kde_2d=kde_2d, kde_2d_kwargs=kde_2d_kwargs,
+        legend_kwargs=legend_kwargs, **kwargs
     )
     ax2.axis("off")
     ax4.spines["right"].set_visible(False)
