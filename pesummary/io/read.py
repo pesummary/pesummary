@@ -15,6 +15,15 @@
 
 import importlib
 from pathlib import Path
+from pesummary.core.file.formats.ini import read_ini
+from pesummary.gw.file.formats.lcf import read_lcf
+from pesummary.gw.file.skymap import SkyMap
+
+OTHER = {
+    "fits": SkyMap.from_fits,
+    "ini": read_ini,
+    "lcf": read_lcf,
+}
 
 
 def read(path, package="gw", file_format=None, skymap=False, **kwargs):
@@ -36,13 +45,12 @@ def read(path, package="gw", file_format=None, skymap=False, **kwargs):
         function
     """
     extension = Path(path).suffix[1:]
-    if extension == "fits" or skymap:
-        from pesummary.gw.file.skymap import SkyMap
+    if extension in OTHER.keys():
+        return OTHER[extension](path, **kwargs)
+    elif file_format == "ini":
+        return OTHER["ini"](path, **kwargs)
+    elif skymap:
+        return OTHER["fits"](path, **kwargs)
 
-        return SkyMap.from_fits(path)
-    if extension == "ini" or file_format == "ini":
-        from pesummary.core.file.formats.ini import read_ini
-
-        return read_ini(path)
     module = importlib.import_module("pesummary.{}.file.read".format(package))
     return getattr(module, "read")(path, file_format=file_format, **kwargs)

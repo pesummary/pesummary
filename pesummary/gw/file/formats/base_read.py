@@ -372,23 +372,12 @@ class GWRead(Read):
             dictionary containing one key (channel) and one value (path to
             cache file)
         """
-        from gwpy.timeseries import TimeSeries
+        from pesummary.gw.file.formats.lcf import read_lcf
 
-        try:
-            from glue.lal import Cache
-            GLUE = True
-        except ImportError:
-            GLUE = False
-
-        if not GLUE:
-            raise Exception("lscsoft-glue is required to read from a cached "
-                            "file. Please install this package")
         channel = list(strain_dictionary.keys())[0]
         cached_file = strain_dictionary[channel]
-        with open(cached_file, "r") as f:
-            data = Cache.fromfile(f)
         try:
-            strain_data = TimeSeries.read(data, channel)
+            strain_data = read_lcf(cached_file, channel=channel)
         except Exception as e:
             raise Exception("Failed to read in the cached file because %s" % (
                             e))
