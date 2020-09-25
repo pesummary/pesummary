@@ -35,7 +35,7 @@ Generating a 2d contour plot
 PESummary has the ability to generate a 2d contour plot which contains bounded
 2d KDEs for all result files passed (like Figure 4 in thr GWTC1 paper). The
 bounds for each parameter is hardcoded in the
-`pesummary.gw.plots.bounded_2d_kde` module:
+`pesummary.core.plots.bounded_2d_kde` module:
 
 .. literalinclude:: ../../pesummary/gw/plots/bounds.py
    :language: python

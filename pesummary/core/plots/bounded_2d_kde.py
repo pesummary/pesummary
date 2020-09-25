@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.stats import gaussian_kde as kde
-from pesummary.gw.plots.bounds import default_bounds
 
 
 class Bounded_2d_kde(kde):
@@ -11,7 +10,7 @@ class Bounded_2d_kde(kde):
                  *args, **kwargs):
         pts = np.atleast_2d(pts)
         assert pts.ndim == 2, 'Bounded_kde can only be two-dimensional'
-        super(Bounded_2d_kde, self).__init__(pts.T, *args, **kwargs)
+        super(Bounded_2d_kde, self).__init__(pts, *args, **kwargs)
         self._xlow = xlow
         self._xhigh = xhigh
         self._ylow = ylow
@@ -46,9 +45,11 @@ class Bounded_2d_kde(kde):
         points."""
         pts = np.atleast_2d(pts)
         assert pts.ndim == 2, 'points must be two-dimensional'
+        if pts.shape[0] != 2 and pts.shape[1] == 2:
+            pts = pts.T
 
-        x, y = pts.T
-        pdf = super(Bounded_2d_kde, self).evaluate(pts.T)
+        x, y = pts
+        pdf = super(Bounded_2d_kde, self).evaluate(pts)
         if self.xlow is not None:
             pdf += super(Bounded_2d_kde, self).evaluate([2 * self.xlow - x, y])
 
@@ -81,16 +82,19 @@ class Bounded_2d_kde(kde):
 
     def __call__(self, pts):
         pts = np.atleast_2d(pts)
-        out_of_bounds = np.zeros(pts.shape[0], dtype='bool')
+        if pts.shape[0] != 2 and pts.shape[1] == 2:
+            pts = pts.T
+
+        out_of_bounds = np.zeros(pts.T.shape[0], dtype='bool')
 
         if self.xlow is not None:
-            out_of_bounds[pts[:, 0] < self.xlow] = True
+            out_of_bounds[pts.T[:, 0] < self.xlow] = True
         if self.xhigh is not None:
-            out_of_bounds[pts[:, 0] > self.xhigh] = True
+            out_of_bounds[pts.T[:, 0] > self.xhigh] = True
         if self.ylow is not None:
-            out_of_bounds[pts[:, 1] < self.ylow] = True
+            out_of_bounds[pts.T[:, 1] < self.ylow] = True
         if self.yhigh is not None:
-            out_of_bounds[pts[:, 1] > self.yhigh] = True
+            out_of_bounds[pts.T[:, 1] > self.yhigh] = True
 
         results = self.evaluate(pts)
         results[out_of_bounds] = 0.

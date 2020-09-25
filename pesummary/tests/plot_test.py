@@ -364,10 +364,10 @@ class TestPublication(object):
         from pesummary.gw.plots.publication import twod_contour_plots
 
         parameters = ["a", "b"]
-        samples = [[
+        samples = [np.array([
             np.random.uniform(0., 3000, 1000),
             np.random.uniform(0., 3000, 1000)
-        ]]
+        ])]
         labels = ["a", "b"]
         fig = twod_contour_plots(
             parameters, samples, labels, {"a": "a", "b": "b"}
