@@ -51,6 +51,14 @@ The pesummary metafile
 
     pesummary_file
 
+Fetching open data
+++++++++++++++++++
+
+.. toctree::
+    :maxdepth: 2
+
+    fetch
+
 Waveforms
 +++++++++
 

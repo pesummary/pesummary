@@ -1,16 +1,9 @@
-from pesummary.io import read
+from pesummary.gw.fetch import fetch_open_data
 import matplotlib.pyplot as plt
 import requests
 
-# First we download publically available posterior samples
-data = requests.get(
-    "https://dcc.ligo.org/public/0168/P2000183/008/GW190814_posterior_samples.h5"
-)
-with open("GW190814_posterior_samples.h5", "wb") as f:
-    f.write(data.content)
-
-# Next we read in the posterior samples and select the samples we wish to plot
-f = read("GW190814_posterior_samples.h5")
+# First we download and read the publically available posterior samples
+f = fetch_open_data("GW190814")
 samples = f.samples_dict
 EOB = samples["C01:SEOBNRv4PHM"]
 

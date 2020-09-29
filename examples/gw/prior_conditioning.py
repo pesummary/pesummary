@@ -1,20 +1,13 @@
-from pesummary.io import read
+from pesummary.gw.fetch import fetch_open_data
 from pesummary.utils.utils import draw_conditioned_prior_samples
 import matplotlib.pyplot as plt
 from pesummary.core.plots.bounded_1d_kde import bounded_1d_kde
 import numpy as np
-import requests
 
 np.random.seed(21)
 
-# First lets download the data
-data = requests.get("https://dcc.ligo.org/public/0163/P190412/012/GW190412_posterior_samples_v3.h5")
-with open("GW190412_posterior_samples.h5", "wb") as f:
-    f.write(data.content)
-
-# Next lets read it in with the `pesummary.io` module and extract the posterior
-# and prior samples
-f = read("GW190412_posterior_samples.h5")
+# First lets download and read the publicly available data
+f = fetch_open_data("GW190412")
 posterior = f.samples_dict
 prior = f.priors["samples"]["combined"]
 unconditioned = prior["chi_p"]
