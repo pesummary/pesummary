@@ -479,6 +479,251 @@ class SamplesDict(dict):
             return classifications[prior]
         return classifications
 
+    def _waveform_args(self, ind=0, longAscNodes=0., eccentricity=0.):
+        """Arguments to be passed to waveform generation
+
+        Parameters
+        ----------
+        ind: int, optional
+            index for the sample you wish to plot
+        longAscNodes: float, optional
+            longitude of ascending nodes, degenerate with the polarization
+            angle. Default 0.
+        eccentricity: float, optional
+            eccentricity at reference frequency. Default 0.
+        """
+        from lal import MSUN_SI, PC_SI
+
+        _samples = {key: value[ind] for key, value in self.items()}
+        required = [
+            "mass_1", "mass_2", "luminosity_distance", "iota"
+        ]
+        if not all(param in _samples.keys() for param in required):
+            raise ValueError(
+                "Unable to generate a waveform. Please add samples for "
+                + ", ".join(required)
+            )
+        waveform_args = [
+            _samples["mass_1"] * MSUN_SI, _samples["mass_2"] * MSUN_SI
+        ]
+        spins = [
+            _samples[param] if param in _samples.keys() else 0. for param in
+            ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
+        ]
+        waveform_args += spins
+        phase = _samples["phase"] if "phase" in _samples.keys() else 0.
+        waveform_args += [
+            _samples["luminosity_distance"] * PC_SI * 10**6,
+            _samples["iota"], phase
+        ]
+        waveform_args += [longAscNodes, eccentricity, 0.]
+        return waveform_args, _samples
+
+    def _project_waveform(self, ifo, hp, hc, ra, dec, psi, time):
+        """Project a waveform onto a given detector
+
+        Parameters
+        ----------
+        ifo: str
+            name of the detector you wish to project the waveform onto
+        hp: np.ndarray
+            plus gravitational wave polarization
+        hc: np.ndarray
+            cross gravitational wave polarization
+        ra: float
+            right ascension to be passed to antenna response function
+        dec: float
+            declination to be passed to antenna response function
+        psi: float
+            polarization to be passed to antenna response function
+        time: float
+            time to be passed to antenna response function
+        """
+        import importlib
+
+        mod = importlib.import_module("pesummary.gw.plots.plot")
+        func = getattr(mod, "__antenna_response")
+        antenna = func(ifo, ra, dec, psi, time)
+        ht = hp * antenna[0] + hc * antenna[1]
+        return ht
+
+    def fd_waveform(
+        self, approximant, delta_f, f_low, f_high, f_ref=20., project=None,
+        ind=0, longAscNodes=0., eccentricity=0., LAL_parameters=None
+    ):
+        """Generate a gravitational wave in the frequency domain
+
+        Parameters
+        ----------
+        approximant: str
+            name of the approximant to use when generating the waveform
+        delta_f: float
+            spacing between frequency samples
+        f_low: float
+            frequency to start evaluating the waveform
+        f_high: float
+            frequency to stop evaluating the waveform
+        f_ref: float, optional
+            reference frequency
+        project: str, optional
+            name of the detector to project the waveform onto. If None,
+            the plus and cross polarizations are returned. Default None
+        ind: int, optional
+            index for the sample you wish to plot
+        longAscNodes: float, optional
+            longitude of ascending nodes, degenerate with the polarization
+            angle. Default 0.
+        eccentricity: float, optional
+            eccentricity at reference frequency. Default 0.
+        LAL_parameters: dict, optional
+            LAL dictioanry containing accessory parameters. Default None
+        """
+        from gwpy.frequencyseries import FrequencySeries
+        import lalsimulation as lalsim
+
+        waveform_args, _samples = self._waveform_args(
+            ind=ind, longAscNodes=longAscNodes, eccentricity=eccentricity
+        )
+        approx = lalsim.GetApproximantFromString(approximant)
+        hp, hc = lalsim.SimInspiralChooseFDWaveform(
+            *waveform_args, delta_f, f_low, f_high, f_ref, LAL_parameters, approx
+        )
+        hp = FrequencySeries(hp.data.data, df=hp.deltaF, f0=0.)
+        hc = FrequencySeries(hc.data.data, df=hc.deltaF, f0=0.)
+        if project is None:
+            return {"h_plus": hp, "h_cross": hc}
+        ht = self._project_waveform(
+            project, hp, hc, _samples["ra"], _samples["dec"], _samples["psi"],
+            _samples["geocent_time"]
+        )
+        return ht
+
+    def td_waveform(
+        self, approximant, delta_t, f_low, f_ref=20., project=None, ind=0,
+        longAscNodes=0., eccentricity=0., LAL_parameters=None
+    ):
+        """Generate a gravitational wave in the time domain
+
+        Parameters
+        ----------
+        approximant: str
+            name of the approximant to use when generating the waveform
+        delta_t: float
+            spacing between frequency samples
+        f_low: float
+            frequency to start evaluating the waveform
+        f_ref: float, optional
+            reference frequency
+        project: str, optional
+            name of the detector to project the waveform onto. If None,
+            the plus and cross polarizations are returned. Default None
+        ind: int, optional
+            index for the sample you wish to plot
+        longAscNodes: float, optional
+            longitude of ascending nodes, degenerate with the polarization
+            angle. Default 0.
+        eccentricity: float, optional
+            eccentricity at reference frequency. Default 0.
+        LAL_parameters: dict, optional
+            LAL dictioanry containing accessory parameters. Default None
+        """
+        from gwpy.timeseries import TimeSeries
+        import lalsimulation as lalsim
+        from astropy.units import Quantity
+
+        waveform_args, _samples = self._waveform_args(
+            ind=ind, longAscNodes=longAscNodes, eccentricity=eccentricity
+        )
+        approx = lalsim.GetApproximantFromString(approximant)
+        hp, hc = lalsim.SimInspiralChooseTDWaveform(
+            *waveform_args, delta_t, f_low, f_ref, LAL_parameters, approx
+        )
+        hp = TimeSeries(hp.data.data, dt=hp.deltaT, t0=hp.epoch)
+        hc = TimeSeries(hc.data.data, dt=hc.deltaT, t0=hc.epoch)
+        if project is None:
+            return {"h_plus": hp, "h_cross": hc}
+        ht = self._project_waveform(
+            project, hp, hc, _samples["ra"], _samples["dec"], _samples["psi"],
+            _samples["geocent_time"]
+        )
+        ht.times = (
+            Quantity(ht.times, unit="s")
+            + Quantity(_samples["{}_time".format(project)], unit="s")
+        )
+        return ht
+
+    def _maxL_waveform(self, func, *args, **kwargs):
+        """Return the maximum likelihood waveform in a given domain
+
+        Parameters
+        ----------
+        func: function
+            function you wish to use when generating the maximum likelihood
+            waveform
+        *args: tuple
+            all args passed to func
+        **kwargs: dict
+            all kwargs passed to func
+        """
+        ind = np.argmax(self["log_likelihood"])
+        kwargs["ind"] = ind
+        return func(*args, **kwargs)
+
+    def maxL_td_waveform(self, *args, **kwargs):
+        """Generate the maximum likelihood gravitational wave in the time domain
+
+        Parameters
+        ----------
+        approximant: str
+            name of the approximant to use when generating the waveform
+        delta_t: float
+            spacing between frequency samples
+        f_low: float
+            frequency to start evaluating the waveform
+        f_ref: float, optional
+            reference frequency
+        project: str, optional
+            name of the detector to project the waveform onto. If None,
+            the plus and cross polarizations are returned. Default None
+        longAscNodes: float, optional
+            longitude of ascending nodes, degenerate with the polarization
+            angle. Default 0.
+        eccentricity: float, optional
+            eccentricity at reference frequency. Default 0.
+        LAL_parameters: dict, optional
+            LAL dictioanry containing accessory parameters. Default None
+        """
+        return self._maxL_waveform(self.td_waveform, *args, **kwargs)
+
+    def maxL_fd_waveform(self, *args, **kwargs):
+        """Generate the maximum likelihood gravitational wave in the frequency
+        domain
+
+        Parameters
+        ----------
+        approximant: str
+            name of the approximant to use when generating the waveform
+        delta_f: float
+            spacing between frequency samples
+        f_low: float
+            frequency to start evaluating the waveform
+        f_high: float
+            frequency to stop evaluating the waveform
+        f_ref: float, optional
+            reference frequency
+        project: str, optional
+            name of the detector to project the waveform onto. If None,
+            the plus and cross polarizations are returned. Default None
+        longAscNodes: float, optional
+            longitude of ascending nodes, degenerate with the polarization
+            angle. Default 0.
+        eccentricity: float, optional
+            eccentricity at reference frequency. Default 0.
+        LAL_parameters: dict, optional
+            LAL dictioanry containing accessory parameters. Default None
+        """
+        return self._maxL_waveform(self.fd_waveform, *args, **kwargs)
+
 
 class _MultiDimensionalSamplesDict(dict):
     """Class to store multiple SamplesDict objects

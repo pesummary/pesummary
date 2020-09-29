@@ -14,9 +14,16 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from pesummary.core.plots.figure import figure
-from pesummary.utils.utils import logger, get_matplotlib_backend
-import matplotlib
-matplotlib.use(get_matplotlib_backend())
+from pesummary.utils.utils import (
+    logger, get_matplotlib_style_file, _check_latex_install
+)
+from pesummary import conf
+from gwpy.plot.colors import GW_OBSERVATORY_COLORS
+import matplotlib.style
+import numpy as np
+
+matplotlib.style.use(get_matplotlib_style_file())
+_check_latex_install()
 
 
 def spectrogram(
@@ -113,4 +120,147 @@ def omegascan(
                 "Failed to generate an omegascan for {} because {}".format(key, e)
             )
             figs[key] = figure(figsize=(12, 6), gca=False)
+    return figs
+
+
+def time_domain_strain_data(
+    strain, bandpass_frequencies=[50, 250], notches=[60., 120., 180.],
+    window=None, merger_time=None, template=None, grid=False,
+    xlabel="UTC", UTC_format="%B %d %Y, %H:%M:%S"
+):
+    """Plot the strain data in the time domain. Code based on the GW150914
+    tutorial provided by gwpy:
+    https://gwpy.github.io/docs/latest/examples/signal/gw150914.html
+
+    Parameters
+    ----------
+    """
+    from gwpy.signal import filter_design
+    import matplotlib.patheffects as pe
+
+    detectors = list(strain.keys())
+    figs = {}
+    for num, key in enumerate(detectors):
+        if bandpass_frequencies is not None and notches is not None:
+            bp = filter_design.bandpass(*bandpass_frequencies, strain[key].sample_rate)
+            zpks = [
+                filter_design.notch(line, strain[key].sample_rate) for line in
+                notches
+            ]
+            zpk = filter_design.concatenate_zpks(bp, *zpks)
+            hfilt = strain[key].filter(zpk, filtfilt=True)
+            _strain = hfilt.crop(*hfilt.span.contract(1))
+        else:
+            _strain = strain[key]
+        figs[key], ax = figure(figsize=(12, 6), gca=True)
+        if merger_time is not None:
+            x = _strain.times.value - merger_time
+            _xlabel = "Time (seconds) from {} {}"
+            if xlabel == "UTC":
+                from lal import gpstime
+
+                _merger_time = gpstime.gps_to_str(merger_time, form=UTC_format)
+                xlabel = _xlabel.format(_merger_time, "UTC")
+            else:
+                xlabel = _xlabel.format(merger_time, "GPS")
+        else:
+            x = _strain.times
+            xlabel = "GPS [$s$]"
+        if template is not None:
+            _x = template[key].times.value
+            if merger_time is not None:
+                _x -= merger_time
+            ax.plot(
+                _x, template[key], color='lightgray', linewidth=4.,
+                path_effects=[pe.Stroke(linewidth=4.5, foreground='k'), pe.Normal()],
+                label="Template"
+            )
+        ax.plot(
+            x, _strain, color=GW_OBSERVATORY_COLORS[key], linewidth=3.,
+            label="Detector data"
+        )
+        if window is not None:
+            ax.set_xlim(*window)
+        ax.set_xlabel(xlabel)
+        ax.grid(b=grid)
+        ax.legend()
+    return figs
+
+
+def frequency_domain_strain_data(
+    strain, window=True, window_kwargs={"roll_off": 0.2}, resolution=1. / 512,
+    fmin=-np.inf, fmax=np.inf, asd={}
+):
+    """Plot the strain data in the frequency domain
+
+    Parameters
+    ----------
+    strain: dict
+        dictionary of gw.py timeseries objects containing the strain data for
+        each IFO
+    window: Bool, optional
+        if True, apply a window to the data before applying FFT to the data.
+        Default True
+    window_kwargs: dict, optional
+        optional kwargs for the window function
+    resolution: float, optional
+        resolution to downsample the frequency domain data. Default 1./512
+    fmin: float, optional
+        lowest frequency to start plotting the data
+    fmax: float, optional
+        highest frequency to stop plotting the data
+    asd: dict, optional
+        dictionary containing the ASDs for each detector to plot ontop of the
+        detector data
+    """
+    detectors = list(strain.keys())
+    figs = {}
+    if not isinstance(asd, dict):
+        raise ValueError(
+            "Please provide the asd as a dictionary keyed by the detector"
+        )
+    elif not all(ifo in asd.keys() for ifo in detectors):
+        logger.info(
+            ""
+        )
+    for num, key in enumerate(detectors):
+        logger.debug("Plotting strain data in frequency domain")
+        if window:
+            from scipy.signal.windows import tukey
+
+            if "alpha" in window_kwargs.keys():
+                alpha = window_kwargs["alpha"]
+            elif "roll_off" and "duration" in window_kwargs.keys():
+                alpha = 2 * window_kwargs["roll_off"] / window_kwargs["duration"]
+            elif "roll_off" in window_kwargs.keys():
+                alpha = 2 * window_kwargs["roll_off"] / strain[key].duration.value
+            else:
+                raise ValueError(
+                    "Please either provide 'alpha' (the shape parameter of the "
+                    "Tukey window) or the 'roll_off' for the Tukey window."
+                )
+            _window = tukey(len(strain[key].value), alpha=alpha)
+        else:
+            _window = None
+        freq = strain[key].average_fft(window=_window)
+        freq = freq.interpolate(resolution)
+        freq = np.absolute(freq) / freq.df.value**0.5
+        figs[key], ax = figure(figsize=(12, 6), gca=True)
+        inds = np.where(
+            (freq.frequencies.value > fmin) & (freq.frequencies.value < fmax)
+        )
+        ax.loglog(
+            freq.frequencies[inds], freq[inds], label=key,
+            color=GW_OBSERVATORY_COLORS[key], alpha=0.2
+        )
+        if key in asd.keys():
+            inds = np.where((asd[key][:, 0] > fmin) & (asd[key][:, 0] < fmax))
+            ax.loglog(
+                asd[key][:, 0][inds], asd[key][:, 1][inds],
+                label="%s ASD" % (key), color=GW_OBSERVATORY_COLORS[key]
+            )
+        ax.set_xlabel(r"Frequency [$Hz$]")
+        ax.set_ylabel(r"Strain [strain/$\sqrt{Hz}$]")
+        ax.legend()
+        figs[key].tight_layout()
     return figs
