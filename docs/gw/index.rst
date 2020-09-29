@@ -51,6 +51,14 @@ The pesummary metafile
 
     pesummary_file
 
+Waveforms
++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    tutorials/waveforms
+
 Plotting
 ++++++++
 
@@ -63,6 +71,7 @@ Plotting
     tutorials/population_scatter_plot_GWTC-1
     tutorials/GWTC1_plots
     tutorials/interaction_with_ligo_skymap
+    tutorials/plot_waveform_on_strain_data
 
 Releasing samples
 +++++++++++++++++

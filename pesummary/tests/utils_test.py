@@ -332,6 +332,80 @@ class TestSamplesDict(object):
         remove = dataset.pop("a")
         assert list(dataset.keys()) == ["b"]
 
+    def test_core_plots(self):
+        """Test that the core plotting methods of the SamplesDict class work as
+        expected
+        """
+        import matplotlib.figure
+
+        dataset = SamplesDict(self.parameters, self.samples)
+        fig = dataset.plot(self.parameters[0], type="hist")
+        assert isinstance(fig, matplotlib.figure.Figure)
+        fig = dataset.plot(self.parameters[0], type="marginalized_posterior")
+        assert isinstance(fig, matplotlib.figure.Figure)
+
+    def test_waveforms(self):
+        """Test the waveform generation
+        """
+        from pycbc.waveform import get_fd_waveform, get_td_waveform
+        import requests
+        from pesummary.io import read
+
+        data = requests.get(
+            "https://dcc.ligo.org/public/0168/P2000183/008/GW190814_posterior_samples.h5"
+        )
+        with open(".outdir/GW190814_posterior_samples.h5", "wb") as f:
+            f.write(data.content)
+        f = read(".outdir/GW190814_posterior_samples.h5")
+        samples = f.samples_dict["C01:IMRPhenomPv3HM"]
+        ind = 0
+        data = samples.fd_waveform("IMRPhenomPv3HM", 1./256, 20., 1024., ind=ind)
+        hp_pycbc, hc_pycbc = get_fd_waveform(
+            approximant="IMRPhenomPv3HM", mass1=samples["mass_1"][ind],
+            mass2=samples["mass_2"][ind], spin1x=samples["spin_1x"][ind],
+            spin1y=samples["spin_1y"][ind], spin1z=samples["spin_1z"][ind],
+            spin2x=samples["spin_2x"][ind], spin2y=samples["spin_2y"][ind],
+            spin2z=samples["spin_2z"][ind], inclination=samples["iota"][ind],
+            distance=samples["luminosity_distance"][ind],
+            coa_phase=samples["phase"][ind], f_lower=20., f_final=1024.,
+            delta_f=1./256, f_ref=20.
+        )
+        np.testing.assert_almost_equal(
+            data["h_plus"].frequencies.value, hp_pycbc.sample_frequencies
+        )
+        np.testing.assert_almost_equal(
+            data["h_cross"].frequencies.value, hc_pycbc.sample_frequencies
+        )
+        np.testing.assert_almost_equal(
+            data["h_plus"].value * 10**25, hp_pycbc._data * 10**25
+        )
+        np.testing.assert_almost_equal(
+            data["h_cross"].value * 10**25, hc_pycbc._data * 10**25
+        )
+        data = samples.td_waveform("SEOBNRv4PHM", 1./4096, 20., ind=ind)
+        hp_pycbc, hc_pycbc = get_td_waveform(
+            approximant="SEOBNRv4PHM", mass1=samples["mass_1"][ind],
+            mass2=samples["mass_2"][ind], spin1x=samples["spin_1x"][ind],
+            spin1y=samples["spin_1y"][ind], spin1z=samples["spin_1z"][ind],
+            spin2x=samples["spin_2x"][ind], spin2y=samples["spin_2y"][ind],
+            spin2z=samples["spin_2z"][ind], inclination=samples["iota"][ind],
+            distance=samples["luminosity_distance"][ind],
+            coa_phase=samples["phase"][ind], f_lower=20., delta_t=1./4096,
+            f_ref=20.
+        )
+        np.testing.assert_almost_equal(
+            data["h_plus"].times.value, hp_pycbc.sample_times
+        )
+        np.testing.assert_almost_equal(
+            data["h_cross"].times.value, hc_pycbc.sample_times
+        )
+        np.testing.assert_almost_equal(
+            data["h_plus"].value * 10**25, hp_pycbc._data * 10**25
+        )
+        np.testing.assert_almost_equal(
+            data["h_cross"].value * 10**25, hc_pycbc._data * 10**25
+        )
+
 
 class TestMultiAnalysisSamplesDict(object):
     """Test the MultiAnalysisSamplesDict class

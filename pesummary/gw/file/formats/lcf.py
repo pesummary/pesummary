@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from gwpy.timeseries import TimeSeries
+from pesummary.gw.file.strain import StrainData
 from glue.lal import Cache
 
 
@@ -33,4 +33,4 @@ def read_lcf(path, channel=None, **kwargs):
     with open(path, "r") as f:
         data = Cache.fromfile(f)
 
-    return TimeSeries.read(data, channel, **kwargs)
+    return StrainData.read(data, channel, **kwargs)

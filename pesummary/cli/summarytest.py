@@ -177,7 +177,7 @@ def _old_pesummary_result_file(GW190412=False, GW190425=False):
     file
     """
     if GW190412:
-        URL = "https://dcc.ligo.org/public/0163/P190412/009/posterior_samples.h5"
+        URL = "https://dcc.ligo.org/public/0163/P190412/012/GW190412_posterior_samples_v3.h5"
         NAME = "GW190412"
     elif GW190425:
         URL = "https://dcc.ligo.org/public/0165/P2000026/001/GW190425_posterior_samples.h5"
