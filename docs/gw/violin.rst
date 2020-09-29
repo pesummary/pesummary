@@ -83,16 +83,13 @@ Real example
 Lets now take a real example. Let us download and plot the `chi_p` posterior
 distributions for `GW190412 <https://arxiv.org/pdf/2004.08342.pdf>`_ on the left
 hand side, and the `chi_p` prior on the right hand side (we will utilize the
-`bounded_1d_kde method <../core/bounded_kdes.html>`_ implemented in `pesummary`),
+`bounded_1d_kde method <../core/bounded_kdes.html>`_
+and the `fetch module <fetch.html>`_ both implemented in `pesummary`),
 
 .. code-block:: python
 
-    >>> from pesummary.io import read
-    >>> import requests
-    >>> data = requests.get("https://dcc.ligo.org/public/0163/P190412/008/posterior_samples.h5")
-    >>> with open("GW190412_posterior_samples.h5", "wb") as f:
-    ...     f.write(data.content)
-    >>> f = read("GW190412_posterior_samples.h5")
+    >>> from pesummary.gw.fetch import fetch_open_data
+    >>> f = fetch_open_data("GW190412")
     >>> posterior = f.samples_dict
     >>> parameter = "chi_p"
     >>> prior = f.priors["samples"]["combined"]
@@ -115,7 +112,6 @@ using the `.plot() method <./tutorials/plotting_from_metafile.html>`_.
 
 .. code-block:: python
 
-    >>> f = read("GW190412_posterior_samples.h5")
     >>> posterior = f.samples_dict
     >>> parameter = "chi_p"
     >>> fig = posterior.plot(parameter, type="violin", kde=bounded_1d_kde, kde_kwargs={"method": "Transform", "xlow": 0.01, "xhigh": 0.99, "apply_smoothing": True}, labels=["SEOBNRv4PHM", "IMRPhenomPv3HM", "combined"], priors=f.priors["samples"])

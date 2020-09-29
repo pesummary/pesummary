@@ -1,4 +1,4 @@
-from pesummary.io import read
+from pesummary.gw.fetch import fetch_open_data
 import matplotlib.pyplot as plt
 import requests
 import time
@@ -19,13 +19,7 @@ def generate_skymap(samples, **kwargs):
     return samples.plot(type="skymap", **kwargs)
 
 
-data = requests.get(
-    "https://dcc.ligo.org/public/0168/P2000183/008/GW190814_posterior_samples.h5"
-)
-with open("GW190814_posterior_samples.h5", "wb") as f:
-    f.write(data.content)
-
-f = read("GW190814_posterior_samples.h5", package="gw")
+f = fetch_open_data("GW190814")
 label = f.labels[0]
 
 # If the pesummary file has the skymap data already

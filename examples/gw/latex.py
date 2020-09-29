@@ -3,17 +3,9 @@
 # file and then using the `to_latex_table` and the `generate_latex_macros`
 # functions.
 
-from pesummary.io import read
-import requests
+from pesummary.gw.fetch import fetch_open_data
 
-data = requests.get(
-    "https://dcc.ligo.org/public/0168/P2000183/008/GW190814_posterior_samples.h5"
-)
-with open("GW190814_posterior_samples.h5", "wb") as f:
-    f.write(data.content)
-
-# First load in the result file
-f = read("GW190814_posterior_samples.h5", package="gw")
+f = fetch_open_data("GW190814")
 
 # Then make a dictionary which maps the parameter to a description that you
 # wish to use in the latex table
