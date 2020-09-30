@@ -38,3 +38,10 @@ our existing samples using the `generate_all_posterior_samples` method,
 .. code-block:: python
 
     >>> data.generate_all_posterior_samples()
+
+and we can see which parameters have been derived using the
+`converted_parameters` attribute,
+
+.. code-block:: python
+
+    >>> data.converted_parameters

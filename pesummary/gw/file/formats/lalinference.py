@@ -69,6 +69,8 @@ class LALInference(GWRead):
     ----------
     parameters: list
         list of parameters stored in the result file
+    converted_parameters: list
+        list of parameters that have been derived from the sampled distributions
     samples: 2d list
         list of samples stored in the result file
     samples_dict: dict
@@ -77,6 +79,8 @@ class LALInference(GWRead):
         version of the result file passed.
     extra_kwargs: dict
         dictionary of kwargs that were extracted from the result file
+    converted_parameters: list
+        list of parameters that have been added
 
     Methods
     -------

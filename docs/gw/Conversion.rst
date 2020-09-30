@@ -24,7 +24,8 @@ The `Conversion` class can be initalized as follows,
     >>> data = _Conversion(posterior)
     >>> print(data.keys())
     dict_keys(['mass_1', 'mass_2', 'a_1', 'a_2', 'mass_ratio', 'inverted_mass_ratio', 'total_mass', 'chirp_mass', 'symmetric_mass_ratio'])
-
+    >>> print(data.parameters.added)
+    ['a_1', 'a_2', 'mass_ratio', 'inverted_mass_ratio', 'reference_frequency', 'total_mass', 'chirp_mass', 'symmetric_mass_ratio']
 Alternatively,
 
 .. code-block:: python

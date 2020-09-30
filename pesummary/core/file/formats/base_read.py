@@ -15,6 +15,7 @@
 
 import numpy as np
 import h5py
+from pesummary.utils.parameters import Parameters
 from pesummary.utils.samples_dict import SamplesDict, MCMCSamplesDict, Array
 from pesummary.utils.utils import logger
 
@@ -55,6 +56,7 @@ class Read(object):
         self.path_to_results_file = path_to_results_file
         self.mcmc_samples = False
         self.extension = self.extension_from_path(self.path_to_results_file)
+        self.converted_parameters = []
 
     @staticmethod
     def load_from_function(function, path_to_file, **kwargs):
@@ -101,7 +103,8 @@ class Read(object):
         """
         self.data = self.load_from_function(
             function, self.path_to_results_file, **kwargs)
-        self.parameters = self.data["parameters"]
+        self.parameters = Parameters(self.data["parameters"])
+        self.converted_parameters = []
         self.samples = self.data["samples"]
         if "mcmc_samples" in self.data.keys():
             self.mcmc_samples = self.data["mcmc_samples"]

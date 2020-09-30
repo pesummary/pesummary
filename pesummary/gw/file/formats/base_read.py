@@ -18,6 +18,7 @@ from scipy.interpolate import interp1d
 from pesummary.gw.file.standard_names import standard_names
 from pesummary.core.file.formats.base_read import Read
 from pesummary.utils.utils import logger
+from pesummary.utils.parameters import Parameters
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.decorators import open_config
 from pesummary.gw.file import conversions as con
@@ -43,6 +44,8 @@ class GWRead(Read):
     ----------
     parameters: list
         list of parameters stored in the result file
+    converted_parameters: list
+        list of parameters that have been derived from the sampled distributions
     samples: 2d list
         list of samples stored in the result file
     samples_dict: dict
@@ -51,6 +54,8 @@ class GWRead(Read):
         version of the result file passed.
     extra_kwargs: dict
         dictionary of kwargs that were extracted from the result file
+    converted_parameters: list
+        list of parameters that have been added
 
     Methods
     -------
@@ -96,7 +101,8 @@ class GWRead(Read):
         self.data = {
             "parameters": parameters, "samples": samples
         }
-        self.parameters = self.data["parameters"]
+        self.parameters = Parameters(self.data["parameters"])
+        self.converted_parameters = []
         self.samples = self.data["samples"]
         self.data["injection"] = data["injection"]
         if "version" in data.keys() and data["version"] is not None:
@@ -571,6 +577,7 @@ class GWRead(Read):
                 return_dict=False, **kwargs
             )
             self.parameters = data[0]
+            self.converted_parameters = self.parameters.added
             self.samples = data[1]
             if kwargs.get("return_kwargs", False):
                 self.extra_kwargs = data[2]
