@@ -1461,6 +1461,7 @@ class _Conversion(object):
     """
     def __new__(cls, *args, **kwargs):
         from pesummary.utils.samples_dict import SamplesDict
+        from pesummary.utils.parameters import Parameters
 
         obj = super(_Conversion, cls).__new__(cls)
         base_replace = (
@@ -1473,12 +1474,12 @@ class _Conversion(object):
                 "of samples or a list of parameters and a list of samples"
             )
         elif isinstance(args[0], dict):
-            parameters = list(args[0].keys())
+            parameters = Parameters(args[0].keys())
             samples = np.atleast_2d(
                 np.array([args[0][i] for i in parameters]).T
             ).tolist()
         else:
-            parameters, samples = args
+            parameters, samples = Parameters(args[0]), args[1]
             samples = np.atleast_2d(samples).tolist()
         extra_kwargs = kwargs.get("extra_kwargs", {"sampler": {}, "meta_data": {}})
         f_low = kwargs.get("f_low", None)

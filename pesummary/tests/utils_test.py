@@ -25,6 +25,7 @@ import pesummary.cli as cli
 from pesummary.utils import utils
 from pesummary.utils.tqdm import tqdm
 from pesummary.utils.dict import Dict
+from pesummary.utils.list import List
 from pesummary.utils.samples_dict import (
     Array, SamplesDict, MCMCSamplesDict, MultiAnalysisSamplesDict
 )
@@ -649,7 +650,43 @@ class TestMCMCSamplesDict(object):
         )
         assert len(burnin["chain_0"]["a"]) == len(idxs) - 10
         
-        
+
+class TestList(object):
+    """Test the List class
+    """
+    def test_added(self):
+        original = ["a", "b", "c", "d", "e"]
+        array = List(original)
+        assert not len(array.added)
+        array.append("f")
+        assert len(array.added)
+        assert array.added == ["f"]
+        array.extend(["g", "h"])
+        assert sorted(array.added) == sorted(["f", "g", "h"])
+        assert sorted(array.original) == sorted(original)
+        array.insert(2, "z")
+        assert sorted(array.added) == sorted(["f", "g", "h", "z"])
+        assert sorted(array) == sorted(original + ["f", "g", "h", "z"])
+        array = List(original)
+        array = array + ["f", "g", "h"]
+        assert sorted(array.added) == sorted(["f", "g", "h"])
+        array += ["i"]
+        assert sorted(array.added) == sorted(["f", "g", "h", "i"])
+
+    def test_removed(self):
+        original = ["a", "b", "c", "d", "e"]
+        array = List(original)
+        assert not len(array.removed)
+        array.remove("e")
+        assert sorted(array) == sorted(["a", "b", "c", "d"])
+        assert array.removed == ["e"]
+        assert not len(sorted(array.added))
+        array.extend(["f", "g"])
+        array.remove("f")
+        assert array.removed == ["e", "f"]
+        assert array.added == ["g"]
+        array.pop(0)
+        assert sorted(array.removed) == sorted(["e", "f", "a"])
 
 
 class TestArray(object):

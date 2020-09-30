@@ -68,6 +68,8 @@ class PESummary(GWRead, CorePESummary):
     ----------
     parameters: list
         list of parameters stored in the result file
+    converted_parameters: list
+        list of parameters that have been derived from the sampled distributions
     samples: 2d list
         list of samples stored in the result file
     samples_dict: dict
@@ -136,6 +138,7 @@ class PESummary(GWRead, CorePESummary):
             function, self.path_to_results_file, **kwargs)
         self.data = data
         self.parameters = self.data["parameters"]
+        self.converted_parameters = []
         self.samples = self.data["samples"]
         if "mcmc_samples" in data.keys():
             self.mcmc_samples = data["mcmc_samples"]
@@ -291,6 +294,7 @@ class PESummary(GWRead, CorePESummary):
         from pesummary.gw.file.conversions import _Conversion
 
         converted_params, converted_samples, converted_kwargs = [], [], []
+        _converted_params = []
         for param, samples, kwargs in zip(
                 self.parameters, self.samples, self.extra_kwargs
         ):
@@ -302,10 +306,12 @@ class PESummary(GWRead, CorePESummary):
                 **conversion_kwargs
             )
             converted_params.append(data[0])
+            _converted_params.append(data[0].added)
             converted_samples.append(data[1])
             if kwargs.get("return_kwargs", False):
                 converted_kwargs.append(data[2])
         self.parameters = converted_params
+        self.converted_parameters = _converted_params
         self.samples = converted_samples
         if converted_kwargs != []:
             self.extra_kwargs = {

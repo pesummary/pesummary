@@ -64,6 +64,8 @@ class Bilby(GWRead):
     ----------
     parameters: list
         list of parameters stored in the result file
+    converted_parameters: list
+        list of parameters that have been derived from the sampled distributions
     samples: 2d list
         list of samples stored in the result file
     samples_dict: dict
@@ -77,6 +79,8 @@ class Bilby(GWRead):
         analytic priors are evaluated for 5000 samples
     injection_parameters: dict
         dictionary of injection parameters stored in the result file
+    converted_parameters: list
+        list of parameters that have been added
 
     Methods
     -------
