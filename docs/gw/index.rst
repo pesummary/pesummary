@@ -51,8 +51,8 @@ The pesummary metafile
 
     pesummary_file
 
-Fetching open data
-++++++++++++++++++
+Fetching data
++++++++++++++
 
 .. toctree::
     :maxdepth: 2
