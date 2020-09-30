@@ -15,8 +15,43 @@
 
 import os
 from pathlib import Path
-from astropy.utils.data import download_file
+from astropy.utils.data import download_file, conf, _tempfilestodel
 from pesummary.io import read
+from tempfile import NamedTemporaryFile
+
+try:
+    import ciecplib
+    CIECPLIB = True
+except ImportError:
+    CIECPLIB = False
+
+
+def _download_authenticated_file(url, **kwargs):
+    """Downloads a URL from an authenticated site
+
+    Parameters
+    ----------
+    url: str
+        url you wish to download
+    **kwargs: dict, optional
+        additional kwargs passed to ciecplib.Session
+    """
+    if not CIECPLIB:
+        raise ImportError(
+            "Please install 'ciecplib' in order to download authenticated urls"
+        )
+
+    with ciecplib.Session(**kwargs) as sess:
+        pid = os.getpid()
+        prefix = "pesummary-download-%s-" % (pid)
+        with NamedTemporaryFile(prefix=prefix, delete=False) as f:
+            content = sess.get(url).content
+            f.write(content)
+
+    if conf.delete_temporary_downloads_at_exit:
+        global _tempfilestodel
+        _tempfilestodel.append(f.name)
+    return f.name
 
 
 def _download_file(url, **kwargs):
@@ -32,7 +67,9 @@ def _download_file(url, **kwargs):
     return download_file(url, **kwargs)
 
 
-def download_and_read_file(url, download_kwargs={}, **kwargs):
+def download_and_read_file(
+    url, download_kwargs={}, _function=_download_file, **kwargs
+):
     """Downloads a URL and reads the file with pesummary.io.read function
 
     Parameters
@@ -44,7 +81,7 @@ def download_and_read_file(url, download_kwargs={}, **kwargs):
     **kwargs: dict, optional
         additional kwargs passed to pesummary.io.read function
     """
-    local = _download_file(url, **download_kwargs)
+    local = _function(url, **download_kwargs)
     filename = Path(url).name
     new_name = Path(local).parent / filename
     os.rename(local, new_name)

@@ -13,7 +13,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.core.fetch import download_and_read_file
+from pesummary.core.fetch import (
+    download_and_read_file, _download_authenticated_file
+)
 
 DCC = "https://dcc.ligo.org/public/"
 GWTC1_base = DCC + "0157/P1800370/005/"
@@ -28,6 +30,26 @@ DCC_MAP.update({
     "GW190412": DCC + "0163/P190412/012/GW190412_posterior_samples_v3.h5",
     "GW190814": DCC + "0168/P2000183/008/GW190814_posterior_samples.h5"
 })
+
+
+def fetch(url, download_kwargs={}, **kwargs):
+    """Download and read files from LIGO authenticated URLs
+
+    Parameters
+    ----------
+    url: str
+        url you wish to download
+    download_kwargs: dict, optional
+        optional kwargs passed to _download_autheticated_file
+    **kwargs: dict, optional
+        additional kwargs passed to pesummary.io.read function
+    """
+    if "idp" not in download_kwargs.keys():
+        download_kwargs["idp"] = "LIGO"
+    return download_and_read_file(
+        url, download_kwargs=download_kwargs,
+        _function=_download_authenticated_file, **kwargs
+    )
 
 
 def fetch_open_data(event, **kwargs):
