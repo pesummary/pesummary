@@ -83,6 +83,12 @@ class TestWrite(Base):
         parameters, samples = self.write("lalinference", "lalinference.hdf5")
         self.check_samples(".outdir/lalinference.hdf5", parameters, samples.T)
 
+    def test_sql(self):
+        """Test that the user can write to an sql database
+        """
+        parameters, samples = self.write("sql", "sql.db")
+        self.check_samples(".outdir/sql.db", parameters, samples.T)
+
     def test_pesummary(self):
         """Test that the user can write to a pesummary file
         """

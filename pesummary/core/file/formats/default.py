@@ -59,6 +59,7 @@ class Default(Read):
                     "hdf5": self._grab_data_from_hdf5_file,
                     "h5": self._grab_data_from_hdf5_file,
                     "hdf": self._grab_data_from_hdf5_file,
+                    "db": self._grab_data_from_sql_database,
                     "prior": self._grab_data_from_prior_file}
 
         self.load_function = func_map[self.extension]
@@ -107,6 +108,18 @@ class Default(Read):
         return {
             "parameters": parameters, "samples": samples.samples.T.tolist(),
             "injection": injection, "analytic": analytic
+        }
+
+    @staticmethod
+    def _grab_data_from_sql_database(path, **kwargs):
+        """Grab the data stored in a sql database
+        """
+        from pesummary.core.file.formats.sql import read_sql
+
+        parameters, samples, labels = read_sql(path, **kwargs)
+        injection = {i: float("nan") for i in parameters}
+        return {
+            "parameters": parameters, "samples": samples, "injection": injection
         }
 
     @staticmethod
