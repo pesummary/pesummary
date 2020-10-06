@@ -26,7 +26,9 @@ OTHER = {
 }
 
 
-def read(path, package="gw", file_format=None, skymap=False, **kwargs):
+def read(
+    path, package="gw", file_format=None, skymap=False, cls=None, **kwargs
+):
     """Read in a results file.
 
     Parameters
@@ -40,11 +42,15 @@ def read(path, package="gw", file_format=None, skymap=False, **kwargs):
         function loops through all possible options
     skymap: Bool, optional
         if True, path is the path to a fits file generated with `ligo.skymap`
+    cls: func, optional
+        class to use when reading in a result file
     **kwargs: dict, optional
         all additional kwargs are passed to the `pesummary.{}.file.read.read`
         function
     """
     extension = Path(path).suffix[1:]
+    if cls is not None:
+        return cls.load_file(path, **kwargs)
     if extension in OTHER.keys():
         return OTHER[extension](path, **kwargs)
     elif file_format == "ini":

@@ -13,11 +13,46 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os
 import numpy as np
 import h5py
 from pesummary.utils.parameters import Parameters
-from pesummary.utils.samples_dict import SamplesDict, MCMCSamplesDict, Array
+from pesummary.utils.samples_dict import (
+    MultiAnalysisSamplesDict, SamplesDict, MCMCSamplesDict, Array
+)
 from pesummary.utils.utils import logger
+
+
+def _downsample(samples, number, extra_kwargs=None):
+    """Downsample a posterior table
+
+    Parameters
+    ----------
+    samples: 2d list
+        list of posterior samples where the columns correspond to a given
+        parameter
+    number: int
+        number of posterior samples you wish to downsample to
+    extra_kwargs: dict, optional
+        dictionary of kwargs to modify
+    """
+    from pesummary.utils.utils import resample_posterior_distribution
+    import copy
+
+    _samples = np.array(samples).T
+    if number > len(_samples[0]):
+        raise ValueError(
+            "Failed to downsample the posterior samples to {} because "
+            "there are only {} samples stored in the file.".format(
+                number, len(_samples[0])
+            )
+        )
+    _samples = np.array(resample_posterior_distribution(_samples, number))
+    if extra_kwargs is None:
+        return _samples.T.tolist()
+    _extra_kwargs = copy.deepcopy(extra_kwargs)
+    _extra_kwargs["sampler"]["nsamples"] = number
+    return _samples.T.tolist(), _extra_kwargs
 
 
 class Read(object):
@@ -58,6 +93,21 @@ class Read(object):
         self.extension = self.extension_from_path(self.path_to_results_file)
         self.converted_parameters = []
 
+    @classmethod
+    def load_file(cls, path, **kwargs):
+        """Initialize the class with a file
+
+        Parameters
+        ----------
+        path: str
+            path to the result file you wish to load
+        **kwargs: dict, optional
+            all kwargs passed to the class
+        """
+        if not os.path.isfile(path):
+            raise FileNotFoundError("%s does not exist" % (path))
+        return cls(path, **kwargs)
+
     @staticmethod
     def load_from_function(function, path_to_file, **kwargs):
         """Load a file according to a given function
@@ -93,7 +143,27 @@ class Read(object):
             return Array(np.array(samples).T[ind])
         return None
 
-    def load(self, function, **kwargs):
+    attrs = {
+        "input_version": "version", "extra_kwargs": "kwargs",
+        "priors": "prior", "analytic": "analytic", "labels": "labels",
+        "config": "config", "weights": "weights"
+    }
+
+    def _load(self, function, **kwargs):
+        """Extract the data from a file using a given function
+
+        Parameters
+        ----------
+        function: func
+            function you wish to use to extract the data
+        **kwargs: dict, optional
+            optional kwargs to pass to the load function
+        """
+        return self.load_from_function(
+            function, self.path_to_results_file, **kwargs
+        )
+
+    def load(self, function, _data=None, **kwargs):
         """Load a results file according to a given function
 
         Parameters
@@ -101,8 +171,9 @@ class Read(object):
         function: func
             callable function that will load in your results file
         """
-        self.data = self.load_from_function(
-            function, self.path_to_results_file, **kwargs)
+        self.data = _data
+        if _data is None:
+            self.data = self._load(function, **kwargs)
         self.parameters = Parameters(self.data["parameters"])
         self.converted_parameters = []
         self.samples = self.data["samples"]
@@ -123,125 +194,19 @@ class Read(object):
                 ]
             else:
                 self.injection_parameters = self.data["injection"]
-        if "version" in self.data.keys():
-            self.input_version = self.data["version"]
-        else:
-            self.input_version = "No version information found"
-        if "kwargs" in self.data.keys():
-            self.extra_kwargs = self.data["kwargs"]
-        else:
-            self.extra_kwargs = {"sampler": {}, "meta_data": {}}
-            self.extra_kwargs["sampler"]["nsamples"] = len(self.data["samples"])
-        if "prior" in self.data.keys():
-            self.priors = self.data["prior"]
-        if "analytic" in self.data.keys():
-            self.analytic = self.data["analytic"]
-        if "labels" in self.data.keys():
-            self.labels = self.data["labels"]
-        if "config" in self.data.keys():
-            self.config = self.data["config"]
-        if "weights" in self.data.keys():
-            self.weights = self.data["weights"]
-        else:
+        for new_attr, existing_attr in self.attrs.items():
+            if existing_attr in self.data.keys():
+                setattr(self, new_attr, self.data[existing_attr])
+            else:
+                setattr(self, new_attr, None)
+        if self.input_version is None:
+            self.input_version = self._default_version
+        if self.extra_kwargs is None:
+            self.extra_kwargs = self._default_kwargs
+        if self.weights is None:
             self.weights = self.check_for_weights(
                 self.data["parameters"], self.data["samples"]
             )
-
-    @property
-    def samples_dict(self):
-        if self.mcmc_samples:
-            return MCMCSamplesDict(
-                self.parameters, [np.array(i).T for i in self.samples]
-            )
-        return SamplesDict(self.parameters, np.array(self.samples).T)
-
-    @staticmethod
-    def paths_to_key(key, dictionary, current_path=None):
-        """Return the path to a key stored in a nested dictionary
-
-        Parameters
-        ----------
-        key: str
-            the key that you would like to find
-        dictionary: dict
-            the nested dictionary that has the key stored somewhere within it
-        current_path: str, optional
-            the current level in the dictionary
-        """
-        if current_path is None:
-            current_path = []
-
-        for k, v in dictionary.items():
-            if k == key:
-                yield current_path + [key]
-            else:
-                if isinstance(v, dict):
-                    path = current_path + [k]
-                    for z in Read.paths_to_key(key, v, path):
-                        yield z
-
-    @staticmethod
-    def convert_list_to_item(dictionary):
-        """
-        """
-        for key, value in dictionary.items():
-            if isinstance(value, dict):
-                Read.convert_list_to_item(value)
-            else:
-                if isinstance(value, (list, np.ndarray, Array)):
-                    if len(value) == 1 and isinstance(value[0], bytes):
-                        dictionary.update({key: value[0].decode("utf-8")})
-                    elif len(value) == 1:
-                        dictionary.update({key: value[0]})
-        return dictionary
-
-    @staticmethod
-    def load_recursively(key, dictionary):
-        """Return the entry for a key of format 'a/b/c/d'
-
-        Parameters
-        ----------
-        key: str
-            key of format 'a/b/c/d'
-        dictionary: dict
-            the dictionary that has the key stored
-        """
-        if "/" in key:
-            key = key.split("/")
-        if isinstance(key, (str, float)):
-            key = [key]
-        if key[-1] in dictionary.keys():
-            try:
-                converted_dictionary = Read.convert_list_to_item(
-                    dictionary[key[-1]]
-                )
-                yield converted_dictionary
-            except AttributeError:
-                yield dictionary[key[-1]]
-        else:
-            old, new = key[0], key[1:]
-            for z in Read.load_recursively(new, dictionary[old]):
-                yield z
-
-    @staticmethod
-    def edit_dictionary(dictionary, path, value):
-        """Replace an entry in a nested dictionary
-
-        Parameters
-        ----------
-        dictionary: dict
-            the nested dictionary that you would like to edit
-        path: list
-            the path to the key that you would like to edit
-        value:
-            the replacement
-        """
-        from functools import reduce
-        from operator import getitem
-
-        edit = dictionary.copy()
-        reduce(getitem, path[:-1], edit)[path[-1]] = value
-        return edit
 
     @staticmethod
     def extension_from_path(path):
@@ -302,42 +267,6 @@ class Read(object):
                 "Unable to find a posterior samples table in '{}'".format(path)
             )
 
-    @staticmethod
-    def _grab_params_and_samples_from_json_file(path):
-        """Grab the parameters and samples stored in a .json file
-        """
-        import json
-
-        with open(path, "r") as f:
-            data = json.load(f)
-        try:
-            path, = Read.paths_to_key("posterior", data)
-            path = path[0]
-            path += "/posterior"
-        except Exception:
-            path, = Read.paths_to_key("posterior_samples", data)
-            path = path[0]
-            path += "/posterior_samples"
-        reduced_data, = Read.load_recursively(path, data)
-        if "content" in list(reduced_data.keys()):
-            reduced_data = reduced_data["content"]
-        parameters = list(reduced_data.keys())
-
-        samples = [[
-            reduced_data[j][i] if not isinstance(reduced_data[j][i], dict)
-            else reduced_data[j][i]["real"] for j in parameters] for i in
-            range(len(reduced_data[parameters[0]]))]
-        return parameters, samples
-
-    @staticmethod
-    def _grab_params_and_samples_from_dat_file(path):
-        """Grab the parameters and samples in a .dat file
-        """
-        dat_file = np.genfromtxt(path, names=True)
-        parameters = [i for i in dat_file.dtype.names]
-        samples = np.atleast_2d(dat_file.tolist())
-        return parameters, samples
-
     def generate_all_posterior_samples(self, **kwargs):
         """Empty function
         """
@@ -353,34 +282,6 @@ class Read(object):
             path to the configuration file
         """
         pass
-
-    def _add_fixed_parameters_from_config_file(self, config_file, function):
-        """Search the conifiguration file and add fixed parameters to the
-        list of parameters and samples
-
-        Parameters
-        ----------
-        config_file: str
-            path to the configuration file
-        function: func
-            function you wish to use to extract the information from the
-            configuration file
-        """
-        self.data[0], self.data[1] = function(self.parameters, self.samples, config_file)
-
-    def _add_marginalized_parameters_from_config_file(self, config_file, function):
-        """Search the configuration file and add marginalized parameters to the
-        list of parameters and samples
-
-        Parameters
-        ----------
-        config_file: str
-            path to the configuration file
-        function: func
-            function you wish to use to extract the information from the
-            configuration file
-        """
-        self.data[0], self.data[1] = function(self.parameters, self.samples, config_file)
 
     def add_injection_parameters_from_file(self, injection_file, **kwargs):
         """
@@ -414,7 +315,10 @@ class Read(object):
         """
         return function(injection_file, **kwargs)
 
-    def write(self, package="core", **kwargs):
+    def write(
+        self, package="core", file_format="dat", extra_kwargs=None,
+        file_versions=None, **kwargs
+    ):
         """Save the data to file
 
         Parameters
@@ -426,40 +330,25 @@ class Read(object):
         """
         from pesummary.io import write
 
+        if file_format == "pesummary" and np.array(self.parameters).ndim > 1:
+            args = [self.samples_dict]
+        else:
+            args = [self.parameters, self.samples]
+        if extra_kwargs is None:
+            extra_kwargs = self.extra_kwargs
+        if file_versions is None:
+            file_versions = self.input_version
         return write(
-            self.parameters, self.samples, package=package,
-            file_versions=self.input_version, file_kwargs=self.extra_kwargs,
-            **kwargs
+            *args, package=package, file_versions=file_versions,
+            file_kwargs=extra_kwargs, file_format=file_format, **kwargs
         )
 
     def downsample(self, number):
         """Downsample the posterior samples stored in the result file
         """
-        from pesummary.utils.utils import resample_posterior_distribution
-
-        if number > self.samples_dict.number_of_samples:
-            raise ValueError(
-                "Failed to downsample the posterior samples to {} because "
-                "there are only {} samples stored in the file.".format(
-                    number, self.samples_dict.number_of_samples
-                )
-            )
-        _samples = np.array(resample_posterior_distribution(
-            np.array(self.samples).T, number
-        ))
-        self.samples = _samples.T.tolist()
-        self.extra_kwargs["sampler"]["nsamples"] = number
-
-    def to_dat(self, **kwargs):
-        """Save the PESummary results file object to a dat file
-
-        Parameters
-        ----------
-        kwargs: dict
-            all kwargs passed to the pesummary.core.file.formats.dat.write_dat
-            function
-        """
-        return self.write(file_format="dat", **kwargs)
+        self.samples, self.extra_kwargs = _downsample(
+            self.samples, number, extra_kwargs=self.extra_kwargs
+        )
 
     @staticmethod
     def latex_table(samples, parameter_dict=None, labels=None):
@@ -585,6 +474,88 @@ class Read(object):
                 )
         return macros
 
+
+class SingleAnalysisRead(Read):
+    """Base class to read in a results file which contains a single analyses
+
+    Parameters
+    ----------
+    path_to_results_file: str
+        path to the results file you wish to load
+
+    Attributes
+    ----------
+    parameters: list
+        list of parameters stored in the file
+    samples: 2d list
+        list of samples stored in the result file
+    samples_dict: dict
+        dictionary of samples stored in the result file
+    input_version: str
+        version of the result file passed
+    extra_kwargs: dict
+        dictionary of kwargs that were extracted from the result file
+
+    Methods
+    -------
+    downsample:
+        downsample the posterior samples stored in the result file
+    to_dat:
+        save the posterior samples to a .dat file
+    to_latex_table:
+        convert the posterior samples to a latex table
+    generate_latex_macros:
+        generate a set of latex macros for the stored posterior samples
+    """
+    def __init__(self, *args, **kwargs):
+        super(SingleAnalysisRead, self).__init__(*args, **kwargs)
+
+    @property
+    def samples_dict(self):
+        if self.mcmc_samples:
+            return MCMCSamplesDict(
+                self.parameters, [np.array(i).T for i in self.samples]
+            )
+        return SamplesDict(self.parameters, np.array(self.samples).T)
+
+    @property
+    def _default_version(self):
+        return "No version information found"
+
+    @property
+    def _default_kwargs(self):
+        _kwargs = {"sampler": {}, "meta_data": {}}
+        _kwargs["sampler"]["nsamples"] = len(self.data["samples"])
+        return _kwargs
+
+    def _add_fixed_parameters_from_config_file(self, config_file, function):
+        """Search the conifiguration file and add fixed parameters to the
+        list of parameters and samples
+
+        Parameters
+        ----------
+        config_file: str
+            path to the configuration file
+        function: func
+            function you wish to use to extract the information from the
+            configuration file
+        """
+        self.data[0], self.data[1] = function(self.parameters, self.samples, config_file)
+
+    def _add_marginalized_parameters_from_config_file(self, config_file, function):
+        """Search the configuration file and add marginalized parameters to the
+        list of parameters and samples
+
+        Parameters
+        ----------
+        config_file: str
+            path to the configuration file
+        function: func
+            function you wish to use to extract the information from the
+            configuration file
+        """
+        self.data[0], self.data[1] = function(self.parameters, self.samples, config_file)
+
     def to_latex_table(self, parameter_dict=None, save_to_file=None):
         """Make a latex table displaying the data in the result file.
 
@@ -646,6 +617,217 @@ class Read(object):
 
         macros = self.latex_macros(
             [self.samples_dict], parameter_dict, rounding=rounding
+        )
+        if save_to_file is None:
+            print(macros)
+        else:
+            with open(save_to_file, "w") as f:
+                f.writelines([macros])
+
+    def to_dat(self, **kwargs):
+        """Save the PESummary results file object to a dat file
+
+        Parameters
+        ----------
+        kwargs: dict
+            all kwargs passed to the pesummary.core.file.formats.dat.write_dat
+            function
+        """
+        return self.write(file_format="dat", **kwargs)
+
+
+class MultiAnalysisRead(Read):
+    """Base class to read in a results file which contains multiple analyses
+
+    Parameters
+    ----------
+    path_to_results_file: str
+        path to the results file you wish to load
+
+    Attributes
+    ----------
+    parameters: 2d list
+        list of parameters for each analysis
+    samples: 3d list
+        list of samples stored in the result file for each analysis
+    samples_dict: dict
+        dictionary of samples stored in the result file keyed by analysis label
+    input_version: str
+        version of the result files passed
+    extra_kwargs: dict
+        dictionary of kwargs that were extracted from the result file
+
+    Methods
+    -------
+    downsample:
+        downsample the posterior samples stored in the result file
+    to_dat:
+        save the posterior samples to a .dat file
+    to_latex_table:
+        convert the posterior samples to a latex table
+    generate_latex_macros:
+        generate a set of latex macros for the stored posterior samples
+    """
+    def __init__(self, *args, **kwargs):
+        super(MultiAnalysisRead, self).__init__(*args, **kwargs)
+
+    @property
+    def samples_dict(self):
+        if self.mcmc_samples:
+            outdict = MCMCSamplesDict(
+                self.parameters[0], [np.array(i).T for i in self.samples[0]]
+            )
+        else:
+            if all("log_likelihood" in i for i in self.parameters):
+                likelihood_inds = [self.parameters[idx].index("log_likelihood")
+                                   for idx in range(len(self.labels))]
+                likelihoods = [[i[likelihood_inds[idx]] for i in self.samples[idx]]
+                               for idx, label in enumerate(self.labels)]
+            else:
+                likelihoods = [None] * len(self.labels)
+            outdict = MultiAnalysisSamplesDict({
+                label:
+                    SamplesDict(
+                        self.parameters[idx], np.array(self.samples[idx]).T
+                    ) for idx, label in enumerate(self.labels)
+            })
+        return outdict
+
+    @property
+    def _default_version(self):
+        return ["No version information found"] * len(self.parameters)
+
+    @property
+    def _default_kwargs(self):
+        _kwargs = [{"sampler": {}, "meta_data": {}}] * len(self.parameters)
+        for num, ss in enumerate(self.data["samples"]):
+            _kwargs[num]["sampler"]["nsamples"] = len(ss)
+        return _kwargs
+
+    def write(self, package="core", file_format="dat", **kwargs):
+        """Save the data to file
+
+        Parameters
+        ----------
+        package: str, optional
+            package you wish to use when writing the data
+        kwargs: dict, optional
+            all additional kwargs are passed to the pesummary.io.write function
+        """
+        return super(MultiAnalysisRead, self).write(
+            package=package, file_format=file_format,
+            extra_kwargs=self.kwargs_dict, file_versions=self.version_dict,
+            **kwargs
+        )
+
+    @property
+    def kwargs_dict(self):
+        return {
+            label: kwarg for label, kwarg in zip(self.labels, self.extra_kwargs)
+        }
+
+    @property
+    def version_dict(self):
+        return {
+            label: version for label, version in zip(self.labels, self.input_version)
+        }
+
+    def downsample(self, number):
+        """Downsample the posterior samples stored in the result file
+        """
+        for num, ss in enumerate(self.samples):
+            self.samples[num], self.extra_kwargs[num] = _downsample(
+                ss, number, extra_kwargs=self.extra_kwargs[num]
+            )
+
+    def to_latex_table(self, labels="all", parameter_dict=None, save_to_file=None):
+        """Make a latex table displaying the data in the result file.
+
+        Parameters
+        ----------
+        labels: list, optional
+            list of labels that you want to include in the table
+        parameter_dict: dict, optional
+            dictionary of parameters that you wish to include in the latex
+            table. The keys are the name of the parameters and the items are
+            the descriptive text. If None, all parameters are included
+        save_to_file: str, optional
+            name of the file you wish to save the latex table to. If None, print
+            to stdout
+        """
+        import os
+
+        if save_to_file is not None and os.path.isfile("{}".format(save_to_file)):
+            raise FileExistsError(
+                "The file {} already exists.".format(save_to_file)
+            )
+        if labels != "all" and isinstance(labels, str) and labels not in self.labels:
+            raise ValueError("The label %s does not exist." % (labels))
+        elif labels == "all":
+            labels = list(self.labels)
+        elif isinstance(labels, str):
+            labels = [labels]
+        elif isinstance(labels, list):
+            for ll in labels:
+                if ll not in list(self.labels):
+                    raise ValueError("The label %s does not exist." % (ll))
+
+        table = self.latex_table(
+            [self.samples_dict[label] for label in labels], parameter_dict,
+            labels=labels
+        )
+        if save_to_file is None:
+            print(table)
+        elif os.path.isfile("{}".format(save_to_file)):
+            logger.warning(
+                "File {} already exists. Printing to stdout".format(save_to_file)
+            )
+            print(table)
+        else:
+            with open(save_to_file, "w") as f:
+                f.writelines([table])
+
+    def generate_latex_macros(
+        self, labels="all", parameter_dict=None, save_to_file=None,
+        rounding=2
+    ):
+        """Generate a list of latex macros for each parameter in the result
+        file
+
+        Parameters
+        ----------
+        labels: list, optional
+            list of labels that you want to include in the table
+        parameter_dict: dict, optional
+            dictionary of parameters that you wish to generate macros for. The
+            keys are the name of the parameters and the items are the latex
+            macros name you wish to use. If None, all parameters are included.
+        save_to_file: str, optional
+            name of the file you wish to save the latex table to. If None, print
+            to stdout
+        rounding: int, optional
+            number of decimal points to round the latex macros
+        """
+        import os
+
+        if save_to_file is not None and os.path.isfile("{}".format(save_to_file)):
+            raise FileExistsError(
+                "The file {} already exists.".format(save_to_file)
+            )
+        if labels != "all" and isinstance(labels, str) and labels not in self.labels:
+            raise ValueError("The label %s does not exist." % (labels))
+        elif labels == "all":
+            labels = list(self.labels)
+        elif isinstance(labels, str):
+            labels = [labels]
+        elif isinstance(labels, list):
+            for ll in labels:
+                if ll not in list(self.labels):
+                    raise ValueError("The label %s does not exist." % (ll))
+
+        macros = self.latex_macros(
+            [self.samples_dict[i] for i in labels], parameter_dict,
+            labels=labels, rounding=rounding
         )
         if save_to_file is None:
             print(macros)

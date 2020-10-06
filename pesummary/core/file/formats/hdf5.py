@@ -16,6 +16,7 @@
 import h5py
 import numpy as np
 from pesummary.core.file.formats.base_read import Read
+from pesummary.utils.dict import load_recursively, paths_to_key
 
 
 def read_hdf5(path, **kwargs):
@@ -49,18 +50,18 @@ def _read_hdf5_with_deepdish(path, remove_params=None, path_to_samples=None):
     f = deepdish.io.load(path)
     if path_to_samples is None:
         try:
-            path_to_samples, = Read.paths_to_key("posterior", f)
+            path_to_samples, = paths_to_key("posterior", f)
             path_to_samples = path_to_samples[0]
         except ValueError:
             try:
-                path_to_samples, = Read.paths_to_key("posterior_samples", f)
+                path_to_samples, = paths_to_key("posterior_samples", f)
                 path_to_samples = path_to_samples[0]
             except ValueError:
                 raise ValueError(
                     "Unable to find a 'posterior' or 'posterior_samples' group "
                     "in the file '{}'".format(path)
                 )
-    reduced_f, = Read.load_recursively(path_to_samples, f)
+    reduced_f, = load_recursively(path_to_samples, f)
     parameters = [i for i in reduced_f.keys()]
     if remove_params is not None:
         for param in remove_params:
@@ -136,7 +137,7 @@ def _read_hdf5_with_h5py(path, remove_params=None, path_to_samples=None):
     return parameters, samples
 
 
-def write_hdf5(
+def _write_hdf5(
     parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
     **kwargs
 ):
@@ -170,3 +171,33 @@ def write_hdf5(
     _samples = samples.to_structured_array()
     with h5py.File(filename, "w") as f:
         f.create_dataset("posterior_samples", data=_samples)
+
+
+def write_hdf5(
+    parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
+    **kwargs
+):
+    """Write a set of samples to a hdf5 file
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters
+    samples: 2d list
+        list of samples. Columns correspond to a given parameter
+    outdir: str, optional
+        directory to write the dat file
+    label: str, optional
+        The label of the analysis. This is used in the filename if a filename
+        if not specified
+    filename: str, optional
+        The name of the file that you wish to write
+    overwrite: Bool, optional
+        If True, an existing file of the same name will be overwritten
+    """
+    from pesummary.io.write import _multi_analysis_write
+
+    _multi_analysis_write(
+        _write_hdf5, parameters, samples, outdir=outdir, label=label,
+        filename=filename, overwrite=overwrite, file_format="hdf5", **kwargs
+    )

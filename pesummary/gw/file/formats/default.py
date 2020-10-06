@@ -15,11 +15,101 @@
 
 import os
 import numpy as np
-from pesummary.gw.file.formats.base_read import GWRead
+from pesummary.gw.file.formats.base_read import (
+    GWRead, GWSingleAnalysisRead, GWMultiAnalysisRead
+)
 from pesummary.core.file.formats.default import Default as CoreDefault
 
 
-class Default(GWRead):
+class SingleAnalysisDefault(GWSingleAnalysisRead):
+    """Class to handle result files which only contain a single analysis
+
+    Parameters
+    ----------
+    path_to_results_file: str
+        path to the results file you wish to load
+
+    Attributes
+    ----------
+    parameters: list
+        list of parameters stored in the result file
+    converted_parameters: list
+        list of parameters that have been derived from the sampled distributions
+    samples: 2d list
+        list of samples stored in the result file
+    samples_dict: dict
+        dictionary of samples stored in the result file keyed by parameters
+    input_version: str
+        version of the result file passed.
+    extra_kwargs: dict
+        dictionary of kwargs that were extracted from the result file
+    converted_parameters: list
+        list of parameters that have been added
+
+    Methods
+    -------
+    to_dat:
+        save the posterior samples to a .dat file
+    to_latex_table:
+        convert the posterior samples to a latex table
+    generate_latex_macros:
+        generate a set of latex macros for the stored posterior samples
+    to_lalinference:
+        convert the posterior samples to a lalinference result file
+    generate_all_posterior_samples:
+        generate all posterior distributions that may be derived from
+        sampled distributions
+    """
+    def __init__(self, *args, _data=None, **kwargs):
+        super(SingleAnalysisDefault, self).__init__(*args, **kwargs)
+        if _data is not None:
+            self.load(None, _data=_data, **kwargs)
+
+
+class MultiAnalysisDefault(GWMultiAnalysisRead):
+    """Class to handle result files which contain multiple analyses
+
+    Parameters
+    ----------
+    path_to_results_file: str
+        path to the results file you wish to load
+
+    Attributes
+    ----------
+    parameters: 2d list
+        list of parameters stored in the result file for each analysis
+    converted_parameters: 2d list
+        list of parameters that have been derived from the sampled distributions
+    samples: 3d list
+        list of samples stored in the result file for each analysis
+    samples_dict: dict
+        dictionary of samples stored in the result file keyed by analysis label
+    input_version: str
+        version of the result file passed.
+    extra_kwargs: dict
+        dictionary of kwargs that were extracted from the result file
+
+    Methods
+    -------
+    to_dat:
+        save the posterior samples to a .dat file
+    to_latex_table:
+        convert the posterior samples to a latex table
+    generate_latex_macros:
+        generate a set of latex macros for the stored posterior samples
+    to_lalinference:
+        convert the posterior samples to a lalinference result file
+    generate_all_posterior_samples:
+        generate all posterior distributions that may be derived from
+        sampled distributions
+    """
+    def __init__(self, *args, _data=None, **kwargs):
+        super(MultiAnalysisDefault, self).__init__(*args, **kwargs)
+        if _data is not None:
+            self.load(None, _data=_data, **kwargs)
+
+
+class Default(CoreDefault):
     """Class to handle the default loading options.
 
     Parameters
@@ -58,9 +148,7 @@ class Default(GWRead):
         generate all posterior distributions that may be derived from
         sampled distributions
     """
-    def __init__(self, path_to_results_file, **kwargs):
-        super(Default, self).__init__(path_to_results_file, **kwargs)
-
+    def __new__(self, path_to_results_file, **kwargs):
         func_map = {"json": self._grab_data_from_json_file,
                     "dat": self._grab_data_from_dat_file,
                     "txt": self._grab_data_from_dat_file,
@@ -68,24 +156,28 @@ class Default(GWRead):
                     "h5": self._grab_data_from_hdf5_file,
                     "hdf": self._grab_data_from_hdf5_file,
                     "db": self._grab_data_from_sql_database,
+                    "sql": self._grab_data_from_sql_database,
                     "prior": self._grab_data_from_prior_file,
                     "xml": self._grab_data_from_xml_file}
 
+        self.extension = GWRead.extension_from_path(path_to_results_file)
         self.load_function = func_map[self.extension]
         try:
-            self.load(self.load_function, **kwargs)
+            self._load_data = self.load_function(path_to_results_file, **kwargs)
         except Exception as e:
             raise Exception(
                 "Failed to read data for file %s because: %s" % (
-                    self.path_to_results_file, e
+                    path_to_results_file, e
                 )
             )
-
-    @classmethod
-    def load_file(cls, path, **kwargs):
-        if not os.path.isfile(path):
-            raise FileNotFoundError("%s does not exist" % (path))
-        return cls(path, **kwargs)
+        if np.array(self._load_data["parameters"]).ndim > 1:
+            return MultiAnalysisDefault(
+                path_to_results_file, _data=self._load_data, **kwargs
+            )
+        else:
+            return SingleAnalysisDefault(
+                path_to_results_file, _data=self._load_data, **kwargs
+            )
 
     @staticmethod
     def grab_extra_kwargs(parameters, samples):

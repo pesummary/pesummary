@@ -15,7 +15,7 @@
 
 import os
 import numpy as np
-from pesummary.core.file.formats.base_read import Read
+from pesummary.core.file.formats.base_read import SingleAnalysisRead
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary import conf
 from pesummary.utils.utils import logger
@@ -104,7 +104,43 @@ def read_bilby(
     return data
 
 
-def write_bilby(
+def to_bilby(
+    parameters, samples, label=None, analytic_priors=None, cls=None,
+    meta_data=None, **kwargs
+):
+    """Convert a set of samples to a bilby object
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters
+    samples: 2d list
+        list of samples. Columns correspond to a given parameter
+    label: str, optional
+        The label of the analysis. This is used in the filename if a filename
+        if not specified
+    """
+    from bilby.core.result import Result
+    from bilby.core.prior import Prior, PriorDict
+    from pandas import DataFrame
+
+    if cls is None:
+        cls = Result
+    if analytic_priors is not None:
+        priors = PriorDict._get_from_json_dict(analytic_priors)
+        search_parameters = priors.keys()
+    else:
+        priors = {param: Prior() for param in parameters}
+        search_parameters = parameters
+    posterior_data_frame = DataFrame(samples, columns=parameters)
+    bilby_object = cls(
+        search_parameter_keys=search_parameters, samples=samples, priors=priors,
+        posterior=posterior_data_frame, label="pesummary_%s" % label,
+    )
+    return bilby_object
+
+
+def _write_bilby(
     parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
     extension="json", save=True, analytic_priors=None, cls=None,
     meta_data=None, **kwargs
@@ -131,22 +167,9 @@ def write_bilby(
     save: Bool, optional
         if True, save the bilby object to file
     """
-    from bilby.core.result import Result
-    from bilby.core.prior import Prior, PriorDict
-    from pandas import DataFrame
-
-    if cls is None:
-        cls = Result
-    if analytic_priors is not None:
-        priors = PriorDict._get_from_json_dict(analytic_priors)
-        search_parameters = priors.keys()
-    else:
-        priors = {param: Prior() for param in parameters}
-        search_parameters = parameters
-    posterior_data_frame = DataFrame(samples, columns=parameters)
-    bilby_object = cls(
-        search_parameter_keys=search_parameters, samples=samples, priors=priors,
-        posterior=posterior_data_frame, label="pesummary_%s" % label,
+    bilby_object = to_bilby(
+        parameters, samples, label=None, analytic_priors=None, cls=None,
+        meta_data=None, **kwargs
     )
     if save:
         _filename = os.path.join(outdir, filename)
@@ -155,7 +178,48 @@ def write_bilby(
         return bilby_object
 
 
-def prior_samples_from_file(path, cls="PriorDict", nsamples=5000):
+def write_bilby(
+    parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
+    extension="json", save=True, analytic_priors=None, cls=None,
+    meta_data=None, labels=None, **kwargs
+):
+    """Write a set of samples to a bilby file
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters
+    samples: 2d list
+        list of samples. Columns correspond to a given parameter
+    outdir: str, optional
+        directory to write the dat file
+    label: str, optional
+        The label of the analysis. This is used in the filename if a filename
+        if not specified
+    filename: str, optional
+        The name of the file that you wish to write
+    overwrite: Bool, optional
+        If True, an existing file of the same name will be overwritten
+    extension: str, optional
+        file extension for the bilby result file. Default json.
+    save: Bool, optional
+        if True, save the bilby object to file
+    """
+    from pesummary.io.write import _multi_analysis_write
+
+    func = _write_bilby
+    if not save:
+        func = to_bilby
+    return _multi_analysis_write(
+        func, parameters, samples, outdir=outdir, label=label,
+        filename=filename, overwrite=overwrite, extension=extension,
+        save=save, analytic_priors=analytic_priors, cls=cls,
+        meta_data=meta_data, file_format="bilby", labels=labels,
+        _return=True, **kwargs
+    )
+
+
+def prior_samples_from_file(path, cls="PriorDict", nsamples=5000, **kwargs):
     """Return a dict of prior samples from a `bilby` prior file
 
     Parameters
@@ -176,7 +240,7 @@ def prior_samples_from_file(path, cls="PriorDict", nsamples=5000):
     return _bilby_prior_dict_to_pesummary_samples_dict(samples, prior=_prior)
 
 
-def prior_samples_from_bilby_object(bilby_object, nsamples=5000):
+def prior_samples_from_bilby_object(bilby_object, nsamples=5000, **kwargs):
     """Return a dict of prior samples from a `bilby.core.result.Result`
     object
 
@@ -206,7 +270,7 @@ def _bilby_prior_dict_to_pesummary_samples_dict(samples, prior=None):
     return _samples
 
 
-class Bilby(Read):
+class Bilby(SingleAnalysisRead):
     """PESummary wrapper of `bilby` (https://git.ligo.org/lscsoft/bilby). The
     path_to_results_file argument will be passed directly to
     `bilby.core.result.read_in_result`. All functions therefore use `bilby`
@@ -250,12 +314,6 @@ class Bilby(Read):
     def __init__(self, path_to_results_file, **kwargs):
         super(Bilby, self).__init__(path_to_results_file, **kwargs)
         self.load(self._grab_data_from_bilby_file, **kwargs)
-
-    @classmethod
-    def load_file(cls, path, **kwargs):
-        if not os.path.isfile(path):
-            raise Exception("%s does not exist" % (path))
-        return cls(path, **kwargs)
 
     @staticmethod
     def grab_priors(bilby_object, nsamples=5000):

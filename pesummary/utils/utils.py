@@ -861,7 +861,7 @@ def _default_filename(default_filename, label=None):
 
 def check_filename(
     default_filename="pesummary_{}.dat", outdir="./", label=None, filename=None,
-    overwrite=False
+    overwrite=False, delete_existing=False
 ):
     """Check to see if a file exists. If no filename is provided, a default
     filename is checked
@@ -890,6 +890,8 @@ def check_filename(
                 filename, outdir
             )
         )
+    if os.path.isfile(_file) and delete_existing:
+        os.remove(_file)
     return _file
 
 

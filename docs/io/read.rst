@@ -2,6 +2,9 @@
 The universal read function
 ===========================
 
+Builtin functions
+-----------------
+
 `pesummay` offers a `read` function which not only allows for nearly all result
 file formats to be read in, but it also allows for config files, injection
 files, prior files etc to be read in. Below we show a few examples.
@@ -61,3 +64,16 @@ can still be read in with,
 .. code-block:: python
 
     >>> skymap = read("skymap.gz", skymap=True)
+
+
+Custom functions
+----------------
+
+Of course, you might have a file in a format which pesummary is unable to read
+in with the inbuilt functions. As a result of the modularity of pesummary, we
+may define a class which is capable of reading in this custom file format and
+pass it as a kwarg to the universal read function. Below we show a couple of
+examples,
+
+.. literalinclude:: ../../../examples/core/single_analysis_custom_read.py
+.. literalinclude:: ../../../examples/core/multiple_analysis_custom_read.py 

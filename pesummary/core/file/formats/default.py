@@ -15,10 +15,88 @@
 
 import numpy as np
 import os
-from pesummary.core.file.formats.base_read import Read
+from pesummary.core.file.formats.base_read import (
+    Read, SingleAnalysisRead, MultiAnalysisRead
+)
 
 
-class Default(Read):
+class SingleAnalysisDefault(SingleAnalysisRead):
+    """Class to handle result files which only contain a single analysis
+
+    Parameters
+    ----------
+    path_to_results_file: str
+        path to the results file you wish to load
+
+    Attributes
+    ----------
+    parameters: list
+        list of parameters stored in the result file
+    samples: 2d list
+        list of samples stored in the result file
+    samples_dict: dict
+        dictionary of samples stored in the result file keyed by parameters
+    input_version: str
+        version of the result file passed.
+    extra_kwargs: dict
+        dictionary of kwargs that were extracted from the result file
+    injection_parameters: dict
+        dictionary of injection parameters extracted from the result file
+
+    Methods
+    -------
+    to_dat:
+        save the posterior samples to a .dat file
+    to_latex_table:
+        convert the posterior samples to a latex table
+    generate_latex_macros:
+        generate a set of latex macros for the stored posterior samples
+    """
+    def __init__(self, *args, _data=None, **kwargs):
+        super(SingleAnalysisDefault, self).__init__(*args, **kwargs)
+        if _data is not None:
+            self.load(None, _data=_data, **kwargs)
+
+
+class MultiAnalysisDefault(MultiAnalysisRead):
+    """Class to handle result files which contain multiple analyses
+
+    Parameters
+    ----------
+    path_to_results_file: str
+        path to the results file you wish to load
+
+    Attributes
+    ----------
+    parameters: 2d list
+        list of parameters stored in the result file for each analyses
+    samples: 2d list
+        list of samples stored in the result file for each analyses
+    samples_dict: dict
+        dictionary of samples stored in the result file keyed by analysis label
+    input_version: str
+        version of the result file passed.
+    extra_kwargs: dict
+        dictionary of kwargs that were extracted from the result file
+    injection_parameters: dict
+        dictionary of injection parameters extracted from the result file
+
+    Methods
+    -------
+    to_dat:
+        save the posterior samples to a .dat file
+    to_latex_table:
+        convert the posterior samples to a latex table
+    generate_latex_macros:
+        generate a set of latex macros for the stored posterior samples
+    """
+    def __init__(self, *args, _data=None, **kwargs):
+        super(MultiAnalysisDefault, self).__init__(*args, **kwargs)
+        if _data is not None:
+            self.load(None, _data=_data, **kwargs)
+
+
+class Default(object):
     """Class to handle the default loading options.
 
     Attributes
@@ -50,9 +128,7 @@ class Default(Read):
     generate_latex_macros:
         generate a set of latex macros for the stored posterior samples
     """
-    def __init__(self, path_to_results_file, **kwargs):
-        super(Default, self).__init__(path_to_results_file, **kwargs)
-
+    def __new__(self, path_to_results_file, **kwargs):
         func_map = {"json": self._grab_data_from_json_file,
                     "dat": self._grab_data_from_dat_file,
                     "txt": self._grab_data_from_dat_file,
@@ -60,16 +136,26 @@ class Default(Read):
                     "h5": self._grab_data_from_hdf5_file,
                     "hdf": self._grab_data_from_hdf5_file,
                     "db": self._grab_data_from_sql_database,
+                    "sql": self._grab_data_from_sql_database,
                     "prior": self._grab_data_from_prior_file}
 
+        self.extension = Read.extension_from_path(path_to_results_file)
         self.load_function = func_map[self.extension]
         try:
-            self.load(self.load_function, **kwargs)
+            self._load_data = self.load_function(path_to_results_file, **kwargs)
         except Exception as e:
             raise Exception(
                 "Failed to read data for file %s because: %s" % (
-                    self.path_to_results_file, e
+                    path_to_results_file, e
                 )
+            )
+        if np.array(self._load_data["parameters"]).ndim > 1:
+            return MultiAnalysisDefault(
+                path_to_results_file, _data=self._load_data, **kwargs
+            )
+        else:
+            return SingleAnalysisDefault(
+                path_to_results_file, _data=self._load_data, **kwargs
             )
 
     @classmethod
@@ -117,9 +203,16 @@ class Default(Read):
         from pesummary.core.file.formats.sql import read_sql
 
         parameters, samples, labels = read_sql(path, **kwargs)
-        injection = {i: float("nan") for i in parameters}
+        if len(labels) > 1:
+            injection = {
+                label: {i: float("nan") for i in parameters[num]} for num, label
+                in enumerate(labels)
+            }
+        else:
+            injection = {i: float("nan") for i in parameters}
         return {
-            "parameters": parameters, "samples": samples, "injection": injection
+            "parameters": parameters, "samples": samples, "injection": injection,
+            "labels": labels
         }
 
     @staticmethod

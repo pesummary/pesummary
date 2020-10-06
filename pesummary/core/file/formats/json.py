@@ -16,6 +16,7 @@
 import json
 import numpy as np
 import inspect
+from pesummary.utils.dict import load_recursively, paths_to_key
 
 
 class PESummaryJsonEncoder(json.JSONEncoder):
@@ -61,12 +62,12 @@ def read_json(path, path_to_samples=None):
         data = json.load(f)
     if not path_to_samples:
         try:
-            path_to_samples, = Read.paths_to_key("posterior", data)
+            path_to_samples, = paths_to_key("posterior", data)
             path_to_samples = path_to_samples[0]
             path_to_samples += "/posterior"
         except ValueError:
             try:
-                path_to_samples, = Read.paths_to_key("posterior_samples", data)
+                path_to_samples, = paths_to_key("posterior_samples", data)
                 path_to_samples = path_to_samples[0]
                 path_to_samples += "/posterior_samples"
             except ValueError:
@@ -74,7 +75,7 @@ def read_json(path, path_to_samples=None):
                     "Unable to find a 'posterior' or 'posterior_samples' group "
                     "in the file '{}'".format(path_to_samples)
                 )
-    reduced_data, = Read.load_recursively(path_to_samples, data)
+    reduced_data, = load_recursively(path_to_samples, data)
     if "content" in list(reduced_data.keys()):
         reduced_data = reduced_data["content"]
     parameters = list(reduced_data.keys())
@@ -91,7 +92,7 @@ def read_json(path, path_to_samples=None):
     return parameters, samples
 
 
-def write_json(
+def _write_json(
     parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
     indent=4, sort_keys=True, cls=PESummaryJsonEncoder, **kwargs
 ):
@@ -134,3 +135,40 @@ def write_json(
     }
     with open(filename, "w") as f:
         json.dump(data, f, indent=indent, sort_keys=sort_keys, cls=cls)
+
+
+def write_json(
+    parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
+    indent=4, sort_keys=True, cls=PESummaryJsonEncoder, **kwargs
+):
+    """Write a set of samples to a json file
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters
+    samples: 2d list
+        list of samples. Columns correspond to a given parameter
+    outdir: str, optional
+        directory to write the dat file
+    label: str, optional
+        The label of the analysis. This is used in the filename if a filename
+        if not specified
+    filename: str, optional
+        The name of the file that you wish to write
+    overwrite: Bool, optional
+        If True, an existing file of the same name will be overwritten
+    indent: int, optional
+        The indentation to use in json.dump. Default 4
+    sort_keys: Bool, optional
+        Whether or not to sort the keys in json.dump. Default True
+    cls: class, optional
+        Class to use as the JsonEncoder. Default PESumamryJsonEncoder
+    """
+    from pesummary.io.write import _multi_analysis_write
+
+    _multi_analysis_write(
+        _write_json, parameters, samples, outdir=outdir, label=label,
+        filename=filename, overwrite=overwrite, indent=indent,
+        sort_keys=sort_keys, cls=cls, file_format="json", **kwargs
+    )

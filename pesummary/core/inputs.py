@@ -152,7 +152,7 @@ class _Input(object):
                 if isinstance(inj_values[i][param], bytes):
                     inj_values[i][param] = inj_values[i][param].decode("utf-8")
 
-        if hasattr(f, "priors") and f.priors != {}:
+        if hasattr(f, "priors") and f.priors is not None and f.priors != {}:
             priors = f.priors
         else:
             priors = {label: {} for label in labels}
@@ -254,11 +254,11 @@ class _Input(object):
             injection = {i: j for i, j in zip(
                 parameters, [float("nan")] * len(parameters))}
         version = f.input_version
-        if hasattr(f, "priors"):
+        if hasattr(f, "priors") and f.priors is not None:
             priors = {key: {label: item} for key, item in f.priors.items()}
         else:
             priors = {label: []}
-        if hasattr(f, "weights"):
+        if hasattr(f, "weights") and f.weights is not None:
             weights = f.weights
         else:
             weights = None
@@ -997,10 +997,12 @@ class _Input(object):
         nested_dictionary = get_nested_dictionary(self._priors, path[:-1])
         nested_dictionary[path[-1]] = data
 
-    def grab_priors_from_inputs(self, priors):
+    def grab_priors_from_inputs(self, priors, read_func=None, read_kwargs={}):
         """
         """
-        from pesummary.core.file.read import read as Read
+        if read_func is None:
+            from pesummary.core.file.read import read as Read
+            read_func = Read
 
         prior_dict = {}
         if priors is not None:
@@ -1014,11 +1016,12 @@ class _Input(object):
                     "files. Assuming the same prior file for all result "
                     "files".format(len(self.labels))
                 )
-                data = Read(priors[0])
+                data = read_func(priors[0])
                 for i in self.labels:
                     prior_dict["samples"][i] = data.samples_dict
                     try:
-                        prior_dict["analytic"][i] = data.analytic
+                        if data.analytic is not None:
+                            prior_dict["analytic"][i] = data.analytic
                     except AttributeError:
                         continue
             elif len(priors) != len(self.labels):
@@ -1032,10 +1035,15 @@ class _Input(object):
                     logger.info(
                         "Assigning {} to {}".format(self.labels[num], i)
                     )
-                    data = Read(priors[num])
+                    if self.labels[num] in read_kwargs.keys():
+                        grab_data_kwargs = read_kwargs[self.labels[num]]
+                    else:
+                        grab_data_kwargs = read_kwargs
+                    data = read_func(priors[num], **grab_data_kwargs)
                     prior_dict["samples"][self.labels[num]] = data.samples_dict
                     try:
-                        prior_dict["analytic"][self.labels[num]] = data.analytic
+                        if data.analytic is not None:
+                            prior_dict["analytic"][self.labels[num]] = data.analytic
                     except AttributeError:
                         continue
         return prior_dict
