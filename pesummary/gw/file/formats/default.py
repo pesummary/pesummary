@@ -67,6 +67,7 @@ class Default(GWRead):
                     "hdf5": self._grab_data_from_hdf5_file,
                     "h5": self._grab_data_from_hdf5_file,
                     "hdf": self._grab_data_from_hdf5_file,
+                    "db": self._grab_data_from_sql_database,
                     "prior": self._grab_data_from_prior_file,
                     "xml": self._grab_data_from_xml_file}
 
@@ -138,6 +139,10 @@ class Default(GWRead):
         """Grab data stored in a .prior file
         """
         return CoreDefault._grab_data_from_prior_file(path, module="gw", **kwargs)
+
+    @staticmethod
+    def _grab_data_from_sql_database(path, **kwargs):
+        return CoreDefault._grab_data_from_sql_database(path, **kwargs)
 
     @staticmethod
     def _grab_data_from_hdf5_file(path, path_to_samples=None, **kwargs):
