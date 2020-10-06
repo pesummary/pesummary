@@ -24,11 +24,12 @@ import numpy as np
 import configparser
 import warnings
 
-from pesummary.core.file.formats.base_read import Read
+from pesummary.core.file.formats.base_read import MultiAnalysisRead
 from pesummary.utils.samples_dict import (
     MCMCSamplesDict, MultiAnalysisSamplesDict, SamplesDict, Array
 )
 from pesummary.utils.utils import logger
+from pesummary.utils.dict import load_recursively
 from pesummary.utils.decorators import deprecation
 
 
@@ -81,7 +82,7 @@ def write_pesummary(
         labels = [label]
 
     if isinstance(args[0], MultiAnalysisSamplesDict):
-        labels = args[0].keys()
+        labels = list(args[0].keys())
         samples = args[0]
     elif isinstance(args[0], (SamplesDict, MCMCSamplesDict)):
         _samples = args[0]
@@ -147,7 +148,7 @@ def write_pesummary(
         )
 
 
-class PESummary(Read):
+class PESummary(MultiAnalysisRead):
     """This class handles the existing posterior_samples.h5 file
 
     Parameters
@@ -216,9 +217,7 @@ class PESummary(Read):
                 raise FileNotFoundError(
                     "Unable to find a file called 'posterior_samples' in "
                     "the directory %s" % (path + "/samples"))
-        if not os.path.isfile(path):
-            raise FileNotFoundError("%s does not exist" % path)
-        return cls(path, **kwargs)
+        return super(PESummary, cls).load_file(path, **kwargs)
 
     @staticmethod
     def _grab_data_from_pesummary_file(path, **kwargs):
@@ -227,7 +226,7 @@ class PESummary(Read):
         func_map = {"h5": PESummary._grab_data_from_hdf5_file,
                     "hdf5": PESummary._grab_data_from_hdf5_file,
                     "json": PESummary._grab_data_from_json_file}
-        return func_map[Read.extension_from_path(path)](path, **kwargs)
+        return func_map[MultiAnalysisRead.extension_from_path(path)](path, **kwargs)
 
     @staticmethod
     def _convert_hdf5_to_dict(dictionary, path="/"):
@@ -279,7 +278,7 @@ class PESummary(Read):
         for num, label in enumerate(labels):
             if label == "version" or label == "history":
                 continue
-            data, = Read.load_recursively(label, dictionary)
+            data, = load_recursively(label, dictionary)
             if "mcmc_chains" in data.keys():
                 mcmc_samples = True
                 dataset = data["mcmc_chains"]
@@ -376,28 +375,6 @@ class PESummary(Read):
             "prior": reversed_prior_dict,
             "mcmc_samples": mcmc_samples
         }
-
-    @property
-    def samples_dict(self):
-        if self.mcmc_samples:
-            outdict = MCMCSamplesDict(
-                self.parameters[0], [np.array(i).T for i in self.samples[0]]
-            )
-        else:
-            if all("log_likelihood" in i for i in self.parameters):
-                likelihood_inds = [self.parameters[idx].index("log_likelihood")
-                                   for idx in range(len(self.labels))]
-                likelihoods = [[i[likelihood_inds[idx]] for i in self.samples[idx]]
-                               for idx, label in enumerate(self.labels)]
-            else:
-                likelihoods = [None] * len(self.labels)
-            outdict = MultiAnalysisSamplesDict({
-                label:
-                    SamplesDict(
-                        self.parameters[idx], np.array(self.samples[idx]).T
-                    ) for idx, label in enumerate(self.labels)
-            })
-        return outdict
 
     @property
     def injection_dict(self):
@@ -545,27 +522,6 @@ class PESummary(Read):
             _return=True, **kwargs
         )
 
-    def downsample(self, number):
-        """Downsample the posterior samples stored in the result file
-        """
-        from pesummary.utils.utils import resample_posterior_distribution
-
-        _samples = []
-        for num, samp in enumerate(self.samples):
-            label = self.labels[num]
-            if number > self.samples_dict[label].number_of_samples:
-                raise ValueError(
-                    "Failed to downsample the posterior samples for {} because "
-                    "there are only {} samples stored in the file.".format(
-                        label, self.samples_dict[label].number_of_samples
-                    )
-                )
-            _samples.append(np.array(resample_posterior_distribution(
-                np.array(samp).T, number
-            )).T.tolist())
-            self.extra_kwargs[num]["sampler"]["nsamples"] = number
-        self.samples = _samples
-
     def to_dat(self, labels="all", **kwargs):
         """Convert the samples stored in a PESummary metafile to a .dat file
 
@@ -579,101 +535,6 @@ class PESummary(Read):
         return PESummary.write(
             self, labels=labels, package="core", file_format="dat", **kwargs
         )
-
-    def to_latex_table(self, labels="all", parameter_dict=None, save_to_file=None):
-        """Make a latex table displaying the data in the result file.
-
-        Parameters
-        ----------
-        labels: list, optional
-            list of labels that you want to include in the table
-        parameter_dict: dict, optional
-            dictionary of parameters that you wish to include in the latex
-            table. The keys are the name of the parameters and the items are
-            the descriptive text. If None, all parameters are included
-        save_to_file: str, optional
-            name of the file you wish to save the latex table to. If None, print
-            to stdout
-        """
-        import os
-
-        if save_to_file is not None and os.path.isfile("{}".format(save_to_file)):
-            raise FileExistsError(
-                "The file {} already exists.".format(save_to_file)
-            )
-        if labels != "all" and isinstance(labels, str) and labels not in self.labels:
-            raise ValueError("The label %s does not exist." % (labels))
-        elif labels == "all":
-            labels = list(self.labels)
-        elif isinstance(labels, str):
-            labels = [labels]
-        elif isinstance(labels, list):
-            for ll in labels:
-                if ll not in list(self.labels):
-                    raise ValueError("The label %s does not exist." % (ll))
-
-        table = self.latex_table(
-            [self.samples_dict[label] for label in labels], parameter_dict,
-            labels=labels
-        )
-        if save_to_file is None:
-            print(table)
-        elif os.path.isfile("{}".format(save_to_file)):
-            logger.warning(
-                "File {} already exists. Printing to stdout".format(save_to_file)
-            )
-            print(table)
-        else:
-            with open(save_to_file, "w") as f:
-                f.writelines([table])
-
-    def generate_latex_macros(
-        self, labels="all", parameter_dict=None, save_to_file=None,
-        rounding=2
-    ):
-        """Generate a list of latex macros for each parameter in the result
-        file
-
-        Parameters
-        ----------
-        labels: list, optional
-            list of labels that you want to include in the table
-        parameter_dict: dict, optional
-            dictionary of parameters that you wish to generate macros for. The
-            keys are the name of the parameters and the items are the latex
-            macros name you wish to use. If None, all parameters are included.
-        save_to_file: str, optional
-            name of the file you wish to save the latex table to. If None, print
-            to stdout
-        rounding: int, optional
-            number of decimal points to round the latex macros
-        """
-        import os
-
-        if save_to_file is not None and os.path.isfile("{}".format(save_to_file)):
-            raise FileExistsError(
-                "The file {} already exists.".format(save_to_file)
-            )
-        if labels != "all" and isinstance(labels, str) and labels not in self.labels:
-            raise ValueError("The label %s does not exist." % (labels))
-        elif labels == "all":
-            labels = list(self.labels)
-        elif isinstance(labels, str):
-            labels = [labels]
-        elif isinstance(labels, list):
-            for ll in labels:
-                if ll not in list(self.labels):
-                    raise ValueError("The label %s does not exist." % (ll))
-
-        macros = self.latex_macros(
-            [self.samples_dict[i] for i in labels], parameter_dict,
-            labels=labels, rounding=rounding
-        )
-        if save_to_file is None:
-            print(macros)
-        else:
-            with open(save_to_file, "w") as f:
-                f.writelines([macros])
 
 
 class PESummaryDeprecated(PESummary):
@@ -704,12 +565,12 @@ class PESummaryDeprecated(PESummary):
             posterior_samples = dictionary["posterior_samples"][label]
             if isinstance(posterior_samples, (h5py._hl.dataset.Dataset, np.ndarray)):
                 parameters = [j for j in posterior_samples.dtype.names]
-                samples = [np.array(j.tolist()) for j in posterior_samples]
+                samples = [j.tolist() for j in posterior_samples]
             else:
                 parameters = \
                     dictionary["posterior_samples"][label]["parameter_names"].copy()
                 samples = [
-                    j for j in dictionary["posterior_samples"][label]["samples"]
+                    j.tolist() for j in dictionary["posterior_samples"][label]["samples"]
                 ].copy()
                 if isinstance(parameters[0], bytes):
                     parameters = [
@@ -737,9 +598,9 @@ class PESummaryDeprecated(PESummary):
             sample_list.append(samples)
             config = None
             if "config_file" in dictionary.keys():
-                config, = Read.load_recursively("config_file", dictionary)
+                config, = load_recursively("config_file", dictionary)
             if "meta_data" in dictionary.keys():
-                data, = Read.load_recursively("meta_data", dictionary)
+                data, = load_recursively("meta_data", dictionary)
                 meta_data_list.append(data[label])
             else:
                 meta_data_list.append({"sampler": {}, "meta_data": {}})
@@ -752,12 +613,12 @@ class PESummaryDeprecated(PESummary):
             else:
                 weights_list.append(None)
         if "version" in dictionary.keys():
-            version, = Read.load_recursively("version", dictionary)
+            version, = load_recursively("version", dictionary)
         else:
             version = {label: "No version information found" for label in labels
                        + ["pesummary"]}
         if "priors" in dictionary.keys():
-            priors, = Read.load_recursively("priors", dictionary)
+            priors, = load_recursively("priors", dictionary)
         else:
             priors = dict()
         for label in list(version.keys()):

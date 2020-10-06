@@ -13,6 +13,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import numpy as np
+
 
 class List(list):
     """Base list class to extend the core `list` class
@@ -36,6 +38,10 @@ class List(list):
         super(List, self).__init__(*args, **kwargs)
         self.added = []
         self.removed = []
+
+    @property
+    def ndim(self):
+        return np.array(self).ndim
 
     def __add__(self, *args, **kwargs):
         self.added.extend(*args)

@@ -19,7 +19,7 @@ from pesummary.utils.samples_dict import MultiAnalysisSamplesDict, SamplesDict
 from pesummary.utils.utils import logger, check_filename
 
 
-def read_sql(path, path_to_samples=None):
+def read_sql(path, path_to_samples=None, remove_row_column="ROW", **kwargs):
     """Grab the parameters and samples in an sql database file
 
     Parameters
@@ -28,6 +28,9 @@ def read_sql(path, path_to_samples=None):
         path to the result file you wish to read in
     path_to_samples: str/list, optional
         table or list of tables that you wish to load
+    remove_row_column: str, optional
+        remove the column with name 'remove_row_column' which indicates the row.
+        Default 'ROW'
     """
     db = sqlite3.connect(path)
     d = db.cursor()
@@ -62,6 +65,13 @@ def read_sql(path, path_to_samples=None):
         )
         samples.append(np.array(d.fetchall()))
         parameters.append([i[0] for i in d.description])
+    for num, (_parameters, _samples) in enumerate(zip(parameters, samples)):
+        if remove_row_column in _parameters:
+            ind = _parameters.index(remove_row_column)
+            _parameters.remove(remove_row_column)
+            mask = np.ones(len(_samples.T), dtype=bool)
+            mask[ind] = False
+            samples[num] = _samples[:, mask]
     if len(tables) == 1:
         return parameters[0], np.array(samples[0]).tolist(), tables
     return parameters, np.array(samples).tolist(), tables
@@ -69,12 +79,18 @@ def read_sql(path, path_to_samples=None):
 
 def write_sql(
     *args, table_name="MYTABLE", outdir="./", filename=None, overwrite=False,
-    keys_as_table_name=True, **kwargs
+    keys_as_table_name=True, delete_existing=False, **kwargs
 ):
     """Write a set of samples to an sql database
 
     Parameters
     ----------
+    args: tuple, dict, MultiAnalysisSamplesDict
+        the posterior samples you wish to save to file. Either a tuple
+        of parameters and a 2d list of samples with columns corresponding to
+        a given parameter, dict of parameters and samples, or a
+        MultiAnalysisSamplesDict object with parameters and samples for
+        multiple analyses
     table_name: str, optional
         name of the table to store the samples. If a MultiAnalysisSamplesDict
         if provided, this is ignored and the table_names are the labels stored
@@ -91,7 +107,7 @@ def write_sql(
     default_filename = "pesummary_{}.db"
     filename = check_filename(
         default_filename=default_filename, outdir=outdir, label=table_name,
-        filename=filename, overwrite=overwrite
+        filename=filename, overwrite=overwrite, delete_existing=delete_existing
     )
 
     if isinstance(args[0], MultiAnalysisSamplesDict):
@@ -138,6 +154,11 @@ def write_sql(
         rows = [[rows]]
     elif np.array(rows).ndim == 2:
         rows = [rows]
+
+    if len(table_names) != len(columns):
+        table_names = [
+            "{}_{}".format(table_names[0], idx) for idx in range(len(columns))
+        ]
 
     db = sqlite3.connect(filename)
     d = db.cursor()

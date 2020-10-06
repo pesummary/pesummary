@@ -715,53 +715,15 @@ class _GWInput(_Input):
     def grab_priors_from_inputs(self, priors):
         """
         """
-        from pesummary.gw.file.read import read as GWRead
+        def read_func(data, **kwargs):
+            from pesummary.gw.file.read import read as GWRead
+            data = GWRead(data, **kwargs)
+            data.generate_all_posterior_samples()
+            return data
 
-        prior_dict = {}
-        if priors is not None:
-            prior_dict = {"samples": {}, "analytic": {}}
-            for i in priors:
-                if i.lower() != "none" and not os.path.isfile(i):
-                    raise InputError("The file {} does not exist".format(i))
-            if len(priors) != len(self.labels) and len(priors) == 1:
-                logger.warning(
-                    "You have only specified a single prior file for {} result "
-                    "files. Assuming the same prior file for all result "
-                    "files".format(len(self.labels))
-                )
-                data = GWRead(priors[0])
-                data.generate_all_posterior_samples()
-                for i in self.labels:
-                    prior_dict["samples"][i] = data.samples_dict
-                    try:
-                        prior_dict["analytic"][i] = data.analytic
-                    except AttributeError:
-                        continue
-            elif len(priors) != len(self.labels):
-                raise InputError(
-                    "Please provide a prior file for each result file"
-                )
-            else:
-                for num, i in enumerate(priors):
-                    if i.lower() == "none":
-                        continue
-                    logger.info(
-                        "Assigning {} to {}".format(self.labels[num], i)
-                    )
-                    if self.labels[num] in self.grab_data_kwargs.keys():
-                        grab_data_kwargs = self.grab_data_kwargs[
-                            self.labels[num]
-                        ]
-                    else:
-                        grab_data_kwargs = self.grab_data_kwargs
-                    data = GWRead(priors[num])
-                    data.generate_all_posterior_samples(**grab_data_kwargs)
-                    prior_dict["samples"][self.labels[num]] = data.samples_dict
-                    try:
-                        prior_dict["analytic"][self.labels[num]] = data.analytic
-                    except AttributeError:
-                        continue
-        return prior_dict
+        return super(_GWInput, self).grab_priors_from_inputs(
+            priors, read_func=read_func, read_kwargs=self.grab_data_kwargs
+        )
 
 
 class GWInput(_GWInput, Input):
@@ -935,9 +897,7 @@ class GWInput(_GWInput, Input):
         """
         for dirs in ["psds", "calibration"]:
             self.default_directories.append(dirs)
-        if self.publication:
-            self.default_directories.append("plots/publication")
-        self._make_directories(self.webdir, self.default_directories)
+        super(GWInput, self).make_directories()
 
 
 class GWPostProcessing(PostProcessing):

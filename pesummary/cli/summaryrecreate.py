@@ -18,6 +18,7 @@
 from pesummary.core.command_line import DelimiterSplitAction
 from pesummary.gw.file.read import read
 from pesummary.utils.utils import logger, make_dir
+from pesummary.utils.dict import edit_dictionary, paths_to_key
 from pesummary.utils.exceptions import InputError
 from pesummary.io import write
 
@@ -269,10 +270,8 @@ class _Input(object):
             if self.settings_to_change is not None:
                 for key, item in self.settings_to_change[label].items():
                     try:
-                        path, = self.samples.paths_to_key(key, config_data)
-                        config_data = self.samples.edit_dictionary(
-                            config_data, path, item
-                        )
+                        path, = paths_to_key(key, config_data)
+                        config_data = edit_dictionary(config_data, path, item)
                     except ValueError:
                         logger.warning(
                             "Unable to change '{}' to '{}' in the config "

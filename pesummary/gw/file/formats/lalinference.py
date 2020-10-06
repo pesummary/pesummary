@@ -25,7 +25,7 @@ try:
 except ImportError:
     GLUE = False
 
-from pesummary.gw.file.formats.base_read import GWRead
+from pesummary.gw.file.formats.base_read import GWRead, GWSingleAnalysisRead
 from pesummary.gw.file import conversions as con
 from pesummary.utils.utils import logger
 from pesummary.utils.decorators import open_config
@@ -56,7 +56,7 @@ META_DATA = {
 }
 
 
-class LALInference(GWRead):
+class LALInference(GWSingleAnalysisRead):
     """PESummary wrapper of `lalinference`
     (https://git.ligo.org/lscsoft/lalsuite/lalinference).
 
@@ -102,11 +102,11 @@ class LALInference(GWRead):
 
     @classmethod
     def load_file(cls, path, injection_file=None, **kwargs):
-        if not os.path.isfile(path):
-            raise IOError("%s does not exist" % (path))
         if injection_file and not os.path.isfile(injection_file):
             raise IOError("%s does not exist" % (path))
-        return cls(path, injection_file=injection_file, **kwargs)
+        return super(LALInference, cls).load_file(
+            path, injection_file=injection_file, **kwargs
+        )
 
     @staticmethod
     def guess_path_to_sampler(path):
@@ -431,7 +431,7 @@ class LALInference(GWRead):
         return parameters, samples
 
 
-def write_lalinference(
+def _write_lalinference(
     parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
     sampler="lalinference_nest", dat=False, **kwargs
 ):
@@ -512,3 +512,39 @@ def write_lalinference(
             samples = sampler.create_dataset(
                 "posterior_samples", data=lalinference_samples
             )
+
+
+def write_lalinference(
+    parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
+    sampler="lalinference_nest", dat=False, **kwargs
+):
+    """Write a set of samples in LALInference file format
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters
+    samples: 2d list
+        list of samples. Columns correspond to a given parameter
+    outdir: str
+        The directory where you would like to write the lalinference file
+    label: str
+        The label of the analysis. This is used in the filename if a filename
+        if not specified
+    filename: str
+        The name of the file that you wish to write
+    overwrite: Bool
+        If True, an existing file of the same name will be overwritten
+    sampler: str
+        The sampler which you wish to store in the result file. This may either
+        be 'lalinference_nest' or 'lalinference_mcmc'
+    dat: Bool
+        If True, a LALInference dat file is produced
+    """
+    from pesummary.io.write import _multi_analysis_write
+
+    _multi_analysis_write(
+        _write_lalinference, parameters, samples, outdir=outdir, label=label,
+        filename=filename, overwrite=overwrite, sampler=sampler, dat=dat,
+        file_format="lalinference", **kwargs
+    )

@@ -25,12 +25,12 @@ try:
 except ImportError:
     GLUE = False
 
-from pesummary.gw.file.formats.base_read import GWRead
+from pesummary.gw.file.formats.base_read import GWSingleAnalysisRead
 from pesummary.gw.file import conversions as con
 from pesummary.utils.utils import logger
 
 
-class GWTC1(GWRead):
+class GWTC1(GWSingleAnalysisRead):
     """PESummary wrapper of the GWTC1 sample release
 
     Attributes
@@ -44,11 +44,11 @@ class GWTC1(GWRead):
 
     @classmethod
     def load_file(cls, path, injection_file=None, **kwargs):
-        if not os.path.isfile(path):
-            raise IOError("%s does not exist" % (path))
         if injection_file and not os.path.isfile(injection_file):
             raise IOError("%s does not exist" % (path))
-        return cls(path, injection_file=injection_file, **kwargs)
+        return super(GWTC1, cls).load_file(
+            path, injection_file=injection_file, **kwargs
+        )
 
     @staticmethod
     def grab_extra_kwargs(path):

@@ -16,12 +16,12 @@
 import os
 import numpy as np
 from pesummary.core.file.formats.bilby import Bilby as CoreBilby
-from pesummary.gw.file.formats.base_read import GWRead
+from pesummary.gw.file.formats.base_read import GWSingleAnalysisRead
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.utils import logger
 
 
-def prior_samples_from_file(path, cls="BBHPriorDict", nsamples=5000):
+def prior_samples_from_file(path, cls="BBHPriorDict", nsamples=5000, **kwargs):
     """Return a dict of prior samples from a `bilby` prior file
 
     Parameters
@@ -40,10 +40,10 @@ def prior_samples_from_file(path, cls="BBHPriorDict", nsamples=5000):
 
     if isinstance(cls, str):
         cls = getattr(prior, cls)
-    return _prior_samples_from_file(path, cls=cls, nsamples=nsamples)
+    return _prior_samples_from_file(path, cls=cls, nsamples=nsamples, **kwargs)
 
 
-class Bilby(GWRead):
+class Bilby(GWSingleAnalysisRead):
     """PESummary wrapper of `bilby` (https://git.ligo.org/lscsoft/bilby). The
     path_to_results_file argument will be passed directly to
     `bilby.core.result.read_in_result`. All functions therefore use `bilby`
@@ -99,12 +99,6 @@ class Bilby(GWRead):
     def __init__(self, path_to_results_file, **kwargs):
         super(Bilby, self).__init__(path_to_results_file, **kwargs)
         self.load(self._grab_data_from_bilby_file, **kwargs)
-
-    @classmethod
-    def load_file(cls, path, **kwargs):
-        if not os.path.isfile(path):
-            raise Exception("%s does not exist" % (path))
-        return cls(path, **kwargs)
 
     @staticmethod
     def grab_priors(bilby_object, nsamples=5000):

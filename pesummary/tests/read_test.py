@@ -6,6 +6,8 @@ from .base import make_result_file, testing_dir
 import pesummary
 from pesummary.gw.file.read import read as GWRead
 from pesummary.core.file.read import read as Read
+from pesummary.io import read, write
+import glob
 
 
 class BaseRead(object):
@@ -233,7 +235,9 @@ class TestCoreJsonFile(BaseRead):
     def test_class_name(self):
         """Test the class used to load in this file
         """
-        assert isinstance(self.result, pesummary.core.file.formats.default.Default)
+        assert isinstance(
+            self.result, pesummary.core.file.formats.default.SingleAnalysisDefault
+        )
 
     def test_parameters(self):
         """Test the parameter property of the default class
@@ -273,9 +277,11 @@ class TestCoreJsonFile(BaseRead):
     def test_file_format_read(self):
         """Test that when the file_format is specified, that correct class is used
         """
-        from pesummary.core.file.formats.default import Default
+        from pesummary.core.file.formats.default import SingleAnalysisDefault
 
-        super(TestCoreJsonFile, self).test_file_format_read(self.path, "json", Default)
+        super(TestCoreJsonFile, self).test_file_format_read(
+            self.path, "json", SingleAnalysisDefault
+        )
 
     def test_downsample(self):
         """Test that the posterior table is correctly downsampled
@@ -304,7 +310,9 @@ class TestCoreHDF5File(BaseRead):
     def test_class_name(self):
         """Test the class used to load in this file
         """
-        assert isinstance(self.result, pesummary.core.file.formats.default.Default)
+        assert isinstance(
+            self.result, pesummary.core.file.formats.default.SingleAnalysisDefault
+        )
 
     def test_parameters(self):
         """Test the parameter property of the default class
@@ -346,9 +354,9 @@ class TestCoreHDF5File(BaseRead):
     def test_file_format_read(self):
         """Test that when the file_format is specified, that correct class is used
         """
-        from pesummary.core.file.formats.default import Default
+        from pesummary.core.file.formats.default import SingleAnalysisDefault
 
-        super(TestCoreHDF5File, self).test_file_format_read(self.path, "hdf5", Default)
+        super(TestCoreHDF5File, self).test_file_format_read(self.path, "hdf5", SingleAnalysisDefault)
 
     def test_downsample(self):
         """Test that the posterior table is correctly downsampled
@@ -377,7 +385,9 @@ class TestCoreDatFile(BaseRead):
     def test_class_name(self):
         """Test the class used to load in this file
         """
-        assert isinstance(self.result, pesummary.core.file.formats.default.Default)
+        assert isinstance(
+            self.result, pesummary.core.file.formats.default.SingleAnalysisDefault
+        )
 
     def test_parameters(self):
         """Test the parameter property of the default class
@@ -419,9 +429,9 @@ class TestCoreDatFile(BaseRead):
     def test_file_format_read(self):
         """Test that when the file_format is specified, that correct class is used
         """
-        from pesummary.core.file.formats.default import Default
+        from pesummary.core.file.formats.default import SingleAnalysisDefault
 
-        super(TestCoreDatFile, self).test_file_format_read(self.path, "dat", Default)
+        super(TestCoreDatFile, self).test_file_format_read(self.path, "dat", SingleAnalysisDefault)
 
     def test_downsample(self):
         """Test that the posterior table is correctly downsampled
@@ -489,7 +499,7 @@ class BilbyFile(BaseRead):
         for param, prior in self.result.priors["samples"].items():
             assert isinstance(prior, np.ndarray)
         f = read_function(self.path, disable_prior=True)
-        assert not hasattr(f, "priors")
+        assert f.priors is None
         
 
 
@@ -913,7 +923,9 @@ class TestGWDatFile(GWBaseRead):
     def test_class_name(self):
         """Test the class used to load in this file
         """
-        assert isinstance(self.result, pesummary.gw.file.formats.default.Default)
+        assert isinstance(
+            self.result, pesummary.gw.file.formats.default.SingleAnalysisDefault
+        )
 
     def test_parameters(self):
         """Test the parameter property of the default class
@@ -960,9 +972,11 @@ class TestGWDatFile(GWBaseRead):
     def test_file_format_read(self):
         """Test that when the file_format is specified, that correct class is used
         """
-        from pesummary.gw.file.formats.default import Default
+        from pesummary.gw.file.formats.default import SingleAnalysisDefault
 
-        super(TestGWDatFile, self).test_file_format_read(self.path, "dat", Default)
+        super(TestGWDatFile, self).test_file_format_read(
+            self.path, "dat", SingleAnalysisDefault
+        )
 
     def test_downsample(self):
         """Test that the posterior table is correctly downsampled
@@ -991,7 +1005,9 @@ class TestGWHDF5File(GWBaseRead):
     def test_class_name(self):
         """Test the class used to load in this file
         """
-        assert isinstance(self.result, pesummary.gw.file.formats.default.Default)
+        assert isinstance(
+            self.result, pesummary.gw.file.formats.default.SingleAnalysisDefault
+        )
 
     def test_parameters(self):
         """Test the parameter property of the default class
@@ -1038,9 +1054,11 @@ class TestGWHDF5File(GWBaseRead):
     def test_file_format_read(self):
         """Test that when the file_format is specified, that correct class is used
         """
-        from pesummary.gw.file.formats.default import Default
+        from pesummary.gw.file.formats.default import SingleAnalysisDefault
 
-        super(TestGWHDF5File, self).test_file_format_read(self.path, "hdf5", Default)
+        super(TestGWHDF5File, self).test_file_format_read(
+            self.path, "hdf5", SingleAnalysisDefault
+        )
 
     def test_downsample(self):
         """Test that the posterior table is correctly downsampled
@@ -1069,7 +1087,9 @@ class TestGWJsonFile(GWBaseRead):
     def test_class_name(self):
         """Test the class used to load in this file
         """
-        assert isinstance(self.result, pesummary.gw.file.formats.default.Default)
+        assert isinstance(
+            self.result, pesummary.gw.file.formats.default.SingleAnalysisDefault
+        )
 
     def test_parameters(self):
         """Test the parameter property of the default class
@@ -1116,9 +1136,11 @@ class TestGWJsonFile(GWBaseRead):
     def test_file_format_read(self):
         """Test that when the file_format is specified, that correct class is used
         """
-        from pesummary.gw.file.formats.default import Default
+        from pesummary.gw.file.formats.default import SingleAnalysisDefault
 
-        super(TestGWJsonFile, self).test_file_format_read(self.path, "json", Default)
+        super(TestGWJsonFile, self).test_file_format_read(
+            self.path, "json", SingleAnalysisDefault
+        )
 
     def test_downsample(self):
         """Test that the posterior table is correctly downsampled
@@ -1222,7 +1244,7 @@ class TestGWJsonBilbyFile(GWBaseRead):
         f = read_function(self.path, disable_prior_conversion=True)
         assert "final_mass_source_non_evolved" not in f.priors["samples"].keys()
         f = read_function(self.path, disable_prior=True)
-        assert not hasattr(f, "priors")
+        assert f.priors is None
 
 
 class TestGWLALInferenceFile(GWBaseRead):
@@ -1305,3 +1327,301 @@ class TestGWLALInferenceFile(GWBaseRead):
         """Test that the posterior table is correctly downsampled
         """
         super(TestGWLALInferenceFile, self).test_downsample()
+
+
+class TestMultiAnalysis(object):
+    """Class to test that a file which contains multiple analyses can be read
+    in appropiately
+    """
+    def setup(self):
+        """Setup the TestMultiAnalysis class
+        """
+        from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
+        from pesummary.io import write
+
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        self.data = MultiAnalysisSamplesDict(
+            {"label1": {
+                "mass_1": np.random.uniform(20, 100, 10),
+                "mass_2": np.random.uniform(5, 20, 10),
+            }, "label2": {
+                "mass_1": np.random.uniform(20, 100, 10),
+                "mass_2": np.random.uniform(5, 20, 10)
+            }}
+        )
+        write(
+            self.data, file_format="sql", filename="multi_analysis.db",
+            outdir=".outdir", overwrite=True, delete_existing=True
+        )
+        self.result = read(
+            os.path.join(".outdir", "multi_analysis.db"),
+            add_zero_likelihood=False, remove_row_column="ROW"
+        )
+        self.samples_dict = self.result.samples_dict
+
+    def teardown(self):
+        """Remove all files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_multi_analysis_db(self):
+        """Test that an sql database with more than one set of samples can
+        be read in appropiately
+        """
+        assert sorted(self.samples_dict.keys()) == sorted(self.data.keys())
+        for key in self.samples_dict.keys():
+            assert sorted(self.samples_dict[key].keys()) == sorted(
+                self.data[key].keys()
+            )
+            for param in self.samples_dict[key].keys():
+                np.testing.assert_almost_equal(
+                    self.samples_dict[key][param], self.data[key][param]
+                )
+        self.result.generate_all_posterior_samples()
+        self.samples_dict = self.result.samples_dict
+        for key in self.samples_dict.keys():
+            assert "total_mass" in self.samples_dict[key].keys()
+            np.testing.assert_almost_equal(
+                self.data[key]["mass_1"] + self.data[key]["mass_2"],
+                self.samples_dict[key]["total_mass"]
+            )
+
+
+class TestSingleAnalysisChangeFormat(object):
+    """Test that when changing file format through the 'write' method, the
+    samples are conserved
+    """
+    def setup(self):
+        """Setup the TestChangeFormat class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        self.parameters = ["log_likelihood", "mass_1", "mass_2"]
+        self.samples = np.array(
+            [
+                np.random.uniform(20, 100, 1000),
+                np.random.uniform(5, 10, 1000), np.random.uniform(0, 1, 1000)
+            ]
+        ).T
+        write(
+            self.parameters, self.samples, outdir=".outdir", filename="test.dat",
+            overwrite=True
+        )
+        self.result = read(os.path.join(".outdir", "test.dat"))
+
+    def teardown(self):
+        """Remove all files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def save_and_check(
+        self, file_format, bilby=False, pesummary=False, lalinference=False
+    ):
+        """Save the result file and check the contents
+        """
+        if bilby:
+            filename = "test_bilby.json"
+        elif pesummary or lalinference:
+            filename = "test_pesummary.h5"
+        else:
+            filename = "test.{}".format(file_format)
+        self.result.write(
+            file_format=file_format, outdir=".outdir", filename=filename
+        )
+        result = read(os.path.join(".outdir", filename))
+        if pesummary:
+            assert result.parameters[0] == self.parameters
+            np.testing.assert_almost_equal(result.samples[0], self.samples)
+        else:
+            original = result.parameters
+            sorted_params = sorted(result.parameters)
+            idxs = [original.index(i) for i in sorted_params]
+            assert sorted(result.parameters) == self.parameters
+            np.testing.assert_almost_equal(
+                np.array(result.samples)[:, idxs], self.samples
+            )
+
+    def test_to_bilby(self):
+        """Test saving to bilby format
+        """
+        self.save_and_check("bilby", bilby=True)
+
+    def test_to_hdf5(self):
+        """Test saving to hdf5
+        """
+        self.save_and_check("hdf5")
+
+    def test_to_json(self):
+        """Test saving to json
+        """
+        self.save_and_check("json")
+
+    def test_to_sql(self):
+        """Test saving to sql
+        """
+        self.save_and_check("sql")
+
+    def test_to_pesummary(self):
+        self.save_and_check("pesummary", pesummary=True)
+
+    def test_to_lalinference(self):
+        self.save_and_check("lalinference", lalinference=True)
+
+
+class TestMultipleAnalysisChangeFormat(object):
+    """Test that when changing file format through the 'write' method, the
+    samples are conserved
+    """
+    def setup(self):
+        """Setup the TestMultiplAnalysisChangeFormat class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        self.parameters = [
+            ["log_likelihood", "mass_1", "mass_2"],
+            ["chirp_mass", "log_likelihood", "total_mass"]
+        ]
+        self.samples = np.array(
+            [np.array(
+                [
+                    np.random.uniform(20, 100, 1000),
+                    np.random.uniform(5, 10, 1000),
+                    np.random.uniform(0, 1, 1000)
+                ]
+            ).T, np.array(
+                [
+                    np.random.uniform(20, 100, 1000),
+                    np.random.uniform(5, 10, 1000),
+                    np.random.uniform(0, 1, 1000)
+                ]
+            ).T]
+        )
+        write(
+            self.parameters, self.samples, outdir=".outdir", filename="test.db",
+            overwrite=True, file_format="sql"
+        )
+        self.result = read(os.path.join(".outdir", "test.db"))
+
+    def teardown(self):
+        """Remove all files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def save_and_check(
+        self, file_format, bilby=False, pesummary=False, lalinference=False,
+        multiple_files=True
+    ):
+        """Save the result file and check the contents
+        """
+        if bilby:
+            filename = "test_bilby.json"
+        elif pesummary or lalinference:
+            filename = "test_pesummary.h5"
+        else:
+            filename = "test.{}".format(file_format)
+        self.result.write(
+            file_format=file_format, outdir=".outdir", filename=filename
+        )
+        if multiple_files:
+            files = sorted(glob.glob(".outdir/{}_*.{}".format(*filename.split("."))))
+            assert len(files) == 2
+            for num, _file in enumerate(files):
+                result = read(_file)
+                original = result.parameters
+                sorted_params = sorted(result.parameters)
+                idxs = [original.index(i) for i in sorted_params]
+                assert sorted(result.parameters) == self.parameters[num]
+                np.testing.assert_almost_equal(
+                    np.array(result.samples)[:, idxs], self.samples[num]
+                )
+        else:
+            result = read(os.path.join(".outdir", filename))
+            original = result.parameters
+            sorted_params = sorted(result.parameters)
+            idxs = [original.index(i) for i in sorted_params]
+            for ii in range(len(original)):
+                assert result.parameters[ii] == self.parameters[ii]
+            np.testing.assert_almost_equal(
+                np.array(result.samples), self.samples
+            )
+
+    def test_to_bilby(self):
+        """Test saving to bilby
+        """
+        self.save_and_check("bilby", bilby=True)
+
+    def test_to_dat(self):
+        """Test saving to dat
+        """
+        self.save_and_check("dat")
+
+    def test_to_hdf5(self):
+        """Test saving to hdf5
+        """
+        self.save_and_check("hdf5")
+
+    def test_to_json(self):
+        """Test saving to json
+        """
+        self.save_and_check("json")
+
+    def test_to_sql(self):
+        """Test saving to sql
+        """
+        self.save_and_check("sql", multiple_files=False)
+
+    def test_to_pesummary(self):
+        self.save_and_check("pesummary", pesummary=True, multiple_files=False)
+
+    def test_to_lalinference(self):
+        self.save_and_check("lalinference", lalinference=True)
+
+
+def test_add_log_likelihood():
+    """Test that zero log likelihood samples are added when the posterior table
+    does not include likelihood samples
+    """
+    from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
+
+    if not os.path.isdir(".outdir"):
+        os.mkdir(".outdir")
+    parameters = ["a", "b"]
+    samples = np.array([
+        np.random.uniform(10, 5, 1000), np.random.uniform(10, 5, 1000)
+    ]).T
+    write(parameters, samples, filename="test.dat", outdir=".outdir")
+    f = read(".outdir/test.dat")
+    assert sorted(f.parameters) == ["a", "b", "log_likelihood"]
+    np.testing.assert_almost_equal(
+        f.samples_dict["log_likelihood"], np.zeros(1000)
+    )
+    np.testing.assert_almost_equal(f.samples_dict["a"], samples.T[0])
+    np.testing.assert_almost_equal(f.samples_dict["b"], samples.T[1])
+    parameters = [["a", "b"], ["c", "d"]]
+    samples = [
+        np.array([np.random.uniform(1, 5, 1000), np.random.uniform(1, 2, 1000)]).T,
+        np.array([np.random.uniform(1, 5, 1000), np.random.uniform(1, 2, 1000)]).T
+    ]
+    data = MultiAnalysisSamplesDict({
+        "one": {
+            "a": np.random.uniform(1, 5, 1000), "b": np.random.uniform(1, 2, 1000)
+        }, "two": {
+            "c": np.random.uniform(1, 5, 1000), "d": np.random.uniform(1, 2, 1000)
+        }
+    })
+    write(
+        data, file_format="pesummary", filename="multi.h5", outdir=".outdir",
+    )
+    f = read(".outdir/multi.h5")
+    np.testing.assert_almost_equal(
+        f.samples_dict["one"]["log_likelihood"], np.zeros(1000)
+    )
+    np.testing.assert_almost_equal(
+        f.samples_dict["two"]["log_likelihood"], np.zeros(1000)
+    )
+    if os.path.isdir(".outdir"):
+        shutil.rmtree(".outdir")

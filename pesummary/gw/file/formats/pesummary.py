@@ -13,11 +13,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.gw.file.formats.base_read import GWRead
+from pesummary.gw.file.formats.base_read import GWMultiAnalysisRead
 from pesummary.core.file.formats.pesummary import (
     PESummary as CorePESummary, PESummaryDeprecated as CorePESummaryDeprecated
 )
 from pesummary.utils.utils import logger
+from pesummary.utils.dict import load_recursively
 from pesummary.utils.decorators import deprecation
 import numpy as np
 import warnings
@@ -56,7 +57,7 @@ def write_pesummary(*args, **kwargs):
     return core_write(*args, cls=_GWMetaFile, **kwargs)
 
 
-class PESummary(GWRead, CorePESummary):
+class PESummary(GWMultiAnalysisRead, CorePESummary):
     """This class handles the existing posterior_samples.h5 file
 
     Parameters
@@ -126,91 +127,6 @@ class PESummary(GWRead, CorePESummary):
     def load_kwargs(self):
         return dict(grab_data_from_dictionary=self._grab_data_from_dictionary)
 
-    def load(self, function, **kwargs):
-        """Load a results file according to a given function
-
-        Parameters
-        ----------
-        function: func
-            callable function that will load in your results file
-        """
-        data = self.load_from_function(
-            function, self.path_to_results_file, **kwargs)
-        self.data = data
-        self.parameters = self.data["parameters"]
-        self.converted_parameters = []
-        self.samples = self.data["samples"]
-        if "mcmc_samples" in data.keys():
-            self.mcmc_samples = data["mcmc_samples"]
-        if "version" in data.keys() and data["version"] is not None:
-            self.input_version = data["version"]
-        else:
-            self.input_version = "No version information found"
-        if "kwargs" in data.keys():
-            self.extra_kwargs = data["kwargs"]
-        else:
-            self.extra_kwargs = {"sampler": {}, "meta_data": {}}
-            self.extra_kwargs["sampler"]["nsamples"] = len(self.data["samples"])
-        if data["injection"] is not None:
-            self.injection_parameters = data["injection"]
-        if "prior" in data.keys() and data["prior"] != {}:
-            self.priors = data["prior"]
-        if "weights" in self.data.keys():
-            self.weights = self.data["weights"]
-        if "approximant" in self.data.keys():
-            self.approximant = self.data["approximant"]
-        if "labels" in self.data.keys():
-            self.labels = self.data["labels"]
-        if "config" in self.data.keys():
-            self.config = self.data["config"]
-        if "psd" in self.data.keys():
-            from pesummary.gw.file.psd import PSDDict
-
-            try:
-                self.psd = {
-                    label: PSDDict(
-                        {ifo: value for ifo, value in psd_data.items()}
-                    ) for label, psd_data in self.data["psd"].items()
-                }
-            except (KeyError, AttributeError):
-                self.psd = self.data["psd"]
-        if "calibration" in self.data.keys():
-            from pesummary.gw.file.calibration import Calibration
-
-            try:
-                self.calibration = {
-                    label: {
-                        ifo: Calibration(value) for ifo, value in
-                        calibration_data.items()
-                    } for label, calibration_data in
-                    self.data["calibration"].items()
-                }
-            except (KeyError, AttributeError):
-                self.calibration = self.data["calibration"]
-        if "calibration" in self.data["prior"].keys():
-            from pesummary.gw.file.calibration import Calibration
-
-            try:
-                self.priors["calibration"] = {
-                    label: {
-                        ifo: Calibration(value) for ifo, value in
-                        calibration_data.items()
-                    } for label, calibration_data in
-                    self.data["prior"]["calibration"].items()
-                }
-            except (KeyError, AttributeError):
-                pass
-        if "skymap" in self.data.keys():
-            from pesummary.gw.file.skymap import SkyMapDict, SkyMap
-
-            try:
-                self.skymap = SkyMapDict({
-                    label: SkyMap(skymap["data"], skymap["meta_data"])
-                    for label, skymap in self.data["skymap"].items()
-                })
-            except (KeyError, AttributeError):
-                self.skymap = self.data["skymap"]
-
     @staticmethod
     def _grab_data_from_dictionary(dictionary):
         """
@@ -223,7 +139,7 @@ class PESummary(GWRead, CorePESummary):
         psd_dict, cal_dict, skymap_dict = {}, {}, {}
         psd, cal = None, None
         for num, label in enumerate(stored_data["labels"]):
-            data, = GWRead.load_recursively(label, dictionary)
+            data, = load_recursively(label, dictionary)
             if "psds" in data.keys():
                 psd_dict[label] = data["psds"]
             if "calibration_envelope" in data.keys():
@@ -284,42 +200,6 @@ class PESummary(GWRead, CorePESummary):
             self, package="gw", labels=labels, cls_properties=properties, **kwargs
         )
 
-    def generate_all_posterior_samples(self, **conversion_kwargs):
-        if "no_conversion" in conversion_kwargs.keys():
-            no_conversion = conversion_kwargs.pop("no_conversion")
-        else:
-            no_conversion = False
-        if no_conversion:
-            return
-        from pesummary.gw.file.conversions import _Conversion
-
-        converted_params, converted_samples, converted_kwargs = [], [], []
-        _converted_params = []
-        for param, samples, kwargs in zip(
-                self.parameters, self.samples, self.extra_kwargs
-        ):
-            if conversion_kwargs.get("evolve_spins", False):
-                if not conversion_kwargs.get("return_kwargs", False):
-                    conversion_kwargs["return_kwargs"] = True
-            data = _Conversion(
-                param, samples, extra_kwargs=kwargs, return_dict=False,
-                **conversion_kwargs
-            )
-            converted_params.append(data[0])
-            _converted_params.append(data[0].added)
-            converted_samples.append(data[1])
-            if kwargs.get("return_kwargs", False):
-                converted_kwargs.append(data[2])
-        self.parameters = converted_params
-        self.converted_parameters = _converted_params
-        self.samples = converted_samples
-        if converted_kwargs != []:
-            self.extra_kwargs = {
-                label: converted_kwargs[num] for num, label in enumerate(
-                    self.labels
-                )
-            }
-
     def to_bilby(self, labels="all", **kwargs):
         """Convert a PESummary metafile to a bilby results object
         """
@@ -373,9 +253,9 @@ class PESummaryDeprecated(PESummary):
         psd, cal = None, None
         for num, key in enumerate(data["labels"]):
             if "psds" in dictionary.keys():
-                psd, = GWRead.load_recursively("psds", dictionary)
+                psd, = load_recursively("psds", dictionary)
             if "calibration_envelope" in dictionary.keys():
-                cal, = GWRead.load_recursively("calibration_envelope", dictionary)
+                cal, = load_recursively("calibration_envelope", dictionary)
             if "approximant" in dictionary.keys():
                 if key in dictionary["approximant"].keys():
                     approx_list.append(dictionary["approximant"][key])

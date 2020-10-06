@@ -24,6 +24,7 @@ import h5py
 from pathlib import Path
 
 from pesummary.utils.utils import logger, check_file_exists_and_rename
+from pesummary.utils.dict import paths_to_key
 from pesummary.utils.exceptions import InputError
 from pesummary.core.command_line import DelimiterSplitAction
 from pesummary.gw.inputs import _GWInput
@@ -343,7 +344,7 @@ def _modify_kwargs(data, kwargs=None):
     def add_to_meta_data(data, label, string):
         kwarg, value = string.split(":")
         try:
-            _group, = Read.paths_to_key(kwarg, data[label]["meta_data"])
+            _group, = paths_to_key(kwarg, data[label]["meta_data"])
             group = _group[0]
         except ValueError:
             group = "other"
