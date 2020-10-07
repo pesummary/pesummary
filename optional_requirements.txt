@@ -4,7 +4,7 @@ coloredlogs
 coverage
 coverage-badge
 beautifulsoup4
-Sphinx >= 1.2.2
+Sphinx>=1.2.2
 sphinx-argparse
 sphinx_rtd_theme
 sphinxcontrib-programoutput

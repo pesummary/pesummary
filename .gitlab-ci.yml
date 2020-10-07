@@ -23,6 +23,7 @@ before_script:
   - pip install bilby
   - export USER=albert.einstein
 
+
 .core_workflow: &core_workflow
   stage: end-to-end
   needs:
@@ -55,7 +56,7 @@ before_script:
 
 tarball:
   stage: build
-  image: python
+  image: python:3.6
   script:
     - python setup.py sdist --dist-dir .
     - export PESUMMARY_TESTING_DIR=`python -c "import pkg_resources; print(pkg_resources.resource_filename('pesummary', 'tests'))"`
@@ -66,7 +67,7 @@ tarball:
 
 wheel:
   stage: build
-  image: python
+  image: python:3.6
   script:
     - python setup.py bdist_wheel
 
@@ -84,6 +85,22 @@ conda:
     - python setup.py install
     - conda deactivate
   allow_failure: true
+
+
+docker:
+  stage: build
+  image: docker:19.03.10
+  before_script:
+    - apk update
+    - apk add py3-pip
+    - apk add python3
+  script:
+    - python3 containers/write_dockerfile.py
+    - docker build -f containers/Dockerfile-pesummary-python36 -t pesummary-dev/latest .
+    - docker run pesummary-dev/latest summarytest --type imports
+  artifacts:
+    paths:
+      - "containers/Dockerfile-pesummary-python*"
 
 
 executables:
