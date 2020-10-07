@@ -1,0 +1,29 @@
+FROM continuumio/miniconda3
+
+LABEL name="PESummary" \
+maintainer="Charlie Hoy <charlie.hoy@ligo.org>" \
+date="{date}"
+
+RUN conda update -n base -c defaults conda
+
+ENV conda_env python{python_major_version}.{python_minor_version}
+
+RUN conda create -n ${{conda_env}} python={python_major_version}.{python_minor_version}
+RUN echo "source activate ${{conda_env}}" > ~/.bashrc
+ENV PATH /opt/conda/envs/${{conda_env}}/bin:$PATH
+RUN /bin/bash -c "source activate ${{conda_env}}"
+
+# Install backend
+RUN apt-get update --fix-missing \
+&& apt-get install -y libglib2.0-0 libxext6 libsm6 libxrender1 libgl1-mesa-glx \
+dh-autoreconf build-essential libarchive-dev wget curl git libhdf5-serial-dev
+
+# Install conda-forge-installable programs
+RUN conda install -c conda-forge ligo.skymap -y
+
+# Install requirements
+RUN pip install --upgrade pip \
+&& pip install --upgrade setuptools \
+&& pip install {requirements} \
+&& pip install {optional_requirements} \
+&& pip install pesummary=={pesummary_major_version}.{pesummary_minor_version}.{pesummary_build_version}
