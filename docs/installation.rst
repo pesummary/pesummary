@@ -5,7 +5,8 @@ Installation
 Install PESummary
 -----------------
 
-:code:`PESummary` is developed and tested for python 3.5+. This code will work for python 2.7, however this is not suggested. We recommend that this code is installed inside a virtual environment using :code:`virtualenv`. This environment can be installed with python 3.5+ using `pyenv`_.
+:code:`PESummary` is developed and tested for python 3.5+.
+We recommend that this code is installed inside a virtual environment using :code:`virtualenv`. This environment can be installed with python 3.5+ using `pyenv`_.
 
 .. _pyenv: https://github.com/pyenv/pyenv
 
