@@ -73,7 +73,7 @@ class _Input(object):
     @staticmethod
     def grab_data_from_metafile(
         existing_file, webdir, compare=None, read_function=Read,
-        nsamples=None, **kwargs
+        nsamples=None, disable_injection=False, **kwargs
     ):
         """Grab data from an existing PESummary metafile
 
@@ -135,7 +135,7 @@ class _Input(object):
             labels = f.labels
             indicies = np.arange(len(labels))
             _parameters = lambda label: DataFrame[f.labels[0]].parameters
-        if f.injection_parameters != []:
+        if not disable_injection and f.injection_parameters != []:
             inj_values = f.injection_dict
             for label in labels:
                 for param in DataFrame[label].keys():
@@ -143,7 +143,9 @@ class _Input(object):
                         f.injection_dict[label][param] = float("nan")
         else:
             inj_values = {
-                i: [float("nan")] * len(DataFrame[i]) for i in labels
+                i: {
+                    param: float("nan") for param in DataFrame[i].parameters
+                } for i in labels
             }
         for i in inj_values.keys():
             for param in inj_values[i].keys():
@@ -1083,7 +1085,8 @@ class _Input(object):
         if self.is_pesummary_metafile(file):
             existing_data = self.grab_data_from_metafile(
                 file, self.webdir, compare=self.compare_results,
-                nsamples=self.nsamples, **grab_data_kwargs
+                nsamples=self.nsamples,
+                disable_injection=self.disable_injection, **grab_data_kwargs
             )
             return existing_data
         else:
@@ -1575,6 +1578,7 @@ class Input(_Input):
             self.meta_file = self.is_pesummary_metafile(self.result_files[0])
         self.existing = self.opts.existing
         self.compare_results = self.opts.compare_results
+        self.disable_injection = self.opts.disable_injection
         self.add_to_existing = False
         if self.existing is not None:
             self.add_to_existing = True

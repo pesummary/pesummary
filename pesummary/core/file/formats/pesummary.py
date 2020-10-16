@@ -329,6 +329,10 @@ class PESummary(MultiAnalysisRead):
                     parameter: parse_injection_value(value)
                     for parameter, value in zip(parameters, inj)
                 })
+            else:
+                inj_list.append({
+                    parameter: np.nan for parameter in parameters
+                })
             sample_list.append(samples)
             config = None
             if "config_file" in data.keys():

@@ -56,14 +56,14 @@ class _GWInput(_Input):
         psd = {i: {} for i in labels}
         if f.psd is not None and f.psd != {}:
             for i in labels:
-                if f.psd[i] != {}:
+                if i in f.psd.keys() and f.psd[i] != {}:
                     psd[i] = {
                         ifo: PSD(f.psd[i][ifo]) for ifo in f.psd[i].keys()
                     }
         calibration = {i: {} for i in labels}
         if f.calibration is not None and f.calibration != {}:
             for i in labels:
-                if f.calibration[i] != {}:
+                if i in f.calibration.keys() and f.calibration[i] != {}:
                     calibration[i] = {
                         ifo: Calibration(f.calibration[i][ifo]) for ifo in
                         f.calibration[i].keys()
