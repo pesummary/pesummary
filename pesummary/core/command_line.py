@@ -516,6 +516,12 @@ def _pesummary_metafile_command_line_options(parser):
             "files stored in hdf5 format. Default, no compression applied"
         )
     )
+    pesummary_group.add_argument(
+        "--disable_injection", action="store_true", default=False,
+        help=(
+            "whether or not to extract stored injection data from the meta file"
+        )
+    )
     return pesummary_group
 
 
