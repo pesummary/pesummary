@@ -19,6 +19,7 @@ import socket
 from glob import glob
 import pkg_resources
 
+import math
 import numpy as np
 import pesummary
 from pesummary.core.file.read import read as Read
@@ -1797,3 +1798,19 @@ class PostProcessing(object):
         parameters = [list(self.samples[key]) for key in self.samples.keys()]
         params = list(set.intersection(*[set(l) for l in parameters]))
         self._same_parameters = params
+
+    def grab_key_data_from_result_files(self):
+        """Grab the mean, median, maxL and standard deviation for all
+        parameters for all each result file
+        """
+        key_data = {
+            key: samples.key_data for key, samples in self.samples.items()
+        }
+        for key, val in self.samples.items():
+            for j in val.keys():
+                _inj = self.injection_data[key][j]
+                key_data[key][j]["injected"] = (
+                    _inj[0] if not math.isnan(_inj) and isinstance(_inj, list)
+                    else _inj
+                )
+        return key_data

@@ -64,6 +64,7 @@ class _CoreWebpageGeneration(PostProcessing):
         from pesummary.core.webpage.main import _WebpageGeneration
 
         super(_CoreWebpageGeneration, self).__init__(inputs, colors)
+        key_data = self.grab_key_data_from_result_files()
         self.webpage_object = _WebpageGeneration(
             webdir=self.webdir, samples=self.samples, labels=self.labels,
             publication=self.publication, user=self.user, config=self.config,
@@ -83,7 +84,7 @@ class _CoreWebpageGeneration(PostProcessing):
             disable_interactive=self.disable_interactive,
             package_information=self.package_information,
             mcmc_samples=self.mcmc_samples,
-            external_hdf5_links=self.external_hdf5_links
+            external_hdf5_links=self.external_hdf5_links, key_data=key_data
         )
 
     def generate_webpages(self):

@@ -126,7 +126,6 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self.pastro_probs = pastro_probs
         self.gracedb = gracedb
         self.approximant = approximant
-        self.key_data = key_data
         self.file_kwargs = file_kwargs
         self.publication = publication
         self.publication_kwargs = publication_kwargs
@@ -153,8 +152,16 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             disable_comparison=disable_comparison,
             disable_interactive=disable_interactive,
             package_information=package_information, mcmc_samples=mcmc_samples,
-            external_hdf5_links=external_hdf5_links
+            external_hdf5_links=external_hdf5_links, key_data=key_data
         )
+        if self.file_kwargs is None:
+            self.file_kwargs = {
+                label: {"sampler": {}, "meta_data": {}} for label in self.labels
+            }
+        if self.approximant is None:
+            self.approximant = {label: None for label in self.labels}
+        if self.result_files is None:
+            self.result_files = [None] * len(self.labels)
         self.psd_path = {"other": os.path.join("..", "psds")}
         self.calibration_path = {"other": os.path.join("..", "calibration")}
 
@@ -367,24 +374,19 @@ class _WebpageGeneration(_CoreWebpageGeneration):
 
             key_data = self.key_data
             contents = []
-            headings = [
-                "posterior", "maxL", "maxP", "mean", "median",
-                "5th percentile", "95th percentile"
-            ]
-            _injection = not all(
-                math.isnan(_data["injected"]) for _data in self.key_data[i].values()
-            )
+            headings = [" "] + self.key_data_headings.copy()
+            _injection = False
+            if "injected" in headings:
+                _injection = not all(
+                    math.isnan(_data["injected"]) for _data in
+                    self.key_data[i].values()
+                )
             if _injection:
                 headings.append("injected")
             for j in self.samples[i].keys():
                 row = []
                 row.append(j)
-                row.append(safe_round(self.key_data[i][j]["maxL"], 3))
-                row.append(safe_round(self.key_data[i][j]["maxP"], 3))
-                row.append(safe_round(self.key_data[i][j]["mean"], 3))
-                row.append(safe_round(self.key_data[i][j]["median"], 3))
-                row.append(safe_round(self.key_data[i][j]["5th percentile"], 3))
-                row.append(safe_round(self.key_data[i][j]["95th percentile"], 3))
+                row += self.key_data_table[i][j]
                 if _injection:
                     row.append(safe_round(self.key_data[i][j]["injected"], 3))
                 contents.append(row)
@@ -716,7 +718,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                             )
                         ]
                     )
-        if "calibration" in self.priors.keys():
+        if self.priors is not None and "calibration" in self.priors.keys():
             if label in self.priors["calibration"].keys():
                 for ifo in self.priors["calibration"][label].keys():
                     table.append(

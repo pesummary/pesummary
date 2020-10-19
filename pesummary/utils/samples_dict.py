@@ -53,6 +53,8 @@ class SamplesDict(dict):
     mean: pesummary.utils.samples_dict.SamplesDict
         SamplesDict object containing the mean of each marginalized posterior
         distribution
+    key_data: dict
+        dictionary containing the key data associated with each array
     number_of_samples: int
         Number of samples stored in the SamplesDict object
     latex_labels: dict
@@ -105,8 +107,11 @@ class SamplesDict(dict):
             self.samples = np.array(
                 [args[0][param] for param in self.parameters]
             )
-            for key, item in args[0].items():
-                self[key] = Array(item)
+            try:
+                self.make_dictionary()
+            except (TypeError, IndexError):
+                for key, item in args[0].items():
+                    self[key] = Array(item)
         else:
             self.parameters, self.samples = args
             lengths = [len(i) for i in self.samples]
@@ -121,6 +126,7 @@ class SamplesDict(dict):
                     dataset[:nsamples] for dataset in self.samples
                 ]
             self.make_dictionary()
+
         self.latex_labels = {
             param: latex_labels[param] if param in latex_labels.keys() else
             param for param in self.parameters
@@ -200,6 +206,10 @@ class SamplesDict(dict):
         from pesummary.io import read
 
         return read(filename, **kwargs).samples_dict
+
+    @property
+    def key_data(self):
+        return {param: value.key_data for param, value in self.items()}
 
     @property
     def maxL(self):
@@ -1027,6 +1037,13 @@ class MCMCSamplesDict(_MultiDimensionalSamplesDict):
             }, logger_warn="debug")
         return data
 
+    @property
+    def key_data(self):
+        data = {}
+        for param, value in self.combine.items():
+            data[param] = value.key_data
+        return data
+
     def discard_samples(self, number):
         """Remove the first n samples
 
@@ -1511,9 +1528,12 @@ class Array(np.ndarray):
         median of the input array
     mean: float
         mean of the input array
+    key_data: dict
+        dictionary containing the key data associated with the array
     """
     __slots__ = [
-        "standard_deviation", "minimum", "maximum", "maxL", "maxP", "weights"
+        "standard_deviation", "minimum", "maximum", "maxL", "maxP", "weights",
+        "key_data"
     ]
 
     def __new__(cls, input_array, likelihood=None, prior=None, weights=None):
@@ -1524,6 +1544,7 @@ class Array(np.ndarray):
         obj.maxL = cls._maxL(obj, likelihood)
         obj.maxP = cls._maxP(obj, log_likelihood=likelihood, log_prior=prior)
         obj.weights = weights
+        obj.key_data = cls._key_data(obj)
         return obj
 
     def __reduce__(self):
@@ -1534,13 +1555,14 @@ class Array(np.ndarray):
         return (pickled_state[0], pickled_state[1], new_state)
 
     def __setstate__(self, state):
-        self.standard_deviation = state[-6]
-        self.minimum = state[-5]
-        self.maximum = state[-4]
-        self.maxL = state[-3]
-        self.maxP = state[-2]
-        self.weights = state[-1]
-        super(Array, self).__setstate__(state[0:-6])
+        self.standard_deviation = state[-7]
+        self.minimum = state[-6]
+        self.maximum = state[-5]
+        self.maxL = state[-4]
+        self.maxP = state[-3]
+        self.weights = state[-2]
+        self.key_data = state[-1]
+        super(Array, self).__setstate__(state[0:-7])
 
     def average(self, type="mean"):
         """Return the average of the array
@@ -1626,6 +1648,60 @@ class Array(np.ndarray):
         ind = np.argmax(posterior)
         return array[ind]
 
+    def to_dtype(self, _dtype):
+        return _dtype(self)
+
+    @staticmethod
+    def _key_data(
+        array, header=[
+            "mean", "median", "std", "maxL", "maxP", "5th percentile",
+            "95th percentile"
+        ]
+    ):
+        """Return a dictionary containing the key data associated with the
+        array
+
+        Parameters
+        ----------
+        array: np.ndarray
+            input array
+        header: list
+            list of properties you wish to return
+        """
+        def safe_dtype_change(array, _dtype):
+            if array is not None:
+                if isinstance(array, Array):
+                    return array.to_dtype(_dtype)
+                else:
+                    return _dtype(array)
+            return array
+
+        mydict = {}
+        for key in header:
+            if not hasattr(np.ndarray, key):
+                try:
+                    _value = safe_dtype_change(getattr(array, key), float)
+                except AttributeError:
+                    if key == "5th percentile":
+                        _value = safe_dtype_change(
+                            array.confidence_interval(percentile=5), float
+                        )
+                    elif key == "95th percentile":
+                        _value = safe_dtype_change(
+                            array.confidence_interval(percentile=95), float
+                        )
+                    else:
+                        _value = safe_dtype_change(
+                            array.average(type=key), float
+                        )
+            else:
+                if key == "std":
+                    _value = safe_dtype_change(array.standard_deviation, float)
+                else:
+                    _value = safe_dtype_change(array.average(type=key), float)
+            mydict[key] = _value
+        return mydict
+
     @staticmethod
     def percentile(array, weights=None, percentile=None):
         """Compute the Nth percentile of a set of weighted samples
@@ -1688,3 +1764,4 @@ class Array(np.ndarray):
         self.maxL = getattr(obj, 'maxL', None)
         self.maxP = getattr(obj, 'maxP', None)
         self.weights = getattr(obj, 'weights', None)
+        self.key_data = getattr(obj, 'key_data', None)

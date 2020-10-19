@@ -26,7 +26,9 @@ import numpy as np
 
 import pesummary
 from pesummary import conf
-from pesummary.utils.utils import logger, LOG_FILE, jensen_shannon_divergence
+from pesummary.utils.utils import (
+    logger, LOG_FILE, jensen_shannon_divergence, safe_round, make_dir
+)
 from pesummary.core.webpage import webpage
 
 
@@ -119,9 +121,12 @@ class _WebpageGeneration(object):
         existing_weights=None, add_to_existing=False, notes=None,
         disable_comparison=False, disable_interactive=False,
         package_information={"packages": [], "manager": "pypi"},
-        mcmc_samples=False, external_hdf5_links=False
+        mcmc_samples=False, external_hdf5_links=False, key_data=None
     ):
         self.webdir = webdir
+        make_dir(self.webdir)
+        make_dir(os.path.join(self.webdir, "html"))
+        make_dir(os.path.join(self.webdir, "css"))
         self.samples = samples
         self.labels = labels
         self.publication = publication
@@ -130,8 +135,14 @@ class _WebpageGeneration(object):
         self.same_parameters = same_parameters
         self.base_url = base_url
         self.file_versions = file_versions
+        if self.file_versions is None:
+            self.file_versions = {
+                label: "No version information found" for label in self.labels
+            }
         self.hdf5 = hdf5
         self.colors = colors
+        if self.colors is None:
+            self.colors = list(conf.colorcycle)
         self.custom_plotting = custom_plotting
         self.existing_labels = existing_labels
         self.existing_config = existing_config
@@ -140,6 +151,24 @@ class _WebpageGeneration(object):
         self.existing_metafile = existing_metafile
         self.existing_file_kwargs = existing_file_kwargs
         self.add_to_existing = add_to_existing
+        self.key_data = key_data
+        if key_data is None:
+            self.key_data = {
+                label: _samples.key_data for label, _samples in
+                self.samples.items()
+            }
+        _label = self.labels[0]
+        self.key_data_headings = sorted(
+            list(self.key_data[_label][list(self.samples[_label].keys())[0]])
+        )
+        self.key_data_table = {
+            label: {
+                param: [
+                    safe_round(self.key_data[label][param][key], 3) for key in
+                    self.key_data_headings
+                ] for param in self.samples[label].keys()
+            } for label in self.labels
+        }
         self.notes = notes
         self.make_interactive = not disable_interactive
         self.package_information = package_information
@@ -403,7 +432,10 @@ class _WebpageGeneration(object):
             self.make_notes_page()
         self.make_downloads_page()
         self.make_about_page()
-        self.generate_specific_javascript()
+        try:
+            self.generate_specific_javascript()
+        except Exception:
+            pass
 
     def create_blank_html_pages(self, pages, stylesheets=[]):
         """Create blank html pages
@@ -742,6 +774,7 @@ class _WebpageGeneration(object):
             images = [y for x in image_contents for y in x]
             html_file.make_modal_carousel(images=images, unique_id=unique_id)
         path = self.image_path["other"]
+
         if self.comparison_stats is not None:
             for _num, _key in enumerate(["KS_test", "JS_test"]):
                 if _key == "KS_test":
@@ -795,6 +828,29 @@ class _WebpageGeneration(object):
             html_file.make_table_of_images(
                 contents=contents, rows=1, columns=2, code="changeimage"
             )
+            html_file.make_banner(
+                approximant="Summary Table", key="summary_table",
+                _style="font-size: 26px;"
+            )
+            _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+            _class = "row justify-content-center"
+            html_file.make_container(style=_style)
+            html_file.make_div(4, _class=_class, _style=None)
+            headings = [" "] + self.key_data_headings.copy()
+            contents = []
+            for label in self.labels:
+                row = [label]
+                row += self.key_data_table[label][i]
+                contents.append(row)
+            html_file.make_table(
+                headings=headings, contents=contents, heading_span=1,
+                accordian=False, format="table-hover",
+                sticky_header=True
+            )
+            html_file.end_div(4)
+            html_file.end_container()
+            html_file.export("comparison_summary_{}.csv".format(i))
+
             if self.comparison_stats is not None:
                 for _num, _key in enumerate(["KS_test", "JS_test"]):
                     if _key == "KS_test":
@@ -1005,21 +1061,22 @@ class _WebpageGeneration(object):
         html_file.end_container()
         packages = self.package_information["packages"]
         style = "margin-top:{}; margin-bottom:{};"
-        html_file.make_table(
-            headings=[x.title().replace('_', ' ') for x in packages.dtype.names],
-            contents=[[pp.decode("utf-8") for pp in pkg] for pkg in packages],
-            accordian=False, style=style.format("1em", "1em")
-        )
-        if self.package_information["manager"] == "conda":
-            html_file.export(
-                "environment.yml", margin_top="1em", csv=False,
-                conda=True
+        if len(packages):
+            html_file.make_table(
+                headings=[x.title().replace('_', ' ') for x in packages.dtype.names],
+                contents=[[pp.decode("utf-8") for pp in pkg] for pkg in packages],
+                accordian=False, style=style.format("1em", "1em")
             )
-        else:
-            html_file.export(
-                "requirements.txt", margin_top="1em", csv=False,
-                requirements=True
-            )
+            if self.package_information["manager"] == "conda":
+                html_file.export(
+                    "environment.yml", margin_top="1em", csv=False,
+                    conda=True
+                )
+            else:
+                html_file.export(
+                    "requirements.txt", margin_top="1em", csv=False,
+                    requirements=True
+                )
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
