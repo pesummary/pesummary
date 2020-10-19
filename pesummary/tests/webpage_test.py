@@ -20,6 +20,7 @@ from glob import glob
 import numpy as np
 
 from pesummary.core.webpage import webpage
+from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
 from .base import data_dir
 
 from bs4 import BeautifulSoup
@@ -66,7 +67,7 @@ class TestPage(object):
             os.mkdir(webdir)
         except:
             shutil.rmtree(webdir)
-            os.mkdir(directory)
+            os.mkdir(webdir)
         os.mkdir("./.outdir/css")
         f = open("./.outdir/css/command_line.css", "w")
         f.close()
@@ -214,17 +215,18 @@ class TestWebpage(object):
         from pesummary.gw.webpage.main import _WebpageGeneration
 
         self.labels = ["one", "two"]
-        self.samples = {
+        self.samples = MultiAnalysisSamplesDict({
             label: {
                 param: np.random.uniform(0.2, 1.0, 1000) for param in
                 ["chirp_mass", "mass_ratio"]
             } for label in self.labels
-        }
+        })
         self.webpage = _WebpageGeneration(
             webdir=".outdir", labels=self.labels, samples=self.samples,
             pepredicates_probs={label: None for label in self.labels},
             same_parameters=["chirp_mass", "mass_ratio"]
         )
+        self.webpage.generate_webpages()
 
     def test_comparison_stats(self):
         """
@@ -251,3 +253,61 @@ class TestWebpage(object):
                 Bounded_1d_kde(samples[1], xlow=xlow, xhigh=xhigh)(x)
             )**2
             np.testing.assert_almost_equal(js, _js, 5)
+
+    def test_displayed_label_summary_table(self):
+        """Test that the summary table displayed on the webpages show the
+        correct information
+        """
+        for label in self.labels:
+            with open("./.outdir/html/{}_{}.html".format(label, label)) as fp:
+                soup = BeautifulSoup(fp, features="html.parser")
+                table = soup.find(lambda tag: tag.name=='table')
+                rows = table.findAll(lambda tag: tag.name=='tr')
+            _tags = ["th"] + ["td"] * (len(rows) - 1)
+            data = [
+                [
+                    hh.string for hh in _row.findAll(
+                        lambda tag: tag.name==_tags[num]
+                    )
+                ] for num, _row in enumerate(rows)
+            ]
+            _samples = self.samples[label]
+            _key_data = _samples.key_data
+            for row in data[1:]:
+                for num, header in enumerate(data[0][1:]):
+                    try:
+                        np.testing.assert_almost_equal(
+                            _key_data[row[0]][header], float(row[num + 1]), 3
+                        )
+                    except ValueError:
+                        assert _key_data[row[0]][header] is None
+                        assert row[num + 1] == 'None'
+
+    def test_displayed_comparison_parameter_summary_table(self):
+        """
+        """
+        with open("./.outdir/html/Comparison_chirp_mass.html") as fp:
+            soup = BeautifulSoup(fp, features="html.parser")
+            table = soup.find(lambda tag: tag.name=='table')
+            rows = table.findAll(lambda tag: tag.name=='tr')
+        _tags = ["th"] + ["td"] * (len(rows) - 1)
+        data = [
+            [
+                hh.string for hh in _row.findAll(
+                    lambda tag: tag.name==_tags[num]
+                )
+            ] for num, _row in enumerate(rows)
+        ]
+        _key_data = {
+            label: self.samples[label].key_data["chirp_mass"] for label in
+            self.labels
+        }
+        for row in data[1:]:
+            for num, header in enumerate(data[0][1:]):
+                try:
+                    np.testing.assert_almost_equal(
+                        _key_data[row[0]][header], float(row[num + 1]), 3
+                    )
+                except ValueError:
+                    assert _key_data[row[0]][header] is None
+                    assert row[num + 1] == 'None'

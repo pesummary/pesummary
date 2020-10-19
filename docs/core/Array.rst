@@ -33,6 +33,8 @@ details see the doc string,
     Array(3.5)
     >>> array.average(type="median")
     Array(3.5)
+    >>> array.key_data
+    {'mean': 3.5, 'median': 3.5, 'std': 1.707825127659933, 'maxL': None, 'maxP': None, '5th percentile': 1.25, '95th percentile': 5.75}
 
 Using the Array functions
 -------------------------

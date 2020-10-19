@@ -626,6 +626,20 @@ class TestMCMCSamplesDict(object):
             ), combined["a"]
         )
 
+    def test_key_data(self):
+        """Test that the key data is correct
+        """
+        dataframe = MCMCSamplesDict(self.parameters, self.chains)
+        key_data = dataframe.key_data
+        combined = dataframe.combine
+        for param, in key_data.keys():
+            np.testing.assert_almost_equal(
+                key_data[param]["mean"], np.mean(combined[param])
+            )
+            np.testing.assert_almost_equal(
+                key_data[param]["median"], np.median(combined[param])
+            )
+
     def test_burnin_removal(self):
         """Test that the different methods for removing the samples as burnin
         as expected
@@ -710,6 +724,22 @@ class TestArray(object):
         numpy = np.percentile(np.repeat(x, weights), 90)
         pesummary = array.confidence_interval(percentile=90)
         np.testing.assert_almost_equal(numpy, pesummary, 6)
+
+    def test_key_data(self):
+        samples = np.random.normal(100, 20, 10000)
+        array = Array(samples)
+        key_data = array.key_data
+        np.testing.assert_almost_equal(key_data["mean"], np.mean(samples))
+        np.testing.assert_almost_equal(key_data["median"], np.median(samples))
+        np.testing.assert_almost_equal(key_data["std"], np.std(samples))
+        np.testing.assert_almost_equal(
+            key_data["5th percentile"], np.percentile(samples, 5)
+        )
+        np.testing.assert_almost_equal(
+            key_data["95th percentile"], np.percentile(samples, 95)
+        )
+        assert key_data["maxL"] is None
+        assert key_data["maxP"] is None
 
 
 class TestTQDM(object):
