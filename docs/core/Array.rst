@@ -13,7 +13,7 @@ The `Array` class is initalized with the following:
 
 .. code-block:: python
 
-    >>> from pesummary.utils.utils import Array
+    >>> from pesummary.utils.array import Array
     >>> samples = [1,2,3,4,5,6]
     >>> array = Array(samples)
 

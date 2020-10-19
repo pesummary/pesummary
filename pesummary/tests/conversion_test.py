@@ -517,7 +517,7 @@ class TestConversions(object):
         np.testing.assert_almost_equal(network, 21.06984787727566)
 
     def test_full_conversion(self):
-        from pesummary.utils.samples_dict import Array
+        from pesummary.utils.array import Array
         from pesummary.gw.file.conversions import _Conversion
         from bilby.gw.conversion import convert_to_lal_binary_black_hole_parameters
         from pandas import DataFrame

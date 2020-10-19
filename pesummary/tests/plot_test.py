@@ -20,7 +20,7 @@ import argparse
 
 from pesummary.core.plots import plot
 from pesummary.gw.plots import plot as gwplot
-from pesummary.utils.samples_dict import Array
+from pesummary.utils.array import Array
 from subprocess import CalledProcessError
 
 import numpy as np
