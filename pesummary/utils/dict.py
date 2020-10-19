@@ -49,7 +49,7 @@ def convert_list_to_item(dictionary):
     dictionary: dict
         nested dictionary with nested lists
     """
-    from pesummary.utils.samples_dict import Array
+    from pesummary.utils.array import Array
 
     for key, value in dictionary.items():
         if isinstance(value, dict):

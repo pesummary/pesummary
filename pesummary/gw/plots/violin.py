@@ -649,7 +649,7 @@ class ViolinPlotter(_ViolinPlotter):
                 if weights is None:
                     lower, upper = np.percentile(data, [100 - percent, percent])
                 else:
-                    from pesummary.utils.samples_dict import Array
+                    from pesummary.utils.array import Array
 
                     _data = Array(data, weights=weights)
                     lower, upper = _data.confidence_interval(
@@ -685,7 +685,7 @@ class ViolinPlotter(_ViolinPlotter):
                 if weights is None:
                     lower, upper = np.percentile(data, [100 - percent, percent])
                 else:
-                    from pesummary.utils.samples_dict import Array
+                    from pesummary.utils.array import Array
 
                     _data = Array(data, weights=weights)
                     lower, upper = _data.confidence_interval(

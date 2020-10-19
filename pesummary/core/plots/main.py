@@ -355,7 +355,7 @@ class _PlotGeneration(object):
         label: str
             the label corresponding to the results file
         samples: dict
-            dictionary containing PESummary.utils.utils.Array objects that
+            dictionary containing PESummary.utils.array.Array objects that
             contain samples for each parameter
         latex_labels: str
             latex labels for each parameter in samples
@@ -497,7 +497,7 @@ class _PlotGeneration(object):
             the name of the parameter that you wish to make a oned comparison
             histogram for
         samples: dict
-            dictionary of pesummary.utils.utils.Array objects containing the
+            dictionary of pesummary.utils.array.Array objects containing the
             samples that correspond to parameter for each result file. The key
             should be the corresponding label
         latex_label: str
@@ -538,7 +538,7 @@ class _PlotGeneration(object):
             the label corresponding to the results file
         parameter: str
             the name of the parameter that you wish to plot
-        samples: PESummary.utils.utils.Array
+        samples: PESummary.utils.array.Array
             array containing the samples corresponding to parameter
         latex_label: str
             the latex label corresponding to parameter
@@ -546,9 +546,9 @@ class _PlotGeneration(object):
             the injected value
         kde: Bool, optional
             if True, kde plots will be generated rather than 1d histograms
-        prior: PESummary.utils.utils.Array, optional
+        prior: PESummary.utils.array.Array, optional
             the prior samples for param
-        weights: PESummary.utils.utils.Array, optional
+        weights: PESummary.utils.utilsrray, optional
             the weights for each samples. If None, assumed to be 1
         """
         import math
@@ -586,7 +586,7 @@ class _PlotGeneration(object):
         parameter: str
             the name of the parameter that you wish to plot
         samples: dict
-            dictionary of PESummary.utils.utils.Array objects containing the
+            dictionary of PESummary.utils.array.Array objects containing the
             samples corresponding to parameter for multiple mcmc chains
         latex_label: str
             the latex label corresponding to parameter
@@ -594,13 +594,13 @@ class _PlotGeneration(object):
             the injected value
         kde: Bool, optional
             if True, kde plots will be generated rather than 1d histograms
-        prior: PESummary.utils.utils.Array, optional
+        prior: PESummary.utils.array.Array, optional
             the prior samples for param
-        weights: PESummary.utils.utils.Array, optional
+        weights: PESummary.utils.array.Array, optional
             the weights for each samples. If None, assumed to be 1
         """
         import math
-        from pesummary.utils.samples_dict import Array
+        from pesummary.utils.array import Array
 
         module = importlib.import_module(
             "pesummary.{}.plots.plot".format(package)
@@ -666,7 +666,7 @@ class _PlotGeneration(object):
             the label corresponding to the results file
         parameter: str
             the name of the parameter that you wish to plot
-        samples: PESummary.utils.utils.Array
+        samples: PESummary.utils.array.Array
             array containing the samples corresponding to parameter
         latex_label: str
             the latex label corresponding to parameter
@@ -697,7 +697,7 @@ class _PlotGeneration(object):
         parameter: str
             the name of the parameter that you wish to plot
         samples: dict
-            dictionary containing pesummary.utils.utils.Array objects containing
+            dictionary containing pesummary.utils.array.Array objects containing
             the samples corresponding to parameter for each chain
         latex_label: str
             the latex label corresponding to parameter
@@ -748,7 +748,7 @@ class _PlotGeneration(object):
             the label corresponding to the results file
         parameter: str
             the name of the parameter that you wish to plot
-        samples: PESummary.utils.utils.Array
+        samples: PESummary.utils.array.Array
             array containing the samples corresponding to parameter
         """
         fig = core._autocorrelation_plot(parameter, samples)
@@ -774,7 +774,7 @@ class _PlotGeneration(object):
         parameter: str
             the name of the parameter that you wish to plot
         samples: dict
-            dictioanry of PESummary.utils.utils.Array objects containing the
+            dictioanry of PESummary.utils.array.Array objects containing the
             samples corresponding to parameter for each mcmc chain
         """
         same_samples = [val for key, val in samples.items()]
@@ -823,7 +823,7 @@ class _PlotGeneration(object):
             the label corresponding to the results file
         parameter: str
             the name of the parameter that you wish to plot
-        samples: PESummary.utils.utils.Array
+        samples: PESummary.utils.array.Array
             array containing the samples corresponding to parameter
         latex_label: str
             the latex label corresponding to parameter
@@ -849,7 +849,7 @@ class _PlotGeneration(object):
         parameter: str
             the name of the parameter that you wish to plot
         samples: dict
-            dictionary of PESummary.utils.utils.Array objects containing the
+            dictionary of PESummary.utils.array.Array objects containing the
             samples corresponding to parameter for each mcmc chain
         latex_label: str
             the latex label corresponding to parameter
@@ -917,7 +917,7 @@ class _PlotGeneration(object):
         label: str
             the label corresponding to the results file
         samples: dict
-            dictionary containing PESummary.utils.utils.Array objects that
+            dictionary containing PESummary.utils.array.Array objects that
             contain samples for each parameter
         latex_labels: str
             latex labels for each parameter in samples
@@ -968,7 +968,7 @@ class _PlotGeneration(object):
             the name of the parameter that you wish to make a oned comparison
             histogram for
         samples: dict
-            dictionary of pesummary.utils.utils.Array objects containing the
+            dictionary of pesummary.utils.array.Array objects containing the
             samples that correspond to parameter for each result file. The key
             should be the corresponding label
         latex_label: str
@@ -1026,7 +1026,7 @@ class _PlotGeneration(object):
             the name of the parameter that you wish to make a oned comparison
             histogram for
         samples: dict
-            dictionary of pesummary.utils.utils.Array objects containing the
+            dictionary of pesummary.utils.array.Array objects containing the
             samples that correspond to parameter for each result file. The key
             should be the corresponding label
         latex_label: str

@@ -23,7 +23,8 @@ import numpy as np
 from pesummary.gw.file import meta_file
 from pesummary.gw.file.meta_file import _GWMetaFile
 from pesummary.gw.inputs import GWInput
-from pesummary.utils.samples_dict import SamplesDict, Array
+from pesummary.utils.samples_dict import SamplesDict
+from pesummary.utils.array import Array
 from .base import data_dir
 
 

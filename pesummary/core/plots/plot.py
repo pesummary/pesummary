@@ -355,7 +355,7 @@ def _1d_histogram_plot(
     grid: Bool, optional
         if True, plot a grid
     """
-    from pesummary.utils.samples_dict import Array
+    from pesummary.utils.array import Array
 
     logger.debug("Generating the 1d histogram plot for %s" % (param))
     samples = Array(samples)
