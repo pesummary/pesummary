@@ -96,7 +96,7 @@ docker:
     - apk add python3
   script:
     - python3 containers/write_dockerfile.py
-    - docker build -f containers/Dockerfile-pesummary-python36 -t pesummary-dev/latest .
+    - docker build -f containers/Dockerfile-pesummary-python36 -t pesummary-dev/latest . --build-arg installation=./
     - docker run pesummary-dev/latest summarytest --type imports
   artifacts:
     paths:

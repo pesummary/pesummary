@@ -376,7 +376,7 @@ class TestPublication(object):
 
     def test_violin(self):
         from pesummary.gw.plots.publication import violin_plots
-        from pesummary.gw.plots.violin import split_dataframe
+        from pesummary.core.plots.violin import split_dataframe
 
         parameter = "a"
         samples = [
