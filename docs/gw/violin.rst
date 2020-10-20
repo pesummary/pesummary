@@ -57,7 +57,7 @@ is achieved. We choose to color all the left hand distributions according to the
 
 .. code-block:: python
 
-    >>> from pesummary.gw.plots.violin import split_dataframe
+    >>> from pesummary.core.plots.violin import split_dataframe
     >>> left = [
     ...     np.random.uniform(0., 3000, 1000),
     ...     np.random.uniform(0., 3000, 1000)

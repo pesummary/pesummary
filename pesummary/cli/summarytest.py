@@ -242,11 +242,13 @@ def examples(*args, repository=os.path.join(".", "pesummary"), **kwargs):
     """
     examples_dir = os.path.join(repository, "examples")
     gw_examples = os.path.join(examples_dir, "gw")
+    core_examples = os.path.join(examples_dir, "core")
     shell_scripts = glob.glob(os.path.join(gw_examples, "*.sh"))
     for script in shell_scripts:
         command_line = f"bash {script}"
         launch(command_line)
     python_scripts = glob.glob(os.path.join(gw_examples, "*.py"))
+    python_scripts += [os.path.join(core_examples, "bounded_kdeplot.py")]
     for script in python_scripts:
         command_line = f"python {script}"
         launch(command_line)

@@ -1,5 +1,7 @@
 FROM continuumio/miniconda3
 
+ARG installation
+
 LABEL name="PESummary" \
 maintainer="Charlie Hoy <charlie.hoy@ligo.org>" \
 date="{date}"
@@ -25,5 +27,9 @@ RUN conda install -c conda-forge ligo.skymap -y
 RUN pip install --upgrade pip \
 && pip install --upgrade setuptools \
 && pip install {requirements} \
-&& pip install {optional_requirements} \
-&& pip install pesummary=={pesummary_major_version}.{pesummary_minor_version}.{pesummary_build_version}
+&& pip install {optional_requirements}
+
+
+RUN mkdir src
+COPY $installation src
+RUN cd src && python setup.py install

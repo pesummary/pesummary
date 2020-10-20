@@ -1422,7 +1422,7 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
                 )
             )
         elif priors is not None:
-            from pesummary.gw.plots.violin import split_dataframe
+            from pesummary.core.plots.violin import split_dataframe
 
             priors = [priors[label][parameter] for label in _labels]
             samples = split_dataframe(samples, priors, _labels)

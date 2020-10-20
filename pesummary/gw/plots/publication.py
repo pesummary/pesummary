@@ -21,7 +21,7 @@ import matplotlib
 import matplotlib.lines as mlines
 import seaborn
 from pesummary.core.plots.figure import figure
-from pesummary.gw.plots import violin
+from pesummary.core.plots import violin
 from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.gw.plots.cmap import colormap_with_fixed_hue

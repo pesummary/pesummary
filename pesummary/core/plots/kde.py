@@ -15,306 +15,450 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import numpy as np
-from scipy import stats
-import pandas as pd
-import matplotlib.pyplot as plt
-from seaborn.distributions import _bivariate_kdeplot
-from seaborn.utils import _kde_support
-from seaborn.distributions import _statsmodels_univariate_kde
 import warnings
-from pesummary.utils.utils import logger
+from scipy import stats
+from seaborn.distributions import (
+    _DistributionPlotter as SeabornDistributionPlotter, KDE as SeabornKDE,
+)
+from seaborn.utils import _normalize_kwargs, _check_argument
 
-try:
-    import statsmodels.nonparametric.api as smnp
-    _has_statsmodels = True
-except ImportError:
-    _has_statsmodels = False
-
-
-def _scipy_univariate_kde(data, bw, gridsize, cut, clip, xlow=None, xhigh=None):
-    """Compute a univariate kernel density estimate using scipy."""
-    if xlow is not None or xhigh is not None:
-        from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
-
-        if xlow is None:
-            xlow = np.min(data)
-        if xhigh is None:
-            xhigh = np.max(data)
-        try:
-            x_grid = np.linspace(xlow - 10e-10, xhigh + 10e-10, 10**3)
-            kde = Bounded_1d_kde(data, bw_method=bw, xlow=xlow, xhigh=xhigh)
-            post_grid = kde(np.atleast_1d(x_grid).T)
-            return x_grid, post_grid
-        except TypeError:
-            logger.warning(
-                "Failed to produce bounded 1d kde plot. Reverting to standard"
-            )
-    try:
-        kde = stats.gaussian_kde(data, bw_method=bw)
-    except TypeError:
-        kde = stats.gaussian_kde(data)
-        if bw != "scott":  # scipy default
-            msg = ("Ignoring bandwidth choice, "
-                   "please upgrade scipy to use a different bandwidth.")
-            warnings.warn(msg, UserWarning)
-    if isinstance(bw, str):
-        bw = "scotts" if bw == "scott" else bw
-        bw = getattr(kde, "%s_factor" % bw)() * np.std(data)
-    grid = _kde_support(data, bw, gridsize, cut, clip)
-    y = kde(grid)
-    return grid, y
+import pandas as pd
 
 
-def _univariate_kdeplot(data, shade, vertical, kernel, bw, gridsize, cut,
-                        clip, legend, ax, cumulative=False, xlow=None,
-                        xhigh=None, **kwargs):
-    """Plot a univariate kernel density estimate on one of the axes."""
+class KDE(SeabornKDE):
+    """Extension of the `seaborn._statistics.KDE` to allow for custom
+    kde_kernel
 
-    # Sort out the clipping
-    if clip is None:
-        clip = (-np.inf, np.inf)
-
-    # Calculate the KDE
-    if _has_statsmodels and xlow is None and xhigh is None:
-        # Prefer using statsmodels for kernel flexibility
-        x, y = _statsmodels_univariate_kde(data, kernel, bw,
-                                           gridsize, cut, clip,
-                                           cumulative=cumulative)
-    else:
-        # Fall back to scipy if missing statsmodels
-        if kernel != "gau":
-            kernel = "gau"
-            msg = "Kernel other than `gau` requires statsmodels."
-            warnings.warn(msg, UserWarning)
-        if cumulative:
-            raise ImportError("Cumulative distributions are currently "
-                              "only implemented in statsmodels. "
-                              "Please install statsmodels.")
-        x, y = _scipy_univariate_kde(data, bw, gridsize, cut, clip, xlow=xlow,
-                                     xhigh=xhigh)
-
-    # Make sure the density is nonnegative
-    y = np.amax(np.c_[np.zeros_like(y), y], axis=1)
-
-    # Flip the data if the plot should be on the y axis
-    if vertical:
-        x, y = y, x
-
-    # Check if a label was specified in the call
-    label = kwargs.pop("label", None)
-    alpha_shade = kwargs.pop("alpha_shade", 0.25)
-
-    # Otherwise check if the data object has a name
-    if label is None and hasattr(data, "name"):
-        label = data.name
-
-    # Decide if we're going to add a legend
-    legend = label is not None and legend
-    label = "_nolegend_" if label is None else label
-
-    # Use the active color cycle to find the plot color
-    facecolor = kwargs.pop("facecolor", None)
-    line, = ax.plot(x, y, **kwargs)
-    color = line.get_color()
-    line.remove()
-    kwargs.pop("color", None)
-    facecolor = color if facecolor is None else facecolor
-
-    # Draw the KDE plot and, optionally, shade
-    ax.plot(x, y, color=color, label=label, **kwargs)
-    shade_kws = dict(
-        facecolor=facecolor,
-        alpha=alpha_shade,
-        clip_on=kwargs.get("clip_on", True),
-        zorder=kwargs.get("zorder", 1),)
-    if shade:
-        if vertical:
-            ax.fill_betweenx(y, 0, x, **shade_kws)
-        else:
-            ax.fill_between(x, 0, y, **shade_kws)
-
-    # Set the density axis minimum to 0
-    if vertical:
-        ax.set_xlim(0, auto=None)
-    else:
-        ax.set_ylim(0, auto=None)
-
-    # Draw the legend here
-    handles, labels = ax.get_legend_handles_labels()
-    if legend and handles:
-        ax.legend(loc="best")
-
-    return ax
-
-
-def kdeplot(data, data2=None, shade=False, vertical=False, kernel="gau",
-            bw="scott", gridsize=100, cut=3, clip=None, legend=True,
-            cumulative=False, shade_lowest=True, cbar=False, cbar_ax=None,
-            cbar_kws=None, ax=None, xlow=None, xhigh=None, **kwargs):
-    """Fit and plot a univariate or bivariate kernel density estimate.
     Parameters
     ----------
-    data : 1d array-like
-        Input data.
-    data2: 1d array-like, optional
-        Second input data. If present, a bivariate KDE will be estimated.
-    shade : bool, optional
-        If True, shade in the area under the KDE curve (or draw with filled
-        contours when data is bivariate).
-    vertical : bool, optional
-        If True, density is on x-axis.
-    kernel : {'gau' | 'cos' | 'biw' | 'epa' | 'tri' | 'triw' }, optional
-        Code for shape of kernel to fit with. Bivariate KDE can only use
-        gaussian kernel.
-    bw : {'scott' | 'silverman' | scalar | pair of scalars }, optional
-        Name of reference method to determine kernel size, scalar factor,
-        or scalar for each dimension of the bivariate plot. Note that the
-        underlying computational libraries have different interperetations
-        for this parameter: ``statsmodels`` uses it directly, but ``scipy``
-        treats it as a scaling factor for the standard deviation of the
-        data.
-    gridsize : int, optional
-        Number of discrete points in the evaluation grid.
-    cut : scalar, optional
-        Draw the estimate to cut * bw from the extreme data points.
-    clip : pair of scalars, or pair of pair of scalars, optional
-        Lower and upper bounds for datapoints used to fit KDE. Can provide
-        a pair of (low, high) bounds for bivariate plots.
-    legend : bool, optional
-        If True, add a legend or label the axes when possible.
-    cumulative : bool, optional
-        If True, draw the cumulative distribution estimated by the kde.
-    shade_lowest : bool, optional
-        If True, shade the lowest contour of a bivariate KDE plot. Not
-        relevant when drawing a univariate plot or when ``shade=False``.
-        Setting this to ``False`` can be useful when you want multiple
-        densities on the same Axes.
-    cbar : bool, optional
-        If True and drawing a bivariate KDE plot, add a colorbar.
-    cbar_ax : matplotlib axes, optional
-        Existing axes to draw the colorbar onto, otherwise space is taken
-        from the main axes.
-    cbar_kws : dict, optional
-        Keyword arguments for ``fig.colorbar()``.
-    ax : matplotlib axes, optional
-        Axes to plot on, otherwise uses current axes.
-    kwargs : key, value pairings
-        Other keyword arguments are passed to ``plt.plot()`` or
-        ``plt.contour{f}`` depending on whether a univariate or bivariate
-        plot is being drawn.
-    xlow: float, optional
-        Optional lower bound for the kde
-    xhigh: float, optional
-        Optional upper bound for the kde
-    Returns
-    -------
-    ax : matplotlib Axes
-        Axes with plot.
-    See Also
-    --------
-    distplot: Flexibly plot a univariate distribution of observations.
-    jointplot: Plot a joint dataset with bivariate and marginal distributions.
-    Examples
-    --------
-    Plot a basic univariate density:
-    .. plot::
-        :context: close-figs
-        >>> import numpy as np; np.random.seed(10)
-        >>> import seaborn as sns; sns.set(color_codes=True)
-        >>> mean, cov = [0, 2], [(1, .5), (.5, 1)]
-        >>> x, y = np.random.multivariate_normal(mean, cov, size=50).T
-        >>> ax = sns.kdeplot(x)
-    Shade under the density curve and use a different color:
-    .. plot::
-        :context: close-figs
-        >>> ax = sns.kdeplot(x, shade=True, color="r")
-    Plot a bivariate density:
-    .. plot::
-        :context: close-figs
-        >>> ax = sns.kdeplot(x, y)
-    Use filled contours:
-    .. plot::
-        :context: close-figs
-        >>> ax = sns.kdeplot(x, y, shade=True)
-    Use more contour levels and a different color palette:
-    .. plot::
-        :context: close-figs
-        >>> ax = sns.kdeplot(x, y, n_levels=30, cmap="Purples_d")
-    Use a narrower bandwith:
-    .. plot::
-        :context: close-figs
-        >>> ax = sns.kdeplot(x, bw=.15)
-    Plot the density on the vertical axis:
-    .. plot::
-        :context: close-figs
-        >>> ax = sns.kdeplot(y, vertical=True)
-    Limit the density curve within the range of the data:
-    .. plot::
-        :context: close-figs
-        >>> ax = sns.kdeplot(x, cut=0)
-    Add a colorbar for the contours:
-    .. plot::
-        :context: close-figs
-        >>> ax = sns.kdeplot(x, y, cbar=True)
-    Plot two shaded bivariate densities:
-    .. plot::
-        :context: close-figs
-        >>> iris = sns.load_dataset("iris")
-        >>> setosa = iris.loc[iris.species == "setosa"]
-        >>> virginica = iris.loc[iris.species == "virginica"]
-        >>> ax = sns.kdeplot(setosa.sepal_width, setosa.sepal_length,
-        ...                  cmap="Reds", shade=True, shade_lowest=False)
-        >>> ax = sns.kdeplot(virginica.sepal_width, virginica.sepal_length,
-        ...                  cmap="Blues", shade=True, shade_lowest=False)
+    *args: tuple
+        all args passed to the `seaborn._statistics.KDE` class
+    kde_kernel: func, optional
+        kernel you wish to use to evaluate the KDE. Default
+        scipy.stats.gaussian_kde
+    kde_kwargs: dict, optional
+        optional kwargs to be passed to the kde_kernel. Default {}
+    **kwargs: dict
+        all kwargs passed to the `seaborn._statistics.KDE` class
     """
-    if ax is None:
-        ax = plt.gca()
+    def __init__(
+        self, *args, kde_kernel=stats.gaussian_kde, kde_kwargs={}, **kwargs
+    ):
+        super(KDE, self).__init__(*args, **kwargs)
+        self._kde_kernel = kde_kernel
+        self._kde_kwargs = kde_kwargs
 
-    if isinstance(data, list):
-        data = np.asarray(data)
+    def _fit(self, fit_data, weights=None):
+        """Fit the scipy kde while adding bw_adjust logic and version check."""
+        fit_kws = self._kde_kwargs
+        fit_kws["bw_method"] = self.bw_method
+        if weights is not None:
+            fit_kws["weights"] = weights
 
-    if len(data) == 0:
-        return ax
+        kde = self._kde_kernel(fit_data, **fit_kws)
+        kde.set_bandwidth(kde.factor * self.bw_adjust)
+        return kde
 
-    data = data.astype(np.float64)
+
+class _DistributionPlotter(SeabornDistributionPlotter):
+    """Extension of the `seaborn._statistics._DistributionPlotter` to allow for
+    the custom KDE method to be used
+
+    Parameters
+    ----------
+    *args: tuple
+        all args passed to the `seaborn._statistics._DistributionPlotter` class
+    **kwargs: dict
+        all kwargs passed to the `seaborn._statistics._DistributionPlotter`
+        class
+    """
+    def __init__(self, *args, **kwargs):
+        super(_DistributionPlotter, self).__init__(*args, **kwargs)
+
+    def plot_univariate_density(
+        self,
+        multiple,
+        common_norm,
+        common_grid,
+        fill,
+        legend,
+        estimate_kws,
+        **plot_kws,
+    ):
+
+        import matplotlib as mpl
+        # Handle conditional defaults
+        if fill is None:
+            fill = multiple in ("stack", "fill")
+
+        # Preprocess the matplotlib keyword dictionaries
+        if fill:
+            artist = mpl.collections.PolyCollection
+        else:
+            artist = mpl.lines.Line2D
+        plot_kws = _normalize_kwargs(plot_kws, artist)
+
+        # Input checking
+        _check_argument("multiple", ["layer", "stack", "fill"], multiple)
+
+        # Always share the evaluation grid when stacking
+        subsets = bool(set(self.variables) - {"x", "y"})
+        if subsets and multiple in ("stack", "fill"):
+            common_grid = True
+
+        # Check if the data axis is log scaled
+        log_scale = self._log_scaled(self.data_variable)
+
+        # Do the computation
+        densities = self._compute_univariate_density(
+            self.data_variable,
+            common_norm,
+            common_grid,
+            estimate_kws,
+            log_scale,
+        )
+
+        # Note: raises when no hue and multiple != layer. A problem?
+        densities, baselines = self._resolve_multiple(densities, multiple)
+
+        # Control the interaction with autoscaling by defining sticky_edges
+        # i.e. we don't want autoscale margins below the density curve
+        sticky_density = (0, 1) if multiple == "fill" else (0, np.inf)
+
+        if multiple == "fill":
+            # Filled plots should not have any margins
+            sticky_support = densities.index.min(), densities.index.max()
+        else:
+            sticky_support = []
+
+        # Handle default visual attributes
+        if "hue" not in self.variables:
+            if self.ax is None:
+                color = plot_kws.pop("color", None)
+                default_color = "C0" if color is None else color
+            else:
+                if fill:
+                    if self.var_types[self.data_variable] == "datetime":
+                        # Avoid drawing empty fill_between on date axis
+                        # https://github.com/matplotlib/matplotlib/issues/17586
+                        scout = None
+                        default_color = plot_kws.pop(
+                            "color", plot_kws.pop("facecolor", None)
+                        )
+                        if default_color is None:
+                            default_color = "C0"
+                    else:
+                        alpha_shade = plot_kws.pop("alpha_shade", 0.25)
+                        scout = self.ax.fill_between([], [], **plot_kws)
+                        default_color = tuple(scout.get_facecolor().squeeze())
+                    plot_kws.pop("color", None)
+                else:
+                    scout, = self.ax.plot([], [], **plot_kws)
+                    default_color = scout.get_color()
+                if scout is not None:
+                    scout.remove()
+
+        plot_kws.pop("color", None)
+
+        default_alpha = .25 if multiple == "layer" else .75
+        alpha = plot_kws.pop("alpha", default_alpha)  # TODO make parameter?
+
+        # Now iterate through the subsets and draw the densities
+        # We go backwards so stacked densities read from top-to-bottom
+        for sub_vars, _ in self.iter_data("hue", reverse=True):
+
+            # Extract the support grid and density curve for this level
+            key = tuple(sub_vars.items())
+            try:
+                density = densities[key]
+            except KeyError:
+                continue
+            support = density.index
+            fill_from = baselines[key]
+
+            ax = self._get_axes(sub_vars)
+
+            # Modify the matplotlib attributes from semantic mapping
+            if "hue" in self.variables:
+                color = self._hue_map(sub_vars["hue"])
+            else:
+                color = default_color
+
+            artist_kws = self._artist_kws(
+                plot_kws, fill, False, multiple, color, alpha
+            )
+
+            # Either plot a curve with observation values on the x axis
+            if "x" in self.variables:
+
+                if fill:
+                    artist = ax.fill_between(
+                        support, fill_from, density, **artist_kws
+                    )
+                else:
+                    artist, = ax.plot(support, density, **artist_kws)
+
+                artist.sticky_edges.x[:] = sticky_support
+                artist.sticky_edges.y[:] = sticky_density
+
+            # Or plot a curve with observation values on the y axis
+            else:
+                if fill:
+                    artist = ax.fill_betweenx(
+                        support, fill_from, density, **artist_kws
+                    )
+                else:
+                    artist, = ax.plot(density, support, **artist_kws)
+
+                artist.sticky_edges.x[:] = sticky_density
+                artist.sticky_edges.y[:] = sticky_support
+
+        # --- Finalize the plot ----
+
+        ax = self.ax if self.ax is not None else self.facets.axes.flat[0]
+        default_x = default_y = ""
+        if self.data_variable == "x":
+            default_y = "Density"
+        if self.data_variable == "y":
+            default_x = "Density"
+        self._add_axis_labels(ax, default_x, default_y)
+
+        if "hue" in self.variables and legend:
+            from functools import partial
+            if fill:
+                artist = partial(mpl.patches.Patch)
+            else:
+                artist = partial(mpl.lines.Line2D, [], [])
+
+            ax_obj = self.ax if self.ax is not None else self.facets
+            self._add_legend(
+                ax_obj, artist, fill, False, multiple, alpha, plot_kws, {},
+            )
+
+    def _compute_univariate_density(
+        self,
+        data_variable,
+        common_norm,
+        common_grid,
+        estimate_kws,
+        log_scale,
+    ):
+
+        # Initialize the estimator object
+        estimator = KDE(**estimate_kws)
+
+        all_data = self.plot_data.dropna()
+
+        if set(self.variables) - {"x", "y"}:
+            if common_grid:
+                all_observations = self.comp_data.dropna()
+                estimator.define_support(all_observations[data_variable])
+        else:
+            common_norm = False
+
+        densities = {}
+
+        for sub_vars, sub_data in self.iter_data("hue", from_comp_data=True):
+
+            # Extract the data points from this sub set and remove nulls
+            sub_data = sub_data.dropna()
+            observations = sub_data[data_variable]
+
+            observation_variance = observations.var()
+            if np.isclose(observation_variance, 0) or np.isnan(observation_variance):
+                msg = "Dataset has 0 variance; skipping density estimate."
+                warnings.warn(msg, UserWarning)
+                continue
+
+            # Extract the weights for this subset of observations
+            if "weights" in self.variables:
+                weights = sub_data["weights"]
+            else:
+                weights = None
+
+            # Estimate the density of observations at this level
+            density, support = estimator(observations, weights=weights)
+
+            if log_scale:
+                support = np.power(10, support)
+
+            # Apply a scaling factor so that the integral over all subsets is 1
+            if common_norm:
+                density *= len(sub_data) / len(all_data)
+
+            # Store the density for this level
+            key = tuple(sub_vars.items())
+            densities[key] = pd.Series(density, index=support)
+
+        return densities
+
+
+def kdeplot(
+    x=None,  # Allow positional x, because behavior will not change with reorg
+    *,
+    y=None,
+    shade=None,  # Note "soft" deprecation, explained below
+    vertical=False,  # Deprecated
+    kernel=None,  # Deprecated
+    bw=None,  # Deprecated
+    gridsize=200,  # TODO maybe depend on uni/bivariate?
+    cut=3, clip=None, legend=True, cumulative=False,
+    shade_lowest=None,  # Deprecated, controlled with levels now
+    cbar=False, cbar_ax=None, cbar_kws=None,
+    ax=None,
+
+    # New params
+    weights=None,  # TODO note that weights is grouped with semantics
+    hue=None, palette=None, hue_order=None, hue_norm=None,
+    multiple="layer", common_norm=True, common_grid=False,
+    levels=10, thresh=.05,
+    bw_method="scott", bw_adjust=1, log_scale=None,
+    color=None, fill=None, kde_kernel=stats.gaussian_kde, kde_kwargs={},
+
+    # Renamed params
+    data=None, data2=None,
+
+    **kwargs,
+):
+
+    # Handle deprecation of `data2` as name for y variable
     if data2 is not None:
-        if isinstance(data2, list):
-            data2 = np.asarray(data2)
-        data2 = data2.astype(np.float64)
 
-    warn = False
-    bivariate = False
-    if isinstance(data, np.ndarray) and np.ndim(data) > 1:
-        warn = True
-        bivariate = True
-        x, y = data.T
-    elif isinstance(data, pd.DataFrame) and np.ndim(data) > 1:
-        warn = True
-        bivariate = True
-        x = data.iloc[:, 0].values
-        y = data.iloc[:, 1].values
-    elif data2 is not None:
-        bivariate = True
-        x = data
         y = data2
 
-    if warn:
-        warn_msg = ("Passing a 2D dataset for a bivariate plot is deprecated "
-                    "in favor of kdeplot(x, y), and it will cause an error in "
-                    "future versions. Please update your code.")
-        warnings.warn(warn_msg, UserWarning)
+        # If `data2` is present, we need to check for the `data` kwarg being
+        # used to pass a vector for `x`. We'll reassign the vectors and warn.
+        # We need this check because just passing a vector to `data` is now
+        # technically valid.
 
-    if bivariate and cumulative:
-        raise TypeError("Cumulative distribution plots are not"
-                        "supported for bivariate distributions.")
-    if bivariate:
-        ax = _bivariate_kdeplot(x, y, shade, shade_lowest,
-                                kernel, bw, gridsize, cut, clip, legend,
-                                cbar, cbar_ax, cbar_kws, ax, **kwargs)
+        x_passed_as_data = (
+            x is None
+            and data is not None
+            and np.ndim(data) == 1
+        )
+
+        if x_passed_as_data:
+            msg = "Use `x` and `y` rather than `data` `and `data2`"
+            x = data
+        else:
+            msg = "The `data2` param is now named `y`; please update your code"
+
+        warnings.warn(msg, FutureWarning)
+
+    # Handle deprecation of `vertical`
+    if vertical:
+        msg = (
+            "The `vertical` parameter is deprecated and will be removed in a "
+            "future version. Assign the data to the `y` variable instead."
+        )
+        warnings.warn(msg, FutureWarning)
+        x, y = y, x
+
+    # Handle deprecation of `bw`
+    if bw is not None:
+        msg = (
+            "The `bw` parameter is deprecated in favor of `bw_method` and "
+            f"`bw_adjust`. Using {bw} for `bw_method`, but please "
+            "see the docs for the new parameters and update your code."
+        )
+        warnings.warn(msg, FutureWarning)
+        bw_method = bw
+
+    # Handle deprecation of `kernel`
+    if kernel is not None:
+        msg = (
+            "Support for alternate kernels has been removed. "
+            "Using Gaussian kernel."
+        )
+        warnings.warn(msg, UserWarning)
+
+    # Handle deprecation of shade_lowest
+    if shade_lowest is not None:
+        if shade_lowest:
+            thresh = 0
+        msg = (
+            "`shade_lowest` is now deprecated in favor of `thresh`. "
+            f"Setting `thresh={thresh}`, but please update your code."
+        )
+        warnings.warn(msg, UserWarning)
+
+    # Handle `n_levels`
+    # This was never in the formal API but it was processed, and appeared in an
+    # example. We can treat as an alias for `levels` now and deprecate later.
+    levels = kwargs.pop("n_levels", levels)
+
+    # Handle "soft" deprecation of shade `shade` is not really the right
+    # terminology here, but unlike some of the other deprecated parameters it
+    # is probably very commonly used and much hard to remove. This is therefore
+    # going to be a longer process where, first, `fill` will be introduced and
+    # be used throughout the documentation. In 0.12, when kwarg-only
+    # enforcement hits, we can remove the shade/shade_lowest out of the
+    # function signature all together and pull them out of the kwargs. Then we
+    # can actually fire a FutureWarning, and eventually remove.
+    if shade is not None:
+        fill = shade
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+    p = _DistributionPlotter(
+        data=data,
+        variables=_DistributionPlotter.get_semantics(locals()),
+    )
+
+    p.map_hue(palette=palette, order=hue_order, norm=hue_norm)
+
+    if ax is None:
+        import matplotlib.pyplot as plt
+        ax = plt.gca()
+
+    # Check for a specification that lacks x/y data and return early
+    if not p.has_xy_data:
+        return ax
+
+    # Pack the kwargs for statistics.KDE
+    estimate_kws = dict(
+        bw_method=bw_method,
+        bw_adjust=bw_adjust,
+        gridsize=gridsize,
+        cut=cut,
+        clip=clip,
+        cumulative=cumulative,
+        kde_kernel=kde_kernel,
+        kde_kwargs=kde_kwargs
+    )
+
+    p._attach(ax, allowed_types=["numeric", "datetime"], log_scale=log_scale)
+
+    if p.univariate:
+
+        plot_kws = kwargs.copy()
+        if color is not None:
+            plot_kws["color"] = color
+
+        p.plot_univariate_density(
+            multiple=multiple,
+            common_norm=common_norm,
+            common_grid=common_grid,
+            fill=fill,
+            legend=legend,
+            estimate_kws=estimate_kws,
+            **plot_kws,
+        )
+
     else:
-        ax = _univariate_kdeplot(data, shade, vertical, kernel, bw,
-                                 gridsize, cut, clip, legend, ax,
-                                 cumulative=cumulative, xlow=xlow,
-                                 xhigh=xhigh, **kwargs)
+
+        p.plot_bivariate_density(
+            common_norm=common_norm,
+            fill=fill,
+            levels=levels,
+            thresh=thresh,
+            legend=legend,
+            color=color,
+            cbar=cbar,
+            cbar_ax=cbar_ax,
+            cbar_kws=cbar_kws,
+            estimate_kws=estimate_kws,
+            **kwargs,
+        )
 
     return ax

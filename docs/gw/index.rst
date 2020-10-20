@@ -73,6 +73,7 @@ Plotting
 .. toctree::
     :maxdepth: 1
 
+    ../core/seaborn
     ../core/bounded_kdes
     violin
     tutorials/plotting_from_metafile

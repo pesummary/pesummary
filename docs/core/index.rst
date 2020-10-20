@@ -38,6 +38,7 @@ Plotting
 .. toctree::
     :maxdepth: 1
 
+    seaborn
     bounded_kdes
     tutorials/plotting_from_metafile
 
