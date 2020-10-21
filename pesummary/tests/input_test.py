@@ -205,6 +205,8 @@ class TestInputExceptions(object):
 class TestInput(object):
 
     def setup(self):
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
         self.parser = command_line()
         insert_gwspecific_option_group(self.parser)
         make_result_file(gw=True, lalinference=True, outdir=".outdir/")
@@ -219,6 +221,12 @@ class TestInput(object):
             "--gracedb", "Grace",
             "--labels", "example"]
         self.make_input_object()
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
 
     @staticmethod
     def make_existing_file(path):
@@ -430,6 +438,40 @@ class TestInput(object):
         file_name = "example.dat"
         assert GWInput.get_ifo_from_file_name(file_name) == "example.dat"
 
+    def test_ignore_parameters(self):
+        parser = command_line()
+        insert_gwspecific_option_group(parser)
+        default_arguments = [
+            "--approximant", "IMRPhenomPv2",
+            "--webdir", "./.outdir",
+            "--samples", "./.outdir/bilby_example.h5",
+            "--labels", "example"]
+        opts = parser.parse_args(default_arguments)
+        original = GWInput(opts)
+
+        parser = command_line()
+        insert_gwspecific_option_group(parser)
+        default_arguments = [
+            "--approximant", "IMRPhenomPv2",
+            "--webdir", "./.outdir",
+            "--samples", "./.outdir/bilby_example.h5",
+            "--ignore_parameters", "cos*",
+            "--labels", "example"]
+        opts = parser.parse_args(default_arguments)
+        ignored = GWInput(opts)
+        ignored_params = [
+            param for param in list(original.samples["example"].keys()) if
+            "cos" in param
+        ]
+        assert all(
+            param not in list(ignored.samples["example"].keys()) for param in
+            ignored_params
+        )
+        for param, samples in ignored.samples["example"].items():
+            np.testing.assert_almost_equal(
+                samples, original.samples["example"][param]
+            )
+
     def test_make_directories(self):
         assert os.path.isdir("./.outdir/samples/samples") == False
         self.replace_existing_argument("--webdir", "./.outdir/samples")
@@ -453,6 +495,8 @@ class TestInput(object):
 class TestPostProcessing(object):
 
     def setup(self):
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
         self.parser = command_line()
         insert_gwspecific_option_group(self.parser)
         make_result_file(gw=True, lalinference=True, outdir=".outdir/")
@@ -466,6 +510,12 @@ class TestPostProcessing(object):
             "--labels", "example"])
         self.inputs = GWInput(self.opts)
         self.postprocessing = GWPostProcessing(self.inputs)
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
 
     def test_injection_data(self):
         assert sorted(list(self.postprocessing.injection_data["example"].keys())) == sorted(
@@ -493,6 +543,8 @@ class TestPostProcessing(object):
     def test_psd_labels(self):
         assert list(self.postprocessing.psd.keys()) == ["example"]
         assert self.postprocessing.psd["example"] == {}
+        with open("./.outdir/psd.dat", "w") as f:
+            f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
         parser = command_line()
         insert_gwspecific_option_group(parser)
         opts = parser.parse_args(["--approximant", "IMRPhenomPv2",

@@ -293,14 +293,8 @@ class SamplesDict(dict):
             return
         ind = self.parameters.index(parameter)
         self.parameters.remove(parameter)
-        remove = self.samples[ind]
         samples = self.samples
-        if isinstance(self.samples, np.ndarray):
-            samples = self.samples.tolist()
-            remove = self.samples[ind].tolist()
-        samples.remove(remove)
-        if isinstance(self.samples, np.ndarray):
-            self.samples = np.array(samples)
+        self.samples = np.delete(samples, ind, axis=0)
         return super(SamplesDict, self).pop(parameter)
 
     def downsample(self, number):
