@@ -26,7 +26,7 @@ from pesummary.core.file.read import read as Read
 from pesummary.utils.exceptions import InputError
 from pesummary.utils.samples_dict import SamplesDict, MCMCSamplesDict
 from pesummary.utils.utils import (
-    guess_url, logger, make_dir, make_cache_style_file
+    guess_url, logger, make_dir, make_cache_style_file, list_match
 )
 from pesummary import conf
 
@@ -1352,12 +1352,9 @@ class _Input(object):
         self._ignore_parameters = ignore_parameters
         if ignore_parameters is not None:
             for num, label in enumerate(self.labels):
-                removed_parameters = [
-                    param for param in list(self.samples[label].keys()) for
-                    ignore in ignore_parameters if re.match(
-                        re.compile(ignore), param
-                    )
-                ]
+                removed_parameters = list_match(
+                    list(self.samples[label].keys()), ignore_parameters
+                )
                 if removed_parameters == []:
                     logger.warning(
                         "Failed to remove any parameters from {}".format(

@@ -825,6 +825,62 @@ def test_logger():
             ("PESummary", "WARNING", "warning"),)
 
 
+def test_string_match():
+    """function to test the string_match function
+    """
+    param = "mass_1"
+    # Test that it matches itself
+    assert utils.string_match(param, param)
+    # Test that it does not match another string
+    assert not utils.string_match(param, "mass_2")
+    # Test that a single wildcard works
+    assert utils.string_match(param, "{}*".format(param[0]))
+    assert not utils.string_match(param, "z+")
+    assert utils.string_match(param, "{}?".format(param[:-1]))
+    # Test that multiple wildcards work
+    assert utils.string_match(param, "*{}*".format(param[1]))
+    assert utils.string_match(param, "*{}?".format(param[3:-1]))
+    assert utils.string_match(param, "?{}?".format(param[1:-1]))
+    assert not utils.string_match(param, "?{}?".format(param[:-1]))
+    # Test 'start with' works
+    assert utils.string_match(param, "^{}".format(param[:3]))
+    # Test does not start with
+    assert not utils.string_match(param, "^(?!{}).+".format(param[:3]))
+
+
+def test_list_match():
+    """function to test the list_match function
+    """
+    params = [
+        "mass_1", "mass_2", "chirp_mass", "total_mass", "mass_ratio", "a_1",
+        "luminosity_distance", "x"
+    ]
+    # Test that all mass parameters are returned
+    assert sorted(utils.list_match(params, "*mass*")) == sorted(
+        [p for p in params if "mass" in p]
+    )
+    # Test that only parameters with an "_" are returned
+    assert sorted(utils.list_match(params, "*_*")) == sorted(
+        [p for p in params if "_" in p]
+    )
+    # Test that nothing is returned
+    assert not len(utils.list_match(params, "z+"))
+    # Test that only parameters that do not start with mass are returned
+    assert sorted(utils.list_match(params, "^(?!mass).+")) == sorted(
+        [p for p in params if p[:4] != "mass"]
+    )
+    # Test that only parameters that start with 'l' are returned
+    assert sorted(utils.list_match(params, "^l")) == sorted(
+        [p for p in params if p[0] == "l"]
+    )
+    # Test return false
+    assert sorted(utils.list_match(params, "^l", return_false=True)) == sorted(
+       [p for p in params if p[0] != "l"]
+    )
+    # Test multiple substrings
+    assert sorted(utils.list_match(params, ["^m", "*2"])) == sorted(["mass_2"])
+
+
 class TestDict(object):
     """Class to test the NestedDict object
     """

@@ -895,6 +895,61 @@ def check_filename(
     return _file
 
 
+def string_match(string, substring):
+    """Return True if a string matches a substring. This substring may include
+    wildcards
+
+    Parameters
+    ----------
+    string: str
+        string you wish to match
+    substring: str
+        string you wish to match against
+    """
+    import re
+    import sre_constants
+
+    try:
+        match = re.match(re.compile(substring), string)
+        if match:
+            return True
+        return False
+    except sre_constants.error:
+        import fnmatch
+        return string_match(string, fnmatch.translate(substring))
+
+
+def list_match(list_to_match, substring, return_true=True, return_false=False):
+    """Match a list of strings to a substring. This substring may include
+    wildcards
+
+    Parameters
+    ----------
+    list_to_match: list
+        list of string you wish to match
+    substring: str, list
+        string you wish to match against or a list of string you wish to match
+        against
+    return_true: Bool, optional
+        if True, return a sublist containing only the parameters that match the
+        substring. Default True
+    """
+    match = np.ones(len(list_to_match), dtype=bool)
+    if isinstance(substring, str):
+        substring = [substring]
+
+    for _substring in substring:
+        match *= np.array(
+            [string_match(item, _substring) for item in list_to_match],
+            dtype=bool
+        )
+    if return_false:
+        return np.array(list_to_match)[~match]
+    elif return_true:
+        return np.array(list_to_match)[match]
+    return match
+
+
 class Empty(object):
     """Define an empty class which simply returns the input
     """
