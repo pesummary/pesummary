@@ -23,6 +23,7 @@ from shutil import which
 
 from scipy import stats
 import numpy as np
+import math
 
 import pesummary
 from pesummary import conf
@@ -212,6 +213,33 @@ class _WebpageGeneration(object):
                 _number_of_labels += len(item)
         return _number_of_labels
 
+    def make_modal_carousel(
+        self, html_file, image_contents, unique_id=False, **kwargs
+    ):
+        """Make a modal carousel for a table of images
+
+        Parameters
+        ----------
+        html_file: pesummary.core.webpage.webpage.page
+            open html file
+        image_contents: list
+            list of images to place in a table
+        unique_id: Bool, optional
+            if True, assign a unique identifer to the modal
+        **kwargs: dict, optional
+            all additional kwargs passed to `make_table_of_images` function
+        """
+        if unique_id:
+            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
+        else:
+            unique_id = None
+        html_file.make_table_of_images(
+            contents=image_contents, unique_id=unique_id, **kwargs
+        )
+        images = [y for x in image_contents for y in x]
+        html_file.make_modal_carousel(images=images, unique_id=unique_id)
+        return html_file
+
     def generate_comparison_statistics(self):
         """Generate comparison statistics for all parameters that are common to
         all result files
@@ -250,7 +278,7 @@ class _WebpageGeneration(object):
         ]
         return [ks, js]
 
-    def _jensen_shannon_divergence(self, param, samples):
+    def _jensen_shannon_divergence(self, param, samples, **kwargs):
         """Return the Jensen Shannon divergence between two sets of samples
 
         Parameters
@@ -261,7 +289,7 @@ class _WebpageGeneration(object):
             2d list containing the samples you wish to calculate the Jensen
             Shannon divergence between
         """
-        return jensen_shannon_divergence([samples[0], samples[1]])
+        return jensen_shannon_divergence([samples[0], samples[1]], **kwargs)
 
     @staticmethod
     def get_executable(executable):
@@ -508,7 +536,9 @@ class _WebpageGeneration(object):
         self.create_blank_html_pages(pages)
         self._make_home_pages(pages)
 
-    def _make_home_pages(self, pages):
+    def _make_home_pages(
+        self, pages, title=None, banner="Summary", make_home=True
+    ):
         """Make the home pages
 
         Parameters
@@ -516,16 +546,24 @@ class _WebpageGeneration(object):
         pages: list
             list of pages that you wish to create
         """
-        html_file = self.setup_page("home", self.navbar["home"])
-        html_file.make_banner(approximant="Summary", key="Summary")
+        if make_home:
+            html_file = self.setup_page("home", self.navbar["home"], title=title)
+            html_file.make_banner(approximant=banner, key="Summary")
 
         for num, i in enumerate(self.labels):
             html_file = self.setup_page(
-                i, self.navbar["result_page"][i], i,
+                i, self.navbar["result_page"][i], i, approximant=i,
                 title="{} Summary page".format(i),
-                background_colour=self.colors[num], approximant=i
+                background_colour=self.colors[num]
             )
             html_file.make_banner(approximant=i, key=i)
+            images, cli, captions = self.default_images_for_result_page(i)
+            if len(images):
+                html_file = self.make_modal_carousel(
+                    html_file, images, cli=cli, unique_id=True,
+                    captions=captions, autoscale=True
+                )
+
             if self.custom_plotting:
                 custom_plots = glob(
                     "{}/plots/{}_custom_plotting_*".format(self.webdir, i)
@@ -534,10 +572,52 @@ class _WebpageGeneration(object):
                 for num, i in enumerate(custom_plots):
                     custom_plots[num] = path + i.split("/")[-1]
                 image_contents = [
-                    custom_plots[i:4 + i] for i in range(0, len(custom_plots), 4)]
-                html_file.make_table_of_images(contents=image_contents)
-                images = [y for x in image_contents for y in x]
-                html_file.make_modal_carousel(images=images)
+                    custom_plots[i:4 + i] for i in range(
+                        0, len(custom_plots), 4
+                    )
+                ]
+                html_file = self.make_modal_carousel(
+                    html_file, image_contents, unique_id=True
+                )
+
+            html_file.make_banner(
+                approximant="Summary Table", key="summary_table",
+                _style="font-size: 26px;"
+            )
+            _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+            _class = "row justify-content-center"
+            html_file.make_container(style=_style)
+            html_file.make_div(4, _class=_class, _style=None)
+
+            key_data = self.key_data
+            contents = []
+            headings = [" "] + self.key_data_headings.copy()
+            _injection = False
+            if "injected" in headings:
+                _injection = not all(
+                    math.isnan(_data["injected"]) for _data in
+                    self.key_data[i].values()
+                )
+            if _injection:
+                headings.append("injected")
+            for j in self.samples[i].keys():
+                row = []
+                row.append(j)
+                row += self.key_data_table[i][j]
+                if _injection:
+                    row.append(safe_round(self.key_data[i][j]["injected"], 3))
+                contents.append(row)
+
+            html_file.make_table(
+                headings=headings, contents=contents, heading_span=1,
+                accordian=False, format="table-hover header-fixed",
+                sticky_header=True
+            )
+            html_file.end_div(4)
+            html_file.end_container()
+            html_file.export(
+                "summary_information_{}.csv".format(i)
+            )
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
@@ -750,10 +830,9 @@ class _WebpageGeneration(object):
         path = self.image_path["other"]
         if len(self.default_comparison_homepage_plots()):
             contents = self.default_comparison_homepage_plots()
-            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
-            html_file.make_table_of_images(contents=contents, unique_id=unique_id)
-            images = [y for x in contents for y in x]
-            html_file.make_modal_carousel(images=images, unique_id=unique_id)
+            html_file = self.make_modal_carousel(
+                html_file, contents, unique_id=True
+            )
         if self.custom_plotting:
             from glob import glob
 
@@ -767,12 +846,9 @@ class _WebpageGeneration(object):
             image_contents = [
                 custom_plots[i:4 + i] for i in range(0, len(custom_plots), 4)
             ]
-            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
-            html_file.make_table_of_images(
-                contents=image_contents, unique_id=unique_id
+            html_file = self.make_modal_carousel(
+                html_file, image_contents, unique_id=True
             )
-            images = [y for x in image_contents for y in x]
-            html_file.make_modal_carousel(images=images, unique_id=unique_id)
         path = self.image_path["other"]
 
         if self.comparison_stats is not None:
@@ -1358,6 +1434,11 @@ class _WebpageGeneration(object):
             }
         }
         return categories
+
+    def default_images_for_result_page(self, label):
+        """Return the default images that will be displayed on the result page
+        """
+        return [], [], []
 
     def default_popular_options(self):
         """Return a list of default options
