@@ -14,8 +14,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
-import uuid
-import math
 import numpy as np
 
 import pesummary
@@ -23,7 +21,7 @@ from pesummary.core.webpage import webpage
 from pesummary.core.webpage.main import _WebpageGeneration as _CoreWebpageGeneration
 from pesummary.core.webpage.main import PlotCaption
 from pesummary.gw.file.standard_names import descriptive_names
-from pesummary.utils.utils import logger, jensen_shannon_divergence, safe_round
+from pesummary.utils.utils import logger, safe_round
 from pesummary import conf
 
 
@@ -180,9 +178,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         from pesummary.gw.plots.plot import _return_bounds
 
         xlow, xhigh = _return_bounds(param, samples, comparison=True)
-        return jensen_shannon_divergence(
-            [samples[0], samples[1]], kde=Bounded_1d_kde, xlow=xlow,
-            xhigh=xhigh
+        return super(_WebpageGeneration, self)._jensen_shannon_divergence(
+            param, samples, kde=Bounded_1d_kde, xlow=xlow, xhigh=xhigh
         )
 
     def make_navbar_for_homepage(self):
@@ -191,8 +188,6 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         links = super(_WebpageGeneration, self).make_navbar_for_homepage()
         if self.gwdata is not None:
             links.append(["Detchar", [i for i in self.gwdata.keys()]])
-        if self.notes is not None:
-            links.append("Notes")
         return links
 
     def make_navbar_for_result_page(self):
@@ -240,13 +235,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 if os.path.isfile(_plot):
                     image_contents.append(_plot)
                     image_contents = [image_contents]
-                    unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
-                    html_file.make_table_of_images(
-                        contents=image_contents, unique_id=unique_id
-                    )
-                    images = [y for x in image_contents for y in x]
-                    html_file.make_modal_carousel(
-                        images=images, unique_id=unique_id
+                    html_file = self.make_modal_carousel(
+                        html_file, image_contents, unique_id=True
                     )
 
         for i in self.labels:
@@ -275,13 +265,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 )
                 captions.append(PlotCaption("calibration"))
             image_contents = [image_contents]
-            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
-            html_file.make_table_of_images(
-                contents=image_contents, unique_id=unique_id,
-                captions=[captions], extra_div=True
+            html_file = self.make_modal_carousel(
+                html_file, image_contents, unique_id=True, extra_div=True,
+                captions=[captions]
             )
-            images = [y for x in image_contents for y in x]
-            html_file.make_modal_carousel(images=images, unique_id=unique_id)
 
         for _key in ["sampler", "meta_data"]:
             if _key == "sampler":
@@ -325,84 +312,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
 
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
-
-        for num, i in enumerate(self.labels):
-            html_file = self.setup_page(
-                i, self.navbar["result_page"][i], i, approximant=i,
-                title="{} Summary page".format(i),
-                background_colour=self.colors[num]
-            )
-            html_file.make_banner(approximant=i, key=i)
-            images, cli, captions = self.default_images_for_result_page(i)
-            unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
-            html_file.make_table_of_images(
-                contents=images, cli=cli, unique_id=unique_id,
-                captions=captions, autoscale=True
-            )
-            images = [y for x in images for y in x]
-            html_file.make_modal_carousel(images=images, unique_id=unique_id)
-
-            if self.custom_plotting:
-                from glob import glob
-
-                custom_plots = glob(
-                    "{}/plots/{}_custom_plotting_*".format(self.webdir, i)
-                )
-                path = self.image_path["other"]
-                for num, i in enumerate(custom_plots):
-                    custom_plots[num] = path + i.split("/")[-1]
-                image_contents = [
-                    custom_plots[i:4 + i] for i in range(
-                        0, len(custom_plots), 4
-                    )
-                ]
-                unique_id = '{}'.format(uuid.uuid4().hex.upper()[:6])
-                html_file.make_table_of_images(
-                    contents=image_contents, unique_id=unique_id
-                )
-                images = [y for x in image_contents for y in x]
-                html_file.make_modal_carousel(images=images, unique_id=unique_id)
-
-            html_file.make_banner(
-                approximant="Summary Table", key="summary_table",
-                _style="font-size: 26px;"
-            )
-            _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
-            _class = "row justify-content-center"
-            html_file.make_container(style=_style)
-            html_file.make_div(4, _class=_class, _style=None)
-
-            key_data = self.key_data
-            contents = []
-            headings = [" "] + self.key_data_headings.copy()
-            _injection = False
-            if "injected" in headings:
-                _injection = not all(
-                    math.isnan(_data["injected"]) for _data in
-                    self.key_data[i].values()
-                )
-            if _injection:
-                headings.append("injected")
-            for j in self.samples[i].keys():
-                row = []
-                row.append(j)
-                row += self.key_data_table[i][j]
-                if _injection:
-                    row.append(safe_round(self.key_data[i][j]["injected"], 3))
-                contents.append(row)
-
-            html_file.make_table(
-                headings=headings, contents=contents, heading_span=1,
-                accordian=False, format="table-hover header-fixed",
-                sticky_header=True
-            )
-            html_file.end_div(4)
-            html_file.end_container()
-            html_file.export(
-                "summary_information_{}.csv".format(i)
-            )
-            html_file.make_footer(user=self.user, rundir=self.webdir)
-            html_file.close()
+        super(_WebpageGeneration, self)._make_home_pages(pages, make_home=False)
 
     def make_publication_pages(self):
         """Wrapper function for _make_publication_pages()
@@ -486,11 +396,9 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             cli[i:3 + i] for i in range(0, len(cli), 3)
         ]
         captions = [cap[i:3 + i] for i in range(0, len(cap), 3)]
-        html_file.make_table_of_images(
-            contents=image_contents, cli=command_lines, captions=captions
+        html_file = self.make_modal_carousel(
+            html_file, image_contents, cli=command_lines, captions=captions
         )
-        images = [y for x in image_contents for y in x]
-        html_file.make_modal_carousel(images=images)
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
@@ -564,11 +472,9 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     )
                 ]
             ]
-            html_file.make_table_of_images(
-                contents=image_contents, cli=command_lines, autoscale=True
+            html_file = self.make_modal_carousel(
+                html_file, image_contents, cli=command_lines, autoscale=True,
             )
-            images = [y for x in image_contents for y in x]
-            html_file.make_modal_carousel(images=images)
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
@@ -673,12 +579,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     PlotCaption("population_classification_bar")
                 ]
             ]
-            html_file.make_table_of_images(
-                contents=image_contents, cli=command_lines, autoscale=True,
+            html_file = self.make_modal_carousel(
+                html_file, image_contents, cli=command_lines, autoscale=True,
                 captions=captions
             )
-            images = [y for x in image_contents for y in x]
-            html_file.make_modal_carousel(images=images)
             html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
