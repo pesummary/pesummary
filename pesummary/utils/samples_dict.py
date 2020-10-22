@@ -18,6 +18,7 @@ import numpy as np
 from pesummary.utils.utils import resample_posterior_distribution, logger
 from pesummary.utils.decorators import docstring_subfunction
 from pesummary.utils.array import Array
+from pesummary.utils.dict import Dict
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary import conf
@@ -26,7 +27,7 @@ import importlib
 latex_labels.update(GWlatex_labels)
 
 
-class SamplesDict(dict):
+class SamplesDict(Dict):
     """Class to store the samples from a single run
 
     Parameters
@@ -102,7 +103,7 @@ class SamplesDict(dict):
     >>> fig.show()
     """
     def __init__(self, *args, logger_warn="warn", autoscale=True):
-        super(SamplesDict, self).__init__()
+        super(SamplesDict, self).__init__(_init=False)
         if len(args) == 1 and isinstance(args[0], dict):
             self.parameters = list(args[0].keys())
             self.samples = np.array(
@@ -142,12 +143,6 @@ class SamplesDict(dict):
                 self.parameters,
                 [i[key.start:key.stop:key.step] for i in self.samples]
             )
-        if isinstance(key, str):
-            if key not in self.keys():
-                raise KeyError(
-                    "{} not in dictionary. The list of available keys are "
-                    "{}".format(key, self.keys())
-                )
         return super(SamplesDict, self).__getitem__(key)
 
     def __str__(self):
@@ -730,7 +725,7 @@ class SamplesDict(dict):
         return self._maxL_waveform(self.fd_waveform, *args, **kwargs)
 
 
-class _MultiDimensionalSamplesDict(dict):
+class _MultiDimensionalSamplesDict(Dict):
     """Class to store multiple SamplesDict objects
 
     Parameters

@@ -909,6 +909,18 @@ class TestDict(object):
         np.testing.assert_almost_equal(x["a"].value, [10, 10])
         np.testing.assert_almost_equal(x["a"].value2, [20, 20])
 
+    def test_specify_columns(self):
+        """Test that x[["a", "b"]] works as expected
+        """
+        x = Dict({"a": [10], "b": [20], "c": [30], "d": [40]}, value_class=list)
+        y = x[["a", "b"]]
+        assert sorted(list(y.keys())) == ["a", "b"]
+        for key in y.keys():
+            assert y[key] == x[key]
+        with pytest.raises(Exception):
+            z = x[["e", "f"]]
+        
+
 
 def make_cache_style_file(style_file):
     """Make a cache directory which stores the style file you wish to use

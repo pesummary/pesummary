@@ -14,6 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import numpy as np
+import copy
 
 
 def paths_to_key(key, dictionary, current_path=None):
@@ -125,9 +126,12 @@ class Dict(dict):
         is the name of the property
     """
     def __init__(
-        self, *args, value_class=np.ndarray, value_columns=None, **kwargs
+        self, *args, value_class=np.ndarray, value_columns=None, _init=True,
+        **kwargs
     ):
         super(Dict, self).__init__()
+        if not _init:
+            return
         if isinstance(args[0], dict):
             data = args[0]
         else:
@@ -143,3 +147,39 @@ class Dict(dict):
                         setattr(self[key], col, np.array(self[key].T[num]))
         for key, item in kwargs.items():
             setattr(self, key, item)
+
+    def __getitem__(self, key):
+        """Return an object representing the specialization of Dict
+        by type arguments found in key.
+        """
+        if isinstance(key, list):
+            allowed = [_key for _key in key if _key in self.keys()]
+            remove = [_key for _key in self.keys() if _key not in allowed]
+            if len(allowed):
+                if len(allowed) != len(key):
+                    import warnings
+                    warnings.warn(
+                        "Only returning a dict with keys: {} as not all keys "
+                        "are in the {} class".format(
+                            ", ".join(allowed), self.__class__.__name__
+                        )
+                    )
+                _self = copy.deepcopy(self)
+                for _key in remove:
+                    _self.pop(_key)
+                return _self
+            raise KeyError(
+                "The keys: {} are not available in {}. The list of "
+                "available keys are: {}".format(
+                    ", ".join(key), self.__class__.__name__,
+                    ", ".join(self.keys())
+                )
+            )
+        elif isinstance(key, str):
+            if key not in self.keys():
+                raise KeyError(
+                    "{} not in {}. The list of available keys are {}".format(
+                        key, self.__class__.__name__, ", ".join(self.keys())
+                    )
+                )
+        return super(Dict, self).__getitem__(key)

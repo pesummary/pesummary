@@ -89,6 +89,12 @@ instances,
     ...     {"analysis_1": f.samples_dict, "analysis_2": g.samples_dict}
     ... )
 
+After initializing the class, you may select a subset of columns by running:
+
+.. code-block:: python
+
+    >>> samplesdict[["analysis_1", "analysis_2"]]
+
 Using the MultiAnalysisSamplesDict properties
 ---------------------------------------------
 
