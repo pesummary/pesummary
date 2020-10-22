@@ -29,6 +29,15 @@ of samples for each parameter,
     3       4.000000       3.000000
     4       5.000000       2.000000
     5       6.000000       1.000000
+    >>> samplesdict = SamplesDict({"a": [1,2,3,4,5,6], "b": [6,5,4,3,2,1]})
+    >>> print(samplesdict)
+    idx     a              b
+    0       1.000000       6.000000
+    1       2.000000       5.000000
+    2       3.000000       4.000000
+    3       4.000000       3.000000
+    4       5.000000       2.000000
+    5       6.000000       1.000000
 
 Alternatively, it may be initialized with the path to a result file containing
 posterior samples,
