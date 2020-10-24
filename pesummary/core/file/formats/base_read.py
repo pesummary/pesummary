@@ -143,6 +143,54 @@ class Read(object):
             return Array(np.array(samples).T[ind])
         return None
 
+    def __repr__(self):
+        return self.summary()
+
+    def _parameter_summary(self, parameters, parameters_to_show=4):
+        """Return a summary of the parameter stored
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters to create a summary for
+        parameters_to_show: int, optional
+            number of parameters to show. Default 4.
+        """
+        params = parameters
+        if len(parameters) > parameters_to_show:
+            params = parameters[:2] + ["..."] + parameters[-2:]
+        return ", ".join(params)
+
+    def summary(
+        self, parameters_to_show=4, show_parameters=True, show_nsamples=True
+    ):
+        """Return a summary of the contents of the file
+
+        Parameters
+        ----------
+        parameters_to_show: int, optional
+            number of parameters to show. Default 4
+        show_parameters: Bool, optional
+            if True print a list of the parameters stored
+        show_nsamples: Bool, optional
+            if True print how many samples are stored in the file
+        """
+        string = ""
+        if self.path_to_results_file is not None:
+            string += "file: {}\n".format(self.path_to_results_file)
+        string += "cls: {}.{}\n".format(
+            self.__class__.__module__, self.__class__.__name__
+        )
+        if show_nsamples:
+            string += "nsamples: {}\n".format(len(self.samples))
+        if show_parameters:
+            string += "parameters: {}".format(
+                self._parameter_summary(
+                    self.parameters, parameters_to_show=parameters_to_show
+                )
+            )
+        return string
+
     attrs = {
         "input_version": "version", "extra_kwargs": "kwargs",
         "priors": "prior", "analytic": "analytic", "labels": "labels",
@@ -731,6 +779,29 @@ class MultiAnalysisRead(Read):
         return {
             label: version for label, version in zip(self.labels, self.input_version)
         }
+
+    def summary(self, *args, parameters_to_show=4, **kwargs):
+        """Return a summary of the contents of the file
+
+        Parameters
+        ----------
+        parameters_to_show: int, optional
+            number of parameters to show. Default 4
+        """
+        string = super(MultiAnalysisRead, self).summary(
+            show_parameters=False, show_nsamples=False
+        )
+        string += "analyses: {}\n\n".format(", ".join(self.labels))
+        for num, label in enumerate(self.labels):
+            string += "{}\n".format(label)
+            string += "-" * len(label) + "\n"
+            string += "nsamples: {}\n".format(len(self.samples[num]))
+            string += "parameters: {}\n\n".format(
+                self._parameter_summary(
+                    self.parameters[num], parameters_to_show=parameters_to_show
+                )
+            )
+        return string[:-2]
 
     def downsample(self, number):
         """Downsample the posterior samples stored in the result file
