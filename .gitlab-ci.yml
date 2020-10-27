@@ -75,16 +75,14 @@ wheel:
 conda:
   stage: build
   image: igwn/base:conda
-  before_script:
-    - ''
+  before_script: []
   script:
-    - conda create --name py37 python==3.7
     - . /opt/conda/etc/profile.d/conda.sh
+    - conda create --name py37 python=3.7
     - conda activate py37
     - conda install --file conda_requirements.txt -c conda-forge
     - python setup.py install
     - conda deactivate
-  allow_failure: true
 
 
 docker:
