@@ -13,11 +13,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os
 import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+CONDA_EXE = os.getenv("CONDA_EXE", shutil.which("conda")) or "conda"
 
 
 class GitInformation(object):
@@ -114,7 +117,7 @@ class PackageInformation(GitInformation):
         if (Path(sys.prefix) / "conda-meta").is_dir():
             self.package_manager = "conda"
             raw = self.call([
-                "conda",
+                CONDA_EXE,
                 "list",
                 "--json",
                 "--prefix", sys.prefix,

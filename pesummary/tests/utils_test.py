@@ -35,6 +35,8 @@ from pesummary._version_helper import get_version_information
 import pytest
 from testfixtures import LogCapture
 
+DEFAULT_DIRECTORY = os.getenv("CI_PROJECT_DIR", os.getcwd())
+
 
 class TestGitInformation(object):
     """Class to test the GitInformation helper class
@@ -42,7 +44,7 @@ class TestGitInformation(object):
     def setup(self):
         """Setup the TestGitInformation class
         """
-        self.git = GitInformation(directory="/builds/lscsoft/pesummary/")
+        self.git = GitInformation(directory=DEFAULT_DIRECTORY)
 
     def test_last_commit_info(self):
         """Test the last_commit_info property
