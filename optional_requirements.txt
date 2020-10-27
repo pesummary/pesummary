@@ -16,3 +16,4 @@ nbformat
 nbsphinx
 jupyter_client
 ipykernel
+requests

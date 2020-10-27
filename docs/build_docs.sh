@@ -15,10 +15,16 @@
 
 set -e
 
-tags=($(git tag))
-stable=${tags[${#tags[@]}-1]}
+# get latest tag, use current branch name if no tags found
+stable=$(git describe --abbrev=0 | git rev-parse --abbrev-ref HEAD)
 
-igwn_version=`python -c "from bs4 import BeautifulSoup; import urllib.request; url = 'https://computing.docs.ligo.org/conda/environments/igwn-py37/'; page = urllib.request.urlopen(url); soup = BeautifulSoup(page, 'html.parser'); table_body = soup.find('tbody'); rows = table_body.find_all('tr'); pesummary_row = [i.find_all('td') for i in rows if 'pesummary' in str(i)][0]; version = pesummary_row[1].renderContents().decode('utf-8'); print(version)"`
+# get pesummary version from IGWN Conda Distribution
+igwn_yaml="https://computing.docs.ligo.org/conda/environments/linux/igwn-py37.yaml"
+igwn_version=$(python -c "
+import requests, yaml;
+py38 = yaml.safe_load(requests.get('${igwn_yaml}').content)['dependencies'];
+print(list(filter(lambda x: x.startswith('pesummary='), py38))[0].split('=')[1]);
+")
 
 mkdir -p ../broken_links
 mkdir -p ../stable_docs
