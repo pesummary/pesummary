@@ -14,7 +14,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import sys
+import shutil
 from pathlib import Path
+from astropy.utils.console import ProgressBarOrSpinner
 from astropy.utils.data import download_file, conf, _tempfilestodel
 from pesummary.io import read
 from tempfile import NamedTemporaryFile
@@ -26,7 +29,7 @@ except ImportError:
     CIECPLIB = False
 
 
-def _download_authenticated_file(url, **kwargs):
+def _download_authenticated_file(url, block_size=2**16, **kwargs):
     """Downloads a URL from an authenticated site
 
     Parameters
@@ -44,9 +47,16 @@ def _download_authenticated_file(url, **kwargs):
     with ciecplib.Session(**kwargs) as sess:
         pid = os.getpid()
         prefix = "pesummary-download-%s-" % (pid)
-        with NamedTemporaryFile(prefix=prefix, delete=False) as f:
-            content = sess.get(url).content
-            f.write(content)
+        response = sess.get(url, stream=True)
+        size = int(response.headers.get('content-length', 0))
+        dlmsg = "Downloading {}".format(url)
+        bytes_read = 0
+        with ProgressBarOrSpinner(size, dlmsg, file=sys.stdout) as p:
+            with NamedTemporaryFile(prefix=prefix, delete=False) as f:
+                for data in response.iter_content(block_size):
+                    bytes_read += len(data)
+                    p.update(bytes_read)
+                    f.write(data)
 
     if conf.delete_temporary_downloads_at_exit:
         global _tempfilestodel
@@ -68,7 +78,9 @@ def _download_file(url, **kwargs):
 
 
 def download_and_read_file(
-    url, download_kwargs={}, _function=_download_file, **kwargs
+    url, download_kwargs={}, read_file=True, delete_on_exit=True, outdir=None,
+    _function=_download_file,
+    **kwargs
 ):
     """Downloads a URL and reads the file with pesummary.io.read function
 
@@ -78,13 +90,29 @@ def download_and_read_file(
         url you wish to download
     download_kwargs: dict, optional
         optional kwargs passed to _download_file
+    read_file: Bool, optional
+        if True, read the downloaded file and return the opened object.
+        if False, return the path to the downloaded file. Default True
+    delete_on_exit: Bool, optional
+        if True, delete the file on exit. Default True
+    outdir: str, optional
+        save the file to outdir. Default the default directory from
+        tmpfile.NamedTemporaryFile
     **kwargs: dict, optional
         additional kwargs passed to pesummary.io.read function
     """
+    conf.delete_temporary_downloads_at_exit = delete_on_exit
     local = _function(url, **download_kwargs)
     filename = Path(url).name
-    new_name = Path(local).parent / filename
-    os.rename(local, new_name)
+    if outdir is None:
+        outdir = Path(local).parent
+    new_name = Path(outdir) / filename
+    shutil.move(local, new_name)
+    if not read_file:
+        if conf.delete_temporary_downloads_at_exit:
+            global _tempfilestodel
+            _tempfilestodel.append(new_name)
+        return new_name
     data = read(new_name, **kwargs)
-    os.rename(new_name, local)
+    shutil.move(new_name, local)
     return data
