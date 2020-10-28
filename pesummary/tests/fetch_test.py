@@ -18,6 +18,7 @@ from pesummary.core.fetch import download_and_read_file
 from pesummary.gw.fetch import fetch_open_data
 import numpy as np
 import requests
+import os
 
 
 def test_download_and_read_file():
@@ -36,6 +37,17 @@ def test_download_and_read_file():
     np.testing.assert_almost_equal(
         np.array(data.samples), np.array(data2.samples)
     )
+
+
+def test_download_and_keep_file():
+    """Test that when the `read=False` kwarg is passed to the
+    download_and_read_file function the filename is returned
+    """
+    file_name = download_and_read_file(
+        "https://dcc.ligo.org/public/0157/P1800370/005/GW150914_GWTC-1.hdf5",
+        outdir=".", read_file=False
+    )
+    assert os.path.isfile(file_name)
 
 
 def test_fetch_open_data():
