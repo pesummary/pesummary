@@ -17,3 +17,4 @@ nbsphinx
 jupyter_client
 ipykernel
 requests
+gwosc

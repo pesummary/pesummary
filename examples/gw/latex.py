@@ -5,7 +5,7 @@
 
 from pesummary.gw.fetch import fetch_open_data
 
-f = fetch_open_data("GW190814")
+f = fetch_open_data("GW190814", unpack=True, path="GW190814.h5")
 
 # Then make a dictionary which maps the parameter to a description that you
 # wish to use in the latex table

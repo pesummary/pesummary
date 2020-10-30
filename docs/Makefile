@@ -33,7 +33,7 @@ clean:
 html:
 	../../examples/gw/make_public_release.py
 	mv posterior_samples.ipynb gw/tutorials
-	mv GW190814_posterior_samples.h5 gw/tutorials
+	mv GW190814.h5 gw/tutorials
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

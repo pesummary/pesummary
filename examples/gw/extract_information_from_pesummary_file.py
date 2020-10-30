@@ -1,7 +1,7 @@
 # let us extract the information from the GW specific pesummary metafile
 from pesummary.gw.fetch import fetch_open_data
 
-f = fetch_open_data("GW190814")
+f = fetch_open_data("GW190814", unpack=True, path="GW190814.h5")
 config_data = f.config
 samples = f.samples_dict
 parameters = f.parameters
@@ -20,9 +20,10 @@ approximants = f.approximant
 # as dat/txt files, you can easily convert them back to their original form
 # by using the `save_to_file` function
 
-psds[labels[0]]["H1"].save_to_file("IFO0_psd.dat")
-calibration_envelopes[labels[0]]["H1"].save_to_file("calibration_H1.txt")
+label = "C01:IMRPhenomD"
+psds[label]["H1"].save_to_file("IFO0_psd.dat")
+calibration_envelopes[label]["H1"].save_to_file("calibration_H1.txt")
 
 # We can also save the config_data as a valid configuration file by running
 
-f.write_config_to_file(labels[0], outdir="./")
+f.write_config_to_file(label, outdir="./")
