@@ -21,6 +21,7 @@ from astropy.utils.console import ProgressBarOrSpinner
 from astropy.utils.data import download_file, conf, _tempfilestodel
 from pesummary.io import read
 from tempfile import NamedTemporaryFile
+import tarfile
 
 try:
     import ciecplib
@@ -29,7 +30,36 @@ except ImportError:
     CIECPLIB = False
 
 
-def _download_authenticated_file(url, block_size=2**16, **kwargs):
+def _unpack_and_extract(path_to_file, filename, path=None):
+    """
+    """
+    path_to_file = Path(path_to_file)
+    if not tarfile.is_tarfile(path_to_file):
+        raise ValueError("unable to unpack file")
+    outdir = path_to_file.parent
+    tar = tarfile.open(path_to_file, 'r')
+    _files = tar.getnames()
+    if path is None:
+        print("Extracting all files from {}".format(path_to_file))
+        tar.extractall(path=outdir)
+        return outdir / Path(filename).stem
+    if not any(path in _file for _file in _files):
+        raise ValueError(
+            "Unable to find a file called '{}' in tarball. The list of "
+            "available files are: {}".format(path, ", ".join(_files))
+        )
+    _path = [_file for _file in _files if path in _file][0]
+    tar.extract(_path, path=outdir)
+    unpacked_file = path_to_file.parent / _path
+    if conf.delete_temporary_downloads_at_exit:
+        global _tempfilestodel
+        _tempfilestodel.append(unpacked_file)
+    return unpacked_file
+
+
+def _download_authenticated_file(
+    url, unpack=False, path=None, block_size=2**16, **kwargs
+):
     """Downloads a URL from an authenticated site
 
     Parameters
@@ -64,13 +94,15 @@ def _download_authenticated_file(url, block_size=2**16, **kwargs):
     return f.name
 
 
-def _download_file(url, **kwargs):
+def _download_file(url, unpack=False, path=None, **kwargs):
     """Downloads a URL and optionally caches the result
 
     Parameters
     ----------
     url: str
         url you wish to download
+    unpack: Bool, optional
+        if True, unpack tarball. Default False
     **kwargs: dict, optional
         additional kwargs passed to astropy.utils.data.download_file
     """
@@ -79,7 +111,7 @@ def _download_file(url, **kwargs):
 
 def download_and_read_file(
     url, download_kwargs={}, read_file=True, delete_on_exit=True, outdir=None,
-    _function=_download_file,
+    unpack=False, path=None, _function=_download_file,
     **kwargs
 ):
     """Downloads a URL and reads the file with pesummary.io.read function
@@ -104,9 +136,17 @@ def download_and_read_file(
     conf.delete_temporary_downloads_at_exit = delete_on_exit
     local = _function(url, **download_kwargs)
     filename = Path(url).name
+    if unpack:
+        local = _unpack_and_extract(local, path=path, filename=filename)
+        filename = Path(local).name
+        if os.path.isdir(local):
+            filename = Path(filename).stem
     if outdir is None:
         outdir = Path(local).parent
-    new_name = Path(outdir) / filename
+    if os.path.isdir(filename):
+        new_name = Path(outdir)
+    else:
+        new_name = Path(outdir) / filename
     shutil.move(local, new_name)
     if not read_file:
         if conf.delete_temporary_downloads_at_exit:

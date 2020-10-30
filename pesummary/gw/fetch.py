@@ -16,20 +16,7 @@
 from pesummary.core.fetch import (
     download_and_read_file, _download_authenticated_file
 )
-
-DCC = "https://dcc.ligo.org/public/"
-GWTC1_base = DCC + "0157/P1800370/005/"
-GWTC1_events = [
-    "GW150914", "GW151012", "GW151226", "GW170104", "GW170608", "GW170729",
-    "GW170809", "GW170814", "GW170817", "GW170818", "GW170823"
-]
-DCC_MAP = {
-    key: GWTC1_base + "{}_GWTC-1.hdf5".format(key) for key in GWTC1_events
-}
-DCC_MAP.update({
-    "GW190412": DCC + "0163/P190412/012/GW190412_posterior_samples_v3.h5",
-    "GW190814": DCC + "0168/P2000183/008/GW190814_posterior_samples.h5"
-})
+from gwosc.api import fetch_event_json
 
 
 def fetch(url, download_kwargs={}, **kwargs):
@@ -52,6 +39,25 @@ def fetch(url, download_kwargs={}, **kwargs):
     )
 
 
+def _DCC_url(event):
+    """Return the url for posterior samples stored on the DCC for a given event
+
+    Parameters
+    ----------
+    event: str
+        name of the event you wish to return posterior samples for
+    """
+    data, = fetch_event_json(event)["events"].values()
+    url = None
+    for key, item in data["parameters"].items():
+        if "_pe_" in key:
+            url = item["data_url"]
+            break
+    if url is None:
+        raise RuntimeError("Failed to find PE data URL for {}".format(event))
+    return url
+
+
 def fetch_open_data(event, **kwargs):
     """Download and read publically available gravitational wave posterior
     samples
@@ -61,9 +67,11 @@ def fetch_open_data(event, **kwargs):
     event: str
         name of the gravitational wave event you wish to download data for
     """
-    if event not in DCC_MAP.keys():
+    try:
+        url = _DCC_url(event)
+    except RuntimeError:
         raise ValueError(
             "Unknown URL for {}. If the URL is known, please run "
             "download_and_read_file(URL)"
         )
-    return download_and_read_file(DCC_MAP[event], **kwargs)
+    return download_and_read_file(url, **kwargs)

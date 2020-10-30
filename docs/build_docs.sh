@@ -16,7 +16,7 @@
 set -e
 
 # get latest tag, use current branch name if no tags found
-stable=$(git describe --abbrev=0 | git rev-parse --abbrev-ref HEAD)
+stable=$(git describe --abbrev=0 || git rev-parse --abbrev-ref HEAD)
 
 # get pesummary version from IGWN Conda Distribution
 igwn_yaml="https://computing.docs.ligo.org/conda/environments/linux/igwn-py37.yaml"
@@ -36,8 +36,10 @@ git checkout v0.3.4 ./*
 mv ./* ../broken_links
 git checkout ${stable} ./*
 mv ./* ../stable_docs
+cp ../unstable_docs/Makefile ../stable_docs
 git checkout v${igwn_version} ./*
 mv ./* ../igwn_pinned
+cp ../unstable_docs/Makefile ../igwn_pinned
 mv ../broken_links/ .
 mv ../stable_docs .
 mv ../unstable_docs .

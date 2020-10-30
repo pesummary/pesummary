@@ -4,7 +4,8 @@ import requests
 
 # First we download the GW190814 posterior samples and generate the maximum
 # likelihood waveform in the time domain
-samples = fetch_open_data("GW190814").samples_dict["C01:SEOBNRv4PHM"]
+data = fetch_open_data("GW190814", unpack=True, path="GW190814.h5")
+samples = data.samples_dict["C01:SEOBNRv4PHM"]
 maxL = samples.maxL_td_waveform("SEOBNRv4PHM", 1. / 4096, 20., project="L1")
 
 # # Next we fetch the LIGO Livingston data around the time of GW190814

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import requests
 
 # First we download and read the publically available posterior samples
-f = fetch_open_data("GW190814")
+f = fetch_open_data("GW190814", unpack=True, path="GW190814.h5")
 samples = f.samples_dict
 Phenom = samples["C01:IMRPhenomPv3HM"]
 

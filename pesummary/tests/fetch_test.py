@@ -50,6 +50,40 @@ def test_download_and_keep_file():
     assert os.path.isfile(file_name)
 
 
+def test_fetch_tarball_and_keep():
+    """Test that the `pesummary.gw.fetch.fetch_open_data` function is able to
+    fetch, unpack and keep a tarball
+    """
+    directory_name = fetch_open_data(
+        "GW190814", read_file=False, outdir=".", unpack=True
+    )
+    assert os.path.isdir("./GW190814")
+    assert os.path.isdir(directory_name)
+
+
+def test_fetch_tarball_and_keep_single_file():
+    """Test that the `pesummary.gw.fetch.fetch_open_data` function is able to
+    fetch, unpack and keep a single file stored in a tarball
+    """
+    file_name = fetch_open_data(
+        "GW190814", read_file=False, outdir=".", unpack=True, path="GW190814.h5"
+    )
+    assert os.path.isfile("./GW190814.h5")
+    assert os.path.isfile(file_name)
+
+
+def test_fetch_and_open_tarball():
+    """Test that a `pesummary.gw.fetch.fetch_open_data` function is able to
+    fetch, unpack and read a single file stored in a tarball
+    """
+    import pesummary.gw.file.formats.pesummary
+
+    f = fetch_open_data(
+        "GW190814", read_file=True, outdir=".", unpack=True, path="GW190814.h5"
+    )
+    assert isinstance(f, pesummary.gw.file.formats.pesummary.PESummary)
+
+
 def test_fetch_open_data():
     """Test that the `pesummary.gw.fetch.fetch_open_data` function works as
     expected

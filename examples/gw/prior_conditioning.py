@@ -7,9 +7,9 @@ import numpy as np
 np.random.seed(21)
 
 # First lets download and read the publicly available data
-f = fetch_open_data("GW190412")
+f = fetch_open_data("GW190412", unpack=True, path="GW190412.h5")
 posterior = f.samples_dict
-prior = f.priors["samples"]["combined"]
+prior = f.priors["samples"]["C01:SEOBNRv4PHM"]
 unconditioned = prior["chi_p"]
 # Next let us generate the prior samples conditioned on the chi_eff posterior
 # distribution
@@ -20,14 +20,17 @@ boundaries = {
 }
 N_bins = 100
 conditioned = draw_conditioned_prior_samples(
-    posterior["combined"], prior, parameters_to_condition_on, boundaries["low"],
-    boundaries["high"], N_bins
+    posterior["PublicationSamples"], prior, parameters_to_condition_on,
+    boundaries["low"], boundaries["high"], N_bins
 )
 
 # Next let us plot the data
 fig = plt.figure()
 xsmooth = np.linspace(0.01, 0.99, 100)
-samples = [posterior["SEOBNRv4PHM"]["chi_p"], posterior["IMRPhenomPv3HM"]["chi_p"], unconditioned, conditioned["chi_p"]]
+samples = [
+    posterior["C01:SEOBNRv4PHM"]["chi_p"], posterior["C01:IMRPhenomPv3HM"]["chi_p"],
+    unconditioned, conditioned["chi_p"]
+]
 colors = ["#e69f00", "#0072b2", "grey", "k"]
 labels = ["EOBNR PHM", "Phenom PHM", "global", "restricted"]
 linestyles = ["-", "-", ":", ":"]
