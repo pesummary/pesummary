@@ -4,7 +4,9 @@ import glob
 import subprocess
 import numpy as np
 
-from .base import make_result_file, get_list_of_plots, get_list_of_files, data_dir
+from .base import (
+    make_result_file, get_list_of_plots, get_list_of_files, data_dir
+)
 import pytest
 from pesummary.utils.exceptions import InputError
 import importlib
@@ -21,7 +23,149 @@ class Base(object):
         cla = args[1:]
         module = importlib.import_module("pesummary.cli.{}".format(executable))
         print(cla)
-        module.main(args=[i for i in cla if i != " " and i != ""])
+        return module.main(args=[i for i in cla if i != " " and i != ""])
+
+
+class TestSummaryPipe(Base):
+    """Test the `summarypipe` executable with trivial examples
+    """
+    def setup(self):
+        """Setup the SummaryPipe class
+        """
+        self.dirs = [
+            ".outdir", ".outdir/lalinference", ".outdir/bilby",
+            ".outdir/lalinference/posterior_samples",
+            ".outdir/lalinference/ROQdata", ".outdir/lalinference/engine",
+            ".outdir/lalinference/caches", ".outdir/lalinference/log",
+            ".outdir/bilby/data", ".outdir/bilby/result",
+            ".outdir/bilby/submit", ".outdir/bilby/log_data_analysis"
+        ]
+        for dd in self.dirs:
+            if not os.path.isdir(dd):
+                os.mkdir(dd)
+        make_result_file(
+            gw=False, lalinference=True,
+            outdir=".outdir/lalinference/posterior_samples/"
+        )
+        os.rename(
+            ".outdir/lalinference/posterior_samples/test.hdf5",
+            ".outdir/lalinference/posterior_samples/posterior_HL_result.hdf5"
+        )
+        make_result_file(
+            gw=False, bilby=True, outdir=".outdir/bilby/result/"
+        )
+        os.rename(
+            ".outdir/bilby/result/test.json",
+            ".outdir/bilby/result/label_result.json"
+        )
+
+    def add_config_file(self):
+        shutil.copyfile(
+            os.path.join(data_dir, "config_lalinference.ini"),
+            ".outdir/lalinference/config.ini"
+        )
+        shutil.copyfile(
+            os.path.join(data_dir, "config_bilby.ini"),
+            ".outdir/bilby/config.ini"
+        )
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        for dd in self.dirs:
+            if os.path.isdir(dd):
+                shutil.rmtree(dd)
+
+    def test_no_config(self):
+        """Test that the code fails if there is no config file in the
+        directory
+        """
+        for _type in ["lalinference", "bilby"]:
+            command_line = "summarypipe --rundir .outdir/{}".format(_type)
+            with pytest.raises(FileNotFoundError):
+                self.launch(command_line)
+
+    def test_no_samples(self):
+        """Test that the code fails if there are no posterior samples in the
+        directory
+        """
+        self.add_config_file()
+        for _type in ["lalinference", "bilby"]:
+            if _type == "lalinference":
+                os.remove(
+                    ".outdir/{}/posterior_samples/posterior_HL_result.hdf5".format(
+                        _type
+                    )
+                )
+            else:
+                os.remove(
+                    ".outdir/{}/result/label_result.json".format(_type)
+                )
+            command_line = "summarypipe --rundir .outdir/{}".format(_type)
+            with pytest.raises(FileNotFoundError):
+                self.launch(command_line)
+
+    def test_basic(self):
+        """Test that the code runs for a trivial example
+        """
+        self.add_config_file()
+        for _type in ["lalinference", "bilby"]:
+            command_line = (
+                "summarypipe --rundir .outdir/{} --return_string".format(_type)
+            )
+            output = self.launch(command_line)
+            assert "--config" in output
+            assert ".outdir/{}/config.ini".format(_type) in output
+            assert "--samples" in output
+            if _type == "lalinference":
+                _f = (
+                    ".outdir/{}/posterior_samples/posterior_HL_result.hdf5".format(
+                        _type
+                    )
+                )
+            else:
+                _f = ".outdir/{}/result/label_result.json".format(_type)
+            assert _f in output
+            assert "--webdir" in output
+            assert "--approximant" in output
+            assert "--labels" in output
+
+    def test_override(self):
+        """Test that when you provide an option from the command line it
+        overrides the one inferred from the rundir
+        """
+        self.add_config_file()
+        command_line = (
+            "summarypipe --rundir .outdir/lalinference --return_string"
+        )
+        output = self.launch(command_line)
+        command_line += " --labels hello"
+        output2 = self.launch(command_line)
+        assert output != output2
+        label = output.split(" ")[output.split(" ").index("--labels") + 1]
+        label2 = output2.split(" ")[output2.split(" ").index("--labels") + 1]
+        assert label != label2
+        assert label2 == "hello"
+
+    def test_add_to_summarypages_command(self):
+        """Test that when you provide an option from the command line that
+        is not already in the summarypages command line, it adds it to the one
+        inferred from the rundir
+        """
+        self.add_config_file()
+        command_line = (
+            "summarypipe --rundir .outdir/lalinference --return_string"
+        )
+        output = self.launch(command_line)
+        command_line += " --multi_process 10 --kde_plot --cosmology Planck15_lal"
+        output2 = self.launch(command_line)
+        assert output != output2
+        assert "--multi_process 10" in output2
+        assert "--cosmology Planck15_lal" in output2
+        assert "--kde_plot" in output2
+        assert "--multi_process 10" not in output
+        assert "--cosmology Planck15_lal" not in output
+        assert "--kde_plot" not in output
 
 
 class TestSummaryPages(Base):

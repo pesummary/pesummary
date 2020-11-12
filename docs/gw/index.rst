@@ -108,6 +108,7 @@ for details:
     ../core/cli/summarymodify
     ../core/cli/summarypages
     ../core/cli/summarypageslw
+    cli/summarypipe
     ../core/cli/summarypublication
     cli/summaryrecreate
     cli/summaryreview
