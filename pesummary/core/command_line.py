@@ -57,7 +57,7 @@ class ConfigAction(argparse.Action):
                 setattr(namespace, i, items[i])
 
     @staticmethod
-    def dict_from_str(string):
+    def dict_from_str(string, delimiter=":"):
         """Reformat the string into a dictionary
 
         Parameters
@@ -79,7 +79,7 @@ class ConfigAction(argparse.Action):
             string = string.split(", ")
 
         for i in string:
-            value = i.split(":")
+            value = i.split(delimiter)
             if " " in value[0]:
                 value[0] = value[0].replace(" ", "")
             if " " in value[1]:

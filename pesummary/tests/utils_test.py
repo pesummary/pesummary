@@ -120,7 +120,7 @@ class TestUtils(object):
     def test_rename_group_in_hf5_file(self):
         """Test the rename_group_in_hf5_file method
         """
-        f = h5py.File("./.outdir/rename_group.h5")
+        f = h5py.File("./.outdir/rename_group.h5", "w")
         group = f.create_group("group")
         group.create_dataset("example", data=np.array([10]))
         f.close()
@@ -134,7 +134,7 @@ class TestUtils(object):
         f.close()
 
     def test_rename_dataset_in_hf5_file(self):
-        f = h5py.File("./.outdir/rename_dataset.h5")
+        f = h5py.File("./.outdir/rename_dataset.h5", "w")
         group = f.create_group("group")
         group.create_dataset("example", data=np.array([10]))
         f.close()

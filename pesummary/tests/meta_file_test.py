@@ -29,9 +29,9 @@ from .base import data_dir
 
 
 def test_recursively_save_dictionary_to_hdf5_file():
-    if os.path.isdir("./.outdir"):
-        shutil.rmtree("./.outdir")
-    os.makedirs("./.outdir")
+    if os.path.isdir("./.outdir_recursive"):
+        shutil.rmtree("./.outdir_recursive")
+    os.makedirs("./.outdir_recursive")
 
     data = {
                "H1_L1_IMRPhenomPv2": {
@@ -54,11 +54,11 @@ def test_recursively_save_dictionary_to_hdf5_file():
                },
           }
 
-    with h5py.File("./.outdir/test.h5") as f:
+    with h5py.File("./.outdir_recursive/test.h5", "w") as f:
         meta_file.recursively_save_dictionary_to_hdf5_file(
             f, data, extra_keys=list(data.keys()))
 
-    f = h5py.File("./.outdir/test.h5", "r")
+    f = h5py.File("./.outdir_recursive/test.h5", "r")
     assert sorted(list(f.keys())) == sorted(list(data.keys()))
     assert sorted(
         list(f["H1_L1_IMRPhenomPv2/posterior_samples"].keys())) == sorted(
@@ -121,9 +121,9 @@ def test_recursively_save_dictionary_to_hdf5_file():
 def test_softlinks():
     """
     """
-    if os.path.isdir("./.outdir"):
-        shutil.rmtree("./.outdir")
-    os.makedirs("./.outdir")
+    if os.path.isdir("./.outdir_softlinks"):
+        shutil.rmtree("./.outdir_softlinks")
+    os.makedirs("./.outdir_softlinks")
 
     data = {
         "label1": {
@@ -202,19 +202,19 @@ def test_softlinks():
             repeat[keys[0]][1] == repeat[keys[0]][0]
 
     print(simlinked_dict)
-    with h5py.File("./.outdir/test.h5") as f:
+    with h5py.File("./.outdir_softlinks/test.h5", "w") as f:
         meta_file.recursively_save_dictionary_to_hdf5_file(
             f, simlinked_dict, extra_keys=meta_file.DEFAULT_HDF5_KEYS + ["label1", "label2"])
 
-    with h5py.File("./.outdir/no_softlink.h5") as f:
+    with h5py.File("./.outdir_softlinks/no_softlink.h5", "w") as f:
         meta_file.recursively_save_dictionary_to_hdf5_file(
             f, data, extra_keys=meta_file.DEFAULT_HDF5_KEYS + ["label1", "label2"])
 
-    softlink_size = os.stat("./.outdir/test.h5").st_size
-    no_softlink_size = os.stat('./.outdir/no_softlink.h5').st_size
+    softlink_size = os.stat("./.outdir_softlinks/test.h5").st_size
+    no_softlink_size = os.stat('./.outdir_softlinks/no_softlink.h5').st_size
     assert softlink_size < no_softlink_size
 
-    with h5py.File("./.outdir/test.h5", "r") as f:
+    with h5py.File("./.outdir_softlinks/test.h5", "r") as f:
         assert \
             f["label2"]["config_file"]["condor"]["executable"][0] == \
             f["label1"]["config_file"]["condor"]["executable"][0]
