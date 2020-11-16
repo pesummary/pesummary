@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, list_match
 from pesummary.utils.decorators import open_config
 import argparse
 import shutil
@@ -52,6 +52,8 @@ def command_line():
                             "search for in run directory. If not provided, search run "
                             "directory for a config file to use."
                         ))
+    parser.add_argument("--samples", dest="samples", default=None,
+                        help="path to posterior samples file you wish to use")
     parser.add_argument("--pattern", dest="pattern", default=None,
                         help="pattern to use when searching for files")
     parser.add_argument("--return_string", action="store_true", default=False,
@@ -115,7 +117,7 @@ class Base(object):
     }
 
     def __init__(
-        self, rundir, webdir=None, label=None, config=None, other="",
+        self, rundir, webdir=None, label=None, samples=None, config=None, other="",
         pattern=None
     ):
         if pattern is not None:
@@ -128,7 +130,7 @@ class Base(object):
             self.pattern["ignore_posterior_file"] = None
         self.rundir = os.path.abspath(rundir)
         self.parent_dir = Path(self.rundir).parent
-        self.samples = None
+        self.samples = samples
         self.config = config
         self.webdir = webdir
         self.label = label
@@ -209,12 +211,24 @@ class Base(object):
 
     @samples.setter
     def samples(self, samples):
+        if samples is not None and os.path.isfile(samples):
+            logger.info("Using specified posterior file: '{}'".format(samples))
+            self._samples = samples
+            return
+        elif samples is not None:
+            raise ValueError("Unable to find posterior file: {}".format(samples))
         files = self.glob(
             self.rundir, self.pattern["posterior_file"],
             ignore=self.pattern["ignore_posterior_file"]
         )
+        files = self.preferred_samples_from_options(files)
         self._samples = self.check_files(
-            files, "result file", self.pattern["posterior_file"], self.rundir
+            files, "result file", self.pattern["posterior_file"], self.rundir,
+            allow_multiple=False, multiple_warn=(
+                "If you wish to use a specific samples file, please add the "
+                "'--samples' flag and the path to the samples file you wish to "
+                "use."
+            )
         )
 
     @property
@@ -296,7 +310,6 @@ class Base(object):
         """
         files = glob.glob(os.path.join(directory, "**", name), recursive=True)
         if ignore is not None:
-            from pesummary.utils.utils import list_match
             files = list_match(files, ignore, return_false=True, return_true=False)
         return files
 
@@ -340,16 +353,18 @@ class Base(object):
         else:
             if allow_multiple:
                 logger.info(
-                    "Multiple {}s found. Using {}".format(description, files[0])
+                    "Multiple {}s found: {}. Using {}".format(
+                        description, ", ".join(files), files[0]
+                    )
                 )
                 if multiple_warn is not None:
                     logger.warn(multiple_warn)
                 return files[0]
             raise ValueError(
-                "Multiple {}s found in {}. Please either specify one from the command "
+                "Multiple {}s found in {}: {}. Please either specify one from the command "
                 "line or add a pattern unique to that file name via the '--pattern' "
                 "command line argument".format(
-                    description, rundir
+                    description, ", ".join(files), rundir
                 )
             )
 
@@ -395,6 +410,9 @@ class Base(object):
                 command += "{} {} ".format(cla, val)
         if len(other):
             command += " ".join(other)
+            command += " "
+        if "--gw" not in command:
+            command += "--gw "
         return command
 
     @staticmethod
@@ -421,6 +439,10 @@ class Base(object):
         """
         return path_to_config
 
+    @property
+    def preferred_posterior_string(self):
+        return ""
+
     def find_config_file(self, pattern):
         """Find a configuration file given a pattern
 
@@ -430,6 +452,20 @@ class Base(object):
             pattern to find a specific config file
         """
         return self.glob(self.rundir, pattern), self.rundir
+
+    def preferred_samples_from_options(self, files):
+        """Return the preferred posterior samples file from a list of
+        options
+
+        Parameters
+        ----------
+        files: list
+            list of available options
+        """
+        _files = list_match(files, self.preferred_posterior_string)
+        if len(_files):
+            return _files
+        return files
 
     def webdir_fallback(self):
         return "webpage"
@@ -545,6 +581,10 @@ class Bilby(Base):
         }
         super(Bilby, self).__init__(*args, **kwargs)
 
+    @property
+    def preferred_posterior_string(self):
+        return "*merged_result.json"
+
     def find_config_file(self, pattern):
         """Find a configuration file given a pattern
 
@@ -553,16 +593,40 @@ class Bilby(Base):
         pattern: str
             pattern to find a specific config file
         """
-        files = self.glob(self.rundir, pattern)
+        files = self.glob(self.rundir, pattern, ignore="*_complete.ini")
         if not len(files):
-            return self.glob(self.parent_dir, pattern), self.parent_dir
+            return self.glob(
+                self.parent_dir, pattern, ignore="*_complete.ini"
+            ), self.parent_dir
         return files, self.rundir
+
+    def try_underscore_and_hyphen(self, config, option):
+        """Try to find a key in a dictionary. If KeyError is raised, replace
+        underscore with a hyphen and try again
+
+        Parameters
+        ----------
+        config: dict
+            dictionary you wish to search
+        option: str
+            key you wish to search for
+        """
+        original = "_" if "_" in option else "-"
+        alternative = "-" if original == "_" else "_"
+        try:
+            return config[option]
+        except KeyError:
+            return config[option.replace(original, alternative)]
 
     def webdir_fallback(self):
         """Grab the web directory from a Bilby configuration file
         """
         config = self.load_config(self.config)
-        path = os.path.join(config["config"]["outdir"], "webpage")
+        outdir = config["config"]["outdir"]
+        if self.rundir in outdir:
+            path = os.path.join(outdir, "webpage")
+        else:
+            path = os.path.join(self.rundir, outdir, "webpage")
         return self._webdir_fallback(path)
 
     def label_fallback(self):
@@ -586,7 +650,8 @@ class Bilby(Base):
         """Grab the approximant used from a Bilby configuration file
         """
         config = self.load_config(self.config)
-        approx = config["config"]["waveform_approximant"]
+        option = "waveform_approximant"
+        approx = self.try_underscore_and_hyphen(config["config"], option)
         return self._approximant_fallback(approx)
 
     def prior_file_fallback(self):
@@ -622,7 +687,7 @@ class Bilby(Base):
         config = self.load_config(self.config)
         try:
             return self.grab_psd_calibration_data_from_config(
-                config, "spline-calibration-envelope-dict"
+                config, "spline_calibration_envelope_dict"
             )
         except KeyError:
             from pesummary.gw.inputs import _GWInput
@@ -646,7 +711,7 @@ class Bilby(Base):
         """
         from pesummary.core.command_line import ConfigAction
 
-        data_dict = config["config"][pattern]
+        data_dict = self.try_underscore_and_hyphen(config["config"], pattern)
         try:
             data_dict = ConfigAction.dict_from_str(data_dict, delimiter=":")
         except IndexError:
@@ -659,6 +724,12 @@ class Bilby(Base):
                 if os.path.isfile(os.path.join(config_dir, value[0])):
                     data_dict[key] = os.path.join(config_dir, value[0])
                 else:
+                    logger.warn(
+                        "Found file: '{}' in the config file, but it  "
+                        "does not exist. This is likely because the config "
+                        "was run on a different cluster. Ignoring from final "
+                        "command.".format(value[0])
+                    )
                     raise KeyError
             else:
                 data_dict[key] = value[0]
@@ -832,17 +903,16 @@ def main(args=None):
         and "--" not in all_options[i + 1] else [all_options[i], ""] for i in
         idxs
     ]).flatten()
-    print(unknown)
     label = opts.labels[0] if opts.labels is not None else None
     if is_lalinference_rundir(opts.rundir):
         cl = LALInference(
-            opts.rundir, webdir=opts.webdir, label=label, config=opts.config,
-            other=unknown, pattern=opts.pattern
+            opts.rundir, webdir=opts.webdir, label=label, samples=opts.samples,
+            config=opts.config, other=unknown, pattern=opts.pattern
         )
     elif is_bilby_rundir(opts.rundir):
         cl = Bilby(
-            opts.rundir, webdir=opts.webdir, label=label, config=opts.config,
-            other=unknown, pattern=opts.pattern
+            opts.rundir, webdir=opts.webdir, label=label, samples=opts.samples,
+            config=opts.config, other=unknown, pattern=opts.pattern
         )
     else:
         raise NotImplementedError(
