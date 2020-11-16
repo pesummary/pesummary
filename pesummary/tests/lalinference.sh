@@ -21,7 +21,7 @@ curl https://git.ligo.org/charlie.hoy/lalsuite/raw/master/lalinference/lib/lalin
 mv lalinference_pipe_example.ini lalinference/lib
 curl https://git.ligo.org/charlie.hoy/lalsuite/raw/master/lalinference/test/lalinference_nestedSampling_integration_test.sh -o fast_tutorial.sh
 mv fast_tutorial.sh lalinference/test
-curl https://git.ligo.org/charlie.hoy/lalsuite/raw/master/lalinference/test/injection_standard.xml -o injection_standard.xml
+curl https://git.ligo.org/lscsoft/lalsuite/raw/master/lalinference/test/injection_standard.xml -o injection_standard.xml
 mv injection_standard.xml lalinference/test
 path=`which lalinference_pipe`
 base=`python -c "print('/'.join('${path}'.split('/')[:-2]))"`
