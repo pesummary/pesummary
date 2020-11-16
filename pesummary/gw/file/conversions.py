@@ -126,54 +126,70 @@ def comoving_distance_from_z(redshift, cosmology="Planck15"):
 
 
 def _source_from_detector(parameter, z):
-    """Return the source parameter given samples for the detector parameter and
-    the redshift
+    """Return the source-frame parameter given samples for the detector-frame parameter
+    and the redshift
     """
     return parameter / (1. + z)
 
 
 def _detector_from_source(parameter, z):
-    """Return the detector parameter given samples for the source parameter and
-    the redshift
+    """Return the detector-frame parameter given samples for the source-frame parameter
+    and the redshift
     """
     return parameter * (1. + z)
 
 
 @array_input
 def m1_source_from_m1_z(mass_1, z):
-    """Return the source mass of the bigger black hole given samples for the
-    detector mass of the bigger black hole and the redshift
+    """Return the source-frame primary mass given samples for the
+    detector-frame primary mass and the redshift
     """
     return _source_from_detector(mass_1, z)
 
 
 @array_input
+def m1_from_m1_source_z(mass_1_source, z):
+    """Return the detector-frame primary mass given samples for the
+    source-frame primary mass and the redshift
+    """
+    return _detector_from_source(mass_1_source, z)
+
+
+@array_input
 def m2_source_from_m2_z(mass_2, z):
-    """Return the source mass of the smaller black hole given samples for the
-    detector mass of the smaller black hole and the redshift
+    """Return the source-frame secondary mass given samples for the
+    detector-frame secondary mass and the redshift
     """
     return _source_from_detector(mass_2, z)
 
 
 @array_input
+def m2_from_m2_source_z(mass_2_source, z):
+    """Return the detector-frame secondary mass given samples for the
+    source-frame secondary mass and the redshift
+    """
+    return _detector_from_source(mass_2_source, z)
+
+
+@array_input
 def m_total_source_from_mtotal_z(total_mass, z):
-    """Return the source total mass of the binary given samples for detector
-    total mass and redshift
+    """Return the source-frame total mass of the binary given samples for
+    the detector-frame total mass and redshift
     """
     return _source_from_detector(total_mass, z)
 
 
 @array_input
 def mtotal_from_mtotal_source_z(total_mass_source, z):
-    """Return the total mass of the binary given samples for the source total
-    mass and redshift
+    """Return the detector-frame total mass of the binary given samples for
+    the source-frame total mass and redshift
     """
     return _detector_from_source(total_mass_source, z)
 
 
 @array_input
 def mchirp_source_from_mchirp_z(mchirp, z):
-    """Return the source chirp mass of the binary given samples for detector
+    """Return the source-frame chirp mass of the binary given samples for detector-frame
     chirp mass and redshift
     """
     return _source_from_detector(mchirp, z)
@@ -181,8 +197,8 @@ def mchirp_source_from_mchirp_z(mchirp, z):
 
 @array_input
 def mchirp_from_mchirp_source_z(mchirp_source, z):
-    """Return the chirp mass of the binary given samples for the source chirp
-    mass and redshift
+    """Return the detector-frame chirp mass of the binary given samples for
+    the source-frame chirp mass and redshift
     """
     return _detector_from_source(mchirp_source, z)
 
@@ -206,7 +222,7 @@ def m_total_from_m1_m2(mass1, mass2):
 
 @array_input
 def m1_from_mchirp_q(mchirp, q):
-    """Return the mass of the larger black hole given the chirp mass and
+    """Return the mass of the larger component given the chirp mass and
     mass ratio
     """
     return ((1. / q)**(2. / 5.)) * ((1.0 + (1. / q))**(1. / 5.)) * mchirp
@@ -214,10 +230,28 @@ def m1_from_mchirp_q(mchirp, q):
 
 @array_input
 def m2_from_mchirp_q(mchirp, q):
-    """Return the mass of the smaller black hole given the chirp mass and
+    """Return the mass of the smaller component given the chirp mass and
     mass ratio
     """
-    return ((1. / q)**(-3. / 5.)) * ((1.0 + (1. / q))**(1. / 5.)) * mchirp
+    _m1 = m1_from_mchirp_q(mchirp, q)
+    return _m1 * q
+
+
+@array_input
+def m1_from_mtotal_q(mtotal, q):
+    """Return the mass of the larger component given the total mass and
+    mass ratio
+    """
+    return mtotal / (1. + q)
+
+
+@array_input
+def m2_from_mtotal_q(mtotal, q):
+    """Return the mass of the smaller component given the total mass and
+    mass ratio
+    """
+    _m1 = m1_from_mtotal_q(mtotal, q)
+    return _m1 * q
 
 
 @array_input
@@ -1750,6 +1784,16 @@ class _Conversion(object):
         mass_2 = m2_from_mchirp_q(samples[0], samples[1])
         self.append_data("mass_2", mass_2)
 
+    def _m1_from_mtotal_q(self):
+        samples = self.specific_parameter_samples(["total_mass", "mass_ratio"])
+        mass_1 = m1_from_mtotal_q(samples[0], samples[1])
+        self.append_data("mass_1", mass_1)
+
+    def _m2_from_mtotal_q(self):
+        samples = self.specific_parameter_samples(["total_mass", "mass_ratio"])
+        mass_2 = m2_from_mtotal_q(samples[0], samples[1])
+        self.append_data("mass_2", mass_2)
+
     def _reference_frequency(self):
         nsamples = len(self.samples)
         extra_kwargs = self.extra_kwargs["meta_data"]
@@ -1944,15 +1988,30 @@ class _Conversion(object):
         mass_1_source = m1_source_from_m1_z(samples[0], samples[1])
         self.append_data("mass_1_source", mass_1_source)
 
+    def _m1_from_m1_source_z(self):
+        samples = self.specific_parameter_samples(["mass_1_source", "redshift"])
+        mass_1 = m1_from_m1_source_z(samples[0], samples[1])
+        self.append_data("mass_1", mass_1)
+
     def _m2_source_from_m2_z(self):
         samples = self.specific_parameter_samples(["mass_2", "redshift"])
         mass_2_source = m2_source_from_m2_z(samples[0], samples[1])
         self.append_data("mass_2_source", mass_2_source)
 
+    def _m2_from_m2_source_z(self):
+        samples = self.specific_parameter_samples(["mass_2_source", "redshift"])
+        mass_2 = m2_from_m2_source_z(samples[0], samples[1])
+        self.append_data("mass_2", mass_2)
+
     def _mtotal_source_from_mtotal_z(self):
         samples = self.specific_parameter_samples(["total_mass", "redshift"])
         total_mass_source = m_total_source_from_mtotal_z(samples[0], samples[1])
         self.append_data("total_mass_source", total_mass_source)
+
+    def _mtotal_from_mtotal_source_z(self):
+        samples = self.specific_parameter_samples(["total_mass_source", "redshift"])
+        total_mass = mtotal_from_mtotal_source_z(samples[0], samples[1])
+        self.append_data("total_mass", total_mass)
 
     def _mchirp_source_from_mchirp_z(self):
         samples = self.specific_parameter_samples(["chirp_mass", "redshift"])
@@ -2416,9 +2475,13 @@ class _Conversion(object):
             self._cos_angle("tilt_1", reverse=True)
         if "cos_tilt_2" in self.parameters and "tilt_2" not in self.parameters:
             self._cos_angle("tilt_2", reverse=True)
-        if "chirp_mass" not in self.parameters and "chirp_mass_source" in \
-                self.parameters and "redshift" in self.parameters:
-            self._mchirp_from_mchirp_source_z()
+        if "luminosity_distance" not in self.parameters and "redshift" in self.parameters:
+            self._dL_from_z()
+        if "redshift" not in self.parameters and "luminosity_distance" in self.parameters:
+            self._z_from_dL()
+        if "comoving_distance" not in self.parameters and "redshift" in self.parameters:
+            self._comoving_distance_from_z()
+
         if "mass_ratio" not in self.parameters and "symmetric_mass_ratio" in \
                 self.parameters:
             self._q_from_eta()
@@ -2435,10 +2498,39 @@ class _Conversion(object):
             self._invq_from_q()
         if "chirp_mass" not in self.parameters and "total_mass" in self.parameters:
             self._mchirp_from_mtotal_q()
+        if "mass_1" in self.parameters and "mass_2" in self.parameters:
+            if "total_mass" not in self.parameters:
+                self._mtotal_from_m1_m2()
+            if "chirp_mass" not in self.parameters:
+                self._mchirp_from_m1_m2()
+            if "symmetric_mass_ratio" not in self.parameters:
+                self._eta_from_m1_m2()
         if "mass_1" not in self.parameters and "chirp_mass" in self.parameters:
             self._m1_from_mchirp_q()
         if "mass_2" not in self.parameters and "chirp_mass" in self.parameters:
             self._m2_from_mchirp_q()
+        if "mass_1" not in self.parameters and "total_mass" in self.parameters:
+            self._m1_from_mtotal_q()
+        if "mass_2" not in self.parameters and "total_mass" in self.parameters:
+            self._m2_from_mtotal_q()
+        if "redshift" in self.parameters:
+            if "mass_1_source" not in self.parameters and "mass_1" in self.parameters:
+                self._m1_source_from_m1_z()
+            if "mass_1_source" in self.parameters and "mass_1" not in self.parameters:
+                self._m1_from_m1_source_z()
+            if "mass_2_source" not in self.parameters and "mass_2" in self.parameters:
+                self._m2_source_from_m2_z()
+            if "mass_2_source" in self.parameters and "mass_2" not in self.parameters:
+                self._m2_from_m2_source_z()
+            if "total_mass_source" not in self.parameters and "total_mass" in self.parameters:
+                self._mtotal_source_from_mtotal_z()
+            if "total_mass_source" in self.parameters and "total_mass" not in self.parameters:
+                self._mtotal_from_mtotal_source_z()
+            if "chirp_mass_source" not in self.parameters and "chirp_mass" in self.parameters:
+                self._mchirp_source_from_mchirp_z()
+            if "chirp_mass_source" in self.parameters and "chirp_mass" not in self.parameters:
+                self._mchirp_from_mchirp_source_z()
+
         if "reference_frequency" not in self.parameters:
             self._reference_frequency()
         condition1 = "phi_12" not in self.parameters
@@ -2450,13 +2542,13 @@ class _Conversion(object):
             "a_2_polar"]
         if all(i in self.parameters for i in angles):
             self._component_spins_from_azimuthal_and_polar_angles()
+
+        check_for_evolved_parameter = lambda suffix, param, params: (
+            param not in params and param + suffix not in params if
+            len(suffix) else param not in params
+        )
+
         if "mass_1" in self.parameters and "mass_2" in self.parameters:
-            if "total_mass" not in self.parameters:
-                self._mtotal_from_m1_m2()
-            if "chirp_mass" not in self.parameters:
-                self._mchirp_from_m1_m2()
-            if "symmetric_mass_ratio" not in self.parameters:
-                self._eta_from_m1_m2()
             spin_components = [
                 "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z",
                 "iota"
@@ -2533,10 +2625,6 @@ class _Conversion(object):
             else:
                 final_spin_params += ["tilt_1", "tilt_2", "phi_12"]
 
-            check_for_evolved_parameter = lambda suffix, param, params: (
-                param not in params and param + suffix not in params if
-                len(suffix) else param not in params
-            )
             condition_peak_luminosity = check_for_evolved_parameter(
                 evolve_suffix, "peak_luminosity", self.parameters
             )
@@ -2583,30 +2671,16 @@ class _Conversion(object):
                         self._peak_luminosity_of_merger(evolved=evolve_condition)
                     if condition_final_mass or self.force_non_evolved:
                         self._final_mass_of_merger(evolved=evolve_condition)
+
         if "cos_tilt_1" not in self.parameters and "tilt_1" in self.parameters:
             self._cos_tilt_1_from_tilt_1()
         if "cos_tilt_2" not in self.parameters and "tilt_2" in self.parameters:
             self._cos_tilt_2_from_tilt_2()
-        if "luminosity_distance" not in self.parameters and "redshift" in self.parameters:
-            self._dL_from_z()
-        if "redshift" not in self.parameters and "luminosity_distance" in self.parameters:
-            self._z_from_dL()
-        if "comoving_distance" not in self.parameters and "redshift" in self.parameters:
-            self._comoving_distance_from_z()
-
         evolve_suffix = "_non_evolved"
         if evolve_condition or self.NRSurrogate or self.waveform_fit or self.non_precessing:
             evolve_suffix = ""
             evolve_condition = True
         if "redshift" in self.parameters:
-            if "mass_1_source" not in self.parameters and "mass_1" in self.parameters:
-                self._m1_source_from_m1_z()
-            if "mass_2_source" not in self.parameters and "mass_2" in self.parameters:
-                self._m2_source_from_m2_z()
-            if "total_mass_source" not in self.parameters and "total_mass" in self.parameters:
-                self._mtotal_source_from_mtotal_z()
-            if "chirp_mass_source" not in self.parameters and "chirp_mass" in self.parameters:
-                self._mchirp_source_from_mchirp_z()
             condition_final_mass_source = check_for_evolved_parameter(
                 evolve_suffix, "final_mass_source", self.parameters
             )

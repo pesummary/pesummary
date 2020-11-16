@@ -140,6 +140,29 @@ class TestConversions(object):
             8
         ) is None
 
+    def test_m1_m2_from_m1_source_m2_source_z(self):
+        from bilby.gw.conversion import generate_source_frame_parameters
+
+        mass_1_source = np.random.randint(5, 100, 100)
+        mass_2_source = np.random.randint(2, mass_1_source, 100)
+        redshift = np.random.randint(1, 10, 100)
+        luminosity_distance = dL_from_z(redshift)
+
+        # calculate mass_1 and mass_2 using pesummary
+        mass_1 = m1_from_m1_source_z(mass_1_source, redshift)
+        mass_2 = m2_from_m2_source_z(mass_2_source, redshift)
+        # use calculated mass_1/mass_2 to calculate mass_1_source/mass_2_source using
+        # bilby
+        sample = generate_source_frame_parameters(
+            {"mass_1": mass_1, "mass_2": mass_2,
+             "luminosity_distance": luminosity_distance}
+        )
+        source_frame = generate_source_frame_parameters(sample)
+        # confirm that bilby's mass_1_source/mass_2_source is the same as
+        # mass_1_source/mass_2_source that pesummary used
+        np.testing.assert_almost_equal(sample["mass_1_source"], mass_1_source, 6)
+        np.testing.assert_almost_equal(sample["mass_2_source"], mass_2_source, 6)
+
     def test_m2_source_from_m2_z(self):
         from bilby.gw.conversion import generate_source_frame_parameters
 
@@ -231,6 +254,24 @@ class TestConversions(object):
         pesummary_function = m2_from_mchirp_q
         conversion_check(
             pesummary_function, [mchirp, q], pycbc_function, [mchirp, 1./q]
+        )
+
+    def test_m1_from_mtotal_q(self):
+        mtotal = np.random.randint(5, 100, 100)
+        q = np.random.random(100)
+        pycbc_function = conversions.mass1_from_mtotal_q
+        pesummary_function = m1_from_mtotal_q
+        conversion_check(
+            pesummary_function, [mtotal, q], pycbc_function, [mtotal, 1./q]
+        )
+
+    def test_m2_from_mtotal_q(self):
+        mtotal = np.random.randint(5, 100, 100)
+        q = np.random.random(100)
+        pycbc_function = conversions.mass2_from_mtotal_q
+        pesummary_function = m2_from_mtotal_q
+        conversion_check(
+            pesummary_function, [mtotal, q], pycbc_function, [mtotal, 1./q]
         )
 
     def test_eta_from_m1_m2(self):
