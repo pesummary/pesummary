@@ -14,6 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import copy
 import numpy as np
 from scipy.stats import gaussian_kde as kde
 from scipy.ndimage.filters import gaussian_filter1d
@@ -129,13 +130,14 @@ class TransformBoundedKDE(BoundedKDE):
     def __init__(
         self, pts, xlow=None, xhigh=None, transform="logit", inv_transform=None,
         dydx=None, alpha=1.5, N=100, smooth=3, apply_smoothing=False,
-        weights=None, *args, **kwargs
+        weights=None, same_input=True, *args, **kwargs
     ):
         import pandas
 
         self.inv_transform = inv_transform
         self.dydx = dydx
         self.transform = transform
+        self.same_input = same_input
         if isinstance(pts, pandas.core.series.Series):
             pts = np.array(pts)
         _args = np.hstack(np.argwhere((pts > xlow) & (pts < xhigh)))
@@ -181,6 +183,7 @@ class TransformBoundedKDE(BoundedKDE):
         self._transform = transform
 
     def __call__(self, pts):
+        _original = copy.deepcopy(pts)
         _args = np.argwhere((pts > self.xlow) & (pts < self.xhigh))
         if len(_args) != len(np.atleast_1d(pts)):
             logger.info(
@@ -189,6 +192,7 @@ class TransformBoundedKDE(BoundedKDE):
             )
         if not len(_args):
             return np.zeros_like(pts)
+
         pts = np.hstack(pts[_args])
         pts = self.transform(np.atleast_1d(pts), self.xlow, self.xhigh)
         delta = np.max(pts) - np.min(pts)
@@ -199,6 +203,17 @@ class TransformBoundedKDE(BoundedKDE):
         Y = self.evaluate(y) * np.abs(self.dydx(x, self.xlow, self.xhigh))
         if self.apply_smoothing:
             Y = gaussian_filter1d(Y, sigma=self.smooth)
+        if self.same_input:
+            from scipy.interpolate import interp1d
+
+            f = interp1d(x, Y)
+            _args = np.argwhere(
+                (_original > np.amin(x)) & (_original < np.amax(x))
+            )
+            _Y = f(_original[_args])
+            Y = np.zeros(len(_original))
+            Y[_args] = _Y
+            return Y
         return x, Y
 
 

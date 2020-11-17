@@ -511,6 +511,24 @@ class TestMultiAnalysisSamplesDict(object):
         with pytest.raises(ValueError):
             transpose = dataframe.T
 
+    def test_adding_to_table(self):
+        """
+        """
+        data = {
+            "one": {
+                "a": np.random.uniform(10, 0.5, 100),
+                "b": np.random.uniform(5, 0.5, 100)
+            }, "two": {
+                "a": np.random.uniform(10, 0.5, 100)
+            }
+        }
+        dataframe = MultiAnalysisSamplesDict(data)
+        assert "three" not in dataframe.parameters.keys()
+        new_data = {"a": np.random.uniform(10, 0.5, 100)}
+        dataframe["three"] = new_data
+        np.testing.assert_almost_equal(dataframe["three"]["a"], new_data["a"])
+        assert dataframe.parameters["three"] == ["a"]
+        assert "three" in dataframe.number_of_samples.keys()
 
 class TestMCMCSamplesDict(object):
     """Test the MCMCSamplesDict class

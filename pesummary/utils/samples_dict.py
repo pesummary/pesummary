@@ -829,10 +829,29 @@ class _MultiDimensionalSamplesDict(Dict):
                 enumerate(samples)
             ]
         self.parameters = parameters
-        self.latex_labels = {
+        self.latex_labels = self._latex_labels()
+
+    def _latex_labels(self):
+        """
+        """
+        return {
             param: latex_labels[param] if param in latex_labels.keys() else
             param for param in self.total_list_of_parameters
         }
+
+    def __setitem__(self, key, value):
+        super(_MultiDimensionalSamplesDict, self).__setitem__(
+            key, SamplesDict(value)
+        )
+        try:
+            if key not in self.labels:
+                parameters = list(value.keys())
+                samples = np.array([value[param] for param in parameters])
+                self.parameters[key] = parameters
+                self.labels.append(key)
+                self.latex_labels = self._latex_labels()
+        except (AttributeError, TypeError):
+            pass
 
     @property
     def T(self):
