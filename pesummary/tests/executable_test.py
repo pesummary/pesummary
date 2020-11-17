@@ -341,6 +341,23 @@ class TestSummaryPages(Base):
         self.launch(command_line)
         self.check_output(number=1, mcmc=True)
 
+    def test_kde_plot(self):
+        """Test that the kde plots work on a single input and on MCMC inputs
+        """
+        command_line = (
+            "summarypages --webdir .outdir --samples "
+            ".outdir/example.json --label core0 --kde_plot"
+        )
+        self.launch(command_line)
+        self.check_output(number=1)
+        command_line = (
+            "summarypages --webdir .outdir --samples "
+            ".outdir/example.json .outdir/example2.h5 "
+            "--label core0 --mcmc_samples --kde_plot"
+        )
+        self.launch(command_line)
+        self.check_output(number=1, mcmc=True)
+
     def test_mcmc_more_than_label(self):
         """Test that the code fails with the `--mcmc_samples` command line
         argument when multiple labels are passed.

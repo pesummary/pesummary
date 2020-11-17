@@ -331,6 +331,10 @@ def _triangle_plot(
     ax1.grid(grid)
     ax3.grid(grid)
     ax4.grid(grid)
+    xlims = ax1.get_xlim()
+    ax3.set_xlim(xlims)
+    ylims = ax4.get_ylim()
+    ax3.set_ylim(ylims)
     return fig, ax1, ax3, ax4
 
 

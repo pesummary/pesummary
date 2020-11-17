@@ -153,6 +153,7 @@ class _DistributionPlotter(SeabornDistributionPlotter):
                         default_color = tuple(scout.get_facecolor().squeeze())
                     plot_kws.pop("color", None)
                 else:
+                    plot_kws.pop("alpha_shade", 0.25)
                     scout, = self.ax.plot([], [], **plot_kws)
                     default_color = scout.get_color()
                 if scout is not None:
@@ -321,6 +322,8 @@ def kdeplot(
     **kwargs,
 ):
 
+    if kde_kernel is None:
+        kde_kernel = stats.gaussian_kde
     # Handle deprecation of `data2` as name for y variable
     if data2 is not None:
 

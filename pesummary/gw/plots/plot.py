@@ -74,113 +74,121 @@ def _return_bounds(param, samples, comparison=False):
     return xlow, xhigh
 
 
-def _1d_histogram_plot(param, samples, latex_label, inj_value=None, kde=False,
-                       prior=None, weights=None, bins=50, grid=True):
+def _add_default_bounds_to_kde_kwargs_dict(
+    kde_kwargs, param, samples, comparison=False
+):
+    """Add default kde bounds to the a dictionary of kwargs
+
+    Parameters
+    ----------
+    kde_kwargs: dict
+        dictionary of kwargs to pass to the kde class
+    param: str
+        name of the parameter you wish to plot
+    samples: list
+        list of samples for param
+    """
+    from pesummary.core.plots.bounded_1d_kde import bounded_1d_kde
+
+    xlow, xhigh = _return_bounds(param, samples, comparison=comparison)
+    kde_kwargs["xlow"] = xlow
+    kde_kwargs["xhigh"] = xhigh
+    kde_kwargs["kde_kernel"] = bounded_1d_kde
+    return kde_kwargs
+
+
+def _1d_histogram_plot(
+    param, samples, *args, kde_kwargs={}, bounded=True, **kwargs
+):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
 
     Parameters
     ----------
-    param: str
-        name of the parameter that you wish to plot
-    samples: list
-        list of samples for param
-    latex_label: str
-        latex label for param
-    inj_value: float
-        value that was injected
-    kde: Bool
-        if true, a kde is plotted instead of a histogram
-    prior: list
-        list of prior samples for param
-    weights: list
-        list of weights for each sample
-    bins: int, optional
-        number of bins to use for histogram
-    grid: Bool, optional
-        if True, plot a grid
+    *args: tuple
+        all args passed directly to pesummary.core.plots.plot._1d_histogram_plot
+        function
+    kde_kwargs: dict, optional
+        optional kwargs passed to the kde class
+    bounded: Bool, optional
+        if True, pass default 'xlow' and 'xhigh' arguments to the kde class
+    **kwargs: dict, optional
+        all additional kwargs passed to the
+        pesummary.core.plots.plot._1d_histogram_plot function
     """
     from pesummary.core.plots.plot import _1d_histogram_plot
 
-    xlow, xhigh = _return_bounds(param, samples)
+    if bounded:
+        kde_kwargs = _add_default_bounds_to_kde_kwargs_dict(
+            kde_kwargs, param, samples
+        )
     return _1d_histogram_plot(
-        param, samples, latex_label, inj_value=inj_value, kde=kde, prior=prior,
-        weights=weights, xlow=xlow, xhigh=xhigh, bins=bins, grid=grid
+        param, samples, *args, kde_kwargs=kde_kwargs, **kwargs
     )
 
 
 def _1d_histogram_plot_mcmc(
-    param, samples, latex_label, inj_value=None, kde=False, prior=None,
-    weights=None, grid=True
+    param, samples, *args, kde_kwargs={}, bounded=True, **kwargs
 ):
     """Generate the 1d histogram plot for a given parameter for set of
     mcmc chains
 
     Parameters
     ----------
-    param: str
-        name of the parameter that you wish to plot
-    samples: np.ndarray
-        2d array of samples for param for each mcmc chain
-    latex_label: str
-        latex label for param
-    inj_value: float
-        value that was injected
-    kde: Bool
-        if true, a kde is plotted instead of a histogram
-    prior: list
-        list of prior samples for param
-    weights: list
-        list of weights for each sample
-    grid: Bool, optional
-        if True, plot a grid
+    *args: tuple
+        all args passed directly to
+        pesummary.core.plots.plot._1d_histogram_plot_mcmc function
+    kde_kwargs: dict, optional
+        optional kwargs passed to the kde class
+    bounded: Bool, optional
+        if True, pass default 'xlow' and 'xhigh' arguments to the kde class
+    **kwargs: dict, optional
+        all additional kwargs passed to the
+        pesummary.core.plots.plot._1d_histogram_plot_mcmc function
     """
     from pesummary.core.plots.plot import _1d_histogram_plot_mcmc
 
-    xlow, xhigh = _return_bounds(param, samples, comparison=True)
+    if bounded:
+        kde_kwargs = _add_default_bounds_to_kde_kwargs_dict(
+            kde_kwargs, param, samples, comparison=True
+        )
     return _1d_histogram_plot_mcmc(
-        param, samples, latex_label, inj_value=inj_value, kde=kde, prior=prior,
-        weights=weights, xlow=xlow, xhigh=xhigh, grid=grid
+        param, samples, *args, kde_kwargs=kde_kwargs, **kwargs
     )
 
 
-def _1d_comparison_histogram_plot(param, samples, colors,
-                                  latex_label, labels, kde=False,
-                                  linestyles=None, max_vline=2, grid=True,
-                                  legend_kwargs=_default_legend_kwargs):
+def _1d_comparison_histogram_plot(
+    param, samples, *args, kde_kwargs={}, bounded=True, max_vline=2,
+    legend_kwargs=_default_legend_kwargs, **kwargs
+):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
 
     Parameters
     ----------
-    param: str
-        name of the parameter that you wish to plot
-    approximants: list
-        list of approximant names that you would like to compare
-    samples: 2d list
-        list of samples for param for each approximant
-    colors: list
-        list of colors to be used to differentiate the different approximants
-    latex_label: str
-        latex label for param
-    approximant_labels: list, optional
-        label to prepend the approximant in the legend
-    kde: Bool
-        if true, a kde is plotted instead of a histogram
-    linestyles: list
-        list of linestyles for each set of samples
-    grid: Bool, optional
-        if True, plot a grid
-    legend_kwargs: dict, optional
-        optional kwargs to pass to ax.legend()
+    *args: tuple
+        all args passed directly to
+        pesummary.core.plots.plot._1d_comparisonhistogram_plot function
+    kde_kwargs: dict, optional
+        optional kwargs passed to the kde class
+    bounded: Bool, optional
+        if True, pass default 'xlow' and 'xhigh' arguments to the kde class
+    max_vline: int, optional
+        if number of peaks < max_vline draw peaks as vertical lines rather
+        than histogramming the data
+    **kwargs: dict, optional
+        all additional kwargs passed to the
+        pesummary.core.plots.plot._1d_comparison_histogram_plot function
     """
     from pesummary.core.plots.plot import _1d_comparison_histogram_plot
 
-    xlow, xhigh = _return_bounds(param, samples, comparison=True)
+    if bounded:
+        kde_kwargs = _add_default_bounds_to_kde_kwargs_dict(
+            kde_kwargs, param, samples, comparison=True
+        )
     return _1d_comparison_histogram_plot(
-        param, samples, colors, latex_label, labels, kde=kde,
-        linestyles=linestyles, xlow=xlow, xhigh=xhigh,
-        max_vline=max_vline, grid=grid, legend_kwargs=legend_kwargs
+        param, samples, *args, kde_kwargs=kde_kwargs, max_vline=max_vline,
+        legend_kwargs=legend_kwargs, **kwargs
     )
 
 

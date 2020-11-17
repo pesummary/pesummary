@@ -316,9 +316,13 @@ def _1d_cdf_comparison_plot(
 
 
 def _1d_histogram_plot(
-    param, samples, latex_label, inj_value=None, kde=False, prior=None,
-    weights=None, xlow=None, xhigh=None, fig=None, title=True, color=conf.color,
-    autoscale=True, bins=50, histtype="step", grid=True
+    param, samples, latex_label, inj_value=None, kde=False, hist=True,
+    prior=None, weights=None, fig=None, ax=None, title=True, color=conf.color,
+    autoscale=True, grid=True, kde_kwargs={}, hist_kwargs={}, set_labels=True,
+    plot_percentile=True, xlims=None, max_vline=1, label=None, linestyle="-",
+    _default_hist_kwargs={"density": True, "bins": 50, "histtype": "step"},
+    _default_kde_kwargs={"shade": True, "alpha_shade": 0.1},
+    **plot_kwargs
 ):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
@@ -331,87 +335,128 @@ def _1d_histogram_plot(
         list of samples for param
     latex_label: str
         latex label for param
-    inj_value: float
+    inj_value: float, optional
         value that was injected
-    kde: Bool
-        if true, a kde is plotted instead of a histogram
+    kde: Bool, optional
+        if True, a kde is plotted instead of a histogram
+    hist: Bool, optional
+        if True, plot a histogram
     prior: list
         list of prior samples for param
     weights: list
         list of weights for each sample
     fig: matplotlib.pyplot.figure, optional
         existing figure you wish to use
-    color: str, optional09
+    ax: matplotlib.pyplot.axes._subplots.AxesSubplot, optional
+        existing axis you wish to use
+    color: str, optional
         color you wish to use to plot the scatter points
     title: Bool, optional
         if True, add a title to the 1d cdf plot showing giving the median
         and symmetric 90% credible intervals
     autoscale: Bool, optional
         autoscale the x axis
-    bins: int, optional
-        number of bins to use for histogram
-    histtype: str, optional
-        histogram type to use when plotting
     grid: Bool, optional
         if True, plot a grid
+    kde_kwargs, dict, optional
+        optional kwargs to pass to the kde class
+    hist_kwargs: dict, optional
+        optional kwargs to pass to matplotlib.pyplot.hist
+    set_labels: Bool, optional
+        if True, add labels to the axes
+    plot_percentile: Bool, optional
+        if True, plot dashed vertical lines showing the 90% symmetric credible
+        intervals
+    xlims: list, optional
+        x axis limits you wish to use
+    max_vline: int, optional
+        if number of peaks < max_vline draw peaks as vertical lines rather
+        than histogramming the data
+    label: str, optional
+        label you wish to use for the plot
+    linestyle: str, optional
+        linestyle you wish to use for the plot
     """
     from pesummary.utils.array import Array
 
     logger.debug("Generating the 1d histogram plot for %s" % (param))
     samples = Array(samples)
-    if fig is None:
+    if ax is None and fig is None:
         fig, ax = figure(gca=True)
-    else:
+    elif ax is None:
         ax = fig.gca()
-    if np.ptp(samples) == 0:
-        ax.axvline(samples[0], color=conf.color)
-        xlims = ax.get_xlim()
-    elif not kde:
-        ax.hist(
-            samples, histtype=histtype, bins=bins, color=color, density=True,
-            linewidth=1.75, weights=weights
-        )
-        xlims = ax.get_xlim()
-        if prior is not None:
-            ax.hist(
-                prior, color=conf.prior_color, alpha=0.2, edgecolor="w",
-                density=True, linewidth=1.75, histtype="bar", bins=bins,
-            )
+
+    if len(set(samples)) <= max_vline:
+        for _ind, _sample in enumerate(set(samples)):
+            _label = None
+            if _ind == 0:
+                _label = label
+            ax.axvline(_sample, color=color, label=_label)
+        _xlims = ax.get_xlim()
     else:
-        kwargs = {"shade": True, "alpha_shade": 0.1, "linewidth": 1.0}
-        if xlow is not None or xhigh is not None:
-            kwargs.update({"xlow": xlow, "xhigh": xhigh})
-        else:
-            kwargs.update({"clip": [samples.minimum, samples.maximum]})
-        x = kdeplot(samples, color=color, ax=ax, **kwargs)
-        xlims = ax.get_xlim()
-        if prior is not None:
-            kdeplot(prior, color=conf.prior_color, ax=ax, **kwargs)
-    ax.set_xlabel(latex_label)
-    ax.set_ylabel("Probability Density")
-    percentile = samples.confidence_interval([5, 95])
+        if hist:
+            _default_hist_kwargs.update(hist_kwargs)
+            ax.hist(
+                samples, weights=weights, color=color, label=label,
+                linestyle=linestyle, **_default_hist_kwargs, **plot_kwargs
+            )
+            _xlims = ax.get_xlim()
+            if prior is not None:
+                ax.hist(
+                    prior, color=conf.prior_color, alpha=0.2, edgecolor="w",
+                    linestyle=linestyle, **_default_hist_kwargs, **plot_kwargs
+                )
+        if kde:
+            _kde_kwargs = kde_kwargs.copy()
+            kwargs = _default_kde_kwargs
+            kwargs.update({
+                "kde_kwargs": _kde_kwargs,
+                "kde_kernel": _kde_kwargs.pop("kde_kernel", None),
+            })
+            kwargs.update(plot_kwargs)
+            x = kdeplot(
+                samples, color=color, ax=ax, linestyle=linestyle, **kwargs
+            )
+            _xlims = ax.get_xlim()
+            if prior is not None:
+                kdeplot(
+                    prior, color=conf.prior_color, ax=ax, linestyle=linestyle,
+                    **kwargs
+                )
+
+    if set_labels:
+        ax.set_xlabel(latex_label)
+        ax.set_ylabel("Probability Density")
+
     if inj_value is not None:
         ax.axvline(
             inj_value, color=conf.injection_color, linestyle="-", linewidth=2.5
         )
-    ax.axvline(percentile[0], color=color, linestyle="--", linewidth=1.75)
-    ax.axvline(percentile[1], color=color, linestyle="--", linewidth=1.75)
+    percentile = samples.confidence_interval([5, 95])
     median = samples.average("median")
+    if plot_percentile:
+        for pp in percentile:
+            ax.axvline(
+                pp, color=color, linestyle="--",
+                linewidth=hist_kwargs.get("linewidth", 1.75)
+            )
     if title:
         upper = np.round(percentile[1] - median, 2)
         lower = np.round(median - percentile[0], 2)
         median = np.round(median, 2)
         ax.set_title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
     ax.grid(b=grid)
+    ax.set_xlim(xlims)
     if autoscale:
-        ax.set_xlim(xlims)
+        ax.set_xlim(_xlims)
+    if fig is None:
+        return ax
     fig.tight_layout()
     return fig
 
 
 def _1d_histogram_plot_mcmc(
-    param, samples, latex_label, inj_value=None, kde=False, prior=None,
-    weights=None, xlow=None, xhigh=None, colorcycle=conf.colorcycle, grid=True
+    param, samples, latex_label, colorcycle=conf.colorcycle, **kwargs
 ):
     """Generate a 1d histogram plot for a given parameter for a given
     set of mcmc chains
@@ -424,26 +469,17 @@ def _1d_histogram_plot_mcmc(
         2d array of samples for param for each mcmc chain
     latex_label: str
         latex label for param
-    inj_value: float
-        value that was injected
-    kde: Bool
-        if true, a kde is plotted instead of a histogram
-    prior: list
-        list of prior samples for param
-    weights: list
-        list of weights for each sample
     colorcycle: list, str
         color cycle you wish to use for the different mcmc chains
-    grid: Bool, optional
-        if True, plot a grid
+    **kwargs: dict, optional
+        all additional kwargs passed to _1d_histogram_plot
     """
     cycol = cycle(colorcycle)
     fig, ax = figure(gca=True)
     for ss in samples:
         fig = _1d_histogram_plot(
-            param, ss, latex_label, inj_value=inj_value, kde=kde, prior=prior,
-            weights=weights, xlow=xlow, xhigh=xhigh, fig=fig, color=next(cycol),
-            title=False, autoscale=False, grid=grid
+            param, ss, latex_label, color=next(cycol), title=False,
+            autoscale=False, fig=fig, **kwargs
         )
     gelman = gelman_rubin(samples)
     ax.set_title("Gelman-Rubin: {}".format(gelman))
@@ -451,9 +487,10 @@ def _1d_histogram_plot_mcmc(
 
 
 def _1d_comparison_histogram_plot(
-    param, samples, colors, latex_label, labels, kde=False, linestyles=None,
-    xlow=None, xhigh=None, max_vline=1, figsize=(8, 6), grid=True,
-    legend_kwargs=_default_legend_kwargs, latex_friendly=False
+    param, samples, colors, latex_label, labels, kde=False, hist=True,
+    linestyles=None, kde_kwargs={}, hist_kwargs={}, max_vline=1,
+    figsize=(8, 6), grid=True, legend_kwargs=_default_legend_kwargs,
+    latex_friendly=False
 ):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
@@ -488,39 +525,15 @@ def _1d_comparison_histogram_plot(
         linestyles = ["-"] * len(samples)
     fig, ax = figure(figsize=figsize, gca=True)
     handles = []
+    hist_kwargs.update({"linewidth": 2.5})
     for num, i in enumerate(samples):
         if latex_friendly:
             labels = copy.deepcopy(labels)
             labels[num] = labels[num].replace("_", "\_")
-        if len(set(i)) <= max_vline:
-            for _ind, _sample in enumerate(set(i)):
-                _label = None
-                if _ind == 0:
-                    _label = labels[num]
-                ax.axvline(_sample, color=colors[num], label=_label)
-        elif not kde:
-            ax.hist(
-                i, histtype="step", bins=50, color=colors[num],
-                label=labels[num], linewidth=2.5, density=True,
-                linestyle=linestyles[num],
-            )
-        else:
-            kwargs = {
-                "shade": True, "alpha_shade": 0.05, "linewidth": 1.5,
-                "label": labels[num]
-            }
-            if xlow is not None or xhigh is not None:
-                kwargs.update({"xlow": xlow, "xhigh": xhigh})
-            else:
-                kwargs.update({"clip": [np.min(i), np.max(i)]})
-            kdeplot(i, color=colors[num], ax=ax, **kwargs)
-        ax.axvline(
-            x=np.percentile(i, 95), color=colors[num], linestyle="--",
-            linewidth=2.5
-        )
-        ax.axvline(
-            x=np.percentile(i, 5), color=colors[num], linestyle="--",
-            linewidth=2.5
+        fig = _1d_histogram_plot(
+            param, i, latex_label, kde=kde, hist=hist, kde_kwargs=kde_kwargs,
+            max_vline=max_vline, grid=grid, title=False, autoscale=False,
+            label=labels[num], color=colors[num], fig=fig, hist_kwargs=hist_kwargs
         )
         handles.append(mlines.Line2D([], [], color=colors[num], label=labels[num]))
     ncols = number_of_columns_for_legend(labels)

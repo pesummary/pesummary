@@ -512,10 +512,11 @@ class _PlotGeneration(object):
         module = importlib.import_module(
             "pesummary.{}.plots.plot".format(package)
         )
+        hist = not kde
         same_samples = [val for key, val in samples.items()]
         fig = module._1d_comparison_histogram_plot(
             parameter, same_samples, colors, latex_label,
-            list(samples.keys()), kde=kde, linestyles=linestyles
+            list(samples.keys()), kde=kde, linestyles=linestyles, hist=hist
         )
         _PlotGeneration.save(
             fig, os.path.join(
@@ -558,10 +559,11 @@ class _PlotGeneration(object):
 
         if math.isnan(injection):
             injection = None
+        hist = not kde
 
         fig = module._1d_histogram_plot(
-            parameter, samples, latex_label, injection, kde=kde, prior=prior,
-            weights=weights
+            parameter, samples, latex_label, inj_value=injection, kde=kde,
+            hist=hist, prior=prior, weights=weights
         )
         _PlotGeneration.save(
             fig, os.path.join(
@@ -610,7 +612,7 @@ class _PlotGeneration(object):
             injection = None
         same_samples = [val for key, val in samples.items()]
         fig = module._1d_histogram_plot_mcmc(
-            parameter, same_samples, latex_label, injection, kde=kde,
+            parameter, same_samples, latex_label, inj_value=injection, kde=kde,
             prior=prior, weights=weights
         )
         _PlotGeneration.save(
@@ -620,7 +622,7 @@ class _PlotGeneration(object):
         )
         fig = module._1d_histogram_plot(
             parameter, Array(np.concatenate(same_samples)), latex_label,
-            injection, kde=kde, prior=prior, weights=weights
+            inj_value=injection, kde=kde, prior=prior, weights=weights
         )
         _PlotGeneration.save(
             fig, os.path.join(

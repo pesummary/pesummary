@@ -101,13 +101,18 @@ want to plot the samples as a KDE, we can run,
 
 .. code-block:: python
 
-    >>> import matplotlib.pyplot as plt
     >>> parameter = "a"
     >>> fig = samplesdict.plot(parameter, type="hist", kde=True)
-    >>> plt.show()
+    >>> fig.show()
 
 To see the full list of available plots, you can run:
 
 .. code-block:: python
 
     >>> samplesdict.available_plots
+
+To see the list of args and kwargs for each plot type, you can run:
+
+.. code-block:: python
+
+    >>> help(samplesdict.plot)
