@@ -1466,6 +1466,8 @@ class _Conversion(object):
         force remnant quantities to be calculated for systems that include
         tidal deformability parameters where BBH fits may not be applicable.
         Default False.
+    disable_remnant: Bool, optional
+        disable all remnant quantities from being calculated. Default False.
     add_zero_spin: Bool, optional
         if no spins are present in the posterior table, add spins with 0 value.
         Default False.
@@ -1524,6 +1526,7 @@ class _Conversion(object):
         cosmology = kwargs.get("cosmology", "Planck15")
         force_non_evolved = kwargs.get("force_non_evolved", False)
         force_remnant = kwargs.get("force_remnant_computation", False)
+        disable_remnant = kwargs.get("disable_remnant", False)
         if redshift_method not in ["approx", "exact"]:
             raise ValueError(
                 "'redshift_method' can either be 'approx' corresponding to "
@@ -1537,6 +1540,35 @@ class _Conversion(object):
                 "quantities"
             )
         waveform_fits = kwargs.get("waveform_fits", False)
+        evolve_spins = kwargs.get("evolve_spins", False)
+        if disable_remnant and (
+                force_non_evolved or force_remnant
+                or NRSurrogate or waveform_fits or evolve_spins
+        ):
+            _disable = []
+            if force_non_evolved:
+                _disable.append("force_non_evolved")
+                force_non_evolved = False
+            if force_remnant:
+                _disable.append("force_remnant_computation")
+                force_remnant_computation = False
+            if NRSurrogate:
+                _disable.append("NRSur_fits")
+                NRSurrogate = False
+            if waveform_fits:
+                _disable.append("waveform_fits")
+                waveform_fits = False
+            if evolve_spins:
+                _disable.append("evolve_spins")
+                evolve_spins = False
+            logger.warn(
+                "Unable to use 'disable_remnant' and {}. Setting "
+                "{} and disabling all remnant quantities from being "
+                "calculated".format(
+                    " or ".join(_disable),
+                    " and ".join(["{}=False".format(_p) for _p in _disable])
+                )
+            )
         if NRSurrogate and waveform_fits:
             raise ValueError(
                 "Unable to use both the NRSurrogate and {} to calculate "
@@ -1544,7 +1576,6 @@ class _Conversion(object):
                     approximant
                 )
             )
-        evolve_spins = kwargs.get("evolve_spins", False)
         if isinstance(evolve_spins, bool) and evolve_spins:
             raise ValueError(
                 "'evolve_spins' must be a float, the final velocity to "
@@ -1611,7 +1642,7 @@ class _Conversion(object):
             parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
             waveform_fits, multi_process, regenerate, redshift_method,
             cosmology, force_non_evolved, force_remnant,
-            kwargs.get("add_zero_spin", False)
+            kwargs.get("add_zero_spin", False), disable_remnant
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -1629,7 +1660,8 @@ class _Conversion(object):
     def __init__(
         self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
         waveform_fits, multi_process, regenerate, redshift_method,
-        cosmology, force_non_evolved, force_remnant, add_zero_spin
+        cosmology, force_non_evolved, force_remnant, add_zero_spin,
+        disable_remnant
     ):
         self.parameters = parameters
         self.samples = samples
@@ -1641,6 +1673,7 @@ class _Conversion(object):
         self.redshift_method = redshift_method
         self.cosmology = cosmology
         self.force_non_evolved = force_non_evolved
+        self.disable_remnant = disable_remnant
         self.non_precessing = False
         if not any(param in self.parameters for param in conf.precessing_angles):
             self.non_precessing = True
@@ -1651,7 +1684,7 @@ class _Conversion(object):
             )
             evolve_spins = False
         self.has_tidal = self._check_for_tidal_parameters()
-        self.compute_remnant = True
+        self.compute_remnant = not self.disable_remnant
         if force_remnant and self.has_tidal:
             logger.warning(
                 "Posterior samples for tidal deformability found in the "
