@@ -35,6 +35,13 @@ def _remnant_command_line_arguments(parser):
         "-------------------------------------------------------"
     )
     remnant_group.add_argument(
+        "--disable_remnant", action="store_true",
+        help=(
+            "Prevent remnant quantities from being calculated when the "
+            "conversions module is used"
+        )
+    )
+    remnant_group.add_argument(
         "--evolve_spins", action="store_true",
         help=(
             "Evolve the spins up to the Schwarzschild ISCO frequency for "
