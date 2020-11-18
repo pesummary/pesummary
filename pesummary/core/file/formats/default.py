@@ -132,6 +132,7 @@ class Default(object):
         func_map = {"json": self._grab_data_from_json_file,
                     "dat": self._grab_data_from_dat_file,
                     "txt": self._grab_data_from_dat_file,
+                    "csv": self._grab_data_from_csv_file,
                     "hdf5": self._grab_data_from_hdf5_file,
                     "h5": self._grab_data_from_hdf5_file,
                     "hdf": self._grab_data_from_hdf5_file,
@@ -171,6 +172,18 @@ class Default(object):
         from pesummary.core.file.formats.dat import read_dat
 
         parameters, samples = read_dat(path)
+        injection = {i: float("nan") for i in parameters}
+        return {
+            "parameters": parameters, "samples": samples, "injection": injection
+        }
+
+    @staticmethod
+    def _grab_data_from_csv_file(path, **kwargs):
+        """Grab the data stored in a .csv file
+        """
+        from pesummary.core.file.formats.csv import read_csv
+
+        parameters, samples = read_csv(path)
         injection = {i: float("nan") for i in parameters}
         return {
             "parameters": parameters, "samples": samples, "injection": injection

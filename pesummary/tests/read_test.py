@@ -364,6 +364,81 @@ class TestCoreHDF5File(BaseRead):
         super(TestCoreHDF5File, self).test_downsample()
 
 
+class TestCoreCSVFile(BaseRead):
+    """Class to test loading in a csv file with the core Read function
+    """
+    def setup(self):
+        """Setup the TestCoreCSVFile class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        self.parameters, self.samples = make_result_file(extension="csv", gw=False)
+        self.path = os.path.join(".outdir", "test.csv")
+        self.result = Read(self.path)
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_class_name(self):
+        """Test the class used to load in this file
+        """
+        assert isinstance(
+            self.result, pesummary.core.file.formats.default.SingleAnalysisDefault
+        )
+
+    def test_parameters(self):
+        """Test the parameter property of the default class
+        """
+        super(TestCoreCSVFile, self).test_parameters(self.parameters)
+
+    def test_samples(self):
+        """Test the samples property of the default class
+        """
+        super(TestCoreCSVFile, self).test_samples(self.samples)
+
+    def test_samples_dict(self):
+        """Test the samples_dict property of the default class
+        """
+        true = [self.parameters, self.samples]
+        super(TestCoreCSVFile, self).test_samples_dict(true)
+
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestCoreCSVFile, self).test_version()
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestCoreCSVFile, self).test_extra_kwargs()
+
+    def test_injection_parameters(self):
+        """Test the injection_parameters property
+        """
+        true = {par: float("nan") for par in self.parameters}
+        super(TestCoreCSVFile, self).test_injection_parameters(true)
+
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestCoreCSVFile, self).test_to_dat()
+
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.core.file.formats.default import SingleAnalysisDefault
+
+        super(TestCoreCSVFile, self).test_file_format_read(self.path, "csv", SingleAnalysisDefault)
+
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestCoreCSVFile, self).test_downsample()
+
+
 class TestCoreDatFile(BaseRead):
     """Class to test loading in an dat file with the core Read function
     """
@@ -900,6 +975,83 @@ class TestCoreHDF5PESummaryFile(PESummaryFile):
         """Test that the posterior table is correctly downsampled
         """
         super(TestCoreHDF5PESummaryFile, self).test_downsample()
+
+
+class TestGWCSVFile(GWBaseRead):
+    """Class to test loading in a csv file with the core Read function
+    """
+    def setup(self):
+        """Setup the TestGWCSVFile class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        self.parameters, self.samples = make_result_file(extension="csv", gw=True)
+        self.path = os.path.join(".outdir", "test.csv")
+        self.result = GWRead(self.path)
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_class_name(self):
+        """Test the class used to load in this file
+        """
+        assert isinstance(
+            self.result, pesummary.gw.file.formats.default.SingleAnalysisDefault
+        )
+
+    def test_parameters(self):
+        """Test the parameter property of the default class
+        """
+        super(TestGWCSVFile, self).test_parameters(self.parameters)
+
+    def test_samples(self):
+        """Test the samples property of the default class
+        """
+        super(TestGWCSVFile, self).test_samples(self.samples)
+
+    def test_samples_dict(self):
+        """Test the samples_dict property of the default class
+        """
+        true = [self.parameters, self.samples]
+        super(TestGWCSVFile, self).test_samples_dict(true)
+
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestGWCSVFile, self).test_version()
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestGWCSVFile, self).test_extra_kwargs()
+
+    def test_injection_parameters(self):
+        """Test the injection_parameters property
+        """
+        true = {par: float("nan") for par in self.parameters}
+        super(TestGWCSVFile, self).test_injection_parameters(true)
+
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestGWCSVFile, self).test_to_dat()
+
+    def test_to_lalinference_dat(self):
+        """Test the to_lalinference dat=True method
+        """
+        super(TestGWCSVFile, self).test_to_lalinference_dat()
+
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.gw.file.formats.default import SingleAnalysisDefault
+
+        super(TestGWCSVFile, self).test_file_format_read(
+            self.path, "csv", SingleAnalysisDefault
+        )
 
 
 class TestGWDatFile(GWBaseRead):
