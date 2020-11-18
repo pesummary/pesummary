@@ -301,8 +301,11 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
 
         parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
     if extension == "dat":
-            np.savetxt(outdir + "test.dat", data, delimiter=" ",
-                       header=" ".join(parameters), comments="")
+        np.savetxt(outdir + "test.dat", data, delimiter=" ",
+                   header=" ".join(parameters), comments="")
+    elif extension == "csv":
+        np.savetxt(outdir + "test.csv", data, delimiter=",",
+                   header=",".join(parameters), comments="")
     elif extension == "json" and not bilby and not pesummary and not lalinference:
         import json
 

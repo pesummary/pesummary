@@ -152,6 +152,7 @@ class Default(CoreDefault):
         func_map = {"json": self._grab_data_from_json_file,
                     "dat": self._grab_data_from_dat_file,
                     "txt": self._grab_data_from_dat_file,
+                    "csv": self._grab_data_from_csv_file,
                     "hdf5": self._grab_data_from_hdf5_file,
                     "h5": self._grab_data_from_hdf5_file,
                     "hdf": self._grab_data_from_hdf5_file,
@@ -225,6 +226,12 @@ class Default(CoreDefault):
             "parameters": parameters, "samples": samples,
             "injection": injection, "kwargs": extra_kwargs
         }
+
+    @staticmethod
+    def _grab_data_from_csv_file(path, **kwargs):
+        """Grab the data stored in a .csv file
+        """
+        return CoreDefault._grab_data_from_csv_file(path, module="gw", **kwargs)
 
     @staticmethod
     def _grab_data_from_prior_file(path, **kwargs):

@@ -13,31 +13,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import numpy as np
-from pesummary import conf
-from pesummary.utils.utils import logger, check_filename
+from pesummary.core.file.formats.dat import read_dat, _write_dat
 
 
-def read_dat(path, delimiter=None):
-    """Grab the parameters and samples in a .dat file
+def read_csv(path):
+    """Grab the parameters and samples in a .csv file
 
     Parameters
     ----------
     path: str
         path to the result file you wish to read in
     """
-    dat_file = np.genfromtxt(path, delimiter=delimiter, names=True)
-    parameters = [i for i in dat_file.dtype.names]
-    dat_file = np.atleast_1d(dat_file)
-    samples = [list(x) for x in dat_file]
-    return parameters, samples
+    return read_dat(path, delimiter=",")
 
 
-def _write_dat(
+def _write_csv(
     parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
-    delimiter=conf.delimiter, default_filename="pesummary_{}.dat", **kwargs
+    **kwargs
 ):
-    """Write a set of samples to a dat file
+    """Write a set of samples to a csv file
 
     Parameters
     ----------
@@ -54,24 +48,19 @@ def _write_dat(
         The name of the file that you wish to write
     overwrite: Bool, optional
         If True, an existing file of the same name will be overwritten
-    delimiter: str, optional
-        The delimiter you wish to use for the dat file
     """
-    filename = check_filename(
-        default_filename=default_filename, outdir=outdir, label=label,
-        filename=filename, overwrite=overwrite
-    )
-    np.savetxt(
-        filename, samples, delimiter=delimiter, header=delimiter.join(parameters),
-        comments=''
+    return _write_dat(
+        parameters, samples, outdir="./", label=label, filename=filename,
+        overwrite=overwrite, delimiter=",", default_filename="pesummary_{}.csv",
+        **kwargs
     )
 
 
-def write_dat(
+def write_csv(
     parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
-    delimiter=conf.delimiter, **kwargs
+    **kwargs
 ):
-    """Write a set of samples to a dat file
+    """Write a set of samples to a csv file
 
     Parameters
     ----------
@@ -80,7 +69,7 @@ def write_dat(
     samples: nd list
         list of samples. Columns correspond to a given parameter
     outdir: str, optional
-        directory to write the dat file
+        directory to write the csv file
     label: str, optional
         The label of the analysis. This is used in the filename if a filename
         if not specified
@@ -88,13 +77,10 @@ def write_dat(
         The name of the file that you wish to write
     overwrite: Bool, optional
         If True, an existing file of the same name will be overwritten
-    delimiter: str, optional
-        The delimiter you wish to use for the dat file
     """
     from pesummary.io.write import _multi_analysis_write
 
     _multi_analysis_write(
-        _write_dat, parameters, samples, outdir=outdir, label=label,
-        filename=filename, overwrite=overwrite, delimiter=delimiter,
-        file_format="dat", **kwargs
+        _write_csv, parameters, samples, outdir=outdir, label=label,
+        filename=filename, overwrite=overwrite, file_format="csv", **kwargs
     )
