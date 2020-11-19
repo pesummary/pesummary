@@ -25,11 +25,19 @@ methods for reading `hdf5`, `dat`, `txt` and `json` result files:
 
 .. code-block:: python
 
-    >>> from pesummary.core.file.read import read
+    >>> from pesummary.io import read
     >>> hdf5_object = read("posterior_samples.hdf5")
     >>> json_object = read("posterior_samples.json")
 
-and for producing summary pages, either from the command line,
+plotting the contents:
+
+.. code-block:: python
+
+    >>> samples = json_object.samples_dict
+    >>> samples.plot("a", type="hist")
+
+and for producing html pages to visualise the plots from a browser; either from
+the command line,
 
 .. code-block:: console
 
@@ -41,13 +49,13 @@ or via the python interface,
 
 .. code-block:: python
 
-    >>> from pesummary.core.plots.main import _CorePlotGeneration
-    >>> from pesummary.core.webpage.main import _CoreWebpageGeneration
-    >>> plotting_object = _CorePlotGeneration(
+    >>> from pesummary.core.plots.main import _PlotGeneration
+    >>> from pesummary.core.webpage.main import _WebpageGeneration
+    >>> plotting_object = _PlotGeneration(
     ...    webdir="/home/albert.einstein/example", labels=["example"],
     ...    samples=json_object.samples_dict
     ... )
-    >>> webpage_object = _CoreWebpageGeneration(
+    >>> webpage_object = _WebpageGeneration(
     ...    webdir="/home/albert.einstein/example", labels=["example"],
     ...    samples=json_object.samples_dict, user="albert.einstein",
     ...    colors=["b"]
