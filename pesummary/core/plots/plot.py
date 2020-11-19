@@ -320,9 +320,10 @@ def _1d_histogram_plot(
     prior=None, weights=None, fig=None, ax=None, title=True, color=conf.color,
     autoscale=True, grid=True, kde_kwargs={}, hist_kwargs={}, set_labels=True,
     plot_percentile=True, xlims=None, max_vline=1, label=None, linestyle="-",
-    _default_hist_kwargs={"density": True, "bins": 50, "histtype": "step"},
-    _default_kde_kwargs={"shade": True, "alpha_shade": 0.1},
-    **plot_kwargs
+    injection_color=conf.injection_color, _default_hist_kwargs={
+        "density": True, "bins": 50, "histtype": "step", "linewidth": 1.75
+    }, _default_kde_kwargs={"shade": True, "alpha_shade": 0.1},
+    _default_inj_kwargs={"linewidth": 2.5, "linestyle": "-"}, **plot_kwargs
 ):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
@@ -376,6 +377,8 @@ def _1d_histogram_plot(
         label you wish to use for the plot
     linestyle: str, optional
         linestyle you wish to use for the plot
+    injection_color: str, optional
+        color of vertical line showing the injected value
     """
     from pesummary.utils.array import Array
 
@@ -430,7 +433,7 @@ def _1d_histogram_plot(
 
     if inj_value is not None:
         ax.axvline(
-            inj_value, color=conf.injection_color, linestyle="-", linewidth=2.5
+            inj_value, color=injection_color, **_default_inj_kwargs
         )
     percentile = samples.confidence_interval([5, 95])
     median = samples.average("median")
@@ -487,10 +490,10 @@ def _1d_histogram_plot_mcmc(
 
 
 def _1d_comparison_histogram_plot(
-    param, samples, colors, latex_label, labels, kde=False, hist=True,
-    linestyles=None, kde_kwargs={}, hist_kwargs={}, max_vline=1,
+    param, samples, colors, latex_label, labels, inj_value=None, kde=False,
+    hist=True, linestyles=None, kde_kwargs={}, hist_kwargs={}, max_vline=1,
     figsize=(8, 6), grid=True, legend_kwargs=_default_legend_kwargs,
-    latex_friendly=False
+    latex_friendly=False, max_inj_line=1, injection_color="k"
 ):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
@@ -519,10 +522,46 @@ def _1d_comparison_histogram_plot(
         optional kwargs to pass to ax.legend()
     latex_friendly: Bool, optional
         if True, make the label latex friendly. Default False
+    inj_value: float/list, optional
+        either a single injection value which will be used for all histograms
+        or a list of injection values, one for each histogram
+    injection_color: str/list, optional
+        either a single color which will be used for all vertical line showing
+        the injected value or a list of colors, one for each injection
     """
     logger.debug("Generating the 1d comparison histogram plot for %s" % (param))
     if linestyles is None:
         linestyles = ["-"] * len(samples)
+    if inj_value is None:
+        inj_value = [None] * len(samples)
+    elif isinstance(inj_value, (list, np.ndarray)) and len(inj_value) != len(samples):
+        raise ValueError(
+            "Please provide an injection for each analysis or a single "
+            "injection value which will be used for all histograms"
+        )
+    elif not isinstance(inj_value, (list, np.ndarray)):
+        inj_value = [inj_value] * len(samples)
+
+    if isinstance(injection_color, str):
+        injection_color = [injection_color] * len(samples)
+    elif len(injection_color) != len(samples):
+        raise ValueError(
+            "Please provide an injection color for each analysis or a single "
+            "injection color which will be used for all lines showing the "
+            "injected values"
+        )
+
+    flat_injection = np.array([_ for _ in inj_value if _ is not None]).flatten()
+    if len(set(flat_injection)) > max_inj_line:
+        logger.warn(
+            "Number of unique injection values ({}) is more than the maximum "
+            "allowed injection value ({}). Not plotting injection value. If "
+            "this is a mistake, please increase `max_inj_line`".format(
+                len(set(flat_injection)), max_inj_line
+            )
+        )
+        inj_value = [None] * len(samples)
+
     fig, ax = figure(figsize=figsize, gca=True)
     handles = []
     hist_kwargs.update({"linewidth": 2.5})
@@ -533,7 +572,9 @@ def _1d_comparison_histogram_plot(
         fig = _1d_histogram_plot(
             param, i, latex_label, kde=kde, hist=hist, kde_kwargs=kde_kwargs,
             max_vline=max_vline, grid=grid, title=False, autoscale=False,
-            label=labels[num], color=colors[num], fig=fig, hist_kwargs=hist_kwargs
+            label=labels[num], color=colors[num], fig=fig, hist_kwargs=hist_kwargs,
+            inj_value=inj_value[num], injection_color=injection_color[num],
+            _default_inj_kwargs={"linewidth": 4., "linestyle": "-", "alpha": 0.4}
         )
         handles.append(mlines.Line2D([], [], color=colors[num], label=labels[num]))
     ncols = number_of_columns_for_legend(labels)

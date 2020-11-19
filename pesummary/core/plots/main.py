@@ -471,9 +471,12 @@ class _PlotGeneration(object):
             "Failed to generate a comparison histogram plot for %s because {}"
         )
         for param in self.same_parameters:
+            injection = [
+                value[param] for value in self.injection_data.values()
+            ]
             arguments = [
                 self.savedir, param, self.same_samples[param],
-                latex_labels[param], self.colors, self.kde_plot,
+                latex_labels[param], self.colors, injection, self.kde_plot,
                 self.linestyles, self.package
             ]
             self._try_to_make_a_plot(
@@ -484,13 +487,13 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _oned_histogram_comparison_plot(
-        savedir, parameter, samples, latex_label, colors, kde=False,
+        savedir, parameter, samples, latex_label, colors, injection, kde=False,
         linestyles=None, package="core"
     ):
         """Generate a oned comparison histogram plot for a given parameter
 
         Parameters
-        ----------
+        ----------i
         savedir: str
             the directory you wish to save the plot in
         parameter: str
@@ -504,19 +507,26 @@ class _PlotGeneration(object):
             the latex label for parameter
         colors: list
             list of colors to be used to distinguish different result files
+        injection: list
+            list of injected values, one for each analysis
         kde: Bool, optional
             if True, kde plots will be generated rather than 1d histograms
         linestyles: list, optional
             list of linestyles used to distinguish different result files
         """
+        import math
         module = importlib.import_module(
             "pesummary.{}.plots.plot".format(package)
         )
         hist = not kde
+        for num, inj in enumerate(injection):
+            if math.isnan(inj):
+                injection[num] = None
         same_samples = [val for key, val in samples.items()]
         fig = module._1d_comparison_histogram_plot(
             parameter, same_samples, colors, latex_label,
-            list(samples.keys()), kde=kde, linestyles=linestyles, hist=hist
+            list(samples.keys()), inj_value=injection, kde=kde,
+            linestyles=linestyles, hist=hist
         )
         _PlotGeneration.save(
             fig, os.path.join(
