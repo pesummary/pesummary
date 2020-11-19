@@ -1807,7 +1807,8 @@ class PostProcessing(object):
             for j in val.keys():
                 _inj = self.injection_data[key][j]
                 key_data[key][j]["injected"] = (
-                    _inj[0] if not math.isnan(_inj) and isinstance(_inj, list)
-                    else _inj
+                    _inj[0] if not math.isnan(_inj) and isinstance(
+                        _inj, (list, np.ndarray)
+                    ) else _inj
                 )
         return key_data
