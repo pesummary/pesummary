@@ -229,7 +229,7 @@ def _core_command_line_arguments(parser):
     )
     core_group.add_argument(
         "-s", "--samples", dest="samples", default=None, nargs='+',
-        help="Posterior samples hdf5 file"
+        help="Posterior samples file(s). See documentation for allowed formats"
     )
     core_group.add_argument(
         "-c", "--config", dest="config", nargs='+', default=None,
