@@ -23,6 +23,155 @@ from .corner import hist2d
 from pesummary import conf
 
 
+def twod_contour_plot(
+    x, y, rangex=None, rangey=None, fig=None, ax=None, return_ax=False,
+    levels=[0.9], bins=300, smooth=7, xlabel=None, ylabel=None,
+    fontsize={"label": 12}, grid=True, label=None, truth=None, **kwargs
+):
+    """Generate a 2d contour contour plot for 2 marginalized posterior
+    distributions
+
+    Parameters
+    ----------
+    x: np.array
+        array of posterior samples to use for the x axis
+    y: np.array
+        array of posterior samples to use for the y axis
+    rangex: tuple, optional
+        range over which to plot the x axis
+    rangey: tuple, optional
+        range over which to plot the y axis
+    fig: matplotlib.figure.Figure, optional
+        figure you wish to use for plotting
+    ax: matplotlib.axes._subplots.AxesSubplot, optional
+        axis you wish to use for plotting
+    return_ax: Bool, optional
+        if True return the axis used for plotting. Else return the figure
+    levels: list, optional
+        levels you wish to use for the 2d contours. Default [0.9]
+    bins: int, optional
+        number of bins to use for gridding 2d parameter space. Default 300
+    smooth: int, optional
+        how much smoothing you wish to use for the 2d contours
+    xlabel: str, optional
+        label to use for the xaxis
+    ylabel: str, optional
+        label to use for the yaxis
+    fontsize: dict, optional
+        dictionary containing the fontsize to use for the plot
+    grid: Bool, optional
+        if True, add a grid to the plot
+    label: str, optional
+        label to use for a given contour
+    truth: list, optional
+        the true value of the posterior. `truth` is a list of length 2 with
+        first element being the true x value and second element being the true
+        y value
+    **kwargs: dict, optional
+        all additional kwargs are passed to the
+        `pesummary.core.plots.corner.hist2d` function
+    """
+    if fig is None and ax is None:
+        fig, ax = figure(gca=True)
+    elif fig is None and ax is not None:
+        return_ax = True
+    elif ax is None:
+        ax = fig.gca()
+
+    xlow, xhigh = np.min(x), np.max(x)
+    ylow, yhigh = np.min(y), np.max(y)
+    if rangex is not None:
+        xlow, xhigh = rangex
+    if rangey is not None:
+        ylow, yhigh = rangey
+    if "range" not in list(kwargs.keys()):
+        kwargs["range"] = [[xlow, xhigh], [ylow, yhigh]]
+
+    hist2d(
+        x, y, ax=ax, levels=levels, bins=bins, smooth=smooth, label=label,
+        **kwargs
+    )
+    if truth is not None:
+        ax.plot(*truth, marker='o', markeredgewidth=2, markersize=6, color='k')
+        ax.axvline(truth[0], color='k', linewidth=0.5)
+        ax.axhline(truth[1], color='k', linewidth=0.5)
+    if xlabel is not None:
+        ax.set_xlabel(xlabel, fontsize=fontsize["label"])
+    if ylabel is not None:
+        ax.set_ylabel(ylabel, fontsize=fontsize["label"])
+    ax.grid(grid)
+    if fig is not None:
+        fig.tight_layout()
+    if return_ax:
+        return ax
+    return fig
+
+
+def comparison_twod_contour_plot(
+    x, y, labels=None, plot_density=None, rangex=None, rangey=None,
+    legend_kwargs={"loc": "best", "frameon": False},
+    colors=list(conf.colorcycle), **kwargs
+):
+    """Generate a comparison 2d contour contour plot for 2 marginalized
+    posterior distributions from multiple analyses
+
+    Parameters
+    ----------
+    x: np.ndarray
+        2d array of posterior samples to use for the x axis; array for each
+        analysis
+    y: np.ndarray
+        2d array of posterior samples to use for the y axis; array for each
+        analysis
+    labels: list, optional
+        labels to assign to each contour
+    plot_density: str, optional
+        label of the analysis you wish to plot the density for. If you wish
+        to plot both, simply pass `plot_density='both'`
+    rangex: tuple, optional
+        range over which to plot the x axis
+    rangey: tuple, optional
+        range over which to plot the y axis
+    legend_kwargs: dict, optional
+        kwargs to use for the legend
+    colors: list, optional
+        list of colors to use for each contour
+    **kwargs: dict, optional
+        all additional kwargs are passed to the
+        `pesummary.core.plots.publication.twod_contour_plot` function
+    """
+    if labels is None and plot_density is not None:
+        plot_density = None
+    if labels is None:
+        labels = [None] * len(x)
+
+    xlow = np.min([np.min(_x) for _x in x])
+    xhigh = np.max([np.max(_x) for _x in x])
+    ylow = np.min([np.min(_y) for _y in y])
+    yhigh = np.max([np.max(_y) for _y in y])
+    if rangex is None:
+        rangex = [xlow, xhigh]
+    if rangey is None:
+        rangey = [ylow, yhigh]
+
+    fig = None
+    for num, (_x, _y) in enumerate(zip(x, y)):
+        if plot_density is not None and plot_density == labels[num]:
+            plot_density = True
+        elif plot_density is not None and plot_density == "both":
+            plot_density = True
+        else:
+            plot_density = False
+
+        fig = twod_contour_plot(
+            _x, _y, plot_density=plot_density, label=labels[num], fig=fig,
+            rangex=rangex, rangey=rangey, color=colors[num], **kwargs
+        )
+    ax = fig.gca()
+    ax.legend(**legend_kwargs)
+    return fig
+
+
 def _triangle_axes(
     figsize=(8, 8), width_ratios=[4, 1], height_ratios=[1, 4], wspace=0.0,
     hspace=0.0,
@@ -313,14 +462,15 @@ def _triangle_plot(
             _smooth = smooth[labels[num]]
         else:
             _smooth = smooth
-        hist2d(
+        twod_contour_plot(
             x[num], y[num], bins=300, ax=ax3, levels=levels, smooth=_smooth,
-            range=[[xlow, xhigh], [ylow, yhigh]], color=colors[num],
+            rangex=[xlow, xhigh], rangey=[ylow, yhigh], color=colors[num],
             plot_density=plot_density, contour_kwargs=dict(
                 linestyles=[linestyles[num]], linewidths=linewidths[num]
             ), plot_datapoints=plot_datapoints, kde=kde_2d,
-            kde_kwargs=kde_2d_kwargs, **kwargs
+            kde_kwargs=kde_2d_kwargs, grid=False, **kwargs
         )
+
     if xlabel is not None:
         ax3.set_xlabel(xlabel, fontsize=fontsize["label"])
     if ylabel is not None:

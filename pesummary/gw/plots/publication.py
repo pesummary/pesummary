@@ -103,7 +103,7 @@ def estimate_2d_posterior(samples, xlow=None, xhigh=None, ylow=None,
 
 def twod_contour_plots(
     parameters, samples, labels, latex_labels, colors=None, linestyles=None,
-    gridsize=100, return_ax=False
+    gridsize=100, return_ax=False, latex_friendly=False
 ):
     """Generate 2d contour plots for a set of samples for given parameters
 
@@ -194,14 +194,15 @@ def twod_contour_plots(
     ax1.set_xlim(0.9 * _xlow, 1.1 * _xhigh)
     ax1.set_ylim(0.9 * _ylow, 1.1 * _yhigh)
 
-    ncols = number_of_columns_for_legend(labels)
-    legend = ax1.legend(
-        handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-        handlelength=3, ncol=ncols, mode="expand", borderaxespad=0.
-    )
-    for num, legobj in enumerate(legend.legendHandles):
-        legobj.set_linewidth(1.75)
-        legobj.set_linestyle(linestyles[num])
+    if not all(label is None for label in labels):
+        ncols = number_of_columns_for_legend(labels)
+        legend = ax1.legend(
+            handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+            handlelength=3, ncol=ncols, mode="expand", borderaxespad=0.
+        )
+        for num, legobj in enumerate(legend.legendHandles):
+            legobj.set_linewidth(1.75)
+            legobj.set_linestyle(linestyles[num])
     fig.tight_layout()
     if return_ax:
         return fig, ax1
