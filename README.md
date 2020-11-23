@@ -5,7 +5,7 @@
 [![PyPI version](https://badge.fury.io/py/pesummary.svg)](http://badge.fury.io/py/pesummary)
 [![Conda version](https://img.shields.io/conda/vn/conda-forge/pesummary.svg)](https://anaconda.org/conda-forge/pesummary/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/pesummary)](https://img.shields.io/pypi/dm/pesummary)
-[![Total Downloads](https://anaconda.org/conda-forge/pesummary/badges/downloads.svg)](https://anaconda.org/conda-forge/pycbc/badges/downloads.svg)
+[![Total Downloads](https://anaconda.org/conda-forge/pesummary/badges/downloads.svg)](https://anaconda.org/conda-forge/pesummary/badges/downloads.svg)
 
 [![License](https://img.shields.io/pypi/l/pesummary.svg)](https://choosealicense.com/licenses/mit/)
 [![Python versions](https://img.shields.io/pypi/pyversions/pesummary.svg)](https://img.shields.io/pypi/pyversions/pesummary.svg)
