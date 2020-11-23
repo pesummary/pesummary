@@ -38,7 +38,8 @@ def hist2d(
     color=None, quiet=False, plot_datapoints=True, plot_density=True,
     plot_contours=True, no_fill_contours=False, fill_contours=False,
     contour_kwargs=None, contourf_kwargs=None, data_kwargs=None,
-    pcolor_kwargs=None, new_fig=True, kde=None, kde_kwargs={}, **kwargs
+    pcolor_kwargs=None, new_fig=True, kde=None, kde_kwargs={},
+    density_cmap=None, label=None, **kwargs
 ):
     """Extension of the corner.hist2d function. Allows the user to specify the
     kde used when estimating the 2d probability density
@@ -83,15 +84,7 @@ def hist2d(
         kwargs passed directly to kde
     """
     if kde is None:
-        return corner.hist2d(
-            x, y, bins=bins, range=range, weights=weights, levels=levels,
-            smooth=smooth, ax=ax, color=color, quiet=quiet,
-            plot_datapoints=True, plot_density=plot_density,
-            plot_contours=plot_contours, no_fill_contours=no_fill_contours,
-            fill_contours=fill_contours, contour_kwargs=contour_kwargs,
-            contourf_kwargs=contourf_kwargs, data_kwargs=data_kwargs,
-            pcolor_kwargs=pcolor_kwargs, new_fig=new_fig, **kwargs
-        )
+        kde = gaussian_kde
 
     if ax is None:
         raise ValueError("Please provide an axis to plot")
@@ -109,9 +102,14 @@ def hist2d(
 
     # This is the color map for the density plot, over-plotted to indicate the
     # density of the points near the center.
-    density_cmap = LinearSegmentedColormap.from_list(
-        "density_cmap", [color, (1, 1, 1, 0)]
-    )
+    if density_cmap is None:
+        density_cmap = LinearSegmentedColormap.from_list(
+            "density_cmap", [color, (1, 1, 1, 0)]
+        )
+    elif isinstance(density_cmap, str):
+        from matplotlib import cm
+
+        density_cmap = cm.get_cmap(density_cmap)
 
     # This color map is used to hide the points at the high density areas.
     white_cmap = LinearSegmentedColormap.from_list(
@@ -206,8 +204,12 @@ def hist2d(
         elif len(colors) < len(contour_set):
             raise ValueError("Please provide a color for each contour")
         for idx, _contour in enumerate(contour_set):
+            if idx == 0:
+                _label = label
+            else:
+                _label = None
             for _path in _contour:
-                ax.plot(*_path, color=colors[idx])
+                ax.plot(*_path, color=colors[idx], label=_label)
 
     _set_xlim(new_fig, ax, range[0])
     _set_ylim(new_fig, ax, range[1])

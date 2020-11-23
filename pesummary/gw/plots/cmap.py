@@ -31,6 +31,10 @@ def cylon():
     locals().update({"cylon": cmap})
     # Register with Matplotlib.
     cm.register_cmap(cmap=cmap)
+    # Create inverse color map
+    cmap_r = colors.LinearSegmentedColormap.from_list("cylon_r", data[::-1])
+    locals().update({"cylon_r": cmap_r})
+    cm.register_cmap(cmap=cmap_r)
 
 
 def colormap_with_fixed_hue(color, N=10):

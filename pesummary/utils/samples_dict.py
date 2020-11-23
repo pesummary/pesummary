@@ -250,7 +250,8 @@ class SamplesDict(Dict):
             "skymap": self._skymap,
             "hist": self._marginalized_posterior,
             "corner": self._corner,
-            "spin_disk": self._spin_disk
+            "spin_disk": self._spin_disk,
+            "2d_kde": self._2d_kde,
         }
 
     @property
@@ -451,6 +452,36 @@ class SamplesDict(Dict):
         return getattr(module, "_make_corner_plot")(
             self, self.latex_labels, corner_parameters=_parameters, **kwargs
         )[0]
+
+    def _2d_kde(self, parameters, module="core", **kwargs):
+        """Wrapper for the `pesummary.gw.plots.publication.twod_contour_plot` or
+        `pesummary.core.plots.publication.twod_contour_plot` function
+
+        Parameters
+        ----------
+        parameters: list
+            list of length 2 giving the parameters you wish to plot
+        module: str, optional
+            module you wish to use for the plotting
+        **kwargs: dict, optional
+            all additional kwargs are passed to the `twod_contour_plot` function
+        """
+        _module = importlib.import_module(
+            "pesummary.{}.plots.publication".format(module)
+        )
+        if module == "gw":
+            return getattr(_module, "twod_contour_plots")(
+                parameters, [[self[parameters[0]], self[parameters[1]]]],
+                [None], {
+                    parameters[0]: self.latex_labels[parameters[0]],
+                    parameters[1]: self.latex_labels[parameters[1]]
+                }, **kwargs
+            )
+        return getattr(_module, "twod_contour_plot")(
+            self[parameters[0]], self[parameters[1]],
+            xlabel=self.latex_labels[parameters[0]],
+            ylabel=self.latex_labels[parameters[1]], **kwargs
+        )
 
     def classification(self, prior=None):
         """Return the classification probabilities
@@ -1211,7 +1242,8 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             "corner": self._corner,
             "triangle": self._triangle,
             "reverse_triangle": self._reverse_triangle,
-            "violin": self._violin
+            "violin": self._violin,
+            "2d_kde": self._2d_kde
         }
 
     @property
@@ -1484,6 +1516,53 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
                 )
         return getattr(module, "_make_comparison_corner_plot")(
             _samples, self.latex_labels, corner_parameters=_parameters, **kwargs
+        )
+
+    def _2d_kde(
+        self, parameters, module="core", labels="all", plot_density=None,
+        **kwargs
+    ):
+        """Wrapper for the
+        `pesummary.gw.plots.publication.comparison_twod_contour_plot` or
+        `pesummary.core.plots.publication.comparison_twod_contour_plot` function
+
+        Parameters
+        ----------
+        parameters: list
+            list of length 2 giving the parameters you wish to plot
+        module: str, optional
+            module you wish to use for the plotting
+        labels: list
+            list of analyses that you wish to include in the plot
+        **kwargs: dict, optional
+            all additional kwargs are passed to the
+            `comparison_twod_contour_plot` function
+        """
+        _module = importlib.import_module(
+            "pesummary.{}.plots.publication".format(module)
+        )
+        samples = self._base_triangle(parameters, labels=labels)
+        if plot_density is not None and plot_density not in labels:
+            raise ValueError(
+                "Unable to plot the density for '{}'. Please choose from: "
+                "{}".format(plot_density, ", ".join(labels))
+            )
+        if module == "gw":
+            return getattr(_module, "twod_contour_plots")(
+                parameters, [
+                    [self[label][param] for param in parameters] for label in
+                    labels
+                ], labels, {
+                    parameters[0]: self.latex_labels[parameters[0]],
+                    parameters[1]: self.latex_labels[parameters[1]]
+                }, **kwargs
+            )
+        return getattr(_module, "comparison_twod_contour_plot")(
+            [_samples[parameters[0]] for _samples in samples],
+            [_samples[parameters[1]] for _samples in samples],
+            xlabel=self.latex_labels[parameters[0]],
+            ylabel=self.latex_labels[parameters[1]], labels=labels,
+            plot_density=plot_density, **kwargs
         )
 
     def js_divergence(self, parameter, decimal=5):
