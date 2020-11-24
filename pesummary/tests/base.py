@@ -306,6 +306,10 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
     elif extension == "csv":
         np.savetxt(outdir + "test.csv", data, delimiter=",",
                    header=",".join(parameters), comments="")
+    elif extension == "npy":
+        from pesummary.utils.samples_dict import SamplesDict
+        samples = SamplesDict(parameters, np.array(data).T).to_structured_array()
+        np.save(outdir + "test.npy", samples)
     elif extension == "json" and not bilby and not pesummary and not lalinference:
         import json
 
