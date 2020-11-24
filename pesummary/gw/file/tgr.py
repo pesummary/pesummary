@@ -17,46 +17,48 @@ from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 import numpy as np
 
 
-def P_integrand(Mf, chif, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object):
-    """Compute the integrand of P(dMf/Mfbar, dchif/chifbar).
+def P_integrand(
+    final_mass, final_spin, v1, v2, P_final_massfinal_spin_i_interp_object, P_final_massfinal_spin_r_interp_object
+):
+    """Compute the integrand of P(delta_final_mass/final_mass_bar, delta_final_spin/final_spin_bar).
 
     Parameters
     ----------
-    Mf: np.ndarray
+    final_mass: np.ndarray
         vector of values of final mass
-    chif: np.ndarray
+    final_spin: np.ndarray
         vector of values of final spin
     v1: float
-        dMf/Mfbar value
+        delta_final_mass/final_mass_bar value
     v2: float
-        dchif/chifbar value
-    P_Mfchif_i_interp_object:
-        interpolated P_i(Mf, chif)
-    P_Mfchif_r_interp_object:
-        interpolated P_r(Mf, chif)
+        delta_final_spin/final_spin_bar value
+    P_final_massfinal_spin_i_interp_object:
+        interpolated P_i(final_mass, final_spin)
+    P_final_massfinal_spin_r_interp_object:
+        interpolated P_r(final_mass, final_spin)
 
     Returns
     -------
     float
-        integrand of P(dMf/Mfbar, dchif/chifbar)
+        integrand of P(delta_final_mass/final_mass_bar, delta_final_spin/final_spin_bar)
     """
 
-    Mf_mat, chif_mat = np.meshgrid(Mf, chif)
+    final_mass_mat, final_spin_mat = np.meshgrid(final_mass, final_spin)
 
-    # Create dMf and dchif vectors corresponding to the given v1 and v2. These vectors have to be
+    # Create delta_final_mass and delta_final_spin vectors corresponding to the given v1 and v2. These vectors have to be
     # monotonically increasing in order to evaluate the interpolated prob densities. Hence, for
     # v1, v2 < 0, flip them, evaluate the prob density (in column or row) and flip it back
-    dMf_i = (1.0 + v1 / 2.0) * Mf
-    dchif_i = (1.0 + v2 / 2.0) * chif
+    delta_final_mass_i = (1.0 + v1 / 2.0) * final_mass
+    delta_final_spin_i = (1.0 + v2 / 2.0) * final_spin
 
-    dMf_r = (1.0 - v1 / 2.0) * Mf
-    dchif_r = (1.0 - v2 / 2.0) * chif
+    delta_final_mass_r = (1.0 - v1 / 2.0) * final_mass
+    delta_final_spin_r = (1.0 - v2 / 2.0) * final_spin
 
     if (1.0 + v1 / 2.0) < 0.0:
-        dMf_i = np.flipud(dMf_i)
+        delta_final_mass_i = np.flipud(delta_final_mass_i)
     if (1.0 + v2 / 2.0) < 0.0:
-        dchif_i = np.flipud(dchif_i)
-    P_i = P_Mfchif_i_interp_object([dMf_i, dchif_i])
+        delta_final_spin_i = np.flipud(delta_final_spin_i)
+    P_i = P_final_massfinal_spin_i_interp_object([delta_final_mass_i, delta_final_spin_i])
 
     if (1.0 + v1 / 2.0) < 0.0:
         P_i = np.fliplr(P_i)
@@ -64,74 +66,88 @@ def P_integrand(Mf, chif, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_ob
         P_i = np.flipud(P_i)
 
     if (1.0 - v1 / 2.0) < 0.0:
-        dMf_r = np.flipud(dMf_r)
+        delta_final_mass_r = np.flipud(delta_final_mass_r)
     if (1.0 - v2 / 2.0) < 0.0:
-        dchif_r = np.flipud(dchif_r)
-    P_r = P_Mfchif_r_interp_object([dMf_r, dchif_r])
+        delta_final_spin_r = np.flipud(delta_final_spin_r)
+    P_r = P_final_massfinal_spin_r_interp_object([delta_final_mass_r, delta_final_spin_r])
 
     if (1.0 - v1 / 2.0) < 0.0:
         P_r = np.fliplr(P_r)
     if (1.0 - v2 / 2.0) < 0.0:
         P_r = np.flipud(P_r)
 
-    return P_i * P_r * abs(Mf_mat * chif_mat), P_i, P_r
+    return P_i * P_r * abs(final_mass_mat * final_spin_mat), P_i, P_r
 
 
-def imrct_deviation_parameters_from_Mf_af(
-    Mf_inspiral, chif_inspiral, Mf_postinspiral, chif_postinspiral, dMfbyMf_lim=2, dchifbychif_lim=1, N_bins=401
+def imrct_deviation_parameters_from_final_mass_final_spin(
+    final_mass_inspiral,
+    final_spin_inspiral,
+    final_mass_postinspiral,
+    final_spin_postinspiral,
+    final_mass_deviation_lim=2,
+    final_spin_deviation_lim=1,
+    N_bins=401,
 ):
     """Compute the IMR Consistency Test deviation parameters
 
     Parameters
     ----------
-    Mf_inspiral: np.ndarray
+    final_mass_inspiral: np.ndarray
         values of final mass calculated from the inspiral part
-    chif_inspiral: np.ndarray
+    final_spin_inspiral: np.ndarray
         values of final spin calculated from the inspiral part
-    Mf_postinspiral: np.ndarray
+    final_mass_postinspiral: np.ndarray
         values of final mass calculated from the post-inspiral part
-    chif_postinspiral: np.ndarray
+    final_spin_postinspiral: np.ndarray
         values of final spin calculated from the post-inspiral part
-    dMfbyMf_lim: float, optional
+    final_mass_deviation_lim: float, optional
         Maximum value of the final mass deviation parameter. Default 2.
-    dchifbychif_lim: float, optional
+    final_spin_deviation_lim: float, optional
         Maximum value of the final spin deviation parameter. Default 1.
     N_bins: int, optional
-        Number of equally spaced bins between [-dMfbyMf_lim, dMfbyMf_lim]
-        and [-dchifbychif_lim, dchifbychif_lim]
+        Number of equally spaced bins between [-final_mass_deviation_lim, final_mass_deviation_lim]
+        and [-final_spin_deviation_lim, final_spin_deviation_lim]
 
     Returns
     -------
     fill this in later
     """
 
-    Mf_lim = np.amax(np.append(Mf_inspiral, Mf_postinspiral))
-    Mf_bins = np.linspace(-Mf_lim, Mf_lim, N_bins)
-    chif_lim = np.amax(np.append(chif_inspiral, chif_postinspiral))
-    chif_bins = np.linspace(-chif_lim, chif_lim, N_bins)
-    Mf_intp = (Mf_bins[:-1] + Mf_bins[1:]) / 2
-    chif_intp = (chif_bins[:-1] + chif_bins[1:]) / 2.0
+    final_mass_lim = np.amax(np.append(final_mass_inspiral, final_mass_postinspiral))
+    final_mass_bins = np.linspace(-final_mass_lim, final_mass_lim, N_bins)
+    final_spin_lim = np.amax(np.append(final_spin_inspiral, final_spin_postinspiral))
+    final_spin_bins = np.linspace(-final_spin_lim, final_spin_lim, N_bins)
+    final_mass_intp = (final_mass_bins[:-1] + final_mass_bins[1:]) / 2
+    final_spin_intp = (final_spin_bins[:-1] + final_spin_bins[1:]) / 2.0
 
-    inspiral_kde = Bounded_2d_kde(np.array([Mf_inspiral, chif_inspiral]))
-    postinspiral_kde = Bounded_2d_kde(np.array([Mf_postinspiral, chif_postinspiral]))
+    inspiral_kde = Bounded_2d_kde(np.array([final_mass_inspiral, final_spin_inspiral]))
+    postinspiral_kde = Bounded_2d_kde(np.array([final_mass_postinspiral, final_spin_postinspiral]))
 
-    dMfbyMf_vec = np.linspace(-dMfbyMf_lim, dMfbyMf_lim, N_bins)
-    dchifbychif_vec = np.linspace(-dchifbychif_lim, dchifbychif_lim, N_bins)
+    final_mass_deviation_vec = np.linspace(-final_mass_deviation_lim, final_mass_deviation_lim, N_bins)
+    final_spin_deviation_vec = np.linspace(-final_spin_deviation_lim, final_spin_deviation_lim, N_bins)
 
-    diff_dMfbyMf = np.mean(np.diff(dMfbyMf_vec))
-    diff_dchifbychif = np.mean(np.diff(dchifbychif_vec))
+    diff_final_mass_deviation = np.mean(np.diff(final_mass_deviation_vec))
+    diff_final_spin_deviation = np.mean(np.diff(final_spin_deviation_vec))
 
-    P_dMfbyMf_dchifbychif = np.zeros(shape=(N_bins, N_bins))
-    for i, v2 in enumerate(dchifbychif_vec):
-        for j, v1 in enumerate(dMfbyMf_vec):
-            P_dMfbyMf_dchifbychif[i, j] = np.sum(
-                P_integrand(Mf_intp, chif_intp, v1, v2, inspiral_kde, postinspiral_kde)[0]
+    P_final_mass_deviation_final_spin_deviation = np.zeros(shape=(N_bins, N_bins))
+    for i, v2 in enumerate(final_spin_deviation_vec):
+        for j, v1 in enumerate(final_mass_deviation_vec):
+            P_final_mass_deviation_final_spin_deviation[i, j] = np.sum(
+                P_integrand(final_mass_intp, final_spin_intp, v1, v2, inspiral_kde, postinspiral_kde)[0]
             )
 
-    P_dMfbyMf_dchifbychif /= np.sum(P_dMfbyMf_dchifbychif) * diff_dMfbyMf * diff_dchifbychif
+    P_final_mass_deviation_final_spin_deviation /= (
+        np.sum(P_final_mass_deviation_final_spin_deviation) * diff_final_mass_deviation * diff_final_spin_deviation
+    )
 
     # Marginalization to one-dimensional joint_posteriors
 
-    P_dMfbyMf = np.sum(P_dMfbyMf_dchifbychif, axis=0) * diff_dchifbychif
-    P_dchifbychif = np.sum(P_dMfbyMf_dchifbychif, axis=1) * diff_dMfbyMf
-    return P_dMfbyMf, P_dchifbychif, P_dMfbyMf_dchifbychif, dMfbyMf_vec, dchifbychif_vec
+    P_final_mass_deviation = np.sum(P_final_mass_deviation_final_spin_deviation, axis=0) * diff_final_spin_deviation
+    P_final_spin_deviation = np.sum(P_final_mass_deviation_final_spin_deviation, axis=1) * diff_final_mass_deviation
+    return (
+        P_final_mass_deviation,
+        P_final_spin_deviation,
+        P_final_mass_deviation_final_spin_deviation,
+        final_mass_deviation_vec,
+        final_spin_deviation_vec,
+    )
