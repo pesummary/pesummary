@@ -217,7 +217,7 @@ def triangle_plot(
     xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
     linestyles=None, linewidths=None, plot_density=True,
     percentiles=None, percentile_plot=None, fig_kwargs={}, labels=None,
-    rangex=None, rangey=None, grid=False, latex_friendly=False,
+    rangex=None, rangey=None, grid=False, latex_friendly=False, truth=None,
     kde_2d=None, kde_2d_kwargs={}, legend_kwargs={"loc": "best", "frameon": False},
     **kwargs
 ):
@@ -299,7 +299,7 @@ def triangle_plot(
         xlabel=xlabel, ylabel=ylabel, fontsize=fontsize, rangex=rangex,
         rangey=rangey, percentile_plot=percentile_plot, grid=grid,
         latex_friendly=latex_friendly, kde_2d=kde_2d, kde_2d_kwargs=kde_2d_kwargs,
-        legend_kwargs=legend_kwargs, **kwargs
+        legend_kwargs=legend_kwargs, truth=truth, **kwargs
     )
 
 
@@ -310,7 +310,8 @@ def _triangle_plot(
     linestyles=None, linewidths=None, plot_density=True, percentiles=None,
     percentile_plot=None, fig_kwargs={}, labels=None, plot_datapoints=False,
     rangex=None, rangey=None, grid=False, latex_friendly=False, kde_2d=None,
-    kde_2d_kwargs={}, legend_kwargs={"loc": "best", "frameon": False}, **kwargs
+    kde_2d_kwargs={}, legend_kwargs={"loc": "best", "frameon": False},
+    truth=None, **kwargs
 ):
     """Base function to generate a triangular plot
 
@@ -468,9 +469,12 @@ def _triangle_plot(
             plot_density=plot_density, contour_kwargs=dict(
                 linestyles=[linestyles[num]], linewidths=linewidths[num]
             ), plot_datapoints=plot_datapoints, kde=kde_2d,
-            kde_kwargs=kde_2d_kwargs, grid=False, **kwargs
+            kde_kwargs=kde_2d_kwargs, grid=False, truth=truth, **kwargs
         )
 
+    if truth is not None:
+        ax1.axvline(truth[0], color='k', linewidth=0.5)
+        ax4.axhline(truth[1], color='k', linewidth=0.5)
     if xlabel is not None:
         ax3.set_xlabel(xlabel, fontsize=fontsize["label"])
     if ylabel is not None:
@@ -496,7 +500,7 @@ def reverse_triangle_plot(
     percentiles=None, percentile_plot=None, fig_kwargs={}, labels=None,
     plot_datapoints=False, rangex=None, rangey=None, grid=False,
     latex_friendly=False, kde_2d=None, kde_2d_kwargs={},
-    legend_kwargs={"loc": "best", "frameon": False}, **kwargs
+    legend_kwargs={"loc": "best", "frameon": False}, truth=None, **kwargs
 ):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
@@ -580,7 +584,7 @@ def reverse_triangle_plot(
         fontsize=fontsize, plot_datapoints=plot_datapoints, rangex=rangex,
         rangey=rangey, percentile_plot=percentile_plot,
         latex_friendly=latex_friendly, kde_2d=kde_2d, kde_2d_kwargs=kde_2d_kwargs,
-        legend_kwargs=legend_kwargs, **kwargs
+        legend_kwargs=legend_kwargs, truth=truth, **kwargs
     )
     ax2.axis("off")
     ax4.spines["right"].set_visible(False)

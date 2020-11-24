@@ -252,6 +252,8 @@ class SamplesDict(Dict):
             "corner": self._corner,
             "spin_disk": self._spin_disk,
             "2d_kde": self._2d_kde,
+            "triangle": self._triangle,
+            "reverse_triangle": self._reverse_triangle,
         }
 
     @property
@@ -479,6 +481,44 @@ class SamplesDict(Dict):
             )
         return getattr(_module, "twod_contour_plot")(
             self[parameters[0]], self[parameters[1]],
+            xlabel=self.latex_labels[parameters[0]],
+            ylabel=self.latex_labels[parameters[1]], **kwargs
+        )
+
+    def _triangle(self, parameters, **kwargs):
+        """Wrapper for the `pesummary.core.plots.publication.triangle_plot`
+        function
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters they wish to study
+        **kwargs: dict
+            all additional kwargs are passed to the `triangle_plot` function
+        """
+        from pesummary.core.plots.publication import triangle_plot
+
+        return triangle_plot(
+            [self[parameters[0]]], [self[parameters[1]]],
+            xlabel=self.latex_labels[parameters[0]],
+            ylabel=self.latex_labels[parameters[1]], **kwargs
+        )
+
+    def _reverse_triangle(self, parameters, **kwargs):
+        """Wrapper for the `pesummary.core.plots.publication.reverse_triangle_plot`
+        function
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters they wish to study
+        **kwargs: dict
+            all additional kwargs are passed to the `triangle_plot` function
+        """
+        from pesummary.core.plots.publication import reverse_triangle_plot
+
+        return reverse_triangle_plot(
+            [self[parameters[0]]], [self[parameters[1]]],
             xlabel=self.latex_labels[parameters[0]],
             ylabel=self.latex_labels[parameters[1]], **kwargs
         )
