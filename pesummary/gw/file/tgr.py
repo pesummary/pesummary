@@ -18,18 +18,27 @@ import numpy as np
 
 
 def P_integrand(chif, Mf, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object):
-
     """Compute the integrand of P(dMf/Mfbar, dchif/chifbar).
 
-    inputs:
-    chif: vector of values of final spin
-    Mf: vector of values of final mass
-    v1: dMf/Mfbar value
-    v2: dchif/chifbar value
-    P_Mfchif_i_interp_object: interpolation function of P_i(Mf, chif)
-    P_Mfchif_r_interp_object: interpolation function of P_r(Mf, chif)
+    Parameters
+    ----------
+    chif: np.ndarray
+        vector of values of final spin
+    Mf: np.ndarray
+        vector of values of final mass
+    v1: float
+        dMf/Mfbar value
+    v2: float
+        dchif/chifbar value
+    P_Mfchif_i_interp_object:
+        interpolated P_i(Mf, chif)
+    P_Mfchif_r_interp_object:
+        interpolated P_r(Mf, chif)
 
-    output: integrand of P(dMf/Mfbar, dchif/chifbar)
+    Returns
+    -------
+    float
+        integrand of P(dMf/Mfbar, dchif/chifbar)
     """
 
     Mf_mat, chif_mat = np.meshgrid(Mf, chif)
@@ -73,9 +82,34 @@ def calc_sum(Mf, chif, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_objec
     return np.sum(Pintg)
 
 
-def imrct_delta_parameters_from_Mf_af(
+def imrct_deviation_parameters_from_Mf_af(
     Mf_inspiral, chif_inspiral, Mf_postinspiral, chif_postinspiral, dMfbyMf_lim=2, dchifbychif_lim=1, N_bins=401
 ):
+    """Compute the IMR Consistency Test deviation parameters
+
+    Parameters
+    ----------
+    Mf_inspiral: np.ndarray
+        values of final mass calculated from the inspiral part
+    chif_inspiral: np.ndarray
+        values of final spin calculated from the inspiral part
+    Mf_postinspiral: np.ndarray
+        values of final mass calculated from the post-inspiral part
+    chif_postinspiral: np.ndarray
+        values of final spin calculated from the post-inspiral part
+    dMfbyMf_lim: float, optional
+        Maximum value of the final mass deviation parameter. Default 2.
+    dchifbychif_lim: float, optional
+        Maximum value of the final spin deviation parameter. Default 1.
+    N_bins: int, optional
+        Number of equally spaced bins between [-dMfbyMf_lim, dMfbyMf_lim]
+        and [-dchifbychif_lim, dchifbychif_lim]
+
+    Returns
+    -------
+    fill this in later
+    """
+
     Mf_lim = np.amax(np.append(Mf_inspiral, Mf_postinspiral))
     Mf_bins = np.linspace(-Mf_lim, Mf_lim, N_bins)
     chif_lim = np.amax(np.append(chif_inspiral, chif_postinspiral))
