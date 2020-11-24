@@ -82,6 +82,9 @@ class SamplesDict(Dict):
         Remove the first N samples from each distribution
     plot:
         Generate a plot based on the posterior samples stored
+    generate_all_posterior_samples:
+        Convert the posterior samples in the SamplesDict object according to
+        a conversion function
 
     Examples
     --------
@@ -373,6 +376,30 @@ class SamplesDict(Dict):
                 )
             )
         return self.plotting_map[type](*args, **kwargs)
+
+    def generate_all_posterior_samples(self, function=None, **kwargs):
+        """Convert samples stored in the SamplesDict according to a conversion
+        function
+
+        Parameters
+        ----------
+        function: func, optional
+            function to use when converting posterior samples. Must take a
+            dictionary as input and return a dictionary of converted posterior
+            samples. Default `pesummary.gw.file.conversions._Conversion
+        **kwargs: dict, optional
+            All additional kwargs passed to function
+        """
+        if function is None:
+            from pesummary.gw.file.conversions import _Conversion
+            function = _Conversion
+        _samples = self.copy()
+        _keys = list(_samples.keys())
+        converted_samples = function(_samples, **kwargs)
+        for key, item in converted_samples.items():
+            if key not in _keys:
+                self[key] = item
+        return
 
     def _marginalized_posterior(self, parameter, module="core", **kwargs):
         """Wrapper for the `pesummary.core.plots.plot._1d_histogram_plot` or
