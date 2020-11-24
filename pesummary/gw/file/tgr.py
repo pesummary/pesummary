@@ -17,15 +17,15 @@ from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 import numpy as np
 
 
-def P_integrand(chif, Mf, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object):
+def P_integrand(Mf, chif, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object):
     """Compute the integrand of P(dMf/Mfbar, dchif/chifbar).
 
     Parameters
     ----------
-    chif: np.ndarray
-        vector of values of final spin
     Mf: np.ndarray
         vector of values of final mass
+    chif: np.ndarray
+        vector of values of final spin
     v1: float
         dMf/Mfbar value
     v2: float
@@ -77,11 +77,6 @@ def P_integrand(chif, Mf, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_ob
     return P_i * P_r * abs(Mf_mat * chif_mat), P_i, P_r
 
 
-def calc_sum(Mf, chif, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object):
-    Pintg, P_i, P_r = P_integrand(chif, Mf, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object)
-    return np.sum(Pintg)
-
-
 def imrct_deviation_parameters_from_Mf_af(
     Mf_inspiral, chif_inspiral, Mf_postinspiral, chif_postinspiral, dMfbyMf_lim=2, dchifbychif_lim=1, N_bins=401
 ):
@@ -129,7 +124,9 @@ def imrct_deviation_parameters_from_Mf_af(
     P_dMfbyMf_dchifbychif = np.zeros(shape=(N_bins, N_bins))
     for i, v2 in enumerate(dchifbychif_vec):
         for j, v1 in enumerate(dMfbyMf_vec):
-            P_dMfbyMf_dchifbychif[i, j] = calc_sum(Mf_intp, chif_intp, v1, v2, inspiral_kde, postinspiral_kde)
+            P_dMfbyMf_dchifbychif[i, j] = np.sum(
+                P_integrand(Mf_intp, chif_intp, v1, v2, inspiral_kde, postinspiral_kde)[0]
+            )
 
     P_dMfbyMf_dchifbychif /= np.sum(P_dMfbyMf_dchifbychif) * diff_dMfbyMf * diff_dchifbychif
 
