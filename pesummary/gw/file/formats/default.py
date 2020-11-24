@@ -148,37 +148,20 @@ class Default(CoreDefault):
         generate all posterior distributions that may be derived from
         sampled distributions
     """
-    def __new__(self, path_to_results_file, **kwargs):
-        func_map = {"json": self._grab_data_from_json_file,
-                    "dat": self._grab_data_from_dat_file,
-                    "txt": self._grab_data_from_dat_file,
-                    "csv": self._grab_data_from_csv_file,
-                    "hdf5": self._grab_data_from_hdf5_file,
-                    "h5": self._grab_data_from_hdf5_file,
-                    "hdf": self._grab_data_from_hdf5_file,
-                    "db": self._grab_data_from_sql_database,
-                    "sql": self._grab_data_from_sql_database,
-                    "prior": self._grab_data_from_prior_file,
-                    "xml": self._grab_data_from_xml_file}
+    def load_map(self):
+        _load_map = super(Default, self).load_map(self)
+        _load_map.update({
+            "xml": self._grab_data_from_xml_file
+        })
+        return _load_map
 
-        self.extension = GWRead.extension_from_path(path_to_results_file)
-        self.load_function = func_map[self.extension]
-        try:
-            self._load_data = self.load_function(path_to_results_file, **kwargs)
-        except Exception as e:
-            raise Exception(
-                "Failed to read data for file %s because: %s" % (
-                    path_to_results_file, e
-                )
-            )
-        if np.array(self._load_data["parameters"]).ndim > 1:
-            return MultiAnalysisDefault(
-                path_to_results_file, _data=self._load_data, **kwargs
-            )
-        else:
-            return SingleAnalysisDefault(
-                path_to_results_file, _data=self._load_data, **kwargs
-            )
+    def __new__(self, path_to_results_file, **kwargs):
+        data = super(Default, self).__new__(
+            self, path_to_results_file, _single_default=SingleAnalysisDefault,
+            _multi_default=MultiAnalysisDefault, **kwargs
+        )
+        self.module = "gw"
+        return data
 
     @staticmethod
     def grab_extra_kwargs(parameters, samples):
@@ -216,7 +199,6 @@ class Default(CoreDefault):
             for num, i in enumerate(samples):
                 samples[num].append(
                     np.exp(i[parameters.index("logdistance")]))
-        injection = {i: float("nan") for i in parameters}
         try:
             extra_kwargs = Default.grab_extra_kwargs(parameters, samples)
         except Exception:
@@ -224,24 +206,9 @@ class Default(CoreDefault):
         extra_kwargs["sampler"]["nsamples"] = len(samples)
         return {
             "parameters": parameters, "samples": samples,
-            "injection": injection, "kwargs": extra_kwargs
+            "injection": Default._default_injection(parameters),
+            "kwargs": extra_kwargs
         }
-
-    @staticmethod
-    def _grab_data_from_csv_file(path, **kwargs):
-        """Grab the data stored in a .csv file
-        """
-        return CoreDefault._grab_data_from_csv_file(path, module="gw", **kwargs)
-
-    @staticmethod
-    def _grab_data_from_prior_file(path, **kwargs):
-        """Grab data stored in a .prior file
-        """
-        return CoreDefault._grab_data_from_prior_file(path, module="gw", **kwargs)
-
-    @staticmethod
-    def _grab_data_from_sql_database(path, **kwargs):
-        return CoreDefault._grab_data_from_sql_database(path, **kwargs)
 
     @staticmethod
     def _grab_data_from_hdf5_file(path, path_to_samples=None, **kwargs):
@@ -253,11 +220,11 @@ class Default(CoreDefault):
         )
 
     @staticmethod
-    def _grab_data_from_json_file(path, path_to_samples=None, **kwargs):
-        """Grab the data stored in a .json file
+    def _grab_data_from_prior_file(path, **kwargs):
+        """Grab the data stored in a .prior file
         """
-        return CoreDefault._grab_data_from_json_file(
-            path, path_to_samples=path_to_samples, **kwargs
+        return CoreDefault._grab_data_from_prior_file(
+            path, module="gw", **kwargs
         )
 
     @staticmethod
@@ -267,11 +234,11 @@ class Default(CoreDefault):
         from pesummary.gw.file.formats.xml import read_xml
 
         parameters, samples = read_xml(path, **kwargs)
-        injection = {i: float("nan") for i in parameters}
         extra_kwargs = {"sampler": {"nsamples": len(samples)}, "meta_data": {}}
         return {
             "parameters": parameters, "samples": samples,
-            "injection": injection, "kwargs": extra_kwargs
+            "injection": Default._default_injection(parameters),
+            "kwargs": extra_kwargs
         }
 
     @property
@@ -279,14 +246,3 @@ class Default(CoreDefault):
         """
         """
         return None
-
-    def add_marginalized_parameters_from_config_file(self, config_file):
-        """Search the configuration file and add the marginalized parameters
-        to the list of parameters and samples
-
-        Parameters
-        ----------
-        config_file: str
-            path to the configuration file
-        """
-        pass
