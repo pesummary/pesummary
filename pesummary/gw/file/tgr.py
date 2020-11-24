@@ -18,7 +18,7 @@ import numpy as np
 
 
 def P_integrand(
-    final_mass, final_spin, v1, v2, P_final_massfinal_spin_i_interp_object, P_final_massfinal_spin_r_interp_object
+    final_mass, final_spin, v1, v2, P_final_mass_final_spin_i_interp_object, P_final_mass_final_spin_r_interp_object
 ):
     """Compute the integrand of P(delta_final_mass/final_mass_bar, delta_final_spin/final_spin_bar).
 
@@ -32,7 +32,7 @@ def P_integrand(
         delta_final_mass/final_mass_bar value
     v2: float
         delta_final_spin/final_spin_bar value
-    P_final_massfinal_spin_i_interp_object:
+    P_final_mass_final_spin_i_interp_object:
         interpolated P_i(final_mass, final_spin)
     P_final_massfinal_spin_r_interp_object:
         interpolated P_r(final_mass, final_spin)
@@ -45,9 +45,9 @@ def P_integrand(
 
     final_mass_mat, final_spin_mat = np.meshgrid(final_mass, final_spin)
 
-    # Create delta_final_mass and delta_final_spin vectors corresponding to the given v1 and v2. These vectors have to be
-    # monotonically increasing in order to evaluate the interpolated prob densities. Hence, for
-    # v1, v2 < 0, flip them, evaluate the prob density (in column or row) and flip it back
+    # Create delta_final_mass and delta_final_spin vectors corresponding to the given v1 and v2
+    # These vectors have to be monotonically increasing in order to evaluate the interpolated probability densities.
+    # Hence, for v1, v2 < 0, flip them, evaluate the prob density (in column or row) and flip it back
     delta_final_mass_i = (1.0 + v1 / 2.0) * final_mass
     delta_final_spin_i = (1.0 + v2 / 2.0) * final_spin
 
@@ -58,7 +58,7 @@ def P_integrand(
         delta_final_mass_i = np.flipud(delta_final_mass_i)
     if (1.0 + v2 / 2.0) < 0.0:
         delta_final_spin_i = np.flipud(delta_final_spin_i)
-    P_i = P_final_massfinal_spin_i_interp_object([delta_final_mass_i, delta_final_spin_i])
+    P_i = P_final_mass_final_spin_i_interp_object([delta_final_mass_i, delta_final_spin_i])
 
     if (1.0 + v1 / 2.0) < 0.0:
         P_i = np.fliplr(P_i)
@@ -69,7 +69,7 @@ def P_integrand(
         delta_final_mass_r = np.flipud(delta_final_mass_r)
     if (1.0 - v2 / 2.0) < 0.0:
         delta_final_spin_r = np.flipud(delta_final_spin_r)
-    P_r = P_final_massfinal_spin_r_interp_object([delta_final_mass_r, delta_final_spin_r])
+    P_r = P_final_mass_final_spin_r_interp_object([delta_final_mass_r, delta_final_spin_r])
 
     if (1.0 - v1 / 2.0) < 0.0:
         P_r = np.fliplr(P_r)
