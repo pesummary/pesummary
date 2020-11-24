@@ -193,32 +193,18 @@ def install_path(return_string=False):
 
 
 def get_version_information(short=False):
-    """Grab the version from the .version file
+    """Grab the version of pesummary being used
 
     Parameters
     ----------
     short: Bool
-        If True, only return the version. If False, return git hash
+        If True, return the last stable release. If False, return the version
+        including the git hash
     """
     from ._version import get_versions
 
     version = get_versions()['version']
     if short:
-        version_file = Path(__file__).parent / ".version"
-        try:
-            with open(version_file, "r") as f:
-                f = f.readlines()
-                f = [i.strip() for i in f]
-
-            version = [i.split("= ")[1] for i in f if "last_release" in i][0]
-        except IndexError:
-            print("No version information found")
-        except FileNotFoundError as exc:
-            # if we're inside setup.py, then the file not existing is ok
-            try:
-                if _PESUMMARY_SETUP:
-                    return
-            except NameError:
-                pass
-            raise
+        version = version.split("+")[0]
     return version
+
