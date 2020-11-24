@@ -207,4 +207,3 @@ def get_version_information(short=False):
     if short:
         version = version.split("+")[0]
     return version
-
