@@ -30,6 +30,50 @@ from pesummary.gw.file import conversions as con
 from pesummary.utils.utils import logger
 
 
+def open_GWTC1(path, path_to_samples=None, **kwargs):
+    """Grab the parameters and samples in a bilby file
+
+    Parameters
+    ----------
+    path: str
+        path to the result file you wish to read in
+    path_to_samples: str, optional
+        path to the group containing the posterior samples you wish to load
+    """
+    f = h5py.File(path, 'r')
+    keys = list(f.keys())
+    if path_to_samples is not None:
+        data = f[path_to_samples]
+    elif "Overall_posterior" in keys or "overall_posterior" in keys:
+        data = \
+            f["overall_posterior"] if "overall_posterior" in keys else \
+            f["Overall_posterior"]
+    else:
+        f.close()
+        raise Exception(
+            "Failed to read in result file because there was no group "
+            "called 'Overall_posterior' or 'overall_posterior'"
+        )
+
+    parameters = list(data.dtype.names)
+    samples = [list(i) for i in data]
+    extra_kwargs = GWTC1.grab_extra_kwargs(path)
+    extra_kwargs["sampler"]["nsamples"] = len(samples)
+    prior_samples = GWTC1.grab_priors(f)
+    version = None
+    f.close()
+    data = {
+        "parameters": parameters,
+        "samples": samples,
+        "injection": None,
+        "version": version,
+        "kwargs": extra_kwargs
+    }
+    if len(prior_samples):
+        data["prior"] = {"samples": prior_samples}
+    return data
+
+
 class GWTC1(GWSingleAnalysisRead):
     """PESummary wrapper of the GWTC1 sample release
 
@@ -78,38 +122,7 @@ class GWTC1(GWSingleAnalysisRead):
     def _grab_data_from_GWTC1_file(path, path_to_samples=None, **kwargs):
         """
         """
-        f = h5py.File(path, 'r')
-        keys = list(f.keys())
-        if path_to_samples is not None:
-            data = f[path_to_samples]
-        elif "Overall_posterior" in keys or "overall_posterior" in keys:
-            data = \
-                f["overall_posterior"] if "overall_posterior" in keys else \
-                f["Overall_posterior"]
-        else:
-            f.close()
-            raise Exception(
-                "Failed to read in result file because there was no group "
-                "called 'Overall_posterior' or 'overall_posterior'"
-            )
-
-        parameters = list(data.dtype.names)
-        samples = [list(i) for i in data]
-        extra_kwargs = GWTC1.grab_extra_kwargs(path)
-        extra_kwargs["sampler"]["nsamples"] = len(samples)
-        prior_samples = GWTC1.grab_priors(f)
-        version = None
-        f.close()
-        data = {
-            "parameters": parameters,
-            "samples": samples,
-            "injection": None,
-            "version": version,
-            "kwargs": extra_kwargs
-        }
-        if len(prior_samples):
-            data["prior"] = {"samples": prior_samples}
-        return data
+        return open_GWTC1(path, path_to_samples=path_to_samples, **kwargs)
 
     @property
     def calibration_data_in_results_file(self):

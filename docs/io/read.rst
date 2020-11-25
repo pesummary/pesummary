@@ -5,34 +5,34 @@ The universal read function
 Builtin functions
 -----------------
 
-`pesummay` offers a `read` function which not only allows for nearly all result
-file formats to be read in, but it also allows for config files, injection
-files, prior files etc to be read in. Below we show a few examples.
+`pesummay` offers a `read` function which allows for configuration files,
+injection files, prior files and nearly result files formats to be read in.
+For a full list of result files that can be read in with the
+`core <../core/index.html>`_ module see `here <../core/file_formats.html>`_.
+For a full list of result files that can be read in with the
+`gw <../gw/index.html>`_ module see `here <../gw/file_formats.html>`_.
+Below we show a few examples. of how the `read` function works.
 
-First we import the universal read function
+First we import the universal read function,
 
 .. code-block:: python
 
      >>> from pesummary.io import read
 
-A result file containing a set of posterior samples can then be read in with
+A :code:`dat` file containing a set of posterior samples can then be read in
+with,
 
 .. code-block:: python
 
     >>> data = read("example.dat")
-    >>> json_load = read("example.json")
-    >>> hdf5_load = read("example.hdf5")
-    >>> txt_load = read("example.txt")
+
 
 Of course, if you would like, you may specify the package that you wish to
-use when reading the file. This is done with the 'package' kwarg,
+use when reading the file. This is done with the :code:`package` kwarg,
 
 .. code-block:: python
 
     >>> data = read("example.dat", package="core")
-    >>> json_load = read("example.json", package="core")
-    >>> hdf5_load = read("example.hdf5", package="core")
-    >>> txt_load = read("example.txt", package="core")
 
 For details about the returned posterior samples object, see
 `the core package tutorial <../core/read.html>`_ or
