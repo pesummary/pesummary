@@ -139,3 +139,4 @@ output pages. We will use the pages that were produced from Listing 5 in the
     summarypages/comparison/home
     summarypages/comparison/mass_1
     summarypages/comparison/interactive
+    summarypages/watermark

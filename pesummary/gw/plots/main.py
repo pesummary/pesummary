@@ -56,7 +56,8 @@ class _PlotGeneration(_BasePlotGeneration):
         existing_weights=None, weights=None, disable_comparison=False,
         linestyles=None, disable_interactive=False, disable_corner=False,
         publication_kwargs={}, multi_process=1, mcmc_samples=False,
-        skymap=None, existing_skymap=None, corner_params=None
+        skymap=None, existing_skymap=None, corner_params=None,
+        preliminary_pages=False
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -72,6 +73,19 @@ class _PlotGeneration(_BasePlotGeneration):
             disable_comparison=disable_comparison, linestyles=linestyles,
             disable_interactive=disable_interactive, disable_corner=disable_corner,
             multi_process=multi_process, corner_params=corner_params
+        )
+        self.preliminary_pages = preliminary_pages
+        if not isinstance(self.preliminary_pages, dict):
+            if self.preliminary_pages:
+                self.preliminary_pages = {
+                    label: True for label in self.labels
+                }
+            else:
+                self.preliminary_pages = {
+                    label: False for label in self.labels
+                }
+        self.preliminary_comparison_pages = any(
+            value for value in self.preliminary_pages.values()
         )
         self.package = "gw"
         self.file_kwargs = file_kwargs
@@ -123,23 +137,11 @@ class _PlotGeneration(_BasePlotGeneration):
     def generate_plots(self):
         """Generate all plots for all result files
         """
-        for i in self.labels:
-            logger.debug("Starting to generate plots for {}".format(i))
-            self._generate_plots(i)
-            if self.make_interactive:
-                logger.debug(
-                    "Starting to generate interactive plots for {}".format(i)
-                )
-                self._generate_interactive_plots(i)
         if self.calibration or "calibration" in list(self.priors.keys()):
             self.try_to_make_a_plot("calibration")
         if self.psd:
             self.try_to_make_a_plot("psd")
-        if self.add_to_existing:
-            self.add_existing_data()
-        if self.make_comparison:
-            logger.debug("Starting to generate comparison plots")
-            self._generate_comparison_plots()
+        super(_PlotGeneration, self).generate_plots()
 
     def _generate_plots(self, label):
         """Generate all plots for a given result file
@@ -166,7 +168,9 @@ class _PlotGeneration(_BasePlotGeneration):
             self.try_to_make_a_plot("spin_disk")
 
     @staticmethod
-    def _corner_plot(savedir, label, samples, latex_labels, webdir, params):
+    def _corner_plot(
+        savedir, label, samples, latex_labels, webdir, params, preliminary=False
+    ):
         """Generate a corner plot for a given set of samples
 
         Parameters
@@ -181,6 +185,8 @@ class _PlotGeneration(_BasePlotGeneration):
             dictionary of latex labels
         webdir: str
             directory where the javascript is written
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         import warnings
 
@@ -267,7 +273,8 @@ class _PlotGeneration(_BasePlotGeneration):
         self._skymap_plot(
             self.savedir, samples["ra"], samples["dec"], label,
             self.weights[label],
-            [self.injection_data[label]["ra"], self.injection_data[label]["dec"]]
+            [self.injection_data[label]["ra"], self.injection_data[label]["dec"]],
+            preliminary=self.preliminary_pages[label]
         )
 
         if SKYMAP and not self.no_ligo_skymap and self.skymap[label] is None:
@@ -291,18 +298,24 @@ class _PlotGeneration(_BasePlotGeneration):
                         self.savedir, samples["ra"], samples["dec"],
                         samples["luminosity_distance"], _time,
                         label, self.nsamples_for_skymap, self.webdir,
-                        self.multi_threading_for_skymap
+                        self.multi_threading_for_skymap,
+                        self.preliminary_pages[label]
                     ]
                 )
                 process.start()
                 PID = process.pid
             self._ligo_skymap_PID[label] = PID
         elif SKYMAP and not self.no_ligo_skymap:
-            self._ligo_skymap_array_plot(self.savedir, self.skymap[label], label)
+            self._ligo_skymap_array_plot(
+                self.savedir, self.skymap[label], label,
+                self.preliminary_pages[label]
+            )
 
     @staticmethod
     @no_latex_plot
-    def _skymap_plot(savedir, ra, dec, label, weights, injection=None):
+    def _skymap_plot(
+        savedir, ra, dec, label, weights, injection=None, preliminary=False
+    ):
         """Generate a skymap plot for a given set of samples
 
         Parameters
@@ -319,6 +332,8 @@ class _PlotGeneration(_BasePlotGeneration):
             list of weights for the samples
         injection: list, optional
             list containing the injected value of ra and dec
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         import math
 
@@ -326,13 +341,15 @@ class _PlotGeneration(_BasePlotGeneration):
             injection = None
         fig = gw._default_skymap_plot(ra, dec, weights, injection=injection)
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "{}_skymap".format(label))
+            fig, os.path.join(savedir, "{}_skymap".format(label)),
+            preliminary=preliminary
         )
 
     @staticmethod
     @no_latex_plot
     def _ligo_skymap_plot(savedir, ra, dec, dist, time, label, nsamples_for_skymap,
-                          webdir, multi_threading_for_skymap):
+                          webdir, multi_threading_for_skymap,
+                          preliminary=False):
         """Generate a skymap plot for a given set of samples using the
         ligo.skymap package
 
@@ -354,6 +371,8 @@ class _PlotGeneration(_BasePlotGeneration):
             the number of samples used to generate skymap
         webdir: str
             the directory to store the fits file
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         downsampled = False
         if nsamples_for_skymap is not None:
@@ -367,12 +386,13 @@ class _PlotGeneration(_BasePlotGeneration):
             label=label, time=time
         )
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "{}_skymap".format(label))
+            fig, os.path.join(savedir, "{}_skymap".format(label)),
+            preliminary=preliminary
         )
 
     @staticmethod
     @no_latex_plot
-    def _ligo_skymap_array_plot(savedir, skymap, label):
+    def _ligo_skymap_array_plot(savedir, skymap, label, preliminary=False):
         """Generate a skymap based on skymap probability array already generated with
         `ligo.skymap`
 
@@ -384,9 +404,14 @@ class _PlotGeneration(_BasePlotGeneration):
             array of skymap probabilities
         label: str
             the label corresponding to the results file
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         fig = gw._ligo_skymap_plot_from_array(skymap)
-        _PlotGeneration.save(fig, os.path.join(savedir, "{}_skymap".format(label)))
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "{}_skymap".format(label)),
+            preliminary=preliminary
+        )
 
     def waveform_fd_plot(self, label):
         """Generate a frequency domain waveform plot for a given result file
@@ -399,11 +424,14 @@ class _PlotGeneration(_BasePlotGeneration):
         if self.approximant[label] == {}:
             return
         self._waveform_fd_plot(
-            self.savedir, self.detectors[label], self.maxL_samples[label], label
+            self.savedir, self.detectors[label], self.maxL_samples[label], label,
+            self.preliminary_pages[label]
         )
 
     @staticmethod
-    def _waveform_fd_plot(savedir, detectors, maxL_samples, label):
+    def _waveform_fd_plot(
+        savedir, detectors, maxL_samples, label, preliminary=False
+    ):
         """Generate a frequency domain waveform plot for a given detector
         network and set of samples
 
@@ -417,6 +445,8 @@ class _PlotGeneration(_BasePlotGeneration):
             dictionary of maximum likelihood values
         label: str
             the label corresponding to the results file
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         if detectors is None:
             detectors = ["H1", "L1"]
@@ -425,7 +455,8 @@ class _PlotGeneration(_BasePlotGeneration):
 
         fig = gw._waveform_plot(detectors, maxL_samples)
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "{}_waveform".format(label))
+            fig, os.path.join(savedir, "{}_waveform".format(label)),
+            preliminary=preliminary
         )
 
     def waveform_td_plot(self, label):
@@ -439,11 +470,14 @@ class _PlotGeneration(_BasePlotGeneration):
         if self.approximant[label] == {}:
             return
         self._waveform_td_plot(
-            self.savedir, self.detectors[label], self.maxL_samples[label], label
+            self.savedir, self.detectors[label], self.maxL_samples[label], label,
+            self.preliminary_pages[label]
         )
 
     @staticmethod
-    def _waveform_td_plot(savedir, detectors, maxL_samples, label):
+    def _waveform_td_plot(
+        savedir, detectors, maxL_samples, label, preliminary=False
+    ):
         """Generate a time domain waveform plot for a given detector network
         and set of samples
 
@@ -457,6 +491,8 @@ class _PlotGeneration(_BasePlotGeneration):
             dictionary of maximum likelihood values
         label: str
             the label corresponding to the results file
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         if detectors is None:
             detectors = ["H1", "L1"]
@@ -467,7 +503,7 @@ class _PlotGeneration(_BasePlotGeneration):
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir, "{}_waveform_time_domain".format(label)
-            )
+            ), preliminary=preliminary
         )
 
     def gwdata_plots(self, label):
@@ -605,11 +641,13 @@ class _PlotGeneration(_BasePlotGeneration):
         """
         self._skymap_comparison_plot(
             self.savedir, self.same_samples["ra"], self.same_samples["dec"],
-            self.labels, self.colors
+            self.labels, self.colors, self.preliminary_comparison_pages
         )
 
     @staticmethod
-    def _skymap_comparison_plot(savedir, ra, dec, labels, colors):
+    def _skymap_comparison_plot(
+        savedir, ra, dec, labels, colors, preliminary=False
+    ):
         """Generate a plot to compare skymaps for a given set of samples
 
         Parameters
@@ -624,11 +662,16 @@ class _PlotGeneration(_BasePlotGeneration):
             list of labels to distinguish each result file
         colors: list
             list of colors to be used to distinguish different result files
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         ra_list = [ra[key] for key in labels]
         dec_list = [dec[key] for key in labels]
         fig = gw._sky_map_comparison_plot(ra_list, dec_list, labels, colors)
-        _PlotGeneration.save(fig, os.path.join(savedir, "combined_skymap"))
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "combined_skymap"),
+            preliminary=preliminary
+        )
 
     def waveform_comparison_fd_plot(self, label):
         """Generate a plot to compare the frequency domain waveform
@@ -642,11 +685,14 @@ class _PlotGeneration(_BasePlotGeneration):
             return
 
         self._waveform_comparison_fd_plot(
-            self.savedir, self.maxL_samples, self.labels, self.colors
+            self.savedir, self.maxL_samples, self.labels, self.colors,
+            self.preliminary_comparison_pages
         )
 
     @staticmethod
-    def _waveform_comparison_fd_plot(savedir, maxL_samples, labels, colors):
+    def _waveform_comparison_fd_plot(
+        savedir, maxL_samples, labels, colors, preliminary=False
+    ):
         """Generate a plot to compare the frequency domain waveforms
 
         Parameters
@@ -659,11 +705,14 @@ class _PlotGeneration(_BasePlotGeneration):
             list of labels to distinguish each result file
         colors: list
             list of colors to be used to distinguish different result files
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         samples = [maxL_samples[i] for i in labels]
         fig = gw._waveform_comparison_plot(samples, colors, labels)
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "compare_waveforms")
+            fig, os.path.join(savedir, "compare_waveforms"),
+            preliminary=preliminary
         )
 
     def waveform_comparison_td_plot(self, label):
@@ -678,11 +727,14 @@ class _PlotGeneration(_BasePlotGeneration):
             return
 
         self._waveform_comparison_fd_plot(
-            self.savedir, self.maxL_samples, self.labels, self.colors
+            self.savedir, self.maxL_samples, self.labels, self.colors,
+            self.preliminary_comparison_pages
         )
 
     @staticmethod
-    def _waveform_comparison_td_plot(savedir, maxL_samples, labels, colors):
+    def _waveform_comparison_td_plot(
+        savedir, maxL_samples, labels, colors, preliminary=False
+    ):
         """Generate a plot to compare the time domain waveforms
 
         Parameters
@@ -695,11 +747,14 @@ class _PlotGeneration(_BasePlotGeneration):
             list of labels to distinguish each result file
         colors: list
             list of colors to be used to distinguish different result files
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         samples = [maxL_samples[i] for i in labels]
         fig = gw._time_domainwaveform_comparison_plot(samples, colors, labels)
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "compare_time_domain_waveforms")
+            fig, os.path.join(savedir, "compare_time_domain_waveforms"),
+            preliminary=preliminary
         )
 
     def twod_comparison_contour_plot(self, label):
@@ -740,7 +795,8 @@ class _PlotGeneration(_BasePlotGeneration):
             samples = [[self.samples[i][j] for j in plot] for i in self.labels]
             arguments = [
                 self.savedir, plot, samples, self.labels, latex_labels,
-                self.colors, self.linestyles, gridsize
+                self.colors, self.linestyles, gridsize,
+                self.preliminary_comparison_pages
             ]
             self._try_to_make_a_plot(
                 arguments, self._twod_comparison_contour_plot,
@@ -750,7 +806,7 @@ class _PlotGeneration(_BasePlotGeneration):
     @staticmethod
     def _twod_comparison_contour_plot(
         savedir, plot_parameters, samples, labels, latex_labels, colors,
-        linestyles, gridsize
+        linestyles, gridsize, preliminary=False
     ):
         """Generate a 2d comparison contour plot for a given set of samples
 
@@ -768,6 +824,8 @@ class _PlotGeneration(_BasePlotGeneration):
             dictionary containing the latex labels for each parameter
         gridsize: int
             the number of points to use when estimating the KDE
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         fig = publication.twod_contour_plots(
             plot_parameters, samples, labels, latex_labels, colors=colors,
@@ -778,7 +836,7 @@ class _PlotGeneration(_BasePlotGeneration):
                 savedir, "publication", "2d_contour_plot_{}".format(
                     "_and_".join(plot_parameters)
                 )
-            )
+            ), preliminary=preliminary
         )
 
     def violin_plot(self, label):
@@ -803,7 +861,8 @@ class _PlotGeneration(_BasePlotGeneration):
                 )
             samples = [self.samples[i][plot] for i in self.labels]
             arguments = [
-                self.savedir, plot, samples, self.labels, latex_labels[plot]
+                self.savedir, plot, samples, self.labels, latex_labels[plot],
+                self.preliminary_comparison_pages
             ]
             self._try_to_make_a_plot(
                 arguments, self._violin_plot, error_message % (plot)
@@ -812,7 +871,7 @@ class _PlotGeneration(_BasePlotGeneration):
     @staticmethod
     def _violin_plot(
         savedir, plot_parameter, samples, labels, latex_label,
-        kde=Bounded_1d_kde, default_bounds=True
+        preliminary=False, kde=Bounded_1d_kde, default_bounds=True
     ):
         """Generate a violin plot for a given set of samples
 
@@ -828,6 +887,8 @@ class _PlotGeneration(_BasePlotGeneration):
             list of labels used to distinguish each result file
         latex_label: str
              latex_label correspondig to parameter
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         xlow, xhigh = None, None
         if default_bounds:
@@ -843,7 +904,7 @@ class _PlotGeneration(_BasePlotGeneration):
                 savedir, "publication", "violin_plot_{}".format(
                     plot_parameter
                 )
-            )
+            ), preliminary=preliminary
         )
 
     def spin_dist_plot(self, label):
@@ -870,7 +931,8 @@ class _PlotGeneration(_BasePlotGeneration):
                 continue
             samples = [self.samples[label][i] for i in parameters]
             arguments = [
-                self.savedir, parameters, samples, label, self.colors[num]
+                self.savedir, parameters, samples, label, self.colors[num],
+                self.preliminary_comparison_pages
             ]
 
             self._try_to_make_a_plot(
@@ -878,11 +940,15 @@ class _PlotGeneration(_BasePlotGeneration):
             )
 
     @staticmethod
-    def _spin_dist_plot(savedir, parameters, samples, label, color):
+    def _spin_dist_plot(
+        savedir, parameters, samples, label, color, preliminary=False
+    ):
         """Generate a spin disk plot for a given set of samples
 
         Parameters
         ----------
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         fig = publication.spin_distribution_plots(
             parameters, samples, label, color=color
@@ -892,7 +958,7 @@ class _PlotGeneration(_BasePlotGeneration):
                 savedir, "publication", "spin_disk_plot_{}".format(
                     label
                 )
-            )
+            ), preliminary=preliminary
         )
 
     def pepredicates_plot(self, label):
@@ -909,17 +975,20 @@ class _PlotGeneration(_BasePlotGeneration):
             samples = self.samples[label]
         self._pepredicates_plot(
             self.savedir, samples, label,
-            self.pepredicates_probs[label]["default"], population_prior=False
+            self.pepredicates_probs[label]["default"], population_prior=False,
+            preliminary=self.preliminary_pages[label]
         )
         self._pepredicates_plot(
             self.savedir, samples, label,
-            self.pepredicates_probs[label]["population"], population_prior=True
+            self.pepredicates_probs[label]["population"], population_prior=True,
+            preliminary=self.preliminary_pages[label]
         )
 
     @staticmethod
     @no_latex_plot
     def _pepredicates_plot(
-        savedir, samples, label, probabilities, population_prior=False
+        savedir, samples, label, probabilities, population_prior=False,
+        preliminary=False
     ):
         """Generate a plot with the PEPredicates package for a given set of
         samples
@@ -937,6 +1006,8 @@ class _PlotGeneration(_BasePlotGeneration):
         population_prior: Bool, optional
             if True, the samples will be reweighted according to a population
             prior
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         from pesummary.gw.pepredicates import PEPredicates
 
@@ -954,7 +1025,7 @@ class _PlotGeneration(_BasePlotGeneration):
                     savedir, "{}_default_pepredicates".format(
                         label
                     )
-                )
+                ), preliminary=preliminary
             )
         else:
             _PlotGeneration.save(
@@ -962,7 +1033,7 @@ class _PlotGeneration(_BasePlotGeneration):
                     savedir, "{}_population_pepredicates".format(
                         label
                     )
-                )
+                ), preliminary=preliminary
             )
         fig = gw._classification_plot(probabilities)
         if not population_prior:
@@ -971,7 +1042,7 @@ class _PlotGeneration(_BasePlotGeneration):
                     savedir, "{}_default_pepredicates_bar".format(
                         label
                     )
-                )
+                ), preliminary=preliminary
             )
         else:
             _PlotGeneration.save(
@@ -979,7 +1050,7 @@ class _PlotGeneration(_BasePlotGeneration):
                     savedir, "{}_population_pepredicates_bar".format(
                         label
                     )
-                )
+                ), preliminary=preliminary
             )
 
     def psd_plot(self, label):

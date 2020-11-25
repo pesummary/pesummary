@@ -16,6 +16,7 @@
 import os
 import shutil
 import glob
+import copy
 
 import argparse
 
@@ -220,6 +221,7 @@ class TestInput(object):
             "--email", "albert.einstein@ligo.org",
             "--gracedb", "Grace",
             "--labels", "example"]
+        self.original_arguments = copy.deepcopy(self.default_arguments)
         self.make_input_object()
 
     def teardown(self):
@@ -246,7 +248,9 @@ class TestInput(object):
         f.close()
         return path + "/posterior_samples.h5"
 
-    def add_argument(self, argument):
+    def add_argument(self, argument, reset=False):
+        if reset:
+            self.default_arguments = self.original_arguments
         if isinstance(argument, list):
             for i in argument:
                 self.default_arguments.append(i)
@@ -379,6 +383,58 @@ class TestInput(object):
             self.inputs.psd["example"]["H1"],
             [[1.00, 3.44], [2.00, 5.66], [3.00, 4.56], [4.00, 9.83]]
         )
+
+    def test_preliminary_pages_for_single_analysis(self):
+        """Test that preliminary watermarks are added when an analysis
+        is not reproducible
+        """
+        # when neither a psd or config is passed, add preliminary watermark
+        assert self.inputs.preliminary_pages == {"example": True}
+        # when a psd is added but not a config, add preliminary watermark
+        with open("./.outdir/psd.dat", "w") as f:
+            f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
+        self.add_argument(["--psd", "./.outdir/psd.dat"])
+        assert self.inputs.preliminary_pages == {"example": True}
+        # when a config is added but no psd, add preliminary watermark
+        self.add_argument(
+            ["--config", data_dir + "/config_lalinference.ini"], reset=True
+        )
+        assert self.inputs.preliminary_pages == {"example": True}
+        # when both config and psd is added, do not add preliminary watermark
+        self.add_argument(
+            ["--psd", "./.outdir/psd.dat"], reset=True
+        )
+        self.add_argument(["--config", data_dir + "/config_lalinference.ini"])
+        assert self.inputs.preliminary_pages == {"example": False}
+
+    def test_preliminary_pages_for_multiple_analysis(self):
+        """Test that preliminary watermarks are added when multiple analyses
+        are not reproducible
+        """
+        with open("./.outdir/psd.dat", "w") as f:
+            f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
+        self.default_arguments = [
+            "--approximant", "IMRPhenomPv2", "IMRPhenomPv2",
+            "--webdir", "./.outdir",
+            "--samples", "./.outdir/bilby_example.h5", "./.outdir/bilby_example.h5",
+            "--email", "albert.einstein@ligo.org",
+            "--gracedb", "Grace",
+            "--labels", "example", "example2"]
+        self.original_arguments = copy.deepcopy(self.default_arguments)
+        self.make_input_object()
+        # when neither a psd or config is passed for each file, add preliminary
+        # watermark
+        assert self.inputs.preliminary_pages["example"] == True
+        assert self.inputs.preliminary_pages["example2"] == True
+        # When a psd and config is provided to both analyses, add preliminary
+        # watermark to both files
+        self.add_argument(["--psd", "H1:./.outdir/psd.dat"])
+        self.add_argument(
+            ["--config", data_dir + "/config_lalinference.ini",
+             data_dir + "/config_lalinference.ini"]
+        )
+        assert self.inputs.preliminary_pages["example"] == False
+        assert self.inputs.preliminary_pages["example2"] == False
 
     def test_calibration(self):
         with open("./.outdir/calibration.dat", "w") as f:

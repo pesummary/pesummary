@@ -143,7 +143,8 @@ class _GWPlotGeneration(GWPostProcessing):
             publication_kwargs=self.publication_kwargs,
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
             skymap=self.skymap, existing_skymap=self.existing_skymap,
-            corner_params=self.corner_params
+            corner_params=self.corner_params,
+            preliminary_pages=self.preliminary_pages
         )
         self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 
@@ -199,7 +200,8 @@ class _PublicGWPlotGeneration(GWPostProcessing):
             publication_kwargs=self.publication_kwargs,
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
             skymap=self.skymap, existing_skymap=self.existing_skymap,
-            corner_params=self.corner_params
+            corner_params=self.corner_params,
+            preliminary_pages=self.preliminary_pages
         )
         self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 

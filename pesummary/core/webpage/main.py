@@ -178,6 +178,8 @@ class _WebpageGeneration(object):
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
+        self.preliminary_pages = {label: False for label in self.labels}
+        self.all_pages_preliminary = False
         self.categories = self.default_categories()
         self.popular_options = self.default_popular_options()
         self.navbar = {
@@ -505,6 +507,13 @@ class _WebpageGeneration(object):
             web_dir=self.webdir, base_url=self.base_url, html_page=html_page,
             label=label
         )
+        _preliminary_keys = self.preliminary_pages.keys()
+        if self.all_pages_preliminary:
+            html_file.make_watermark()
+        elif approximant is not None and approximant in _preliminary_keys:
+            if self.preliminary_pages[approximant]:
+                html_file.make_watermark()
+
         html_file.make_header(approximant=approximant)
         if html_page == "home" or html_page == "home.html":
             html_file.make_navbar(
@@ -794,6 +803,7 @@ class _WebpageGeneration(object):
                     ), "w"
                 ) as f:
                     f.write(styles)
+                _fix = False
             else:
                 html_file.add_content(
                     "<div class='row justify-content-center'; "
@@ -801,7 +811,10 @@ class _WebpageGeneration(object):
                     "<p style='margin-top:2.5em'> No configuration file was "
                     "provided </p></div>"
                 )
-            html_file.make_footer(user=self.user, rundir=self.webdir)
+                _fix = True
+            html_file.make_footer(
+                user=self.user, rundir=self.webdir, fix_bottom=_fix
+            )
             html_file.close()
 
     def make_comparison_pages(self):
@@ -1237,7 +1250,9 @@ class _WebpageGeneration(object):
             "pesummary.sh", csv=False, json=False, shell=True,
             margin_top="-4em"
         )
-        html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.make_footer(
+            user=self.user, rundir=self.webdir, fix_bottom=True
+        )
         html_file.close()
 
     def make_downloads_page(self):

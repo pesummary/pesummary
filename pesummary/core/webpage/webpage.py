@@ -71,6 +71,7 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <link rel="stylesheet" href="./css/font.css">
     <link rel="stylesheet" href="./css/table.css">
     <link rel="stylesheet" href="./css/image_styles.css">
+    <link rel="stylesheet" href="./css/watermark.css">
 """
 
 OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
@@ -91,6 +92,7 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <link rel="stylesheet" href="../css/font.css">
     <link rel="stylesheet" href="../css/table.css">
     <link rel="stylesheet" href="../css/image_styles.css">
+    <link rel="stylesheet" href="../css/watermark.css">
 """
 
 
@@ -179,7 +181,7 @@ class page(Base):
         self.add_content("<h7 hidden>{}</h7>".format(self.label))
         self.add_content("<h7 hidden>{}</h7>".format(approximant))
 
-    def _footer(self, user, rundir):
+    def _footer(self, user, rundir, fix_bottom=False):
         """
         """
         self.add_content("<script>")
@@ -187,10 +189,21 @@ class page(Base):
         self.add_content("$('[data-toggle=\"tooltip\"]').tooltip();", indent=4)
         self.add_content("});", indent=2)
         self.add_content("</script>")
-        self.make_div(
-            _class='jumbotron', _style='margin-bottom:0; line-height: 0.5;'
-            + 'background-color:#989898; bottom:0; position:bottom;'
-            + 'width:100%')
+        if fix_bottom:
+            self.make_div(
+                _class='container', _style='position: absolute; bottom: 0px; '
+                + 'top: 0px; min-height: 100%; left: 0; right: 0;'
+                + 'min-width: 100%; padding-left: 0px; padding-right: 0px'
+            )
+            self.make_div(
+                _class='jumbotron', _style='margin-bottom:0; line-height: 0.5;'
+                + 'background-color:#989898; bottom:0; position:absolute;'
+                + 'width:100%')
+        else:
+            self.make_div(
+                _class='jumbotron', _style='margin-bottom:0; line-height: 0.5;'
+                + 'background-color:#989898; bottom:0; position:bottom;'
+                + 'width:100%')
         self.add_content("<div class='container'>")
         self.add_content("<div class='row'>", indent=2)
         self.add_content("<div class='col-sm-4 icon-bar'>", indent=4)
@@ -238,6 +251,8 @@ class page(Base):
         self.add_content("</div>", indent=4)
         self.add_content("</div>", indent=2)
         self.add_content("</div>")
+        if fix_bottom:
+            self.add_content("</div>")
         self.end_div()
 
     def _setup_navbar(self, background_colour):
@@ -267,10 +282,10 @@ class page(Base):
         """
         self._header(approximant)
 
-    def make_footer(self, user=None, rundir=None):
+    def make_footer(self, user=None, rundir=None, fix_bottom=False):
         """Make footer for document in bootstrap format.
         """
-        self._footer(user, rundir)
+        self._footer(user, rundir, fix_bottom=fix_bottom)
 
     def make_banner(self, approximant=None, key="Summary", _style=None, link=None):
         """Make a banner for the document.
@@ -937,6 +952,21 @@ class page(Base):
                          "data-content='%s'>Command Line</button>" % (cli),
                          indent=12)
         self.end_div(0)
+
+    def make_watermark(self, text="Preliminary"):
+        """Add a watermark to the html page
+
+        Parameters
+        ----------
+        text: str
+            work you wish to use as a watermark
+        """
+        self.add_content("<div id='background'>")
+        for _ in range(3):
+            self.add_content(
+                "<p id='bg-text'>{} {}</p>".format(text, text)
+            )
+        self.end_div()
 
     def export(
         self, filename, csv=True, json=False, shell=False, histogram_dat=None,

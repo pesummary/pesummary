@@ -39,7 +39,8 @@ class _PlotGeneration(_GWPlotGeneration):
         existing_approximant=None, existing_psd=None, existing_calibration=None,
         existing_weights=None, weights=None, disable_comparison=False,
         linestyles=None, disable_interactive=False, disable_corner=False,
-        publication_kwargs={}, multi_process=1, corner_params=None
+        publication_kwargs={}, multi_process=1, corner_params=None,
+        preliminary_pages=False
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -67,5 +68,6 @@ class _PlotGeneration(_GWPlotGeneration):
             disable_interactive=disable_interactive,
             disable_corner=disable_corner,
             publication_kwargs=publication_kwargs,
-            multi_process=multi_process, corner_params=corner_params
+            multi_process=multi_process, corner_params=corner_params,
+            preliminary_pages=preliminary_pages
         )

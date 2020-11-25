@@ -134,7 +134,8 @@ class _GWWebpageGeneration(GWPostProcessing):
             psd=self.psd, priors=self.priors,
             package_information=self.package_information,
             mcmc_samples=self.mcmc_samples,
-            external_hdf5_links=self.external_hdf5_links
+            external_hdf5_links=self.external_hdf5_links,
+            preliminary_pages=self.preliminary_pages
         )
 
     def generate_webpages(self):
@@ -184,7 +185,8 @@ class _PublicGWWebpageGeneration(GWPostProcessing):
             psd=self.psd, priors=self.priors,
             package_information=self.package_information,
             mcmc_samples=self.mcmc_samples,
-            external_hdf5_links=self.external_hdf5_links
+            external_hdf5_links=self.external_hdf5_links,
+            preliminary_pages=self.preliminary_pages
         )
 
     def generate_webpages(self):
