@@ -17,6 +17,7 @@
 
 import os
 import importlib
+from multiprocessing import Pool, Manager
 
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import logger, get_matplotlib_backend
@@ -101,6 +102,8 @@ class _PlotGeneration(object):
         self.corner_params = corner_params
         self.multi_process = multi_process
         self.pool = self.setup_pool()
+        self.preliminary_pages = {label: False for label in self.labels}
+        self.preliminary_comparison_pages = False
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -149,7 +152,7 @@ class _PlotGeneration(object):
                 )
 
     @staticmethod
-    def save(fig, name, close=True, format="png"):
+    def save(fig, name, preliminary=False, close=True, format="png"):
         """Save a figure to disk.
 
         Parameters
@@ -166,6 +169,12 @@ class _PlotGeneration(object):
         n = len(format)
         if ".%s" % (format) != name[-n - 1:]:
             name += ".%s" % (format)
+        if preliminary:
+            fig.text(
+                0.5, 0.5, 'Preliminary', fontsize=90, color='gray', alpha=0.1,
+                ha='center', va='center', rotation='30'
+            )
+        fig.tight_layout()
         fig.savefig(name, format=format)
         if close:
             fig.close()
@@ -205,8 +214,6 @@ class _PlotGeneration(object):
     def setup_pool(self):
         """Setup a pool of processes to speed up plot generation
         """
-        from multiprocessing import Pool
-
         pool = Pool(processes=self.multi_process)
         return pool
 
@@ -341,11 +348,13 @@ class _PlotGeneration(object):
             samples = self.samples[label]
         self._corner_plot(
             self.savedir, label, samples, latex_labels, self.webdir,
-            self.corner_params
+            self.corner_params, self.preliminary_pages[label]
         )
 
     @staticmethod
-    def _corner_plot(savedir, label, samples, latex_labels, webdir, params):
+    def _corner_plot(
+        savedir, label, samples, latex_labels, webdir, params, preliminary=False
+    ):
         """Generate a corner plot for a given set of samples
 
         Parameters
@@ -361,6 +370,8 @@ class _PlotGeneration(object):
             latex labels for each parameter in samples
         webdir: str
             the directory where the `js` directory is located
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         import warnings
 
@@ -374,7 +385,7 @@ class _PlotGeneration(object):
                     savedir, "corner", "{}_all_density_plots".format(
                         label
                     )
-                )
+                ), preliminary=preliminary
             )
             combine_corner = open(
                 os.path.join(webdir, "js", "combine_corner.js")
@@ -452,7 +463,7 @@ class _PlotGeneration(object):
                     self.savedir, label, param, samples[param],
                     latex_labels[param], self.injection_data[label][param],
                     self.kde_plot, prior(param), self.weights[label],
-                    self.package
+                    self.package, self.preliminary_pages[label]
                 ], function, error_message % (param)
             ) for param in iterator
         ]
@@ -477,7 +488,8 @@ class _PlotGeneration(object):
             arguments = [
                 self.savedir, param, self.same_samples[param],
                 latex_labels[param], self.colors, injection, self.kde_plot,
-                self.linestyles, self.package
+                self.linestyles, self.package,
+                self.preliminary_comparison_pages
             ]
             self._try_to_make_a_plot(
                 arguments, self._oned_histogram_comparison_plot,
@@ -488,7 +500,7 @@ class _PlotGeneration(object):
     @staticmethod
     def _oned_histogram_comparison_plot(
         savedir, parameter, samples, latex_label, colors, injection, kde=False,
-        linestyles=None, package="core"
+        linestyles=None, package="core", preliminary=False
     ):
         """Generate a oned comparison histogram plot for a given parameter
 
@@ -513,6 +525,8 @@ class _PlotGeneration(object):
             if True, kde plots will be generated rather than 1d histograms
         linestyles: list, optional
             list of linestyles used to distinguish different result files
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         import math
         module = importlib.import_module(
@@ -531,13 +545,13 @@ class _PlotGeneration(object):
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir, "combined_1d_posterior_{}".format(parameter)
-            )
+            ), preliminary=preliminary
         )
 
     @staticmethod
     def _oned_histogram_plot(
         savedir, label, parameter, samples, latex_label, injection, kde=False,
-        prior=None, weights=None, package="core"
+        prior=None, weights=None, package="core", preliminary=False
     ):
         """Generate a oned histogram plot for a given set of samples
 
@@ -561,6 +575,8 @@ class _PlotGeneration(object):
             the prior samples for param
         weights: PESummary.utils.utilsrray, optional
             the weights for each samples. If None, assumed to be 1
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         import math
         module = importlib.import_module(
@@ -578,13 +594,13 @@ class _PlotGeneration(object):
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir, "{}_1d_posterior_{}".format(label, parameter)
-            )
+            ), preliminary=preliminary
         )
 
     @staticmethod
     def _oned_histogram_plot_mcmc(
         savedir, label, parameter, samples, latex_label, injection, kde=False,
-        prior=None, weights=None, package="core"
+        prior=None, weights=None, package="core", preliminary=False
     ):
         """Generate a oned histogram plot for a given set of samples for
         multiple mcmc chains
@@ -610,6 +626,8 @@ class _PlotGeneration(object):
             the prior samples for param
         weights: PESummary.utils.array.Array, optional
             the weights for each samples. If None, assumed to be 1
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         import math
         from pesummary.utils.array import Array
@@ -628,7 +646,7 @@ class _PlotGeneration(object):
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir, "{}_1d_posterior_{}".format(label, parameter)
-            )
+            ), preliminary=preliminary
         )
         fig = module._1d_histogram_plot(
             parameter, Array(np.concatenate(same_samples)), latex_label,
@@ -637,7 +655,7 @@ class _PlotGeneration(object):
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir, "{}_1d_posterior_{}_combined".format(label, parameter)
-            )
+            ), preliminary=preliminary
         )
 
     def sample_evolution_plot(self, label):
@@ -658,7 +676,8 @@ class _PlotGeneration(object):
             (
                 [
                     self.savedir, label, param, samples[param],
-                    latex_labels[param], self.injection_data[label][param]
+                    latex_labels[param], self.injection_data[label][param],
+                    self.preliminary_pages[label]
                 ], function, error_message % (param)
             ) for param in iterator
         ]
@@ -666,7 +685,8 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _sample_evolution_plot(
-        savedir, label, parameter, samples, latex_label, injection
+        savedir, label, parameter, samples, latex_label, injection,
+        preliminary=False
     ):
         """Generate a sample evolution plot for a given set of samples
 
@@ -684,6 +704,8 @@ class _PlotGeneration(object):
             the latex label corresponding to parameter
         injection: float
             the injected value
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         fig = core._sample_evolution_plot(
             parameter, samples, latex_label, injection
@@ -691,12 +713,13 @@ class _PlotGeneration(object):
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir, "{}_sample_evolution_{}".format(label, parameter)
-            )
+            ), preliminary=preliminary
         )
 
     @staticmethod
     def _sample_evolution_plot_mcmc(
-        savedir, label, parameter, samples, latex_label, injection
+        savedir, label, parameter, samples, latex_label, injection,
+        preliminary=False
     ):
         """Generate a sample evolution plot for a given set of mcmc chains
 
@@ -715,6 +738,8 @@ class _PlotGeneration(object):
             the latex label corresponding to parameter
         injection: float
             the injected value
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         same_samples = [val for key, val in samples.items()]
         fig = core._sample_evolution_plot_mcmc(
@@ -723,7 +748,7 @@ class _PlotGeneration(object):
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir, "{}_sample_evolution_{}".format(label, parameter)
-            )
+            ), preliminary=preliminary
         )
 
     def autocorrelation_plot(self, label):
@@ -742,14 +767,18 @@ class _PlotGeneration(object):
         )
         arguments = [
             (
-                [self.savedir, label, param, samples[param]],
-                function, error_message % (param)
+                [
+                    self.savedir, label, param, samples[param],
+                    self.preliminary_pages[label]
+                ], function, error_message % (param)
             ) for param in iterator
         ]
         self.pool.starmap(self._try_to_make_a_plot, arguments)
 
     @staticmethod
-    def _autocorrelation_plot(savedir, label, parameter, samples):
+    def _autocorrelation_plot(
+        savedir, label, parameter, samples, preliminary=False
+    ):
         """Generate an autocorrelation plot for a given set of samples
 
         Parameters
@@ -762,6 +791,8 @@ class _PlotGeneration(object):
             the name of the parameter that you wish to plot
         samples: PESummary.utils.array.Array
             array containing the samples corresponding to parameter
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         fig = core._autocorrelation_plot(parameter, samples)
         _PlotGeneration.save(
@@ -769,11 +800,13 @@ class _PlotGeneration(object):
                 savedir, "{}_autocorrelation_{}".format(
                     label, parameter
                 )
-            )
+            ), preliminary=preliminary
         )
 
     @staticmethod
-    def _autocorrelation_plot_mcmc(savedir, label, parameter, samples):
+    def _autocorrelation_plot_mcmc(
+        savedir, label, parameter, samples, preliminary=False
+    ):
         """Generate an autocorrelation plot for a list of samples, one for each
         mcmc chain
 
@@ -788,6 +821,8 @@ class _PlotGeneration(object):
         samples: dict
             dictioanry of PESummary.utils.array.Array objects containing the
             samples corresponding to parameter for each mcmc chain
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         same_samples = [val for key, val in samples.items()]
         fig = core._autocorrelation_plot_mcmc(parameter, same_samples)
@@ -796,7 +831,7 @@ class _PlotGeneration(object):
                 savedir, "{}_autocorrelation_{}".format(
                     label, parameter
                 )
-            )
+            ), preliminary=preliminary
         )
 
     def oned_cdf_plot(self, label):
@@ -817,14 +852,16 @@ class _PlotGeneration(object):
             (
                 [
                     self.savedir, label, param, samples[param],
-                    latex_labels[param]
+                    latex_labels[param], self.preliminary_pages[label]
                 ], function, error_message % (param)
             ) for param in iterator
         ]
         self.pool.starmap(self._try_to_make_a_plot, arguments)
 
     @staticmethod
-    def _oned_cdf_plot(savedir, label, parameter, samples, latex_label):
+    def _oned_cdf_plot(
+        savedir, label, parameter, samples, latex_label, preliminary=False
+    ):
         """Generate a oned CDF plot for a given set of samples
 
         Parameters
@@ -839,16 +876,20 @@ class _PlotGeneration(object):
             array containing the samples corresponding to parameter
         latex_label: str
             the latex label corresponding to parameter
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         fig = core._1d_cdf_plot(parameter, samples, latex_label)
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir + "{}_cdf_{}".format(label, parameter)
-            )
+            ), preliminary=preliminary
         )
 
     @staticmethod
-    def _oned_cdf_plot_mcmc(savedir, label, parameter, samples, latex_label):
+    def _oned_cdf_plot_mcmc(
+        savedir, label, parameter, samples, latex_label, preliminary=False
+    ):
         """Generate a oned CDF plot for a given set of samples, one for each
         mcmc chain
 
@@ -865,13 +906,15 @@ class _PlotGeneration(object):
             samples corresponding to parameter for each mcmc chain
         latex_label: str
             the latex label corresponding to parameter
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         same_samples = [val for key, val in samples.items()]
         fig = core._1d_cdf_plot_mcmc(parameter, same_samples, latex_label)
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir + "{}_cdf_{}".format(label, parameter)
-            )
+            ), preliminary=preliminary
         )
 
     def interactive_ridgeline_plot(self, label):
@@ -958,7 +1001,8 @@ class _PlotGeneration(object):
         for param in self.same_parameters:
             arguments = [
                 self.savedir, param, self.same_samples[param],
-                latex_labels[param], self.colors, self.linestyles
+                latex_labels[param], self.colors, self.linestyles,
+                self.preliminary_comparison_pages
             ]
             self._try_to_make_a_plot(
                 arguments, self._oned_cdf_comparison_plot,
@@ -968,7 +1012,8 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _oned_cdf_comparison_plot(
-        savedir, parameter, samples, latex_label, colors, linestyles=None
+        savedir, parameter, samples, latex_label, colors, linestyles=None,
+        preliminary=False
     ):
         """Generate a oned comparison CDF plot for a given parameter
 
@@ -989,6 +1034,8 @@ class _PlotGeneration(object):
             list of colors to be used to distinguish different result files
         linestyles: list, optional
             list of linestyles used to distinguish different result files
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         keys = list(samples.keys())
         same_samples = [samples[key] for key in keys]
@@ -998,7 +1045,7 @@ class _PlotGeneration(object):
         _PlotGeneration.save(
             fig, os.path.join(
                 savedir, "combined_cdf_{}".format(parameter)
-            )
+            ), preliminary=preliminary
         )
 
     def box_plot_comparison_plot(self, label):
@@ -1016,7 +1063,8 @@ class _PlotGeneration(object):
         for param in self.same_parameters:
             arguments = [
                 self.savedir, param, self.same_samples[param],
-                latex_labels[param], self.colors
+                latex_labels[param], self.colors,
+                self.preliminary_comparison_pages
             ]
             self._try_to_make_a_plot(
                 arguments, self._box_plot_comparison_plot,
@@ -1026,7 +1074,7 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _box_plot_comparison_plot(
-        savedir, parameter, samples, latex_label, colors
+        savedir, parameter, samples, latex_label, colors, preliminary=False
     ):
         """Generate a comparison box plot for a given parameter
 
@@ -1045,6 +1093,8 @@ class _PlotGeneration(object):
             the latex label for parameter
         colors: list
             list of colors to be used to distinguish different result files
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
         """
         same_samples = [val for key, val in samples.items()]
         fig = core._comparison_box_plot(
@@ -1052,7 +1102,8 @@ class _PlotGeneration(object):
             list(samples.keys())
         )
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "combined_boxplot_{}".format(parameter))
+            fig, os.path.join(savedir, "combined_boxplot_{}".format(parameter)),
+            preliminary=preliminary
         )
 
     def custom_plot(self, label):
@@ -1079,5 +1130,5 @@ class _PlotGeneration(object):
             _PlotGeneration.save(
                 fig, os.path.join(
                     self.savedir, "{}_custom_plotting_{}".format(label, num)
-                )
+                ), preliminary=self.preliminary_pages[label]
             )
