@@ -759,7 +759,8 @@ class TestSummaryReview(Base):
         """Test the `summaryreview` script for a `lalinference` result file
         """
         command_line = (
-            "summaryreview --webdir .outdir --samples .outdir/test.hdf5"
+            "summaryreview --webdir .outdir --samples .outdir/test.hdf5 "
+            "--test core_plots"
         )
         self.launch(command_line)
 
