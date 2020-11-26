@@ -205,6 +205,7 @@ class Bilby(GWSingleAnalysisRead):
         """
         from bilby.core.result import read_in_result
 
+        logger.debug("Interpolating the calibration posterior")
         bilby_object = read_in_result(filename=path)
         posterior = bilby_object.posterior
         parameters = list(posterior.keys())
