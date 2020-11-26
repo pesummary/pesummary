@@ -15,6 +15,7 @@
 
 from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 import numpy as np
+import multiprocessing
 
 
 def P_integrand(
@@ -45,6 +46,7 @@ def P_integrand(
         integrand of P(delta_final_mass/final_mass_bar,
         delta_final_spin/final_spin_bar)
     """
+    # total runtime ~55s
     final_mass_mat, final_spin_mat = np.meshgrid(final_mass, final_spin)
     _abs = np.abs(final_mass_mat * final_spin_mat)
     _v1, _v2 = np.meshgrid(v1, v2)
@@ -56,6 +58,7 @@ def P_integrand(
     delta_final_mass_r = np.abs((1.0 - v1 / 2.0)) * final_mass
     delta_final_spin_r = np.abs((1.0 - v2 / 2.0)) * final_spin
 
+    # Evaluating the KDE for P_i and P_r takes ~50s
     P_i = np.abs(
         P_final_mass_final_spin_i_interp_object(
             [delta_final_mass_i.flatten(), delta_final_spin_i.flatten()]
@@ -66,9 +69,10 @@ def P_integrand(
             [delta_final_mass_r.flatten(), delta_final_spin_r.flatten()]
         )
     ).reshape(delta_final_mass_r.shape)
-    _prod = np.array(
-        [np.sum(_P_i * _P_r * _abs) for _P_i, _P_r, in zip(P_i, P_r)]
-    ).reshape(len(final_mass), len(final_mass))
+
+    _prod = np.sum(np.dot(P_i * P_r, _abs.T), axis=1).reshape(
+        len(final_mass), len(final_mass)
+    )
     return _prod, P_i, P_r
 
 
