@@ -2531,13 +2531,6 @@ class _Conversion(object):
             self._invq_from_q()
         if "chirp_mass" not in self.parameters and "total_mass" in self.parameters:
             self._mchirp_from_mtotal_q()
-        if "mass_1" in self.parameters and "mass_2" in self.parameters:
-            if "total_mass" not in self.parameters:
-                self._mtotal_from_m1_m2()
-            if "chirp_mass" not in self.parameters:
-                self._mchirp_from_m1_m2()
-            if "symmetric_mass_ratio" not in self.parameters:
-                self._eta_from_m1_m2()
         if "mass_1" not in self.parameters and "chirp_mass" in self.parameters:
             self._m1_from_mchirp_q()
         if "mass_2" not in self.parameters and "chirp_mass" in self.parameters:
@@ -2546,6 +2539,13 @@ class _Conversion(object):
             self._m1_from_mtotal_q()
         if "mass_2" not in self.parameters and "total_mass" in self.parameters:
             self._m2_from_mtotal_q()
+        if "mass_1" in self.parameters and "mass_2" in self.parameters:
+            if "total_mass" not in self.parameters:
+                self._mtotal_from_m1_m2()
+            if "chirp_mass" not in self.parameters:
+                self._mchirp_from_m1_m2()
+            if "symmetric_mass_ratio" not in self.parameters:
+                self._eta_from_m1_m2()
         if "redshift" in self.parameters:
             if "mass_1_source" not in self.parameters and "mass_1" in self.parameters:
                 self._m1_source_from_m1_z()
