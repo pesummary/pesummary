@@ -362,7 +362,7 @@ class _GWInput(_Input):
                     self.add_to_prior_dict("calibration", {})
             for num, i in enumerate(self.result_files):
                 try:
-                    f = GWRead(i)
+                    f = GWRead(i, disable_prior=True)
                     calibration_data = f.calibration_data_in_results_file
                 except Exception:
                     logger.warning(

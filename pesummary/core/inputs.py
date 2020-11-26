@@ -203,7 +203,7 @@ class _Input(object):
     def grab_data_from_file(
         file, label, config=None, injection=None, read_function=Read,
         file_format=None, nsamples=None, disable_prior_sampling=False,
-        path_to_samples=None, **kwargs
+        nsamples_for_prior=None, path_to_samples=None, **kwargs
     ):
         """Grab data from a result file containing posterior samples
 
@@ -228,7 +228,7 @@ class _Input(object):
         """
         f = read_function(
             file, file_format=file_format, disable_prior=disable_prior_sampling,
-            path_to_samples=path_to_samples
+            nsamples_for_prior=nsamples_for_prior, path_to_samples=path_to_samples
         )
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
@@ -1019,7 +1019,9 @@ class _Input(object):
                     "files. Assuming the same prior file for all result "
                     "files".format(len(self.labels))
                 )
-                data = read_func(priors[0])
+                data = read_func(
+                    priors[0], nsamples=self.nsamples_for_prior
+                )
                 for i in self.labels:
                     prior_dict["samples"][i] = data.samples_dict
                     try:
@@ -1042,7 +1044,10 @@ class _Input(object):
                         grab_data_kwargs = read_kwargs[self.labels[num]]
                     else:
                         grab_data_kwargs = read_kwargs
-                    data = read_func(priors[num], **grab_data_kwargs)
+                    data = read_func(
+                        priors[num], nsamples=self.nsamples_for_prior,
+                        **grab_data_kwargs
+                    )
                     prior_dict["samples"][self.labels[num]] = data.samples_dict
                     try:
                         if data.analytic is not None:
@@ -1095,6 +1100,7 @@ class _Input(object):
                 file, label, config=config, injection=injection,
                 file_format=file_format, nsamples=self.nsamples,
                 disable_prior_sampling=self.disable_prior_sampling,
+                nsamples_for_prior=self.nsamples_for_prior,
                 path_to_samples=self.path_to_samples[label],
                 **grab_data_kwargs
             )
@@ -1622,6 +1628,7 @@ class Input(_Input):
             for opt in extra_options:
                 setattr(self, opt, getattr(self.opts, opt))
         self.kde_plot = self.opts.kde_plot
+        self.nsamples_for_prior = self.opts.nsamples_for_prior
         self.priors = self.opts.prior_file
         self.disable_prior_sampling = self.opts.disable_prior_sampling
         self.path_to_samples = self.opts.path_to_samples
