@@ -196,7 +196,8 @@ class _Input(object):
             "labels": labels,
             "weights": weights,
             "indicies": indicies,
-            "mcmc_samples": f.mcmc_samples
+            "mcmc_samples": f.mcmc_samples,
+            "open_file": f
         }
 
     @staticmethod
@@ -271,7 +272,8 @@ class _Input(object):
             "file_version": {label: version},
             "file_kwargs": {label: kwargs},
             "prior": priors,
-            "weights": {label: weights}
+            "weights": {label: weights},
+            "open_file": f
         }
 
     @property
@@ -588,7 +590,7 @@ class _Input(object):
         self._set_samples(samples)
 
     def _set_samples(
-        self, samples, ignore_keys=["prior", "weights", "labels", "indicies"]
+        self, samples, ignore_keys=["prior", "weights", "labels", "indicies", "open_file"]
     ):
         """Extract the samples and store them as attributes of self
 
@@ -1088,13 +1090,13 @@ class _Input(object):
             grab_data_kwargs = self.grab_data_kwargs[label]
         else:
             grab_data_kwargs = self.grab_data_kwargs
+
         if self.is_pesummary_metafile(file):
-            existing_data = self.grab_data_from_metafile(
+            data = self.grab_data_from_metafile(
                 file, self.webdir, compare=self.compare_results,
                 nsamples=self.nsamples,
                 disable_injection=self.disable_injection, **grab_data_kwargs
             )
-            return existing_data
         else:
             data = self.grab_data_from_file(
                 file, label, config=config, injection=injection,
@@ -1104,7 +1106,8 @@ class _Input(object):
                 path_to_samples=self.path_to_samples[label],
                 **grab_data_kwargs
             )
-            return data
+        self._open_result_files.update({file: data["open_file"]})
+        return data
 
     @property
     def email(self):
@@ -1577,6 +1580,8 @@ class Input(_Input):
         self.seed = self.opts.seed
         self.style_file = self.opts.style_file
         self.result_files = self.opts.samples
+        if self.result_files is not None:
+            self._open_result_files = {path: None for path in self.result_files}
         self.meta_file = False
         if self.result_files is not None and len(self.result_files) == 1:
             self.meta_file = self.is_pesummary_metafile(self.result_files[0])

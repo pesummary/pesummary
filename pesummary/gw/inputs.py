@@ -361,8 +361,12 @@ class _GWInput(_Input):
                 else:
                     self.add_to_prior_dict("calibration", {})
             for num, i in enumerate(self.result_files):
-                try:
+                _opened = self._open_result_files
+                if i in _opened.keys() and _opened[i] is not None:
+                    f = self._open_result_files[i]
+                else:
                     f = GWRead(i, disable_prior=True)
+                try:
                     calibration_data = f.calibration_data_in_results_file
                 except Exception:
                     logger.warning(

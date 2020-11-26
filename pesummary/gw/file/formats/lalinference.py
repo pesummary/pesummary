@@ -255,6 +255,7 @@ class LALInference(GWSingleAnalysisRead):
     def _grab_calibration_data_from_lalinference_file(path):
         """
         """
+        logger.debug("Interpolating the calibration posterior")
         f = h5py.File(path, 'r')
         path_to_samples = GWRead.guess_path_to_samples(path)
         attributes = f[path_to_samples].attrs.items()
