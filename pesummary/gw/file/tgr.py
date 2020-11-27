@@ -17,6 +17,7 @@
 from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 import numpy as np
 from scipy.stats import gaussian_kde
+from scipy.interpolate import interp2d
 import multiprocessing
 
 
@@ -154,22 +155,16 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     fill this in later
     """
     # Find the maximum values
-    final_mass_lim = np.max(np.append([final_mass_inspiral, final_mass_postinspiral]))
-    final_spin_lim = np.max(np.append([final_spin_inspiral, final_spin_postinspiral]))
+    final_mass_lim = np.max(np.append(final_mass_inspiral, final_mass_postinspiral))
+    final_spin_lim = np.max(np.append(final_spin_inspiral, final_spin_postinspiral))
 
     # bin the data
     final_mass_bins = np.linspace(-final_mass_lim, final_mass_lim, N_bins)
     final_mass_df = final_mass_bins[1] - final_mass_bins[0]
     final_spin_bins = np.linspace(-final_spin_lim, final_spin_lim, N_bins)
     final_spin_df = final_spin_bins[1] - final_spin_bins[0]
-    final_mass_intp = np.append(
-        (final_mass_bins[:-1] + final_mass_bins[1:]) / 2.0,
-        final_mass_bins[-1] + final_mass_df,
-    )
-    final_spin_intp = np.append(
-        (final_spin_bins[:-1] + final_spin_bins[1:]) / 2.0,
-        final_spin_bins[-1] + final_spin_df,
-    )
+    final_mass_intp = (final_mass_bins[:-1] + final_mass_bins[1:]) * 0.5
+    final_spin_intp = (final_spin_bins[:-1] + final_spin_bins[1:]) * 0.5
 
     # kde the samples for final mass and final spin
     if use_kde == True:
@@ -195,7 +190,9 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
             density=True,
         )
 
-        inspiral_interp = scipy.interpolate.interp2d(
+        print(len(final_mass_bins), len(final_spin_intp), _inspiral_2d_histogram.shape)
+
+        inspiral_interp = interp2d(
             final_mass_intp,
             final_spin_intp,
             _inspiral_2d_histogram,
@@ -203,7 +200,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
             bounds_error=False,
         )
 
-        postinspiral_interp = scipy.interpolate.interp2d(
+        postinspiral_interp = interp2d(
             final_mass_intp,
             final_spin_intp,
             _inspiral_2d_histogram,
