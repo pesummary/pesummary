@@ -33,7 +33,7 @@ def _wrapper_for_multiprocessing_kde(kde, *args):
     return kde([*args])
 
 
-def P_integrand(
+def imrct_deviation_parameters_integrand(
     final_mass, final_spin, v1, v2, P_final_mass_final_spin_i_interp_object,
     P_final_mass_final_spin_r_interp_object, multi_process=4
 ):
@@ -176,7 +176,6 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         **kde_kwargs
     )
 
-    # 
     final_mass_deviation_vec = np.linspace(
         -final_mass_deviation_lim, final_mass_deviation_lim, N_bins
     )
@@ -187,7 +186,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     diff_final_mass_deviation = np.mean(np.diff(final_mass_deviation_vec))
     diff_final_spin_deviation = np.mean(np.diff(final_spin_deviation_vec))
 
-    P_final_mass_deviation_final_spin_deviation = P_integrand(
+    P_final_mass_deviation_final_spin_deviation = imrct_deviation_parameters_integrand  (
         final_mass_intp, final_spin_intp, final_mass_deviation_vec,
         final_spin_deviation_vec, inspiral_kde, postinspiral_kde,
         multi_process=multi_process
