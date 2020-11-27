@@ -16,6 +16,7 @@
 
 from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 import numpy as np
+from scipy.stats import gaussian_kde
 import multiprocessing
 
 
@@ -115,7 +116,9 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     final_mass_deviation_lim=2,
     final_spin_deviation_lim=1,
     N_bins=401,
-    multi_process=4
+    multi_process=4,
+    kde=gaussian_kde,
+    kde_kwargs={}
 ):
     """Compute the IMR Consistency Test deviation parameters
 
@@ -161,11 +164,12 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     )
 
     # kde the samples for final mass and final spin
-    inspiral_kde = Bounded_2d_kde(
-        np.array([final_mass_inspiral, final_spin_inspiral])
+    inspiral_kde = kde(
+        np.array([final_mass_inspiral, final_spin_inspiral]), **kde_kwargs
     )
-    postinspiral_kde = Bounded_2d_kde(
-        np.array([final_mass_postinspiral, final_spin_postinspiral])
+    postinspiral_kde = kde(
+        np.array([final_mass_postinspiral, final_spin_postinspiral]),
+        **kde_kwargs
     )
 
     # 
