@@ -19,9 +19,22 @@ import numpy as np
 import multiprocessing
 
 
+def _wrapper_for_multiprocessing_kde(kde, *args):
+    """Wrapper to evaluate a KDE on multiple cpus
+
+    Parameters
+    ----------
+    kde: func
+        KDE you wish to evaluate
+    *args: tuple
+        all args are passed to the KDE
+    """
+    return kde([*args])
+
+
 def P_integrand(
     final_mass, final_spin, v1, v2, P_final_mass_final_spin_i_interp_object,
-    P_final_mass_final_spin_r_interp_object
+    P_final_mass_final_spin_r_interp_object, multi_process=4
 ):
     """Compute the integrand of P(delta_final_mass/final_mass_bar,
     delta_final_spin/final_spin_bar).
@@ -60,17 +73,34 @@ def P_integrand(
     delta_final_spin_r = np.abs((1.0 - v2 / 2.0)) * final_spin
 
     # Evaluating the KDE for P_i and P_r takes ~50s
-    P_i = np.abs(
-        P_final_mass_final_spin_i_interp_object(
-            [delta_final_mass_i.flatten(), delta_final_spin_i.flatten()]
+    split_mass_i = np.array_split(delta_final_mass_i.flatten(), multi_process)
+    split_mass_r = np.array_split(delta_final_mass_r.flatten(), multi_process)
+    split_spin_i = np.array_split(delta_final_spin_i.flatten(), multi_process)
+    split_spin_r = np.array_split(delta_final_spin_r.flatten(), multi_process)
+    _args_i, _args_r = [], []
+    for num in range(multi_process):
+        _args_i.append(
+            [
+                P_final_mass_final_spin_i_interp_object, split_mass_i[num],
+                split_spin_i[num]
+            ]
         )
+        _args_r.append(
+            [
+                P_final_mass_final_spin_r_interp_object, split_mass_r[num],
+                split_spin_r[num]
+            ]
+        )
+    with multiprocessing.Pool(multi_process) as pool:
+        _P_i = pool.starmap(_wrapper_for_multiprocessing_kde, _args_i)
+    P_i = np.array(
+        np.abs([item for sublist in _P_i for item in sublist])
     ).reshape(delta_final_mass_i.shape)
-    P_r = np.abs(
-        P_final_mass_final_spin_r_interp_object(
-            [delta_final_mass_r.flatten(), delta_final_spin_r.flatten()]
-        )
+    with multiprocessing.Pool(multi_process) as pool:
+        _P_r = pool.starmap(_wrapper_for_multiprocessing_kde, _args_r)
+    P_r = np.array(
+        np.abs([item for sublist in _P_r for item in sublist])
     ).reshape(delta_final_mass_r.shape)
-
     _prod = np.sum(np.dot(P_i * P_r, _abs.T), axis=1).reshape(
         len(final_mass), len(final_mass)
     )
@@ -85,6 +115,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     final_mass_deviation_lim=2,
     final_spin_deviation_lim=1,
     N_bins=401,
+    multi_process=4
 ):
     """Compute the IMR Consistency Test deviation parameters
 
@@ -150,7 +181,8 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
 
     P_final_mass_deviation_final_spin_deviation = P_integrand(
         final_mass_intp, final_spin_intp, final_mass_deviation_vec,
-        final_spin_deviation_vec, inspiral_kde, postinspiral_kde
+        final_spin_deviation_vec, inspiral_kde, postinspiral_kde,
+        multi_process=multi_process
     )[0]
     P_final_mass_deviation_final_spin_deviation /= (
         np.sum(P_final_mass_deviation_final_spin_deviation)
