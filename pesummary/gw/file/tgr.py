@@ -34,8 +34,13 @@ def _wrapper_for_multiprocessing_kde(kde, *args):
 
 
 def imrct_deviation_parameters_integrand(
-    final_mass, final_spin, v1, v2, P_final_mass_final_spin_i_interp_object,
-    P_final_mass_final_spin_r_interp_object, multi_process=4
+    final_mass,
+    final_spin,
+    v1,
+    v2,
+    P_final_mass_final_spin_i_interp_object,
+    P_final_mass_final_spin_r_interp_object,
+    multi_process=4,
 ):
     """Compute the integrand of P(delta_final_mass/final_mass_bar,
     delta_final_spin/final_spin_bar).
@@ -82,26 +87,28 @@ def imrct_deviation_parameters_integrand(
     for num in range(multi_process):
         _args_i.append(
             [
-                P_final_mass_final_spin_i_interp_object, split_mass_i[num],
-                split_spin_i[num]
+                P_final_mass_final_spin_i_interp_object,
+                split_mass_i[num],
+                split_spin_i[num],
             ]
         )
         _args_r.append(
             [
-                P_final_mass_final_spin_r_interp_object, split_mass_r[num],
-                split_spin_r[num]
+                P_final_mass_final_spin_r_interp_object,
+                split_mass_r[num],
+                split_spin_r[num],
             ]
         )
     with multiprocessing.Pool(multi_process) as pool:
         _P_i = pool.starmap(_wrapper_for_multiprocessing_kde, _args_i)
-    P_i = np.array(
-        np.abs([item for sublist in _P_i for item in sublist])
-    ).reshape(delta_final_mass_i.shape)
+    P_i = np.array(np.abs([item for sublist in _P_i for item in sublist])).reshape(
+        delta_final_mass_i.shape
+    )
     with multiprocessing.Pool(multi_process) as pool:
         _P_r = pool.starmap(_wrapper_for_multiprocessing_kde, _args_r)
-    P_r = np.array(
-        np.abs([item for sublist in _P_r for item in sublist])
-    ).reshape(delta_final_mass_r.shape)
+    P_r = np.array(np.abs([item for sublist in _P_r for item in sublist])).reshape(
+        delta_final_mass_r.shape
+    )
     _prod = np.sum(np.dot(P_i * P_r, _abs.T), axis=1).reshape(
         len(final_mass), len(final_mass)
     )
@@ -118,7 +125,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     N_bins=401,
     multi_process=4,
     kde=gaussian_kde,
-    kde_kwargs={}
+    kde_kwargs={},
 ):
     """Compute the IMR Consistency Test deviation parameters
 
@@ -146,12 +153,8 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     fill this in later
     """
     # Find the maximum values
-    final_mass_lim = np.max(
-        np.append([final_mass_inspiral, final_mass_postinspiral])
-    )
-    final_spin_lim = np.max(
-        np.append([final_spin_inspiral, final_spin_postinspiral])
-    )
+    final_mass_lim = np.max(np.append([final_mass_inspiral, final_mass_postinspiral]))
+    final_spin_lim = np.max(np.append([final_spin_inspiral, final_spin_postinspiral]))
 
     # bin the data
     final_mass_bins = np.linspace(-final_mass_lim, final_mass_lim, N_bins)
@@ -159,12 +162,12 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     final_spin_bins = np.linspace(-final_spin_lim, final_spin_lim, N_bins)
     final_spin_df = final_spin_bins[1] - final_spin_bins[0]
     final_mass_intp = np.append(
-        (final_mass_bins[:-1] + final_mass_bins[1:]) / 2.,
-        final_mass_bins[-1] + final_mass_df
+        (final_mass_bins[:-1] + final_mass_bins[1:]) / 2.0,
+        final_mass_bins[-1] + final_mass_df,
     )
     final_spin_intp = np.append(
-        (final_spin_bins[:-1] + final_spin_bins[1:]) / 2.,
-        final_spin_bins[-1] + final_spin_df
+        (final_spin_bins[:-1] + final_spin_bins[1:]) / 2.0,
+        final_spin_bins[-1] + final_spin_df,
     )
 
     # kde the samples for final mass and final spin
@@ -172,8 +175,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         np.array([final_mass_inspiral, final_spin_inspiral]), **kde_kwargs
     )
     postinspiral_kde = kde(
-        np.array([final_mass_postinspiral, final_spin_postinspiral]),
-        **kde_kwargs
+        np.array([final_mass_postinspiral, final_spin_postinspiral]), **kde_kwargs
     )
 
     final_mass_deviation_vec = np.linspace(
@@ -186,23 +188,30 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     diff_final_mass_deviation = np.mean(np.diff(final_mass_deviation_vec))
     diff_final_spin_deviation = np.mean(np.diff(final_spin_deviation_vec))
 
-    P_final_mass_deviation_final_spin_deviation = imrct_deviation_parameters_integrand  (
-        final_mass_intp, final_spin_intp, final_mass_deviation_vec,
-        final_spin_deviation_vec, inspiral_kde, postinspiral_kde,
-        multi_process=multi_process
+    P_final_mass_deviation_final_spin_deviation = imrct_deviation_parameters_integrand(
+        final_mass_intp,
+        final_spin_intp,
+        final_mass_deviation_vec,
+        final_spin_deviation_vec,
+        inspiral_kde,
+        postinspiral_kde,
+        multi_process=multi_process,
     )[0]
     P_final_mass_deviation_final_spin_deviation /= (
         np.sum(P_final_mass_deviation_final_spin_deviation)
-        * diff_final_mass_deviation * diff_final_spin_deviation
+        * diff_final_mass_deviation
+        * diff_final_spin_deviation
     )
 
     # Marginalization to one-dimensional joint_posteriors
-    P_final_mass_deviation = np.sum(
-        P_final_mass_deviation_final_spin_deviation, axis=0
-    ) * diff_final_spin_deviation
-    P_final_spin_deviation = np.sum(
-        P_final_mass_deviation_final_spin_deviation, axis=1
-    ) * diff_final_mass_deviation
+    P_final_mass_deviation = (
+        np.sum(P_final_mass_deviation_final_spin_deviation, axis=0)
+        * diff_final_spin_deviation
+    )
+    P_final_spin_deviation = (
+        np.sum(P_final_mass_deviation_final_spin_deviation, axis=1)
+        * diff_final_mass_deviation
+    )
     return (
         P_final_mass_deviation,
         P_final_spin_deviation,
