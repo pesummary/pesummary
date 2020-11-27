@@ -124,6 +124,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     final_spin_deviation_lim=1,
     N_bins=401,
     multi_process=4,
+    use_kde=False,
     kde=gaussian_kde,
     kde_kwargs={},
 ):
@@ -171,12 +172,44 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     )
 
     # kde the samples for final mass and final spin
-    inspiral_kde = kde(
-        np.array([final_mass_inspiral, final_spin_inspiral]), **kde_kwargs
-    )
-    postinspiral_kde = kde(
-        np.array([final_mass_postinspiral, final_spin_postinspiral]), **kde_kwargs
-    )
+    if use_kde == True:
+        inspiral_interp = kde(
+            np.array([final_mass_inspiral, final_spin_inspiral]), **kde_kwargs
+        )
+        postinspiral_interp = kde(
+            np.array([final_mass_postinspiral, final_spin_postinspiral]), **kde_kwargs
+        )
+
+    else:
+        _inspiral_2d_histogram, _, _ = np.histogram2d(
+            final_mass_inspiral,
+            final_spin_inspiral,
+            bins=(final_mass_bins, final_spin_bins),
+            density=True,
+        )
+
+        _postinspiral_2d_histogram, _, _ = np.histogram2d(
+            final_mass_postinspiral,
+            final_spin_postinspiral,
+            bins=(final_mass_bins, final_spin_bins),
+            density=True,
+        )
+
+        inspiral_interp = scipy.interpolate.interp2d(
+            final_mass_intp,
+            final_spin_intp,
+            _inspiral_2d_histogram,
+            fill_value=0.0,
+            bounds_error=False,
+        )
+
+        postinspiral_interp = scipy.interpolate.interp2d(
+            final_mass_intp,
+            final_spin_intp,
+            _inspiral_2d_histogram,
+            fill_value=0.0,
+            bounds_error=False,
+        )
 
     final_mass_deviation_vec = np.linspace(
         -final_mass_deviation_lim, final_mass_deviation_lim, N_bins
@@ -193,8 +226,8 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         final_spin_intp,
         final_mass_deviation_vec,
         final_spin_deviation_vec,
-        inspiral_kde,
-        postinspiral_kde,
+        inspiral_interp,
+        postinspiral_interp,
         multi_process=multi_process,
     )[0]
     P_final_mass_deviation_final_spin_deviation /= (
