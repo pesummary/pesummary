@@ -163,11 +163,17 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     final_mass_df = final_mass_bins[1] - final_mass_bins[0]
     final_spin_bins = np.linspace(-final_spin_lim, final_spin_lim, N_bins)
     final_spin_df = final_spin_bins[1] - final_spin_bins[0]
-    final_mass_intp = (final_mass_bins[:-1] + final_mass_bins[1:]) * 0.5
-    final_spin_intp = (final_spin_bins[:-1] + final_spin_bins[1:]) * 0.5
 
     # kde the samples for final mass and final spin
     if use_kde == True:
+        final_mass_intp = np.append(
+            (final_mass_bins[:-1] + final_mass_bins[1:]) / 2.0,
+            final_mass_bins[-1] + final_mass_df,
+        )
+        final_spin_intp = np.append(
+            (final_spin_bins[:-1] + final_spin_bins[1:]) / 2.0,
+            final_spin_bins[-1] + final_spin_df,
+        )
         inspiral_interp = kde(
             np.array([final_mass_inspiral, final_spin_inspiral]), **kde_kwargs
         )
@@ -176,22 +182,20 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         )
 
     else:
+        final_mass_intp = (final_mass_bins[:-1] + final_mass_bins[1:]) * 0.5
+        final_spin_intp = (final_spin_bins[:-1] + final_spin_bins[1:]) * 0.5
         _inspiral_2d_histogram, _, _ = np.histogram2d(
             final_mass_inspiral,
             final_spin_inspiral,
             bins=(final_mass_bins, final_spin_bins),
             density=True,
         )
-
         _postinspiral_2d_histogram, _, _ = np.histogram2d(
             final_mass_postinspiral,
             final_spin_postinspiral,
             bins=(final_mass_bins, final_spin_bins),
             density=True,
         )
-
-        print(len(final_mass_bins), len(final_spin_intp), _inspiral_2d_histogram.shape)
-
         inspiral_interp = interp2d(
             final_mass_intp,
             final_spin_intp,
@@ -199,7 +203,6 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
             fill_value=0.0,
             bounds_error=False,
         )
-
         postinspiral_interp = interp2d(
             final_mass_intp,
             final_spin_intp,
