@@ -18,8 +18,7 @@ from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 from pesummary.utils.utils import logger
 import numpy as np
 from scipy.stats import gaussian_kde
-from scipy.interpolate import interp2d, dfitpack, RectBivariateSpline
-from scipy import interpolate
+from scipy.interpolate import RectBivariateSpline
 import multiprocessing
 
 
@@ -295,13 +294,13 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         _wrapper_function = _wrapper_for_multiprocessing_kde
     else:
         logger.debug("Interpolating 2d histogram data")
-        _inspiral_2d_histogram, _ins_mf_bins, _ins_s_bins_ = np.histogram2d(
+        _inspiral_2d_histogram, _, _ = np.histogram2d(
             final_mass_inspiral,
             final_spin_inspiral,
             bins=(final_mass_bins, final_spin_bins),
             density=True,
         )
-        _postinspiral_2d_histogram, _post_mf_bins, _post_s_bins = np.histogram2d(
+        _postinspiral_2d_histogram, _, _ = np.histogram2d(
             final_mass_postinspiral,
             final_spin_postinspiral,
             bins=(final_mass_bins, final_spin_bins),
