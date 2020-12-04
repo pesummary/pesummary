@@ -230,7 +230,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     kde=gaussian_kde,
     kde_kwargs=dict(),
     interp_method=interp2d,
-    interp_kwargs=dict(fill_value=0.0, bounds_error=False)
+    interp_kwargs=dict(fill_value=0.0, bounds_error=False),
     vectorize=False
 ):
     """Compute the IMR Consistency Test deviation parameters
