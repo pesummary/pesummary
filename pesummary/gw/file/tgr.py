@@ -91,13 +91,13 @@ def _imrct_deviation_parameters_integrand_vectorized(
     delta_final_spin_r = ((1.0 - v2 / 2.0)) * final_spin
 
     for num in range(len(v1)):
-        if (1. + v1[num] / 2.) < 0.:
+        if (1.0 + v1[num] / 2.0) < 0.0:
             delta_final_mass_i[num] = np.flipud(delta_final_mass_i[num])
-        if (1. + v2[num] / 2.) < 0.:
+        if (1.0 + v2[num] / 2.0) < 0.0:
             delta_final_spin_i[num] = np.flipud(delta_final_spin_i[num])
-        if (1. - v1[num] / 2.) < 0.:
+        if (1.0 - v1[num] / 2.0) < 0.0:
             delta_final_mass_r[num] = np.flipud(delta_final_mass_r[num])
-        if (1. - v2[num] / 2.) < 0.:
+        if (1.0 - v2[num] / 2.0) < 0.0:
             delta_final_spin_r[num] = np.flipud(delta_final_spin_r[num])
 
     if multi_process > 1:
@@ -105,45 +105,39 @@ def _imrct_deviation_parameters_integrand_vectorized(
             _length = len(delta_final_mass_i)
             _P_i = pool.starmap(
                 wrapper_function_for_multiprocess,
-                zip(
-                    [P_final_mass_final_spin_i_interp_object] * _length,
-                    delta_final_mass_i, delta_final_spin_i
-                )
+                zip([P_final_mass_final_spin_i_interp_object] * _length, delta_final_mass_i, delta_final_spin_i),
             )
             _P_r = pool.starmap(
                 wrapper_function_for_multiprocess,
-                zip(
-                    [P_final_mass_final_spin_r_interp_object] * _length,
-                    delta_final_mass_r, delta_final_spin_r
-                )
+                zip([P_final_mass_final_spin_r_interp_object] * _length, delta_final_mass_r, delta_final_spin_r),
             )
         P_i = np.array([i for i in _P_i])
         P_r = np.array([i for i in _P_r])
     else:
         P_i, P_r = [], []
         for num in range(len(delta_final_mass_i)):
-            P_i.append(wrapper_function_for_multiprocess(
-                P_final_mass_final_spin_i_interp_object, delta_final_mass_i[num],
-                delta_final_spin_i[num]
-            ))
-            P_r.append(wrapper_function_for_multiprocess(
-                P_final_mass_final_spin_r_interp_object, delta_final_mass_r[num],
-                delta_final_spin_r[num]
-            ))
+            P_i.append(
+                wrapper_function_for_multiprocess(
+                    P_final_mass_final_spin_i_interp_object, delta_final_mass_i[num], delta_final_spin_i[num]
+                )
+            )
+            P_r.append(
+                wrapper_function_for_multiprocess(
+                    P_final_mass_final_spin_r_interp_object, delta_final_mass_r[num], delta_final_spin_r[num]
+                )
+            )
 
     for num in range(len(v1)):
-        if (1. + v1[num] / 2.) < 0.:
+        if (1.0 + v1[num] / 2.0) < 0.0:
             P_i[num] = np.fliplr(P_i[num])
-        if (1. + v2[num] / 2.) < 0.:
+        if (1.0 + v2[num] / 2.0) < 0.0:
             P_i[num] = np.flipud(P_i[num])
-        if (1. - v1[num] / 2.) < 0.:
+        if (1.0 - v1[num] / 2.0) < 0.0:
             P_r[num] = np.fliplr(P_r[num])
-        if (1. - v2[num] / 2.) < 0.:
+        if (1.0 - v2[num] / 2.0) < 0.0:
             P_r[num] = np.flipud(P_r[num])
 
-    _prod = np.array(
-        [np.sum(_P_i * _P_r * _abs) for _P_i, _P_r in zip(P_i, P_r)]
-    ).reshape(_reshape)
+    _prod = np.array([np.sum(_P_i * _P_r * _abs) for _P_i, _P_r in zip(P_i, P_r)]).reshape(_reshape)
     return _prod, P_i, P_r
 
 
@@ -165,43 +159,39 @@ def _imrct_deviation_parameters_integrand_series(
     """
     P = np.zeros(shape=(len(final_mass), len(final_mass)))
     if multi_process == 1:
-        logger.debug(
-            "Performing calculation on a single cpu. This may take some "
-            "time"
-        )
+        logger.debug("Performing calculation on a single cpu. This may take some " "time")
         for i, _v2 in enumerate(v2):
             for j, _v1 in enumerate(v1):
                 P[i, j] = _imrct_deviation_parameters_integrand_vectorized(
-                    final_mass, final_spin, [_v1], [_v2],
+                    final_mass,
+                    final_spin,
+                    [_v1],
+                    [_v2],
                     P_final_mass_final_spin_i_interp_object,
                     P_final_mass_final_spin_r_interp_object,
-                    multi_process=1, **kwargs
+                    multi_process=1,
+                    **kwargs
                 )
     else:
-        logger.debug(
-            "Splitting the calculation across {} cpus".format(multi_process)
-        )
+        logger.debug("Splitting the calculation across {} cpus".format(multi_process))
         _v2, _v1 = np.meshgrid(v2, v1)
         _v1, _v2 = _v1.ravel(), _v2.ravel()
         with multiprocessing.Pool(multi_process) as pool:
             args = [
-                [final_mass] * len(_v1), [final_spin] * len(_v1),
-                np.atleast_2d(_v1).T.tolist(), np.atleast_2d(_v2).T.tolist(),
+                [final_mass] * len(_v1),
+                [final_spin] * len(_v1),
+                np.atleast_2d(_v1).T.tolist(),
+                np.atleast_2d(_v2).T.tolist(),
                 [P_final_mass_final_spin_i_interp_object] * len(_v1),
                 [P_final_mass_final_spin_r_interp_object] * len(_v1),
-                
             ]
             kwargs["multi_process"] = 1
             _args = np.array(args).T
             _P = pool.starmap(
-                _apply_args_and_kwargs, zip(
-                    [_imrct_deviation_parameters_integrand_vectorized] * len(_args),
-                    _args, [kwargs] * len(_args)
-                )
+                _apply_args_and_kwargs,
+                zip([_imrct_deviation_parameters_integrand_vectorized] * len(_args), _args, [kwargs] * len(_args)),
             )
-        P = np.array([i[0][0] for i in _P]).reshape(
-            len(final_mass), len(final_spin)
-        )
+        P = np.array([i[0][0] for i in _P]).reshape(len(final_mass), len(final_spin))
     return P, None, None
 
 
@@ -209,12 +199,8 @@ def imrct_deviation_parameters_integrand(*args, vectorize=False, **kwargs):
     """
     """
     if vectorize:
-        return _imrct_deviation_parameters_integrand_vectorized(
-            *args, **kwargs
-        )
-    return _imrct_deviation_parameters_integrand_series(
-        *args, **kwargs
-    )
+        return _imrct_deviation_parameters_integrand_vectorized(*args, **kwargs)
+    return _imrct_deviation_parameters_integrand_series(*args, **kwargs)
 
 
 def imrct_deviation_parameters_from_final_mass_final_spin(
@@ -231,7 +217,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     kde_kwargs=dict(),
     interp_method=interp2d,
     interp_kwargs=dict(fill_value=0.0, bounds_error=False),
-    vectorize=False
+    vectorize=False,
 ):
     """Compute the IMR Consistency Test deviation parameters
 
@@ -275,85 +261,52 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     if use_kde:
         logger.debug("Using KDE to interpolate data")
         # kde the samples for final mass and final spin
-        final_mass_intp = np.append(
-            final_mass_intp, final_mass_bins[-1] + final_mass_df
-        )
-        final_spin_intp = np.append(
-            final_spin_intp, final_spin_bins[-1] + final_spin_df
-        )
-        inspiral_interp = kde(
-            np.array([final_mass_inspiral, final_spin_inspiral]), **kde_kwargs
-        )
-        postinspiral_interp = kde(
-            np.array([final_mass_postinspiral, final_spin_postinspiral]), **kde_kwargs
-        )
-        final_mass_deviation_vec = np.linspace(
-            -final_mass_deviation_lim, final_mass_deviation_lim, N_bins
-        )
-        final_spin_deviation_vec = np.linspace(
-            -final_spin_deviation_lim, final_spin_deviation_lim, N_bins
-        )
+        final_mass_intp = np.append(final_mass_intp, final_mass_bins[-1] + final_mass_df)
+        final_spin_intp = np.append(final_spin_intp, final_spin_bins[-1] + final_spin_df)
+        inspiral_interp = kde(np.array([final_mass_inspiral, final_spin_inspiral]), **kde_kwargs)
+        postinspiral_interp = kde(np.array([final_mass_postinspiral, final_spin_postinspiral]), **kde_kwargs)
+        final_mass_deviation_vec = np.linspace(-final_mass_deviation_lim, final_mass_deviation_lim, N_bins)
+        final_spin_deviation_vec = np.linspace(-final_spin_deviation_lim, final_spin_deviation_lim, N_bins)
         _wrapper_function = _wrapper_for_multiprocessing_kde
     else:
         logger.debug("Interpolating 2d histogram data")
         _inspiral_2d_histogram, _, _ = np.histogram2d(
-            final_mass_inspiral,
-            final_spin_inspiral,
-            bins=(final_mass_bins, final_spin_bins),
-            density=True,
+            final_mass_inspiral, final_spin_inspiral, bins=(final_mass_bins, final_spin_bins), density=True,
         )
         _postinspiral_2d_histogram, _, _ = np.histogram2d(
-            final_mass_postinspiral,
-            final_spin_postinspiral,
-            bins=(final_mass_bins, final_spin_bins),
-            density=True,
+            final_mass_postinspiral, final_spin_postinspiral, bins=(final_mass_bins, final_spin_bins), density=True,
         )
-        inspiral_interp = interp_method(
-            final_mass_intp,
-            final_spin_intp,
-            _inspiral_2d_histogram,
-            **interp_kwargs
-        )
+        inspiral_interp = interp_method(final_mass_intp, final_spin_intp, _inspiral_2d_histogram, **interp_kwargs)
         postinspiral_interp = interp_method(
-            final_mass_intp,
-            final_spin_intp,
-            _postinspiral_2d_histogram,
-            **interp_kwargs
+            final_mass_intp, final_spin_intp, _postinspiral_2d_histogram, **interp_kwargs
         )
 
-        final_mass_deviation_vec = np.linspace(
-            -final_mass_deviation_lim, final_mass_deviation_lim, N_bins - 1
-        )
-        final_spin_deviation_vec = np.linspace(
-            -final_spin_deviation_lim, final_spin_deviation_lim, N_bins - 1
-        )
+        final_mass_deviation_vec = np.linspace(-final_mass_deviation_lim, final_mass_deviation_lim, N_bins - 1)
+        final_spin_deviation_vec = np.linspace(-final_spin_deviation_lim, final_spin_deviation_lim, N_bins - 1)
         _wrapper_function = _wrapper_for_multiprocessing_interp
 
     diff_final_mass_deviation = np.mean(np.diff(final_mass_deviation_vec))
     diff_final_spin_deviation = np.mean(np.diff(final_spin_deviation_vec))
 
     P_final_mass_deviation_final_spin_deviation = imrct_deviation_parameters_integrand(
-        final_mass_intp, final_spin_intp, final_mass_deviation_vec,
-        final_spin_deviation_vec, inspiral_interp, postinspiral_interp,
-        multi_process=multi_process, vectorize=vectorize,
-        wrapper_function_for_multiprocess=_wrapper_function
+        final_mass_intp,
+        final_spin_intp,
+        final_mass_deviation_vec,
+        final_spin_deviation_vec,
+        inspiral_interp,
+        postinspiral_interp,
+        multi_process=multi_process,
+        vectorize=vectorize,
+        wrapper_function_for_multiprocess=_wrapper_function,
     )[0]
     # Normalize the distribution
     P_final_mass_deviation_final_spin_deviation /= (
-        np.sum(P_final_mass_deviation_final_spin_deviation)
-        * diff_final_mass_deviation
-        * diff_final_spin_deviation
+        np.sum(P_final_mass_deviation_final_spin_deviation) * diff_final_mass_deviation * diff_final_spin_deviation
     )
 
     # Marginalization to one-dimensional joint_posteriors
-    P_final_mass_deviation = (
-        np.sum(P_final_mass_deviation_final_spin_deviation, axis=0)
-        * diff_final_spin_deviation
-    )
-    P_final_spin_deviation = (
-        np.sum(P_final_mass_deviation_final_spin_deviation, axis=1)
-        * diff_final_mass_deviation
-    )
+    P_final_mass_deviation = np.sum(P_final_mass_deviation_final_spin_deviation, axis=0) * diff_final_spin_deviation
+    P_final_spin_deviation = np.sum(P_final_mass_deviation_final_spin_deviation, axis=1) * diff_final_mass_deviation
     return (
         P_final_mass_deviation,
         P_final_spin_deviation,
