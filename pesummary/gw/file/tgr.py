@@ -18,7 +18,7 @@ from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 from pesummary.utils.utils import logger
 import numpy as np
 from scipy.stats import gaussian_kde
-from scipy.interpolate import RectBivariateSpline
+from scipy.interpolate import interp2d
 import multiprocessing
 
 
@@ -228,7 +228,9 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     multi_process=4,
     use_kde=False,
     kde=gaussian_kde,
-    kde_kwargs={},
+    kde_kwargs=dict(),
+    interp_method=interp2d,
+    interp_kwargs=dict(fill_value=0.0, bounds_error=False)
     vectorize=False
 ):
     """Compute the IMR Consistency Test deviation parameters
@@ -306,15 +308,17 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
             bins=(final_mass_bins, final_spin_bins),
             density=True,
         )
-        inspiral_interp = RectBivariateSpline(
+        inspiral_interp = interp_method(
             final_mass_intp,
             final_spin_intp,
-            _inspiral_2d_histogram.T,
+            _inspiral_2d_histogram,
+            **interp_kwargs
         )
-        postinspiral_interp = RectBivariateSpline(
+        postinspiral_interp = interp_method(
             final_mass_intp,
             final_spin_intp,
-            _postinspiral_2d_histogram.T,
+            _postinspiral_2d_histogram,
+            **interp_kwargs
         )
 
         final_mass_deviation_vec = np.linspace(
