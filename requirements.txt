@@ -12,7 +12,6 @@ astropy>=3.2.3
 lalsuite>=6.70.0
 python-ligo-lw
 ligo-gracedb
-configparser
 gwpy
 plotly
 tqdm>=4.44.0
