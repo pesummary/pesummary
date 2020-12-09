@@ -384,6 +384,8 @@ class page(Base):
             self.add_content(
                 "Below is information about how these pages were generated"
             )
+        elif key != "Summary":
+            self.add_content(key)
         else:
             self.add_content(
                 "The figures below show the plots for %s" % (approximant))

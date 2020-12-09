@@ -142,6 +142,7 @@ setup(name='pesummary',
               'summaryrecreate=pesummary.cli.summaryrecreate:main',
               'summaryreview=pesummary.cli.summaryreview:main',
               'summarytest=pesummary.cli.summarytest:main',
+              'summarytgr=pesummary.cli.summarytgr:main',
               'summaryversion=pesummary.cli.summaryversion:main']},
       classifiers=[
           "Programming Language :: Python :: 3.5",

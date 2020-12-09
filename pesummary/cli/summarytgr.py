@@ -149,7 +149,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
     ):
         self.test = test
         if self.test.lower() == "all":
-            labels = TEST
+            labels = TESTS
         else:
             labels = [self.test]
 
@@ -358,11 +358,14 @@ class TGRWebpageGeneration(_WebpageGeneration):
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
+
 def main(args=None):
     """Top level interface for `summarytgr`
     """
-    parser = command_line()
-    opts = parser.parse_args(args=args)
+    from pesummary.gw.parser import parser
+
+    _parser = parser(existing_parser=command_line())
+    opts, unknown = _parser.parse_known_args(args=args)
     make_dir(opts.webdir)
     open_files = {
         _label: read(path).samples_dict for _label, path in zip(
@@ -372,7 +375,7 @@ def main(args=None):
     test_key_data = {}
     if opts.test == "imrct":
         imrct_deviations, data = generate_imrct_deviation_parameters()
-        make_imrct_plots(imrct_deviations, webdir=webdir)
+        make_imrct_plots(imrct_deviations, webdir=opts.webdir)
         test_key_data["imrct"] = data
     webpage = TGRWebpageGeneration(
         opts.webdir, opts.samples, test=opts.test, open_files=open_files,
