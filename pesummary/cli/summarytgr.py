@@ -261,7 +261,6 @@ class TGRWebpageGeneration(_WebpageGeneration):
             html_file.make_container(style=_style)
             html_file.make_div(4, _class=_class, _style=None)
             headings = [" "] + self.key_data_headings.copy()
-            print(headings)
             contents = []
             for j in value.keys():
                 row = []
