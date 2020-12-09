@@ -326,13 +326,13 @@ class TGRWebpageGeneration(_WebpageGeneration):
         )
         image_contents = [
             [
-                base_string.format("final_mass_vs_final_spin_total"),
-                base_string.format("deviations_triangle_plot"),
-                base_string.format("deviations_triangle_plot")
+                base_string.format("final_mass_final_spin_inspiral"),
+                base_string.format("mass_1_mass_2_inspiral"),
+                base_string.format("a_1_a_2_inspiral")
             ], [
-                base_string.format("final_mass_vs_final_spin_total"),
-                base_string.format("deviations_triangle_plot"),
-                base_string.format("deviations_triangle_plot")
+                base_string.format("final_mass_final_spin_ringdown"),
+                base_string.format("mass_1_mass_2_ringdown"),
+                base_string.format("a_1_a_2_ringdown")
             ]
         ]
         _base = (
