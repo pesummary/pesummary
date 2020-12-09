@@ -126,20 +126,33 @@ class Dict(dict):
         is the name of the property
     """
     def __init__(
-        self, *args, value_class=np.ndarray, value_columns=None, _init=True,
-        **kwargs
+        self, *args, value_class=np.array, value_columns=None, _init=True,
+        make_dict_kwargs={}, logger_warn="warn", latex_labels={}, **kwargs
     ):
         super(Dict, self).__init__()
         if not _init:
             return
+        self.logger_warn = logger_warn
         if isinstance(args[0], dict):
-            data = args[0]
+            self.parameters = list(args[0].keys())
+            _samples = [args[0][param] for param in self.parameters]
+            try:
+                self.samples = np.array(_samples)
+            except ValueError:
+                self.samples = _samples
+            _iterator = args[0].items()
         else:
-            data = {
-                key: value for key, value in zip(*args)
-            }
-        for key, value in data.items():
-            self[key] = value_class(value)
+            self.parameters, self.samples = args
+            _iterator = zip(self.parameters, self.samples)
+        try:
+            self.make_dictionary(**make_dict_kwargs)
+        except (TypeError, IndexError):
+            for key, item in _iterator:
+                try:
+                    self[key] = value_class(item)
+                except Exception:
+                    self[key] = value_class(*item)
+
         if value_columns is not None:
             for key in self.keys():
                 if len(value_columns) == self[key].shape[1]:
@@ -147,6 +160,10 @@ class Dict(dict):
                         setattr(self[key], col, np.array(self[key].T[num]))
         for key, item in kwargs.items():
             setattr(self, key, item)
+        self.latex_labels = {
+            param: latex_labels[param] if param in latex_labels.keys() else
+            param for param in self.parameters
+        }
 
     def __getitem__(self, key):
         """Return an object representing the specialization of Dict
@@ -183,3 +200,37 @@ class Dict(dict):
                     )
                 )
         return super(Dict, self).__getitem__(key)
+
+    @property
+    def plotting_map(self):
+        return {}
+
+    @property
+    def available_plots(self):
+        return list(self.plotting_map.keys())
+
+    def plot(self, *args, type="", **kwargs):
+        """Generate a plot for data stored in Dict
+
+        Parameters
+        ----------
+        *args: tuple
+            all arguments are passed to the plotting function
+        type: str
+            name of the plot you wish to make
+        **kwargs: dict
+            all additional kwargs are passed to the plotting function
+        """
+        if type not in self.plotting_map.keys():
+            raise NotImplementedError(
+                "The {} method is not currently implemented. The allowed "
+                "plotting methods are {}".format(
+                    type, ", ".join(self.available_plots)
+                )
+            )
+        return self.plotting_map[type](*args, **kwargs)
+
+    def make_dictionary(self, *args, **kwargs):
+        """Add the parameters and samples to the class
+        """
+        raise TypeError
