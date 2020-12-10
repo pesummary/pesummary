@@ -1364,7 +1364,7 @@ class _Input(object):
                 removed_parameters = list_match(
                     list(self.samples[label].keys()), ignore_parameters
                 )
-                if removed_parameters == []:
+                if not len(removed_parameters):
                     logger.warning(
                         "Failed to remove any parameters from {}".format(
                             self.result_files[num]
