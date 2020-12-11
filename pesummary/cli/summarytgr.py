@@ -108,20 +108,6 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
     if webdir is None:
         webdir = "./"
 
-    for key in ["inspiral", "postinspiral"]:
-        fig, _, _, _ = samples_dict.plot(
-            ["final_mass_non_evolved", "final_spin_non_evolved"],
-            type="triangle",
-            smooth=4,
-            fill_alpha=0.2,
-            labels=[key],
-        )
-        fig.savefig(os.path.join(webdir, "final_mass_final_spin_{}.png".format(key)))
-        fig, _, _, _ = samples_dict.plot(["mass_1", "mass_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
-        fig.savefig(os.path.join(webdir, "mass_1_mass_2_{}.png".format(key)))
-        fig, _, _, _ = samples_dict.plot(["a_1", "a_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
-        fig.savefig(os.path.join(webdir, "a_1_a_2_{}.png".format(key)))
-
     opts = imrct_deviations.plot(
         "final_mass_final_spin_deviations",
         type="triangle",
@@ -134,7 +120,21 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
     fig, axs = opts[0], opts[1:]
     for ax in axs:
         ax.grid(True)
-    fig.savefig(os.path.join(webdir, "imrct_deviations_triangle_plot.png"))
+    fig.savefig(os.path.join(webdir, "plots", "imrct_deviations_triangle_plot.png"))
+
+    # for key in ["inspiral", "postinspiral"]:
+    #     fig, _, _, _ = samples_dict.plot(
+    #         ["final_mass_non_evolved", "final_spin_non_evolved"],
+    #         type="triangle",
+    #         smooth=4,
+    #         fill_alpha=0.2,
+    #         labels=[key],
+    #     )
+    #     fig.savefig(os.path.join(webdir, "plots", "final_mass_final_spin_{}.png".format(key)))
+    #     fig, _, _, _ = samples_dict.plot(["mass_1", "mass_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
+    #     fig.savefig(os.path.join(webdir, "plots", "mass_1_mass_2_{}.png".format(key)))
+    #     fig, _, _, _ = samples_dict.plot(["a_1", "a_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
+    #     fig.savefig(os.path.join(webdir, "plots", "a_1_a_2_{}.png".format(key)))
 
 
 class TGRWebpageGeneration(_WebpageGeneration):
@@ -366,21 +366,22 @@ def main(args=None):
         samples_file_dict = dict(inspiral=inspiral_samples_file, postinspiral=postinspiral_samples_file)
         samples_dict = dict()
 
-        for key in samples_file_dict.keys():
-            f = GWRead(samples_file_dict[key])
-            if not isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
-                logger.info(
-                    "Calculating Final Mass and Final Spin samples as they are not present in {} samples file".format(key)
-                )
-                f.generate_all_posterior_samples()
-        samples_dict[key] = f.samples_dict
-        imrct_deviations, data = generate_imrct_deviation_parameters(samples_dict)
-        make_imrct_plots(imrct_deviations, samples_dict, webdir=opts.webdir)
-        test_key_data["imrct"] = data
     webpage = TGRWebpageGeneration(
         opts.webdir, opts.samples, test=opts.test, open_files=open_files, test_key_data=test_key_data
     )
     webpage.generate_webpages()
+
+    for key in samples_file_dict.keys():
+        f = GWRead(samples_file_dict[key])
+        if not isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
+            logger.info(
+                "Calculating Final Mass and Final Spin samples as they are not present in {} samples file".format(key)
+            )
+            f.generate_all_posterior_samples()
+        samples_dict[key] = f.samples_dict
+    imrct_deviations, data = generate_imrct_deviation_parameters(samples_dict)
+    make_imrct_plots(imrct_deviations, samples_dict, webdir=opts.webdir)
+    test_key_data["imrct"] = data
 
 
 if __name__ == "__main__":

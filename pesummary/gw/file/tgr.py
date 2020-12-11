@@ -304,13 +304,12 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         np.sum(P_final_mass_deviation_final_spin_deviation) * diff_final_mass_deviation * diff_final_spin_deviation
     )
 
-    # Marginalization to one-dimensional joint_posteriors
-    P_final_mass_deviation = np.sum(P_final_mass_deviation_final_spin_deviation, axis=0) * diff_final_spin_deviation
-    P_final_spin_deviation = np.sum(P_final_mass_deviation_final_spin_deviation, axis=1) * diff_final_mass_deviation
-    return (
-        P_final_mass_deviation,
-        P_final_spin_deviation,
-        P_final_mass_deviation_final_spin_deviation,
-        final_mass_deviation_vec,
-        final_spin_deviation_vec,
+    ProbabilityDict2D(
+        {
+            "final_mass_final_spin": [
+                final_mass_deviation_vec,
+                final_spin_deviation_vec,
+                P_final_mass_deviation_final_spin_deviation,
+            ]
+        }
     )
