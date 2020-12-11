@@ -56,7 +56,7 @@ def command_line():
     return parser
 
 
-def generate_imrct_deviation_parameters(inspiral_samples_file, postinspiral_samples_file, **kwargs):
+def generate_imrct_deviation_parameters(samples_dict, **kwargs):
     """Generate deviation parameter pdfs for the IMR Consistency Test
 
     Parameters
@@ -73,18 +73,6 @@ def generate_imrct_deviation_parameters(inspiral_samples_file, postinspiral_samp
     deviations: ProbabilityDict2D
     """
     import time
-
-    samples_file_dict = dict(inspiral=inspiral_samples_file, postinspiral=postinspiral_samples_file)
-    samples_dict = dict()
-
-    for key in samples_file_dict.keys():
-        f = GWRead(samples_file_dict[key])
-        if not isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
-            logger.info(
-                "Calculating Final Mass and Final Spin samples as they are not present in {} samples file".format(key)
-            )
-            f.generate_all_posterior_samples()
-        samples_dict[key] = f.samples_dict
 
     t0 = time.time()
     imrct_deviations = imrct_deviation_parameters_from_final_mass_final_spin(
@@ -375,8 +363,19 @@ def main(args=None):
     open_files = {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
     test_key_data = {}
     if opts.test == "imrct":
-        imrct_deviations, data = generate_imrct_deviation_parameters(opts.samples[0], opts.samples[1])
-        make_imrct_plots(imrct_deviations, webdir=opts.webdir)
+        samples_file_dict = dict(inspiral=inspiral_samples_file, postinspiral=postinspiral_samples_file)
+        samples_dict = dict()
+
+        for key in samples_file_dict.keys():
+            f = GWRead(samples_file_dict[key])
+            if not isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
+                logger.info(
+                    "Calculating Final Mass and Final Spin samples as they are not present in {} samples file".format(key)
+                )
+                f.generate_all_posterior_samples()
+        samples_dict[key] = f.samples_dict
+        imrct_deviations, data = generate_imrct_deviation_parameters(samples_dict)
+        make_imrct_plots(imrct_deviations, samples_dict, webdir=opts.webdir)
         test_key_data["imrct"] = data
     webpage = TGRWebpageGeneration(
         opts.webdir, opts.samples, test=opts.test, open_files=open_files, test_key_data=test_key_data
