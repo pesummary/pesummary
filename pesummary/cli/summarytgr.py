@@ -236,6 +236,8 @@ class TGRWebpageGeneration(_WebpageGeneration):
         """
         html_file = self.setup_page("home", self.navbar["home"])
         html_file.make_banner("Tests of General Relativity", key=" ")
+        image_contents = [os.path.join(self.webdir, "plots", "imrct_deviations_triangle_plot.png")]
+        html_file = self.make_modal_carousel(html_file, image_contents=image_contents, unique_id=True)
         _banner_desc = "Below we show summary statistics associated with each test of GR"
         html_file.make_banner(approximant="Summary Statistics", key=_banner_desc, _style="font-size: 26px;")
         _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
