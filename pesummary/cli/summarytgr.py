@@ -314,7 +314,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
             cli=[[" "]],
             unique_id=True,
             extra_div=True,
-            autoscale=True,
+            autoscale=False,
         )
         desc = "Below we show additional plots generated for the IMR consistency " "test"
         html_file.make_banner(approximant="Additional plots", key=desc, _style="font-size: 26px;")
