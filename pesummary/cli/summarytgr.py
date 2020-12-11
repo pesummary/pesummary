@@ -360,8 +360,8 @@ def main(args=None):
             if "final_mass" not in sample.keys() or "final_mass_non_evolved" not in sample.keys():
                 sample.generate_all_posterior_samples()
                 converted = sample.keys()
-                if "final_mass" not in converted or "final_mass_non_evolved" in converted:
-                    raise
+                if "final_mass" not in converted and "final_mass_non_evolved" not in converted:
+                    raise KeyError
 
         imrct_deviations, data = generate_imrct_deviation_parameters(open_files)
         make_imrct_plots(imrct_deviations, open_files, webdir=opts.webdir)
