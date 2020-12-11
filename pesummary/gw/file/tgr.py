@@ -20,6 +20,7 @@ import numpy as np
 from scipy.stats import gaussian_kde
 from scipy.interpolate import interp2d
 import multiprocessing
+from pesummary.utils.probability_dict import ProbabilityDict2D
 
 
 def _wrapper_for_multiprocessing_kde(kde, *args):
@@ -39,8 +40,7 @@ def _wrapper_for_multiprocessing_kde(kde, *args):
 
 
 def _wrapper_for_multiprocessing_interp(interp, *args):
-    """
-    """
+    """"""
     return interp(*args)
 
 
@@ -155,8 +155,7 @@ def _imrct_deviation_parameters_integrand_series(
     multi_process=4,
     **kwargs
 ):
-    """
-    """
+    """"""
     P = np.zeros(shape=(len(final_mass), len(final_mass)))
     if multi_process == 1:
         logger.debug("Performing calculation on a single cpu. This may take some " "time")
@@ -196,8 +195,7 @@ def _imrct_deviation_parameters_integrand_series(
 
 
 def imrct_deviation_parameters_integrand(*args, vectorize=False, **kwargs):
-    """
-    """
+    """"""
     if vectorize:
         return _imrct_deviation_parameters_integrand_vectorized(*args, **kwargs)
     return _imrct_deviation_parameters_integrand_series(*args, **kwargs)
@@ -271,10 +269,16 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     else:
         logger.debug("Interpolating 2d histogram data")
         _inspiral_2d_histogram, _, _ = np.histogram2d(
-            final_mass_inspiral, final_spin_inspiral, bins=(final_mass_bins, final_spin_bins), density=True,
+            final_mass_inspiral,
+            final_spin_inspiral,
+            bins=(final_mass_bins, final_spin_bins),
+            density=True,
         )
         _postinspiral_2d_histogram, _, _ = np.histogram2d(
-            final_mass_postinspiral, final_spin_postinspiral, bins=(final_mass_bins, final_spin_bins), density=True,
+            final_mass_postinspiral,
+            final_spin_postinspiral,
+            bins=(final_mass_bins, final_spin_bins),
+            density=True,
         )
         inspiral_interp = interp_method(final_mass_intp, final_spin_intp, _inspiral_2d_histogram, **interp_kwargs)
         postinspiral_interp = interp_method(
@@ -304,12 +308,13 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         np.sum(P_final_mass_deviation_final_spin_deviation) * diff_final_mass_deviation * diff_final_spin_deviation
     )
 
-    ProbabilityDict2D(
+    imrct_deviations = ProbabilityDict2D(
         {
-            "final_mass_final_spin": [
+            "final_mass_final_spin_deviations": [
                 final_mass_deviation_vec,
                 final_spin_deviation_vec,
-                P_final_mass_deviation_final_spin_deviation,
+                P_final_mass_deviation_final_spin_deviation / np.sum(P_final_mass_deviation_final_spin_deviation),
             ]
         }
     )
+    return imrct_deviations

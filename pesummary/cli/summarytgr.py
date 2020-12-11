@@ -35,8 +35,7 @@ TESTS = ["imrct"]
 
 
 def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
+    """Generate an Argument Parser object to control the command line options"""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "-w", "--webdir", dest="webdir", help="make page and plots in DIR", metavar="DIR", required=True, default=None
@@ -86,7 +85,7 @@ def generate_imrct_deviation_parameters(samples_dict, **kwargs):
     data = kwargs.copy()
     data["total_time"] = t1 - t0
 
-    return imrct_deviations, 0.0
+    return imrct_deviations
 
 
 def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
@@ -94,7 +93,7 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
 
     Parameters
     ----------
-    imrct_deviations: ProbabilityDict2d
+    imrct_deviations: ProbabilityDict2D
         Output of imrct_deviation_parameters_from_final_mass_final_spin
     webdir: str
         path to save the files
@@ -108,6 +107,8 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
     if webdir is None:
         webdir = "./"
 
+    plotdir = os.path.join(webdir, "plots")
+    os.mkdir(plotdir)
     opts = imrct_deviations.plot(
         "final_mass_final_spin_deviations",
         type="triangle",
@@ -120,7 +121,7 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
     fig, axs = opts[0], opts[1:]
     for ax in axs:
         ax.grid(True)
-    fig.savefig(os.path.join(webdir, "plots", "imrct_deviations_triangle_plot.png"))
+    fig.savefig(os.path.join(plotdir, "imrct_deviations_triangle_plot.png"))
 
     # for key in ["inspiral", "postinspiral"]:
     #     fig, _, _, _ = samples_dict.plot(
@@ -130,11 +131,11 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
     #         fill_alpha=0.2,
     #         labels=[key],
     #     )
-    #     fig.savefig(os.path.join(webdir, "plots", "final_mass_final_spin_{}.png".format(key)))
+    #     fig.savefig(os.path.join(plotdir, "final_mass_final_spin_{}.png".format(key)))
     #     fig, _, _, _ = samples_dict.plot(["mass_1", "mass_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
-    #     fig.savefig(os.path.join(webdir, "plots", "mass_1_mass_2_{}.png".format(key)))
+    #     fig.savefig(os.path.join(plotdir, "mass_1_mass_2_{}.png".format(key)))
     #     fig, _, _, _ = samples_dict.plot(["a_1", "a_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
-    #     fig.savefig(os.path.join(webdir, "plots", "a_1_a_2_{}.png".format(key)))
+    #     fig.savefig(os.path.join(plotdir, "a_1_a_2_{}.png".format(key)))
 
 
 class TGRWebpageGeneration(_WebpageGeneration):
@@ -190,8 +191,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         self.copy_css_and_js_scripts()
 
     def generate_webpages(self):
-        """Generate all webpages for all tests
-        """
+        """Generate all webpages for all tests"""
         self.make_home_pages()
         if self.test == "imrct" or self.test == "all":
             self.make_imrct_pages()
@@ -207,15 +207,13 @@ class TGRWebpageGeneration(_WebpageGeneration):
         return
 
     def _test_links(self):
-        """Return the navbar structure for the Test tab
-        """
+        """Return the navbar structure for the Test tab"""
         if self.test == "all":
             return TESTS
         return [self.test]
 
     def make_navbar_for_homepage(self):
-        """Make a navbar for the homepage
-        """
+        """Make a navbar for the homepage"""
         links = ["home", ["Tests", self._test_links()], "Logging", "Version"]
         return links
 
@@ -280,8 +278,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         html_file.close()
 
     def make_imrct_pages(self):
-        """Make the IMR consistency test pages
-        """
+        """Make the IMR consistency test pages"""
         pages = ["imrct"]
         self.create_blank_html_pages(pages)
         html_file = self.setup_page("imrct", self.navbar["home"], title="IMR Consistency Test")
@@ -353,8 +350,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
 
 
 def main(args=None):
-    """Top level interface for `summarytgr`
-    """
+    """Top level interface for `summarytgr`"""
     from pesummary.gw.parser import parser
 
     _parser = parser(existing_parser=command_line())
@@ -379,9 +375,9 @@ def main(args=None):
             )
             f.generate_all_posterior_samples()
         samples_dict[key] = f.samples_dict
-    imrct_deviations, data = generate_imrct_deviation_parameters(samples_dict)
+    imrct_deviations = generate_imrct_deviation_parameters(samples_dict)
     make_imrct_plots(imrct_deviations, samples_dict, webdir=opts.webdir)
-    test_key_data["imrct"] = data
+    # test_key_data["imrct"] = data
 
 
 if __name__ == "__main__":
