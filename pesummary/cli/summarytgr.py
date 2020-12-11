@@ -117,13 +117,19 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
     make_dir(plotdir)
     base_string = "imrct_{}.png"
 
-    plot_kwargs = dict(grid=True, smooth=4, type="triangle")
-    fig, _, _, _ = imrct_deviations.plot(
-        "final_mass_final_spin_deviations",
+    plot_kwargs = dict(
+        grid=True,
+        smooth=4,
+        type="triangle",
         truth=[0.0, 0.0],
         cmap="YlOrBr",
         levels=[0.68, 0.95],
         level_kwargs={"colors": ["k", "k"]},
+        xlabel=r"$\Delta M_{\mathrm{f}} / \bar{M_{\mathrm{f}}}$",
+        ylabel=r"$\Delta a_{\mathrm{f}} / \bar{a_{\mathrm{f}}}$",
+    )
+    fig, _, _, _ = imrct_deviations.plot(
+        "final_mass_final_spin_deviations",
         **plot_kwargs,
     )
 
