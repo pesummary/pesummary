@@ -32,7 +32,6 @@ source classification probailities"""
 
 TESTS = ["imrct"]
 
-
 def command_line():
     """Generate an Argument Parser object to control the command line options
     """
@@ -381,6 +380,7 @@ def main(args=None):
         test_key_data=test_key_data
     )
     webpage.generate_webpages()
+
 
 if __name__ == "__main__":
     main()
