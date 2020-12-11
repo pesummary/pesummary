@@ -211,11 +211,11 @@ class TGRWebpageGeneration(_WebpageGeneration):
             self.input_file_summary = self.key_data
         self.copy_css_and_js_scripts()
 
-    def generate_webpages(self):
+    def generate_webpages(self, make_diagnostic_plots=False):
         """Generate all webpages for all tests"""
         self.make_home_pages()
         if self.test == "imrct" or self.test == "all":
-            self.make_imrct_pages()
+            self.make_imrct_pages(make_diagnostic_plots=make_diagnostic_plots)
         self.make_version_page()
         self.make_logging_page()
         self.make_about_page()
@@ -300,7 +300,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
-    def make_imrct_pages(self):
+    def make_imrct_pages(self, make_diagnostic_plots=False):
         """Make the IMR consistency test pages"""
         pages = ["imrct"]
         self.create_blank_html_pages(pages)
@@ -330,27 +330,29 @@ class TGRWebpageGeneration(_WebpageGeneration):
             extra_div=True,
             autoscale=False,
         )
-        desc = "Below we show additional plots generated for the IMR consistency " "test"
-        html_file.make_banner(approximant="Additional plots", key=desc, _style="font-size: 26px;")
-        image_contents = [
-            [
-                base_string.format("final_mass_non_evolved_final_spin_non_evolved"),
-                base_string.format("mass_1_mass_2"),
-                base_string.format("a_1_a_2"),
-            ],
-        ]
-        _base = "2D posterior distribution for {} estimated from the inspiral and post-inspiral parts of the signal"
-        captions = [
-            [
-                _base.format("final_mass and final_spin"),
-                _base.format("mass_1 and mass_2"),
-                _base.format("a_1 and a_2"),
-            ],
-        ]
-        cli = [[" ", " ", " "]]
-        html_file = self.make_modal_carousel(
-            html_file, image_contents, captions=captions, cli=cli, unique_id=True, autoscale=True
-        )
+
+        if make_diagnostic_plots:
+            desc = "Below we show additional plots generated for the IMR consistency " "test"
+            html_file.make_banner(approximant="Additional plots", key=desc, _style="font-size: 26px;")
+            image_contents = [
+                [
+                    base_string.format("final_mass_non_evolved_final_spin_non_evolved"),
+                    base_string.format("mass_1_mass_2"),
+                    base_string.format("a_1_a_2"),
+                ],
+            ]
+            _base = "2D posterior distribution for {} estimated from the inspiral and post-inspiral parts of the signal"
+            captions = [
+                [
+                    _base.format("final_mass and final_spin"),
+                    _base.format("mass_1 and mass_2"),
+                    _base.format("a_1 and a_2"),
+                ],
+            ]
+            cli = [[" ", " ", " "]]
+            html_file = self.make_modal_carousel(
+                html_file, image_contents, captions=captions, cli=cli, unique_id=True, autoscale=True
+            )
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
@@ -384,7 +386,7 @@ def main(args=None):
     webpage = TGRWebpageGeneration(
         opts.webdir, opts.samples, test=opts.test, open_files=open_files, test_key_data=test_key_data
     )
-    webpage.generate_webpages()
+    webpage.generate_webpages(make_diagnostic_plots=opts.make_diagnostic_plots)
 
 
 if __name__ == "__main__":
