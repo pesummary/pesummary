@@ -81,11 +81,14 @@ def generate_imrct_deviation_parameters(samples_dict, **kwargs):
         samples_dict["postinspiral"]["final_spin_non_evolved"],
         **kwargs
     )
+    gr_quantile = (
+        imrct_deviations["final_mass_final_spin_deviations"].minimum_encompassing_contour_level(0.0, 0.0) * 100
+    )
     t1 = time.time()
     data = kwargs.copy()
     data["total_time"] = t1 - t0
 
-    return imrct_deviations
+    return imrct_deviations, gr_quantile
 
 
 def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
@@ -123,19 +126,19 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
         ax.grid(True)
     fig.savefig(os.path.join(plotdir, "imrct_deviations_triangle_plot.png"))
 
-    # for key in ["inspiral", "postinspiral"]:
-    #     fig, _, _, _ = samples_dict.plot(
-    #         ["final_mass_non_evolved", "final_spin_non_evolved"],
-    #         type="triangle",
-    #         smooth=4,
-    #         fill_alpha=0.2,
-    #         labels=[key],
-    #     )
-    #     fig.savefig(os.path.join(plotdir, "final_mass_final_spin_{}.png".format(key)))
-    #     fig, _, _, _ = samples_dict.plot(["mass_1", "mass_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
-    #     fig.savefig(os.path.join(plotdir, "mass_1_mass_2_{}.png".format(key)))
-    #     fig, _, _, _ = samples_dict.plot(["a_1", "a_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
-    #     fig.savefig(os.path.join(plotdir, "a_1_a_2_{}.png".format(key)))
+    for key in ["inspiral", "postinspiral"]:
+        fig, _, _, _ = samples_dict.plot(
+            ["final_mass_non_evolved", "final_spin_non_evolved"],
+            type="triangle",
+            smooth=4,
+            fill_alpha=0.2,
+            labels=[key],
+        )
+        fig.savefig(os.path.join(plotdir, "final_mass_final_spin_{}.png".format(key)))
+        fig, _, _, _ = samples_dict.plot(["mass_1", "mass_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
+        fig.savefig(os.path.join(plotdir, "mass_1_mass_2_{}.png".format(key)))
+        fig, _, _, _ = samples_dict.plot(["a_1", "a_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
+        fig.savefig(os.path.join(plotdir, "a_1_a_2_{}.png".format(key)))
 
 
 class TGRWebpageGeneration(_WebpageGeneration):
@@ -375,9 +378,9 @@ def main(args=None):
             )
             f.generate_all_posterior_samples()
         samples_dict[key] = f.samples_dict
-    imrct_deviations = generate_imrct_deviation_parameters(samples_dict)
+    imrct_deviations, gr_quantile = generate_imrct_deviation_parameters(samples_dict)
     make_imrct_plots(imrct_deviations, samples_dict, webdir=opts.webdir)
-    # test_key_data["imrct"] = data
+    test_key_data["imrct"] = gr_quantile
 
 
 if __name__ == "__main__":

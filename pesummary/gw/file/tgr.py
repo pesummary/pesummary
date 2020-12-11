@@ -269,16 +269,10 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     else:
         logger.debug("Interpolating 2d histogram data")
         _inspiral_2d_histogram, _, _ = np.histogram2d(
-            final_mass_inspiral,
-            final_spin_inspiral,
-            bins=(final_mass_bins, final_spin_bins),
-            density=True,
+            final_mass_inspiral, final_spin_inspiral, bins=(final_mass_bins, final_spin_bins), density=True,
         )
         _postinspiral_2d_histogram, _, _ = np.histogram2d(
-            final_mass_postinspiral,
-            final_spin_postinspiral,
-            bins=(final_mass_bins, final_spin_bins),
-            density=True,
+            final_mass_postinspiral, final_spin_postinspiral, bins=(final_mass_bins, final_spin_bins), density=True,
         )
         inspiral_interp = interp_method(final_mass_intp, final_spin_intp, _inspiral_2d_histogram, **interp_kwargs)
         postinspiral_interp = interp_method(
