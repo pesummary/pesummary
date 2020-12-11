@@ -23,10 +23,70 @@ from .corner import hist2d
 from pesummary import conf
 
 
+def pcolormesh(
+    x, y, density, ax=None, levels=None, smooth=None, bins=None, label=None,
+    level_kwargs={}, range=None, **kwargs
+):
+    """Generate a colormesh plot on a given axis
+
+    Parameters
+    ----------
+    x: np.ndarray
+        array of floats for the x axis
+    y: np.ndarray
+        array of floats for the y axis
+    density: np.ndarray
+        2d array of probabilities
+    ax: matplotlib.axes._subplots.AxesSubplot, optional
+        axis you wish to use for plotting
+    levels: list, optional
+        contour levels to show on the plot. Default None
+    smooth: float, optional
+        sigma to use for smoothing. Default, no smoothing applied
+    level_kwargs: dict, optional
+        optional kwargs to use for ax.contour
+    **kwargs: dict, optional
+        all additional kwargs passed to ax.pcolormesh
+    """
+    if smooth is not None:
+        import scipy.ndimage.filters as filter
+        density = filter.gaussian_filter(density, sigma=smooth)
+    _cmap = kwargs.get("cmap", None)
+    _off = False
+    if _cmap is not None and isinstance(_cmap, str) and _cmap.lower() == "off":
+        _off = True
+    if not _off:
+        ax.pcolormesh(x, y, density, **kwargs)
+    if levels is not None:
+        ax.contour(x, y, density, levels=levels, **level_kwargs)
+    return ax
+
+
+def analytic_twod_contour_plot(*args, smooth=None, **kwargs):
+    """Generate a 2d contour plot given an analytic PDF
+
+    Parameters
+    ----------
+    *args: tuple
+        all args passed to twod_contour_plot
+    smooth: float, optional
+        degree of smoothing to apply to probabilities
+    **kwargs: dict, optional
+        all additional kwargs passed to twod_contour_plot
+    """
+    return twod_contour_plot(
+        *args, smooth=smooth, _function=pcolormesh, **kwargs
+    )
+
+
 def twod_contour_plot(
-    x, y, rangex=None, rangey=None, fig=None, ax=None, return_ax=False,
+    x, y, *args, rangex=None, rangey=None, fig=None, ax=None, return_ax=False,
     levels=[0.9], bins=300, smooth=7, xlabel=None, ylabel=None,
-    fontsize={"label": 12}, grid=True, label=None, truth=None, **kwargs
+    fontsize={"label": 12}, grid=True, label=None, truth=None,
+    _function=hist2d, truth_lines=True, truth_kwargs={},
+    _default_truth_kwargs={
+        "marker": 'o', "markeredgewidth": 2, "markersize": 6, "color": 'k'
+    }, **kwargs
 ):
     """Generate a 2d contour contour plot for 2 marginalized posterior
     distributions
@@ -67,6 +127,11 @@ def twod_contour_plot(
         the true value of the posterior. `truth` is a list of length 2 with
         first element being the true x value and second element being the true
         y value
+    truth_lines: Bool, optional
+        if True, add vertical and horizontal lines spanning the 2d space to show
+        injected value
+    truth_kwargs: dict, optional
+        kwargs to use to indicate truth
     **kwargs: dict, optional
         all additional kwargs are passed to the
         `pesummary.core.plots.corner.hist2d` function
@@ -87,14 +152,20 @@ def twod_contour_plot(
     if "range" not in list(kwargs.keys()):
         kwargs["range"] = [[xlow, xhigh], [ylow, yhigh]]
 
-    hist2d(
-        x, y, ax=ax, levels=levels, bins=bins, smooth=smooth, label=label,
-        **kwargs
+    _function(
+        x, y, *args, ax=ax, levels=levels, bins=bins, smooth=smooth,
+        label=label, **kwargs
     )
     if truth is not None:
-        ax.plot(*truth, marker='o', markeredgewidth=2, markersize=6, color='k')
-        ax.axvline(truth[0], color='k', linewidth=0.5)
-        ax.axhline(truth[1], color='k', linewidth=0.5)
+        _default_truth_kwargs.update(truth_kwargs)
+        ax.plot(*truth, **_default_truth_kwargs)
+        if truth_lines:
+            ax.axvline(
+                truth[0], color=_default_truth_kwargs["color"], linewidth=0.5
+            )
+            ax.axhline(
+                truth[1], color=_default_truth_kwargs["color"], linewidth=0.5
+            )
     if xlabel is not None:
         ax.set_xlabel(xlabel, fontsize=fontsize["label"])
     if ylabel is not None:
@@ -211,16 +282,27 @@ def _triangle_axes(
     return fig, ax1, ax2, ax3, ax4
 
 
-def triangle_plot(
-    x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
-    fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
-    xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
-    linestyles=None, linewidths=None, plot_density=True,
-    percentiles=None, percentile_plot=None, fig_kwargs={}, labels=None,
-    rangex=None, rangey=None, grid=False, latex_friendly=False, truth=None,
-    kde_2d=None, kde_2d_kwargs={}, legend_kwargs={"loc": "best", "frameon": False},
-    **kwargs
-):
+def _generate_triangle_plot(*args, function=None, **kwargs):
+    """Generate a triangle plot according to a given function
+
+    Parameters
+    ----------
+    *args: tuple
+        all args passed to function
+    function: func, optional
+        function you wish to use to generate triangle plot. Default
+        _triangle_plot
+    **kwargs: dict, optional
+        all kwargs passed to function
+    """
+    fig, ax1, ax2, ax3, ax4 = _triangle_axes(**kwargs.get("fig_kwargs", {}))
+    ax2.axis("off")
+    if function is None:
+        function = _triangle_plot
+    return function(fig, [ax1, ax3, ax4], *args, **kwargs)
+
+
+def triangle_plot(*args, **kwargs):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
     posterior distribution (above and to the right of central axis)
@@ -288,19 +370,84 @@ def triangle_plot(
     **kwargs: dict
         all additional kwargs are passed to the corner.hist2d function
     """
-    fig, ax1, ax2, ax3, ax4 = _triangle_axes(**fig_kwargs)
-    ax2.axis("off")
-    return _triangle_plot(
-        fig, [ax1, ax3, ax4], x, y, kde=kde, npoints=npoints,
-        smooth=smooth, kde_kwargs=kde_kwargs, fill=fill, fill_alpha=fill_alpha,
-        levels=levels, colors=colors, linestyles=linestyles,
-        linewidths=linewidths, plot_density=plot_density,
-        percentiles=percentiles, fig_kwargs=fig_kwargs, labels=labels,
-        xlabel=xlabel, ylabel=ylabel, fontsize=fontsize, rangex=rangex,
-        rangey=rangey, percentile_plot=percentile_plot, grid=grid,
-        latex_friendly=latex_friendly, kde_2d=kde_2d, kde_2d_kwargs=kde_2d_kwargs,
-        legend_kwargs=legend_kwargs, truth=truth, **kwargs
+    return _generate_triangle_plot(*args, function=_triangle_plot, **kwargs)
+
+
+def analytic_triangle_plot(*args, **kwargs):
+    """Generate a triangle plot given probability densities for x, y and xy.
+
+    Parameters
+    ----------
+    fig: matplotlib.figure.Figure
+        figure on which to make the plots
+    axes: list
+        list of subplots associated with the figure
+    x: list
+        list of points to use for the x axis
+    y: list
+        list of points to use for the y axis
+    prob_x: list
+        list of probabilities associated with x
+    prob_y: list
+        list of probabilities associated with y
+    probs_xy: list
+        2d list of probabilities for xy
+    smooth: float, optional
+        degree of smoothing to apply to probs_xy. Default no smoothing applied
+    cmap: str, optional
+        name of cmap to use for plotting
+    """
+    return _generate_triangle_plot(
+        *args, function=_analytic_triangle_plot, **kwargs
     )
+
+
+def _analytic_triangle_plot(
+    fig, axes, x, y, probs_x, probs_y, probs_xy, smooth=None, xlabel=None,
+    ylabel=None, grid=True, **kwargs
+):
+    """Generate a triangle plot given probability densities for x, y and xy.
+
+    Parameters
+    ----------
+    fig: matplotlib.figure.Figure
+        figure on which to make the plots
+    axes: list
+        list of subplots associated with the figure
+    x: list
+        list of points to use for the x axis
+    y: list
+        list of points to use for the y axis
+    prob_x: list
+        list of probabilities associated with x
+    prob_y: list
+        list of probabilities associated with y
+    probs_xy: list
+        2d list of probabilities for xy
+    smooth: float, optional
+        degree of smoothing to apply to probs_xy. Default no smoothing applied
+    xlabel: str, optional
+        label to use for the x axis
+    ylabel: str, optional
+        label to use for the y axis
+    grid: Bool, optional
+        if True, add a grid to the plot
+    """
+    ax1, ax3, ax4 = axes
+    analytic_twod_contour_plot(
+        x, y, probs_xy, ax=ax3, smooth=smooth, **kwargs
+    )
+    ax1.plot(x, probs_x)
+    ax4.plot(probs_y, y)
+    fontsize = kwargs.get("fontsize", {"label": 12})
+    if xlabel is not None:
+        ax3.set_xlabel(xlabel, fontsize=fontsize["label"])
+    if ylabel is not None:
+        ax3.set_ylabel(ylabel, fontsize=fontsize["label"])
+    ax1.grid(grid)
+    ax3.grid(grid)
+    ax4.grid(grid)
+    return fig, ax1, ax3, ax4
 
 
 def _triangle_plot(
@@ -492,16 +639,51 @@ def _triangle_plot(
     return fig, ax1, ax3, ax4
 
 
-def reverse_triangle_plot(
-    x, y, kde=gaussian_kde, npoints=100, kde_kwargs={}, fill=True,
-    fill_alpha=0.5, levels=[0.9], smooth=7, colors=list(conf.colorcycle),
-    xlabel=None, ylabel=None, fontsize={"legend": 12, "label": 12},
-    linestyles=None, linewidths=None, plot_density=True,
-    percentiles=None, percentile_plot=None, fig_kwargs={}, labels=None,
-    plot_datapoints=False, rangex=None, rangey=None, grid=False,
-    latex_friendly=False, kde_2d=None, kde_2d_kwargs={},
-    legend_kwargs={"loc": "best", "frameon": False}, truth=None, **kwargs
+def _generate_reverse_triangle_plot(
+    *args, xlabel=None, ylabel=None, function=None, **kwargs
 ):
+    """Generate a reverse triangle plot according to a given function
+
+    Parameters
+    ----------
+    *args: tuple
+        all args passed to function
+    xlabel: str, optional
+        label to use for the x axis
+    ylabel: str, optional
+        label to use for the y axis
+    function: func, optional
+        function to use to generate triangle plot. Default _triangle_plot
+    **kwargs: dict, optional
+        all kwargs passed to function
+    """
+    fig, ax1, ax2, ax3, ax4 = _triangle_axes(
+        width_ratios=[1, 4], height_ratios=[4, 1]
+    )
+    ax3.axis("off")
+    if function is None:
+        function = _triangle_plot
+    fig, ax4, ax2, ax1 = function(fig, [ax4, ax2, ax1], *args, **kwargs)
+    ax2.axis("off")
+    ax4.spines["right"].set_visible(False)
+    ax4.spines["top"].set_visible(False)
+    ax4.spines["left"].set_visible(False)
+    ax4.set_yticks([])
+
+    ax1.spines["right"].set_visible(False)
+    ax1.spines["top"].set_visible(False)
+    ax1.spines["bottom"].set_visible(False)
+    ax1.set_xticks([])
+
+    _fontsize = kwargs.get("fontsize", {"label": 12})["label"]
+    if xlabel is not None:
+        ax4.set_xlabel(xlabel, fontsize=_fontsize)
+    if ylabel is not None:
+        ax1.set_ylabel(ylabel, fontsize=_fontsize)
+    return fig, ax1, ax2, ax4
+
+
+def reverse_triangle_plot(*args, **kwargs):
     """Generate a triangular plot made of 3 axis. One central axis showing the
     2d marginalized posterior and two smaller axes showing the marginalized 1d
     posterior distribution (below and to the left of central axis). Only two
@@ -571,34 +753,35 @@ def reverse_triangle_plot(
     **kwargs: dict
         all kwargs are passed to the corner.hist2d function
     """
-    fig, ax1, ax2, ax3, ax4 = _triangle_axes(
-        width_ratios=[1, 4], height_ratios=[4, 1]
+    return _generate_reverse_triangle_plot(
+        *args, function=_triangle_plot, **kwargs
     )
-    ax3.axis("off")
-    fig, ax4, ax2, ax1 = _triangle_plot(
-        fig, [ax4, ax2, ax1], x, y, kde=kde, npoints=npoints, smooth=smooth,
-        kde_kwargs=kde_kwargs, fill=fill, fill_alpha=fill_alpha,
-        levels=levels, colors=colors, linestyles=linestyles,
-        linewidths=linewidths, plot_density=plot_density,
-        percentiles=percentiles, fig_kwargs=fig_kwargs, labels=labels,
-        fontsize=fontsize, plot_datapoints=plot_datapoints, rangex=rangex,
-        rangey=rangey, percentile_plot=percentile_plot,
-        latex_friendly=latex_friendly, kde_2d=kde_2d, kde_2d_kwargs=kde_2d_kwargs,
-        legend_kwargs=legend_kwargs, truth=truth, **kwargs
+
+
+def analytic_reverse_triangle_plot(*args, **kwargs):
+    """Generate a triangle plot given probability densities for x, y and xy.
+
+    Parameters
+    ----------
+    fig: matplotlib.figure.Figure
+        figure on which to make the plots
+    axes: list
+        list of subplots associated with the figure
+    x: list
+        list of points to use for the x axis
+    y: list
+        list of points to use for the y axis
+    prob_x: list
+        list of probabilities associated with x
+    prob_y: list
+        list of probabilities associated with y
+    probs_xy: list
+        2d list of probabilities for xy
+    smooth: float, optional
+        degree of smoothing to apply to probs_xy. Default no smoothing applied
+    cmap: str, optional
+        name of cmap to use for plotting
+    """
+    return _generate_reverse_triangle_plot(
+        *args, function=_analytic_triangle_plot, **kwargs
     )
-    ax2.axis("off")
-    ax4.spines["right"].set_visible(False)
-    ax4.spines["top"].set_visible(False)
-    ax4.spines["left"].set_visible(False)
-    ax4.set_yticks([])
-
-    ax1.spines["right"].set_visible(False)
-    ax1.spines["top"].set_visible(False)
-    ax1.spines["bottom"].set_visible(False)
-    ax1.set_xticks([])
-
-    if xlabel is not None:
-        ax4.set_xlabel(xlabel, fontsize=fontsize["label"])
-    if ylabel is not None:
-        ax1.set_ylabel(ylabel, fontsize=fontsize["label"])
-    return fig, ax1, ax2, ax4

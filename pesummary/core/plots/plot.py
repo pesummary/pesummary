@@ -315,6 +315,97 @@ def _1d_cdf_comparison_plot(
     return fig
 
 
+def _1d_analytic_plot(
+    param, x, pdf, latex_label, inj_value=None, prior=None, fig=None, ax=None,
+    title=True, color=conf.color, autoscale=True, grid=True, set_labels=True,
+    plot_percentile=True, xlims=None, label=None, linestyle="-",
+    linewidth=1.75, injection_color=conf.injection_color,
+    _default_inj_kwargs={"linewidth": 2.5, "linestyle": "-"}, **plot_kwargs
+):
+    """Generate a plot to display a PDF
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+
+    latex_label: str
+        latex label for param
+    inj_value: float, optional
+        value that was injected
+    prior: list
+        list of prior samples for param
+    weights: list
+        list of weights for each sample
+    fig: matplotlib.pyplot.figure, optional
+        existing figure you wish to use
+    ax: matplotlib.pyplot.axes._subplots.AxesSubplot, optional
+        existing axis you wish to use
+    color: str, optional
+        color you wish to use to plot the scatter points
+    title: Bool, optional
+        if True, add a title to the 1d cdf plot showing giving the median
+        and symmetric 90% credible intervals
+    autoscale: Bool, optional
+        autoscale the x axis
+    grid: Bool, optional
+        if True, plot a grid
+    set_labels: Bool, optional
+        if True, add labels to the axes
+    plot_percentile: Bool, optional
+        if True, plot dashed vertical lines showing the 90% symmetric credible
+        intervals
+    xlims: list, optional
+        x axis limits you wish to use
+    label: str, optional
+        label you wish to use for the plot
+    linestyle: str, optional
+        linestyle you wish to use for the plot
+    linewidth: float, optional
+        linewidth to use for the plot
+    injection_color: str, optional
+        color of vertical line showing the injected value
+    """
+    from pesummary.utils.pdf import DiscretePDF
+
+    pdf = DiscretePDF(x, pdf)
+    if ax is None and fig is None:
+        fig, ax = figure(gca=True)
+    elif ax is None:
+        ax = fig.gca()
+
+    ax.plot(pdf.x, pdf.probs, color=color, linestyle=linestyle, label=label)
+    _xlims = ax.get_xlim()
+    percentile = pdf.percentile([5, 95])
+    median = pdf.percentile([50])[0]
+    if title:
+        upper = np.round(percentile[1] - median, 2)
+        lower = np.round(median - percentile[0], 2)
+        median = np.round(median, 2)
+        ax.set_title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
+    if plot_percentile:
+        for pp in percentile:
+            ax.axvline(
+                pp, color=color, linestyle="--", linewidth=linewidth
+            )
+    if set_labels:
+        ax.set_xlabel(latex_label)
+        ax.set_ylabel("Probability Density")
+
+    if inj_value is not None:
+        ax.axvline(
+            inj_value, color=injection_color, **_default_inj_kwargs
+        )
+    ax.grid(b=grid)
+    ax.set_xlim(xlims)
+    if autoscale:
+        ax.set_xlim(_xlims)
+    if fig is None:
+        return ax
+    fig.tight_layout()
+    return fig
+
+
 def _1d_histogram_plot(
     param, samples, latex_label, inj_value=None, kde=False, hist=True,
     prior=None, weights=None, fig=None, ax=None, title=True, color=conf.color,

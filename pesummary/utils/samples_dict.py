@@ -106,36 +106,10 @@ class SamplesDict(Dict):
     >>> fig.show()
     """
     def __init__(self, *args, logger_warn="warn", autoscale=True):
-        super(SamplesDict, self).__init__(_init=False)
-        if len(args) == 1 and isinstance(args[0], dict):
-            self.parameters = list(args[0].keys())
-            self.samples = np.array(
-                [args[0][param] for param in self.parameters]
-            )
-            try:
-                self.make_dictionary()
-            except (TypeError, IndexError):
-                for key, item in args[0].items():
-                    self[key] = Array(item)
-        else:
-            self.parameters, self.samples = args
-            lengths = [len(i) for i in self.samples]
-            if len(np.unique(lengths)) > 1 and autoscale:
-                nsamples = np.min(lengths)
-                getattr(logger, logger_warn)(
-                    "Unequal number of samples for each parameter. "
-                    "Restricting all posterior samples to have {} "
-                    "samples".format(nsamples)
-                )
-                self.samples = [
-                    dataset[:nsamples] for dataset in self.samples
-                ]
-            self.make_dictionary()
-
-        self.latex_labels = {
-            param: latex_labels[param] if param in latex_labels.keys() else
-            param for param in self.parameters
-        }
+        super(SamplesDict, self).__init__(
+            *args, value_class=Array, make_dict_kwargs={"autoscale": autoscale},
+            logger_warn=logger_warn, latex_labels=latex_labels
+        )
 
     def __getitem__(self, key):
         """Return an object representing the specialization of SamplesDict
@@ -248,20 +222,21 @@ class SamplesDict(Dict):
 
     @property
     def plotting_map(self):
-        return {
-            "marginalized_posterior": self._marginalized_posterior,
-            "skymap": self._skymap,
-            "hist": self._marginalized_posterior,
-            "corner": self._corner,
-            "spin_disk": self._spin_disk,
-            "2d_kde": self._2d_kde,
-            "triangle": self._triangle,
-            "reverse_triangle": self._reverse_triangle,
-        }
-
-    @property
-    def available_plots(self):
-        return list(self.plotting_map.keys())
+        existing = super(SamplesDict, self).plotting_map
+        modified = existing.copy()
+        modified.update(
+            {
+                "marginalized_posterior": self._marginalized_posterior,
+                "skymap": self._skymap,
+                "hist": self._marginalized_posterior,
+                "corner": self._corner,
+                "spin_disk": self._spin_disk,
+                "2d_kde": self._2d_kde,
+                "triangle": self._triangle,
+                "reverse_triangle": self._reverse_triangle,
+            }
+        )
+        return modified
 
     def to_pandas(self, **kwargs):
         """Convert a SamplesDict object to a pandas dataframe
@@ -321,9 +296,20 @@ class SamplesDict(Dict):
         self.make_dictionary(discard_samples=number)
         return self
 
-    def make_dictionary(self, discard_samples=None):
+    def make_dictionary(self, discard_samples=None, autoscale=True):
         """Add the parameters and samples to the class
         """
+        lengths = [len(i) for i in self.samples]
+        if len(np.unique(lengths)) > 1 and autoscale:
+            nsamples = np.min(lengths)
+            getattr(logger, self.logger_warn)(
+                "Unequal number of samples for each parameter. "
+                "Restricting all posterior samples to have {} "
+                "samples".format(nsamples)
+            )
+            self.samples = [
+                dataset[:nsamples] for dataset in self.samples
+            ]
         if "log_likelihood" in self.parameters:
             likelihoods = self.samples[self.parameters.index("log_likelihood")]
             likelihoods = likelihoods[discard_samples:]
@@ -368,14 +354,7 @@ class SamplesDict(Dict):
         **kwargs: dict
             all additional kwargs are passed to the plotting function
         """
-        if type not in self.plotting_map.keys():
-            raise NotImplementedError(
-                "The {} method is not currently implemented. The allowed "
-                "plotting methods are {}".format(
-                    type, ", ".join(self.available_plots)
-                )
-            )
-        return self.plotting_map[type](*args, **kwargs)
+        return super(SamplesDict, self).plot(*args, type=type, **kwargs)
 
     def generate_all_posterior_samples(self, function=None, **kwargs):
         """Convert samples stored in the SamplesDict according to a conversion
@@ -938,9 +917,10 @@ class _MultiDimensionalSamplesDict(Dict):
         }
 
     def __setitem__(self, key, value):
-        super(_MultiDimensionalSamplesDict, self).__setitem__(
-            key, SamplesDict(value)
-        )
+        _value = value
+        if not isinstance(value, SamplesDict):
+            _value = SamplesDict(value)
+        super(_MultiDimensionalSamplesDict, self).__setitem__(key, _value)
         try:
             if key not in self.labels:
                 parameters = list(value.keys())

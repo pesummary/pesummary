@@ -1,7 +1,7 @@
 numpy>=1.15.4
 h5py
-matplotlib<=3.3.2
-seaborn
+matplotlib
+seaborn>=0.11.0
 statsmodels
 corner
 tables
@@ -12,6 +12,6 @@ astropy>=3.2.3
 lalsuite>=6.70.0
 python-ligo-lw
 ligo-gracedb
-gwpy
+gwpy>=2.0.2
 plotly
 tqdm>=4.44.0

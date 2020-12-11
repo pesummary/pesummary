@@ -26,9 +26,11 @@ from pesummary.utils import utils
 from pesummary.utils.tqdm import tqdm
 from pesummary.utils.dict import Dict
 from pesummary.utils.list import List
+from pesummary.utils.pdf import DiscretePDF, DiscretePDF2D, DiscretePDF2Dplus1D
 from pesummary.utils.samples_dict import (
     Array, SamplesDict, MCMCSamplesDict, MultiAnalysisSamplesDict
 )
+from pesummary.utils.probability_dict import ProbabilityDict, ProbabilityDict2D
 from pesummary._version_helper import GitInformation, PackageInformation
 from pesummary._version_helper import get_version_information
 
@@ -939,7 +941,159 @@ class TestDict(object):
             assert y[key] == x[key]
         with pytest.raises(Exception):
             z = x[["e", "f"]]
-        
+
+
+class TestProbabilityDict(object):
+    """Test the ProbabilityDict class
+    """
+    def setup(self):
+        """Setup the ProbabilityDict class
+        """
+        self.mydict = {
+            "a": [[1,2,3,4], [0.1, 0.2, 0.3, 0.4]],
+            "b": [[1,3,5,7], [0.1, 0.3, 0.2, 0.4]]
+        }
+
+    def test_initiate(self):
+        """Test the different ways to initiate this class
+        """
+        probs = ProbabilityDict(self.mydict)
+        assert all(param in probs.keys() for param in self.mydict.keys())
+        for param, data in self.mydict.items():
+            np.testing.assert_almost_equal(data[0], probs[param].x)
+            np.testing.assert_almost_equal(data[1], probs[param].probs)
+        parameters = list(self.mydict.keys())
+        data = [self.mydict[key] for key in parameters]
+        probs = ProbabilityDict(parameters, data)
+        assert all(param in probs.keys() for param in self.mydict.keys())
+        for param, data in self.mydict.items():
+            np.testing.assert_almost_equal(data[0], probs[param].x)
+            np.testing.assert_almost_equal(data[1], probs[param].probs)
+
+    def test_rvs(self):
+        """Test the .rvs method
+        """
+        probs = ProbabilityDict(self.mydict)
+        # draw 10 samples for all parameters
+        samples = probs.rvs(size=10, interpolate=False)
+        assert isinstance(samples, SamplesDict)
+        assert all(param in samples.keys() for param in self.mydict.keys())
+        assert all(len(samples[param] == 10) for param in self.mydict.keys())
+        for param in self.mydict.keys():
+            for p in samples[param]:
+                print(p, self.mydict[param][0])
+            assert all(p in self.mydict[param][0] for p in samples[param])
+        # draw 10 samples for only parameter 'a'
+        samples = probs.rvs(size=10, parameters=["a"])
+        assert list(samples.keys()) == ["a"]
+        assert len(samples["a"]) == 10
+        # interpolate first and then draw samples
+        samples = probs.rvs(size=10, interpolate=True)
+        assert isinstance(samples, SamplesDict)
+        assert all(param in samples.keys() for param in self.mydict.keys())
+        assert all(len(samples[param] == 10) for param in self.mydict.keys())
+
+    def test_plotting(self):
+        """Test the .plot method
+        """
+        probs = ProbabilityDict(self.mydict)
+        # Test that a histogram plot is generated when required
+        fig = probs.plot("a", type="hist")
+        fig = probs.plot("a", type="marginalized_posterior")
+        # Test that a PDF is generated when required
+        fig = probs.plot("a", type="pdf")
+
+
+class TestProbabilityDict2D(object):
+    """Class to test the ProbabilityDict2D class
+    """
+    def setup(self):
+        """Setup the TestProbabilityDict2D class
+        """
+        probs = np.random.uniform(0, 1, 100).reshape(10, 10)
+        self.mydict = {
+            "x_y": [
+                np.random.uniform(0, 1, 10), np.random.uniform(0, 1, 10),
+                probs / np.sum(probs)
+            ]
+        }
+
+    def test_plotting(self):
+        """Test the .plot method
+        """
+        # Test that a 2d KDE plot is generated when specified
+        mydict = ProbabilityDict2D(self.mydict)
+        fig = mydict.plot("x_y", type="2d_kde")
+        # Test that a triangle plot is generated when specified
+        fig, _, _, _ = mydict.plot("x_y", type="triangle")
+        # Test that a reverse triangle plot is generated when specified
+        fig, _, _, _ = mydict.plot("x_y", type="reverse_triangle")
+        # Test that an Exception is raised when you try and generate a plot
+        # which does not exist
+        with pytest.raises(Exception):
+            fig = mydict.plot("x_y", type="does_not_exist")
+
+
+class TestDiscretePDF2D(object):
+    """Class to test the DiscretePDF2D class
+    """
+    def setup(self):
+        """Setup the TestDiscretePDF2D class
+        """
+        self.x = [1,2]
+        self.y = [1,2]
+        self.probs = [[0.25, 0.25], [0.25, 0.25]]
+
+    def test_initiate(self):
+        """
+        """
+        # Test that a ValueError is raised if a 2d probability array is not
+        # provided
+        with pytest.raises(ValueError):
+            _ = DiscretePDF2D(self.x, self.y, [1,2,3,4,5,6])
+        obj = DiscretePDF2D(self.x, self.y, self.probs)
+
+    def test_marginalize(self):
+        obj = DiscretePDF2D(self.x, self.y, self.probs)
+        marg = obj.marginalize()
+        assert isinstance(marg, DiscretePDF2Dplus1D)
+        np.testing.assert_almost_equal(obj.probs, marg.probs_xy.probs)
+
+
+class TestDiscretePDF2Dplus1D(object):
+    """Class to test the DiscretePDF2Dplus1D class
+    """
+    def setup(self):
+        """Setup the TestDiscretePDF2Dplus1D class
+        """
+        self.x = [1,2]
+        self.y = [1,2]
+        self.probs = [[0.5, 0.5], [0.5, 0.5], [[0.25, 0.25], [0.25, 0.25]]]
+
+    def test_initiate_raise(self):
+        """Test that the class raises ValueErrors when required
+        """
+        # Raise error when 3 probabilities are not given
+        with pytest.raises(ValueError):
+            _ = DiscretePDF2Dplus1D(self.x, self.y, self.probs[:-1])
+        # Raise error when 2d probability not given
+        with pytest.raises(ValueError):
+            _ = DiscretePDF2Dplus1D(
+                self.x, self.y, self.probs[:-1] + self.probs[:1]
+            )
+        # Raise error when only 1 1d array is given
+        with pytest.raises(ValueError):
+            _ = DiscretePDF2Dplus1D(
+                self.x, self.y, self.probs[1:] + self.probs[-1:]
+            )
+
+    def test_initiate(self):
+        """Test that we can initiate the class
+        """
+        obj = DiscretePDF2Dplus1D(self.x, self.y, self.probs)
+        assert isinstance(obj.probs[0], DiscretePDF)
+        assert isinstance(obj.probs[2], DiscretePDF2D)
+        assert isinstance(obj.probs[1], DiscretePDF)
 
 
 def make_cache_style_file(style_file):
