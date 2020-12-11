@@ -23,7 +23,7 @@ from pesummary.utils.utils import logger
 
 def read_bilby(
     path, disable_prior=False, complex_params=[], latex_dict=latex_labels,
-    **kwargs
+    nsamples_for_prior=None, **kwargs
 ):
     """Grab the parameters and samples in a bilby file
 
@@ -40,6 +40,8 @@ def read_bilby(
         posterior distributions
     latex_dict: dict, optional
         list of latex labels for each parameter
+    nsamples_for_prior: int, optional
+        number of samples to draw from the analytic priors
     """
     from bilby.core.result import read_in_result
 
@@ -97,7 +99,12 @@ def read_bilby(
         "kwargs": extra_kwargs
     }
     if not disable_prior:
-        prior_samples = Bilby.grab_priors(bilby_object, nsamples=len(samples))
+        logger.debug("Drawing prior samples from bilby result file")
+        if nsamples_for_prior is None:
+            nsamples_for_prior = len(samples)
+        prior_samples = Bilby.grab_priors(
+            bilby_object, nsamples=nsamples_for_prior
+        )
         data["prior"] = {"samples": prior_samples}
         if len(prior_samples):
             data["prior"]["analytic"] = prior_samples.analytic

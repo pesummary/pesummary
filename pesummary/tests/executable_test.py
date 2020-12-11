@@ -207,7 +207,6 @@ class TestSummaryPages(Base):
             )
         )
 
-
     def test_prior_input(self):
         """Check that `summarypages` works when a prior file is passed from
         the command line
@@ -230,7 +229,8 @@ class TestSummaryPages(Base):
             for _file in [".outdir/prior.json", bilby_prior_file]:
                 command_line = (
                     "summarypages --webdir .outdir --samples .outdir/example.json "
-                    "--labels test --prior_file {}".format(_file)
+                    "--labels test --prior_file {} --nsamples_for_prior "
+                    "10".format(_file)
                 )
                 command_line += " --gw" if gw else ""
                 self.launch(command_line)
@@ -243,6 +243,9 @@ class TestSummaryPages(Base):
                         np.testing.assert_almost_equal(
                             original[param], stored[param]
                         )
+                        # Non-bilby prior file will have same number or prior
+                        # samples as posterior samples
+                        assert len(stored[param]) == 1000
                 else:
                     from bilby.core.prior import PriorDict
 
@@ -250,6 +253,9 @@ class TestSummaryPages(Base):
                     bilby_prior = PriorDict(filename=bilby_prior_file)
                     for param, value in bilby_prior.items():
                         assert analytic[param] == str(value)
+                    params = list(f.priors["samples"]["test"].keys())
+                    # A bilby prior file will have 10 prior samples
+                    assert len(f.priors["samples"]["test"][params[0]]) == 10
 
     def test_calibration_and_psd(self):
         """Test that the calibration and psd files are passed appropiately
@@ -759,7 +765,8 @@ class TestSummaryReview(Base):
         """Test the `summaryreview` script for a `lalinference` result file
         """
         command_line = (
-            "summaryreview --webdir .outdir --samples .outdir/test.hdf5"
+            "summaryreview --webdir .outdir --samples .outdir/test.hdf5 "
+            "--test core_plots"
         )
         self.launch(command_line)
 

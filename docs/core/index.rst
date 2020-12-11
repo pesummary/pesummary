@@ -24,6 +24,16 @@ Manipulating posterior samples
     MCMCSamplesDict
     MultiAnalysisSamplesDict
 
+Manipulating PDFs
++++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    pdf
+    ProbabilityDict
+    ProbabilityDict2D
+
 The pesummary metafile
 ++++++++++++++++++++++
 

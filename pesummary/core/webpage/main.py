@@ -19,7 +19,7 @@ import uuid
 from glob import glob
 from operator import itemgetter
 from pathlib import Path
-from shutil import which
+import shutil
 
 from scipy import stats
 import numpy as np
@@ -153,23 +153,24 @@ class _WebpageGeneration(object):
         self.existing_file_kwargs = existing_file_kwargs
         self.add_to_existing = add_to_existing
         self.key_data = key_data
-        if key_data is None:
-            self.key_data = {
-                label: _samples.key_data for label, _samples in
-                self.samples.items()
-            }
         _label = self.labels[0]
-        self.key_data_headings = sorted(
-            list(self.key_data[_label][list(self.samples[_label].keys())[0]])
-        )
-        self.key_data_table = {
-            label: {
-                param: [
-                    safe_round(self.key_data[label][param][key], 3) for key in
-                    self.key_data_headings
-                ] for param in self.samples[label].keys()
-            } for label in self.labels
-        }
+        if self.samples is not None:
+            if key_data is None:
+                self.key_data = {
+                    label: _samples.key_data for label, _samples in
+                    self.samples.items()
+                }
+            self.key_data_headings = sorted(
+                list(self.key_data[_label][list(self.samples[_label].keys())[0]])
+            )
+            self.key_data_table = {
+                label: {
+                    param: [
+                        safe_round(self.key_data[label][param][key], 3) for key
+                        in self.key_data_headings
+                    ] for param in self.samples[label].keys()
+                } for label in self.labels
+            }
         self.notes = notes
         self.make_interactive = not disable_interactive
         self.package_information = package_information
@@ -178,6 +179,8 @@ class _WebpageGeneration(object):
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
+        self.preliminary_pages = {label: False for label in self.labels}
+        self.all_pages_preliminary = False
         self.categories = self.default_categories()
         self.popular_options = self.default_popular_options()
         self.navbar = {
@@ -212,6 +215,30 @@ class _WebpageGeneration(object):
             if isinstance(item, list):
                 _number_of_labels += len(item)
         return _number_of_labels
+
+    def copy_css_and_js_scripts(self):
+        """Copy css and js scripts from the package to the web directory
+        """
+        import pkg_resources
+        files_to_copy = []
+        path = pkg_resources.resource_filename("pesummary", "core")
+        scripts = glob(os.path.join(path, "js", "*.js"))
+        for i in scripts:
+            files_to_copy.append(
+                [i, os.path.join(self.webdir, "js", os.path.basename(i))]
+            )
+        scripts = glob(os.path.join(path, "css", "*.css"))
+        for i in scripts:
+            files_to_copy.append(
+                [i, os.path.join(self.webdir, "css", os.path.basename(i))]
+            )
+        for _dir in ["js", "css"]:
+            try:
+                os.mkdir(os.path.join(self.webdir, _dir))
+            except FileExistsError:
+                pass
+        for ff in files_to_copy:
+            shutil.copy(ff[0], ff[1])
 
     def make_modal_carousel(
         self, html_file, image_contents, unique_id=False, **kwargs
@@ -300,7 +327,7 @@ class _WebpageGeneration(object):
         executable: str
             the name of the executable you wish to find
         """
-        return which(
+        return shutil.which(
             executable,
             path=os.pathsep.join((
                 os.getenv("PATH", ""),
@@ -505,6 +532,13 @@ class _WebpageGeneration(object):
             web_dir=self.webdir, base_url=self.base_url, html_page=html_page,
             label=label
         )
+        _preliminary_keys = self.preliminary_pages.keys()
+        if self.all_pages_preliminary:
+            html_file.make_watermark()
+        elif approximant is not None and approximant in _preliminary_keys:
+            if self.preliminary_pages[approximant]:
+                html_file.make_watermark()
+
         html_file.make_header(approximant=approximant)
         if html_page == "home" or html_page == "home.html":
             html_file.make_navbar(
@@ -537,7 +571,8 @@ class _WebpageGeneration(object):
         self._make_home_pages(pages)
 
     def _make_home_pages(
-        self, pages, title=None, banner="Summary", make_home=True
+        self, pages, title=None, banner="Summary", make_home=True,
+        make_result=True, return_html=False
     ):
         """Make the home pages
 
@@ -549,6 +584,10 @@ class _WebpageGeneration(object):
         if make_home:
             html_file = self.setup_page("home", self.navbar["home"], title=title)
             html_file.make_banner(approximant=banner, key="Summary")
+            if return_html:
+                return html_file
+        if not make_result:
+            return
 
         for num, i in enumerate(self.labels):
             html_file = self.setup_page(
@@ -794,6 +833,7 @@ class _WebpageGeneration(object):
                     ), "w"
                 ) as f:
                     f.write(styles)
+                _fix = False
             else:
                 html_file.add_content(
                     "<div class='row justify-content-center'; "
@@ -801,7 +841,10 @@ class _WebpageGeneration(object):
                     "<p style='margin-top:2.5em'> No configuration file was "
                     "provided </p></div>"
                 )
-            html_file.make_footer(user=self.user, rundir=self.webdir)
+                _fix = True
+            html_file.make_footer(
+                user=self.user, rundir=self.webdir, fix_bottom=_fix
+            )
             html_file.close()
 
     def make_comparison_pages(self):
@@ -1237,7 +1280,9 @@ class _WebpageGeneration(object):
             "pesummary.sh", csv=False, json=False, shell=True,
             margin_top="-4em"
         )
-        html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.make_footer(
+            user=self.user, rundir=self.webdir, fix_bottom=True
+        )
         html_file.close()
 
     def make_downloads_page(self):

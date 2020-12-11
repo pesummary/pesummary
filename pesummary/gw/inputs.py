@@ -361,8 +361,12 @@ class _GWInput(_Input):
                 else:
                     self.add_to_prior_dict("calibration", {})
             for num, i in enumerate(self.result_files):
+                _opened = self._open_result_files
+                if i in _opened.keys() and _opened[i] is not None:
+                    f = self._open_result_files[i]
+                else:
+                    f = GWRead(i, disable_prior=True)
                 try:
-                    f = GWRead(i)
                     calibration_data = f.calibration_data_in_results_file
                 except Exception:
                     logger.warning(
@@ -592,6 +596,40 @@ class _GWInput(_Input):
                 } for prior, _probs in list(probabilities.values())[0].items()
             }
         self._pastro_probs = probabilities
+
+    @property
+    def preliminary_pages(self):
+        return self._preliminary_pages
+
+    @preliminary_pages.setter
+    def preliminary_pages(self, preliminary_pages):
+        required = conf.gw_reproducibility
+        self._preliminary_pages = {label: False for label in self.labels}
+        for num, label in enumerate(self.labels):
+            for attr in required:
+                _property = getattr(self, attr)
+                if isinstance(_property, dict):
+                    if label not in _property.keys():
+                        self._preliminary_pages[label] = True
+                    elif not len(_property[label]):
+                        self._preliminary_pages[label] = True
+                elif isinstance(_property, list):
+                    if _property[num] is None:
+                        self._preliminary_pages[label] = True
+        if any(value for value in self._preliminary_pages.values()):
+            _labels = [
+                label for label, value in self._preliminary_pages.items() if
+                value
+            ]
+            msg = (
+                "Unable to reproduce the {} analys{} because no {} data was "
+                "provided. 'Preliminary' watermarks will be added to the final "
+                "html pages".format(
+                    ", ".join(_labels), "es" if len(_labels) > 1 else "is",
+                    " or ".join(required)
+                )
+            )
+            logger.warn(msg)
 
     @staticmethod
     def extract_psd_data_from_file(file, IFO=None):
@@ -867,6 +905,7 @@ class GWInput(_GWInput, Input):
             )
         self.gwdata = self.opts.gwdata
         self.public = self.opts.public
+        self.preliminary_pages = None
         self.pepredicates_probs = []
         self.pastro_probs = []
         self.copy_files()
@@ -1027,6 +1066,7 @@ class GWPostProcessing(PostProcessing):
         self.pepredicates_probs = self.inputs.pepredicates_probs
         self.pastro_probs = self.inputs.pastro_probs
         self.public = self.inputs.public
+        self.preliminary_pages = self.inputs.preliminary_pages
 
     @property
     def maxL_samples(self):

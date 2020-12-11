@@ -196,14 +196,15 @@ class _Input(object):
             "labels": labels,
             "weights": weights,
             "indicies": indicies,
-            "mcmc_samples": f.mcmc_samples
+            "mcmc_samples": f.mcmc_samples,
+            "open_file": f
         }
 
     @staticmethod
     def grab_data_from_file(
         file, label, config=None, injection=None, read_function=Read,
         file_format=None, nsamples=None, disable_prior_sampling=False,
-        path_to_samples=None, **kwargs
+        nsamples_for_prior=None, path_to_samples=None, **kwargs
     ):
         """Grab data from a result file containing posterior samples
 
@@ -228,7 +229,7 @@ class _Input(object):
         """
         f = read_function(
             file, file_format=file_format, disable_prior=disable_prior_sampling,
-            path_to_samples=path_to_samples
+            nsamples_for_prior=nsamples_for_prior, path_to_samples=path_to_samples
         )
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
@@ -271,7 +272,8 @@ class _Input(object):
             "file_version": {label: version},
             "file_kwargs": {label: kwargs},
             "prior": priors,
-            "weights": {label: weights}
+            "weights": {label: weights},
+            "open_file": f
         }
 
     @property
@@ -588,7 +590,7 @@ class _Input(object):
         self._set_samples(samples)
 
     def _set_samples(
-        self, samples, ignore_keys=["prior", "weights", "labels", "indicies"]
+        self, samples, ignore_keys=["prior", "weights", "labels", "indicies", "open_file"]
     ):
         """Extract the samples and store them as attributes of self
 
@@ -1019,7 +1021,9 @@ class _Input(object):
                     "files. Assuming the same prior file for all result "
                     "files".format(len(self.labels))
                 )
-                data = read_func(priors[0])
+                data = read_func(
+                    priors[0], nsamples=self.nsamples_for_prior
+                )
                 for i in self.labels:
                     prior_dict["samples"][i] = data.samples_dict
                     try:
@@ -1042,7 +1046,10 @@ class _Input(object):
                         grab_data_kwargs = read_kwargs[self.labels[num]]
                     else:
                         grab_data_kwargs = read_kwargs
-                    data = read_func(priors[num], **grab_data_kwargs)
+                    data = read_func(
+                        priors[num], nsamples=self.nsamples_for_prior,
+                        **grab_data_kwargs
+                    )
                     prior_dict["samples"][self.labels[num]] = data.samples_dict
                     try:
                         if data.analytic is not None:
@@ -1083,22 +1090,24 @@ class _Input(object):
             grab_data_kwargs = self.grab_data_kwargs[label]
         else:
             grab_data_kwargs = self.grab_data_kwargs
+
         if self.is_pesummary_metafile(file):
-            existing_data = self.grab_data_from_metafile(
+            data = self.grab_data_from_metafile(
                 file, self.webdir, compare=self.compare_results,
                 nsamples=self.nsamples,
                 disable_injection=self.disable_injection, **grab_data_kwargs
             )
-            return existing_data
         else:
             data = self.grab_data_from_file(
                 file, label, config=config, injection=injection,
                 file_format=file_format, nsamples=self.nsamples,
                 disable_prior_sampling=self.disable_prior_sampling,
+                nsamples_for_prior=self.nsamples_for_prior,
                 path_to_samples=self.path_to_samples[label],
                 **grab_data_kwargs
             )
-            return data
+        self._open_result_files.update({file: data["open_file"]})
+        return data
 
     @property
     def email(self):
@@ -1355,7 +1364,7 @@ class _Input(object):
                 removed_parameters = list_match(
                     list(self.samples[label].keys()), ignore_parameters
                 )
-                if removed_parameters == []:
+                if not len(removed_parameters):
                     logger.warning(
                         "Failed to remove any parameters from {}".format(
                             self.result_files[num]
@@ -1571,6 +1580,8 @@ class Input(_Input):
         self.seed = self.opts.seed
         self.style_file = self.opts.style_file
         self.result_files = self.opts.samples
+        if self.result_files is not None:
+            self._open_result_files = {path: None for path in self.result_files}
         self.meta_file = False
         if self.result_files is not None and len(self.result_files) == 1:
             self.meta_file = self.is_pesummary_metafile(self.result_files[0])
@@ -1622,6 +1633,7 @@ class Input(_Input):
             for opt in extra_options:
                 setattr(self, opt, getattr(self.opts, opt))
         self.kde_plot = self.opts.kde_plot
+        self.nsamples_for_prior = self.opts.nsamples_for_prior
         self.priors = self.opts.prior_file
         self.disable_prior_sampling = self.opts.disable_prior_sampling
         self.path_to_samples = self.opts.path_to_samples

@@ -21,6 +21,36 @@ from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.utils import logger
 
 
+def read_bilby(
+    path, disable_prior=False, latex_dict=GWlatex_labels,
+    complex_params=["matched_filter_snr", "optimal_snr"], **kwargs
+):
+    """Grab the parameters and samples in a bilby file
+
+    Parameters
+    ----------
+    path: str
+        path to the result file you wish to read in
+    disable_prior: Bool, optional
+        if True, do not collect prior samples from the `bilby` result file.
+        Default False
+    complex_params: list, optional
+        list of parameters stored in the bilby result file which are complex
+        and you wish to store the `amplitude` and `angle` as seperate
+        posterior distributions
+    latex_dict: dict, optional
+        list of latex labels for each parameter
+    """
+    from pesummary.core.file.formats.bilby import (
+        read_bilby as _read_bilby
+    )
+
+    return _read_bilby(
+        path, disable_prior=disable_prior, latex_dict=latex_dict,
+        complex_params=complex_params, **kwargs
+    )
+
+
 def prior_samples_from_file(path, cls="BBHPriorDict", nsamples=5000, **kwargs):
     """Return a dict of prior samples from a `bilby` prior file
 
@@ -175,6 +205,7 @@ class Bilby(GWSingleAnalysisRead):
         """
         from bilby.core.result import read_in_result
 
+        logger.debug("Interpolating the calibration posterior")
         bilby_object = read_in_result(filename=path)
         posterior = bilby_object.posterior
         parameters = list(posterior.keys())
@@ -243,12 +274,7 @@ class Bilby(GWSingleAnalysisRead):
         Complex matched filter SNRs are stored in the result file.
         The amplitude and angle are extracted here.
         """
-        from pesummary.core.file.formats.bilby import read_bilby
-
-        return read_bilby(
-            path, disable_prior=disable_prior, latex_dict=GWlatex_labels,
-            complex_params=["matched_filter_snr", "optimal_snr"], **kwargs
-        )
+        return read_bilby(path, disable_prior=disable_prior, **kwargs)
 
     def add_marginalized_parameters_from_config_file(self, config_file):
         """Search the configuration file and add the marginalized parameters

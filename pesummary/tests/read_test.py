@@ -439,6 +439,81 @@ class TestCoreCSVFile(BaseRead):
         super(TestCoreCSVFile, self).test_downsample()
 
 
+class TestCoreNumpyFile(BaseRead):
+    """Class to test loading in a numpy file with the core Read function
+    """
+    def setup(self):
+        """Setup the TestCoreNumpyFile class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        self.parameters, self.samples = make_result_file(extension="npy", gw=False)
+        self.path = os.path.join(".outdir", "test.npy")
+        self.result = Read(self.path)
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_class_name(self):
+        """Test the class used to load in this file
+        """
+        assert isinstance(
+            self.result, pesummary.core.file.formats.default.SingleAnalysisDefault
+        )
+
+    def test_parameters(self):
+        """Test the parameter property of the default class
+        """
+        super(TestCoreNumpyFile, self).test_parameters(self.parameters)
+
+    def test_samples(self):
+        """Test the samples property of the default class
+        """
+        super(TestCoreNumpyFile, self).test_samples(self.samples)
+
+    def test_samples_dict(self):
+        """Test the samples_dict property of the default class
+        """
+        true = [self.parameters, self.samples]
+        super(TestCoreNumpyFile, self).test_samples_dict(true)
+
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestCoreNumpyFile, self).test_version()
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestCoreNumpyFile, self).test_extra_kwargs()
+
+    def test_injection_parameters(self):
+        """Test the injection_parameters property
+        """
+        true = {par: float("nan") for par in self.parameters}
+        super(TestCoreNumpyFile, self).test_injection_parameters(true)
+
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestCoreNumpyFile, self).test_to_dat()
+
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.core.file.formats.default import SingleAnalysisDefault
+
+        super(TestCoreNumpyFile, self).test_file_format_read(self.path, "numpy", SingleAnalysisDefault)
+
+    def test_downsample(self):
+        """Test that the posterior table is correctly downsampled
+        """
+        super(TestCoreNumpyFile, self).test_downsample()
+
+
 class TestCoreDatFile(BaseRead):
     """Class to test loading in an dat file with the core Read function
     """
@@ -575,6 +650,9 @@ class BilbyFile(BaseRead):
             assert isinstance(prior, np.ndarray)
         f = read_function(self.path, disable_prior=True)
         assert f.priors is None
+        f = read_function(self.path, nsamples_for_prior=200)
+        params = list(f.priors["samples"].keys())
+        assert len(f.priors["samples"][params[0]]) == 200
         
 
 
@@ -1054,6 +1132,83 @@ class TestGWCSVFile(GWBaseRead):
         )
 
 
+class TestGWNumpyFile(GWBaseRead):
+    """Class to test loading in a npy file with the core Read function
+    """
+    def setup(self):
+        """Setup the TestGWNumpyFile class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        self.parameters, self.samples = make_result_file(extension="npy", gw=True)
+        self.path = os.path.join(".outdir", "test.npy")
+        self.result = GWRead(self.path)
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_class_name(self):
+        """Test the class used to load in this file
+        """
+        assert isinstance(
+            self.result, pesummary.gw.file.formats.default.SingleAnalysisDefault
+        )
+
+    def test_parameters(self):
+        """Test the parameter property of the default class
+        """
+        super(TestGWNumpyFile, self).test_parameters(self.parameters)
+
+    def test_samples(self):
+        """Test the samples property of the default class
+        """
+        super(TestGWNumpyFile, self).test_samples(self.samples)
+
+    def test_samples_dict(self):
+        """Test the samples_dict property of the default class
+        """
+        true = [self.parameters, self.samples]
+        super(TestGWNumpyFile, self).test_samples_dict(true)
+
+    def test_version(self):
+        """Test the version property of the default class
+        """
+        super(TestGWNumpyFile, self).test_version()
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class
+        """
+        super(TestGWNumpyFile, self).test_extra_kwargs()
+
+    def test_injection_parameters(self):
+        """Test the injection_parameters property
+        """
+        true = {par: float("nan") for par in self.parameters}
+        super(TestGWNumpyFile, self).test_injection_parameters(true)
+
+    def test_to_dat(self):
+        """Test the to_dat method
+        """
+        super(TestGWNumpyFile, self).test_to_dat()
+
+    def test_to_lalinference_dat(self):
+        """Test the to_lalinference dat=True method
+        """
+        super(TestGWNumpyFile, self).test_to_lalinference_dat()
+
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used
+        """
+        from pesummary.gw.file.formats.default import SingleAnalysisDefault
+
+        super(TestGWNumpyFile, self).test_file_format_read(
+            self.path, "numpy", SingleAnalysisDefault
+        )
+
+
 class TestGWDatFile(GWBaseRead):
     """Class to test loading in an dat file with the core Read function
     """
@@ -1397,6 +1552,9 @@ class TestGWJsonBilbyFile(GWBaseRead):
         assert "final_mass_source_non_evolved" not in f.priors["samples"].keys()
         f = read_function(self.path, disable_prior=True)
         assert f.priors is None
+        f = read_function(self.path, nsamples_for_prior=200)
+        params = list(f.priors["samples"].keys())
+        assert len(f.priors["samples"][params[0]]) == 200
 
 
 class TestGWLALInferenceFile(GWBaseRead):

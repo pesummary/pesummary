@@ -34,6 +34,16 @@ Manipulating posterior samples
     MultiAnalysisSamplesDict
     Conversion
 
+Manipulating PDFs
++++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    ../core/pdf
+    ../core/ProbabilityDict
+    ../core/ProbabilityDict2D
+
 Manipulating PSD and Calibration data
 +++++++++++++++++++++++++++++++++++++
 
@@ -139,3 +149,4 @@ output pages. We will use the pages that were produced from Listing 5 in the
     summarypages/comparison/home
     summarypages/comparison/mass_1
     summarypages/comparison/interactive
+    summarypages/watermark

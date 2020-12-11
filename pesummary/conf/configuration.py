@@ -102,3 +102,6 @@ cosmology = "Planck15"
 
 # GraceDB service url to use
 gracedb_server = "https://gracedb.ligo.org/api/"
+
+# Information required for reproducing a GW analysis
+gw_reproducibility = ["config", "psd"]

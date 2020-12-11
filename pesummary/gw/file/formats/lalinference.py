@@ -56,6 +56,44 @@ META_DATA = {
 }
 
 
+def open_lalinference(path):
+    """Grab the parameters and samples in a lalinference file
+
+    Parameters
+    ----------
+    path: str
+        path to the result file you wish to read in
+    """
+    f = h5py.File(path, 'r')
+    path_to_samples = GWRead.guess_path_to_samples(path)
+    lalinference_names = list(f[path_to_samples].dtype.names)
+    samples = [list(i) for i in f[path_to_samples]]
+
+    if "logdistance" in lalinference_names:
+        lalinference_names.append("luminosity_distance")
+        for num, i in enumerate(samples):
+            samples[num].append(
+                np.exp(i[lalinference_names.index("logdistance")]))
+    if "costheta_jn" in lalinference_names:
+        lalinference_names.append("theta_jn")
+        for num, i in enumerate(samples):
+            samples[num].append(
+                np.arccos(i[lalinference_names.index("costheta_jn")]))
+    extra_kwargs = LALInference.grab_extra_kwargs(path)
+    extra_kwargs["sampler"]["nsamples"] = len(samples)
+    try:
+        version = f[path_to_samples].attrs["VERSION"].decode("utf-8")
+    except Exception as e:
+        version = None
+    return {
+        "parameters": lalinference_names,
+        "samples": samples,
+        "injection": None,
+        "version": version,
+        "kwargs": extra_kwargs
+    }
+
+
 class LALInference(GWSingleAnalysisRead):
     """PESummary wrapper of `lalinference`
     (https://git.ligo.org/lscsoft/lalsuite/lalinference).
@@ -217,6 +255,7 @@ class LALInference(GWSingleAnalysisRead):
     def _grab_calibration_data_from_lalinference_file(path):
         """
         """
+        logger.debug("Interpolating the calibration posterior")
         f = h5py.File(path, 'r')
         path_to_samples = GWRead.guess_path_to_samples(path)
         attributes = f[path_to_samples].attrs.items()
@@ -255,34 +294,7 @@ class LALInference(GWSingleAnalysisRead):
     def _grab_data_from_lalinference_file(path):
         """
         """
-        f = h5py.File(path, 'r')
-        path_to_samples = GWRead.guess_path_to_samples(path)
-        lalinference_names = list(f[path_to_samples].dtype.names)
-        samples = [list(i) for i in f[path_to_samples]]
-
-        if "logdistance" in lalinference_names:
-            lalinference_names.append("luminosity_distance")
-            for num, i in enumerate(samples):
-                samples[num].append(
-                    np.exp(i[lalinference_names.index("logdistance")]))
-        if "costheta_jn" in lalinference_names:
-            lalinference_names.append("theta_jn")
-            for num, i in enumerate(samples):
-                samples[num].append(
-                    np.arccos(i[lalinference_names.index("costheta_jn")]))
-        extra_kwargs = LALInference.grab_extra_kwargs(path)
-        extra_kwargs["sampler"]["nsamples"] = len(samples)
-        try:
-            version = f[path_to_samples].attrs["VERSION"].decode("utf-8")
-        except Exception as e:
-            version = None
-        return {
-            "parameters": lalinference_names,
-            "samples": samples,
-            "injection": None,
-            "version": version,
-            "kwargs": extra_kwargs
-        }
+        return open_lalinference(path)
 
     def add_fixed_parameters_from_config_file(self, config_file):
         """Search the conifiguration file and add fixed parameters to the

@@ -1,0 +1,26 @@
+#background{
+    position:fixed;
+    z-index:-100;
+    background:#F8F8F8;
+    display:block;
+    height:200%;
+    width:200%;
+    overflow:hidden;
+    margin-top:-600px;
+    margin-left:-200px
+}
+
+#content{
+    position:absolute;
+    z-index:1;
+    overflow:hidden;
+}
+
+#bg-text
+{
+    color:#F0F0F0;
+    font-size:300px;
+    overflow:hidden;
+    transform:rotate(-30deg);
+    -webkit-transform:rotate(-30deg);
+}

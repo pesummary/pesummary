@@ -118,7 +118,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
         disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False,
         psd=None, priors=None, package_information={"packages": []},
-        mcmc_samples=False, external_hdf5_links=False
+        mcmc_samples=False, external_hdf5_links=False, preliminary_pages=False
     ):
         self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
@@ -150,7 +150,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             disable_comparison=disable_comparison,
             disable_interactive=disable_interactive,
             package_information=package_information, mcmc_samples=mcmc_samples,
-            external_hdf5_links=external_hdf5_links, key_data=key_data
+            external_hdf5_links=external_hdf5_links, key_data=key_data,
         )
         if self.file_kwargs is None:
             self.file_kwargs = {
@@ -162,6 +162,21 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             self.result_files = [None] * len(self.labels)
         self.psd_path = {"other": os.path.join("..", "psds")}
         self.calibration_path = {"other": os.path.join("..", "calibration")}
+        self.preliminary_pages = preliminary_pages
+        if not isinstance(self.preliminary_pages, dict):
+            if self.preliminary_pages:
+                self.preliminary_pages = {
+                    label: True for label in self.labels
+                }
+            else:
+                self.preliminary_pages = {
+                    label: False for label in self.labels
+                }
+        if all(value for value in self.preliminary_pages.values()):
+            self.all_pages_preliminary = True
+        if len(self.labels) > 1:
+            if any(value for value in self.preliminary_pages.values()):
+                self.preliminary_pages["Comparison"] = True
 
     def _jensen_shannon_divergence(self, param, samples):
         """Return the Jensen Shannon divergence between two sets of samples

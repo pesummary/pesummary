@@ -89,6 +89,12 @@ class TestWrite(Base):
         parameters, samples = self.write("sql", "sql.db")
         self.check_samples(".outdir/sql.db", parameters, samples.T)
 
+    def test_numpy(self):
+        """Test that the user can write to a npy file
+        """
+        parameters, samples = self.write("numpy", "numpy.npy")
+        self.check_samples(".outdir/numpy.npy", parameters, samples.T)
+
     def test_pesummary(self):
         """Test that the user can write to a pesummary file
         """
@@ -163,6 +169,11 @@ class TestWritePESummary(object):
         """Test write to dat
         """
         self._write("dat", "dat")
+
+    def test_write_numpy(self):
+        """Test write to numpy
+        """
+        self._write("numpy", "npy")
 
     def test_write_json(self):
         """Test write to dat

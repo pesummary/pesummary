@@ -1,3 +1,41 @@
+## 0.10.0 [27/11/2020]
+
+### Changed
+
+- `summaryreview` - upgrade the `summaryreview` script to include additional
+  tests and display them on a single html page
+- `summarypipe` - upgrade `summarypipe` to allow for `pbilby` rundirs
+- `seaborn` - update the code to allow for `seaborn==0.11.0`
+- `Array` class - separate `Array` class into its own `pesummary.utils.array`
+  module
+
+### Added
+
+- Add a section to the Documentation indicating the file formats that
+  PESummary is able to read it through its `io.read` function
+- Add a 'Preliminary' watermark to GW html pages and plots if they are not
+  reproducible (i.e. if the pages do not include PSD and configuration
+  settings)
+- Allow for `.npy` files to be read in with the `io.read` function
+- Allow for `.csv` files to be read in with the `io.read` function
+- Allow for `sql` databases to be read in with the `io.read` function
+- Allow the user to generate `triangle`, `reverse_triangle` and `2d_kde` plots
+  from the SamplesDict class
+- Add the injected line(s) to 1d comparison histograms if an injection file
+  is provided
+- Add a `--disable_remnant` flag to prevent remnant conversions from being
+  calculated
+- Add a module to fetch public data
+- Be able to fetch public samples released as part of the `GWTC-2` publication
+- Print a summary of the opened file giving the number of samples, list of
+  parameters etc
+- Add a summary table to the comparison pages giving 90% credible intervals,
+  injected values etc for each analysis
+- Test the pesummary docker image as part of the CI
+- Add a `converted_parameters` attribute to the opened result file so you can
+  see which parameters have been added to the posterior table through the
+  conversion module
+
 ## 0.9.1 [04/09/2020]
 
 ### Changed

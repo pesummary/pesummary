@@ -128,20 +128,28 @@ class Default(object):
     generate_latex_macros:
         generate a set of latex macros for the stored posterior samples
     """
-    def __new__(self, path_to_results_file, **kwargs):
-        func_map = {"json": self._grab_data_from_json_file,
-                    "dat": self._grab_data_from_dat_file,
-                    "txt": self._grab_data_from_dat_file,
-                    "csv": self._grab_data_from_csv_file,
-                    "hdf5": self._grab_data_from_hdf5_file,
-                    "h5": self._grab_data_from_hdf5_file,
-                    "hdf": self._grab_data_from_hdf5_file,
-                    "db": self._grab_data_from_sql_database,
-                    "sql": self._grab_data_from_sql_database,
-                    "prior": self._grab_data_from_prior_file}
+    def load_map(self):
+        return {
+            "json": self._grab_data_from_json_file,
+            "dat": self._grab_data_from_dat_file,
+            "txt": self._grab_data_from_dat_file,
+            "csv": self._grab_data_from_csv_file,
+            "hdf5": self._grab_data_from_hdf5_file,
+            "h5": self._grab_data_from_hdf5_file,
+            "hdf": self._grab_data_from_hdf5_file,
+            "db": self._grab_data_from_sql_database,
+            "sql": self._grab_data_from_sql_database,
+            "prior": self._grab_data_from_prior_file,
+            "npy": self._grab_data_from_numpy_file
+        }
 
+    def __new__(
+        self, path_to_results_file, _single_default=SingleAnalysisDefault,
+        _multi_default=MultiAnalysisDefault, **kwargs
+    ):
+        self.module = "core"
         self.extension = Read.extension_from_path(path_to_results_file)
-        self.load_function = func_map[self.extension]
+        self.load_function = self.load_map(self)[self.extension]
         try:
             self._load_data = self.load_function(path_to_results_file, **kwargs)
         except Exception as e:
@@ -151,11 +159,11 @@ class Default(object):
                 )
             )
         if np.array(self._load_data["parameters"]).ndim > 1:
-            return MultiAnalysisDefault(
+            return _multi_default(
                 path_to_results_file, _data=self._load_data, **kwargs
             )
         else:
-            return SingleAnalysisDefault(
+            return _single_default(
                 path_to_results_file, _data=self._load_data, **kwargs
             )
 
@@ -166,15 +174,38 @@ class Default(object):
         return cls(path, **kwargs)
 
     @staticmethod
+    def _default_injection(parameters):
+        """Return a dictionary of nan's for each parameter
+
+        Parameters
+        ----------
+        parameters: tuple/list
+            list of parameters you wish to have null injections for
+        """
+        return {i: float("nan") for i in parameters}
+
+    @staticmethod
     def _grab_data_from_dat_file(path, **kwargs):
         """Grab the data stored in a .dat file
         """
         from pesummary.core.file.formats.dat import read_dat
 
         parameters, samples = read_dat(path)
-        injection = {i: float("nan") for i in parameters}
         return {
-            "parameters": parameters, "samples": samples, "injection": injection
+            "parameters": parameters, "samples": samples,
+            "injection": Default._default_injection(parameters)
+        }
+
+    @staticmethod
+    def _grab_data_from_numpy_file(path, **kwargs):
+        """Grab the data stored in a .npy file
+        """
+        from pesummary.core.file.formats.numpy import read_numpy
+
+        parameters, samples = read_numpy(path)
+        return {
+            "parameters": parameters, "samples": samples,
+            "injection": Default._default_injection(parameters)
         }
 
     @staticmethod
@@ -184,9 +215,9 @@ class Default(object):
         from pesummary.core.file.formats.csv import read_csv
 
         parameters, samples = read_csv(path)
-        injection = {i: float("nan") for i in parameters}
         return {
-            "parameters": parameters, "samples": samples, "injection": injection
+            "parameters": parameters, "samples": samples,
+            "injection": Default._default_injection(parameters)
         }
 
     @staticmethod
@@ -203,10 +234,10 @@ class Default(object):
         samples = func(path, **kwargs)
         parameters = samples.parameters
         analytic = samples.analytic
-        injection = {i: float("nan") for i in parameters}
         return {
             "parameters": parameters, "samples": samples.samples.T.tolist(),
-            "injection": injection, "analytic": analytic
+            "injection": Default._default_injection(parameters),
+            "analytic": analytic
         }
 
     @staticmethod
@@ -218,11 +249,11 @@ class Default(object):
         parameters, samples, labels = read_sql(path, **kwargs)
         if len(labels) > 1:
             injection = {
-                label: {i: float("nan") for i in parameters[num]} for num, label
+                label: Default._default_injection(parameters[num]) for num, label
                 in enumerate(labels)
             }
         else:
-            injection = {i: float("nan") for i in parameters}
+            injection = Default._default_injection(parameters)
         return {
             "parameters": parameters, "samples": samples, "injection": injection,
             "labels": labels
@@ -235,9 +266,9 @@ class Default(object):
         from pesummary.core.file.formats.json import read_json
 
         parameters, samples = read_json(path, path_to_samples=path_to_samples)
-        injection = {i: float("nan") for i in parameters}
         return {
-            "parameters": parameters, "samples": samples, "injection": injection
+            "parameters": parameters, "samples": samples,
+            "injection": Default._default_injection(parameters)
         }
 
     @staticmethod
@@ -251,9 +282,9 @@ class Default(object):
         parameters, samples = read_hdf5(
             path, remove_params=remove_params, path_to_samples=path_to_samples
         )
-        injection = {i: float("nan") for i in parameters}
         return {
-            "parameters": parameters, "samples": samples, "injection": injection
+            "parameters": parameters, "samples": samples,
+            "injection": Default._default_injection(parameters)
         }
 
     def add_marginalized_parameters_from_config_file(self, config_file):

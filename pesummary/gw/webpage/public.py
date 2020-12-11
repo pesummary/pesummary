@@ -33,7 +33,8 @@ class _PublicWebpageGeneration(_GWWebpageGeneration):
         notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
         disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False,
         psd=None, priors=None, package_information={"packages": []},
-        mcmc_samples=False, external_hdf5_links=False
+        mcmc_samples=False, external_hdf5_links=False,
+        preliminary_pages=False
     ):
         super(_PublicWebpageGeneration, self).__init__(
             webdir=webdir, samples=samples, labels=labels,
@@ -57,7 +58,8 @@ class _PublicWebpageGeneration(_GWWebpageGeneration):
             publication_kwargs=publication_kwargs,
             no_ligo_skymap=no_ligo_skymap, psd=psd, priors=priors,
             package_information=package_information,
-            mcmc_samples=mcmc_samples, external_hdf5_links=external_hdf5_links
+            mcmc_samples=mcmc_samples, external_hdf5_links=external_hdf5_links,
+            preliminary_pages=preliminary_pages
         )
 
     def setup_page(
