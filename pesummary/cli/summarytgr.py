@@ -18,7 +18,6 @@
 import os
 import pesummary
 from pesummary.core.webpage.main import _WebpageGeneration
-from pesummary.gw.file.read import read as GWRead
 from pesummary.gw.file.tgr import imrct_deviation_parameters_from_final_mass_final_spin
 from pesummary.io import read
 from pesummary.gw.pepredicates import PEPredicates
@@ -112,7 +111,8 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
         webdir = "./"
 
     plotdir = os.path.join(webdir, "plots")
-    os.makedirs(plotdir, exist_ok=True)
+    make_dir(plotdir)
+    plot_kwargs = dict(grid=True)
     opts = imrct_deviations.plot(
         "final_mass_final_spin_deviations",
         type="triangle",
@@ -121,11 +121,13 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
         levels=[0.68, 0.95],
         smooth=2.0,
         level_kwargs={"colors": ["k", "k"]},
+        **plot_kwargs
     )
     fig, axs = opts[0], opts[1:]
     for ax in axs:
         ax.grid(True)
     fig.savefig(os.path.join(plotdir, "imrct_deviations_triangle_plot.png"))
+    fig.close()
 
     base_string = "imrct_{}_{}.png"
     for key in ["inspiral", "postinspiral"]:
