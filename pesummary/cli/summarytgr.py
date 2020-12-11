@@ -363,7 +363,7 @@ def main(args=None):
     open_files = {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
     test_key_data = {}
     if opts.test == "imrct":
-        samples_file_dict = dict(inspiral=inspiral_samples_file, postinspiral=postinspiral_samples_file)
+        samples_file_dict = dict(inspiral=opts.samples[0], postinspiral=opts.samples[1])
         samples_dict = dict()
 
     webpage = TGRWebpageGeneration(
