@@ -111,7 +111,7 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
         webdir = "./"
 
     plotdir = os.path.join(webdir, "plots")
-    os.mkdir(plotdir)
+    os.makedirs(plotdir, exist_ok=True)
     opts = imrct_deviations.plot(
         "final_mass_final_spin_deviations",
         type="triangle",
@@ -135,7 +135,9 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
             labels=[key],
         )
         fig.savefig(os.path.join(plotdir, "final_mass_final_spin_{}.png".format(key)))
-        fig, _, _, _ = samples_dict[key].plot(["mass_1", "mass_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
+        fig, _, _, _ = samples_dict[key].plot(
+            ["mass_1", "mass_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key]
+        )
         fig.savefig(os.path.join(plotdir, "mass_1_mass_2_{}.png".format(key)))
         fig, _, _, _ = samples_dict[key].plot(["a_1", "a_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
         fig.savefig(os.path.join(plotdir, "a_1_a_2_{}.png".format(key)))
@@ -290,9 +292,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         html_file.make_banner(approximant="Executive plots", key=desc, _style="font-size: 26px;")
         path = self.image_path["other"]
         base_string = path + "imrct_{}.png"
-        image_contents = [
-            [base_string.format("deviations_triangle_plot")]
-        ]
+        image_contents = [[base_string.format("deviations_triangle_plot")]]
         captions = [
             [
                 (
@@ -304,13 +304,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
             ]
         ]
         html_file = self.make_modal_carousel(
-            html_file,
-            image_contents,
-            captions=captions,
-            cli=[[" "]],
-            unique_id=True,
-            extra_div=True,
-            autoscale=True,
+            html_file, image_contents, captions=captions, cli=[[" "]], unique_id=True, extra_div=True, autoscale=True,
         )
         desc = "Below we show additional plots generated for the IMR consistency " "test"
         html_file.make_banner(approximant="Additional plots", key=desc, _style="font-size: 26px;")
