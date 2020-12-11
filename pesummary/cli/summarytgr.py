@@ -19,6 +19,7 @@ import os
 import pesummary
 from pesummary.core.webpage.main import _WebpageGeneration
 from pesummary.gw.file.read import read as GWRead
+from pesummary.gw.file.tgr import imrct_deviation_parameters_from_final_mass_final_spin
 from pesummary.io import read
 from pesummary.gw.pepredicates import PEPredicates
 from pesummary.gw.p_astro import PAstro
@@ -47,7 +48,7 @@ def command_line():
         help="What test do you want to run? Currently only supports `imrct`",
         metavar="DIR",
         default=None,
-        choices=TESTS
+        choices=TESTS,
     )
     parser.add_argument("-s", "--samples", dest="samples", help="Posterior samples hdf5 file", nargs="+", default=None)
     parser.add_argument("--labels", dest="labels", help="labels used to distinguish runs", nargs="+", default=None)
@@ -57,7 +58,7 @@ def command_line():
 
 def generate_imrct_deviation_parameters(inspiral_samples_file, postinspiral_samples_file, **kwargs):
     """Generate deviation parameter pdfs for the IMR Consistency Test
-    
+
     Parameters
     ----------
     inspiral_samples_file: filename
@@ -72,6 +73,7 @@ def generate_imrct_deviation_parameters(inspiral_samples_file, postinspiral_samp
     deviations: ProbabilityDict2D
     """
     import time
+
     samples_file_dict = dict(inspiral=inspiral_samples_file, postinspiral=postinspiral_samples_file)
     samples_dict = dict()
 
@@ -143,9 +145,17 @@ class TGRWebpageGeneration(_WebpageGeneration):
     **kwargs: dict
         all kwargs passed to the _WebpageGeneration class
     """
+
     def __init__(
-        self, webdir, path_to_results_file, *args, test="all",
-        test_key_data={}, open_files=None, input_file_summary={}, **kwargs
+        self,
+        webdir,
+        path_to_results_file,
+        *args,
+        test="all",
+        test_key_data={},
+        open_files=None,
+        input_file_summary={},
+        **kwargs
     ):
         self.test = test
         if self.test.lower() == "all":
@@ -157,13 +167,10 @@ class TGRWebpageGeneration(_WebpageGeneration):
         if open_files is not None:
             _labels = list(open_files.keys())
         super(TGRWebpageGeneration, self).__init__(
-            *args, webdir=webdir, labels=_labels, user=os.environ["USER"],
-            samples=open_files, **kwargs
+            *args, webdir=webdir, labels=_labels, user=os.environ["USER"], samples=open_files, **kwargs
         )
         self.labels = labels
-        self.file_versions = {
-            label: "No version information found" for label in self.labels
-        }
+        self.file_versions = {label: "No version information found" for label in self.labels}
         self.test_key_data = test_key_data
         self.open_files = open_files
         self.input_file_summary = input_file_summary
@@ -202,10 +209,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
     def make_navbar_for_homepage(self):
         """Make a navbar for the homepage
         """
-        links = [
-            "home", ["Tests", self._test_links()], "Logging",
-            "Version"
-        ]
+        links = ["home", ["Tests", self._test_links()], "Logging", "Version"]
         return links
 
     def _make_home_pages(self, pages):
@@ -218,13 +222,8 @@ class TGRWebpageGeneration(_WebpageGeneration):
         """
         html_file = self.setup_page("home", self.navbar["home"])
         html_file.make_banner("Tests of General Relativity", key=" ")
-        _banner_desc = (
-            "Below we show summary statistics associated with each test of GR"
-        )
-        html_file.make_banner(
-            approximant="Summary Statistics", key=_banner_desc,
-            _style="font-size: 26px;"
-        )
+        _banner_desc = "Below we show summary statistics associated with each test of GR"
+        html_file.make_banner(approximant="Summary Statistics", key=_banner_desc, _style="font-size: 26px;")
         _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
         _class = "row justify-content-center"
         html_file.make_container(style=_style)
@@ -233,20 +232,14 @@ class TGRWebpageGeneration(_WebpageGeneration):
         total_keys = list(self.test_key_data[base_label].keys())
         if len(self.labels) > 1:
             for _label in self.labels[1:]:
-                total_keys += [
-                    key for key in self.test_key_data[_label].keys()
-                    if key not in total_keys
-                ]
+                total_keys += [key for key in self.test_key_data[_label].keys() if key not in total_keys]
         table_contents = [
-            [i] + [
-                self.test_key_data[i][key] if key in self.test_key_data[i].keys() else
-                "-" for key in total_keys
-            ] for i in self.labels
+            [i] + [self.test_key_data[i][key] if key in self.test_key_data[i].keys() else "-" for key in total_keys]
+            for i in self.labels
         ]
         _headings = [" "] + total_keys
         html_file.make_table(
-            headings=_headings, format="table-hover", heading_span=1,
-            contents=table_contents, accordian=False
+            headings=_headings, format="table-hover", heading_span=1, contents=table_contents, accordian=False
         )
         html_file.end_div(4)
         html_file.end_container()
@@ -255,8 +248,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         _class = "row justify-content-center"
         for key, value in self.input_file_summary.items():
             html_file.make_banner(
-                approximant="{} Summary Table".format(key),
-                key="summary_table", _style="font-size: 26px;"
+                approximant="{} Summary Table".format(key), key="summary_table", _style="font-size: 26px;"
             )
             html_file.make_container(style=_style)
             html_file.make_div(4, _class=_class, _style=None)
@@ -268,9 +260,12 @@ class TGRWebpageGeneration(_WebpageGeneration):
                 row += self.key_data_table[key][j]
                 contents.append(row)
             html_file.make_table(
-                headings=headings, contents=contents, heading_span=1,
-                accordian=False, format="table-hover header-fixed",
-                sticky_header=True
+                headings=headings,
+                contents=contents,
+                heading_span=1,
+                accordian=False,
+                format="table-hover header-fixed",
+                sticky_header=True,
             )
             html_file.end_div(4)
             html_file.end_container()
@@ -282,21 +277,14 @@ class TGRWebpageGeneration(_WebpageGeneration):
         """
         pages = ["imrct"]
         self.create_blank_html_pages(pages)
-        html_file = self.setup_page(
-            "imrct", self.navbar["home"], title="IMR Consistency Test"
-        )
+        html_file = self.setup_page("imrct", self.navbar["home"], title="IMR Consistency Test")
         html_file.make_banner(approximant="IMR Consistency Test", key=" ")
         desc = "Below we show the executive plots for the IMR consistency test"
-        html_file.make_banner(
-            approximant="Executative plots", key=desc, _style="font-size: 26px;"
-        )
+        html_file.make_banner(approximant="Executative plots", key=desc, _style="font-size: 26px;")
         path = self.image_path["other"]
         base_string = path + "imrct_{}.png"
         image_contents = [
-            [
-                base_string.format("final_mass_vs_final_spin_total"),
-                base_string.format("deviations_triangle_plot")
-            ]
+            [base_string.format("final_mass_vs_final_spin_total"), base_string.format("deviations_triangle_plot")]
         ]
         captions = [
             [
@@ -304,55 +292,54 @@ class TGRWebpageGeneration(_WebpageGeneration):
                     "This plot shows the 2D posterior distribution for the "
                     "final_mass -- final_spin parameter space. We show the "
                     "68% and 95% confidence regions."
-                ), (
+                ),
+                (
                     "This triangle plot shows the 2D and marginalized 1D "
                     "posterior distributions for the fractional parameters "
                     "fractional_final_mass and fractional_final_spin. The "
                     "prediction from General Relativity is shown"
-                )
+                ),
             ]
         ]
         html_file = self.make_modal_carousel(
-            html_file, image_contents, captions=captions, cli=[[" ", " "]],
-            unique_id=True, extra_div=True, autoscale=True
+            html_file,
+            image_contents,
+            captions=captions,
+            cli=[[" ", " "]],
+            unique_id=True,
+            extra_div=True,
+            autoscale=True,
         )
-        desc = (
-            "Below we show additional plots generated for the IMR consistency "
-            "test"
-        )
-        html_file.make_banner(
-            approximant="Additional plots", key=desc, _style="font-size: 26px;"
-        )
+        desc = "Below we show additional plots generated for the IMR consistency " "test"
+        html_file.make_banner(approximant="Additional plots", key=desc, _style="font-size: 26px;")
         image_contents = [
             [
                 base_string.format("final_mass_final_spin_inspiral"),
                 base_string.format("mass_1_mass_2_inspiral"),
-                base_string.format("a_1_a_2_inspiral")
-            ], [
+                base_string.format("a_1_a_2_inspiral"),
+            ],
+            [
                 base_string.format("final_mass_final_spin_ringdown"),
                 base_string.format("mass_1_mass_2_ringdown"),
-                base_string.format("a_1_a_2_ringdown")
-            ]
+                base_string.format("a_1_a_2_ringdown"),
+            ],
         ]
-        _base = (
-            "2D posterior distribution for {} estimated from the {} part of "
-            "the signal"
-        )
+        _base = "2D posterior distribution for {} estimated from the {} part of " "the signal"
         captions = [
             [
                 _base.format("final_mass and final_spin", "inspiral"),
                 _base.format("mass_1 and mass_2", "inspiral"),
-                _base.format("a_1 and a_2", "inspiral")
-            ], [
+                _base.format("a_1 and a_2", "inspiral"),
+            ],
+            [
                 _base.format("final_mass and final_spin", "ringdown"),
                 _base.format("mass_1 and mass_2", "ringdown"),
-                _base.format("a_1 and a_2", "ringdown")
-            ]
+                _base.format("a_1 and a_2", "ringdown"),
+            ],
         ]
         cli = [[" ", " ", " "]] * 2
         html_file = self.make_modal_carousel(
-            html_file, image_contents, captions=captions, cli=cli,
-            unique_id=True, autoscale=True
+            html_file, image_contents, captions=captions, cli=cli, unique_id=True, autoscale=True
         )
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
@@ -366,21 +353,17 @@ def main(args=None):
     _parser = parser(existing_parser=command_line())
     opts, unknown = _parser.parse_known_args(args=args)
     make_dir(opts.webdir)
-    open_files = {
-        _label: read(path).samples_dict for _label, path in zip(
-            opts.labels, opts.samples
-        )
-    }
+    open_files = {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
     test_key_data = {}
     if opts.test == "imrct":
         imrct_deviations, data = generate_imrct_deviation_parameters()
         make_imrct_plots(imrct_deviations, webdir=opts.webdir)
         test_key_data["imrct"] = data
     webpage = TGRWebpageGeneration(
-        opts.webdir, opts.samples, test=opts.test, open_files=open_files,
-        test_key_data=test_key_data
+        opts.webdir, opts.samples, test=opts.test, open_files=open_files, test_key_data=test_key_data
     )
     webpage.generate_webpages()
+
 
 if __name__ == "__main__":
     main()
