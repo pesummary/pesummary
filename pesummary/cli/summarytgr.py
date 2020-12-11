@@ -113,9 +113,9 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
     if webdir is None:
         webdir = "./"
 
-    plotdir = os.path.join(webdir, "plots")
+    plotdir = self.image_path["other"]
     make_dir(plotdir)
-    base_string = "imrct_{}.png"
+    base_string = path + "imrct_{}.png"
 
     plot_kwargs = dict(
         grid=True,
@@ -133,7 +133,7 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
         **plot_kwargs,
     )
 
-    fig.savefig(os.path.join(plotdir, base_string.format("deviations_triangle_plot")))
+    fig.savefig(base_string.format("deviations_triangle_plot"))
     fig.close()
     if make_diagnostic_plots:
         plot_kwargs = dict(
@@ -155,7 +155,7 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
                 **plot_kwargs,
             )
             save_string = "{}_{}".format(parameters[0], parameters[1])
-            fig.savefig(os.path.join(plotdir, base_string.format(save_string)))
+            fig.savefig(base_string.format(save_string))
             fig.close()
 
 
@@ -248,7 +248,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         """
         html_file = self.setup_page("home", self.navbar["home"])
         html_file.make_banner("Tests of General Relativity", key=" ")
-        image_contents = [[os.path.join(self.webdir, "plots", "imrct_deviations_triangle_plot.png")]]
+        image_contents = [[self.image_path["other"] + "imrct_deviations_triangle_plot.png"]]
         html_file = self.make_modal_carousel(html_file, image_contents=image_contents, unique_id=True)
         _banner_desc = "Below we show summary statistics associated with each test of GR"
         html_file.make_banner(approximant="Summary Statistics", key=_banner_desc, _style="font-size: 26px;")
