@@ -33,7 +33,6 @@ source classification probailities"""
 
 TESTS = ["imrct"]
 
-
 def command_line():
     """Generate an Argument Parser object to control the command line options
     """
