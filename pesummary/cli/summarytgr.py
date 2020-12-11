@@ -322,30 +322,20 @@ class TGRWebpageGeneration(_WebpageGeneration):
         html_file.make_banner(approximant="Additional plots", key=desc, _style="font-size: 26px;")
         image_contents = [
             [
-                base_string.format("final_mass_final_spin_inspiral"),
-                base_string.format("mass_1_mass_2_inspiral"),
-                base_string.format("a_1_a_2_inspiral"),
-            ],
-            [
-                base_string.format("final_mass_final_spin_postinspiral"),
-                base_string.format("mass_1_mass_2_postinspiral"),
-                base_string.format("a_1_a_2_postinspiral"),
+                base_string.format("final_mass_final_spin"),
+                base_string.format("mass_1_mass_2"),
+                base_string.format("a_1_a_2"),
             ],
         ]
-        _base = "2D posterior distribution for {} estimated from the {} part of " "the signal"
+        _base = "2D posterior distribution for {} estimated from the inspiral and post-inspiral parts of the signal"
         captions = [
             [
-                _base.format("final_mass and final_spin", "inspiral"),
-                _base.format("mass_1 and mass_2", "inspiral"),
-                _base.format("a_1 and a_2", "inspiral"),
-            ],
-            [
-                _base.format("final_mass and final_spin", "postinspiral"),
-                _base.format("mass_1 and mass_2", "postinspiral"),
-                _base.format("a_1 and a_2", "postinspiral"),
+                _base.format("final_mass and final_spin"),
+                _base.format("mass_1 and mass_2"),
+                _base.format("a_1 and a_2"),
             ],
         ]
-        cli = [[" ", " ", " "]] * 2
+        cli = [[" ", " ", " "]]
         html_file = self.make_modal_carousel(
             html_file, image_contents, captions=captions, cli=cli, unique_id=True, autoscale=True
         )
