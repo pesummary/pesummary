@@ -87,8 +87,9 @@ def generate_imrct_deviation_parameters(samples_dict, **kwargs):
     t1 = time.time()
     data = kwargs.copy()
     data["total_time"] = t1 - t0
+    data["gr_quantile"] = gr_quantile
 
-    return imrct_deviations, gr_quantile
+    return imrct_deviations, data
 
 
 def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
@@ -352,25 +353,23 @@ def main(args=None):
     open_files = {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
     test_key_data = {}
     if opts.test == "imrct":
-        samples_file_dict = dict(inspiral=opts.samples[0], postinspiral=opts.samples[1])
         samples_dict = dict()
+
+        for key, sample in open_files.items():
+            if "final_mass" not in sample.keys() or "final_mass_non_evolved" not in sample.keys():
+                sample.generate_all_posterior_samples()
+                converted = sample.keys()
+                if "final_mass" not in converted or "final_mass_non_evolved" in converted:
+                    raise
+
+        imrct_deviations, data = generate_imrct_deviation_parameters(open_files)
+        make_imrct_plots(imrct_deviations, samples_dict, webdir=opts.webdir)
+        test_key_data["imrct"] = data
 
     webpage = TGRWebpageGeneration(
         opts.webdir, opts.samples, test=opts.test, open_files=open_files, test_key_data=test_key_data
     )
     webpage.generate_webpages()
-
-    for key in samples_file_dict.keys():
-        f = GWRead(samples_file_dict[key])
-        if not isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
-            logger.info(
-                "Calculating Final Mass and Final Spin samples as they are not present in {} samples file".format(key)
-            )
-            f.generate_all_posterior_samples()
-        samples_dict[key] = f.samples_dict
-    imrct_deviations, gr_quantile = generate_imrct_deviation_parameters(samples_dict)
-    make_imrct_plots(imrct_deviations, samples_dict, webdir=opts.webdir)
-    test_key_data["imrct"] = gr_quantile
 
 
 if __name__ == "__main__":
