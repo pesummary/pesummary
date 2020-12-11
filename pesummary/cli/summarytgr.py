@@ -291,15 +291,10 @@ class TGRWebpageGeneration(_WebpageGeneration):
         path = self.image_path["other"]
         base_string = path + "imrct_{}.png"
         image_contents = [
-            [base_string.format("final_total_mass_final_total_spin"), base_string.format("deviations_triangle_plot")]
+            [base_string.format("deviations_triangle_plot")]
         ]
         captions = [
             [
-                (
-                    "This plot shows the 2D posterior distribution for the "
-                    "final_mass -- final_spin parameter space. We show the "
-                    "68% and 95% confidence regions."
-                ),
                 (
                     "This triangle plot shows the 2D and marginalized 1D "
                     "posterior distributions for the fractional parameters "
@@ -312,7 +307,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
             html_file,
             image_contents,
             captions=captions,
-            cli=[[" ", " "]],
+            cli=[[" "]],
             unique_id=True,
             extra_div=True,
             autoscale=True,
