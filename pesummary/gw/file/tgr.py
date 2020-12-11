@@ -210,7 +210,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     final_spin_postinspiral,
     final_mass_deviation_lim=1,
     final_spin_deviation_lim=1,
-    N_bins=401,
+    N_bins=101,
     multi_process=4,
     use_kde=False,
     kde=gaussian_kde,

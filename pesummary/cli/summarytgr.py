@@ -84,7 +84,7 @@ def generate_imrct_deviation_parameters(inspiral_samples_file, postinspiral_samp
                 "Calculating Final Mass and Final Spin samples as they are not present in {} samples file".format(key)
             )
             f.generate_all_posterior_samples()
-        samples_dict[key] = f.samples
+        samples_dict[key] = f.samples_dict
 
     t0 = time.time()
     imrct_deviations = imrct_deviation_parameters_from_final_mass_final_spin(
@@ -98,7 +98,7 @@ def generate_imrct_deviation_parameters(inspiral_samples_file, postinspiral_samp
     data = kwargs.copy()
     data["total_time"] = t1 - t0
 
-    return imrct_deviations
+    return imrct_deviations, 0.0
 
 
 def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
@@ -375,7 +375,7 @@ def main(args=None):
     open_files = {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
     test_key_data = {}
     if opts.test == "imrct":
-        imrct_deviations, data = generate_imrct_deviation_parameters()
+        imrct_deviations, data = generate_imrct_deviation_parameters(opts.samples[0], opts.samples[1])
         make_imrct_plots(imrct_deviations, webdir=opts.webdir)
         test_key_data["imrct"] = data
     webpage = TGRWebpageGeneration(
