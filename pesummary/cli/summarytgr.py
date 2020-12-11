@@ -127,7 +127,7 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
     fig.savefig(os.path.join(plotdir, "imrct_deviations_triangle_plot.png"))
 
     for key in ["inspiral", "postinspiral"]:
-        fig, _, _, _ = samples_dict.plot(
+        fig, _, _, _ = samples_dict[key].plot(
             ["final_mass_non_evolved", "final_spin_non_evolved"],
             type="triangle",
             smooth=4,
@@ -135,9 +135,9 @@ def make_imrct_plots(imrct_deviations, samples_dict, webdir=None):
             labels=[key],
         )
         fig.savefig(os.path.join(plotdir, "final_mass_final_spin_{}.png".format(key)))
-        fig, _, _, _ = samples_dict.plot(["mass_1", "mass_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
+        fig, _, _, _ = samples_dict[key].plot(["mass_1", "mass_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
         fig.savefig(os.path.join(plotdir, "mass_1_mass_2_{}.png".format(key)))
-        fig, _, _, _ = samples_dict.plot(["a_1", "a_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
+        fig, _, _, _ = samples_dict[key].plot(["a_1", "a_2"], type="triangle", smooth=4, fill_alpha=0.2, labels=[key])
         fig.savefig(os.path.join(plotdir, "a_1_a_2_{}.png".format(key)))
 
 
