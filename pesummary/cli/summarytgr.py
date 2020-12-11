@@ -23,6 +23,7 @@ from pesummary.io import read
 from pesummary.gw.pepredicates import PEPredicates
 from pesummary.gw.p_astro import PAstro
 from pesummary.utils.utils import make_dir, logger
+from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
 from pesummary.utils.exceptions import InputError
 import argparse
 
@@ -352,7 +353,10 @@ def main(args=None):
     _parser = parser(existing_parser=command_line())
     opts, unknown = _parser.parse_known_args(args=args)
     make_dir(opts.webdir)
-    open_files = {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
+
+    open_files = MultiAnalysisSamplesDict(
+        {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
+    )
     test_key_data = {}
     if opts.test == "imrct":
         samples_dict = dict()
