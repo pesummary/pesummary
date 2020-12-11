@@ -318,9 +318,9 @@ class TGRWebpageGeneration(_WebpageGeneration):
                 base_string.format("a_1_a_2_inspiral"),
             ],
             [
-                base_string.format("final_mass_final_spin_ringdown"),
-                base_string.format("mass_1_mass_2_ringdown"),
-                base_string.format("a_1_a_2_ringdown"),
+                base_string.format("final_mass_final_spin_postinspiral"),
+                base_string.format("mass_1_mass_2_postinspiral"),
+                base_string.format("a_1_a_2_postinspiral"),
             ],
         ]
         _base = "2D posterior distribution for {} estimated from the {} part of " "the signal"
@@ -331,9 +331,9 @@ class TGRWebpageGeneration(_WebpageGeneration):
                 _base.format("a_1 and a_2", "inspiral"),
             ],
             [
-                _base.format("final_mass and final_spin", "ringdown"),
-                _base.format("mass_1 and mass_2", "ringdown"),
-                _base.format("a_1 and a_2", "ringdown"),
+                _base.format("final_mass and final_spin", "postinspiral"),
+                _base.format("mass_1 and mass_2", "postinspiral"),
+                _base.format("a_1 and a_2", "postinspiral"),
             ],
         ]
         cli = [[" ", " ", " "]] * 2
