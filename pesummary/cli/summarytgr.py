@@ -77,6 +77,7 @@ def generate_imrct_deviation_parameters(samples, **kwargs):
     import time
 
     t0 = time.time()
+    logger.info("Calculating IMRCT deviation parameters and GR Quantile")
     imrct_deviations = imrct_deviation_parameters_from_final_mass_final_spin(
         samples["inspiral"]["final_mass_non_evolved"],
         samples["inspiral"]["final_spin_non_evolved"],
@@ -91,6 +92,8 @@ def generate_imrct_deviation_parameters(samples, **kwargs):
     data = kwargs.copy()
     data["total_time"] = t1 - t0
     data["gr_quantile"] = gr_quantile
+
+    logger.info("Calculation Finished in {} seconds. GR Quantile is {} %.".format(t1 - t0, gr_quantile))
 
     return imrct_deviations, data
 
@@ -117,6 +120,7 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
     plotdir = os.path.join(webdir, "plots/")
     make_dir(plotdir)
     base_string = plotdir + "imrct_{}.png"
+    logger.info("Creating IMRCT deviations triangle plot")
 
     plot_kwargs = dict(
         grid=True,
@@ -136,7 +140,10 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
 
     fig.savefig(base_string.format("deviations_triangle_plot"))
     fig.close()
+    logger.info("Finished creating IMRCT deviations triangle plot.")
+
     if make_diagnostic_plots:
+        logger.info("Creating diagnostic plots")
         plot_kwargs = dict(
             grid=True,
             smooth=4,
@@ -158,6 +165,7 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
             save_string = "{}_{}".format(parameters[0], parameters[1])
             fig.savefig(base_string.format(save_string))
             fig.close()
+        logger.info("Finished creating diagnostic plots.")
 
 
 class TGRWebpageGeneration(_WebpageGeneration):
@@ -384,6 +392,7 @@ def main(args=None):
         )
         test_key_data["imrct"] = data
 
+    logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
         opts.webdir, opts.samples, test=opts.test, open_files=open_files, test_key_data=test_key_data
     )
