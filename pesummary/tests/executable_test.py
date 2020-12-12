@@ -447,6 +447,58 @@ class TestSummaryClassification(Base):
         self.launch(command_line)
         self.check_output()
 
+class TestSummaryTGR(Base):
+    """Test the `summarytgr` executable
+    """
+    def setup(self):
+        """Setup the SummaryTGR class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        make_result_file(pesummary=True, gw=True, pesummary_label="test")
+        os.rename(".outdir/test.json", ".outdir/pesummary.json")
+        make_result_file(bilby=True, gw=True)
+        os.rename(".outdir/test.json", ".outdir/bilby.json")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def check_output(self):
+        """Check the output from the `summarytgr` executable
+        """
+        import glob
+
+        image_files = glob.glob(".outdir/plots/*")
+        image_base_string = ".outdir/plots/imrct_{}.png"
+        file_strings = ["deviations_triangle_plot", "mass_1_mass_2", "a_1_a_2", "final_mass_non_evolved_final_spin_non_evolved"]
+        for file_string in file_strings:
+            assert image_base_string.format(file_string) in image_files
+
+    def test_result_file(self):
+        """Test the `summarytgr` executable for a random result file
+        """
+        command_line = (
+            "summarytgr --webdir .outdir --samples --test imrct "
+            ".outdir/bilby.json .outdir/bilby.json --labels "
+            "inspiral postinspiral --make-diagnostic-plots"
+        )
+
+        self.launch(command_line)
+        self.check_output()
+
+    def test_pesummary_file(self):
+        """Test the `summarytgr` executable for a pesummary metafile
+        """
+        command_line = (
+            "summarytgr --webdir .outdir --samples --test imrct "
+            ".outdir/pesummary.json .outdir/pesummary.json --labels "
+            "inspiral postinspiral --make-diagnostic-plots"
+        )
+        self.launch(command_line)
+        self.check_output()
 
 class TestSummaryClean(Base):
     """Test the `summaryclean` executable
