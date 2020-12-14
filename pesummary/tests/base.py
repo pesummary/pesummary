@@ -42,7 +42,7 @@ def gw_parameters():
     return parameters
 
 
-def get_list_of_files(gw=False, number=1):
+def get_list_of_files(gw=False, number=1, existing_plot=False):
     """Return a list of files that should be generated from a typical workflow
     """
     if not gw:
@@ -72,6 +72,8 @@ def get_list_of_files(gw=False, number=1):
         ))
         for j in parameters:
             html.append("./.outdir/html/%s%s_%s%s_%s.html" % (label, num, label, num, j))
+        if existing_plot:
+            html.append("./.outdir/html/%s%s_%s%s_Additional.html" % (label, num, label, num))
 
     if number > 1:
         html.append("./.outdir/html/Comparison.html")
@@ -86,7 +88,7 @@ def get_list_of_files(gw=False, number=1):
 
 def get_list_of_plots(
     gw=False, number=1, mcmc=False, label=None, outdir=".outdir",
-    comparison=True, psd=False, calibration=False
+    comparison=True, psd=False, calibration=False, existing_plot=False
 ):
     """Return a list of plots that should be generated from a typical workflow
     """
@@ -113,6 +115,8 @@ def get_list_of_plots(
             plots.append("./%s/plots/%s%s_psd_plot.png" % (outdir, label, num))
         if calibration:
             plots.append("./%s/plots/%s%s_calibration_plot.png" % (outdir, label, num))
+        if existing_plot:
+            plots.append("./%s/plots/test.png" % (outdir))
     if number > 1 and comparison:
         for i in ["1d_posterior", "boxplot", "cdf"]:
             for j in parameters:

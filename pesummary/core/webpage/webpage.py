@@ -303,6 +303,12 @@ class page(Base):
         elif key == "corner":
             self.add_content(
                 "Below is the custom corner plotter for %s" % (approximant))
+        elif key == "additional":
+            self.add_content(
+                "Below we show plots which have been generated previously "
+                "and passed to pesummary via the `--add_existing_plot` "
+                "command line argument"
+            )
         elif key == "interactive_corner":
             self.add_content(
                 "Below are interative corner plots for %s. Simply use the "
@@ -716,7 +722,7 @@ class page(Base):
     def make_table_of_images(self, contents=None, rows=None, columns=None,
                              code="modal", cli=None, autoscale=False,
                              unique_id=None, captions=None, extra_div=False,
-                             mcmc_samples=False):
+                             mcmc_samples=False, margin_left=None):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -737,7 +743,8 @@ class page(Base):
                                        code=code, cli=cli, autoscale=autoscale,
                                        unique_id=unique_id, captions=captions,
                                        extra_div=extra_div,
-                                       mcmc_samples=mcmc_samples)
+                                       mcmc_samples=mcmc_samples,
+                                       margin_left=margin_left)
         table.make()
 
     def insert_image(self, path, justify="center", code=None):

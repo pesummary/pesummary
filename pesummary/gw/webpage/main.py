@@ -118,7 +118,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
         disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False,
         psd=None, priors=None, package_information={"packages": []},
-        mcmc_samples=False, external_hdf5_links=False, preliminary_pages=False
+        mcmc_samples=False, external_hdf5_links=False, preliminary_pages=False,
+        existing_plot=None
     ):
         self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
@@ -151,6 +152,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             disable_interactive=disable_interactive,
             package_information=package_information, mcmc_samples=mcmc_samples,
             external_hdf5_links=external_hdf5_links, key_data=key_data,
+            existing_plot=existing_plot
         )
         if self.file_kwargs is None:
             self.file_kwargs = {

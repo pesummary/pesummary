@@ -386,6 +386,13 @@ def _plotting_command_line_arguments(parser):
         "--add_to_corner", dest="add_to_corner", default=None,
         nargs="+", help="Parameters you wish to include in the corner plot"
     )
+    plot_group.add_argument(
+        "--add_existing_plot", dest="existing_plot", nargs="+", default=None,
+        action=DictionaryAction, help=(
+            "Path(s) to existing plots that you wish to add to the "
+            "summarypages. Should be of the form {label}:{path}"
+        )
+    )
     return plot_group
 
 

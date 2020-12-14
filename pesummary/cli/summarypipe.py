@@ -113,7 +113,7 @@ class Base(object):
         "samples": "samples", "config": "config", "webdir": "webdir",
         "approximant": "approximant", "labels": "label", "{}_psd": "psd",
         "{}_calibration": "calibration", "gwdata": "gwdata",
-        "prior_file": "prior_file"
+        "prior_file": "prior_file", "add_existing_plot": "add_existing_plot"
     }
 
     def __init__(
@@ -138,6 +138,7 @@ class Base(object):
         self.gracedb = None
         self.approximant = None
         self.prior_file = None
+        self.add_existing_plot = None
         self.psd = None
         self.calibration = None
         self.gwdata = None
@@ -270,6 +271,14 @@ class Base(object):
     @prior_file.setter
     def prior_file(self, prior_file):
         self._prior_file = self.prior_file_fallback()
+
+    @property
+    def add_existing_plot(self):
+        return self._add_existing_plot
+
+    @add_existing_plot.setter
+    def add_existing_plot(self, add_existing_plot):
+        self._add_existing_plot = self.add_existing_plot_fallback()
 
     @property
     def psd(self):
@@ -479,6 +488,9 @@ class Base(object):
     def prior_file_fallback(self):
         return
 
+    def add_existing_plot_fallback(self):
+        return
+
     def psd_fallback(self):
         return
 
@@ -665,6 +677,14 @@ class Bilby(Base):
             allow_failure=True
         )
 
+    def add_existing_plot_fallback(self):
+        """Grab the trace checkpoint plots generated from a Bilby run directory
+        """
+        existing_plots = self.glob(self.rundir, "*checkpoint*.png")
+        return " ".join(
+            ["{}:{}".format(self.label, _plot) for _plot in existing_plots]
+        )
+
     def psd_fallback(self):
         """Try and grab PSD data from a Bilby configuration file else
         look in the rundir for any PSD files
@@ -712,6 +732,8 @@ class Bilby(Base):
         from pesummary.core.command_line import ConfigAction
 
         data_dict = self.try_underscore_and_hyphen(config["config"], pattern)
+        if data_dict is None or data_dict == "None":
+            return
         try:
             data_dict = ConfigAction.dict_from_str(data_dict, delimiter=":")
         except IndexError:
