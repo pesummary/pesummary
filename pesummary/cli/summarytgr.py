@@ -90,10 +90,10 @@ def generate_imrct_deviation_parameters(samples, **kwargs):
     )
     t1 = time.time()
     data = kwargs.copy()
-    data["total_time"] = t1 - t0
-    data["gr_quantile"] = gr_quantile
+    data["Time"] = t1 - t0
+    data["GR Quantile (%)"] = gr_quantile[0]
 
-    logger.info("Calculation Finished in {} seconds. GR Quantile is {} %.".format(t1 - t0, gr_quantile))
+    logger.info("Calculation Finished in {} seconds. GR Quantile is {} %.".format(t1 - t0, gr_quantile[0]))
 
     return imrct_deviations, data
 
@@ -126,17 +126,17 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
         grid=True,
         smooth=4,
         type="triangle",
-        truth=[0.0, 0.0],
         cmap="YlOrBr",
         levels=[0.68, 0.95],
-        level_kwargs={"colors": ["k", "k"]},
+        level_kwargs=dict(colors=["k", "k"]),
         xlabel=r"$\Delta M_{\mathrm{f}} / \bar{M_{\mathrm{f}}}$",
         ylabel=r"$\Delta a_{\mathrm{f}} / \bar{a_{\mathrm{f}}}$",
     )
-    fig, _, _, _ = imrct_deviations.plot(
+    fig, _, ax_2d, _ = imrct_deviations.plot(
         "final_mass_final_spin_deviations",
         **plot_kwargs,
     )
+    ax_2d.plot(0, 0, 'k+', ms=12, mew=2)
 
     fig.savefig(base_string.format("deviations_triangle_plot"))
     fig.close()
@@ -384,7 +384,7 @@ def main(args=None):
                 sample.generate_all_posterior_samples()
                 converted = sample.keys()
                 if "final_mass" not in converted and "final_mass_non_evolved" not in converted:
-                    raise KeyError
+                    raise KeyError("Remnant properties not in samples.")
 
         imrct_deviations, data = generate_imrct_deviation_parameters(open_files)
         make_imrct_plots(
