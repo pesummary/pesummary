@@ -52,13 +52,14 @@ def command_line():
     )
     parser.add_argument("-s", "--samples", dest="samples", help="Posterior samples hdf5 file", nargs="+", default=None)
     parser.add_argument("--labels", dest="labels", help="labels used to distinguish runs", nargs="+", default=None)
+    parser.add_argument("--evolve_spins", dest="evolve_spins", help="Evolve spins while calculating remnant quantities",  action="store_true")
     parser.add_argument(
         "--make-diagnostic-plots", dest="make_diagnostic_plots", help="Make extra diagnostic plots", action="store_true"
     )
     return parser
 
 
-def generate_imrct_deviation_parameters(samples, **kwargs):
+def generate_imrct_deviation_parameters(samples, evolve_spins=True, **kwargs):
     """Generate deviation parameter pdfs for the IMR Consistency Test
 
     Parameters
@@ -78,11 +79,16 @@ def generate_imrct_deviation_parameters(samples, **kwargs):
 
     t0 = time.time()
     logger.info("Calculating IMRCT deviation parameters and GR Quantile")
+    evolve_spins_string = "evolved"
+    if not evolve_spins:
+        evolve_spins_string = "non_" + evolve_spins_string
+
+    samples_string = "final_{}_" + evolve_spins_string
     imrct_deviations = imrct_deviation_parameters_from_final_mass_final_spin(
-        samples["inspiral"]["final_mass_non_evolved"],
-        samples["inspiral"]["final_spin_non_evolved"],
-        samples["postinspiral"]["final_mass_non_evolved"],
-        samples["postinspiral"]["final_spin_non_evolved"],
+        samples["inspiral"][samples_string.format("mass")],
+        samples["inspiral"][samples_string.format("spin")],
+        samples["postinspiral"][samples_string.format("mass")],
+        samples["postinspiral"][samples_string.format("spin")],
         **kwargs,
     )
     gr_quantile = (
@@ -90,6 +96,7 @@ def generate_imrct_deviation_parameters(samples, **kwargs):
     )
     t1 = time.time()
     data = kwargs.copy()
+    data["evolve_spin"] = evolve_spins
     data["Time"] = t1 - t0
     data["GR Quantile (%)"] = gr_quantile[0]
 
@@ -373,6 +380,12 @@ def main(args=None):
     _parser = parser(existing_parser=command_line())
     opts, unknown = _parser.parse_known_args(args=args)
     make_dir(opts.webdir)
+    evolve_spins_string = "evolved"
+    if not opts.evolve_spins:
+        evolve_spins = opts.evolve_spins
+        evolve_spins_string = "non_" + evolve_spins_string
+    else:
+        evolve_spins = "ISCO"
 
     open_files = MultiAnalysisSamplesDict(
         {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
@@ -380,13 +393,17 @@ def main(args=None):
     test_key_data = {}
     if opts.test == "imrct":
         for key, sample in open_files.items():
-            if "final_mass" not in sample.keys() or "final_mass_non_evolved" not in sample.keys():
-                sample.generate_all_posterior_samples()
-                converted = sample.keys()
-                if "final_mass" not in converted and "final_mass_non_evolved" not in converted:
-                    raise KeyError("Remnant properties not in samples.")
+            if "final_mass_{}".format(evolve_spins_string) not in sample.keys():
+                logger.info("Remnant properties not in samples, trying to generate them")
+                print(opts.evolve_spins)
+                sample.generate_all_posterior_samples(evolve_spins=evolve_spins)
+                converted_keys = sample.keys()
+                if "final_mass_{}".format(evolve_spins_string) not in converted_keys:
+                    raise KeyError("Remnant properties not in samples and cannot be generated")
+                else:
+                    logger.info("Remnant properties generated.")
 
-        imrct_deviations, data = generate_imrct_deviation_parameters(open_files)
+        imrct_deviations, data = generate_imrct_deviation_parameters(open_files, evolve_spins=opts.evolve_spins)
         make_imrct_plots(
             imrct_deviations, open_files, webdir=opts.webdir, make_diagnostic_plots=opts.make_diagnostic_plots
         )
