@@ -122,7 +122,8 @@ class _WebpageGeneration(object):
         existing_weights=None, add_to_existing=False, notes=None,
         disable_comparison=False, disable_interactive=False,
         package_information={"packages": [], "manager": "pypi"},
-        mcmc_samples=False, external_hdf5_links=False, key_data=None
+        mcmc_samples=False, external_hdf5_links=False, key_data=None,
+        existing_plot=None
     ):
         self.webdir = webdir
         make_dir(self.webdir)
@@ -175,6 +176,7 @@ class _WebpageGeneration(object):
         self.package_information = package_information
         self.mcmc_samples = mcmc_samples
         self.external_hdf5_links = external_hdf5_links
+        self.existing_plot = existing_plot
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -356,6 +358,12 @@ class _WebpageGeneration(object):
                 final_links[label].append(
                     ["Interactive", [{"Interactive_Corner": label}]]
                 )
+        if self.existing_plot is not None:
+            for _label in self.labels:
+                if _label in self.existing_plot.keys():
+                    final_links[_label].append(
+                        {"Additional": _label}
+                    )
         return final_links
 
     def make_navbar_for_comparison_page(self):
@@ -455,6 +463,8 @@ class _WebpageGeneration(object):
             self.make_comparison_pages()
         if self.make_interactive:
             self.make_interactive_pages()
+        if self.existing_plot is not None:
+            self.make_additional_plots_pages()
         self.make_error_page()
         self.make_version_page()
         self.make_logging_page()
@@ -725,6 +735,82 @@ class _WebpageGeneration(object):
                 ]
                 html_file.make_table_of_images(
                     contents=contents, rows=1, columns=2, code="changeimage")
+            html_file.close()
+
+    def make_additional_plots_pages(self):
+        """Wrapper function for _make_additional_plots_pages
+        """
+        pages = [
+            "{}_{}_Additional".format(i, i) for i in self.labels if i in
+            self.existing_plot.keys()
+        ]
+        self.create_blank_html_pages(pages)
+        self._make_additional_plots_pages(pages)
+
+    def _make_additional_plots_pages(self, pages):
+        """Make the additional plots pages
+
+        Parameters
+        ----------
+        pages: list
+            list of pages that you wish to create
+        """
+        from PIL import Image
+        for num, i in enumerate(self.labels):
+            if i not in self.existing_plot.keys():
+                continue
+            html_file = self.setup_page(
+                "{}_Additional".format(i), self.navbar["result_page"][i], i,
+                title="Additional plots for {}".format(i), approximant=i,
+                background_colour=self.colors[num]
+            )
+            html_file.make_banner(approximant=i, key="additional")
+            if isinstance(self.existing_plot[i], list):
+                images = sorted(
+                    self.existing_plot[i],
+                    key=lambda _path: Image.open(_path).size[1]
+                )
+                tol = 2.
+                # if all images are of similar height, then grid them uniformly, else
+                # grid by heights
+                cond = all(
+                    Image.open(_path).size[1] / tol < Image.open(images[0]).size[1]
+                    for _path in images
+                )
+                if cond:
+                    image_contents = [
+                        [
+                            self.image_path["other"] + Path(_path).name for
+                            _path in images[j:4 + j]
+                        ] for j in range(0, len(self.existing_plot[i]), 4)
+                    ]
+                else:
+                    heights = [Image.open(_path).size[1] for _path in images]
+                    image_contents = [
+                        [self.image_path["other"] + Path(images[0]).name]
+                    ]
+                    row = 0
+                    for num, _height in enumerate(heights[1:]):
+                        if _height / tol < heights[num]:
+                            image_contents[row].append(
+                                self.image_path["other"] + Path(images[num + 1]).name
+                            )
+                        else:
+                            row += 1
+                            image_contents.append(
+                                [self.image_path["other"] + Path(images[num + 1]).name]
+                            )
+                margin_left = None
+            else:
+                image_contents = [
+                    [self.image_path["other"] + Path(self.existing_plot[i]).name]
+                ]
+                margin_left = "-250px"
+            html_file = self.make_modal_carousel(
+                html_file, image_contents, unique_id=True, autoscale=True,
+                margin_left=margin_left
+            )
+            html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
     def make_corner_pages(self):
