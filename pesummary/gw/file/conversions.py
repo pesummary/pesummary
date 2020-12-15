@@ -1,4 +1,4 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
+# Copyright (C) 2018 Charlie Hoy <charlie.hoy@ligo.org>
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -29,7 +29,9 @@ try:
         FLAG_SEOBNRv4P_EULEREXT_QNM_SIMPLE_PRECESSION,
         FLAG_SEOBNRv4P_ZFRAME_L, SimNeutronStarEOS4ParameterPiecewisePolytrope,
         SimNeutronStarRadius, CreateSimNeutronStarFamily,
-        SimNeutronStarLoveNumberK2, SimNeutronStarEOS4ParameterSpectralDecomposition
+        SimNeutronStarLoveNumberK2, SimNeutronStarEOS4ParameterSpectralDecomposition,
+        SimIMRPhenomNSBHProperties, SimNSBH_compactness_from_lambda,
+        SimIMRPhenomNSBH_baryonic_mass_from_C
     )
     from lal import MSUN_SI, C_SI, MRSUN_SI
     LALINFERENCE_INSTALL = True
@@ -650,6 +652,186 @@ def lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
 
 
 @array_input
+def NS_compactness_from_lambda(lambda_x):
+    """Calculate neutron star compactness from its tidal deformability
+    """
+    data = np.zeros(len(lambda_x))
+    for num, _lambda in enumerate(lambda_x):
+        data[num] = SimNSBH_compactness_from_lambda(_lambda)
+    return data
+
+
+@array_input
+def NS_baryonic_mass(compactness, NS_mass):
+    """Calculate the neutron star baryonic mass from its compactness and
+    gravitational mass in solar masses
+    """
+    data = np.zeros(len(NS_mass))
+    for num in np.arange(len(NS_mass)):
+        data[num] = SimIMRPhenomNSBH_baryonic_mass_from_C(
+            compactness[num], NS_mass[num]
+        )
+    return data
+
+
+@array_input
+def _IMRPhenomNSBH_properties(mass_1, mass_2, a_1, lambda_2):
+    """Calculate NSBH specific properties using the IMRPhenomNSBH waveform
+    model given samples for mass_1, mass_2, a_1 and lambda_2. mass_1 and
+    mass_2 should be in solar mass units
+    """
+    data = np.zeros((len(mass_1), 6))
+    for num in range(len(mass_1)):
+        data[num] = SimIMRPhenomNSBHProperties(
+            float(mass_1[num]) * MSUN_SI, float(mass_2[num]) * MSUN_SI,
+            float(a_1[num]), float(lambda_2[num])
+        )
+    transpose_data = data.T
+    # convert final mass and torus mass to solar masses
+    transpose_data[2] /= MSUN_SI
+    transpose_data[4] /= MSUN_SI
+    return transpose_data
+
+
+def _check_NSBH_approximant(approximant, *args, _raise=True):
+    """Check that the supplied NSBH waveform model is allowed
+    """
+    if approximant.lower() == "imrphenomnsbh":
+        return _IMRPhenomNSBH_properties(*args)
+    msg = "Currently only the IMRPhenomNSBH waveform model can be used."
+    if not _raise:
+        logger.warn(msg)
+    else:
+        raise ValueError(msg)
+
+
+@array_input
+def NSBH_merger_type(
+    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH",
+    percentages=True, percentage_round=2, _ringdown=None, _disruption=None,
+    _torus=None
+):
+    """Determine the merger type based on the disruption frequency, ringdown
+    frequency and torus mass. If percentages = True, a dictionary is returned
+    showing the number of samples which fall in each category. If
+    percentages = False, an array of length mass_1 is returned with
+    elements indicating the merger type for each sample
+    """
+    _type = np.zeros(len(mass_1), dtype='U15')
+    _type[:] = "disruptive"
+    if not all(param is not None for param in [_ringdown, _disruption, _torus]):
+        ringdown, disruption, torus, _, _, _ = _check_NSBH_approximant(
+            approximant, mass_1, mass_2, a_1, lambda_2
+        )
+    else:
+        ringdown = _ringdown
+        disruption = _disruption
+        torus = _torus
+    freq_ratio = disruption / ringdown
+    non_disruptive_inds = np.where(freq_ratio > 1)
+    _type[non_disruptive_inds] = "non_disruptive"
+    mildly_disruptive_inds = np.where((freq_ratio < 1) & (torus == 0))
+    _type[mildly_disruptive_inds] = "mildly_disruptive"
+    if percentages:
+        _percentages = {
+            "non_disruptive": 100 * len(non_disruptive_inds[0]) / len(mass_1),
+            "mildly_disruptive": 100 * len(mildly_disruptive_inds[0]) / len(mass_1)
+        }
+        _percentages["disruptive"] = (
+            100 - _percentages["non_disruptive"] - _percentages["mildly_disruptive"]
+        )
+        for key, value in _percentages.items():
+            _percentages[key] = np.round(value, percentage_round)
+        return _percentages
+    return _type
+
+
+@array_input
+def NSBH_ringdown_frequency(
+    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+):
+    """Calculate the ringdown frequency given samples for mass_1, mass_2, a_1,
+    lambda_2. mass_1 and mass_2 should be in solar mass units.
+    """
+    return _check_NSBH_approximant(
+        approximant, mass_1, mass_2, a_1, lambda_2
+    )[0]
+
+
+@array_input
+def NSBH_tidal_disruption_frequency(
+    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+):
+    """Calculate the tidal disruption frequency given samples for mass_1,
+    mass_2, a_1, lambda_2. mass_1 and mass_2 should be in solar mass units.
+    """
+    return _check_NSBH_approximant(
+        approximant, mass_1, mass_2, a_1, lambda_2
+    )[1]
+
+
+@array_input
+def NSBH_baryonic_torus_mass(
+    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+):
+    """Calculate the baryonic torus mass given samples for mass_1, mass_2, a_1,
+    lambda_2. mass_1 and mass_2 should be in solar mass units.
+    """
+    return _check_NSBH_approximant(
+        approximant, mass_1, mass_2, a_1, lambda_2
+    )[2]
+
+
+@array_input
+def NS_compactness_from_NSBH(
+    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+):
+    """Calculate the neutron star compactness given samples for mass_1, mass_2,
+    a_1, lambda_2. mass_1 and mass_2 should be in solar mass units.
+    """
+    return _check_NSBH_approximant(
+        approximant, mass_1, mass_2, a_1, lambda_2
+    )[3]
+
+
+@array_input
+def final_mass_of_merger_from_NSBH(
+    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+):
+    """Calculate the final mass resulting from an NSBH merger using NSBH
+    waveform models given samples for mass_1, mass_2, a_1 and lambda_2.
+    mass_1 and mass_2 should be in solar mass units.
+    """
+    return _check_NSBH_approximant(
+        approximant, mass_1, mass_2, a_1, lambda_2
+    )[4]
+
+
+@array_input
+def final_spin_of_merger_from_NSBH(
+    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+):
+    """Calculate the final spin resulting from an NSBH merger using NSBH
+    waveform models given samples for mass_1, mass_2, a_1 and lambda_2.
+    mass_1 and mass_2 should be in solar mass units.
+    """
+    return _check_NSBH_approximant(
+        approximant, mass_1, mass_2, a_1, lambda_2
+    )[5]
+
+
+@array_input
+def _final_from_initial_NSBH(*args, **kwargs):
+    """Calculate the final mass and final spin given the initial parameters
+    of the binary using the approximant directly
+    """
+    return [
+        final_mass_of_merger_from_NSBH(*args, **kwargs),
+        final_spin_of_merger_from_NSBH(*args, **kwargs)
+    ]
+
+
+@array_input
 def _ifo_snr(IFO_abs_snr, IFO_snr_angle):
     """Return the matched filter SNR for a given IFO given samples for the
     absolute SNR and the angle
@@ -852,7 +1034,7 @@ def _setup_SEOBNRv4P_args(mode=[2, 2], seob_flags=DEFAULT_SEOBFLAGS):
 
 
 @array_input
-def _final_from_initial(
+def _final_from_initial_BBH(
     mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
     approximant="SEOBNRv4", iota=None, luminosity_distance=None, f_ref=None,
     phi_ref=None, mode=[2, 2], delta_t=1. / 4096, seob_flags=DEFAULT_SEOBFLAGS,
@@ -1137,11 +1319,18 @@ def final_mass_of_merger_from_NRSurrogate(
     return data["final_mass"]
 
 
-def final_mass_of_merger_from_waveform(*args, **kwargs):
-    """Return the final mass resulting from a BBH merger using a given
+def final_mass_of_merger_from_waveform(*args, NSBH=False, **kwargs):
+    """Return the final mass resulting from a BBH/NSBH merger using a given
     approximant
+
+    Parameters
+    ----------
+    NSBH: Bool, optional
+        if True, use NSBH waveform fits. Default False
     """
-    return _final_from_initial(*args, **kwargs)[0]
+    if NSBH or "nsbh" in kwargs.get("approximant", "").lower():
+        return _final_from_initial_NSBH(*args, **kwargs)[1]
+    return _final_from_initial_BBH(*args, **kwargs)[0]
 
 
 def final_spin_of_merger_from_NR(
@@ -1196,11 +1385,18 @@ def final_spin_of_merger_from_NRSurrogate(
     return data["final_spin"]
 
 
-def final_spin_of_merger_from_waveform(*args, **kwargs):
-    """Return the final spin resulting from a BBH merger using a given
-    approximant
+def final_spin_of_merger_from_waveform(*args, NSBH=False, **kwargs):
+    """Return the final spin resulting from a BBH/NSBH merger using a given
+    approximant.
+
+    Parameters
+    ----------
+    NSBH: Bool, optional
+        if True, use NSBH waveform fits. Default False
     """
-    return _final_from_initial(*args, **kwargs)[1]
+    if NSBH or "nsbh" in kwargs.get("approximant", "").lower():
+        return _final_from_initial_NSBH(*args, **kwargs)[1]
+    return _final_from_initial_BBH(*args, **kwargs)[1]
 
 
 def final_kick_of_merger_from_NRSurrogate(
@@ -1269,7 +1465,7 @@ def final_mass_of_merger(
 
 def final_spin_of_merger(
     *args, method="NR", approximant="SEOBNRv4", NRfit="average",
-    return_fits_used: False, model="NRSur7dq4Remnant"
+    return_fits_used=False, model="NRSur7dq4Remnant"
 ):
     """Return the final mass resulting from a BBH merger
 
@@ -1462,8 +1658,8 @@ class _Conversion(object):
     force_non_evolved: Bool, optional
         force non evolved remnant quantities to be calculated when evolved quantities
         already exist in the input. Default False
-    force_remnant_computation: Bool, optional
-        force remnant quantities to be calculated for systems that include
+    force_BBH_remnant_computation: Bool, optional
+        force BBH remnant quantities to be calculated for systems that include
         tidal deformability parameters where BBH fits may not be applicable.
         Default False.
     disable_remnant: Bool, optional
@@ -1525,7 +1721,7 @@ class _Conversion(object):
         redshift_method = kwargs.get("redshift_method", "approx")
         cosmology = kwargs.get("cosmology", "Planck15")
         force_non_evolved = kwargs.get("force_non_evolved", False)
-        force_remnant = kwargs.get("force_remnant_computation", False)
+        force_remnant = kwargs.get("force_BBH_remnant_computation", False)
         disable_remnant = kwargs.get("disable_remnant", False)
         if redshift_method not in ["approx", "exact"]:
             raise ValueError(
@@ -1550,8 +1746,8 @@ class _Conversion(object):
                 _disable.append("force_non_evolved")
                 force_non_evolved = False
             if force_remnant:
-                _disable.append("force_remnant_computation")
-                force_remnant_computation = False
+                _disable.append("force_BBH_remnant_computation")
+                force_remnant = False
             if NRSurrogate:
                 _disable.append("NRSur_fits")
                 NRSurrogate = False
@@ -1684,14 +1880,29 @@ class _Conversion(object):
             )
             evolve_spins = False
         self.has_tidal = self._check_for_tidal_parameters()
+        self.NSBH = self._check_for_NSBH_system()
         self.compute_remnant = not self.disable_remnant
-        if force_remnant and self.has_tidal:
+        if self.has_tidal and force_remnant and self.NSBH and self.compute_remnant:
+            logger.warning(
+                "Posterior samples for lambda_2 found in the posterior table "
+                "but unable to find samples for lambda_1. Assuming this "
+                "is an NSBH system. 'force_remnant' provided so using BBH "
+                "fits for this system. This may not give sensible results."
+            )
+        elif self.has_tidal and self.NSBH and self.compute_remnant:
+            logger.warning(
+                "Posterior samples for lambda_2 found in the posterior table "
+                "but unable to find samples for lambda_1. Applying NSBH "
+                "fits to this system."
+            )
+            self.waveform_fit = True
+        elif force_remnant and self.has_tidal and self.compute_remnant:
             logger.warning(
                 "Posterior samples for tidal deformability found in the "
                 "posterior table. Applying BBH remnant fits to this system. "
                 "This may not give sensible results."
             )
-        elif self.has_tidal:
+        elif self.has_tidal and self.compute_remnant:
             if evolve_spins:
                 msg = (
                     "Not applying spin evolution as tidal parameters found "
@@ -1715,6 +1926,14 @@ class _Conversion(object):
         from pesummary.gw.file.standard_names import tidal_params
 
         if any(param in self.parameters for param in tidal_params):
+            return True
+        return False
+
+    def _check_for_NSBH_system(self):
+        """Check to see if the posterior samples correspond to an NSBH
+        system
+        """
+        if "lambda_2" in self.parameters and "lambda_1" not in self.parameters:
             return True
         return False
 
@@ -2092,6 +2311,34 @@ class _Conversion(object):
             samples[0], samples[1], samples[2], samples[3])
         self.append_data("delta_lambda", delta_lambda)
 
+    def _NS_compactness_from_lambda(self, parameter="lambda_1"):
+        if parameter not in ["lambda_1", "lambda_2"]:
+            logger.warn(
+                "Can only use Love-compactness relation for 'lambda_1' and/or "
+                "'lambda_2'. Skipping conversion"
+            )
+            return
+        ind = parameter.split("lambda_")[1]
+        samples = self.specific_parameter_samples([parameter])
+        compactness = NS_compactness_from_lambda(samples[0])
+        self.append_data("compactness_{}".format(ind), compactness)
+        self.extra_kwargs["meta_data"]["compactness_fits"] = (
+            "YagiYunes2017_with_BBHlimit"
+        )
+
+    def _NS_baryonic_mass(self, primary=True):
+        if primary:
+            params = ["compactness_1", "mass_1"]
+        else:
+            params = ["compactness_2", "mass_2"]
+        samples = self.specific_parameter_samples(params)
+        mass = NS_baryonic_mass(samples[0], samples[1])
+        if primary:
+            self.append_data("baryonic_mass_1", mass)
+        else:
+            self.append_data("baryonic_mass_2", mass)
+        self.extra_kwargs["meta_data"]["baryonic_mass_fits"] = "Breu2016"
+
     def _lambda1_lambda2_from_polytrope_EOS(self):
         samples = self.specific_parameter_samples([
             "log_pressure", "gamma_1", "gamma_2", "gamma_3", "mass_1", "mass_2"
@@ -2331,8 +2578,64 @@ class _Conversion(object):
             self.append_data(param, data[param])
             self.extra_kwargs["meta_data"]["{}_NR_fits".format(param)] = fits
 
+    def _final_remnant_properties_from_NSBH_waveform(
+        self, source=False, parameters=[
+            "baryonic_torus_mass", "final_mass", "final_spin"
+        ]
+    ):
+        approximant = self._retrieve_approximant()
+        if source:
+            sample_params = ["mass_1_source", "mass_2_source", "a_1", "lambda_2"]
+        else:
+            sample_params = ["mass_1", "mass_2", "a_1", "lambda_2"]
+        samples = self.specific_parameter_samples(sample_params)
+        _data = _check_NSBH_approximant(
+            approximant, samples[0], samples[1], samples[2], samples[3],
+            _raise=False
+        )
+        _mapping = {
+            "220_quasinormal_mode_frequency": 0, "tidal_disruption_frequency": 1,
+            "baryonic_torus_mass": 2, "compactness_2": 3,
+            "final_mass": 4, "final_spin": 5
+        }
+        for param in parameters:
+            self.append_data(param, _data[_mapping[param]])
+        if "final_mass" in parameters:
+            self.extra_kwargs["meta_data"]["final_mass_NR_fits"] = "Zappa2019"
+        if "final_spin" in parameters:
+            self.extra_kwargs["meta_data"]["final_spin_NR_fits"] = "Zappa2019"
+        if "baryonic_torus_mass" in parameters:
+            self.extra_kwargs["meta_data"]["baryonic_torus_mass_fits"] = (
+                "Foucart2012"
+            )
+        if "220_quasinormal_mode_frequency" in parameters:
+            self.extra_kwargs["meta_data"]["quasinormal_mode_fits"] = (
+                "London2019"
+            )
+        if "tidal_disruption_frequency" in parameters:
+            probabilities = NSBH_merger_type(
+                samples[0], samples[1], samples[2], samples[3],
+                approximant=approximant,
+                _ringdown=_data[_mapping["220_quasinormal_mode_frequency"]],
+                _disruption=_data[_mapping["tidal_disruption_frequency"]],
+                _torus=_data[_mapping["baryonic_torus_mass"]], percentages=True
+            )
+            self.extra_kwargs["meta_data"]["NSBH_merger_type_probabilities"] = (
+                probabilities
+            )
+            self.extra_kwargs["meta_data"]["tidal_disruption_frequency_fits"] = (
+                "Pannarale2018"
+            )
+            ratio = (
+                _data[_mapping["tidal_disruption_frequency"]]
+                / _data[_mapping["220_quasinormal_mode_frequency"]]
+            )
+            self.append_data(
+                "tidal_disruption_frequency_ratio", ratio
+            )
+
     def _final_remnant_properties_from_waveform(
-        self, non_precessing=False, parameters=["final_mass", "final_spin"]
+        self, non_precessing=False, parameters=["final_mass", "final_spin"],
     ):
         f_low = self._retrieve_f_low()
         approximant = self._retrieve_approximant()
@@ -2359,7 +2662,7 @@ class _Conversion(object):
             ]
         samples = self.specific_parameter_samples(sample_params)
         ind = self.parameters.index("spin_1x")
-        _data, fits = _final_from_initial(
+        _data, fits = _final_from_initial_BBH(
             *samples[:8], iota=samples[8], luminosity_distance=samples[9],
             f_ref=[f_low] * len(samples[0]), phi_ref=samples[10],
             delta_t=1. / 4096, approximant=approximant, return_fits_used=True,
@@ -2439,6 +2742,15 @@ class _Conversion(object):
             cos_samples = np.cos(samples[0])
         self.append_data(parameter_to_add, cos_samples)
 
+    def source_frame_from_detector_frame(self, detector_frame_parameter):
+        samples = self.specific_parameter_samples(
+            [detector_frame_parameter, "redshift"]
+        )
+        source_frame = _source_from_detector(samples[0], samples[1])
+        self.append_data(
+            "{}_source".format(detector_frame_parameter), source_frame
+        )
+
     def _check_parameters(self):
         params = ["mass_1", "mass_2", "a_1", "a_2", "mass_1_source", "mass_2_source",
                   "mass_ratio", "total_mass", "chirp_mass"]
@@ -2480,25 +2792,23 @@ class _Conversion(object):
         cond1 = all(i in self.parameters for i in spin_magnitudes)
         cond2 = all(i in self.parameters for i in angles)
         cond3 = all(i in self.parameters for i in cartesian)
-        if cond1 and not cond2:
-            self.parameters.append("tilt_1")
-            self.parameters.append("tilt_2")
-            for num, i in enumerate(self.samples):
-                self.samples[num].append(
-                    np.arccos(np.sign(i[self.parameters.index("a_1")])))
-                self.samples[num].append(
-                    np.arccos(np.sign(i[self.parameters.index("a_2")])))
-            ind_a1 = self.parameters.index("a_1")
-            ind_a2 = self.parameters.index("a_2")
-            for num, i in enumerate(self.samples):
-                self.samples[num][ind_a1] = abs(self.samples[num][ind_a1])
-                self.samples[num][ind_a2] = abs(self.samples[num][ind_a2])
-        elif not cond1 and not cond2 and not cond3 and self.add_zero_spin:
-            parameters = ["a_1", "a_2", "spin_1z", "spin_2z"]
-            for param in parameters:
-                self.parameters.append(param)
+        for _param in spin_magnitudes:
+            if _param in self.parameters and not cond2:
+                _index = _param.split("a_")[1]
+                _spin = self.specific_parameter_samples(_param)
+                _tilt = np.arccos(np.sign(_spin))
+                self.append_data("tilt_{}".format(_index), _tilt)
+                _spin_ind = self.parameters.index(_param)
                 for num, i in enumerate(self.samples):
-                    self.samples[num].append(0)
+                    self.samples[num][_spin_ind] = abs(self.samples[num][_spin_ind])
+
+        if not cond2 and not cond3 and self.add_zero_spin:
+            for _param in spin_magnitudes:
+                if _param not in self.parameters:
+                    _spin = np.zeros(len(self.samples))
+                    self.append_data(_param, _spin)
+                    _index = _param.split("a_")[1]
+                    self.append_data("spin_{}z".format(_index), _spin)
         self._check_parameters()
         if "cos_theta_jn" in self.parameters and "theta_jn" not in self.parameters:
             self._cos_angle("theta_jn", reverse=True)
@@ -2683,13 +2993,18 @@ class _Conversion(object):
                 for param in _default:
                     if param not in self.parameters:
                         parameters.append(param)
-                if all(i in self.parameters for i in final_spin_params):
+                # We already know that lambda_2 is in the posterior table if
+                # self.NSBH = True
+                if self.NSBH and "a_1" in self.parameters:
+                    self._final_remnant_properties_from_NSBH_waveform()
+                elif all(i in self.parameters for i in final_spin_params):
                     function(non_precessing=False, parameters=parameters)
                 elif all(i in self.parameters for i in non_precessing_NR_params):
                     function(non_precessing=True, parameters=parameters)
                 if all(i in self.parameters for i in non_precessing_NR_params):
                     if condition_peak_luminosity or self.force_non_evolved:
-                        self._peak_luminosity_of_merger(evolved=evolve_condition)
+                        if not self.NSBH:
+                            self._peak_luminosity_of_merger(evolved=evolve_condition)
             elif self.compute_remnant:
                 if all(i in self.parameters for i in final_spin_params):
                     if condition_final_spin or self.force_non_evolved:
@@ -2705,6 +3020,22 @@ class _Conversion(object):
                     if condition_final_mass or self.force_non_evolved:
                         self._final_mass_of_merger(evolved=evolve_condition)
 
+            # if NSBH system and self.compute_remnant = False and/or BBH fits
+            # fits used, only calculate baryonic_torus_mass
+            if self.NSBH and "a_1" in self.parameters:
+                if "baryonic_torus_mass" not in self.parameters:
+                    self._final_remnant_properties_from_NSBH_waveform(
+                        parameters=["baryonic_torus_mass"]
+                    )
+        # calculate compactness from Love-compactness relation
+        if "lambda_1" in self.parameters and "compactness_1" not in self.parameters:
+            self._NS_compactness_from_lambda(parameter="lambda_1")
+            if "mass_1" in self.parameters and "baryonic_mass_1" not in self.parameters:
+                self._NS_baryonic_mass(primary=True)
+        if "lambda_2" in self.parameters and "compactness_2" not in self.parameters:
+            self._NS_compactness_from_lambda(parameter="lambda_2")
+            if "mass_2" in self.parameters and "baryonic_mass_2" not in self.parameters:
+                self._NS_baryonic_mass(primary=False)
         if "cos_tilt_1" not in self.parameters and "tilt_1" in self.parameters:
             self._cos_tilt_1_from_tilt_1()
         if "cos_tilt_2" not in self.parameters and "tilt_2" in self.parameters:
@@ -2720,6 +3051,21 @@ class _Conversion(object):
             if condition_final_mass_source or self.force_non_evolved:
                 if "final_mass{}".format(evolve_suffix) in self.parameters:
                     self._final_mass_source(evolved=evolve_condition)
+            if "baryonic_torus_mass" in self.parameters:
+                if "baryonic_torus_mass_source" not in self.parameters:
+                    self.source_frame_from_detector_frame(
+                        "baryonic_torus_mass"
+                    )
+            if "baryonic_mass_1" in self.parameters:
+                if "baryonic_mass_1_source" not in self.parameters:
+                    self.source_frame_from_detector_frame(
+                        "baryonic_mass_1"
+                    )
+            if "baryonic_mass_2" in self.parameters:
+                if "baryonic_mass_2_source" not in self.parameters:
+                    self.source_frame_from_detector_frame(
+                        "baryonic_mass_2"
+                    )
         if "total_mass_source" in self.parameters:
             if "final_mass_source{}".format(evolve_suffix) in self.parameters:
                 condition_radiated_energy = check_for_evolved_parameter(
@@ -2727,6 +3073,17 @@ class _Conversion(object):
                 )
                 if condition_radiated_energy or self.force_non_evolved:
                     self._radiated_energy(evolved=evolve_condition)
+        if self.NSBH and "a_1" in self.parameters:
+            if all(_p in self.parameters for _p in ["mass_1_source", "mass_2_source"]):
+                _NSBH_parameters = []
+                if "tidal_disruption_frequency" not in self.parameters:
+                    _NSBH_parameters.append("tidal_disruption_frequency")
+                if "220_quasinormal_mode_frequency" not in self.parameters:
+                    _NSBH_parameters.append("220_quasinormal_mode_frequency")
+                if len(_NSBH_parameters):
+                    self._final_remnant_properties_from_NSBH_waveform(
+                        parameters=_NSBH_parameters, source=True
+                    )
         location = ["geocent_time", "ra", "dec"]
         if all(i in self.parameters for i in location):
             try:
