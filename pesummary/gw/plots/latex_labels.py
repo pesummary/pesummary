@@ -112,6 +112,17 @@ GWlatex_labels = {
     "spectral_decomposition_gamma_1": r"$\gamma_{1}$",
     "spectral_decomposition_gamma_2": r"$\gamma_{2}$",
     "spectral_decomposition_gamma_3": r"$\gamma_{3}$",
+    "tidal_disruption_frequency": r"$f_{\mathrm{td}} [\mathrm{Hz}]$",
+    "tidal_disruption_frequency_ratio": r"$f_{\mathrm{td}} / f_{220}$",
+    "220_quasinormal_mode_frequency": r"$f_{220} [\mathrm{Hz}]$",
+    "baryonic_torus_mass": r"$M_{\mathrm{torus}} [M_{\odot}]$",
+    "baryonic_torus_mass_source": r"$M^{\mathrm{source}}_{\mathrm{torus}} [M_{\odot}]$",
+    "compactness_1": r"$C_{1}$",
+    "compactness_2": r"$C_{2}$",
+    "baryonic_mass_1": r"$m_{1, \mathrm{baryonic}} [M_{\odot}]$",
+    "baryonic_mass_1_source": r"$m^{\mathrm{source}}_{1, \mathrm{baryonic}} [M_{\odot}]$",
+    "baryonic_mass_2": r"$m_{2, \mathrm{baryonic}} [M_{\odot}]$",
+    "baryonic_mass_2_source": r"$m^{\mathrm{source}}_{2, \mathrm{baryonic}} [M_{\odot}]$"
 }
 
 public_GWlatex_labels = {"mass_1": r"$m_{1}^{det} [M_{\odot}]$",

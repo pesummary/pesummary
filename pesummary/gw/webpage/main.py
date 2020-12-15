@@ -727,13 +727,13 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         categories = self.categories = {
             "masses": {
                 "accept": ["mass"],
-                "reject": ["source", "final"]
+                "reject": ["source", "final", "torus"]
             },
             "source": {
-                "accept": ["source"], "reject": ["final"]
+                "accept": ["source"], "reject": ["final", "torus"]
             },
             "remnant": {
-                "accept": ["final"], "reject": []
+                "accept": ["final", "torus"], "reject": []
             },
             "inclination": {
                 "accept": ["theta", "iota"], "reject": []
@@ -748,7 +748,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             "tidal": {
                 "accept": [
                     "lambda", "gamma_", "log_pressure",
-                    "spectral_decomposition_gamma_"
+                    "spectral_decomposition_gamma_", "compactness_",
+                    "tidal_disruption"
                 ],
                 "reject": []
             },
@@ -767,14 +768,14 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             },
             "calibration": {
                 "accept": ["spcal", "recalib", "frequency"],
-                "reject": ["minimum"]
+                "reject": ["minimum", "tidal_disruption", "quasinormal"]
             },
             "energy": {
                 "accept": ["peak_luminosity", "radiated"],
                 "reject": []
             },
             "others": {
-                "accept": ["phase", "likelihood", "prior"],
+                "accept": ["phase", "likelihood", "prior", "quasinormal"],
                 "reject": ["spcal", "recalib"]
             }
         }

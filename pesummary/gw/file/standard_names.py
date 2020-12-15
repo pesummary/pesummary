@@ -170,7 +170,18 @@ pesummary_map = {
     "radiated_energy": "radiated_energy",
     "radiated_energy_non_evolved": "radiated_energy_non_evolved",
     "weights": "weights",
-    "final_kick": "final_kick"
+    "final_kick": "final_kick",
+    "tidal_disruption_frequency": "tidal_disruption_frequency",
+    "tidal_disruption_frequency_ratio": "tidal_disruption_frequency_ratio",
+    "220_quasinormal_mode_frequency": "220_quasinormal_mode_frequency",
+    "baryonic_torus_mass": "baryonic_torus_mass",
+    "baryonic_torus_mass_source": "baryonic_torus_mass_source",
+    "compactness_1": "compactness_1",
+    "compactness_2": "compactness_2",
+    "baryonic_mass_1": "baryonic_mass_1",
+    "baryonic_mass_1_source": "baryonic_mass_1_source",
+    "baryonic_mass_2": "baryonic_mass_2",
+    "baryonic_mass_2_source": "baryonic_mass_2_source"
 }
 
 
@@ -548,6 +559,45 @@ descriptive_names = {
         "the energy radiated in gravitational waves. Defined as the difference "
         "between the source total and source remant mass. The source remnant "
         "mass was estimated using the spins defined at the reference frequency"
+    ),
+    "tidal_disruption_frequency": (
+        "the gravitational wave detector-frame frequency at which tidal forces "
+        "dominate over the self-gravity forces, invoking mass shedding"
+    ),
+    "tidal_disruption_frequency_ratio": (
+        "the ratio of the tidal disruption and the 220 quasinormal mode "
+        "frequency of the system. In NSBH models this ratio describes whether the "
+        "system is disruptive or non-disruptive. If the ratio is less than 1, the "
+        "system is characterised as either mildly disruptive or disruptive. If the ratio "
+        "is greater than 1, the system is characterised as non-disruptive meaning "
+        "the secondary object remains intact as it plunges into the primary."
+    ),
+    "220_quasinormal_mode_frequency": (
+        "the detector-frame 220 quasinormal mode (QNM) frequency of the "
+        "remnant object"
+    ),
+    "baryonic_torus_mass": (
+        "the detector-frame (redshifted) baryonic mass of the torus formed "
+        "around the primary object. If the baryonic torus mass is 0, the system "
+        "is characterised as either mildly disruptive or non-disruptive."
+    ),
+    "baryonic_torus_mass_source": (
+        "the source-frame baryonic mass of the torus formed around the primary "
+        "object"
+    ),
+    "compactness_1": "the compactness of the primary object",
+    "compactness_2": "the compactness of the secondary object",
+    "baryonic_mass_1": (
+        "the detector-frame (redshifted) baryonic mass of the primary object"
+    ),
+    "baryonic_mass_1_source": (
+        "the source-frame baryonic mass of the primary object"
+    ),
+    "baryonic_mass_2": (
+        "the detector-frame (redshifted) baryonic mass of the secondary object"
+    ),
+    "baryonic_mass_2_source": (
+        "the source-frame baryonic mass of the secondary object"
     ),
 }
 

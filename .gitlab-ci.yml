@@ -168,6 +168,7 @@ examples:
     - cd _testing
     - summarytest --type examples --repository ${PESUMMARY_REPO_DIR}
     - cd ${BASE}
+  allow_failure: true
 
 
 authors:
