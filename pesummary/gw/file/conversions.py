@@ -698,7 +698,11 @@ def _check_NSBH_approximant(approximant, *args, _raise=True):
     """
     if approximant.lower() == "imrphenomnsbh":
         return _IMRPhenomNSBH_properties(*args)
-    msg = "Currently only the IMRPhenomNSBH waveform model can be used."
+    msg = (
+        "You have supplied the waveform model: '{}'. Currently only the "
+        "IMRPhenomNSBH waveform model can be used. Unable to calculate "
+        "the NSBH conversion".format(approximant)
+    )
     if not _raise:
         logger.warn(msg)
     else:
@@ -2593,6 +2597,8 @@ class _Conversion(object):
             approximant, samples[0], samples[1], samples[2], samples[3],
             _raise=False
         )
+        if _data is None:
+            return
         _mapping = {
             "220_quasinormal_mode_frequency": 0, "tidal_disruption_frequency": 1,
             "baryonic_torus_mass": 2, "compactness_2": 3,

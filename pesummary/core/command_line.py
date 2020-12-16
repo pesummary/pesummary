@@ -436,7 +436,7 @@ def _prior_command_line_arguments(parser):
         help="File containing for the prior samples for a given label"
     )
     prior_group.add_argument(
-        "--nsamples_for_prior", dest="nsamples_for_prior", default=None,
+        "--nsamples_for_prior", dest="nsamples_for_prior", default=5000,
         type=int, help=(
             "The number of prior samples to extract from a bilby prior file "
             "or a bilby result file"
