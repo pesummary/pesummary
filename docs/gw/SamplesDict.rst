@@ -7,8 +7,25 @@ SamplesDict class
 initializing the `SamplesDict` class and using the core `SamplesDict`
 properties, see the `core SamplesDict docs <../core/SamplesDict.html>`_.
 
-Extending the SamplesDict functionality
----------------------------------------
+Parameter descriptions
+----------------------
+
+`pesummary` provides a set of parameter descriptions for most gravitational
+wave specific parameters (see `here <./parameters.html>`_). You can access
+these descriptions directly from the `SamplesDict` class,
+
+.. code-block:: python
+
+    >>> from pesummary.utils.samples_dict import SamplesDict
+    >>> samplesdict = SamplesDict.from_file("path_to_file.hdf5")
+    >>> parameters = samplesdict.keys()
+    >>> print(parameters[0])
+    'mass_1'
+    >>> print(parameters[0].description)
+    the detector-frame (redshifted) mass of the heavier object
+
+Source classifications
+----------------------
 
 `pesummary` provides wrappers for the
 `PEPredicates <https://git.ligo.org/will-farr/pepredicates>`_ and
