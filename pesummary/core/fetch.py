@@ -57,6 +57,24 @@ def _unpack_and_extract(path_to_file, filename, path=None):
     return unpacked_file
 
 
+def _scp_file(path):
+    """Secure copy a file from a server
+
+    Parameters
+    ----------
+    path: str
+        file you wish to download. Should be of the form
+        '{username}@{servername}:{path_to_file}'.
+    """
+    import subprocess
+
+    pid = os.getpid()
+    prefix = "pesummary-download-%s-" % (pid)
+    with NamedTemporaryFile(prefix=prefix, delete=False) as f:
+        subprocess.run("scp {} {}".format(path, f.name), shell=True)
+    return f.name
+
+
 def _download_authenticated_file(
     url, unpack=False, path=None, block_size=2**16, **kwargs
 ):
@@ -156,3 +174,17 @@ def download_and_read_file(
     data = read(new_name, **kwargs)
     shutil.move(new_name, local)
     return data
+
+
+def scp_and_read_file(path, **kwargs):
+    """Secure copy and read a file with the pesummary.io.read function
+
+    Parameters
+    ----------
+    path: str
+        file you wish to download. Should be of the form
+        '{username}@{servername}:{path_to_file}'.
+    **kwargs: dict, optional
+        all kwargs passed to download_and_read_file
+    """
+    return download_and_read_file(path, _function=_scp_file, **kwargs)

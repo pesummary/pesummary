@@ -229,7 +229,11 @@ def _core_command_line_arguments(parser):
     )
     core_group.add_argument(
         "-s", "--samples", dest="samples", default=None, nargs='+',
-        help="Posterior samples file(s). See documentation for allowed formats"
+        help=(
+            "Path to posterior samples file(s). See documentation for allowed "
+            "formats. If path is on a remote server, add username and "
+            "servername in the form {username}@{servername}:{path}"
+        )
     )
     core_group.add_argument(
         "-c", "--config", dest="config", nargs='+', default=None,
