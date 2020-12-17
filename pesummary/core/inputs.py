@@ -277,6 +277,23 @@ class _Input(object):
         }
 
     @property
+    def result_files(self):
+        return self._result_files
+
+    @result_files.setter
+    def result_files(self, result_files):
+        self._result_files = result_files
+        if self._result_files is not None:
+            for num, ff in enumerate(self._result_files):
+                if not os.path.isfile(ff) and "@" in ff:
+                    from pesummary.core.fetch import scp_and_read_file
+                    logger.info(
+                        "Copying file: '{}' to temporary folder".format(ff)
+                    )
+                    filename = scp_and_read_file(ff, read_file=False)
+                    self._result_files[num] = str(filename)
+
+    @property
     def seed(self):
         return self._seed
 
