@@ -26,7 +26,7 @@ import numpy as np
 import math
 
 import pesummary
-from pesummary import conf
+from pesummary import conf, __version_string__
 from pesummary.utils.utils import (
     logger, LOG_FILE, jensen_shannon_divergence, safe_round, make_dir
 )
@@ -1219,9 +1219,7 @@ class _WebpageGeneration(object):
             "Version", self.navbar["home"], title="Version Information"
         )
         html_file.make_banner(approximant="Version", key="Version")
-        path = pesummary.__file__[:-12]
-        with open(path + "/.version", 'r') as f:
-            contents = f.read()
+        contents = __version_string__
         contents += install_path(return_string=True)
         for i in self.labels:
             contents = (
