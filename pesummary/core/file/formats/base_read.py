@@ -194,7 +194,7 @@ class Read(object):
     attrs = {
         "input_version": "version", "extra_kwargs": "kwargs",
         "priors": "prior", "analytic": "analytic", "labels": "labels",
-        "config": "config", "weights": "weights"
+        "config": "config", "weights": "weights", "history": "history"
     }
 
     def _load(self, function, **kwargs):
