@@ -229,7 +229,11 @@ def _core_command_line_arguments(parser):
     )
     core_group.add_argument(
         "-s", "--samples", dest="samples", default=None, nargs='+',
-        help="Posterior samples file(s). See documentation for allowed formats"
+        help=(
+            "Path to posterior samples file(s). See documentation for allowed "
+            "formats. If path is on a remote server, add username and "
+            "servername in the form {username}@{servername}:{path}"
+        )
     )
     core_group.add_argument(
         "-c", "--config", dest="config", nargs='+', default=None,
@@ -386,6 +390,13 @@ def _plotting_command_line_arguments(parser):
         "--add_to_corner", dest="add_to_corner", default=None,
         nargs="+", help="Parameters you wish to include in the corner plot"
     )
+    plot_group.add_argument(
+        "--add_existing_plot", dest="existing_plot", nargs="+", default=None,
+        action=DictionaryAction, help=(
+            "Path(s) to existing plots that you wish to add to the "
+            "summarypages. Should be of the form {label}:{path}"
+        )
+    )
     return plot_group
 
 
@@ -429,7 +440,7 @@ def _prior_command_line_arguments(parser):
         help="File containing for the prior samples for a given label"
     )
     prior_group.add_argument(
-        "--nsamples_for_prior", dest="nsamples_for_prior", default=None,
+        "--nsamples_for_prior", dest="nsamples_for_prior", default=5000,
         type=int, help=(
             "The number of prior samples to extract from a bilby prior file "
             "or a bilby result file"

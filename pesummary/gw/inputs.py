@@ -109,7 +109,8 @@ class _GWInput(_Input):
                     redshift_method=self.redshift_method,
                     cosmology=self.cosmology,
                     no_conversion=self.no_conversion,
-                    add_zero_spin=True, disable_remnant=self.disable_remnant
+                    add_zero_spin=True, disable_remnant=self.disable_remnant,
+                    force_BBH_remnant_computation=self.force_BBH_remnant_computation
                 ))
             return kwargs
         except IndexError:
@@ -130,7 +131,8 @@ class _GWInput(_Input):
                     redshift_method=self.redshift_method,
                     cosmology=self.cosmology,
                     no_conversion=self.no_conversion,
-                    add_zero_spin=True
+                    add_zero_spin=True,
+                    force_BBH_remnant_computation=self.force_BBH_remnant_computation
                 ))
             return kwargs
 
@@ -861,7 +863,8 @@ class GWInput(_GWInput, Input):
             opts, ignore_copy=True, extra_options=[
                 "evolve_spins", "NRSur_fits", "f_low", "f_ref",
                 "waveform_fits", "redshift_method", "cosmology",
-                "no_conversion", "disable_remnant"
+                "no_conversion", "disable_remnant",
+                "force_BBH_remnant_computation"
             ]
         )
         if self.existing is not None:

@@ -39,7 +39,7 @@ def hist2d(
     plot_contours=True, no_fill_contours=False, fill_contours=False,
     contour_kwargs=None, contourf_kwargs=None, data_kwargs=None,
     pcolor_kwargs=None, new_fig=True, kde=None, kde_kwargs={},
-    density_cmap=None, label=None, **kwargs
+    density_cmap=None, label=None, grid=True, **kwargs
 ):
     """Extension of the corner.hist2d function. Allows the user to specify the
     kde used when estimating the 2d probability density
