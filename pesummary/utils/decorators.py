@@ -210,6 +210,13 @@ def docstring_subfunction(*args):
     return wrapper_function
 
 
+def set_docstring(docstring):
+    def wrapper_function(func):
+        func.__doc__ = docstring
+        return func
+    return wrapper_function
+
+
 def deprecation(warning):
     def decorator(func):
         @functools.wraps(func)

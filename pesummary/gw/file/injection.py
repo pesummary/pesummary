@@ -30,15 +30,15 @@ class GWInjection(Injection):
     conversion: Bool, optional
         If True, convert all injection parameters
     conversion_kwargs: dict, optional
-        kwargs that are passed to the
-        `pesummary.gw.file.conversions._Conversion` class
+        kwargs that are passed to the `pesummary.gw.conversions.convert`
+        function
     """
     def __init__(self, *args, conversion=True, conversion_kwargs={}, **kwargs):
         super(GWInjection, self).__init__(*args, **kwargs)
         if conversion:
-            from pesummary.gw.file.conversions import _Conversion
+            from pesummary.gw.conversions import convert
 
-            converted = _Conversion(self, **conversion_kwargs)
+            converted = convert(self, **conversion_kwargs)
             if conversion_kwargs.get("return_kwargs", False):
                 converted = converted[0]
             for key, value in converted.items():
@@ -55,8 +55,8 @@ class GWInjection(Injection):
         conversion: Bool, optional
             If True, convert all injection parameters
         conversion_kwargs: dict, optional
-            kwargs that are passed to the
-            `pesummary.gw.file.conversions._Conversion` class
+            kwargs that are passed to the `pesummary.gw.conversions.convert`
+            function
         **kwargs: dict
             All kwargs passed to the format specific read function
         """

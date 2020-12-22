@@ -26,7 +26,7 @@ except ImportError:
     GLUE = False
 
 from pesummary.gw.file.formats.base_read import GWSingleAnalysisRead
-from pesummary.gw.file import conversions as con
+from pesummary.gw import conversions as con
 from pesummary.utils.utils import logger
 
 

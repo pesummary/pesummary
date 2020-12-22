@@ -15,12 +15,17 @@
 
 import numpy as np
 from pesummary.utils.utils import logger
-from lalinference.imrtgr import nrutils
-import lalsimulation
-from lalsimulation import (
-    SimInspiralGetSpinFreqFromApproximant, SIM_INSPIRAL_SPINS_CASEBYCASE,
-    SIM_INSPIRAL_SPINS_FLOW
-)
+
+try:
+    from lalinference.imrtgr import nrutils
+    import lalsimulation
+    from lalsimulation import (
+        SimInspiralGetSpinFreqFromApproximant, SIM_INSPIRAL_SPINS_CASEBYCASE,
+        SIM_INSPIRAL_SPINS_FLOW
+    )
+except ImportError:
+    pass
+
 try:
     from lalsimulation.nrfits.eval_fits import eval_nrfit as _eval_nrfit
     NRSUR_MODULE = True
@@ -757,9 +762,8 @@ def NRSur_fit(
         `lalsimulation.nrfits.eval_fits.eval_nrfit` function
     """
     from lal import MSUN_SI, C_SI
-    from pesummary.gw.file.conversions import (
-        component_spins, magnitude_from_vector
-    )
+    from .spins import component_spins
+    from .utils import magnitude_from_vector
     from pesummary.utils.utils import iterator
     import copy
 

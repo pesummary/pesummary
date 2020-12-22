@@ -6,7 +6,7 @@ PESummary has multiple methods for calculating the remnant properties of a
 binary. These include averaging multiple fits tuned to numerical relativity, and
 using waveform specific fitting functions. Below we go into more details about
 how each of these can be used with the `summarypages` executable and/or
-the `_Conversion` class directly.
+the `convert` function directly.
 
 Average NR fits
 ---------------
@@ -30,19 +30,19 @@ or:
 
 .. code-block:: python
 
-    >>> from pesummary.gw.file.conversions import _Conversion
-    >>> data = _Conversion(data_table, evolve_spins='ISCO')
+    >>> from pesummary.gw.conversions import convert
+    >>> data = convert(data_table, evolve_spins='ISCO')
 
 
 This then calls the following functions:
 
-.. autofunction:: pesummary.gw.file.nrutils.bbh_final_mass_average
+.. autofunction:: pesummary.gw.conversions.nrutils.bbh_final_mass_average
 
-.. autofunction:: pesummary.gw.file.nrutils.bbh_final_spin_average_precessing
+.. autofunction:: pesummary.gw.conversions.nrutils.bbh_final_spin_average_precessing
 
-.. autofunction:: pesummary.gw.file.nrutils.bbh_final_spin_average_non_precessing
+.. autofunction:: pesummary.gw.conversions.nrutils.bbh_final_spin_average_non_precessing
 
-.. autofunction:: pesummary.gw.file.nrutils.bbh_peak_luminosity_average
+.. autofunction:: pesummary.gw.conversions.nrutils.bbh_peak_luminosity_average
 
 NRSurrogate fits
 ----------------
@@ -64,15 +64,15 @@ NRSurrogate remnant model by passing it from the command line:
     $ summarypages --webdir ./NRSurrogate --samples example.hdf5 \
                    --NRSur_fits NRSur3dq8Remnant --gw
 
-Using the `_Conversion` class:
+Using the `convert` function:
 
 .. code-block:: python
 
-    >>> data = _Conversion(data_table, NRSur_fits='NRSur7dq4Remnant')
+    >>> data = convert(data_table, NRSur_fits='NRSur7dq4Remnant')
 
 This then calls the following function:
 
-.. autofunction:: pesummary.gw.file.nrutils.NRSur_fit
+.. autofunction:: pesummary.gw.conversions.nrutils.NRSur_fit
 
 A list of available NRSurrogate remnant models can be found
 `here <https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/eval__fits_8py_source.html>`_.
@@ -121,12 +121,12 @@ passed from the command line. This can be done with the following:
                    --multi_process 20 --f_low 3.0
 
 
-Using the `_Conversion` class:
+Using the `convert` function:
 
-    >>> data = _Conversion(data_table, waveform_fits=True, approximant="SEOBNRv4PHM")
+    >>> data = convert(data_table, waveform_fits=True, approximant="SEOBNRv4PHM")
 
 This then calls the following function:
 
-.. autofunction:: pesummary.gw.file.conversions.final_mass_of_merger_from_waveform
+.. autofunction:: pesummary.gw.conversions.remnant.final_mass_of_merger_from_waveform
 
-.. autofunction:: pesummary.gw.file.conversions.final_spin_of_merger_from_waveform 
+.. autofunction:: pesummary.gw.conversions.remnant.final_spin_of_merger_from_waveform 

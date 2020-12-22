@@ -25,7 +25,7 @@ from pesummary.core.plots import violin
 from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.gw.plots.cmap import colormap_with_fixed_hue
-from pesummary.gw.file.conversions import mchirp_from_m1_m2, q_from_m1_m2
+from pesummary.gw.conversions import mchirp_from_m1_m2, q_from_m1_m2
 import numpy as np
 import copy
 
