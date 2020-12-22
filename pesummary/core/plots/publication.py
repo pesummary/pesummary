@@ -282,7 +282,7 @@ def _triangle_axes(
     return fig, ax1, ax2, ax3, ax4
 
 
-def _generate_triangle_plot(*args, function=None, **kwargs):
+def _generate_triangle_plot(*args, function=None, fig_kwargs={}, **kwargs):
     """Generate a triangle plot according to a given function
 
     Parameters
@@ -295,7 +295,7 @@ def _generate_triangle_plot(*args, function=None, **kwargs):
     **kwargs: dict, optional
         all kwargs passed to function
     """
-    fig, ax1, ax2, ax3, ax4 = _triangle_axes(**kwargs.get("fig_kwargs", {}))
+    fig, ax1, ax2, ax3, ax4 = _triangle_axes(**fig_kwargs)
     ax2.axis("off")
     if function is None:
         function = _triangle_plot
