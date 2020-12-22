@@ -370,13 +370,13 @@ class SamplesDict(Dict):
         function: func, optional
             function to use when converting posterior samples. Must take a
             dictionary as input and return a dictionary of converted posterior
-            samples. Default `pesummary.gw.file.conversions._Conversion
+            samples. Default `pesummary.gw.conversions.convert
         **kwargs: dict, optional
             All additional kwargs passed to function
         """
         if function is None:
-            from pesummary.gw.file.conversions import _Conversion
-            function = _Conversion
+            from pesummary.gw.conversions import convert
+            function = convert
         _samples = self.copy()
         _keys = list(_samples.keys())
         converted_samples = function(_samples, **kwargs)

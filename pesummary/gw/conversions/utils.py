@@ -1,4 +1,4 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
+# Copyright (C) 2018 Charlie Hoy <charlie.hoy@ligo.org>
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -13,14 +13,16 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pesummary.utils.decorators import deprecation
+import numpy as np
 
 
-class _Conversion(object):
-    @deprecation(
-        "The _Conversion class will be deprecated in future releases. Please "
-        "use pesummary.gw.conversions.convert"
-    )
-    def __new__(cls, *args, **kwargs):
-        from pesummary.gw.conversions import convert
-        return convert(*args, **kwargs)
+def magnitude_from_vector(vector):
+    """Return the magnitude of a vector
+
+    Parameters
+    ----------
+    vector: list, np.ndarray
+        The vector you wish to return the magnitude for.
+    """
+    vector = np.atleast_2d(vector)
+    return np.linalg.norm(vector, axis=1)

@@ -22,8 +22,8 @@ import h5py
 
 import deepdish
 
-from pesummary.gw.file.conversions import *
-from pesummary.gw.file.nrutils import *
+from pesummary.gw.conversions import *
+from pesummary.gw.conversions.nrutils import *
 from pycbc import conversions
 import pytest
 
@@ -559,7 +559,7 @@ class TestConversions(object):
 
     def test_full_conversion(self):
         from pesummary.utils.array import Array
-        from pesummary.gw.file.conversions import _Conversion
+        from pesummary.gw.conversions import convert
         from bilby.gw.conversion import convert_to_lal_binary_black_hole_parameters
         from pandas import DataFrame
 
@@ -584,7 +584,7 @@ class TestConversions(object):
             "H1_matched_filter_snr": [10.0],
             "H1_optimal_snr": [10.0]
         }
-        data = _Conversion(dictionary)
+        data = convert(dictionary)
         true_params = [
             'mass_1', 'mass_2', 'a_1', 'a_2', 'cos_theta_jn', 'cos_tilt_1',
             'cos_tilt_2', 'luminosity_distance', 'geocent_time', 'ra', 'dec',
@@ -657,15 +657,15 @@ class TestConversions(object):
             ) is None
 
     def test_remove_parameter(self):
-        from pesummary.gw.file.conversions import _Conversion
+        from pesummary.gw.conversions import convert
 
         dictionary = {
             "mass_1": np.random.uniform(5, 100, 100),
             "mass_ratio": [0.1] * 100
         }
         dictionary["mass_2"] = np.random.uniform(2, dictionary["mass_1"], 100)
-        incorrect_mass_ratio = _Conversion(dictionary)
-        data = _Conversion(dictionary, regenerate=["mass_ratio"])
+        incorrect_mass_ratio = convert(dictionary)
+        data = convert(dictionary, regenerate=["mass_ratio"])
         assert all(i != j for i, j in zip(
             incorrect_mass_ratio["mass_ratio"], data["mass_ratio"]
         ))

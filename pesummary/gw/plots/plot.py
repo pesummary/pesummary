@@ -1261,7 +1261,7 @@ def _strain_plot(strain, maxL_params, **kwargs):
         dictionary of maximum likelihood parameter values
     """
     logger.debug("Generating the strain plot")
-    from pesummary.gw.file.conversions import time_in_each_ifo
+    from pesummary.gw.conversions import time_in_each_ifo
 
     fig, ax = figure(gca=True)
     time = maxL_params["geocent_time"]

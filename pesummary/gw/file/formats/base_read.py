@@ -23,7 +23,7 @@ from pesummary.utils.utils import logger
 from pesummary.utils.parameters import Parameters
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.decorators import open_config
-from pesummary.gw.file import conversions as con
+from pesummary.gw.conversions import convert
 
 try:
     from glue.ligolw import ligolw
@@ -124,7 +124,7 @@ def convert_injection_parameters(
     for i in nan_inds[::-1]:
         parameters.remove(parameters[i])
         samples[0].remove(samples[0][i])
-    inj_samples = con._Conversion(parameters, samples, extra_kwargs=extra_kwargs)
+    inj_samples = convert(parameters, samples, extra_kwargs=extra_kwargs)
     if sampled_parameters is not None:
         for i in sampled_parameters:
             if i not in list(inj_samples.keys()):
@@ -232,7 +232,7 @@ class GWRead(Read):
             default_parameters, default_samples
         )
         if not disable_convert:
-            return con._Conversion(
+            return convert(
                 parameters, samples, extra_kwargs=self.extra_kwargs
             )
         return SamplesDict(parameters, samples)
@@ -571,21 +571,21 @@ class GWSingleAnalysisRead(GWRead, SingleAnalysisRead):
         return _add_log_likelihood(parameters, samples)
 
     def generate_all_posterior_samples(self, **kwargs):
-        """Generate all posterior samples via the Conversion module
+        """Generate all posterior samples via the conversion module
 
         Parameters
         ----------
         **kwargs: dict
-            all kwargs passed to the Conversion module
+            all kwargs passed to the conversion module
         """
         if "no_conversion" in kwargs.keys():
             no_conversion = kwargs.pop("no_conversion")
         else:
             no_conversion = False
         if not no_conversion:
-            from pesummary.gw.file.conversions import _Conversion
+            from pesummary.gw.conversions import convert
 
-            data = _Conversion(
+            data = convert(
                 self.parameters, self.samples, extra_kwargs=self.extra_kwargs,
                 return_dict=False, **kwargs
             )
@@ -703,7 +703,7 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
                     [default_parameters], [default_samples]
                 )
                 if not disable_convert:
-                    mydict[label] = con._Conversion(
+                    mydict[label] = convert(
                         parameters[0], samples[0], extra_kwargs=self.extra_kwargs[num]
                     )
                 else:
@@ -752,7 +752,7 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
             no_conversion = False
         if no_conversion:
             return
-        from pesummary.gw.file.conversions import _Conversion
+        from pesummary.gw.conversions import convert
 
         converted_params, converted_samples, converted_kwargs = [], [], []
         _converted_params = []
@@ -762,7 +762,7 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
             if conversion_kwargs.get("evolve_spins", False):
                 if not conversion_kwargs.get("return_kwargs", False):
                     conversion_kwargs["return_kwargs"] = True
-            data = _Conversion(
+            data = convert(
                 param, samples, extra_kwargs=kwargs, return_dict=False,
                 **conversion_kwargs
             )
