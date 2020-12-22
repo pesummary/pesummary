@@ -169,7 +169,7 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, evolve_spins=False,
             type="triangle",
             fill_alpha=0.2,
             labels=["inspiral", "postinspiral"],
-            fontsize=dict(label=20),
+            fontsize=dict(label=20, legend=14),
             fig_kwargs=dict(wspace=0.2, hspace=0.2),
         )
         parameters_to_plot = [
