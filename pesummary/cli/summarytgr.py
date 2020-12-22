@@ -59,7 +59,7 @@ def command_line():
         action="store_true",
     )
     parser.add_argument(
-        "--make-diagnostic-plots", dest="make_diagnostic_plots", help="Make extra diagnostic plots", action="store_true"
+        "--make_diagnostic_plots", dest="make_diagnostic_plots", help="Make extra diagnostic plots", action="store_true"
     )
     return parser
 
