@@ -139,12 +139,17 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
         smooth=4,
         type="triangle",
         cmap="YlOrBr",
+        fontsize=dict(label=20),
         levels=[0.68, 0.95],
         level_kwargs=dict(colors=["k", "k"]),
         xlabel=r"$\Delta M_{\mathrm{f}} / \bar{M_{\mathrm{f}}}$",
         ylabel=r"$\Delta a_{\mathrm{f}} / \bar{a_{\mathrm{f}}}$",
+        fig_kwargs=dict(wspace=0.2, hspace=0.2),
     )
-    fig, _, ax_2d, _ = imrct_deviations.plot("final_mass_final_spin_deviations", **plot_kwargs,)
+    fig, _, ax_2d, _ = imrct_deviations.plot(
+        "final_mass_final_spin_deviations",
+        **plot_kwargs,
+    )
     ax_2d.plot(0, 0, "k+", ms=12, mew=2)
 
     fig.savefig(base_string.format("deviations_triangle_plot"))
@@ -153,7 +158,15 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
 
     if make_diagnostic_plots:
         logger.info("Creating diagnostic plots")
-        plot_kwargs = dict(grid=True, smooth=4, type="triangle", fill_alpha=0.2, labels=["inspiral", "postinspiral"],)
+        plot_kwargs = dict(
+            grid=True,
+            smooth=4,
+            type="triangle",
+            fill_alpha=0.2,
+            label=["inspiral", "postinspiral"],
+            fontsize=dict(label=20),
+            fig_kwargs=dict(wspace=0.2, hspace=0.2),
+        )
         parameters_to_plot = [
             ["final_mass_non_evolved", "final_spin_non_evolved"],
             ["mass_1", "mass_2"],
@@ -161,7 +174,10 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, make_diagnostic_plo
         ]
 
         for parameters in parameters_to_plot:
-            fig, _, _, _ = samples.plot(parameters, **plot_kwargs,)
+            fig, _, _, _ = samples.plot(
+                parameters,
+                **plot_kwargs,
+            )
             save_string = "{}_{}".format(parameters[0], parameters[1])
             fig.savefig(base_string.format(save_string))
             fig.close()
@@ -331,7 +347,13 @@ class TGRWebpageGeneration(_WebpageGeneration):
             ]
         ]
         html_file = self.make_modal_carousel(
-            html_file, image_contents, captions=captions, cli=[[" "]], unique_id=True, extra_div=True, autoscale=False,
+            html_file,
+            image_contents,
+            captions=captions,
+            cli=[[" "]],
+            unique_id=True,
+            extra_div=True,
+            autoscale=False,
         )
 
         if make_diagnostic_plots:
