@@ -1864,6 +1864,7 @@ class PostProcessing(object):
         self.hdf5_compression = self.inputs.hdf5_compression
         self.file_version = self.inputs.file_version
         self.file_kwargs = self.inputs.file_kwargs
+        self.file_kwargs["webpage_url"] = self.baseurl + "/home.html"
         self.palette = self.inputs.palette
         self.colors = self.inputs.colors
         self.linestyles = self.inputs.linestyles
