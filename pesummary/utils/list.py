@@ -31,10 +31,11 @@ class List(list):
     added: list
         list of values appended to the original list
     """
-    __slots__ = ["original", "added", "removed"]
+    __slots__ = ["original", "cls", "added", "removed"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, cls=None, **kwargs):
         self.original = list(*args, **kwargs)
+        self.cls = cls
         super(List, self).__init__(*args, **kwargs)
         self.added = []
         self.removed = []
@@ -42,6 +43,15 @@ class List(list):
     @property
     def ndim(self):
         return np.array(self).ndim
+
+    def __getitem__(self, *args, **kwargs):
+        output = super(List, self).__getitem__(*args, **kwargs)
+        if self.cls is None:
+            return output
+        if isinstance(output, list):
+            return [self.cls(value) for value in output]
+        else:
+            return self.cls(output)
 
     def __add__(self, *args, **kwargs):
         self.added.extend(*args)

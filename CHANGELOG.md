@@ -1,3 +1,16 @@
+## 0.11.0 [15/12/2020]
+
+### Changed
+
+- FutureWarning - fix FutureWarning: elementwise comparison failed
+
+### Added
+
+- Allow the user to add previously generated plots to the webpages through the
+  `--add_existing_plot` command line argument.
+- Add a ProbabilityDict class to handle discrete PDFs
+- Add NSBH specific conversions to the `pesummary.gw.file.conversion` module
+
 ## 0.10.0 [27/11/2020]
 
 ### Changed

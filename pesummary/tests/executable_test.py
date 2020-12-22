@@ -190,17 +190,21 @@ class TestSummaryPages(Base):
             if os.path.isdir(dd):
                 shutil.rmtree(dd)
 
-    def check_output(self, number=1, mcmc=False):
+    def check_output(self, number=1, mcmc=False, existing_plot=False):
         """Check the output from the summarypages executable
         """
         assert os.path.isfile(".outdir/home.html")
-        plots = get_list_of_plots(gw=False, number=number, mcmc=mcmc)
+        plots = get_list_of_plots(
+            gw=False, number=number, mcmc=mcmc, existing_plot=existing_plot
+        )
         assert all(
             i == j for i, j in zip(
                 sorted(plots), sorted(glob.glob("./.outdir/plots/*.png"))
             )
         )
-        files = get_list_of_files(gw=False, number=number)
+        files = get_list_of_files(
+            gw=False, number=number, existing_plot=existing_plot
+        )
         assert all(
             i == j for i, j in zip(
                 sorted(files), sorted(glob.glob("./.outdir/html/*.html"))
@@ -389,6 +393,27 @@ class TestSummaryPages(Base):
         )
         with pytest.raises(InputError):
             self.launch(command_line)
+
+    def test_add_existing_plot(self):
+        """Test that an Additional page is made if existing plots are provided
+        to the summarypages executable
+        """
+        with open(".outdir/test.png", "w") as f:
+            f.writelines("")
+        command_line = (
+            "summarypages --webdir .outdir --samples "
+            ".outdir/example.json --label core0 --add_existing_plot "
+            "core0:.outdir/test.png"
+        )
+        self.launch(command_line)
+        self.check_output(number=1, existing_plot=True)
+        command_line = (
+            "summarypages --webdir .outdir --samples "
+            ".outdir/example.json .outdir/example.json --label core0 core1 "
+            "--add_existing_plot core0:.outdir/test.png core1:.outdir/test.png"
+        )
+        self.launch(command_line)
+        self.check_output(number=2, existing_plot=True)
 
 
 class TestSummaryClassification(Base):

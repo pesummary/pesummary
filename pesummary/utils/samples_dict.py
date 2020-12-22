@@ -19,6 +19,7 @@ from pesummary.utils.utils import resample_posterior_distribution, logger
 from pesummary.utils.decorators import docstring_subfunction
 from pesummary.utils.array import Array
 from pesummary.utils.dict import Dict
+from pesummary.utils.parameters import Parameters
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary import conf
@@ -237,6 +238,10 @@ class SamplesDict(Dict):
             }
         )
         return modified
+
+    def keys(self, *args, **kwargs):
+        original = super(SamplesDict, self).keys(*args, **kwargs)
+        return Parameters(original)
 
     def to_pandas(self, **kwargs):
         """Convert a SamplesDict object to a pandas dataframe

@@ -23,6 +23,11 @@ from pathlib import Path
 CONDA_EXE = os.getenv("CONDA_EXE", shutil.which("conda")) or "conda"
 
 
+class GitDummy(object):
+    def __getattr__(self, attr):
+        return ""
+
+
 class GitInformation(object):
     """Helper class to handle the git information
     """
@@ -97,9 +102,12 @@ class GitInformation(object):
         """Return the last stable version
         """
         try:
-            tag_list = self.call(["git", "tag"]).decode("utf-8").split("\n")
-            tag_list = [i for i in tag_list if i.startswith('v')]
-            return tag_list[-1].split("v")[-1]
+            tag = self.call(["git", "describe", "--tags", "--abbrev=0"]).decode(
+                "utf-8"
+            ).strip("\n")
+            if tag[0] != "v":
+                return tag
+            return tag[1:]
         except Exception:
             return "Not found"
 
@@ -150,24 +158,9 @@ def make_version_file(
     return_sting: Bool, optional
         if True, return the version file as a string. Default False
     """
-    git_info = GitInformation()
-    packages = PackageInformation()
+    from pesummary import __version_string__
 
-    if version is None:
-        from ._version import get_versions
-
-        version = get_versions()['version']
-
-    string = (
-        "# pesummary version information\n\n"
-        "version = %s\nlast_release = %s\n\ngit_hash = %s\n"
-        "git_author = %s\ngit_status = %s\ngit_builder = %s\n"
-        "git_build_date = %s\n\n" % (
-            version, git_info.last_version, git_info.hash,
-            git_info.author, git_info.status, git_info.builder,
-            git_info.build_date
-        )
-    )
+    string = __version_string__
     if add_install_path:
         string += install_path(return_string=True)
     if not return_string and version_file is None:
@@ -205,5 +198,5 @@ def get_version_information(short=False):
 
     version = get_versions()['version']
     if short:
-        version = version.split("+")[0]
+        return version.split("+")[0]
     return version

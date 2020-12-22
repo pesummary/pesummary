@@ -42,6 +42,13 @@ def _remnant_command_line_arguments(parser):
         )
     )
     remnant_group.add_argument(
+        "--force_BBH_remnant_computation", action="store_true",
+        help=(
+            "Use BBH fits to calculate remnant quantities for systems that "
+            "include tidal deformability parameters"
+        )
+    )
+    remnant_group.add_argument(
         "--evolve_spins", action="store_true",
         help=(
             "Evolve the spins up to the Schwarzschild ISCO frequency for "

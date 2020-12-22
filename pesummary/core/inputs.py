@@ -277,6 +277,23 @@ class _Input(object):
         }
 
     @property
+    def result_files(self):
+        return self._result_files
+
+    @result_files.setter
+    def result_files(self, result_files):
+        self._result_files = result_files
+        if self._result_files is not None:
+            for num, ff in enumerate(self._result_files):
+                if not os.path.isfile(ff) and "@" in ff:
+                    from pesummary.core.fetch import scp_and_read_file
+                    logger.info(
+                        "Copying file: '{}' to temporary folder".format(ff)
+                    )
+                    filename = scp_and_read_file(ff, read_file=False)
+                    self._result_files[num] = str(filename)
+
+    @property
     def seed(self):
         return self._seed
 
@@ -938,6 +955,68 @@ class _Input(object):
                 "file in hdf5 format. Turning compression off."
             )
             self._hdf5_compression = None
+
+    @property
+    def existing_plot(self):
+        return self._existing_plot
+
+    @existing_plot.setter
+    def existing_plot(self, existing_plot):
+        self._existing_plot = existing_plot
+        if self._existing_plot is not None:
+            from pathlib import Path
+            import shutil
+            if isinstance(self._existing_plot, list):
+                logger.warn(
+                    "Assigning {} to all labels".format(
+                        ", ".join(self._existing_plot)
+                    )
+                )
+                self._existing_plot = {
+                    label: self._existing_plot for label in self.labels
+                }
+            _does_not_exist = (
+                "The plot {} does not exist. Not adding plot to summarypages."
+            )
+            keys_to_remove = []
+            for key, _plot in self._existing_plot.items():
+                if isinstance(_plot, list):
+                    allowed = []
+                    for _subplot in _plot:
+                        if not os.path.isfile(_subplot):
+                            logger.warn(_does_not_exist.format(_subplot))
+                        else:
+                            _filename = os.path.join(
+                                self.webdir, "plots", Path(_subplot).name
+                            )
+                            try:
+                                shutil.copyfile(_subplot, _filename)
+                            except shutil.SameFileError:
+                                pass
+                            allowed.append(_filename)
+                    if not len(allowed):
+                        keys_to_remove.append(key)
+                    elif len(allowed) == 1:
+                        self._existing_plot[key] = allowed[0]
+                    else:
+                        self._existing_plot[key] = allowed
+                else:
+                    if not os.path.isfile(_plot):
+                        logger.warn(_does_not_exist.format(_subplot))
+                        keys_to_remove.append(key)
+                    else:
+                        _filename = os.path.join(
+                            self.webdir, "plots", Path(_plot).name
+                        )
+                        try:
+                            shutil.copyfile(_plot, _filename)
+                        except shutil.SameFileError:
+                            pass
+                        self._existing_plot[key] = _filename
+            for key in keys_to_remove:
+                del self._existing_plot[key]
+            if not len(self._existing_plot):
+                self._existing_plot = None
 
     def add_to_prior_dict(self, path, data):
         """Add priors to the prior dictionary
@@ -1660,6 +1739,7 @@ class Input(_Input):
         self.disable_interactive = self.opts.disable_interactive
         self.multi_process = self.opts.multi_process
         self.multi_threading_for_plots = self.multi_process
+        self.existing_plot = self.opts.existing_plot
         self.package_information = self.get_package_information()
         if not ignore_copy:
             self.copy_files()
@@ -1794,6 +1874,7 @@ class PostProcessing(object):
         self.disable_corner = self.inputs.disable_corner
         self.multi_process = self.inputs.multi_threading_for_plots
         self.package_information = self.inputs.package_information
+        self.existing_plot = self.inputs.existing_plot
         self.same_parameters = []
         if self.mcmc_samples:
             self.samples = {label: self.samples.T for label in self.labels}
