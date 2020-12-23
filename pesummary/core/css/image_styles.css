@@ -4,7 +4,7 @@ img {
     transition: 0.3s;                                                           
 }                                                                               
                                                                                 
-img:hover {opacity: 0.5;}
+img:hover {opacity: 0.8;}
 
 .popover {
     max-width: 550px;

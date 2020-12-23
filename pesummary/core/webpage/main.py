@@ -694,6 +694,29 @@ class _WebpageGeneration(object):
                         self.results_path["other"], i, "{}_{}.dat".format(i, j)
                     )
                 )
+                key_data = self.key_data
+                contents = []
+                headings = self.key_data_headings.copy()
+                _injection = False
+                if "injected" in headings:
+                    _injection = not math.isnan(self.key_data[i][j]["injected"])
+                row = self.key_data_table[i][j]
+                if _injection:
+                    headings.append("injected")
+                    row.append(safe_round(self.key_data[i][j]["injected"], 3))
+                _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+                _class = "row justify-content-center"
+                html_file.make_container(style=_style)
+                html_file.make_div(4, _class=_class, _style=None)
+                html_file.make_table(
+                    headings=headings, contents=[row], heading_span=1,
+                    accordian=False, format="table-hover"
+                )
+                html_file.end_div(4)
+                html_file.end_container()
+                html_file.export(
+                    "summary_information_{}.csv".format(i)
+                )
                 html_file.make_footer(user=self.user, rundir=self.webdir)
                 html_file.close()
             html_file = self.setup_page(
