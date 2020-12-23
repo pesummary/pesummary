@@ -247,7 +247,7 @@ class GWRead(Read):
         kwargs: dict, optional
             all additional kwargs are passed to the pesummary.io.write function
         """
-        super(GWRead, self).write(package="gw", **kwargs)
+        return super(GWRead, self).write(package="gw", **kwargs)
 
     def _grab_injection_parameters_from_file(self, injection_file, **kwargs):
         from pesummary.gw.file.injection import GWInjection

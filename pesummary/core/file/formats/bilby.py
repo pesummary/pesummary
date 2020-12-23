@@ -98,6 +98,11 @@ def read_bilby(
         "version": version,
         "kwargs": extra_kwargs
     }
+    if bilby_object.meta_data is not None:
+        if "command_line_args" in bilby_object.meta_data.keys():
+            data["config"] = {
+                "config": bilby_object.meta_data["command_line_args"]
+            }
     if not disable_prior:
         logger.debug("Drawing prior samples from bilby result file")
         if nsamples_for_prior is None:
