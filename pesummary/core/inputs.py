@@ -202,7 +202,7 @@ class _Input(object):
 
     @staticmethod
     def grab_data_from_file(
-        file, label, config=None, injection=None, read_function=Read,
+        file, label, webdir, config=None, injection=None, read_function=Read,
         file_format=None, nsamples=None, disable_prior_sampling=False,
         nsamples_for_prior=None, path_to_samples=None, **kwargs
     ):
@@ -266,7 +266,7 @@ class _Input(object):
             weights = f.weights
         else:
             weights = None
-        return {
+        data = {
             "samples": DataFrame,
             "injection_data": {label: injection},
             "file_version": {label: version},
@@ -275,6 +275,27 @@ class _Input(object):
             "weights": {label: weights},
             "open_file": f
         }
+        if hasattr(f, "config") and f.config is not None:
+            if config is None:
+                config_dir = os.path.join(webdir, "config")
+                filename = "{}_config.ini".format(label)
+                logger.debug(
+                    "Successfully extracted config data from the provided "
+                    "input file. Saving the data to the file '{}'".format(
+                        os.path.join(config_dir, filename)
+                    )
+                )
+                _filename = f.write(
+                    filename=filename, outdir=config_dir, file_format="ini",
+                    _raise=False
+                )
+                data["config"] = _filename
+            else:
+                logger.info(
+                    "Ignoring config data extracted from the input file and "
+                    "using the config file provided"
+                )
+        return data
 
     @property
     def result_files(self):
@@ -528,6 +549,9 @@ class _Input(object):
             self._config = [None] * len(self.labels)
         else:
             self._config = config
+        for num, ff in enumerate(self._config):
+            if isinstance(ff, str) and ff.lower() == "none":
+                self._config[num] = None
 
     @property
     def injection_file(self):
@@ -607,7 +631,8 @@ class _Input(object):
         self._set_samples(samples)
 
     def _set_samples(
-        self, samples, ignore_keys=["prior", "weights", "labels", "indicies", "open_file"]
+        self, samples,
+        ignore_keys=["prior", "weights", "labels", "indicies", "open_file"]
     ):
         """Extract the samples and store them as attributes of self
 
@@ -652,6 +677,17 @@ class _Input(object):
                     injection=self.injection_file[num],
                     file_format=self.file_format[num]
                 )
+                if "config" in data.keys():
+                    msg = (
+                        "Overwriting the provided config file for '{}' with "
+                        "the config information stored in the input "
+                        "file".format(self.labels[num])
+                    )
+                    if self.config[num] is None:
+                        logger.debug(msg)
+                    else:
+                        logger.info(msg)
+                    self.config[num] = data.pop("config")
                 if self.mcmc_samples:
                     data["samples"] = {
                         "{}_mcmc_chain_{}".format(key, idx): item for key, item
@@ -1178,7 +1214,7 @@ class _Input(object):
             )
         else:
             data = self.grab_data_from_file(
-                file, label, config=config, injection=injection,
+                file, label, self.webdir, config=config, injection=injection,
                 file_format=file_format, nsamples=self.nsamples,
                 disable_prior_sampling=self.disable_prior_sampling,
                 nsamples_for_prior=self.nsamples_for_prior,

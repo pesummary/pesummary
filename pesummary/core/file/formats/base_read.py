@@ -386,10 +386,14 @@ class Read(object):
             extra_kwargs = self.extra_kwargs
         if file_versions is None:
             file_versions = self.input_version
-        return write(
-            *args, package=package, file_versions=file_versions,
-            file_kwargs=extra_kwargs, file_format=file_format, **kwargs
-        )
+        if file_format == "ini":
+            kwargs["file_format"] = "ini"
+            return write(getattr(self, "config", None), **kwargs)
+        else:
+            return write(
+                *args, package=package, file_versions=file_versions,
+                file_kwargs=extra_kwargs, file_format=file_format, **kwargs
+            )
 
     def downsample(self, number):
         """Downsample the posterior samples stored in the result file

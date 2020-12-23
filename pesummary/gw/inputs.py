@@ -138,7 +138,7 @@ class _GWInput(_Input):
 
     @staticmethod
     def grab_data_from_file(
-        file, label, config=None, injection=None, file_format=None,
+        file, label, webdir, config=None, injection=None, file_format=None,
         nsamples=None, disable_prior_sampling=False, **kwargs
     ):
         """Grab data from a result file containing posterior samples
@@ -158,7 +158,7 @@ class _GWInput(_Input):
             If None, the read function loops through all possible options
         """
         data = _Input.grab_data_from_file(
-            file, label, config=config, injection=injection,
+            file, label, webdir, config=config, injection=injection,
             read_function=GWRead, file_format=file_format, nsamples=nsamples,
             disable_prior_sampling=disable_prior_sampling, **kwargs
         )

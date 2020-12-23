@@ -42,6 +42,22 @@ def paths_to_key(key, dictionary, current_path=None):
                     yield z
 
 
+def convert_value_to_string(dictionary):
+    """Convert all nested lists of a single value to an item
+
+    Parameters
+    ----------
+    dictionary: dict
+        nested dictionary with nested lists
+    """
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            convert_value_to_string(value)
+        else:
+            dictionary.update({key: str(value)})
+    return dictionary
+
+
 def convert_list_to_item(dictionary):
     """Convert all nested lists of a single value to an item
 
