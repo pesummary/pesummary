@@ -5,7 +5,7 @@ Remaking plots that appear in GWTC1
 Here we will go through step by step how to make all plots that appear in the
 `GWTC1`_ paper produced by the LIGO Virgo collaboration. This involves first
 downloading the data, and then using the
-`summarypublication <../executables/summarypublication.html>`_ executable
+`summarypublication <../../core/cli/summarypublication.html>`_ executable
 provided by PESummary.
 
 .. _GWTC1: https://arxiv.org/abs/1811.12907
