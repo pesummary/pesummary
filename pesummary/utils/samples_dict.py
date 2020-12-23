@@ -123,6 +123,19 @@ class SamplesDict(Dict):
             )
         return super(SamplesDict, self).__getitem__(key)
 
+    def __setitem__(self, key, value):
+        _value = value
+        if not isinstance(value, Array):
+            _value = Array(value)
+        super(SamplesDict, self).__setitem__(key, _value)
+        try:
+            if key not in self.parameters:
+                self.parameters.append(key)
+                self.samples = np.vstack([self.samples, value])
+                self._update_latex_labels()
+        except (AttributeError, TypeError):
+            pass
+
     def __str__(self):
         """Print a summary of the information stored in the dictionary
         """
@@ -911,12 +924,12 @@ class _MultiDimensionalSamplesDict(Dict):
                 enumerate(samples)
             ]
         self.parameters = parameters
-        self.latex_labels = self._latex_labels()
+        self._update_latex_labels()
 
-    def _latex_labels(self):
+    def _update_latex_labels(self):
+        """Update the stored latex labels
         """
-        """
-        return {
+        self._latex_labels = {
             param: latex_labels[param] if param in latex_labels.keys() else
             param for param in self.total_list_of_parameters
         }

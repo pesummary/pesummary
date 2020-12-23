@@ -133,6 +133,7 @@ class Dict(dict):
         if not _init:
             return
         self.logger_warn = logger_warn
+        self.all_latex_labels = latex_labels
         if isinstance(args[0], dict):
             self.parameters = list(args[0].keys())
             _samples = [args[0][param] for param in self.parameters]
@@ -160,10 +161,7 @@ class Dict(dict):
                         setattr(self[key], col, np.array(self[key].T[num]))
         for key, item in kwargs.items():
             setattr(self, key, item)
-        self.latex_labels = {
-            param: latex_labels[param] if param in latex_labels.keys() else
-            param for param in self.parameters
-        }
+        self._update_latex_labels()
 
     def __getitem__(self, key):
         """Return an object representing the specialization of Dict
@@ -202,12 +200,24 @@ class Dict(dict):
         return super(Dict, self).__getitem__(key)
 
     @property
+    def latex_labels(self):
+        return self._latex_labels
+
+    @property
     def plotting_map(self):
         return {}
 
     @property
     def available_plots(self):
         return list(self.plotting_map.keys())
+
+    def _update_latex_labels(self):
+        """Update the stored latex labels
+        """
+        self._latex_labels = {
+            param: self.all_latex_labels[param] if param in
+            self.all_latex_labels.keys() else param for param in self.parameters
+        }
 
     def plot(self, *args, type="", **kwargs):
         """Generate a plot for data stored in Dict
