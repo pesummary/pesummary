@@ -26,7 +26,7 @@ from pesummary.gw.command_line import (
     insert_gwspecific_option_group, add_dynamic_PSD_to_namespace,
     add_dynamic_calibration_to_namespace
 )
-from .base import make_result_file, gw_parameters, data_dir
+from .base import make_result_file, gw_parameters, data_dir, testing_dir
 
 import numpy as np
 import h5py
@@ -74,8 +74,8 @@ class TestCommandLine(object):
 
     def test_config(self):
         assert self.parser.get_default("config") == None
-        opts = self.parser.parse_args(["--config", "test"])
-        assert opts.config == ["test"]
+        opts = self.parser.parse_args(["--config", data_dir + "/example.ini"])
+        assert opts.config == [data_dir + "/example.ini"]
 
     def test_dump(self):
         assert self.parser.get_default("dump") == False
@@ -99,13 +99,15 @@ class TestCommandLine(object):
 
     def test_inj_file(self):
         assert self.parser.get_default("inj_file") == None
-        opts = self.parser.parse_args(["--inj_file", "test"])
-        assert opts.inj_file == ["test"]
+        opts = self.parser.parse_args(
+            ["--inj_file", testing_dir + "/main_injection.xml"]
+        )
+        assert opts.inj_file == [testing_dir + "/main_injection.xml"]
 
     def test_samples(self):
         assert self.parser.get_default("samples") == None
-        opts = self.parser.parse_args(["--samples", "test"])
-        assert opts.samples == ["test"]
+        opts = self.parser.parse_args(["--samples", ".outdir/lalinference_example.h5"])
+        assert opts.samples == [".outdir/lalinference_example.h5"]
 
     def test_sensitivity(self):
         assert self.parser.get_default("sensitivity") == False
@@ -187,11 +189,11 @@ class TestInputExceptions(object):
         assert "Please provide a results file" in str(info.value)
 
     def test_non_existance_samples(self):
-        opts = self.parser.parse_args(["--webdir", "./.outdir",
-                                       "--samples", "./.outdir/no_existance"])
         with pytest.raises(Exception) as info:
+            opts = self.parser.parse_args(["--webdir", "./.outdir",
+                                           "--samples", "./.outdir/no_existance"])
             x = GWInput(opts)
-        assert "File ./.outdir/no_existance does not exist" in str(info.value)
+        assert "./.outdir/no_existance" in str(info.value)
 
     def test_napproximant_not_equal_to_nsamples(self):
         opts = self.parser.parse_args(["--webdir", "./.outdir",
