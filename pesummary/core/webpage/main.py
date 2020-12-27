@@ -217,6 +217,31 @@ class _WebpageGeneration(object):
                 _number_of_labels += len(item)
         return _number_of_labels
 
+    def copy_css_and_js_scripts(self):
+        """Copy css and js scripts from the package to the web directory
+        """
+        import pkg_resources
+        import shutil
+        files_to_copy = []
+        path = pkg_resources.resource_filename("pesummary", "core")
+        scripts = glob(os.path.join(path, "js", "*.js"))
+        for i in scripts:
+            files_to_copy.append(
+                [i, os.path.join(self.webdir, "js", os.path.basename(i))]
+            )
+        scripts = glob(os.path.join(path, "css", "*.css"))
+        for i in scripts:
+            files_to_copy.append(
+                [i, os.path.join(self.webdir, "css", os.path.basename(i))]
+            )
+        for _dir in ["js", "css"]:
+            try:
+                os.mkdir(os.path.join(self.webdir, _dir))
+            except FileExistsError:
+                pass
+        for ff in files_to_copy:
+            shutil.copy(ff[0], ff[1])
+
     def make_modal_carousel(
         self, html_file, image_contents, unique_id=False, **kwargs
     ):
@@ -384,7 +409,7 @@ class _WebpageGeneration(object):
             return final_links
         return None
 
-    def categorize_parameters(self, parameters):
+    def categorize_parameters(self, parameters, starting_letter=True):
         """Categorize the parameters into common headings
 
         Parameters
@@ -397,7 +422,10 @@ class _WebpageGeneration(object):
             if any(
                 any(i[0] in j for j in category["accept"]) for i in parameters
             ):
-                cond = self._condition(category["accept"], category["reject"])
+                cond = self._condition(
+                    category["accept"], category["reject"],
+                    starting_letter=starting_letter
+                )
                 params.append(
                     [heading, self._partition(cond, parameters)]
                 )
@@ -415,7 +443,7 @@ class _WebpageGeneration(object):
             params.append(["others", other_params])
         return params
 
-    def _condition(self, true, false):
+    def _condition(self, true, false, starting_letter=False):
         """Setup a condition
 
         Parameters
@@ -425,15 +453,23 @@ class _WebpageGeneration(object):
         false: list
             list of strings that you would like to neglect
         """
+        def _starting_letter(param, condition):
+            if condition:
+                return param[0]
+            return param
         if len(true) != 0 and len(false) == 0:
-            condition = lambda j: True if any(i in j for i in true) else \
-                False
+            condition = lambda j: True if any(
+                i in _starting_letter(j, starting_letter) for i in true
+            ) else False
         elif len(true) == 0 and len(false) != 0:
-            condition = lambda j: True if any(i not in j for i in false) \
-                else False
+            condition = lambda j: True if any(
+                i not in _starting_letter(j, starting_letter) for i in false
+            ) else False
         elif len(true) and len(false) != 0:
             condition = lambda j: True if any(
-                i in j and all(k not in j for k in false) for i in true
+                i in _starting_letter(j, starting_letter) and all(
+                    k not in _starting_letter(j, starting_letter) for k in false
+                ) for i in true
             ) else False
         return condition
 
