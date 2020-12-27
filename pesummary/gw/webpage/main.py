@@ -180,6 +180,18 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             if any(value for value in self.preliminary_pages.values()):
                 self.preliminary_pages["Comparison"] = True
 
+    def categorize_parameters(self, parameters):
+        """Categorize the parameters into common headings
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters that you would like to sort
+        """
+        return super(_WebpageGeneration, self).categorize_parameters(
+            parameters, starting_letter=False
+        )
+
     def _jensen_shannon_divergence(self, param, samples):
         """Return the Jensen Shannon divergence between two sets of samples
 

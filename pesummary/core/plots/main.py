@@ -20,7 +20,7 @@ import importlib
 from multiprocessing import Pool, Manager
 
 from pesummary.core.plots.latex_labels import latex_labels
-from pesummary.utils.utils import logger, get_matplotlib_backend
+from pesummary.utils.utils import logger, get_matplotlib_backend, make_dir
 from pesummary.core.plots import plot as core
 from pesummary.core.plots import interactive
 
@@ -80,6 +80,8 @@ class _PlotGeneration(object):
     ):
         self.package = "core"
         self.webdir = webdir
+        make_dir(self.webdir)
+        make_dir(os.path.join(self.webdir, "plots", "corner"))
         self.savedir = savedir
         self.labels = labels
         self.mcmc_samples = mcmc_samples
