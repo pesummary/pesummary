@@ -94,7 +94,22 @@ function grab_html(param, label="None") {
     
     var url = window.location.pathname
     var filename = url.substring(url.lastIndexOf('/')+1)
-    if ( param == "home" ){
+
+    if ( label == "switch") {
+        var current_label = filename.split('_')[0]
+        if ( current_label == "Comparison" ) {
+            var new_filename = filename.replace(current_label, param + "_" + param)
+        }
+        else if ( param == "Comparison" ) {
+            var new_filename = filename.replace(current_label + "_" + current_label, param)
+        } else {
+            var re = new RegExp(current_label, "g")
+            var new_filename = filename.replace(re, param);
+        }
+        setTimeout(function() {window.location = "error.html"}, 150)
+        window.location = new_filename
+    }
+    else if ( param == "home" ){
         if ( filename == "home.html" ) {
             window.location = "./home.html"
         } else {

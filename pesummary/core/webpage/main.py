@@ -378,6 +378,13 @@ class _WebpageGeneration(object):
         if self.make_comparison:
             for label in self.labels:
                 final_links[label][1][1] += ["Comparison"]
+        _dummy_label = self.labels[0]
+        if len(final_links[_dummy_label][1][1]) > 1:
+            for label in self.labels:
+                _options = [{l: "switch"} for l in self.labels if l != label]
+                if self.make_comparison:
+                    _options.append({"Comparison": "switch"})
+                final_links[label].append(["Switch", _options])
         if self.make_interactive:
             for label in self.labels:
                 final_links[label].append(
@@ -402,6 +409,9 @@ class _WebpageGeneration(object):
                 "home", ["Result Pages", self._result_page_links()], links
             ]
             final_links[1][1] += ["Comparison"]
+            final_links.append(
+                ["Switch", [{l: "switch"} for l in self.labels]]
+            )
             if self.make_interactive:
                 final_links.append(
                     ["Interactive", ["Interactive_Ridgeline"]]
