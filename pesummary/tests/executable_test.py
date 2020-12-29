@@ -190,12 +190,15 @@ class TestSummaryPages(Base):
             if os.path.isdir(dd):
                 shutil.rmtree(dd)
 
-    def check_output(self, number=1, mcmc=False, existing_plot=False):
+    def check_output(
+        self, number=1, mcmc=False, existing_plot=False, expert=False
+    ):
         """Check the output from the summarypages executable
         """
         assert os.path.isfile(".outdir/home.html")
         plots = get_list_of_plots(
-            gw=False, number=number, mcmc=mcmc, existing_plot=existing_plot
+            gw=False, number=number, mcmc=mcmc, existing_plot=existing_plot,
+            expert=expert
         )
         assert all(
             i == j for i, j in zip(
@@ -210,6 +213,23 @@ class TestSummaryPages(Base):
                 sorted(files), sorted(glob.glob("./.outdir/html/*.html"))
             )
         )
+
+    def test_expert(self):
+        """Check that summarypages produces the expected expert diagnostic
+        plots
+        """
+        command_line = (
+            "summarypages --webdir .outdir --samples  .outdir/example.json "
+            "--labels core0 --nsamples 100 --disable_expert"
+        )
+        self.launch(command_line)
+        self.check_output(number=1, expert=False)
+        command_line = (
+            "summarypages --webdir .outdir --samples  .outdir/example.json "
+            "--labels core0 --nsamples 100"
+        )
+        self.launch(command_line)
+        self.check_output(number=1, expert=True)
 
     def test_prior_input(self):
         """Check that `summarypages` works when a prior file is passed from
@@ -234,7 +254,7 @@ class TestSummaryPages(Base):
                 command_line = (
                     "summarypages --webdir .outdir --samples .outdir/example.json "
                     "--labels test --prior_file {} --nsamples_for_prior "
-                    "10".format(_file)
+                    "10 --disable_expert".format(_file)
                 )
                 command_line += " --gw" if gw else ""
                 self.launch(command_line)
@@ -272,7 +292,8 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir .outdir --samples .outdir/example.json "
             "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
-            "--labels test --posterior_samples_filename example.h5"
+            "--labels test --posterior_samples_filename example.h5 "
+            "--disable_expert"
         )
         self.launch(command_line)
         f = read(".outdir/samples/example.h5")
@@ -291,7 +312,7 @@ class TestSummaryPages(Base):
 
         command_line = (
             "summarypages --webdir .outdir --samples .outdir/example.json "
-            "--gracedb G17864 --gw --labels test"
+            "--gracedb G17864 --gw --labels test --disable_expert"
         )
         self.launch(command_line)
         f = read(".outdir/samples/posterior_samples.h5")
@@ -303,7 +324,7 @@ class TestSummaryPages(Base):
         """
         command_line = (
             "summarypages --webdir .outdir --samples "
-            ".outdir/example.json --label core0"
+            ".outdir/example.json --label core0 --disable_expert"
         )
         self.launch(command_line)
         self.check_output(number=1)
@@ -335,7 +356,7 @@ class TestSummaryPages(Base):
         self.launch(command_line)
         command_line = (
             "summarypages --webdir .outdir --gw --samples "
-            ".outdir/samples/posterior_samples.h5"
+            ".outdir/samples/posterior_samples.h5 --disable_expert"
         )
         self.launch(command_line)
         
@@ -356,7 +377,7 @@ class TestSummaryPages(Base):
         """
         command_line = (
             "summarypages --webdir .outdir --samples "
-            ".outdir/example.json --label core0 --kde_plot"
+            ".outdir/example.json --label core0 --kde_plot --disable_expert"
         )
         self.launch(command_line)
         self.check_output(number=1)
@@ -403,14 +424,15 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir .outdir --samples "
             ".outdir/example.json --label core0 --add_existing_plot "
-            "core0:.outdir/test.png"
+            "core0:.outdir/test.png --disable_expert"
         )
         self.launch(command_line)
         self.check_output(number=1, existing_plot=True)
         command_line = (
             "summarypages --webdir .outdir --samples "
             ".outdir/example.json .outdir/example.json --label core0 core1 "
-            "--add_existing_plot core0:.outdir/test.png core1:.outdir/test.png"
+            "--add_existing_plot core0:.outdir/test.png core1:.outdir/test.png "
+            "--disable_expert"
         )
         self.launch(command_line)
         self.check_output(number=2, existing_plot=True)

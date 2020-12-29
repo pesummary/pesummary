@@ -66,12 +66,14 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <script src='./js/html_to_csv.js'></script>
     <script src='./js/html_to_json.js'></script>
     <script src='./js/html_to_shell.js'></script>
+    <script src='./js/expert.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/font.css">
     <link rel="stylesheet" href="./css/table.css">
     <link rel="stylesheet" href="./css/image_styles.css">
     <link rel="stylesheet" href="./css/watermark.css">
+    <link rel="stylesheet" href="./css/toggle.css">
 """
 
 OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
@@ -87,12 +89,14 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <script src='../js/html_to_csv.js'></script>
     <script src='../js/html_to_json.js'></script>
     <script src='../js/html_to_shell.js'></script>
+    <script src='../js/expert.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/font.css">
     <link rel="stylesheet" href="../css/table.css">
     <link rel="stylesheet" href="../css/image_styles.css">
     <link rel="stylesheet" href="../css/watermark.css">
+    <link rel="stylesheet" href="../css/toggle.css">
 """
 
 
@@ -398,7 +402,7 @@ class page(Base):
     def make_navbar(self, links=None, samples_path="./samples", search=True,
                     histogram_download=None,
                     background_color="navbar-dark",
-                    hdf5=False, about=True):
+                    hdf5=False, about=True, toggle=False):
         """Make a navigation bar in boostrap format.
 
         Parameters
@@ -529,6 +533,18 @@ class page(Base):
         self.add_content(
             "<ul class='navbar-nav flex-row ml-md-auto d-none d-md-flex'"
             "style='margin-right:1em;'>\n", indent=6)
+        if toggle:
+            self.add_content(
+                "<div style='margin-top:0.5em; margin-right: 1em;' "
+                "data-toggle='tooltip' title='Activate expert mode'>", indent=6
+            )
+            self.add_content("<label class='switch'>", indent=8)
+            self.add_content(
+                "<input type='checkbox' onchange='show_expert_div()'>", indent=10
+            )
+            self.add_content("<span class='slider round'></span>", indent=10)
+            self.add_content("</label>", indent=8)
+            self.add_content("</div>", indent=6)
         self.add_content(
             "<a class='nav-link' href='#', onclick='grab_html(\"{}\")'"
             ">{}</a>\n".format("Downloads", "Downloads"), indent=2
@@ -722,7 +738,8 @@ class page(Base):
     def make_table_of_images(self, contents=None, rows=None, columns=None,
                              code="modal", cli=None, autoscale=False,
                              unique_id=None, captions=None, extra_div=False,
-                             mcmc_samples=False, margin_left=None):
+                             mcmc_samples=False, margin_left=None, display=None,
+                             container_id=None):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -742,9 +759,10 @@ class page(Base):
         table = tables.table_of_images(contents, rows, columns, self.html_file,
                                        code=code, cli=cli, autoscale=autoscale,
                                        unique_id=unique_id, captions=captions,
-                                       extra_div=extra_div,
+                                       extra_div=extra_div, display=display,
                                        mcmc_samples=mcmc_samples,
-                                       margin_left=margin_left)
+                                       margin_left=margin_left,
+                                       container_id=container_id)
         table.make()
 
     def insert_image(self, path, justify="center", code=None):

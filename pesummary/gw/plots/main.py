@@ -57,7 +57,7 @@ class _PlotGeneration(_BasePlotGeneration):
         linestyles=None, disable_interactive=False, disable_corner=False,
         publication_kwargs={}, multi_process=1, mcmc_samples=False,
         skymap=None, existing_skymap=None, corner_params=None,
-        preliminary_pages=False
+        preliminary_pages=False, expert_plots=True
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -72,7 +72,8 @@ class _PlotGeneration(_BasePlotGeneration):
             include_prior=include_prior, weights=weights,
             disable_comparison=disable_comparison, linestyles=linestyles,
             disable_interactive=disable_interactive, disable_corner=disable_corner,
-            multi_process=multi_process, corner_params=corner_params
+            multi_process=multi_process, corner_params=corner_params,
+            expert_plots=expert_plots
         )
         self.preliminary_pages = preliminary_pages
         if not isinstance(self.preliminary_pages, dict):

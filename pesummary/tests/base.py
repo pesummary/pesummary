@@ -88,7 +88,8 @@ def get_list_of_files(gw=False, number=1, existing_plot=False):
 
 def get_list_of_plots(
     gw=False, number=1, mcmc=False, label=None, outdir=".outdir",
-    comparison=True, psd=False, calibration=False, existing_plot=False
+    comparison=True, psd=False, calibration=False, existing_plot=False,
+    expert=False
 ):
     """Return a list of plots that should be generated from a typical workflow
     """
@@ -117,6 +118,12 @@ def get_list_of_plots(
             plots.append("./%s/plots/%s%s_calibration_plot.png" % (outdir, label, num))
         if existing_plot:
             plots.append("./%s/plots/test.png" % (outdir))
+        if expert:
+            for j in parameters:
+                if j != "log_likelihood":
+                    plots.append("./%s/plots/%s%s_2d_contour_%s_log_likelihood.png" % (outdir, label, num, j))
+                plots.append("./%s/plots/%s%s_1d_posterior_%s_bootstrap.png" % (outdir, label, num, j))
+                plots.append("./%s/plots/%s%s_sample_evolution_%s_log_likelihood_colored.png" % (outdir, label, num, j))
     if number > 1 and comparison:
         for i in ["1d_posterior", "boxplot", "cdf"]:
             for j in parameters:
@@ -136,7 +143,7 @@ def get_list_of_plots(
 
 
 def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
-                  number=1, existing=False):
+                  number=1, existing=False, disable_expert=True):
     """
     """
     parser = command_line()
@@ -171,6 +178,8 @@ def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
     default_args.append("--config")
     for i in range(number):
         default_args.append(testing_dir + "/example_config.ini")
+    if disable_expert:
+        default_args.append("--disable_expert")
     opts = parser.parse_args(default_args)
     if gw:
         func = GWInput

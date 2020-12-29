@@ -108,7 +108,7 @@ def _autocorrelation_plot_mcmc(
 
 def _sample_evolution_plot(
     param, samples, latex_label, inj_value=None, fig=None, color=conf.color,
-    markersize=0.5, grid=True
+    markersize=0.5, grid=True, z=None, z_label=None, **kwargs
 ):
     """Generate a scatter plot showing the evolution of the samples for a
     given parameter for a given approximant.
@@ -136,10 +136,17 @@ def _sample_evolution_plot(
     else:
         ax = fig.gca()
     n_samples = len(samples)
-    ax.plot(
-        range(n_samples), samples, linestyle=" ", marker="o",
-        markersize=markersize, color=color
+    add_cbar = True if z is not None else False
+    if z is None:
+        z = color
+    s = ax.scatter(
+        range(n_samples), samples, marker="o", s=markersize, c=z,
+        **kwargs
     )
+    if add_cbar:
+        cbar = fig.colorbar(s)
+        if z_label is not None:
+            cbar.set_label(z_label)
     ax.ticklabel_format(axis="x", style="plain")
     ax.set_xlabel("samples")
     ax.set_ylabel(latex_label)
@@ -577,6 +584,49 @@ def _1d_histogram_plot_mcmc(
         )
     gelman = gelman_rubin(samples)
     ax.set_title("Gelman-Rubin: {}".format(gelman))
+    return fig
+
+
+def _1d_histogram_plot_bootstrap(
+    param, samples, latex_label, colorcycle=conf.colorcycle, nsamples=1000,
+    ntests=100, shade=False, plot_percentile=False, kde=True, hist=False,
+    **kwargs
+):
+    """Generate a bootstrapped 1d histogram plot for a given parameter
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: np.ndarray
+        array of samples for param
+    latex_label: str
+        latex label for param
+    colorcycle: list, str
+        color cycle you wish to use for the different tests
+    nsamples: int, optional
+        number of samples to randomly draw from samples. Default 1000
+    ntests: int, optional
+        number of tests to perform. Default 100
+    **kwargs: dict, optional
+        all additional kwargs passed to _1d_histogram_plot
+    """
+    if nsamples > len(samples):
+        nsamples = int(len(samples) / 2)
+    _samples = [
+        np.random.choice(samples, size=nsamples, replace=False) for _ in
+        range(ntests)
+    ]
+    cycol = cycle(colorcycle)
+    fig, ax = figure(gca=True)
+    for ss in _samples:
+        fig = _1d_histogram_plot(
+            param, ss, latex_label, color=next(cycol), title=False,
+            autoscale=False, fig=fig, shade=shade,
+            plot_percentile=plot_percentile, kde=kde, hist=hist, **kwargs
+        )
+    ax.set_title("Ntests: {}, Nsamples per test: {}".format(ntests, nsamples))
+    fig.tight_layout()
     return fig
 
 

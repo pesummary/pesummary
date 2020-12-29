@@ -158,6 +158,11 @@ def hist2d(
     if plot_contours or plot_density:
         pass
 
+    if kde_kwargs is None:
+        kde_kwargs = dict()
+    if contour_kwargs is None:
+        contour_kwargs = dict()
+
     if plot_datapoints:
         if data_kwargs is None:
             data_kwargs = dict()
@@ -192,6 +197,7 @@ def hist2d(
     if plot_density:
         if pcolor_kwargs is None:
             pcolor_kwargs = dict()
+        pcolor_kwargs["shading"] = "auto"
         ax.pcolor(X, Y, np.max(H) - H, cmap=density_cmap, **pcolor_kwargs)
 
     # Plot the contour edge colors.

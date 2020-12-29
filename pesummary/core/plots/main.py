@@ -76,7 +76,7 @@ class _PlotGeneration(object):
         add_to_existing=False, priors={}, include_prior=False, weights=None,
         disable_comparison=False, linestyles=None, disable_interactive=False,
         multi_process=1, mcmc_samples=False, disable_corner=False,
-        corner_params=None
+        corner_params=None, expert_plots=True
     ):
         self.package = "core"
         self.webdir = webdir
@@ -102,6 +102,10 @@ class _PlotGeneration(object):
         self.make_interactive = not disable_interactive
         self.make_corner = not disable_corner
         self.corner_params = corner_params
+        self.expert_plots = expert_plots
+        if self.mcmc_samples and self.expert_plots:
+            logger.warn("Unable to generate expert plots for mcmc samples")
+            self.expert_plots = False
         self.multi_process = multi_process
         self.pool = self.setup_pool()
         self.preliminary_pages = {label: False for label in self.labels}
@@ -134,6 +138,8 @@ class _PlotGeneration(object):
         }
         if self.make_corner:
             self.plot_type_dictionary.update({"corner": self.corner_plot})
+        if self.expert_plots:
+            self.plot_type_dictionary.update({"expert": self.expert_plot})
         if self.make_comparison:
             self.plot_type_dictionary.update(dict(
                 oned_histogram_comparison=self.oned_histogram_comparison_plot,
@@ -270,6 +276,8 @@ class _PlotGeneration(object):
         self.try_to_make_a_plot("sample_evolution", label=label)
         self.try_to_make_a_plot("autocorrelation", label=label)
         self.try_to_make_a_plot("oned_cdf", label=label)
+        if self.expert_plots:
+            self.try_to_make_a_plot("expert", label=label)
         if self.custom_plotting:
             self.try_to_make_a_plot("custom", label=label)
 
@@ -684,6 +692,182 @@ class _PlotGeneration(object):
             ) for param in iterator
         ]
         self.pool.starmap(self._try_to_make_a_plot, arguments)
+
+    def expert_plot(self, label):
+        """Generate expert plots for diagnostics
+
+        Parameters
+        ----------
+        label: str
+            the label for the results file that you wish to plot
+        """
+        error_message = (
+            "Failed to generate log_likelihood-%s 2d contour plot because {}"
+        )
+        iterator, samples, function = self._mcmc_iterator(
+            label, "_2d_contour_plot"
+        )
+        arguments = [
+            (
+                [
+                    self.savedir, label, param, "log_likelihood", samples[param],
+                    samples["log_likelihood"], latex_labels[param],
+                    latex_labels["log_likelihood"],
+                    self.preliminary_pages[label], [
+                        samples[param][np.argmax(samples["log_likelihood"])],
+                        np.max(samples["log_likelihood"]),
+                    ]
+                ], function, error_message % (param)
+            ) for param in iterator
+        ]
+        self.pool.starmap(self._try_to_make_a_plot, arguments)
+        error_message = (
+            "Failed to generate log_likelihood-%s sample_evolution plot "
+            "because {}"
+        )
+        iterator, samples, function = self._mcmc_iterator(
+            label, "_colored_sample_evolution_plot"
+        )
+        arguments = [
+            (
+                [
+                    self.savedir, label, param, "log_likelihood", samples[param],
+                    samples["log_likelihood"], latex_labels[param],
+                    latex_labels["log_likelihood"],
+                    self.preliminary_pages[label],
+                ], function, error_message % (param)
+            ) for param in iterator
+        ]
+        self.pool.starmap(self._try_to_make_a_plot, arguments)
+        error_message = (
+            "Failed to generate bootstrapped oned_histogram plot for %s "
+            "because {}"
+        )
+        iterator, samples, function = self._mcmc_iterator(
+            label, "_oned_histogram_bootstrap_plot"
+        )
+        arguments = [
+            (
+                [
+                    self.savedir, label, param, samples[param],
+                    latex_labels[param], self.preliminary_pages[label],
+                    self.package
+                ], function, error_message % (param)
+            ) for param in iterator
+        ]
+        self.pool.starmap(self._try_to_make_a_plot, arguments)
+
+    @staticmethod
+    def _oned_histogram_bootstrap_plot(
+        savedir, label, parameter, samples, latex_label, preliminary=False,
+        package="core", nsamples=1000, ntests=100, **kwargs
+    ):
+        """Generate a bootstrapped oned histogram plot for a given set of
+        samples
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        label: str
+            the label corresponding to the results file
+        parameter: str
+            the name of the parameter that you wish to plot
+        samples: PESummary.utils.array.Array
+            array containing the samples corresponding to parameter
+        latex_label: str
+            the latex label corresponding to parameter
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
+        """
+        import math
+        module = importlib.import_module(
+            "pesummary.{}.plots.plot".format(package)
+        )
+
+        fig = module._1d_histogram_plot_bootstrap(
+            parameter, samples, latex_label, nsamples=nsamples, ntests=ntests,
+            **kwargs
+        )
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "{}_1d_posterior_{}_bootstrap".format(label, parameter)
+            ), preliminary=preliminary
+        )
+
+    @staticmethod
+    def _2d_contour_plot(
+        savedir, label, parameter_x, parameter_y, samples_x, samples_y,
+        latex_label_x, latex_label_y, preliminary=False, truth=None
+    ):
+        """Generate a 2d contour plot for a given set of samples
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        label: str
+            the label corresponding to the results file
+        samples_x: PESummary.utils.array.Array
+            array containing the samples for the x axis
+        samples_y: PESummary.utils.array.Array
+            array containing the samples for the y axis
+        latex_label_x: str
+            the latex label for the x axis
+        latex_label_y: str
+            the latex label for the y axis
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
+        """
+        from pesummary.core.plots.publication import twod_contour_plot
+
+        fig = twod_contour_plot(
+            samples_x, samples_y, levels=[0.9, 0.5], xlabel=latex_label_x,
+            ylabel=latex_label_y, bins=50, truth=truth
+        )
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "{}_2d_contour_{}_{}".format(
+                    label, parameter_x, parameter_y
+                )
+            ), preliminary=preliminary
+        )
+
+    @staticmethod
+    def _colored_sample_evolution_plot(
+        savedir, label, parameter_x, parameter_y, samples_x, samples_y,
+        latex_label_x, latex_label_y, preliminary=False
+    ):
+        """Generate a 2d contour plot for a given set of samples
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        label: str
+            the label corresponding to the results file
+        samples_x: PESummary.utils.array.Array
+            array containing the samples for the x axis
+        samples_y: PESummary.utils.array.Array
+            array containing the samples for the y axis
+        latex_label_x: str
+            the latex label for the x axis
+        latex_label_y: str
+            the latex label for the y axis
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
+        """
+        fig = core._sample_evolution_plot(
+            parameter_x, samples_x, latex_label_x, z=samples_y,
+            z_label=latex_label_y
+        )
+        _PlotGeneration.save(
+            fig, os.path.join(
+                savedir, "{}_sample_evolution_{}_{}_colored".format(
+                    label, parameter_x, parameter_y
+                )
+            ), preliminary=preliminary
+        )
 
     @staticmethod
     def _sample_evolution_plot(

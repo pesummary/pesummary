@@ -1689,6 +1689,8 @@ class Input(_Input):
         if True, comparison plots and pages are not produced
     disable_interactive: Bool
         if True, interactive plots are not produced
+    disable_expert: Bool
+        if True, expert diagnostic plots are not produced
     """
     def __init__(self, opts, ignore_copy=False, extra_options=None):
         self.opts = opts
@@ -1773,6 +1775,7 @@ class Input(_Input):
         self.notes = self.opts.notes
         self.disable_comparison = self.opts.disable_comparison
         self.disable_interactive = self.opts.disable_interactive
+        self.disable_expert = self.opts.disable_expert
         self.multi_process = self.opts.multi_process
         self.multi_threading_for_plots = self.multi_process
         self.existing_plot = self.opts.existing_plot
@@ -1908,6 +1911,7 @@ class PostProcessing(object):
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison
         self.disable_interactive = self.inputs.disable_interactive
+        self.disable_expert = self.inputs.disable_expert
         self.disable_corner = self.inputs.disable_corner
         self.multi_process = self.inputs.multi_threading_for_plots
         self.package_information = self.inputs.package_information

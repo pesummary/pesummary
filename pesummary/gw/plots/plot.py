@@ -157,6 +157,39 @@ def _1d_histogram_plot_mcmc(
     )
 
 
+def _1d_histogram_plot_bootstrap(
+    param, samples, *args, kde_kwargs={}, bounded=True, **kwargs
+):
+    """Generate a bootstrapped 1d histogram plot for a given parameter
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: np.ndarray
+        array of samples for param
+    args: tuple
+        all args passed to
+        pesummary.core.plots.plot._1d_histogram_plot_bootstrap function
+    kde_kwargs: dict, optional
+        optional kwargs passed to the kde class
+    bounded: Bool, optional
+        if True, pass default 'xlow' and 'xhigh' arguments to the kde class
+    **kwargs: dict, optional
+        all additional kwargs passed to the
+        pesummary.core.plots.plot._1d_histogram_plot_bootstrap function
+    """
+    from pesummary.core.plots.plot import _1d_histogram_plot_bootstrap
+
+    if bounded:
+        kde_kwargs = _add_default_bounds_to_kde_kwargs_dict(
+            kde_kwargs, param, samples
+        )
+    return _1d_histogram_plot_bootstrap(
+        param, samples, *args, kde_kwargs=kde_kwargs, **kwargs
+    )
+
+
 def _1d_comparison_histogram_plot(
     param, samples, *args, kde_kwargs={}, bounded=True, max_vline=2,
     legend_kwargs=_default_legend_kwargs, **kwargs
