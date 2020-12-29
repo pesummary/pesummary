@@ -262,7 +262,8 @@ class TestCoreBilbyJson(Base):
 
         parser = command_line()
         default_args = ["--webdir", ".outdir_pesummary",
-                        "--samples", ".outdir/samples/posterior_samples.h5"]
+                        "--samples", ".outdir/samples/posterior_samples.h5",
+                        "--disable_expert"]
         opts = parser.parse_args(default_args)
         func = functions(opts)
         inputs = func["input"](opts)
@@ -488,7 +489,7 @@ class TestGWLALInference(GWBase):
         insert_gwspecific_option_group(parser)
         default_args = ["--webdir", ".outdir_pesummary",
                         "--samples", ".outdir/samples/posterior_samples.h5",
-                        "--gw"]
+                        "--gw", "--disable_expert"]
         from pesummary.gw.file.read import read
         f = read(".outdir/samples/posterior_samples.h5")
         opts = parser.parse_args(default_args)

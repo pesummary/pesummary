@@ -123,7 +123,7 @@ class _WebpageGeneration(object):
         disable_comparison=False, disable_interactive=False,
         package_information={"packages": [], "manager": "pypi"},
         mcmc_samples=False, external_hdf5_links=False, key_data=None,
-        existing_plot=None
+        existing_plot=None, disable_expert=False
     ):
         self.webdir = webdir
         make_dir(self.webdir)
@@ -177,6 +177,7 @@ class _WebpageGeneration(object):
         self.mcmc_samples = mcmc_samples
         self.external_hdf5_links = external_hdf5_links
         self.existing_plot = existing_plot
+        self.expert_plots = not disable_expert
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -537,7 +538,7 @@ class _WebpageGeneration(object):
 
     def setup_page(
         self, html_page, links, label=None, title=None, approximant=None,
-        background_colour=None, histogram_download=False
+        background_colour=None, histogram_download=False, toggle=False
     ):
         """Set up each webpage with a header and navigation bar.
 
@@ -575,12 +576,12 @@ class _WebpageGeneration(object):
             html_file.make_navbar(
                 links=links, samples_path=self.results_path["home"],
                 background_color=background_colour,
-                hdf5=self.hdf5
+                hdf5=self.hdf5, toggle=toggle
             )
         elif histogram_download:
             html_file.make_navbar(
                 links=links, samples_path=self.results_path["other"],
-                histogram_download=os.path.join(
+                toggle=toggle, histogram_download=os.path.join(
                     "..", "samples", "dat", label, "{}_{}_samples.dat".format(
                         label, html_page
                     )
@@ -589,7 +590,8 @@ class _WebpageGeneration(object):
         else:
             html_file.make_navbar(
                 links=links, samples_path=self.results_path["home"],
-                background_color=background_colour, hdf5=self.hdf5
+                background_color=background_colour, hdf5=self.hdf5,
+                toggle=toggle
             )
         return html_file
 
@@ -712,7 +714,7 @@ class _WebpageGeneration(object):
                     "{}_{}".format(i, j), self.navbar["result_page"][i],
                     i, title="{} Posterior PDF for {}".format(i, j),
                     approximant=i, background_colour=self.colors[num],
-                    histogram_download=False
+                    histogram_download=False, toggle=self.expert_plots
                 )
                 html_file.make_banner(approximant=i, key=i)
                 path = self.image_path["other"]
@@ -734,6 +736,29 @@ class _WebpageGeneration(object):
                     contents=contents, rows=1, columns=2, code="changeimage",
                     captions=captions, mcmc_samples=self.mcmc_samples
                 )
+                contents = [
+                    [path + "{}_2d_contour_{}_log_likelihood.png".format(i, j)],
+                    [
+                        path + "{}_sample_evolution_{}_{}_colored.png".format(
+                            i, j, "log_likelihood"
+                        ), path + "{}_1d_posterior_{}_bootstrap.png".format(i, j)
+                    ]
+                ]
+                captions = [
+                    [PlotCaption("2d_contour").format(j, "log_likelihood")],
+                    [
+                        PlotCaption("sample_evolution_colored").format(
+                            j, "log_likelihood"
+                        ),
+                        PlotCaption("1d_histogram_bootstrap").format(100, j, 1000)
+                    ]
+                ]
+                if self.expert_plots:
+                    html_file.make_table_of_images(
+                        contents=contents, rows=1, columns=2, code="changeimage",
+                        captions=captions, mcmc_samples=self.mcmc_samples,
+                        display='none', container_id='expert_div'
+                    )
                 html_file.export(
                     "", csv=False, json=False, shell=False, margin_bottom="1em",
                     histogram_dat=os.path.join(

@@ -72,7 +72,7 @@ class Base(object):
             string += " class='%s'" % (_class)
         if _style:
             string += " style='%s'" % (_style)
-        if _id:
+        if _id is not None:
             string += " id='%s'" % (_id)
         string += ">\n"
         self.add_content(string, indent=indent)
@@ -87,7 +87,7 @@ class Base(object):
         """
         self.add_content("</div>", indent)
 
-    def make_container(self, style=None, indent=0):
+    def make_container(self, style=None, indent=0, display=None, container_id=None):
         """Make a container for your webpage
 
         Parameters
@@ -98,7 +98,9 @@ class Base(object):
         if not style:
             style = "margin-top:3em; margin-bottom:5em; background-color:#FFFFFF; " + \
                     "box-shadow: 0 0 5px grey; max-width: 1400px"
-        self.make_div(indent, _class="container", _style=style)
+        if display is not None:
+            style += "; display:{}".format(display)
+        self.make_div(indent, _class="container", _style=style, _id=container_id)
 
     def end_container(self, indent=0):
         """End a container

@@ -40,7 +40,7 @@ class _PlotGeneration(_GWPlotGeneration):
         existing_weights=None, weights=None, disable_comparison=False,
         linestyles=None, disable_interactive=False, disable_corner=False,
         publication_kwargs={}, multi_process=1, corner_params=None,
-        preliminary_pages=False
+        preliminary_pages=False, expert_plots=False
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -69,5 +69,5 @@ class _PlotGeneration(_GWPlotGeneration):
             disable_corner=disable_corner,
             publication_kwargs=publication_kwargs,
             multi_process=multi_process, corner_params=corner_params,
-            preliminary_pages=preliminary_pages
+            preliminary_pages=preliminary_pages, expert_plots=expert_plots
         )
