@@ -1695,6 +1695,7 @@ class Input(_Input):
     def __init__(self, opts, ignore_copy=False, extra_options=None):
         self.opts = opts
         self.seed = self.opts.seed
+        self.restart_from_checkpoint = self.opts.restart_from_checkpoint
         self.style_file = self.opts.style_file
         self.result_files = self.opts.samples
         if self.result_files is not None:
@@ -1732,6 +1733,21 @@ class Input(_Input):
             self.existing_injection_data = None
         self.user = self.opts.user
         self.webdir = self.opts.webdir
+        self._restarted_from_checkpoint = False
+        self.resume_file_dir = os.path.join(self.webdir, "checkpoint")
+        self.resume_file = "pesummary_resume.pickle"
+        self._resume_file_path = os.path.join(
+            self.resume_file_dir, self.resume_file
+        )
+        if self.webdir is not None and self.restart_from_checkpoint:
+            if os.path.isfile(self._resume_file_path):
+                self.load_current_state()
+                self._restarted_from_checkpoint = True
+                return
+            else:
+                logger.info(
+                    "Unable to find resume file. Not restarting from checkpoint"
+                )
         self.baseurl = self.opts.baseurl
         self.filename = self.opts.filename
         self.mcmc_samples = self.opts.mcmc_samples
@@ -1742,7 +1758,8 @@ class Input(_Input):
         self.publication = self.opts.publication
         self.publication_kwargs = self.opts.publication_kwargs
         self.default_directories = [
-            "samples", "plots", "js", "html", "css", "plots/corner", "config"
+            "samples", "plots", "js", "html", "css", "plots/corner", "config",
+            "checkpoint"
         ]
         self.make_directories()
         self.regenerate = self.opts.regenerate
@@ -1782,6 +1799,31 @@ class Input(_Input):
         self.package_information = self.get_package_information()
         if not ignore_copy:
             self.copy_files()
+        self.write_current_state()
+
+    def load_current_state(self):
+        """
+        """
+        from pesummary.io import read
+        logger.info(
+            "Reading checkpoint file: {}".format(self._resume_file_path)
+        )
+        state = read(self._resume_file_path, checkpoint=True)
+        for key, item in vars(state).items():
+            setattr(self, key, item)
+        self.restart_from_checkpoint = True
+
+    def write_current_state(self):
+        """Write the current state of the input class to file
+        """
+        from pesummary.io import write
+        write(
+            self, outdir=self.resume_file_dir, file_format="pickle",
+            filename=self.resume_file, overwrite=True
+        )
+        logger.debug(
+            "Written checkpoint file: {}".format(self._resume_file_path)
+        )
 
 
 class PostProcessing(object):
@@ -1916,6 +1958,7 @@ class PostProcessing(object):
         self.multi_process = self.inputs.multi_threading_for_plots
         self.package_information = self.inputs.package_information
         self.existing_plot = self.inputs.existing_plot
+        self.restart_from_checkpoint = self.inputs.restart_from_checkpoint
         self.same_parameters = []
         if self.mcmc_samples:
             self.samples = {label: self.samples.T for label in self.labels}

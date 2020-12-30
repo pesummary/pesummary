@@ -89,7 +89,8 @@ class _CorePlotGeneration(PostProcessing):
             disable_interactive=self.disable_interactive,
             disable_corner=self.disable_corner,
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
-            corner_params=self.corner_params, expert_plots=expert_plots
+            corner_params=self.corner_params, expert_plots=expert_plots,
+            checkpoint=self.restart_from_checkpoint
         )
 
     def generate_plots(self):
@@ -146,7 +147,8 @@ class _GWPlotGeneration(GWPostProcessing):
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
             skymap=self.skymap, existing_skymap=self.existing_skymap,
             corner_params=self.corner_params,
-            preliminary_pages=self.preliminary_pages, expert_plots=expert_plots
+            preliminary_pages=self.preliminary_pages, expert_plots=expert_plots,
+            checkpoint=self.restart_from_checkpoint
         )
         self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 
@@ -204,7 +206,8 @@ class _PublicGWPlotGeneration(GWPostProcessing):
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
             skymap=self.skymap, existing_skymap=self.existing_skymap,
             corner_params=self.corner_params,
-            preliminary_pages=self.preliminary_pages, expert_plots=expert_plots
+            preliminary_pages=self.preliminary_pages, expert_plots=expert_plots,
+            checkpoint=self.restart_from_checkpoint
         )
         self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 

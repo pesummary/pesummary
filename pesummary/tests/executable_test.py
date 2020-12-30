@@ -214,6 +214,29 @@ class TestSummaryPages(Base):
             )
         )
 
+    def test_checkpoint(self):
+        """Check that when restarting from checkpoint, the outputs are
+        consistent
+        """
+        import time
+        command_line = (
+            "summarypages --webdir .outdir --samples  .outdir/example.json "
+            "--labels core0 --nsamples 100 --disable_expert --restart_from_checkpoint"
+        )
+        t0 = time.time()
+        self.launch(command_line)
+        t1 = time.time()
+        assert os.path.isfile(".outdir/checkpoint/pesummary_resume.pickle")
+        self.check_output(number=1, expert=False)
+        t2 = time.time()
+        self.launch(command_line)
+        t3 = time.time()
+        assert t3 - t2 < t1 - t0
+        self.check_output(number=1, expert=False)
+        # get timestamp of plot
+        made_time = os.path.getmtime(glob.glob(".outdir/plots/*.png")[0])
+        assert made_time < t2
+
     def test_expert(self):
         """Check that summarypages produces the expected expert diagnostic
         plots

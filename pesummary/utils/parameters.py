@@ -17,25 +17,6 @@ from .list import List
 from pesummary.gw.file.standard_names import descriptive_names
 
 
-class Parameters(List):
-    """Class to store the list of parameters
-
-    Parameters
-    ----------
-    *args: tuple
-        all arguments are passed to the list class
-    **kwargs: dict
-        all kwargs are passed to the list class
-
-    Attributes
-    ----------
-    added: list
-        list of parameters that have been appended to the original list
-    """
-    def __init__(self, *args, **kwargs):
-        super(Parameters, self).__init__(*args, cls=Parameter, **kwargs)
-
-
 class Parameter(str):
     """Class to handle a single parameter
 
@@ -71,3 +52,27 @@ class Parameter(str):
 
     def __repr__(self):
         return repr(self._parameter)
+
+
+class Parameters(List):
+    """Class to store the list of parameters
+
+    Parameters
+    ----------
+    args: tuple
+        all arguments are passed to the list class
+    **kwargs: dict
+        all kwargs are passed to the list class
+
+    Attributes
+    ----------
+    added: list
+        list of parameters that have been appended to the original list
+    """
+    def __init__(self, *args, cls=Parameter, **kwargs):
+        if len(args) == 1:
+            super(Parameters, self).__init__(*args, cls=Parameter, **kwargs)
+        else:
+            _args = list(args)
+            _args[2] = Parameter
+            super(Parameters, self).__init__(*_args, **kwargs)

@@ -867,6 +867,8 @@ class GWInput(_GWInput, Input):
                 "force_BBH_remnant_computation"
             ]
         )
+        if self._restarted_from_checkpoint:
+            return
         if self.existing is not None:
             self.existing_data = self.grab_data_from_metafile(
                 self.existing_metafile, self.existing,
@@ -912,6 +914,7 @@ class GWInput(_GWInput, Input):
         self.pepredicates_probs = []
         self.pastro_probs = []
         self.copy_files()
+        self.write_current_state()
 
     def copy_files(self):
         """Copy the relevant file to the web directory
