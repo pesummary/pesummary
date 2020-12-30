@@ -76,7 +76,7 @@ class _PlotGeneration(object):
         add_to_existing=False, priors={}, include_prior=False, weights=None,
         disable_comparison=False, linestyles=None, disable_interactive=False,
         multi_process=1, mcmc_samples=False, disable_corner=False,
-        corner_params=None, expert_plots=True
+        corner_params=None, expert_plots=True, checkpoint=False
     ):
         self.package = "core"
         self.webdir = webdir
@@ -106,6 +106,7 @@ class _PlotGeneration(object):
         if self.mcmc_samples and self.expert_plots:
             logger.warn("Unable to generate expert plots for mcmc samples")
             self.expert_plots = False
+        self.checkpoint = checkpoint
         self.multi_process = multi_process
         self.pool = self.setup_pool()
         self.preliminary_pages = {label: False for label in self.labels}
@@ -358,12 +359,13 @@ class _PlotGeneration(object):
             samples = self.samples[label]
         self._corner_plot(
             self.savedir, label, samples, latex_labels, self.webdir,
-            self.corner_params, self.preliminary_pages[label]
+            self.corner_params, self.preliminary_pages[label], self.checkpoint
         )
 
     @staticmethod
     def _corner_plot(
-        savedir, label, samples, latex_labels, webdir, params, preliminary=False
+        savedir, label, samples, latex_labels, webdir, params, preliminary=False,
+        checkpoint=False
     ):
         """Generate a corner plot for a given set of samples
 
@@ -387,15 +389,16 @@ class _PlotGeneration(object):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            filename = os.path.join(
+                savedir, "corner", "{}_all_density_plots.png".format(label)
+            )
+            if os.path.isfile(filename) and checkpoint:
+                return
             fig, params, data = core._make_corner_plot(
                 samples, latex_labels, corner_parameters=params
             )
             _PlotGeneration.save(
-                fig, os.path.join(
-                    savedir, "corner", "{}_all_density_plots".format(
-                        label
-                    )
-                ), preliminary=preliminary
+                fig, filename, preliminary=preliminary
             )
             combine_corner = open(
                 os.path.join(webdir, "js", "combine_corner.js")
@@ -473,7 +476,8 @@ class _PlotGeneration(object):
                     self.savedir, label, param, samples[param],
                     latex_labels[param], self.injection_data[label][param],
                     self.kde_plot, prior(param), self.weights[label],
-                    self.package, self.preliminary_pages[label]
+                    self.package, self.preliminary_pages[label],
+                    self.checkpoint
                 ], function, error_message % (param)
             ) for param in iterator
         ]
@@ -499,7 +503,7 @@ class _PlotGeneration(object):
                 self.savedir, param, self.same_samples[param],
                 latex_labels[param], self.colors, injection, self.kde_plot,
                 self.linestyles, self.package,
-                self.preliminary_comparison_pages
+                self.preliminary_comparison_pages, self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._oned_histogram_comparison_plot,
@@ -510,7 +514,7 @@ class _PlotGeneration(object):
     @staticmethod
     def _oned_histogram_comparison_plot(
         savedir, parameter, samples, latex_label, colors, injection, kde=False,
-        linestyles=None, package="core", preliminary=False
+        linestyles=None, package="core", preliminary=False, checkpoint=False
     ):
         """Generate a oned comparison histogram plot for a given parameter
 
@@ -542,6 +546,11 @@ class _PlotGeneration(object):
         module = importlib.import_module(
             "pesummary.{}.plots.plot".format(package)
         )
+        filename = os.path.join(
+            savedir, "combined_1d_posterior_{}.png".format(parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         hist = not kde
         for num, inj in enumerate(injection):
             if math.isnan(inj):
@@ -553,15 +562,14 @@ class _PlotGeneration(object):
             linestyles=linestyles, hist=hist
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "combined_1d_posterior_{}".format(parameter)
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     @staticmethod
     def _oned_histogram_plot(
         savedir, label, parameter, samples, latex_label, injection, kde=False,
-        prior=None, weights=None, package="core", preliminary=False
+        prior=None, weights=None, package="core", preliminary=False,
+        checkpoint=False
     ):
         """Generate a oned histogram plot for a given set of samples
 
@@ -597,20 +605,24 @@ class _PlotGeneration(object):
             injection = None
         hist = not kde
 
+        filename = os.path.join(
+            savedir, "{}_1d_posterior_{}.png".format(label, parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = module._1d_histogram_plot(
             parameter, samples, latex_label, inj_value=injection, kde=kde,
             hist=hist, prior=prior, weights=weights
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_1d_posterior_{}".format(label, parameter)
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     @staticmethod
     def _oned_histogram_plot_mcmc(
         savedir, label, parameter, samples, latex_label, injection, kde=False,
-        prior=None, weights=None, package="core", preliminary=False
+        prior=None, weights=None, package="core", preliminary=False,
+        checkpoint=False
     ):
         """Generate a oned histogram plot for a given set of samples for
         multiple mcmc chains
@@ -649,24 +661,32 @@ class _PlotGeneration(object):
         if math.isnan(injection):
             injection = None
         same_samples = [val for key, val in samples.items()]
-        fig = module._1d_histogram_plot_mcmc(
-            parameter, same_samples, latex_label, inj_value=injection, kde=kde,
-            prior=prior, weights=weights
+        filename = os.path.join(
+            savedir, "{}_1d_posterior_{}.png".format(label, parameter)
         )
-        _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_1d_posterior_{}".format(label, parameter)
-            ), preliminary=preliminary
+        if os.path.isfile(filename) and checkpoint:
+            pass
+        else:
+            fig = module._1d_histogram_plot_mcmc(
+                parameter, same_samples, latex_label, inj_value=injection,
+                kde=kde, prior=prior, weights=weights
+            )
+            _PlotGeneration.save(
+                fig, filename, preliminary=preliminary
+            )
+        filename = os.path.join(
+            savedir, "{}_1d_posterior_{}_combined.png".format(label, parameter)
         )
-        fig = module._1d_histogram_plot(
-            parameter, Array(np.concatenate(same_samples)), latex_label,
-            inj_value=injection, kde=kde, prior=prior, weights=weights
-        )
-        _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_1d_posterior_{}_combined".format(label, parameter)
-            ), preliminary=preliminary
-        )
+        if os.path.isfile(filename) and checkpoint:
+            pass
+        else:
+            fig = module._1d_histogram_plot(
+                parameter, Array(np.concatenate(same_samples)), latex_label,
+                inj_value=injection, kde=kde, prior=prior, weights=weights
+            )
+            _PlotGeneration.save(
+                fig, filename, preliminary=preliminary
+            )
 
     def sample_evolution_plot(self, label):
         """Generate sample evolution plots for all parameters in the result file
@@ -687,7 +707,7 @@ class _PlotGeneration(object):
                 [
                     self.savedir, label, param, samples[param],
                     latex_labels[param], self.injection_data[label][param],
-                    self.preliminary_pages[label]
+                    self.preliminary_pages[label], self.checkpoint
                 ], function, error_message % (param)
             ) for param in iterator
         ]
@@ -716,7 +736,7 @@ class _PlotGeneration(object):
                     self.preliminary_pages[label], [
                         samples[param][np.argmax(samples["log_likelihood"])],
                         np.max(samples["log_likelihood"]),
-                    ]
+                    ], self.checkpoint
                 ], function, error_message % (param)
             ) for param in iterator
         ]
@@ -734,7 +754,7 @@ class _PlotGeneration(object):
                     self.savedir, label, param, "log_likelihood", samples[param],
                     samples["log_likelihood"], latex_labels[param],
                     latex_labels["log_likelihood"],
-                    self.preliminary_pages[label],
+                    self.preliminary_pages[label], self.checkpoint
                 ], function, error_message % (param)
             ) for param in iterator
         ]
@@ -751,7 +771,7 @@ class _PlotGeneration(object):
                 [
                     self.savedir, label, param, samples[param],
                     latex_labels[param], self.preliminary_pages[label],
-                    self.package
+                    self.package, self.checkpoint
                 ], function, error_message % (param)
             ) for param in iterator
         ]
@@ -760,7 +780,7 @@ class _PlotGeneration(object):
     @staticmethod
     def _oned_histogram_bootstrap_plot(
         savedir, label, parameter, samples, latex_label, preliminary=False,
-        package="core", nsamples=1000, ntests=100, **kwargs
+        package="core", checkpoint=False, nsamples=1000, ntests=100, **kwargs
     ):
         """Generate a bootstrapped oned histogram plot for a given set of
         samples
@@ -785,20 +805,24 @@ class _PlotGeneration(object):
             "pesummary.{}.plots.plot".format(package)
         )
 
+        filename = os.path.join(
+            savedir, "{}_1d_posterior_{}_bootstrap.png".format(label, parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = module._1d_histogram_plot_bootstrap(
             parameter, samples, latex_label, nsamples=nsamples, ntests=ntests,
             **kwargs
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_1d_posterior_{}_bootstrap".format(label, parameter)
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     @staticmethod
     def _2d_contour_plot(
         savedir, label, parameter_x, parameter_y, samples_x, samples_y,
-        latex_label_x, latex_label_y, preliminary=False, truth=None
+        latex_label_x, latex_label_y, preliminary=False, truth=None,
+        checkpoint=False
     ):
         """Generate a 2d contour plot for a given set of samples
 
@@ -821,22 +845,25 @@ class _PlotGeneration(object):
         """
         from pesummary.core.plots.publication import twod_contour_plot
 
+        filename = os.path.join(
+            savedir, "{}_2d_contour_{}_{}.png".format(
+                label, parameter_x, parameter_y
+            )
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = twod_contour_plot(
             samples_x, samples_y, levels=[0.9, 0.5], xlabel=latex_label_x,
             ylabel=latex_label_y, bins=50, truth=truth
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_2d_contour_{}_{}".format(
-                    label, parameter_x, parameter_y
-                )
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     @staticmethod
     def _colored_sample_evolution_plot(
         savedir, label, parameter_x, parameter_y, samples_x, samples_y,
-        latex_label_x, latex_label_y, preliminary=False
+        latex_label_x, latex_label_y, preliminary=False, checkpoint=False
     ):
         """Generate a 2d contour plot for a given set of samples
 
@@ -857,22 +884,25 @@ class _PlotGeneration(object):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "{}_sample_evolution_{}_{}_colored.png".format(
+                label, parameter_x, parameter_y
+            )
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = core._sample_evolution_plot(
             parameter_x, samples_x, latex_label_x, z=samples_y,
             z_label=latex_label_y
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_sample_evolution_{}_{}_colored".format(
-                    label, parameter_x, parameter_y
-                )
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     @staticmethod
     def _sample_evolution_plot(
         savedir, label, parameter, samples, latex_label, injection,
-        preliminary=False
+        preliminary=False, checkpoint=False
     ):
         """Generate a sample evolution plot for a given set of samples
 
@@ -893,19 +923,22 @@ class _PlotGeneration(object):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "{}_sample_evolution_{}.png".format(label, parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = core._sample_evolution_plot(
             parameter, samples, latex_label, injection
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_sample_evolution_{}".format(label, parameter)
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     @staticmethod
     def _sample_evolution_plot_mcmc(
         savedir, label, parameter, samples, latex_label, injection,
-        preliminary=False
+        preliminary=False, checkpoint=False
     ):
         """Generate a sample evolution plot for a given set of mcmc chains
 
@@ -927,14 +960,17 @@ class _PlotGeneration(object):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "{}_sample_evolution_{}.png".format(label, parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         same_samples = [val for key, val in samples.items()]
         fig = core._sample_evolution_plot_mcmc(
             parameter, same_samples, latex_label, injection
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_sample_evolution_{}".format(label, parameter)
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def autocorrelation_plot(self, label):
@@ -955,7 +991,7 @@ class _PlotGeneration(object):
             (
                 [
                     self.savedir, label, param, samples[param],
-                    self.preliminary_pages[label]
+                    self.preliminary_pages[label], self.checkpoint
                 ], function, error_message % (param)
             ) for param in iterator
         ]
@@ -963,7 +999,7 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _autocorrelation_plot(
-        savedir, label, parameter, samples, preliminary=False
+        savedir, label, parameter, samples, preliminary=False, checkpoint=False
     ):
         """Generate an autocorrelation plot for a given set of samples
 
@@ -980,18 +1016,19 @@ class _PlotGeneration(object):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "{}_autocorrelation_{}.png".format(label, parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = core._autocorrelation_plot(parameter, samples)
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_autocorrelation_{}".format(
-                    label, parameter
-                )
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     @staticmethod
     def _autocorrelation_plot_mcmc(
-        savedir, label, parameter, samples, preliminary=False
+        savedir, label, parameter, samples, preliminary=False, checkpoint=False
     ):
         """Generate an autocorrelation plot for a list of samples, one for each
         mcmc chain
@@ -1010,14 +1047,15 @@ class _PlotGeneration(object):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "{}_autocorrelation_{}.png".format(label, parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         same_samples = [val for key, val in samples.items()]
         fig = core._autocorrelation_plot_mcmc(parameter, same_samples)
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_autocorrelation_{}".format(
-                    label, parameter
-                )
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def oned_cdf_plot(self, label):
@@ -1038,7 +1076,8 @@ class _PlotGeneration(object):
             (
                 [
                     self.savedir, label, param, samples[param],
-                    latex_labels[param], self.preliminary_pages[label]
+                    latex_labels[param], self.preliminary_pages[label],
+                    self.checkpoint
                 ], function, error_message % (param)
             ) for param in iterator
         ]
@@ -1046,7 +1085,8 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _oned_cdf_plot(
-        savedir, label, parameter, samples, latex_label, preliminary=False
+        savedir, label, parameter, samples, latex_label, preliminary=False,
+        checkpoint=False
     ):
         """Generate a oned CDF plot for a given set of samples
 
@@ -1065,16 +1105,20 @@ class _PlotGeneration(object):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir + "{}_cdf_{}.png".format(label, parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = core._1d_cdf_plot(parameter, samples, latex_label)
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir + "{}_cdf_{}".format(label, parameter)
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     @staticmethod
     def _oned_cdf_plot_mcmc(
-        savedir, label, parameter, samples, latex_label, preliminary=False
+        savedir, label, parameter, samples, latex_label, preliminary=False,
+        checkpoint=False
     ):
         """Generate a oned CDF plot for a given set of samples, one for each
         mcmc chain
@@ -1095,12 +1139,15 @@ class _PlotGeneration(object):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir + "{}_cdf_{}.png".format(label, parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         same_samples = [val for key, val in samples.items()]
         fig = core._1d_cdf_plot_mcmc(parameter, same_samples, latex_label)
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir + "{}_cdf_{}".format(label, parameter)
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def interactive_ridgeline_plot(self, label):
@@ -1113,7 +1160,7 @@ class _PlotGeneration(object):
         for param in self.same_parameters:
             arguments = [
                 self.savedir, param, self.same_samples[param],
-                latex_labels[param], self.colors
+                latex_labels[param], self.colors, self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._interactive_ridgeline_plot,
@@ -1123,16 +1170,19 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _interactive_ridgeline_plot(
-        savedir, parameter, samples, latex_label, colors
+        savedir, parameter, samples, latex_label, colors, checkpoint=False
     ):
         """Generate an interactive ridgeline plot for
         """
+        filename = os.path.join(
+            savedir, "interactive_ridgeline_{}.html".format(parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         same_samples = [val for key, val in samples.items()]
         _ = interactive.ridgeline(
             same_samples, list(samples.keys()), xlabel=latex_label,
-            colors=colors, write_to_html_file=os.path.join(
-                savedir, "interactive_ridgeline_{}.html".format(parameter)
-            )
+            colors=colors, write_to_html_file=filename
         )
 
     def interactive_corner_plot(self, label):
@@ -1144,11 +1194,14 @@ class _PlotGeneration(object):
             the label for the results file that you wish to plot
         """
         self._interactive_corner_plot(
-            self.savedir, label, self.samples[label], latex_labels
+            self.savedir, label, self.samples[label], latex_labels,
+            self.checkpoint
         )
 
     @staticmethod
-    def _interactive_corner_plot(savedir, label, samples, latex_labels):
+    def _interactive_corner_plot(
+        savedir, label, samples, latex_labels, checkpoint=False
+    ):
         """Generate an interactive corner plot for a given set of samples
 
         Parameters
@@ -1163,13 +1216,16 @@ class _PlotGeneration(object):
         latex_labels: str
             latex labels for each parameter in samples
         """
+        filename = os.path.join(
+            savedir, "corner", "{}_interactive.html".format(label)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         parameters = samples.keys()
         data = [samples[parameter] for parameter in parameters]
         latex_labels = [latex_labels[parameter] for parameter in parameters]
         _ = interactive.corner(
-            data, latex_labels, write_to_html_file=os.path.join(
-                savedir, "corner", "{}_interactive.html".format(label)
-            )
+            data, latex_labels, write_to_html_file=filename
         )
 
     def oned_cdf_comparison_plot(self, label):
@@ -1188,7 +1244,7 @@ class _PlotGeneration(object):
             arguments = [
                 self.savedir, param, self.same_samples[param],
                 latex_labels[param], self.colors, self.linestyles,
-                self.preliminary_comparison_pages
+                self.preliminary_comparison_pages, self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._oned_cdf_comparison_plot,
@@ -1199,7 +1255,7 @@ class _PlotGeneration(object):
     @staticmethod
     def _oned_cdf_comparison_plot(
         savedir, parameter, samples, latex_label, colors, linestyles=None,
-        preliminary=False
+        preliminary=False, checkpoint=False
     ):
         """Generate a oned comparison CDF plot for a given parameter
 
@@ -1223,15 +1279,18 @@ class _PlotGeneration(object):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "combined_cdf_{}.png".format(parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         keys = list(samples.keys())
         same_samples = [samples[key] for key in keys]
         fig = core._1d_cdf_comparison_plot(
             parameter, same_samples, colors, latex_label, keys, linestyles
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "combined_cdf_{}".format(parameter)
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def box_plot_comparison_plot(self, label):
@@ -1250,7 +1309,7 @@ class _PlotGeneration(object):
             arguments = [
                 self.savedir, param, self.same_samples[param],
                 latex_labels[param], self.colors,
-                self.preliminary_comparison_pages
+                self.preliminary_comparison_pages, self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._box_plot_comparison_plot,
@@ -1260,7 +1319,8 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _box_plot_comparison_plot(
-        savedir, parameter, samples, latex_label, colors, preliminary=False
+        savedir, parameter, samples, latex_label, colors, preliminary=False,
+        checkpoint=False
     ):
         """Generate a comparison box plot for a given parameter
 
@@ -1282,14 +1342,18 @@ class _PlotGeneration(object):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "combined_boxplot_{}.png".format(parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         same_samples = [val for key, val in samples.items()]
         fig = core._comparison_box_plot(
             parameter, same_samples, colors, latex_label,
             list(samples.keys())
         )
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "combined_boxplot_{}".format(parameter)),
-            preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def custom_plot(self, label):

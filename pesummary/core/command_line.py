@@ -546,6 +546,13 @@ def _performance_command_line_options(parser):
         "--file_format", dest="file_format", nargs='+', default=None,
         help="The file format of each result file."
     )
+    performance_group.add_argument(
+        "--restart_from_checkpoint", action="store_true", default=False,
+        help=(
+            "Restart from checkpoint if a checkpoint file can be found in "
+            "webdir"
+        )
+    )
     return performance_group
 
 
