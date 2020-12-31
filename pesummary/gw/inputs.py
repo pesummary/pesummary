@@ -519,7 +519,7 @@ class _GWInput(_Input):
             logger.info(base.format(NRSur_fits))
             self._NRSur_fits = NRSur_fits
         elif NRSur_fits is None:
-            from pesummary.gw.file.nrutils import NRSUR_MODEL
+            from pesummary.gw.conversions.nrutils import NRSUR_MODEL
 
             logger.info(base.format(NRSUR_MODEL))
             self._NRSur_fits = NRSUR_MODEL
