@@ -467,22 +467,43 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         )
         path = self.image_path["other"]
         base = os.path.join(path, "{}_{}.png")
-        maxL_samples = {
-            i: {
-                "geocent_time": self.key_data[i]["geocent_time"]["maxL"]
-            } for i in self.labels
-        }
-        gps_time, window = determine_gps_time_and_window(maxL_samples, self.labels)
-        t = Time(gps_time, format='gps')
-        t = Time(t, format='datetime')
-        link = (
-            "https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day"
-            "/{}{}{}/".format(
-                t.value.year,
-                "0{}".format(t.value.month) if t.value.month < 10 else t.value.month,
-                "0{}".format(t.value.day) if t.value.day < 10 else t.value.day
+        ADD_DETCHAR_LINK = True
+        try:
+            maxL_samples = {
+                i: {
+                    "geocent_time": self.key_data[i]["geocent_time"]["maxL"]
+                } for i in self.labels
+            }
+        except KeyError:
+            # trying a different name for time
+            try:
+                maxL_samples = {
+                    i: {
+                        "geocent_time": self.key_data[i][
+                            "marginalized_geocent_time"
+                        ]["maxL"]
+                    } for i in self.labels
+                }
+            except KeyError:
+                logger.warn(
+                    "Failed to find a time parameter to link to detchar/"
+                    "summary pages. Not adding link to webpages."
+                )
+                ADD_DETCHAR_LINK = False
+        if ADD_DETCHAR_LINK:
+            gps_time, window = determine_gps_time_and_window(maxL_samples, self.labels)
+            t = Time(gps_time, format='gps')
+            t = Time(t, format='datetime')
+            link = (
+                "https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day"
+                "/{}{}{}/".format(
+                    t.value.year,
+                    "0{}".format(t.value.month) if t.value.month < 10 else t.value.month,
+                    "0{}".format(t.value.day) if t.value.day < 10 else t.value.day
+                )
             )
-        )
+        else:
+            link = None
         for det in self.gwdata.keys():
             html_file = self.setup_page(
                 det, self.navbar["home"], title="{} Detchar".format(det)
