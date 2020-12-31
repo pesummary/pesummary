@@ -19,7 +19,7 @@ from pesummary.utils.utils import (
 )
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots.bounds import default_bounds
-from pesummary.core.plots.kde import kdeplot
+from pesummary.core.plots.seaborn.kde import kdeplot
 from pesummary.core.plots.figure import figure, subplots, ExistingFigure
 from pesummary.core.plots.plot import _default_legend_kwargs
 from pesummary import conf

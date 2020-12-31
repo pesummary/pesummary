@@ -30,7 +30,7 @@ plt.close()
 # Now lets show how this can be applied to a seaborn split example. See
 # https://seaborn.pydata.org/generated/seaborn.violinplot.html for details. We
 # choose to boound the data to be between 10 and 50
-from pesummary.core.plots.violin import violinplot
+from pesummary.core.plots.seaborn.violin import violinplot
 import seaborn as sns
 
 tips = sns.load_dataset("tips")
