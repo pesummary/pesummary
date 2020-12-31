@@ -16,7 +16,7 @@ from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, _check_latex_install,
     get_matplotlib_style_file, gelman_rubin,
 )
-from pesummary.core.plots.kde import kdeplot
+from pesummary.core.plots.seaborn.kde import kdeplot
 from pesummary.core.plots.figure import figure, subplots, ExistingFigure
 from pesummary import conf
 
