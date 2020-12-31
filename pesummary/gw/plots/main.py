@@ -277,10 +277,12 @@ class _PlotGeneration(_BasePlotGeneration):
             samples = self.samples[label].combine
         else:
             samples = self.samples[label]
+        _injection = [
+            self.injection_data[label]["ra"], self.injection_data[label]["dec"]
+        ]
         self._skymap_plot(
             self.savedir, samples["ra"], samples["dec"], label,
-            self.weights[label],
-            [self.injection_data[label]["ra"], self.injection_data[label]["dec"]],
+            self.weights[label], _injection,
             preliminary=self.preliminary_pages[label]
         )
 
@@ -305,7 +307,7 @@ class _PlotGeneration(_BasePlotGeneration):
                         self.savedir, samples["ra"], samples["dec"],
                         samples["luminosity_distance"], _time,
                         label, self.nsamples_for_skymap, self.webdir,
-                        self.multi_threading_for_skymap,
+                        self.multi_threading_for_skymap, _injection,
                         self.preliminary_pages[label]
                     ]
                 )
@@ -355,7 +357,7 @@ class _PlotGeneration(_BasePlotGeneration):
     @staticmethod
     @no_latex_plot
     def _ligo_skymap_plot(savedir, ra, dec, dist, time, label, nsamples_for_skymap,
-                          webdir, multi_threading_for_skymap,
+                          webdir, multi_threading_for_skymap, injection,
                           preliminary=False):
         """Generate a skymap plot for a given set of samples using the
         ligo.skymap package
@@ -381,16 +383,20 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        import math
+
         downsampled = False
         if nsamples_for_skymap is not None:
             ra, dec, dist = resample_posterior_distribution(
                 [ra, dec, dist], nsamples_for_skymap
             )
             downsampled = True
+        if injection is not None and any(math.isnan(inj) for inj in injection):
+            injection = None
         fig = gw._ligo_skymap_plot(
             ra, dec, dist=dist, savedir=os.path.join(webdir, "samples"),
             nprocess=multi_threading_for_skymap, downsampled=downsampled,
-            label=label, time=time
+            label=label, time=time, injection=injection
         )
         _PlotGeneration.save(
             fig, os.path.join(savedir, "{}_skymap".format(label)),
