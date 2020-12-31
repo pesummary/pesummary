@@ -18,6 +18,7 @@ error_msg = (
     "functions."
 )
 import numpy as np
+from pathlib import Path
 
 from pesummary import conf
 from pesummary.utils.decorators import set_docstring
@@ -99,6 +100,9 @@ _conversion_doc = """
         list of posterior distributions that you wish to regenerate
     return_dict: Bool, optional
         if True, return a pesummary.utils.utils.SamplesDict object
+    resume_file: str, optional
+        path to file to use for checkpointing. If not provided, checkpointing
+        is not used. Default None
 
     Examples
     --------
@@ -122,12 +126,68 @@ _conversion_doc = """
 
 
 @set_docstring(_conversion_doc % {"function": "convert"})
-def convert(*args, **kwargs):
-    return _Conversion(*args, **kwargs)
+def convert(*args, resume_file=None, **kwargs):
+    import os
+    if resume_file is not None:
+        if os.path.isfile(resume_file):
+            return _Conversion.load_current_state(resume_file)
+        logger.info(
+            "Unable to find resume file for conversion. Not restarting from "
+            "checkpoint"
+        )
+    return _Conversion(*args, resume_file=resume_file, **kwargs)
+
+
+class _PickledConversion(object):
+    pass
 
 
 @set_docstring(_conversion_doc % {"function": "_Conversion"})
 class _Conversion(object):
+    @classmethod
+    def load_current_state(cls, resume_file):
+        """Load current state from a resume file
+
+        Parameters
+        ----------
+        resume_file: str
+            path to a resume file to restart conversion
+        """
+        from pesummary.io import read
+        logger.info(
+            "Reading checkpoint file: {}".format(resume_file)
+        )
+        state = read(resume_file, checkpoint=True)
+        return cls(
+            state.parameters, state.samples, extra_kwargs=state.extra_kwargs,
+            evolve_spins=state.evolve_spins, NRSur_fits=state.NRSurrogate,
+            waveform_fits=state.waveform_fit, multi_process=state.multi_process,
+            redshift_method=state.redshift_method, cosmology=state.cosmology,
+            force_non_evolved=state.force_non_evolved,
+            force_BBH_remnant_computation=state.force_remnant,
+            disable_remnant=state.disable_remnant,
+            add_zero_spin=state.add_zero_spin, regenerate=state.regenerate,
+            return_kwargs=state.return_kwargs, return_dict=state.return_dict,
+            resume_file=state.resume_file
+        )
+
+    def write_current_state(self):
+        """Write the current state of the conversion class to file
+        """
+        from pesummary.io import write
+        state = _PickledConversion()
+        for key, value in vars(self).items():
+            setattr(state, key, value)
+
+        _path = Path(self.resume_file)
+        write(
+            state, outdir=_path.parent, file_format="pickle",
+            filename=_path.name, overwrite=True
+        )
+        logger.debug(
+            "Written checkpoint file: {}".format(self.resume_file)
+        )
+
     def __new__(cls, *args, **kwargs):
         from pesummary.utils.samples_dict import SamplesDict
         from pesummary.utils.parameters import Parameters
@@ -148,7 +208,11 @@ class _Conversion(object):
                 np.array([args[0][i] for i in parameters]).T
             ).tolist()
         else:
-            parameters, samples = Parameters(args[0]), args[1]
+            if not isinstance(args[0], Parameters):
+                parameters = Parameters(args[0])
+            else:
+                parameters = args[0]
+            samples = args[1]
             samples = np.atleast_2d(samples).tolist()
         extra_kwargs = kwargs.get("extra_kwargs", {"sampler": {}, "meta_data": {}})
         f_low = kwargs.get("f_low", None)
@@ -275,7 +339,9 @@ class _Conversion(object):
             parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
             waveform_fits, multi_process, regenerate, redshift_method,
             cosmology, force_non_evolved, force_remnant,
-            kwargs.get("add_zero_spin", False), disable_remnant
+            kwargs.get("add_zero_spin", False), disable_remnant,
+            kwargs.get("return_kwargs", False), kwargs.get("return_dict", True),
+            kwargs.get("resume_file", None)
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -294,11 +360,12 @@ class _Conversion(object):
         self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
         waveform_fits, multi_process, regenerate, redshift_method,
         cosmology, force_non_evolved, force_remnant, add_zero_spin,
-        disable_remnant
+        disable_remnant, return_kwargs, return_dict, resume_file
     ):
         self.parameters = parameters
         self.samples = samples
         self.extra_kwargs = extra_kwargs
+        self.evolve_spins = evolve_spins
         self.NRSurrogate = NRSurrogate
         self.waveform_fit = waveform_fits
         self.multi_process = multi_process
@@ -306,7 +373,11 @@ class _Conversion(object):
         self.redshift_method = redshift_method
         self.cosmology = cosmology
         self.force_non_evolved = force_non_evolved
+        self.force_remnant = force_remnant
         self.disable_remnant = disable_remnant
+        self.return_kwargs = return_kwargs
+        self.return_dict = return_dict
+        self.resume_file = resume_file
         self.non_precessing = False
         if not any(param in self.parameters for param in conf.precessing_angles):
             self.non_precessing = True
@@ -432,6 +503,8 @@ class _Conversion(object):
             self.parameters.append(parameter)
             for num, i in enumerate(self.samples):
                 self.samples[num].append(samples[num])
+        if self.resume_file is not None:
+            self.write_current_state()
 
     def _mchirp_from_mchirp_source_z(self):
         samples = self.specific_parameter_samples(["chirp_mass_source", "redshift"])

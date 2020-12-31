@@ -98,6 +98,16 @@ class _GWInput(_Input):
             approx = [None] * len(self.labels)
         else:
             approx = self.opts.approximant
+        if self.restart_from_checkpoint:
+            resume_file = [
+                os.path.join(
+                    self.webdir, "checkpoint",
+                    "{}_conversion_class.pickle".format(label)
+                ) for label in self.labels
+            ]
+        else:
+            resume_file = [None] * len(self.labels)
+
         try:
             for num, label in enumerate(self.labels):
                 kwargs[label].update(dict(
@@ -110,7 +120,8 @@ class _GWInput(_Input):
                     cosmology=self.cosmology,
                     no_conversion=self.no_conversion,
                     add_zero_spin=True, disable_remnant=self.disable_remnant,
-                    force_BBH_remnant_computation=self.force_BBH_remnant_computation
+                    force_BBH_remnant_computation=self.force_BBH_remnant_computation,
+                    resume_file=resume_file[num]
                 ))
             return kwargs
         except IndexError:
@@ -132,7 +143,8 @@ class _GWInput(_Input):
                     cosmology=self.cosmology,
                     no_conversion=self.no_conversion,
                     add_zero_spin=True,
-                    force_BBH_remnant_computation=self.force_BBH_remnant_computation
+                    force_BBH_remnant_computation=self.force_BBH_remnant_computation,
+                    resume_file=resume_file[num]
                 ))
             return kwargs
 
