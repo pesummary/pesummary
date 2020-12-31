@@ -760,3 +760,64 @@ class TestNRutils(object):
                 chif=self.final_spin, version="2016"
             ), 8
         )
+
+
+class TestConvert(object):
+    """Test the pesummary.gw.conversions._Conversion class
+    """
+    def setup(self):
+        """Setup the TestConvert class
+        """
+        self.dirs = [".outdir"]
+        for dd in self.dirs:
+            if not os.path.isdir(dd):
+                os.mkdir(dd)
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        for dd in self.dirs:
+            if os.path.isdir(dd):
+                shutil.rmtree(dd)
+
+    @staticmethod
+    def _convert(resume_file=None, **kwargs):
+        """
+        """
+        np.random.seed(100)
+        data = {
+            "mass_1": np.random.uniform(10, 1000, 10000),
+            "mass_2": np.random.uniform(2, 10, 10000),
+            "spin_1z": np.random.uniform(0, 1, 10000),
+            "spin_2z": np.random.uniform(0, 1, 10000)
+        }
+        converted = convert(data, resume_file=resume_file, **kwargs)
+        return converted
+
+    def test_from_checkpoint(self):
+        """Check that when restarted from checkpoint, the output is the same
+        """
+        import time
+        import multiprocessing
+        from pesummary.io import read
+
+        t0 = time.time()
+        no_checkpoint = self._convert()
+        t1 = time.time()
+        # check that when interrupted and restarted, the results are the same
+        process = multiprocessing.Process(
+            target=self._convert, args=[".outdir/checkpoint.pickle"]
+        )
+        process.start()
+        time.sleep(5)
+        process.terminate()
+        # check that not all samples have been made
+        _checkpoint = read(".outdir/checkpoint.pickle", checkpoint=True)
+        assert os.path.isfile(".outdir/checkpoint.pickle")
+        assert not all(
+            param in _checkpoint.parameters for param in no_checkpoint.keys()
+        )
+        # restart from checkpoint
+        checkpoint = self._convert(resume_file=".outdir/checkpoint.pickle")
+        for param, value in no_checkpoint.items():
+            np.testing.assert_almost_equal(value, checkpoint[param])
