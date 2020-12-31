@@ -280,7 +280,7 @@ class _Conversion(object):
                 "evolve the spins up to the ISCO frequency"
             )
         if not evolve_spins and (NRSurrogate or waveform_fits):
-            if "eob" in approximant or NRSurrogate:
+            if (approximant is not None and "eob" in approximant) or NRSurrogate:
                 logger.warning(
                     "Only evolved spin remnant quantities are returned by the "
                     "{} fits.".format(
@@ -288,7 +288,7 @@ class _Conversion(object):
                     )
                 )
         elif evolve_spins and (NRSurrogate or waveform_fits):
-            if "eob" in approximant or NRSurrogate:
+            if (approximant is not None and "eob" in approximant) or NRSurrogate:
                 logger.warning(
                     "The {} fits already evolve the spins. Therefore "
                     "additional spin evolution will not be performed.".format(
