@@ -12,8 +12,11 @@ docs/_*
 ## ignore files used for testing
 tests/files/*
 
-## ignore images used for documentation
+## ignore files used for documentation
 docs/images/*
+docs/gw/parameter_descriptions.csv
+docs/gw/tutorials/GW190814.h5
+docs/gw/tutorials/posterior_samples.ipynb
 
 ## ignore __pycache__ directories
 __pycache__
