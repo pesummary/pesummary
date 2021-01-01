@@ -481,7 +481,7 @@ def _1d_histogram_plot(
     from pesummary.utils.array import Array
 
     logger.debug("Generating the 1d histogram plot for %s" % (param))
-    samples = Array(samples)
+    samples = Array(samples, weights=weights)
     if ax is None and fig is None:
         fig, ax = figure(gca=True)
     elif ax is None:
@@ -513,6 +513,7 @@ def _1d_histogram_plot(
             kwargs.update({
                 "kde_kwargs": _kde_kwargs,
                 "kde_kernel": _kde_kwargs.pop("kde_kernel", None),
+                "weights": weights
             })
             kwargs.update(plot_kwargs)
             x = kdeplot(
@@ -543,7 +544,7 @@ def _1d_histogram_plot(
             )
     if title:
         upper = np.round(percentile[1] - median, 2)
-        lower = np.round(median - percentile[0], 2)
+        lower = np.abs(np.round(median - percentile[0], 2))
         median = np.round(median, 2)
         ax.set_title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
     ax.grid(b=grid)

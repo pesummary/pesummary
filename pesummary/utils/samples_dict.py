@@ -416,7 +416,8 @@ class SamplesDict(Dict):
             "pesummary.{}.plots.plot".format(module)
         )
         return getattr(module, "_1d_histogram_plot")(
-            parameter, self[parameter], self.latex_labels[parameter], **kwargs
+            parameter, self[parameter], self.latex_labels[parameter],
+            weights=self[parameter].weights, **kwargs
         )
 
     def _skymap(self, **kwargs):
