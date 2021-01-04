@@ -15,17 +15,22 @@
 
 import numpy as np
 import multiprocessing
-from lal import MTSUN_SI, MSUN_SI
-import lalsimulation
-from lalsimulation import (
-    SimInspiralGetSpinFreqFromApproximant, SIM_INSPIRAL_SPINS_CASEBYCASE,
-    SIM_INSPIRAL_SPINS_FLOW, SimInspiralSpinTaylorPNEvolveOrbit
-)
-from pesummary.gw.file.conversions import (
+
+from pesummary.gw.conversions import (
     tilt_angles_and_phi_12_from_spin_vectors_and_L
 )
 from pesummary.utils.utils import iterator, logger
 from pesummary.utils.exceptions import EvolveSpinError
+
+try:
+    from lal import MTSUN_SI, MSUN_SI
+    import lalsimulation
+    from lalsimulation import (
+        SimInspiralGetSpinFreqFromApproximant, SIM_INSPIRAL_SPINS_CASEBYCASE,
+        SIM_INSPIRAL_SPINS_FLOW, SimInspiralSpinTaylorPNEvolveOrbit
+    )
+except ImportError:
+    pass
 
 
 def evolve_spins(

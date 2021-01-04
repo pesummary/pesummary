@@ -159,7 +159,10 @@ def array_input(func):
                 new_kwargs[key] = np.array([item])
             elif isinstance(item, (list, np.ndarray)):
                 new_kwargs[key] = np.array(item)
-        value = np.array(func(*new_args, **new_kwargs))
+        output = func(*new_args, **new_kwargs)
+        if isinstance(output, dict):
+            return output
+        value = np.array(output)
         if return_float:
             new_value = copy.deepcopy(value)
             if len(new_value) > 1:
@@ -203,6 +206,13 @@ def docstring_subfunction(*args):
                 )
             )
         func.__doc__ = original_docstring
+        return func
+    return wrapper_function
+
+
+def set_docstring(docstring):
+    def wrapper_function(func):
+        func.__doc__ = docstring
         return func
     return wrapper_function
 

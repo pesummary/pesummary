@@ -19,6 +19,7 @@ from pesummary.utils.utils import resample_posterior_distribution, logger
 from pesummary.utils.decorators import docstring_subfunction
 from pesummary.utils.array import Array
 from pesummary.utils.dict import Dict
+from pesummary.utils.parameters import Parameters
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary import conf
@@ -121,6 +122,19 @@ class SamplesDict(Dict):
                 [i[key.start:key.stop:key.step] for i in self.samples]
             )
         return super(SamplesDict, self).__getitem__(key)
+
+    def __setitem__(self, key, value):
+        _value = value
+        if not isinstance(value, Array):
+            _value = Array(value)
+        super(SamplesDict, self).__setitem__(key, _value)
+        try:
+            if key not in self.parameters:
+                self.parameters.append(key)
+                self.samples = np.vstack([self.samples, value])
+                self._update_latex_labels()
+        except (AttributeError, TypeError):
+            pass
 
     def __str__(self):
         """Print a summary of the information stored in the dictionary
@@ -237,6 +251,10 @@ class SamplesDict(Dict):
             }
         )
         return modified
+
+    def keys(self, *args, **kwargs):
+        original = super(SamplesDict, self).keys(*args, **kwargs)
+        return Parameters(original)
 
     def to_pandas(self, **kwargs):
         """Convert a SamplesDict object to a pandas dataframe
@@ -365,13 +383,13 @@ class SamplesDict(Dict):
         function: func, optional
             function to use when converting posterior samples. Must take a
             dictionary as input and return a dictionary of converted posterior
-            samples. Default `pesummary.gw.file.conversions._Conversion
+            samples. Default `pesummary.gw.conversions.convert
         **kwargs: dict, optional
             All additional kwargs passed to function
         """
         if function is None:
-            from pesummary.gw.file.conversions import _Conversion
-            function = _Conversion
+            from pesummary.gw.conversions import convert
+            function = convert
         _samples = self.copy()
         _keys = list(_samples.keys())
         converted_samples = function(_samples, **kwargs)
@@ -398,7 +416,8 @@ class SamplesDict(Dict):
             "pesummary.{}.plots.plot".format(module)
         )
         return getattr(module, "_1d_histogram_plot")(
-            parameter, self[parameter], self.latex_labels[parameter], **kwargs
+            parameter, self[parameter], self.latex_labels[parameter],
+            weights=self[parameter].weights, **kwargs
         )
 
     def _skymap(self, **kwargs):
@@ -906,12 +925,12 @@ class _MultiDimensionalSamplesDict(Dict):
                 enumerate(samples)
             ]
         self.parameters = parameters
-        self.latex_labels = self._latex_labels()
+        self._update_latex_labels()
 
-    def _latex_labels(self):
+    def _update_latex_labels(self):
+        """Update the stored latex labels
         """
-        """
-        return {
+        self._latex_labels = {
             param: latex_labels[param] if param in latex_labels.keys() else
             param for param in self.total_list_of_parameters
         }
@@ -1509,7 +1528,7 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
                 )
             )
         elif priors is not None:
-            from pesummary.core.plots.violin import split_dataframe
+            from pesummary.core.plots.seaborn.violin import split_dataframe
 
             priors = [priors[label][parameter] for label in _labels]
             samples = split_dataframe(samples, priors, _labels)

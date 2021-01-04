@@ -84,7 +84,8 @@ class _CoreWebpageGeneration(PostProcessing):
             disable_interactive=self.disable_interactive,
             package_information=self.package_information,
             mcmc_samples=self.mcmc_samples,
-            external_hdf5_links=self.external_hdf5_links, key_data=key_data
+            external_hdf5_links=self.external_hdf5_links, key_data=key_data,
+            existing_plot=self.existing_plot, disable_expert=self.disable_expert
         )
 
     def generate_webpages(self):
@@ -133,9 +134,10 @@ class _GWWebpageGeneration(GWPostProcessing):
             no_ligo_skymap=self.no_ligo_skymap,
             psd=self.psd, priors=self.priors,
             package_information=self.package_information,
-            mcmc_samples=self.mcmc_samples,
+            mcmc_samples=self.mcmc_samples, existing_plot=self.existing_plot,
             external_hdf5_links=self.external_hdf5_links,
-            preliminary_pages=self.preliminary_pages
+            preliminary_pages=self.preliminary_pages,
+            disable_expert=self.disable_expert
         )
 
     def generate_webpages(self):
@@ -184,9 +186,10 @@ class _PublicGWWebpageGeneration(GWPostProcessing):
             no_ligo_skymap=self.no_ligo_skymap,
             psd=self.psd, priors=self.priors,
             package_information=self.package_information,
-            mcmc_samples=self.mcmc_samples,
+            mcmc_samples=self.mcmc_samples, existing_plot=self.existing_plot,
             external_hdf5_links=self.external_hdf5_links,
-            preliminary_pages=self.preliminary_pages
+            preliminary_pages=self.preliminary_pages,
+            disable_expert=self.disable_expert
         )
 
     def generate_webpages(self):

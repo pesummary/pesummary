@@ -19,7 +19,7 @@ from pesummary.utils.utils import (
 )
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots.bounds import default_bounds
-from pesummary.core.plots.kde import kdeplot
+from pesummary.core.plots.seaborn.kde import kdeplot
 from pesummary.core.plots.figure import figure, subplots, ExistingFigure
 from pesummary.core.plots.plot import _default_legend_kwargs
 from pesummary import conf
@@ -153,6 +153,39 @@ def _1d_histogram_plot_mcmc(
             kde_kwargs, param, samples, comparison=True
         )
     return _1d_histogram_plot_mcmc(
+        param, samples, *args, kde_kwargs=kde_kwargs, **kwargs
+    )
+
+
+def _1d_histogram_plot_bootstrap(
+    param, samples, *args, kde_kwargs={}, bounded=True, **kwargs
+):
+    """Generate a bootstrapped 1d histogram plot for a given parameter
+
+    Parameters
+    ----------
+    param: str
+        name of the parameter that you wish to plot
+    samples: np.ndarray
+        array of samples for param
+    args: tuple
+        all args passed to
+        pesummary.core.plots.plot._1d_histogram_plot_bootstrap function
+    kde_kwargs: dict, optional
+        optional kwargs passed to the kde class
+    bounded: Bool, optional
+        if True, pass default 'xlow' and 'xhigh' arguments to the kde class
+    **kwargs: dict, optional
+        all additional kwargs passed to the
+        pesummary.core.plots.plot._1d_histogram_plot_bootstrap function
+    """
+    from pesummary.core.plots.plot import _1d_histogram_plot_bootstrap
+
+    if bounded:
+        kde_kwargs = _add_default_bounds_to_kde_kwargs_dict(
+            kde_kwargs, param, samples
+        )
+    return _1d_histogram_plot_bootstrap(
         param, samples, *args, kde_kwargs=kde_kwargs, **kwargs
     )
 
@@ -480,7 +513,8 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
 
 def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
                       downsampled=False, label="pesummary", time=None,
-                      distance_map=True, multi_resolution=True, **kwargs):
+                      distance_map=True, multi_resolution=True,
+                      injection=None, **kwargs):
     """Plot the sky location of the source for a given approximant using the
     ligo.skymap package
 
@@ -502,6 +536,8 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
         Boolean for whether or not to produce a distance map
     multi_resolution: Bool
         Boolean for whether or not to generate a multiresolution HEALPix map
+    injection: list, optional
+        List containing RA and DEC of the injection. Both must be in radians
     kwargs: dict
         optional keyword arguments
     """
@@ -541,13 +577,13 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
         os.path.join(savedir, "%s_skymap.fits" % (label)), nest=None
     )
     return _ligo_skymap_plot_from_array(
-        skymap, nsamples=len(ra), downsampled=downsampled
+        skymap, nsamples=len(ra), downsampled=downsampled, injection=injection
     )[0]
 
 
 def _ligo_skymap_plot_from_array(
     skymap, nsamples=None, downsampled=False, contour=[50, 90],
-    annotate=True, ax=None, colors="k"
+    annotate=True, ax=None, colors="k", injection=None
 ):
     """Generate a skymap with `ligo.skymap` based on an array of probabilities
 
@@ -568,6 +604,8 @@ def _ligo_skymap_plot_from_array(
         Existing axis to add the plot to
     colors: str/list
         colors to use for the contours
+    injection: list, optional
+        List containing RA and DEC of the injection. Both must be in radians
     """
     import healpy as hp
     from ligo.skymap import plot, io
@@ -601,11 +639,22 @@ def _ligo_skymap_plot_from_array(
         ax.text(1, 1.05, '\n'.join(text), transform=ax.transAxes, ha='right',
                 fontsize=10)
     plot.outline_text(ax)
+    if injection is not None and len(injection) == 2:
+        from astropy.coordinates import SkyCoord
+        from astropy import units as u
+
+        _inj = SkyCoord(*injection, unit=u.rad)
+        ax.scatter(
+            _inj.ra.value, _inj.dec.value, marker="*", color="orange",
+            edgecolors='k', linewidth=1.75, s=100, zorder=100,
+            transform=ax.get_transform('world')
+        )
     return ExistingFigure(fig), ax
 
 
 def _ligo_skymap_comparion_plot_from_array(
-    skymaps, colors, labels, contour=[50, 90], show_probability_map=False
+    skymaps, colors, labels, contour=[50, 90], show_probability_map=False,
+    injection=None
 ):
     """Generate a skymap with `ligo.skymap` based which compares arrays of
     probabilities
@@ -623,6 +672,8 @@ def _ligo_skymap_comparion_plot_from_array(
     show_probability_map: int, optional
         the index of the skymap you wish to show the probability
         map for. Default False
+    injection: list, optional
+        List containing RA and DEC of the injection. Both must be in radians
     """
     from ligo.skymap import plot
 
@@ -634,7 +685,7 @@ def _ligo_skymap_comparion_plot_from_array(
         if isinstance(show_probability_map, int) and show_probability_map == num:
             _, ax = _ligo_skymap_plot_from_array(
                 skymap, nsamples=None, downsampled=False, contour=contour,
-                annotate=False, ax=ax, colors=colors[num]
+                annotate=False, ax=ax, colors=colors[num], injection=injection,
             )
         cls, cs = _ligo_skymap_contours(
             ax, skymap, contour=contour, colors=colors[num]
@@ -1261,7 +1312,7 @@ def _strain_plot(strain, maxL_params, **kwargs):
         dictionary of maximum likelihood parameter values
     """
     logger.debug("Generating the strain plot")
-    from pesummary.gw.file.conversions import time_in_each_ifo
+    from pesummary.gw.conversions import time_in_each_ifo
 
     fig, ax = figure(gca=True)
     time = maxL_params["geocent_time"]

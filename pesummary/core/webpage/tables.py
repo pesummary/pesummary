@@ -20,7 +20,8 @@ class table_of_images(Base):
 
     def __init__(self, content, rows, columns, html_file, code, cli,
                  autoscale=False, unique_id=None, captions=None, extra_div=False,
-                 mcmc_samples=False):
+                 mcmc_samples=False, margin_left=None, display=None,
+                 container_id=None):
         """
 
         Parameters
@@ -40,6 +41,9 @@ class table_of_images(Base):
         self.unique_id = unique_id
         self.extra_div = extra_div
         self.mcmc_samples = mcmc_samples
+        self.margin_left = margin_left
+        self.display = display
+        self.container_id = container_id
         if self.unique_id is not None:
             self.modal_id = "Modal_{}".format(self.unique_id)
             self.demo_id = "demo_{}".format(self.unique_id)
@@ -74,7 +78,7 @@ class table_of_images(Base):
         self.add_content("width: 550px;", indent=4)
         self.add_content("}", indent=2)
         self.add_content("</style>")
-        self.make_container()
+        self.make_container(display=self.display, container_id=self.container_id)
         self.make_div(2, _class="mx-auto d-block", _style=None)
         if self.rows == 1:
             _id = self.content[0][0].split("/")[-1][:-4]
@@ -82,7 +86,11 @@ class table_of_images(Base):
             self.make_div(2, _class=None, _style="float: right;")
             for num, i in enumerate(self.content[1]):
                 _id = i.split("/")[-1][:-4]
-                self.make_div(2, _class="row")
+                if self.margin_left is not None:
+                    _style = "margin-left: {}".format(self.margin_left)
+                else:
+                    _style = None
+                self.make_div(2, _class="row", _style=_style)
                 self.make_div(4, _class="column")
                 self.add_content("<a>", 6)
                 self._insert_image(i, 415, 8, _id, justify=None)
@@ -107,7 +115,11 @@ class table_of_images(Base):
             captions_margin_left = "-70"
             _class = "row justify-content-center"
             self.make_div(4, _class=_class, _style=None)
-            self.make_div(6, _class="row", _style=None)
+            if self.margin_left is not None:
+                _style = "margin-left: {}".format(self.margin_left)
+            else:
+                _style = None
+            self.make_div(6, _class="row", _style=_style)
             for idx, i in enumerate(self.content):
                 if self.autoscale:
                     width = str(1350 / len(i))

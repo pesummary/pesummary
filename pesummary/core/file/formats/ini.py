@@ -17,6 +17,7 @@ import configparser
 import os
 from pesummary.utils.utils import check_filename, logger
 from pesummary.utils.decorators import open_config
+from pesummary.utils.dict import convert_value_to_string
 
 
 def save_config_dictionary_to_file(
@@ -53,7 +54,7 @@ def save_config_dictionary_to_file(
         return
 
     for key in config_dict.keys():
-        config[key] = config_dict[key]
+        config[key] = convert_value_to_string(config_dict[key])
 
     with open(_filename, "w") as configfile:
         config.write(configfile)

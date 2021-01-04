@@ -202,7 +202,7 @@ class _Input(object):
 
     @staticmethod
     def grab_data_from_file(
-        file, label, config=None, injection=None, read_function=Read,
+        file, label, webdir, config=None, injection=None, read_function=Read,
         file_format=None, nsamples=None, disable_prior_sampling=False,
         nsamples_for_prior=None, path_to_samples=None, **kwargs
     ):
@@ -266,7 +266,7 @@ class _Input(object):
             weights = f.weights
         else:
             weights = None
-        return {
+        data = {
             "samples": DataFrame,
             "injection_data": {label: injection},
             "file_version": {label: version},
@@ -275,6 +275,44 @@ class _Input(object):
             "weights": {label: weights},
             "open_file": f
         }
+        if hasattr(f, "config") and f.config is not None:
+            if config is None:
+                config_dir = os.path.join(webdir, "config")
+                filename = "{}_config.ini".format(label)
+                logger.debug(
+                    "Successfully extracted config data from the provided "
+                    "input file. Saving the data to the file '{}'".format(
+                        os.path.join(config_dir, filename)
+                    )
+                )
+                _filename = f.write(
+                    filename=filename, outdir=config_dir, file_format="ini",
+                    _raise=False
+                )
+                data["config"] = _filename
+            else:
+                logger.info(
+                    "Ignoring config data extracted from the input file and "
+                    "using the config file provided"
+                )
+        return data
+
+    @property
+    def result_files(self):
+        return self._result_files
+
+    @result_files.setter
+    def result_files(self, result_files):
+        self._result_files = result_files
+        if self._result_files is not None:
+            for num, ff in enumerate(self._result_files):
+                if not os.path.isfile(ff) and "@" in ff:
+                    from pesummary.core.fetch import scp_and_read_file
+                    logger.info(
+                        "Copying file: '{}' to temporary folder".format(ff)
+                    )
+                    filename = scp_and_read_file(ff, read_file=False)
+                    self._result_files[num] = str(filename)
 
     @property
     def seed(self):
@@ -511,6 +549,9 @@ class _Input(object):
             self._config = [None] * len(self.labels)
         else:
             self._config = config
+        for num, ff in enumerate(self._config):
+            if isinstance(ff, str) and ff.lower() == "none":
+                self._config[num] = None
 
     @property
     def injection_file(self):
@@ -590,7 +631,8 @@ class _Input(object):
         self._set_samples(samples)
 
     def _set_samples(
-        self, samples, ignore_keys=["prior", "weights", "labels", "indicies", "open_file"]
+        self, samples,
+        ignore_keys=["prior", "weights", "labels", "indicies", "open_file"]
     ):
         """Extract the samples and store them as attributes of self
 
@@ -635,6 +677,17 @@ class _Input(object):
                     injection=self.injection_file[num],
                     file_format=self.file_format[num]
                 )
+                if "config" in data.keys():
+                    msg = (
+                        "Overwriting the provided config file for '{}' with "
+                        "the config information stored in the input "
+                        "file".format(self.labels[num])
+                    )
+                    if self.config[num] is None:
+                        logger.debug(msg)
+                    else:
+                        logger.info(msg)
+                    self.config[num] = data.pop("config")
                 if self.mcmc_samples:
                     data["samples"] = {
                         "{}_mcmc_chain_{}".format(key, idx): item for key, item
@@ -939,6 +992,68 @@ class _Input(object):
             )
             self._hdf5_compression = None
 
+    @property
+    def existing_plot(self):
+        return self._existing_plot
+
+    @existing_plot.setter
+    def existing_plot(self, existing_plot):
+        self._existing_plot = existing_plot
+        if self._existing_plot is not None:
+            from pathlib import Path
+            import shutil
+            if isinstance(self._existing_plot, list):
+                logger.warn(
+                    "Assigning {} to all labels".format(
+                        ", ".join(self._existing_plot)
+                    )
+                )
+                self._existing_plot = {
+                    label: self._existing_plot for label in self.labels
+                }
+            _does_not_exist = (
+                "The plot {} does not exist. Not adding plot to summarypages."
+            )
+            keys_to_remove = []
+            for key, _plot in self._existing_plot.items():
+                if isinstance(_plot, list):
+                    allowed = []
+                    for _subplot in _plot:
+                        if not os.path.isfile(_subplot):
+                            logger.warn(_does_not_exist.format(_subplot))
+                        else:
+                            _filename = os.path.join(
+                                self.webdir, "plots", Path(_subplot).name
+                            )
+                            try:
+                                shutil.copyfile(_subplot, _filename)
+                            except shutil.SameFileError:
+                                pass
+                            allowed.append(_filename)
+                    if not len(allowed):
+                        keys_to_remove.append(key)
+                    elif len(allowed) == 1:
+                        self._existing_plot[key] = allowed[0]
+                    else:
+                        self._existing_plot[key] = allowed
+                else:
+                    if not os.path.isfile(_plot):
+                        logger.warn(_does_not_exist.format(_subplot))
+                        keys_to_remove.append(key)
+                    else:
+                        _filename = os.path.join(
+                            self.webdir, "plots", Path(_plot).name
+                        )
+                        try:
+                            shutil.copyfile(_plot, _filename)
+                        except shutil.SameFileError:
+                            pass
+                        self._existing_plot[key] = _filename
+            for key in keys_to_remove:
+                del self._existing_plot[key]
+            if not len(self._existing_plot):
+                self._existing_plot = None
+
     def add_to_prior_dict(self, path, data):
         """Add priors to the prior dictionary
 
@@ -1099,7 +1214,7 @@ class _Input(object):
             )
         else:
             data = self.grab_data_from_file(
-                file, label, config=config, injection=injection,
+                file, label, self.webdir, config=config, injection=injection,
                 file_format=file_format, nsamples=self.nsamples,
                 disable_prior_sampling=self.disable_prior_sampling,
                 nsamples_for_prior=self.nsamples_for_prior,
@@ -1574,10 +1689,13 @@ class Input(_Input):
         if True, comparison plots and pages are not produced
     disable_interactive: Bool
         if True, interactive plots are not produced
+    disable_expert: Bool
+        if True, expert diagnostic plots are not produced
     """
     def __init__(self, opts, ignore_copy=False, extra_options=None):
         self.opts = opts
         self.seed = self.opts.seed
+        self.restart_from_checkpoint = self.opts.restart_from_checkpoint
         self.style_file = self.opts.style_file
         self.result_files = self.opts.samples
         if self.result_files is not None:
@@ -1615,6 +1733,21 @@ class Input(_Input):
             self.existing_injection_data = None
         self.user = self.opts.user
         self.webdir = self.opts.webdir
+        self._restarted_from_checkpoint = False
+        self.resume_file_dir = os.path.join(self.webdir, "checkpoint")
+        self.resume_file = "pesummary_resume.pickle"
+        self._resume_file_path = os.path.join(
+            self.resume_file_dir, self.resume_file
+        )
+        if self.webdir is not None and self.restart_from_checkpoint:
+            if os.path.isfile(self._resume_file_path):
+                self.load_current_state()
+                self._restarted_from_checkpoint = True
+                return
+            else:
+                logger.info(
+                    "Unable to find resume file. Not restarting from checkpoint"
+                )
         self.baseurl = self.opts.baseurl
         self.filename = self.opts.filename
         self.mcmc_samples = self.opts.mcmc_samples
@@ -1625,7 +1758,8 @@ class Input(_Input):
         self.publication = self.opts.publication
         self.publication_kwargs = self.opts.publication_kwargs
         self.default_directories = [
-            "samples", "plots", "js", "html", "css", "plots/corner", "config"
+            "samples", "plots", "js", "html", "css", "plots/corner", "config",
+            "checkpoint"
         ]
         self.make_directories()
         self.regenerate = self.opts.regenerate
@@ -1658,11 +1792,38 @@ class Input(_Input):
         self.notes = self.opts.notes
         self.disable_comparison = self.opts.disable_comparison
         self.disable_interactive = self.opts.disable_interactive
+        self.disable_expert = self.opts.disable_expert
         self.multi_process = self.opts.multi_process
         self.multi_threading_for_plots = self.multi_process
+        self.existing_plot = self.opts.existing_plot
         self.package_information = self.get_package_information()
         if not ignore_copy:
             self.copy_files()
+        self.write_current_state()
+
+    def load_current_state(self):
+        """
+        """
+        from pesummary.io import read
+        logger.info(
+            "Reading checkpoint file: {}".format(self._resume_file_path)
+        )
+        state = read(self._resume_file_path, checkpoint=True)
+        for key, item in vars(state).items():
+            setattr(self, key, item)
+        self.restart_from_checkpoint = True
+
+    def write_current_state(self):
+        """Write the current state of the input class to file
+        """
+        from pesummary.io import write
+        write(
+            self, outdir=self.resume_file_dir, file_format="pickle",
+            filename=self.resume_file, overwrite=True
+        )
+        logger.debug(
+            "Written checkpoint file: {}".format(self._resume_file_path)
+        )
 
 
 class PostProcessing(object):
@@ -1784,6 +1945,7 @@ class PostProcessing(object):
         self.hdf5_compression = self.inputs.hdf5_compression
         self.file_version = self.inputs.file_version
         self.file_kwargs = self.inputs.file_kwargs
+        self.file_kwargs["webpage_url"] = self.baseurl + "/home.html"
         self.palette = self.inputs.palette
         self.colors = self.inputs.colors
         self.linestyles = self.inputs.linestyles
@@ -1791,9 +1953,12 @@ class PostProcessing(object):
         self.notes = self.inputs.notes
         self.disable_comparison = self.inputs.disable_comparison
         self.disable_interactive = self.inputs.disable_interactive
+        self.disable_expert = self.inputs.disable_expert
         self.disable_corner = self.inputs.disable_corner
         self.multi_process = self.inputs.multi_threading_for_plots
         self.package_information = self.inputs.package_information
+        self.existing_plot = self.inputs.existing_plot
+        self.restart_from_checkpoint = self.inputs.restart_from_checkpoint
         self.same_parameters = []
         if self.mcmc_samples:
             self.samples = {label: self.samples.T for label in self.labels}

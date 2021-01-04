@@ -20,6 +20,7 @@ import numpy as np
 from scipy.stats import gaussian_kde
 from scipy.interpolate import interp2d
 import multiprocessing
+from pesummary.utils.probability_dict import ProbabilityDict2D
 
 
 def _wrapper_for_multiprocessing_kde(kde, *args):
@@ -39,8 +40,7 @@ def _wrapper_for_multiprocessing_kde(kde, *args):
 
 
 def _wrapper_for_multiprocessing_interp(interp, *args):
-    """
-    """
+    """"""
     return interp(*args)
 
 
@@ -155,8 +155,7 @@ def _imrct_deviation_parameters_integrand_series(
     multi_process=4,
     **kwargs
 ):
-    """
-    """
+    """"""
     P = np.zeros(shape=(len(final_mass), len(final_mass)))
     if multi_process == 1:
         logger.debug("Performing calculation on a single cpu. This may take some " "time")
@@ -196,8 +195,7 @@ def _imrct_deviation_parameters_integrand_series(
 
 
 def imrct_deviation_parameters_integrand(*args, vectorize=False, **kwargs):
-    """
-    """
+    """"""
     if vectorize:
         return _imrct_deviation_parameters_integrand_vectorized(*args, **kwargs)
     return _imrct_deviation_parameters_integrand_series(*args, **kwargs)
@@ -210,7 +208,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     final_spin_postinspiral,
     final_mass_deviation_lim=1,
     final_spin_deviation_lim=1,
-    N_bins=401,
+    N_bins=101,
     multi_process=4,
     use_kde=False,
     kde=gaussian_kde,
@@ -304,13 +302,13 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         np.sum(P_final_mass_deviation_final_spin_deviation) * diff_final_mass_deviation * diff_final_spin_deviation
     )
 
-    # Marginalization to one-dimensional joint_posteriors
-    P_final_mass_deviation = np.sum(P_final_mass_deviation_final_spin_deviation, axis=0) * diff_final_spin_deviation
-    P_final_spin_deviation = np.sum(P_final_mass_deviation_final_spin_deviation, axis=1) * diff_final_mass_deviation
-    return (
-        P_final_mass_deviation,
-        P_final_spin_deviation,
-        P_final_mass_deviation_final_spin_deviation,
-        final_mass_deviation_vec,
-        final_spin_deviation_vec,
+    imrct_deviations = ProbabilityDict2D(
+        {
+            "final_mass_final_spin_deviations": [
+                final_mass_deviation_vec,
+                final_spin_deviation_vec,
+                P_final_mass_deviation_final_spin_deviation / np.sum(P_final_mass_deviation_final_spin_deviation),
+            ]
+        }
     )
+    return imrct_deviations

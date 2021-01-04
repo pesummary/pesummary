@@ -18,3 +18,4 @@ jupyter_client
 ipykernel
 requests
 gwosc
+GitPython

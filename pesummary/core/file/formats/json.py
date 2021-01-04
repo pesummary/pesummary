@@ -47,7 +47,16 @@ class PESummaryJsonEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def read_json(path, path_to_samples=None):
+def PESummaryJsonDecoder(obj):
+    if isinstance(obj, dict):
+        if "__array__" in obj.keys() and "content" in obj.keys():
+            return obj["content"]
+        elif "__complex__" in obj.keys():
+            return obj["real"] + obj["imag"] * 1j
+    return obj
+
+
+def read_json(path, path_to_samples=None, decoder=PESummaryJsonDecoder):
     """Grab the parameters and samples in a .json file
 
     Parameters
@@ -59,7 +68,7 @@ def read_json(path, path_to_samples=None):
     from pesummary.core.file.formats.base_read import Read
 
     with open(path, "r") as f:
-        data = json.load(f)
+        data = json.load(f, object_hook=decoder)
     if not path_to_samples:
         try:
             path_to_samples, = paths_to_key("posterior", data)
@@ -83,11 +92,31 @@ def read_json(path, path_to_samples=None):
         j: list([reduced_data[j]]) if not isinstance(reduced_data[j], list) else
         reduced_data[j] for j in parameters
     }
+    _original_parameters = reduced_data.copy().keys()
+    _non_numeric = []
+    numeric_types = (float, int, np.number)
+    for key in _original_parameters:
+        if any(np.iscomplex(reduced_data[key])):
+            reduced_data[key + "_amp"] = np.abs(reduced_data[key])
+            reduced_data[key + "_angle"] = np.angle(reduced_data[key])
+            reduced_data[key] = np.real(reduced_data[key])
+        elif not all(isinstance(_, numeric_types) for _ in reduced_data[key]):
+            _non_numeric.append(key)
+        elif all(isinstance(_, (bool, np.bool_)) for _ in reduced_data[key]):
+            _non_numeric.append(key)
+
+    parameters = list(reduced_data.keys())
+    if len(_non_numeric):
+        from pesummary.utils.utils import logger
+        logger.info(
+            "Removing the parameters: '{}' from the posterior table as they "
+            "are non-numeric".format(", ".join(_non_numeric))
+        )
+    for key in _non_numeric:
+        parameters.remove(key)
     samples = [
-        [
-            reduced_data[j][i] if not isinstance(reduced_data[j][i], dict)
-            else reduced_data[j][i]["real"] for j in parameters
-        ] for i in range(len(reduced_data[parameters[0]]))
+        [reduced_data[j][i] for j in parameters] for i in
+        range(len(reduced_data[parameters[0]]))
     ]
     return parameters, samples
 

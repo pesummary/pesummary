@@ -98,6 +98,16 @@ class _GWInput(_Input):
             approx = [None] * len(self.labels)
         else:
             approx = self.opts.approximant
+        if self.restart_from_checkpoint:
+            resume_file = [
+                os.path.join(
+                    self.webdir, "checkpoint",
+                    "{}_conversion_class.pickle".format(label)
+                ) for label in self.labels
+            ]
+        else:
+            resume_file = [None] * len(self.labels)
+
         try:
             for num, label in enumerate(self.labels):
                 kwargs[label].update(dict(
@@ -109,7 +119,9 @@ class _GWInput(_Input):
                     redshift_method=self.redshift_method,
                     cosmology=self.cosmology,
                     no_conversion=self.no_conversion,
-                    add_zero_spin=True, disable_remnant=self.disable_remnant
+                    add_zero_spin=True, disable_remnant=self.disable_remnant,
+                    force_BBH_remnant_computation=self.force_BBH_remnant_computation,
+                    resume_file=resume_file[num]
                 ))
             return kwargs
         except IndexError:
@@ -130,13 +142,15 @@ class _GWInput(_Input):
                     redshift_method=self.redshift_method,
                     cosmology=self.cosmology,
                     no_conversion=self.no_conversion,
-                    add_zero_spin=True
+                    add_zero_spin=True,
+                    force_BBH_remnant_computation=self.force_BBH_remnant_computation,
+                    resume_file=resume_file[num]
                 ))
             return kwargs
 
     @staticmethod
     def grab_data_from_file(
-        file, label, config=None, injection=None, file_format=None,
+        file, label, webdir, config=None, injection=None, file_format=None,
         nsamples=None, disable_prior_sampling=False, **kwargs
     ):
         """Grab data from a result file containing posterior samples
@@ -156,7 +170,7 @@ class _GWInput(_Input):
             If None, the read function loops through all possible options
         """
         data = _Input.grab_data_from_file(
-            file, label, config=config, injection=injection,
+            file, label, webdir, config=config, injection=injection,
             read_function=GWRead, file_format=file_format, nsamples=nsamples,
             disable_prior_sampling=disable_prior_sampling, **kwargs
         )
@@ -505,7 +519,7 @@ class _GWInput(_Input):
             logger.info(base.format(NRSur_fits))
             self._NRSur_fits = NRSur_fits
         elif NRSur_fits is None:
-            from pesummary.gw.file.nrutils import NRSUR_MODEL
+            from pesummary.gw.conversions.nrutils import NRSUR_MODEL
 
             logger.info(base.format(NRSUR_MODEL))
             self._NRSur_fits = NRSUR_MODEL
@@ -861,9 +875,12 @@ class GWInput(_GWInput, Input):
             opts, ignore_copy=True, extra_options=[
                 "evolve_spins", "NRSur_fits", "f_low", "f_ref",
                 "waveform_fits", "redshift_method", "cosmology",
-                "no_conversion", "disable_remnant"
+                "no_conversion", "disable_remnant",
+                "force_BBH_remnant_computation"
             ]
         )
+        if self._restarted_from_checkpoint:
+            return
         if self.existing is not None:
             self.existing_data = self.grab_data_from_metafile(
                 self.existing_metafile, self.existing,
@@ -909,6 +926,7 @@ class GWInput(_GWInput, Input):
         self.pepredicates_probs = []
         self.pastro_probs = []
         self.copy_files()
+        self.write_current_state()
 
     def copy_files(self):
         """Copy the relevant file to the web directory

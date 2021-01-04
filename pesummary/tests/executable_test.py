@@ -190,22 +190,69 @@ class TestSummaryPages(Base):
             if os.path.isdir(dd):
                 shutil.rmtree(dd)
 
-    def check_output(self, number=1, mcmc=False):
+    def check_output(
+        self, number=1, mcmc=False, existing_plot=False, expert=False
+    ):
         """Check the output from the summarypages executable
         """
         assert os.path.isfile(".outdir/home.html")
-        plots = get_list_of_plots(gw=False, number=number, mcmc=mcmc)
+        plots = get_list_of_plots(
+            gw=False, number=number, mcmc=mcmc, existing_plot=existing_plot,
+            expert=expert
+        )
         assert all(
             i == j for i, j in zip(
                 sorted(plots), sorted(glob.glob("./.outdir/plots/*.png"))
             )
         )
-        files = get_list_of_files(gw=False, number=number)
+        files = get_list_of_files(
+            gw=False, number=number, existing_plot=existing_plot
+        )
         assert all(
             i == j for i, j in zip(
                 sorted(files), sorted(glob.glob("./.outdir/html/*.html"))
             )
         )
+
+    def test_checkpoint(self):
+        """Check that when restarting from checkpoint, the outputs are
+        consistent
+        """
+        import time
+        command_line = (
+            "summarypages --webdir .outdir --samples  .outdir/example.json "
+            "--labels core0 --nsamples 100 --disable_expert --restart_from_checkpoint"
+        )
+        t0 = time.time()
+        self.launch(command_line)
+        t1 = time.time()
+        assert os.path.isfile(".outdir/checkpoint/pesummary_resume.pickle")
+        self.check_output(number=1, expert=False)
+        t2 = time.time()
+        self.launch(command_line)
+        t3 = time.time()
+        assert t3 - t2 < t1 - t0
+        self.check_output(number=1, expert=False)
+        # get timestamp of plot
+        made_time = os.path.getmtime(glob.glob(".outdir/plots/*.png")[0])
+        assert made_time < t2
+
+    def test_expert(self):
+        """Check that summarypages produces the expected expert diagnostic
+        plots
+        """
+        command_line = (
+            "summarypages --webdir .outdir --samples  .outdir/example.json "
+            "--labels core0 --nsamples 100 --disable_expert"
+        )
+        self.launch(command_line)
+        self.check_output(number=1, expert=False)
+        command_line = (
+            "summarypages --webdir .outdir --samples  .outdir/example.json "
+            "--labels core0 --nsamples 100"
+        )
+        self.launch(command_line)
+        self.check_output(number=1, expert=True)
 
     def test_prior_input(self):
         """Check that `summarypages` works when a prior file is passed from
@@ -230,7 +277,7 @@ class TestSummaryPages(Base):
                 command_line = (
                     "summarypages --webdir .outdir --samples .outdir/example.json "
                     "--labels test --prior_file {} --nsamples_for_prior "
-                    "10".format(_file)
+                    "10 --disable_expert".format(_file)
                 )
                 command_line += " --gw" if gw else ""
                 self.launch(command_line)
@@ -268,7 +315,8 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir .outdir --samples .outdir/example.json "
             "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
-            "--labels test --posterior_samples_filename example.h5"
+            "--labels test --posterior_samples_filename example.h5 "
+            "--disable_expert"
         )
         self.launch(command_line)
         f = read(".outdir/samples/example.h5")
@@ -287,7 +335,7 @@ class TestSummaryPages(Base):
 
         command_line = (
             "summarypages --webdir .outdir --samples .outdir/example.json "
-            "--gracedb G17864 --gw --labels test"
+            "--gracedb G17864 --gw --labels test --disable_expert"
         )
         self.launch(command_line)
         f = read(".outdir/samples/posterior_samples.h5")
@@ -299,7 +347,7 @@ class TestSummaryPages(Base):
         """
         command_line = (
             "summarypages --webdir .outdir --samples "
-            ".outdir/example.json --label core0"
+            ".outdir/example.json --label core0 --disable_expert"
         )
         self.launch(command_line)
         self.check_output(number=1)
@@ -331,7 +379,7 @@ class TestSummaryPages(Base):
         self.launch(command_line)
         command_line = (
             "summarypages --webdir .outdir --gw --samples "
-            ".outdir/samples/posterior_samples.h5"
+            ".outdir/samples/posterior_samples.h5 --disable_expert"
         )
         self.launch(command_line)
         
@@ -352,7 +400,7 @@ class TestSummaryPages(Base):
         """
         command_line = (
             "summarypages --webdir .outdir --samples "
-            ".outdir/example.json --label core0 --kde_plot"
+            ".outdir/example.json --label core0 --kde_plot --disable_expert"
         )
         self.launch(command_line)
         self.check_output(number=1)
@@ -389,6 +437,28 @@ class TestSummaryPages(Base):
         )
         with pytest.raises(InputError):
             self.launch(command_line)
+
+    def test_add_existing_plot(self):
+        """Test that an Additional page is made if existing plots are provided
+        to the summarypages executable
+        """
+        with open(".outdir/test.png", "w") as f:
+            f.writelines("")
+        command_line = (
+            "summarypages --webdir .outdir --samples "
+            ".outdir/example.json --label core0 --add_existing_plot "
+            "core0:.outdir/test.png --disable_expert"
+        )
+        self.launch(command_line)
+        self.check_output(number=1, existing_plot=True)
+        command_line = (
+            "summarypages --webdir .outdir --samples "
+            ".outdir/example.json .outdir/example.json --label core0 core1 "
+            "--add_existing_plot core0:.outdir/test.png core1:.outdir/test.png "
+            "--disable_expert"
+        )
+        self.launch(command_line)
+        self.check_output(number=2, existing_plot=True)
 
 
 class TestSummaryClassification(Base):
@@ -447,6 +517,58 @@ class TestSummaryClassification(Base):
         self.launch(command_line)
         self.check_output()
 
+class TestSummaryTGR(Base):
+    """Test the `summarytgr` executable
+    """
+    def setup(self):
+        """Setup the SummaryTGR class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        make_result_file(pesummary=True, gw=True, pesummary_label="test")
+        os.rename(".outdir/test.json", ".outdir/pesummary.json")
+        make_result_file(bilby=True, gw=True)
+        os.rename(".outdir/test.json", ".outdir/bilby.json")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def check_output(self):
+        """Check the output from the `summarytgr` executable
+        """
+        import glob
+
+        image_files = glob.glob(".outdir/plots/*")
+        image_base_string = ".outdir/plots/imrct_{}.png"
+        file_strings = ["deviations_triangle_plot", "mass_1_mass_2", "a_1_a_2", "final_mass_non_evolved_final_spin_non_evolved"]
+        for file_string in file_strings:
+            assert image_base_string.format(file_string) in image_files
+
+    def test_result_file(self):
+        """Test the `summarytgr` executable for a random result file
+        """
+        command_line = (
+            "summarytgr --webdir .outdir --samples --test imrct "
+            ".outdir/bilby.json .outdir/bilby.json --labels "
+            "inspiral postinspiral --make-diagnostic-plots"
+        )
+
+        self.launch(command_line)
+        self.check_output()
+
+    def test_pesummary_file(self):
+        """Test the `summarytgr` executable for a pesummary metafile
+        """
+        command_line = (
+            "summarytgr --webdir .outdir --samples --test imrct "
+            ".outdir/pesummary.json .outdir/pesummary.json --labels "
+            "inspiral postinspiral --make-diagnostic-plots"
+        )
+        self.launch(command_line)
+        self.check_output()
 
 class TestSummaryClean(Base):
     """Test the `summaryclean` executable

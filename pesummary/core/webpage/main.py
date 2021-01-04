@@ -19,14 +19,14 @@ import uuid
 from glob import glob
 from operator import itemgetter
 from pathlib import Path
-from shutil import which
+import shutil
 
 from scipy import stats
 import numpy as np
 import math
 
 import pesummary
-from pesummary import conf
+from pesummary import conf, __version_string__
 from pesummary.utils.utils import (
     logger, LOG_FILE, jensen_shannon_divergence, safe_round, make_dir
 )
@@ -122,7 +122,8 @@ class _WebpageGeneration(object):
         existing_weights=None, add_to_existing=False, notes=None,
         disable_comparison=False, disable_interactive=False,
         package_information={"packages": [], "manager": "pypi"},
-        mcmc_samples=False, external_hdf5_links=False, key_data=None
+        mcmc_samples=False, external_hdf5_links=False, key_data=None,
+        existing_plot=None, disable_expert=False
     ):
         self.webdir = webdir
         make_dir(self.webdir)
@@ -153,28 +154,31 @@ class _WebpageGeneration(object):
         self.existing_file_kwargs = existing_file_kwargs
         self.add_to_existing = add_to_existing
         self.key_data = key_data
-        if key_data is None:
-            self.key_data = {
-                label: _samples.key_data for label, _samples in
-                self.samples.items()
-            }
         _label = self.labels[0]
-        self.key_data_headings = sorted(
-            list(self.key_data[_label][list(self.samples[_label].keys())[0]])
-        )
-        self.key_data_table = {
-            label: {
-                param: [
-                    safe_round(self.key_data[label][param][key], 3) for key in
-                    self.key_data_headings
-                ] for param in self.samples[label].keys()
-            } for label in self.labels
-        }
+        if self.samples is not None:
+            if key_data is None:
+                self.key_data = {
+                    label: _samples.key_data for label, _samples in
+                    self.samples.items()
+                }
+            self.key_data_headings = sorted(
+                list(self.key_data[_label][list(self.samples[_label].keys())[0]])
+            )
+            self.key_data_table = {
+                label: {
+                    param: [
+                        safe_round(self.key_data[label][param][key], 3) for key
+                        in self.key_data_headings
+                    ] for param in self.samples[label].keys()
+                } for label in self.labels
+            }
         self.notes = notes
         self.make_interactive = not disable_interactive
         self.package_information = package_information
         self.mcmc_samples = mcmc_samples
         self.external_hdf5_links = external_hdf5_links
+        self.existing_plot = existing_plot
+        self.expert_plots = not disable_expert
         self.make_comparison = (
             not disable_comparison and self._total_number_of_labels > 1
         )
@@ -214,6 +218,31 @@ class _WebpageGeneration(object):
             if isinstance(item, list):
                 _number_of_labels += len(item)
         return _number_of_labels
+
+    def copy_css_and_js_scripts(self):
+        """Copy css and js scripts from the package to the web directory
+        """
+        import pkg_resources
+        import shutil
+        files_to_copy = []
+        path = pkg_resources.resource_filename("pesummary", "core")
+        scripts = glob(os.path.join(path, "js", "*.js"))
+        for i in scripts:
+            files_to_copy.append(
+                [i, os.path.join(self.webdir, "js", os.path.basename(i))]
+            )
+        scripts = glob(os.path.join(path, "css", "*.css"))
+        for i in scripts:
+            files_to_copy.append(
+                [i, os.path.join(self.webdir, "css", os.path.basename(i))]
+            )
+        for _dir in ["js", "css"]:
+            try:
+                os.mkdir(os.path.join(self.webdir, _dir))
+            except FileExistsError:
+                pass
+        for ff in files_to_copy:
+            shutil.copy(ff[0], ff[1])
 
     def make_modal_carousel(
         self, html_file, image_contents, unique_id=False, **kwargs
@@ -302,7 +331,7 @@ class _WebpageGeneration(object):
         executable: str
             the name of the executable you wish to find
         """
-        return which(
+        return shutil.which(
             executable,
             path=os.pathsep.join((
                 os.getenv("PATH", ""),
@@ -351,11 +380,24 @@ class _WebpageGeneration(object):
         if self.make_comparison:
             for label in self.labels:
                 final_links[label][1][1] += ["Comparison"]
+        _dummy_label = self.labels[0]
+        if len(final_links[_dummy_label][1][1]) > 1:
+            for label in self.labels:
+                _options = [{l: "switch"} for l in self.labels if l != label]
+                if self.make_comparison:
+                    _options.append({"Comparison": "switch"})
+                final_links[label].append(["Switch", _options])
         if self.make_interactive:
             for label in self.labels:
                 final_links[label].append(
                     ["Interactive", [{"Interactive_Corner": label}]]
                 )
+        if self.existing_plot is not None:
+            for _label in self.labels:
+                if _label in self.existing_plot.keys():
+                    final_links[_label].append(
+                        {"Additional": _label}
+                    )
         return final_links
 
     def make_navbar_for_comparison_page(self):
@@ -369,6 +411,9 @@ class _WebpageGeneration(object):
                 "home", ["Result Pages", self._result_page_links()], links
             ]
             final_links[1][1] += ["Comparison"]
+            final_links.append(
+                ["Switch", [{l: "switch"} for l in self.labels]]
+            )
             if self.make_interactive:
                 final_links.append(
                     ["Interactive", ["Interactive_Ridgeline"]]
@@ -376,7 +421,7 @@ class _WebpageGeneration(object):
             return final_links
         return None
 
-    def categorize_parameters(self, parameters):
+    def categorize_parameters(self, parameters, starting_letter=True):
         """Categorize the parameters into common headings
 
         Parameters
@@ -389,7 +434,10 @@ class _WebpageGeneration(object):
             if any(
                 any(i[0] in j for j in category["accept"]) for i in parameters
             ):
-                cond = self._condition(category["accept"], category["reject"])
+                cond = self._condition(
+                    category["accept"], category["reject"],
+                    starting_letter=starting_letter
+                )
                 params.append(
                     [heading, self._partition(cond, parameters)]
                 )
@@ -407,7 +455,7 @@ class _WebpageGeneration(object):
             params.append(["others", other_params])
         return params
 
-    def _condition(self, true, false):
+    def _condition(self, true, false, starting_letter=False):
         """Setup a condition
 
         Parameters
@@ -417,15 +465,23 @@ class _WebpageGeneration(object):
         false: list
             list of strings that you would like to neglect
         """
+        def _starting_letter(param, condition):
+            if condition:
+                return param[0]
+            return param
         if len(true) != 0 and len(false) == 0:
-            condition = lambda j: True if any(i in j for i in true) else \
-                False
+            condition = lambda j: True if any(
+                i in _starting_letter(j, starting_letter) for i in true
+            ) else False
         elif len(true) == 0 and len(false) != 0:
-            condition = lambda j: True if any(i not in j for i in false) \
-                else False
+            condition = lambda j: True if any(
+                i not in _starting_letter(j, starting_letter) for i in false
+            ) else False
         elif len(true) and len(false) != 0:
             condition = lambda j: True if any(
-                i in j and all(k not in j for k in false) for i in true
+                i in _starting_letter(j, starting_letter) and all(
+                    k not in _starting_letter(j, starting_letter) for k in false
+                ) for i in true
             ) else False
         return condition
 
@@ -455,6 +511,8 @@ class _WebpageGeneration(object):
             self.make_comparison_pages()
         if self.make_interactive:
             self.make_interactive_pages()
+        if self.existing_plot is not None:
+            self.make_additional_plots_pages()
         self.make_error_page()
         self.make_version_page()
         self.make_logging_page()
@@ -481,7 +539,7 @@ class _WebpageGeneration(object):
 
     def setup_page(
         self, html_page, links, label=None, title=None, approximant=None,
-        background_colour=None, histogram_download=False
+        background_colour=None, histogram_download=False, toggle=False
     ):
         """Set up each webpage with a header and navigation bar.
 
@@ -519,12 +577,12 @@ class _WebpageGeneration(object):
             html_file.make_navbar(
                 links=links, samples_path=self.results_path["home"],
                 background_color=background_colour,
-                hdf5=self.hdf5
+                hdf5=self.hdf5, toggle=toggle
             )
         elif histogram_download:
             html_file.make_navbar(
                 links=links, samples_path=self.results_path["other"],
-                histogram_download=os.path.join(
+                toggle=toggle, histogram_download=os.path.join(
                     "..", "samples", "dat", label, "{}_{}_samples.dat".format(
                         label, html_page
                     )
@@ -533,7 +591,8 @@ class _WebpageGeneration(object):
         else:
             html_file.make_navbar(
                 links=links, samples_path=self.results_path["home"],
-                background_color=background_colour, hdf5=self.hdf5
+                background_color=background_colour, hdf5=self.hdf5,
+                toggle=toggle
             )
         return html_file
 
@@ -546,7 +605,8 @@ class _WebpageGeneration(object):
         self._make_home_pages(pages)
 
     def _make_home_pages(
-        self, pages, title=None, banner="Summary", make_home=True
+        self, pages, title=None, banner="Summary", make_home=True,
+        make_result=True, return_html=False
     ):
         """Make the home pages
 
@@ -558,6 +618,10 @@ class _WebpageGeneration(object):
         if make_home:
             html_file = self.setup_page("home", self.navbar["home"], title=title)
             html_file.make_banner(approximant=banner, key="Summary")
+            if return_html:
+                return html_file
+        if not make_result:
+            return
 
         for num, i in enumerate(self.labels):
             html_file = self.setup_page(
@@ -656,7 +720,7 @@ class _WebpageGeneration(object):
                     "{}_{}".format(i, j), self.navbar["result_page"][i],
                     i, title="{} Posterior PDF for {}".format(i, j),
                     approximant=i, background_colour=self.colors[num],
-                    histogram_download=False
+                    histogram_download=False, toggle=self.expert_plots
                 )
                 html_file.make_banner(approximant=i, key=i)
                 path = self.image_path["other"]
@@ -678,11 +742,57 @@ class _WebpageGeneration(object):
                     contents=contents, rows=1, columns=2, code="changeimage",
                     captions=captions, mcmc_samples=self.mcmc_samples
                 )
+                contents = [
+                    [path + "{}_2d_contour_{}_log_likelihood.png".format(i, j)],
+                    [
+                        path + "{}_sample_evolution_{}_{}_colored.png".format(
+                            i, j, "log_likelihood"
+                        ), path + "{}_1d_posterior_{}_bootstrap.png".format(i, j)
+                    ]
+                ]
+                captions = [
+                    [PlotCaption("2d_contour").format(j, "log_likelihood")],
+                    [
+                        PlotCaption("sample_evolution_colored").format(
+                            j, "log_likelihood"
+                        ),
+                        PlotCaption("1d_histogram_bootstrap").format(100, j, 1000)
+                    ]
+                ]
+                if self.expert_plots:
+                    html_file.make_table_of_images(
+                        contents=contents, rows=1, columns=2, code="changeimage",
+                        captions=captions, mcmc_samples=self.mcmc_samples,
+                        display='none', container_id='expert_div'
+                    )
                 html_file.export(
                     "", csv=False, json=False, shell=False, margin_bottom="1em",
                     histogram_dat=os.path.join(
                         self.results_path["other"], i, "{}_{}.dat".format(i, j)
                     )
+                )
+                key_data = self.key_data
+                contents = []
+                headings = self.key_data_headings.copy()
+                _injection = False
+                if "injected" in headings:
+                    _injection = not math.isnan(self.key_data[i][j]["injected"])
+                row = self.key_data_table[i][j]
+                if _injection:
+                    headings.append("injected")
+                    row.append(safe_round(self.key_data[i][j]["injected"], 3))
+                _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+                _class = "row justify-content-center"
+                html_file.make_container(style=_style)
+                html_file.make_div(4, _class=_class, _style=None)
+                html_file.make_table(
+                    headings=headings, contents=[row], heading_span=1,
+                    accordian=False, format="table-hover"
+                )
+                html_file.end_div(4)
+                html_file.end_container()
+                html_file.export(
+                    "summary_information_{}.csv".format(i)
                 )
                 html_file.make_footer(user=self.user, rundir=self.webdir)
                 html_file.close()
@@ -725,6 +835,82 @@ class _WebpageGeneration(object):
                 ]
                 html_file.make_table_of_images(
                     contents=contents, rows=1, columns=2, code="changeimage")
+            html_file.close()
+
+    def make_additional_plots_pages(self):
+        """Wrapper function for _make_additional_plots_pages
+        """
+        pages = [
+            "{}_{}_Additional".format(i, i) for i in self.labels if i in
+            self.existing_plot.keys()
+        ]
+        self.create_blank_html_pages(pages)
+        self._make_additional_plots_pages(pages)
+
+    def _make_additional_plots_pages(self, pages):
+        """Make the additional plots pages
+
+        Parameters
+        ----------
+        pages: list
+            list of pages that you wish to create
+        """
+        from PIL import Image
+        for num, i in enumerate(self.labels):
+            if i not in self.existing_plot.keys():
+                continue
+            html_file = self.setup_page(
+                "{}_Additional".format(i), self.navbar["result_page"][i], i,
+                title="Additional plots for {}".format(i), approximant=i,
+                background_colour=self.colors[num]
+            )
+            html_file.make_banner(approximant=i, key="additional")
+            if isinstance(self.existing_plot[i], list):
+                images = sorted(
+                    self.existing_plot[i],
+                    key=lambda _path: Image.open(_path).size[1]
+                )
+                tol = 2.
+                # if all images are of similar height, then grid them uniformly, else
+                # grid by heights
+                cond = all(
+                    Image.open(_path).size[1] / tol < Image.open(images[0]).size[1]
+                    for _path in images
+                )
+                if cond:
+                    image_contents = [
+                        [
+                            self.image_path["other"] + Path(_path).name for
+                            _path in images[j:4 + j]
+                        ] for j in range(0, len(self.existing_plot[i]), 4)
+                    ]
+                else:
+                    heights = [Image.open(_path).size[1] for _path in images]
+                    image_contents = [
+                        [self.image_path["other"] + Path(images[0]).name]
+                    ]
+                    row = 0
+                    for num, _height in enumerate(heights[1:]):
+                        if _height / tol < heights[num]:
+                            image_contents[row].append(
+                                self.image_path["other"] + Path(images[num + 1]).name
+                            )
+                        else:
+                            row += 1
+                            image_contents.append(
+                                [self.image_path["other"] + Path(images[num + 1]).name]
+                            )
+                margin_left = None
+            else:
+                image_contents = [
+                    [self.image_path["other"] + Path(self.existing_plot[i]).name]
+                ]
+                margin_left = "-250px"
+            html_file = self.make_modal_carousel(
+                html_file, image_contents, unique_id=True, autoscale=True,
+                margin_left=margin_left
+            )
+            html_file.make_footer(user=self.user, rundir=self.webdir)
             html_file.close()
 
     def make_corner_pages(self):
@@ -1133,9 +1319,7 @@ class _WebpageGeneration(object):
             "Version", self.navbar["home"], title="Version Information"
         )
         html_file.make_banner(approximant="Version", key="Version")
-        path = pesummary.__file__[:-12]
-        with open(path + "/.version", 'r') as f:
-            contents = f.read()
+        contents = __version_string__
         contents += install_path(return_string=True)
         for i in self.labels:
             contents = (

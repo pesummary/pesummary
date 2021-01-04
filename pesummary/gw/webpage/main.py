@@ -118,7 +118,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
         disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False,
         psd=None, priors=None, package_information={"packages": []},
-        mcmc_samples=False, external_hdf5_links=False, preliminary_pages=False
+        mcmc_samples=False, external_hdf5_links=False, preliminary_pages=False,
+        existing_plot=None, disable_expert=False
     ):
         self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
@@ -151,6 +152,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             disable_interactive=disable_interactive,
             package_information=package_information, mcmc_samples=mcmc_samples,
             external_hdf5_links=external_hdf5_links, key_data=key_data,
+            existing_plot=existing_plot, disable_expert=disable_expert
         )
         if self.file_kwargs is None:
             self.file_kwargs = {
@@ -177,6 +179,18 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         if len(self.labels) > 1:
             if any(value for value in self.preliminary_pages.values()):
                 self.preliminary_pages["Comparison"] = True
+
+    def categorize_parameters(self, parameters):
+        """Categorize the parameters into common headings
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters that you would like to sort
+        """
+        return super(_WebpageGeneration, self).categorize_parameters(
+            parameters, starting_letter=False
+        )
 
     def _jensen_shannon_divergence(self, param, samples):
         """Return the Jensen Shannon divergence between two sets of samples
@@ -453,22 +467,43 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         )
         path = self.image_path["other"]
         base = os.path.join(path, "{}_{}.png")
-        maxL_samples = {
-            i: {
-                "geocent_time": self.key_data[i]["geocent_time"]["maxL"]
-            } for i in self.labels
-        }
-        gps_time, window = determine_gps_time_and_window(maxL_samples, self.labels)
-        t = Time(gps_time, format='gps')
-        t = Time(t, format='datetime')
-        link = (
-            "https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day"
-            "/{}{}{}/".format(
-                t.value.year,
-                "0{}".format(t.value.month) if t.value.month < 10 else t.value.month,
-                "0{}".format(t.value.day) if t.value.day < 10 else t.value.day
+        ADD_DETCHAR_LINK = True
+        try:
+            maxL_samples = {
+                i: {
+                    "geocent_time": self.key_data[i]["geocent_time"]["maxL"]
+                } for i in self.labels
+            }
+        except KeyError:
+            # trying a different name for time
+            try:
+                maxL_samples = {
+                    i: {
+                        "geocent_time": self.key_data[i][
+                            "marginalized_geocent_time"
+                        ]["maxL"]
+                    } for i in self.labels
+                }
+            except KeyError:
+                logger.warn(
+                    "Failed to find a time parameter to link to detchar/"
+                    "summary pages. Not adding link to webpages."
+                )
+                ADD_DETCHAR_LINK = False
+        if ADD_DETCHAR_LINK:
+            gps_time, window = determine_gps_time_and_window(maxL_samples, self.labels)
+            t = Time(gps_time, format='gps')
+            t = Time(t, format='datetime')
+            link = (
+                "https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day"
+                "/{}{}{}/".format(
+                    t.value.year,
+                    "0{}".format(t.value.month) if t.value.month < 10 else t.value.month,
+                    "0{}".format(t.value.day) if t.value.day < 10 else t.value.day
+                )
             )
-        )
+        else:
+            link = None
         for det in self.gwdata.keys():
             html_file = self.setup_page(
                 det, self.navbar["home"], title="{} Detchar".format(det)
@@ -725,13 +760,13 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         categories = self.categories = {
             "masses": {
                 "accept": ["mass"],
-                "reject": ["source", "final"]
+                "reject": ["source", "final", "torus"]
             },
             "source": {
-                "accept": ["source"], "reject": ["final"]
+                "accept": ["source"], "reject": ["final", "torus"]
             },
             "remnant": {
-                "accept": ["final"], "reject": []
+                "accept": ["final", "torus"], "reject": []
             },
             "inclination": {
                 "accept": ["theta", "iota"], "reject": []
@@ -746,7 +781,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             "tidal": {
                 "accept": [
                     "lambda", "gamma_", "log_pressure",
-                    "spectral_decomposition_gamma_"
+                    "spectral_decomposition_gamma_", "compactness_",
+                    "tidal_disruption"
                 ],
                 "reject": []
             },
@@ -765,14 +801,14 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             },
             "calibration": {
                 "accept": ["spcal", "recalib", "frequency"],
-                "reject": ["minimum"]
+                "reject": ["minimum", "tidal_disruption", "quasinormal"]
             },
             "energy": {
                 "accept": ["peak_luminosity", "radiated"],
                 "reject": []
             },
             "others": {
-                "accept": ["phase", "likelihood", "prior"],
+                "accept": ["phase", "likelihood", "prior", "quasinormal"],
                 "reject": ["spcal", "recalib"]
             }
         }
