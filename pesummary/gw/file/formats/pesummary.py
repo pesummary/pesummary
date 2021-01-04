@@ -101,6 +101,8 @@ class PESummary(GWMultiAnalysisRead, CorePESummary):
         dictionary of weights for each samples for each analysis
     detectors: list
         list of IFOs used in each analysis
+    pe_algorithm: dict
+        name of the algorithm used to generate the each analysis
 
     Methods
     -------

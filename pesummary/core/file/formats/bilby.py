@@ -86,6 +86,7 @@ def read_bilby(
     except Exception:
         extra_kwargs = {"sampler": {}, "meta_data": {}}
     extra_kwargs["sampler"]["nsamples"] = len(samples)
+    extra_kwargs["sampler"]["pe_algorithm"] = "bilby"
     try:
         version = bilby_object.version
     except Exception as e:
@@ -313,6 +314,8 @@ class Bilby(SingleAnalysisRead):
     prior: dict
         dictionary of prior samples keyed by parameters. The prior functions
         are evaluated for 5000 samples.
+    pe_algorithm: str
+        name of the algorithm used to generate the posterior samples
 
     Methods
     -------
