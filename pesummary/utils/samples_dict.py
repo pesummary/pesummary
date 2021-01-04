@@ -392,11 +392,16 @@ class SamplesDict(Dict):
             function = convert
         _samples = self.copy()
         _keys = list(_samples.keys())
-        converted_samples = function(_samples, **kwargs)
+        kwargs.update({"return_dict": True})
+        out = function(_samples, **kwargs)
+        if kwargs.get("return_kwargs", False):
+            converted_samples, extra_kwargs = out
+        else:
+            converted_samples, extra_kwargs = out, None
         for key, item in converted_samples.items():
             if key not in _keys:
                 self[key] = item
-        return
+        return extra_kwargs
 
     def _marginalized_posterior(self, parameter, module="core", **kwargs):
         """Wrapper for the `pesummary.core.plots.plot._1d_histogram_plot` or
