@@ -411,7 +411,6 @@ def main(args=None):
         {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
     )
     test_key_data = {}
-    '''
     if opts.test == "imrct":
         for key, sample in open_files.items():
             if "final_mass_{}".format(evolve_spins_string) not in sample.keys():
@@ -429,7 +428,6 @@ def main(args=None):
             imrct_deviations, open_files, webdir=opts.webdir, evolve_spins=opts.evolve_spins, make_diagnostic_plots=opts.make_diagnostic_plots
         )
         test_key_data["imrct"] = data
-    '''
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
         opts.webdir, opts.samples, test=opts.test, open_files=open_files, test_key_data=test_key_data
