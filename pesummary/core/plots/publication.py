@@ -454,6 +454,7 @@ def _analytic_triangle_plot(
     ax1.set_xlim(xlims)
     ylims = ax3.get_ylim()
     ax4.set_ylim(ylims)
+    fig.tight_layout()
     return fig, ax1, ax3, ax4
 
 
