@@ -59,6 +59,13 @@ def command_line():
         action="store_true",
     )
     parser.add_argument(
+        "--cutoff_frequency",
+        dest="cutoff_frequency",
+        help="Cutoff Frequency for IMRCT. Overrides any cutoff frequency present in the supplied files.",
+        type=float,
+        default=None,
+    )
+    parser.add_argument(
         "--make_diagnostic_plots", dest="make_diagnostic_plots", help="Make extra diagnostic plots", action="store_true"
     )
     return parser
@@ -102,10 +109,14 @@ def generate_imrct_deviation_parameters(samples, evolve_spins=True, **kwargs):
     t1 = time.time()
     data = kwargs.copy()
     data["evolve_spin"] = evolve_spins
-    data["Time"] = t1 - t0
-    data["GR Quantile (%)"] = gr_quantile[0]
+    data["Time (seconds)"] = round(t1 - t0, 2)
+    data["GR Quantile (%)"] = round(gr_quantile[0], 2)
 
-    logger.info("Calculation Finished in {} seconds. GR Quantile is {} %.".format(t1 - t0, gr_quantile[0]))
+    logger.info(
+        "Calculation Finished in {} seconds. GR Quantile is {} %.".format(
+            data["Time (seconds)"], data["GR Quantile (%)"]
+        )
+    )
 
     return imrct_deviations, data
 
@@ -406,22 +417,44 @@ def main(args=None):
     )
     test_key_data = {}
     if opts.test == "imrct":
+        test_key_data["imrct"] = {}
         for key, sample in open_files.items():
             if "final_mass_{}".format(evolve_spins_string) not in sample.keys():
                 logger.info("Remnant properties not in samples, trying to generate them")
-                print(opts.evolve_spins)
                 sample.generate_all_posterior_samples(evolve_spins=evolve_spins)
                 converted_keys = sample.keys()
                 if "final_mass_{}".format(evolve_spins_string) not in converted_keys:
                     raise KeyError("Remnant properties not in samples and cannot be generated")
                 else:
                     logger.info("Remnant properties generated.")
+                    # for fit in ["final_mass_NR_fits", "final_spin_NR_fits"]:
+                    # test_key_data["imrct"]["{}_{}".format(key, fit)] = sample.extra_kwargs["meta_data"][fit]
 
         imrct_deviations, data = generate_imrct_deviation_parameters(open_files, evolve_spins=opts.evolve_spins)
         make_imrct_plots(
-            imrct_deviations, open_files, webdir=opts.webdir, evolve_spins=opts.evolve_spins, make_diagnostic_plots=opts.make_diagnostic_plots
+            imrct_deviations,
+            open_files,
+            webdir=opts.webdir,
+            evolve_spins=opts.evolve_spins,
+            make_diagnostic_plots=opts.make_diagnostic_plots,
         )
-        test_key_data["imrct"] = data
+
+        if opts.cutoff_frequency is not None:
+            data["Cutoff frequency"] = opts.cutoff_frequency
+        else:
+            logger.info("No Cutoff Frequency supplied on command line. Checking in the samples files.")
+            try:
+                if float(open_files["inspiral"].config["maximum-frequency"]) == float(
+                    open_files["postinspiral"].config["minimum-frequency"]
+                ):
+                    data["Cutoff Frequency"] = float(open_files["inspiral"].config["maximum-frequency"])
+                else:
+                    logger.warning("The minimum and maximum frequencies for inspiral and postinspiral do not match!")
+                    data["Cutoff Frequency"] = None
+            except (AttributeError, KeyError):
+                logger.info("No Cutoff Frequency information in supplied samples file. Setting to None.")
+                data["Cutoff Frequency"] = None
+        test_key_data["imrct"].update(data)
 
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
