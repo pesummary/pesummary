@@ -428,6 +428,7 @@ def main(args=None):
             imrct_deviations, open_files, webdir=opts.webdir, evolve_spins=opts.evolve_spins, make_diagnostic_plots=opts.make_diagnostic_plots
         )
         test_key_data["imrct"] = data
+
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
         opts.webdir, opts.samples, test=opts.test, open_files=open_files, test_key_data=test_key_data
