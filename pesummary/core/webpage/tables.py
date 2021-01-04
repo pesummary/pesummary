@@ -20,7 +20,8 @@ class table_of_images(Base):
 
     def __init__(self, content, rows, columns, html_file, code, cli,
                  autoscale=False, unique_id=None, captions=None, extra_div=False,
-                 mcmc_samples=False, margin_left=None):
+                 mcmc_samples=False, margin_left=None, display=None,
+                 container_id=None):
         """
 
         Parameters
@@ -41,6 +42,8 @@ class table_of_images(Base):
         self.extra_div = extra_div
         self.mcmc_samples = mcmc_samples
         self.margin_left = margin_left
+        self.display = display
+        self.container_id = container_id
         if self.unique_id is not None:
             self.modal_id = "Modal_{}".format(self.unique_id)
             self.demo_id = "demo_{}".format(self.unique_id)
@@ -75,7 +78,7 @@ class table_of_images(Base):
         self.add_content("width: 550px;", indent=4)
         self.add_content("}", indent=2)
         self.add_content("</style>")
-        self.make_container()
+        self.make_container(display=self.display, container_id=self.container_id)
         self.make_div(2, _class="mx-auto d-block", _style=None)
         if self.rows == 1:
             _id = self.content[0][0].split("/")[-1][:-4]

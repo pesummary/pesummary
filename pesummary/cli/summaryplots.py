@@ -72,6 +72,7 @@ class _CorePlotGeneration(PostProcessing):
         from pesummary.core.plots.main import _PlotGeneration
 
         super(_CorePlotGeneration, self).__init__(inputs, colors)
+        expert_plots = not self.disable_expert
         self.plotting_object = _PlotGeneration(
             webdir=self.webdir, labels=self.labels,
             samples=self.samples, kde_plot=self.kde_plot,
@@ -88,7 +89,8 @@ class _CorePlotGeneration(PostProcessing):
             disable_interactive=self.disable_interactive,
             disable_corner=self.disable_corner,
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
-            corner_params=self.corner_params
+            corner_params=self.corner_params, expert_plots=expert_plots,
+            checkpoint=self.restart_from_checkpoint
         )
 
     def generate_plots(self):
@@ -111,6 +113,7 @@ class _GWPlotGeneration(GWPostProcessing):
         from pesummary.gw.plots.main import _PlotGeneration
 
         super(_GWPlotGeneration, self).__init__(inputs, colors)
+        expert_plots = not self.disable_expert
         self.plotting_object = _PlotGeneration(
             webdir=self.webdir, labels=self.labels,
             samples=self.samples, kde_plot=self.kde_plot,
@@ -144,7 +147,8 @@ class _GWPlotGeneration(GWPostProcessing):
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
             skymap=self.skymap, existing_skymap=self.existing_skymap,
             corner_params=self.corner_params,
-            preliminary_pages=self.preliminary_pages
+            preliminary_pages=self.preliminary_pages, expert_plots=expert_plots,
+            checkpoint=self.restart_from_checkpoint
         )
         self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 
@@ -168,6 +172,7 @@ class _PublicGWPlotGeneration(GWPostProcessing):
         from pesummary.gw.plots.public import _PlotGeneration
 
         super(_PublicGWPlotGeneration, self).__init__(inputs, colors)
+        expert_plots = not self.disable_expert
         self.plotting_object = _PlotGeneration(
             webdir=self.webdir, labels=self.labels,
             samples=self.samples, kde_plot=self.kde_plot,
@@ -201,7 +206,8 @@ class _PublicGWPlotGeneration(GWPostProcessing):
             multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
             skymap=self.skymap, existing_skymap=self.existing_skymap,
             corner_params=self.corner_params,
-            preliminary_pages=self.preliminary_pages
+            preliminary_pages=self.preliminary_pages, expert_plots=expert_plots,
+            checkpoint=self.restart_from_checkpoint
         )
         self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 

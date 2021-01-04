@@ -12,15 +12,3 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-from pesummary.utils.decorators import deprecation
-
-
-class _Conversion(object):
-    @deprecation(
-        "The _Conversion class will be deprecated in future releases. Please "
-        "use pesummary.gw.conversions.convert"
-    )
-    def __new__(cls, *args, **kwargs):
-        from pesummary.gw.conversions import convert
-        return convert(*args, **kwargs)

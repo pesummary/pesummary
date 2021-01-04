@@ -22,8 +22,8 @@ import h5py
 
 import deepdish
 
-from pesummary.gw.file.conversions import *
-from pesummary.gw.file.nrutils import *
+from pesummary.gw.conversions import *
+from pesummary.gw.conversions.nrutils import *
 from pycbc import conversions
 import pytest
 
@@ -559,7 +559,7 @@ class TestConversions(object):
 
     def test_full_conversion(self):
         from pesummary.utils.array import Array
-        from pesummary.gw.file.conversions import _Conversion
+        from pesummary.gw.conversions import convert
         from bilby.gw.conversion import convert_to_lal_binary_black_hole_parameters
         from pandas import DataFrame
 
@@ -584,7 +584,7 @@ class TestConversions(object):
             "H1_matched_filter_snr": [10.0],
             "H1_optimal_snr": [10.0]
         }
-        data = _Conversion(dictionary)
+        data = convert(dictionary)
         true_params = [
             'mass_1', 'mass_2', 'a_1', 'a_2', 'cos_theta_jn', 'cos_tilt_1',
             'cos_tilt_2', 'luminosity_distance', 'geocent_time', 'ra', 'dec',
@@ -657,15 +657,15 @@ class TestConversions(object):
             ) is None
 
     def test_remove_parameter(self):
-        from pesummary.gw.file.conversions import _Conversion
+        from pesummary.gw.conversions import convert
 
         dictionary = {
             "mass_1": np.random.uniform(5, 100, 100),
             "mass_ratio": [0.1] * 100
         }
         dictionary["mass_2"] = np.random.uniform(2, dictionary["mass_1"], 100)
-        incorrect_mass_ratio = _Conversion(dictionary)
-        data = _Conversion(dictionary, regenerate=["mass_ratio"])
+        incorrect_mass_ratio = convert(dictionary)
+        data = convert(dictionary, regenerate=["mass_ratio"])
         assert all(i != j for i, j in zip(
             incorrect_mass_ratio["mass_ratio"], data["mass_ratio"]
         ))
@@ -760,3 +760,64 @@ class TestNRutils(object):
                 chif=self.final_spin, version="2016"
             ), 8
         )
+
+
+class TestConvert(object):
+    """Test the pesummary.gw.conversions._Conversion class
+    """
+    def setup(self):
+        """Setup the TestConvert class
+        """
+        self.dirs = [".outdir"]
+        for dd in self.dirs:
+            if not os.path.isdir(dd):
+                os.mkdir(dd)
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        for dd in self.dirs:
+            if os.path.isdir(dd):
+                shutil.rmtree(dd)
+
+    @staticmethod
+    def _convert(resume_file=None, **kwargs):
+        """
+        """
+        np.random.seed(100)
+        data = {
+            "mass_1": np.random.uniform(10, 1000, 10000),
+            "mass_2": np.random.uniform(2, 10, 10000),
+            "spin_1z": np.random.uniform(0, 1, 10000),
+            "spin_2z": np.random.uniform(0, 1, 10000)
+        }
+        converted = convert(data, resume_file=resume_file, **kwargs)
+        return converted
+
+    def test_from_checkpoint(self):
+        """Check that when restarted from checkpoint, the output is the same
+        """
+        import time
+        import multiprocessing
+        from pesummary.io import read
+
+        t0 = time.time()
+        no_checkpoint = self._convert()
+        t1 = time.time()
+        # check that when interrupted and restarted, the results are the same
+        process = multiprocessing.Process(
+            target=self._convert, args=[".outdir/checkpoint.pickle"]
+        )
+        process.start()
+        time.sleep(5)
+        process.terminate()
+        # check that not all samples have been made
+        _checkpoint = read(".outdir/checkpoint.pickle", checkpoint=True)
+        assert os.path.isfile(".outdir/checkpoint.pickle")
+        assert not all(
+            param in _checkpoint.parameters for param in no_checkpoint.keys()
+        )
+        # restart from checkpoint
+        checkpoint = self._convert(resume_file=".outdir/checkpoint.pickle")
+        for param, value in no_checkpoint.items():
+            np.testing.assert_almost_equal(value, checkpoint[param])

@@ -17,8 +17,6 @@ from ._version_helper import (
     get_version_information, GitInformation, PackageInformation, GitDummy
 )
 from pathlib import Path
-import warnings
-warnings.filterwarnings("ignore")
 
 version, last_stable_release, git_hash, git_author = [""] * 4
 git_status, git_builder, git_build_date = [""] * 3
@@ -52,7 +50,6 @@ except Exception:
         except Exception:
             git_info = GitDummy()
 
-    packages = PackageInformation()
     __version__ = get_version_information()
     __short_version__ = get_version_information(short=True)
     __last_release__ = git_info.last_version

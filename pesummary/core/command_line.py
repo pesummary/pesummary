@@ -14,11 +14,59 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import copy
+import os
 
 import argparse
 import configparser
 import numpy as np
 from pesummary import conf
+
+
+class CheckFilesExistAction(argparse.Action):
+    """Class to extend the argparse.Action to identify if files exist
+    """
+    def __init__(self, *args, **kwargs):
+        super(CheckFilesExistAction, self).__init__(*args, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+        self.check_input(values)
+
+    def check_input(self, value):
+        """Check that all files provided exist
+
+        Parameters
+        ----------
+        value: str, list, dict
+            data structure that you wish to check
+        """
+        if isinstance(value, list):
+            for ff in value:
+                _ = self.check_input(ff)
+        elif isinstance(value, str):
+            _ = self._is_file(value)
+        elif isinstance(value, dict):
+            for _value in value.values():
+                _ = self.check_input(_value)
+        else:
+            _ = self._is_file(value)
+
+    def _is_file(self, ff):
+        """Return True if the file exists else raise a FileNotFoundError
+        exception
+
+        Parameters
+        ----------
+        ff: str
+            path to file you wish to check
+        """
+        if not os.path.isfile(ff):
+            raise FileNotFoundError(
+                "The file '{}' provided for '{}' does not exist".format(
+                    ff, self.dest
+                )
+            )
+        return True
 
 
 class ConfigAction(argparse.Action):
@@ -229,7 +277,7 @@ def _core_command_line_arguments(parser):
     )
     core_group.add_argument(
         "-s", "--samples", dest="samples", default=None, nargs='+',
-        help=(
+        action=CheckFilesExistAction, help=(
             "Path to posterior samples file(s). See documentation for allowed "
             "formats. If path is on a remote server, add username and "
             "servername in the form {username}@{servername}:{path}"
@@ -237,7 +285,9 @@ def _core_command_line_arguments(parser):
     )
     core_group.add_argument(
         "-c", "--config", dest="config", nargs='+', default=None,
-        help="configuration file associcated with each samples file."
+        action=CheckFilesExistAction, help=(
+            "configuration file associcated with each samples file."
+        )
     )
     core_group.add_argument(
         "--email", action="store", default=None,
@@ -248,7 +298,7 @@ def _core_command_line_arguments(parser):
     )
     core_group.add_argument(
         "-i", "--inj_file", dest="inj_file", nargs='+', default=None,
-        help="path to injetcion file"
+        action=CheckFilesExistAction, help="path to injetcion file"
     )
     core_group.add_argument(
         "--user", dest="user", help=argparse.SUPPRESS, default=conf.user
@@ -384,7 +434,9 @@ def _plotting_command_line_arguments(parser):
     )
     plot_group.add_argument(
         "--style_file", dest="style_file", default=None,
-        help="Style file you wish to use when generating plots"
+        action=CheckFilesExistAction, help=(
+            "Style file you wish to use when generating plots"
+        )
     )
     plot_group.add_argument(
         "--add_to_corner", dest="add_to_corner", default=None,
@@ -437,7 +489,9 @@ def _prior_command_line_arguments(parser):
     )
     prior_group.add_argument(
         "--prior_file", dest="prior_file", nargs='+', default=None,
-        help="File containing for the prior samples for a given label"
+        action=CheckFilesExistAction, help=(
+            "File containing for the prior samples for a given label"
+        )
     )
     prior_group.add_argument(
         "--nsamples_for_prior", dest="nsamples_for_prior", default=5000,
@@ -481,12 +535,23 @@ def _performance_command_line_options(parser):
         help="Whether to make a corner plot or not"
     )
     performance_group.add_argument(
+        "--disable_expert", action="store_true", default=False,
+        help="Whether to generate extra diagnostic plots or not"
+    )
+    performance_group.add_argument(
         "--multi_process", dest="multi_process", default=1,
         help="The number of cores to use when generating plots"
     )
     performance_group.add_argument(
         "--file_format", dest="file_format", nargs='+', default=None,
         help="The file format of each result file."
+    )
+    performance_group.add_argument(
+        "--restart_from_checkpoint", action="store_true", default=False,
+        help=(
+            "Restart from checkpoint if a checkpoint file can be found in "
+            "webdir"
+        )
     )
     return performance_group
 

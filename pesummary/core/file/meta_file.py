@@ -32,8 +32,8 @@ DEFAULT_HDF5_KEYS = ["version", "history"]
 
 
 def recursively_save_dictionary_to_hdf5_file(
-        f, dictionary, current_path=None, extra_keys=DEFAULT_HDF5_KEYS,
-        compression=None
+    f, dictionary, current_path=None, extra_keys=DEFAULT_HDF5_KEYS,
+    compression=None
 ):
     """Recursively save a dictionary to a hdf5 file
 
@@ -156,9 +156,12 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path, compression=None):
             kwargs = {"compression": "gzip", "compression_opts": compression}
         else:
             kwargs = {}
-        hdf5_file["/".join(current_path)].create_dataset(
-            key, data=data, **kwargs
-        )
+        try:
+            hdf5_file["/".join(current_path)].create_dataset(
+                key, data=data, **kwargs
+            )
+        except ValueError:
+            hdf5_file.create_dataset(key, data=data, **kwargs)
 
 
 class PESummaryJsonEncoder(json.JSONEncoder):
@@ -291,6 +294,11 @@ class _MetaFile(object):
         dictionary["version"] = self.package_information
         dictionary["version"]["pesummary"] = [__version__]
         dictionary["history"] = self.history
+        if self.file_kwargs is not None and isinstance(self.file_kwargs, dict):
+            if "webpage_url" in self.file_kwargs.keys():
+                dictionary["history"]["webpage_url"] = self.file_kwargs["webpage_url"]
+            else:
+                dictionary["history"]["webpage_url"] = "None"
         for num, label in enumerate(self.labels):
             parameters = self.samples[label].keys()
             samples = np.array([self.samples[label][i] for i in parameters]).T

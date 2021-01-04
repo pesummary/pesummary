@@ -5,7 +5,7 @@
 # First import everything
 import matplotlib.pyplot as plt
 from seaborn import kdeplot as seaborn_kdeplot
-from pesummary.core.plots.kde import kdeplot
+from pesummary.core.plots.seaborn.kde import kdeplot
 import numpy as np
 
 # Next generate some random data

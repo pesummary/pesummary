@@ -62,7 +62,7 @@ class TestPlotGeneration(object):
             "--config", data_dir + "/config_bilby.ini",
             "--psd", "./.outdir_bilby/psd.dat",
             "--calibration", "./.outdir_bilby/calibration.dat",
-            "--labels", "H10", "--no_ligo_skymap"]
+            "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWPlotGeneration(inputs)
@@ -92,7 +92,7 @@ class TestPlotGeneration(object):
             "--webdir", "./.outdir_lalinference",
             "--samples", "./.outdir_lalinference/lalinference_example.h5",
             "--config", data_dir + "/config_lalinference.ini",
-            "--labels", "H10", "--no_ligo_skymap"]
+            "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWPlotGeneration(inputs)
@@ -126,7 +126,7 @@ class TestPlotGeneration(object):
             "--webdir", "./.outdir_comparison",
             "--samples", "./.outdir_comparison/bilby_example.h5",
             "./.outdir_comparison/lalinference_example.h5",
-            "--labels", "H10", "H11", "--no_ligo_skymap"]
+            "--labels", "H10", "H11", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWPlotGeneration(inputs)
@@ -162,7 +162,7 @@ class TestPlotGeneration(object):
             "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir_add_to_existing2",
             "--samples", "./.outdir_add_to_existing2/bilby_example.h5",
-            "--labels", "H10", "--no_ligo_skymap"]
+            "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWPlotGeneration(inputs)
@@ -176,7 +176,7 @@ class TestPlotGeneration(object):
             "--approximant", "IMRPhenomP",
             "--existing_webdir", "./.outdir_add_to_existing2",
             "--samples", "./.outdir_add_to_existing2/lalinference_example.h5",
-            "--labels", "H11", "--no_ligo_skymap"]
+            "--labels", "H11", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWPlotGeneration(inputs) 
@@ -212,7 +212,7 @@ class TestPlotGeneration(object):
             "--samples", "./.outdir_comparison_no_comparison/bilby_example.h5",
             "./.outdir_comparison_no_comparison/lalinference_example.h5",
             "--labels", "H10", "H11", "--no_ligo_skymap",
-            "--disable_comparison"
+            "--disable_comparison", "--disable_expert"
         ]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
@@ -250,7 +250,7 @@ class TestPlotGeneration(object):
             "--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir_add_to_existing_no_comparison",
             "--samples", "./.outdir_add_to_existing_no_comparison/bilby_example.h5",
-            "--labels", "H10", "--no_ligo_skymap"]
+            "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         webpage = GWPlotGeneration(inputs)
@@ -265,7 +265,7 @@ class TestPlotGeneration(object):
             "--existing_webdir", "./.outdir_add_to_existing_no_comparison",
             "--samples", "./.outdir_add_to_existing_no_comparison/lalinference_example.h5",
             "--labels", "H11", "--no_ligo_skymap",
-            "--disable_comparison"
+            "--disable_comparison", "--disable_expert"
         ]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)

@@ -33,16 +33,32 @@ class List(list):
     """
     __slots__ = ["original", "cls", "added", "removed"]
 
-    def __init__(self, *args, cls=None, **kwargs):
-        self.original = list(*args, **kwargs)
-        self.cls = cls
-        super(List, self).__init__(*args, **kwargs)
-        self.added = []
-        self.removed = []
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1:
+            self.original = list(*args)
+            self.cls = kwargs.get("cls", None)
+            self.added = kwargs.get("added", [])
+            self.removed = kwargs.get("removed", [])
+            super(List, self).__init__(*args)
+        else:
+            _, self.original, self.cls, self.added, self.removed = args
+            super(List, self).__init__(_)
 
     @property
     def ndim(self):
         return np.array(self).ndim
+
+    def __reduce__(self):
+        _slots = [getattr(self, i) for i in self.__slots__]
+        slots = [list(self)] + _slots
+        return (self.__class__, tuple(slots))
+
+    def __setstate__(self, state):
+        _state = state[1]
+        self.original = _state["original"]
+        self.cls = _state["original"]
+        self.added = _state["added"]
+        self.removed = _state["removed"]
 
     def __getitem__(self, *args, **kwargs):
         output = super(List, self).__getitem__(*args, **kwargs)

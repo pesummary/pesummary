@@ -57,7 +57,7 @@ class _PlotGeneration(_BasePlotGeneration):
         linestyles=None, disable_interactive=False, disable_corner=False,
         publication_kwargs={}, multi_process=1, mcmc_samples=False,
         skymap=None, existing_skymap=None, corner_params=None,
-        preliminary_pages=False
+        preliminary_pages=False, expert_plots=True, checkpoint=False
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -72,7 +72,8 @@ class _PlotGeneration(_BasePlotGeneration):
             include_prior=include_prior, weights=weights,
             disable_comparison=disable_comparison, linestyles=linestyles,
             disable_interactive=disable_interactive, disable_corner=disable_corner,
-            multi_process=multi_process, corner_params=corner_params
+            multi_process=multi_process, corner_params=corner_params,
+            expert_plots=expert_plots, checkpoint=checkpoint
         )
         self.preliminary_pages = preliminary_pages
         if not isinstance(self.preliminary_pages, dict):
@@ -169,7 +170,8 @@ class _PlotGeneration(_BasePlotGeneration):
 
     @staticmethod
     def _corner_plot(
-        savedir, label, samples, latex_labels, webdir, params, preliminary=False
+        savedir, label, samples, latex_labels, webdir, params, preliminary=False,
+        checkpoint=False
     ):
         """Generate a corner plot for a given set of samples
 
@@ -192,65 +194,70 @@ class _PlotGeneration(_BasePlotGeneration):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            fig, params, data = gw._make_corner_plot(
-                samples, latex_labels, corner_parameters=params
+            filename = os.path.join(
+                savedir, "corner", "{}_all_density_plots.png".format(label)
             )
-            fig.savefig(
-                os.path.join(
-                    savedir, "corner", "{}_all_density_plots.png".format(
-                        label
-                    )
+            if os.path.isfile(filename) and checkpoint:
+                pass
+            else:
+                fig, params, data = gw._make_corner_plot(
+                    samples, latex_labels, corner_parameters=params
                 )
-            )
-            fig.close()
-            combine_corner = open(
-                os.path.join(webdir, "js", "combine_corner.js")
-            )
-            combine_corner = combine_corner.readlines()
-            params = [str(i) for i in params]
-            ind = [
-                linenumber for linenumber, line in enumerate(combine_corner)
-                if "var list = {}" in line
-            ][0]
-            combine_corner.insert(
-                ind + 1, "    list['{}'] = {};\n".format(label, params)
-            )
-            new_file = open(
-                os.path.join(webdir, "js", "combine_corner.js"), "w"
-            )
-            new_file.writelines(combine_corner)
-            new_file.close()
-            combine_corner = open(
-                os.path.join(webdir, "js", "combine_corner.js")
-            )
-            combine_corner = combine_corner.readlines()
-            params = [str(i) for i in params]
-            ind = [
-                linenumber for linenumber, line in enumerate(combine_corner)
-                if "var data = {}" in line
-            ][0]
-            combine_corner.insert(
-                ind + 1, "    data['{}'] = {};\n".format(label, data)
-            )
-            new_file = open(
-                os.path.join(webdir, "js", "combine_corner.js"), "w"
-            )
-            new_file.writelines(combine_corner)
-            new_file.close()
-            fig = gw._make_source_corner_plot(samples, latex_labels)
-            fig.savefig(
-                os.path.join(
-                    savedir, "corner", "{}_sourceframe.png".format(label)
+                fig.savefig(filename)
+                fig.close()
+                combine_corner = open(
+                    os.path.join(webdir, "js", "combine_corner.js")
                 )
-            )
-            fig.close()
-            fig = gw._make_extrinsic_corner_plot(samples, latex_labels)
-            fig.savefig(
-                os.path.join(
-                    savedir, "corner", "{}_extrinsic.png".format(label)
+                combine_corner = combine_corner.readlines()
+                params = [str(i) for i in params]
+                ind = [
+                    linenumber for linenumber, line in enumerate(combine_corner)
+                    if "var list = {}" in line
+                ][0]
+                combine_corner.insert(
+                    ind + 1, "    list['{}'] = {};\n".format(label, params)
                 )
+                new_file = open(
+                    os.path.join(webdir, "js", "combine_corner.js"), "w"
+                )
+                new_file.writelines(combine_corner)
+                new_file.close()
+                combine_corner = open(
+                    os.path.join(webdir, "js", "combine_corner.js")
+                )
+                combine_corner = combine_corner.readlines()
+                params = [str(i) for i in params]
+                ind = [
+                    linenumber for linenumber, line in enumerate(combine_corner)
+                    if "var data = {}" in line
+                ][0]
+                combine_corner.insert(
+                    ind + 1, "    data['{}'] = {};\n".format(label, data)
+                )
+                new_file = open(
+                    os.path.join(webdir, "js", "combine_corner.js"), "w"
+                )
+                new_file.writelines(combine_corner)
+                new_file.close()
+
+            filename = os.path.join(
+                savedir, "corner", "{}_sourceframe.png".format(label)
             )
-            fig.close()
+            if os.path.isfile(filename) and checkpoint:
+                pass
+            else:
+                fig = gw._make_source_corner_plot(samples, latex_labels)
+                fig.savefig(filename)
+                fig.close()
+            filename = os.path.join(
+                savedir, "corner", "{}_extrinsic.png".format(label)
+            )
+            if os.path.isfile(filename) and checkpoint:
+                pass
+            else:
+                fig = gw._make_extrinsic_corner_plot(samples, latex_labels)
+                fig.savefig(filename)
+                fig.close()
 
     def skymap_plot(self, label):
         """Generate a skymap plot for a given result file
@@ -270,10 +277,12 @@ class _PlotGeneration(_BasePlotGeneration):
             samples = self.samples[label].combine
         else:
             samples = self.samples[label]
+        _injection = [
+            self.injection_data[label]["ra"], self.injection_data[label]["dec"]
+        ]
         self._skymap_plot(
             self.savedir, samples["ra"], samples["dec"], label,
-            self.weights[label],
-            [self.injection_data[label]["ra"], self.injection_data[label]["dec"]],
+            self.weights[label], _injection,
             preliminary=self.preliminary_pages[label]
         )
 
@@ -298,7 +307,7 @@ class _PlotGeneration(_BasePlotGeneration):
                         self.savedir, samples["ra"], samples["dec"],
                         samples["luminosity_distance"], _time,
                         label, self.nsamples_for_skymap, self.webdir,
-                        self.multi_threading_for_skymap,
+                        self.multi_threading_for_skymap, _injection,
                         self.preliminary_pages[label]
                     ]
                 )
@@ -348,7 +357,7 @@ class _PlotGeneration(_BasePlotGeneration):
     @staticmethod
     @no_latex_plot
     def _ligo_skymap_plot(savedir, ra, dec, dist, time, label, nsamples_for_skymap,
-                          webdir, multi_threading_for_skymap,
+                          webdir, multi_threading_for_skymap, injection,
                           preliminary=False):
         """Generate a skymap plot for a given set of samples using the
         ligo.skymap package
@@ -374,16 +383,20 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        import math
+
         downsampled = False
         if nsamples_for_skymap is not None:
             ra, dec, dist = resample_posterior_distribution(
                 [ra, dec, dist], nsamples_for_skymap
             )
             downsampled = True
+        if injection is not None and any(math.isnan(inj) for inj in injection):
+            injection = None
         fig = gw._ligo_skymap_plot(
             ra, dec, dist=dist, savedir=os.path.join(webdir, "samples"),
             nprocess=multi_threading_for_skymap, downsampled=downsampled,
-            label=label, time=time
+            label=label, time=time, injection=injection
         )
         _PlotGeneration.save(
             fig, os.path.join(savedir, "{}_skymap".format(label)),
@@ -425,12 +438,13 @@ class _PlotGeneration(_BasePlotGeneration):
             return
         self._waveform_fd_plot(
             self.savedir, self.detectors[label], self.maxL_samples[label], label,
-            self.preliminary_pages[label]
+            self.preliminary_pages[label], self.checkpoint
         )
 
     @staticmethod
     def _waveform_fd_plot(
-        savedir, detectors, maxL_samples, label, preliminary=False
+        savedir, detectors, maxL_samples, label, preliminary=False,
+        checkpoint=False
     ):
         """Generate a frequency domain waveform plot for a given detector
         network and set of samples
@@ -448,6 +462,9 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(savedir, "{}_waveform.png".format(label))
+        if os.path.isfile(filename) and checkpoint:
+            return
         if detectors is None:
             detectors = ["H1", "L1"]
         else:
@@ -455,8 +472,7 @@ class _PlotGeneration(_BasePlotGeneration):
 
         fig = gw._waveform_plot(detectors, maxL_samples)
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "{}_waveform".format(label)),
-            preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def waveform_td_plot(self, label):
@@ -471,12 +487,13 @@ class _PlotGeneration(_BasePlotGeneration):
             return
         self._waveform_td_plot(
             self.savedir, self.detectors[label], self.maxL_samples[label], label,
-            self.preliminary_pages[label]
+            self.preliminary_pages[label], self.checkpoint
         )
 
     @staticmethod
     def _waveform_td_plot(
-        savedir, detectors, maxL_samples, label, preliminary=False
+        savedir, detectors, maxL_samples, label, preliminary=False,
+        checkpoint=False
     ):
         """Generate a time domain waveform plot for a given detector network
         and set of samples
@@ -494,6 +511,11 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "{}_waveform_time_domain.png".format(label)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         if detectors is None:
             detectors = ["H1", "L1"]
         else:
@@ -501,9 +523,7 @@ class _PlotGeneration(_BasePlotGeneration):
 
         fig = gw._time_domain_waveform(detectors, maxL_samples)
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "{}_waveform_time_domain".format(label)
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def gwdata_plots(self, label):
@@ -549,7 +569,7 @@ class _PlotGeneration(_BasePlotGeneration):
         process.start()
 
     @staticmethod
-    def _strain_plot(savedir, gwdata, maxL_samples, label):
+    def _strain_plot(savedir, gwdata, maxL_samples, label, checkpoint=False):
         """Generate a strain plot for a given set of samples
 
         Parameters
@@ -563,10 +583,11 @@ class _PlotGeneration(_BasePlotGeneration):
         label: str
             the label corresponding to the results file
         """
+        filename = os.path.join(savedir, "{}_strain.png".format(label))
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = gw._strain_plot(gwdata, maxL_samples)
-        _PlotGeneration.save(
-            fig, os.path.join(savedir, "{}_straing".format(label))
-        )
+        _PlotGeneration.save(fig, filename)
 
     def spectrogram_plot(self):
         """Generate a plot showing the spectrogram for all detectors
@@ -641,12 +662,13 @@ class _PlotGeneration(_BasePlotGeneration):
         """
         self._skymap_comparison_plot(
             self.savedir, self.same_samples["ra"], self.same_samples["dec"],
-            self.labels, self.colors, self.preliminary_comparison_pages
+            self.labels, self.colors, self.preliminary_comparison_pages,
+            self.checkpoint
         )
 
     @staticmethod
     def _skymap_comparison_plot(
-        savedir, ra, dec, labels, colors, preliminary=False
+        savedir, ra, dec, labels, colors, preliminary=False, checkpoint=False
     ):
         """Generate a plot to compare skymaps for a given set of samples
 
@@ -665,12 +687,14 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(savedir, "combined_skymap.png")
+        if os.path.isfile(filename) and checkpoint:
+            return
         ra_list = [ra[key] for key in labels]
         dec_list = [dec[key] for key in labels]
         fig = gw._sky_map_comparison_plot(ra_list, dec_list, labels, colors)
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "combined_skymap"),
-            preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def waveform_comparison_fd_plot(self, label):
@@ -686,12 +710,13 @@ class _PlotGeneration(_BasePlotGeneration):
 
         self._waveform_comparison_fd_plot(
             self.savedir, self.maxL_samples, self.labels, self.colors,
-            self.preliminary_comparison_pages
+            self.preliminary_comparison_pages, self.checkpoint
         )
 
     @staticmethod
     def _waveform_comparison_fd_plot(
-        savedir, maxL_samples, labels, colors, preliminary=False
+        savedir, maxL_samples, labels, colors, preliminary=False,
+        checkpoint=False
     ):
         """Generate a plot to compare the frequency domain waveforms
 
@@ -708,11 +733,13 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(savedir, "compare_waveforms.png")
+        if os.path.isfile(filename) and checkpoint:
+            return
         samples = [maxL_samples[i] for i in labels]
         fig = gw._waveform_comparison_plot(samples, colors, labels)
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "compare_waveforms"),
-            preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def waveform_comparison_td_plot(self, label):
@@ -728,12 +755,13 @@ class _PlotGeneration(_BasePlotGeneration):
 
         self._waveform_comparison_fd_plot(
             self.savedir, self.maxL_samples, self.labels, self.colors,
-            self.preliminary_comparison_pages
+            self.preliminary_comparison_pages, self.checkpoint
         )
 
     @staticmethod
     def _waveform_comparison_td_plot(
-        savedir, maxL_samples, labels, colors, preliminary=False
+        savedir, maxL_samples, labels, colors, preliminary=False,
+        checkpoint=False
     ):
         """Generate a plot to compare the time domain waveforms
 
@@ -750,11 +778,13 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(savedir, "compare_time_domain_waveforms.png")
+        if os.path.isfile(filename) and checkpoint:
+            return
         samples = [maxL_samples[i] for i in labels]
         fig = gw._time_domainwaveform_comparison_plot(samples, colors, labels)
         _PlotGeneration.save(
-            fig, os.path.join(savedir, "compare_time_domain_waveforms"),
-            preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def twod_comparison_contour_plot(self, label):
@@ -796,7 +826,7 @@ class _PlotGeneration(_BasePlotGeneration):
             arguments = [
                 self.savedir, plot, samples, self.labels, latex_labels,
                 self.colors, self.linestyles, gridsize,
-                self.preliminary_comparison_pages
+                self.preliminary_comparison_pages, self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._twod_comparison_contour_plot,
@@ -806,7 +836,7 @@ class _PlotGeneration(_BasePlotGeneration):
     @staticmethod
     def _twod_comparison_contour_plot(
         savedir, plot_parameters, samples, labels, latex_labels, colors,
-        linestyles, gridsize, preliminary=False
+        linestyles, gridsize, preliminary=False, checkpoint=False
     ):
         """Generate a 2d comparison contour plot for a given set of samples
 
@@ -827,16 +857,19 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "publication", "2d_contour_plot_{}.png".format(
+                "_and_".join(plot_parameters)
+            )
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = publication.twod_contour_plots(
             plot_parameters, samples, labels, latex_labels, colors=colors,
             linestyles=linestyles, gridsize=gridsize
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "publication", "2d_contour_plot_{}".format(
-                    "_and_".join(plot_parameters)
-                )
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def violin_plot(self, label):
@@ -862,7 +895,7 @@ class _PlotGeneration(_BasePlotGeneration):
             samples = [self.samples[i][plot] for i in self.labels]
             arguments = [
                 self.savedir, plot, samples, self.labels, latex_labels[plot],
-                self.preliminary_comparison_pages
+                self.preliminary_comparison_pages, self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._violin_plot, error_message % (plot)
@@ -871,7 +904,8 @@ class _PlotGeneration(_BasePlotGeneration):
     @staticmethod
     def _violin_plot(
         savedir, plot_parameter, samples, labels, latex_label,
-        preliminary=False, kde=Bounded_1d_kde, default_bounds=True
+        preliminary=False, checkpoint=False, kde=Bounded_1d_kde,
+        default_bounds=True
     ):
         """Generate a violin plot for a given set of samples
 
@@ -890,6 +924,11 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "publication", "violin_plot_{}.png".format(plot_parameter)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         xlow, xhigh = None, None
         if default_bounds:
             xlow, xhigh = gw._return_bounds(
@@ -900,11 +939,7 @@ class _PlotGeneration(_BasePlotGeneration):
             kde_kwargs={"xlow": xlow, "xhigh": xhigh}
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "publication", "violin_plot_{}".format(
-                    plot_parameter
-                )
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def spin_dist_plot(self, label):
@@ -932,7 +967,7 @@ class _PlotGeneration(_BasePlotGeneration):
             samples = [self.samples[label][i] for i in parameters]
             arguments = [
                 self.savedir, parameters, samples, label, self.colors[num],
-                self.preliminary_comparison_pages
+                self.preliminary_comparison_pages, self.checkpoint
             ]
 
             self._try_to_make_a_plot(
@@ -941,7 +976,8 @@ class _PlotGeneration(_BasePlotGeneration):
 
     @staticmethod
     def _spin_dist_plot(
-        savedir, parameters, samples, label, color, preliminary=False
+        savedir, parameters, samples, label, color, preliminary=False,
+        checkpoint=False
     ):
         """Generate a spin disk plot for a given set of samples
 
@@ -950,15 +986,16 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
+        filename = os.path.join(
+            savedir, "publication", "spin_disk_plot_{}.png".format(label)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = publication.spin_distribution_plots(
             parameters, samples, label, color=color
         )
         _PlotGeneration.save(
-            fig, os.path.join(
-                savedir, "publication", "spin_disk_plot_{}".format(
-                    label
-                )
-            ), preliminary=preliminary
+            fig, filename, preliminary=preliminary
         )
 
     def pepredicates_plot(self, label):
@@ -976,19 +1013,19 @@ class _PlotGeneration(_BasePlotGeneration):
         self._pepredicates_plot(
             self.savedir, samples, label,
             self.pepredicates_probs[label]["default"], population_prior=False,
-            preliminary=self.preliminary_pages[label]
+            preliminary=self.preliminary_pages[label], checkpoint=self.checkpoint
         )
         self._pepredicates_plot(
             self.savedir, samples, label,
             self.pepredicates_probs[label]["population"], population_prior=True,
-            preliminary=self.preliminary_pages[label]
+            preliminary=self.preliminary_pages[label], checkpoint=self.checkpoint
         )
 
     @staticmethod
     @no_latex_plot
     def _pepredicates_plot(
         savedir, samples, label, probabilities, population_prior=False,
-        preliminary=False
+        preliminary=False, checkpoint=False
     ):
         """Generate a plot with the PEPredicates package for a given set of
         samples
@@ -1012,46 +1049,51 @@ class _PlotGeneration(_BasePlotGeneration):
         from pesummary.gw.pepredicates import PEPredicates
 
         parameters = list(samples.keys())
-        samples = [
-            [samples[parameter][j] for parameter in parameters] for j in
-            range(len(samples[parameters[0]]))
-        ]
-        fig = PEPredicates.plot(
-            samples, parameters, population_prior=population_prior
-        )
+        samples = np.array([samples[param] for param in parameters]).T
         if not population_prior:
-            _PlotGeneration.save(
-                fig, os.path.join(
-                    savedir, "{}_default_pepredicates".format(
-                        label
-                    )
-                ), preliminary=preliminary
+            filename = os.path.join(
+                savedir, "{}_default_pepredicates.png".format(label)
             )
         else:
-            _PlotGeneration.save(
-                fig, os.path.join(
-                    savedir, "{}_population_pepredicates".format(
-                        label
-                    )
-                ), preliminary=preliminary
+            filename = os.path.join(
+                savedir, "{}_population_pepredicates.png".format(label)
             )
-        fig = gw._classification_plot(probabilities)
+
+        if os.path.isfile(filename) and checkpoint:
+            pass
+        else:
+            fig = PEPredicates.plot(
+                samples, parameters, population_prior=population_prior
+            )
+            if not population_prior:
+                _PlotGeneration.save(
+                    fig, filename, preliminary=preliminary
+                )
+            else:
+                _PlotGeneration.save(
+                    fig, filename, preliminary=preliminary
+                )
+
         if not population_prior:
-            _PlotGeneration.save(
-                fig, os.path.join(
-                    savedir, "{}_default_pepredicates_bar".format(
-                        label
-                    )
-                ), preliminary=preliminary
+            filename = os.path.join(
+                savedir, "{}_default_pepredicates_bar.png".format(label)
             )
         else:
-            _PlotGeneration.save(
-                fig, os.path.join(
-                    savedir, "{}_population_pepredicates_bar".format(
-                        label
-                    )
-                ), preliminary=preliminary
+            filename = os.path.join(
+                savedir, "{}_population_pepredicates_bar.png".format(label)
             )
+        if os.path.isfile(filename) and checkpoint:
+            pass
+        else:
+            fig = gw._classification_plot(probabilities)
+            if not population_prior:
+                _PlotGeneration.save(
+                    fig, filename, preliminary=preliminary
+                )
+            else:
+                _PlotGeneration.save(
+                    fig, filename, preliminary=preliminary
+                )
 
     def psd_plot(self, label):
         """Generate a psd plot for a given result file
@@ -1078,7 +1120,8 @@ class _PlotGeneration(_BasePlotGeneration):
             frequencies = [np.array(self.psd[label][i]).T[0] for i in labels]
             strains = [np.array(self.psd[label][i]).T[1] for i in labels]
             arguments = [
-                self.savedir, frequencies, strains, fmin, labels, label
+                self.savedir, frequencies, strains, fmin, labels, label,
+                self.checkpoint
             ]
 
             self._try_to_make_a_plot(
@@ -1086,7 +1129,9 @@ class _PlotGeneration(_BasePlotGeneration):
             )
 
     @staticmethod
-    def _psd_plot(savedir, frequencies, strains, fmin, psd_labels, label):
+    def _psd_plot(
+        savedir, frequencies, strains, fmin, psd_labels, label, checkpoint=False
+    ):
         """Generate a psd plot for a given set of samples
 
         Parameters
@@ -1104,12 +1149,13 @@ class _PlotGeneration(_BasePlotGeneration):
         label: str
             the label used to distinguish the result file
         """
+        filename = os.path.join(savedir, "{}_psd_plot.png".format(label))
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = gw._psd_plot(
             frequencies, strains, labels=psd_labels, fmin=fmin
         )
-        _PlotGeneration.save(
-            fig, os.path.join(savedir, "{}_psd_plot".format(label))
-        )
+        _PlotGeneration.save(fig, filename)
 
     def calibration_plot(self, label):
         """Generate a calibration plot for a given result file
@@ -1142,7 +1188,7 @@ class _PlotGeneration(_BasePlotGeneration):
                 prior = None
             arguments = [
                 self.savedir, frequencies, calibration_data, ifos, prior,
-                label
+                label, self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._calibration_plot, error_message % (label)
@@ -1150,7 +1196,8 @@ class _PlotGeneration(_BasePlotGeneration):
 
     @staticmethod
     def _calibration_plot(
-        savedir, frequencies, calibration_data, calibration_labels, prior, label
+        savedir, frequencies, calibration_data, calibration_labels, prior, label,
+        checkpoint=False
     ):
         """Generate a calibration plot for a given set of samples
 
@@ -1169,15 +1216,20 @@ class _PlotGeneration(_BasePlotGeneration):
         label: str
             the label used to distinguish the result file
         """
+        filename = os.path.join(
+            savedir, "{}_calibration_plot.png".format(label)
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
         fig = gw._calibration_envelope_plot(
             frequencies, calibration_data, calibration_labels, prior=prior
         )
-        _PlotGeneration.save(
-            fig, os.path.join(savedir, "{}_calibration_plot".format(label))
-        )
+        _PlotGeneration.save(fig, filename)
 
     @staticmethod
-    def _interactive_corner_plot(savedir, label, samples, latex_labels):
+    def _interactive_corner_plot(
+        savedir, label, samples, latex_labels, checkpoint=False
+    ):
         """Generate an interactive corner plot for a given set of samples
 
         Parameters
@@ -1192,24 +1244,34 @@ class _PlotGeneration(_BasePlotGeneration):
         latex_labels: str
             latex labels for each parameter in samples
         """
-        source_parameters = [
-            "luminosity_distance", "mass_1_source", "mass_2_source",
-            "total_mass_source", "chirp_mass_source", "redshift"
-        ]
-        parameters = [i for i in samples.keys() if i in source_parameters]
-        data = [samples[parameter] for parameter in parameters]
-        labels = [latex_labels[parameter] for parameter in parameters]
-        _ = interactive.corner(
-            data, labels, write_to_html_file=os.path.join(
-                savedir, "corner", "{}_interactive_source.html".format(label)
-            ), dimensions={"width": 900, "height": 900}
+        filename = os.path.join(
+            savedir, "corner", "{}_interactive_source.html".format(label)
         )
-        extrinsic_parameters = ["luminosity_distance", "psi", "ra", "dec"]
-        parameters = [i for i in samples.keys() if i in extrinsic_parameters]
-        data = [samples[parameter] for parameter in parameters]
-        labels = [latex_labels[parameter] for parameter in parameters]
-        _ = interactive.corner(
-            data, labels, write_to_html_file=os.path.join(
-                savedir, "corner", "{}_interactive_extrinsic.html".format(label)
+        if os.path.isfile(filename) and checkpoint:
+            pass
+        else:
+            source_parameters = [
+                "luminosity_distance", "mass_1_source", "mass_2_source",
+                "total_mass_source", "chirp_mass_source", "redshift"
+            ]
+            parameters = [i for i in samples.keys() if i in source_parameters]
+            data = [samples[parameter] for parameter in parameters]
+            labels = [latex_labels[parameter] for parameter in parameters]
+            _ = interactive.corner(
+                data, labels, write_to_html_file=filename,
+                dimensions={"width": 900, "height": 900}
             )
+
+        filename = os.path.join(
+            savedir, "corner", "{}_interactive_extrinsic.html".format(label)
         )
+        if os.path.isfile(filename) and checkpoint:
+            pass
+        else:
+            extrinsic_parameters = ["luminosity_distance", "psi", "ra", "dec"]
+            parameters = [i for i in samples.keys() if i in extrinsic_parameters]
+            data = [samples[parameter] for parameter in parameters]
+            labels = [latex_labels[parameter] for parameter in parameters]
+            _ = interactive.corner(
+                data, labels, write_to_html_file=filename
+            )

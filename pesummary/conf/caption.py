@@ -5,6 +5,18 @@ caption_1d_histogram = (
     "and 90% confidence interval."
 )
 
+# Caption for bootstrapped 1d histogram
+caption_1d_histogram_bootstrap = (
+    "Plot showing {} posterior realizations for {}. {} samples were randomly "
+    "drawn for each test."
+)
+
+# Caption for 2d contour plot
+caption_2d_contour = (
+    "Plot showing the 2d posterior distribution for {} and {}. The contours "
+    "show the 50% and 90% credible intervals."
+)
+
 # Caption for autocorrelation plot
 caption_autocorrelation = (
     "Plot showing the autocorrelation function for {}. This plot is commonly "
@@ -17,6 +29,11 @@ caption_autocorrelation = (
 # Caption for sample evolution plot
 caption_sample_evolution = (
     "Scatter plot showing the evolution of the collected samples for {}."
+)
+
+# Caption for sample evolution plot colored by second variable
+caption_sample_evolution_colored = (
+    caption_sample_evolution[:-1] + " colored by {}."
 )
 
 # Caption for preliminary skymap

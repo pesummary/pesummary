@@ -15,12 +15,17 @@
 
 import numpy as np
 from pesummary.utils.utils import logger
-from lalinference.imrtgr import nrutils
-import lalsimulation
-from lalsimulation import (
-    SimInspiralGetSpinFreqFromApproximant, SIM_INSPIRAL_SPINS_CASEBYCASE,
-    SIM_INSPIRAL_SPINS_FLOW
-)
+
+try:
+    from lalinference.imrtgr import nrutils
+    import lalsimulation
+    from lalsimulation import (
+        SimInspiralGetSpinFreqFromApproximant, SIM_INSPIRAL_SPINS_CASEBYCASE,
+        SIM_INSPIRAL_SPINS_FLOW
+    )
+except ImportError:
+    pass
+
 try:
     from lalsimulation.nrfits.eval_fits import eval_nrfit as _eval_nrfit
     NRSUR_MODULE = True
@@ -757,9 +762,8 @@ def NRSur_fit(
         `lalsimulation.nrfits.eval_fits.eval_nrfit` function
     """
     from lal import MSUN_SI, C_SI
-    from pesummary.gw.file.conversions import (
-        component_spins, magnitude_from_vector
-    )
+    from .spins import component_spins
+    from .utils import magnitude_from_vector
     from pesummary.utils.utils import iterator
     import copy
 
@@ -791,16 +795,30 @@ def NRSur_fit(
     a_2_vec = np.array([spins.T[4], spins.T[5], spins.T[6]]).T
     mass_1 *= MSUN_SI
     mass_2 *= MSUN_SI
-    _fits = [
-        eval_nrfit(
-            mass_1[num], mass_2[num], a_1_vec[num], a_2_vec[num], model, converted_fits,
-            f_low=f_low, f_ref=f_ref[num], approximant=approximant,
-            extra_params_dict=kwargs
-        ) for num in iterator(
-            range(len(mass_1)), desc=description, tqdm=True, total=len(mass_1),
-            logger=logger
+    try:
+        _fits = [
+            eval_nrfit(
+                mass_1[num], mass_2[num], a_1_vec[num], a_2_vec[num], model,
+                converted_fits, f_low=f_low, f_ref=f_ref[num],
+                approximant=approximant, extra_params_dict=kwargs
+            ) for num in iterator(
+                range(len(mass_1)), desc=description, tqdm=True, total=len(mass_1),
+                logger=logger
+            )
+        ]
+    except ValueError as e:
+        base = (
+            "Failed to generate remnant quantities with the NRSurrogate "
+            "remnant model. {}"
         )
-    ]
+        if "symbol not found" in str(e):
+            raise NameError(
+                base.format(
+                    "This could be because the 'LAL_DATA_PATH' has not been "
+                    "set."
+                )
+            )
+        raise ValueError(base.format(""))
     nr_fits = {key: np.array([dic[key] for dic in _fits]) for key in _fits[0]}
     if fits_map["final_mass"] in nr_fits.keys():
         nr_fits[fits_map["final_mass"]] = np.array(

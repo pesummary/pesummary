@@ -268,7 +268,10 @@ class PESummary(MultiAnalysisRead):
         labels = list(dictionary.keys())
         if "version" in labels:
             labels.remove("version")
+
+        history_dict = None
         if "history" in labels:
+            history_dict = dictionary["history"]
             labels.remove("history")
 
         parameter_list, sample_list, inj_list, ver_list = [], [], [], []
@@ -377,7 +380,8 @@ class PESummary(MultiAnalysisRead):
             "labels": labels,
             "config": config_dict,
             "prior": reversed_prior_dict,
-            "mcmc_samples": mcmc_samples
+            "mcmc_samples": mcmc_samples,
+            "history": history_dict
         }
 
     @property
