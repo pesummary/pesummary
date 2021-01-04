@@ -252,6 +252,12 @@ class TGRWebpageGeneration(_WebpageGeneration):
         self.generate_specific_javascript()
 
     def make_navbar_for_result_page(self):
+        links = self.make_navbar_for_homepage
+        # must have the 'external:' syntax
+        dummy_link = "external:https://www.google.com"
+        links.insert(
+            2, ["PE_pages": {"inspiral": dummy_link, "post_inspiral": dummy_link}]
+        )
         return
 
     def make_navbar_for_comparison_page(self):
@@ -334,7 +340,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         """Make the IMR consistency test pages"""
         pages = ["imrct"]
         self.create_blank_html_pages(pages)
-        html_file = self.setup_page("imrct", self.navbar["home"], title="IMR Consistency Test")
+        html_file = self.setup_page("imrct", self.navbar["result_page"], title="IMR Consistency Test")
         html_file.make_banner(approximant="IMR Consistency Test", key=" ")
         desc = "Below we show the executive plots for the IMR consistency test"
         html_file.make_banner(approximant="Executive plots", key=desc, _style="font-size: 26px;")
@@ -405,6 +411,7 @@ def main(args=None):
         {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
     )
     test_key_data = {}
+    '''
     if opts.test == "imrct":
         for key, sample in open_files.items():
             if "final_mass_{}".format(evolve_spins_string) not in sample.keys():
@@ -422,7 +429,7 @@ def main(args=None):
             imrct_deviations, open_files, webdir=opts.webdir, evolve_spins=opts.evolve_spins, make_diagnostic_plots=opts.make_diagnostic_plots
         )
         test_key_data["imrct"] = data
-
+    '''
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
         opts.webdir, opts.samples, test=opts.test, open_files=open_files, test_key_data=test_key_data
