@@ -258,7 +258,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         links.insert(
             2, ["PE_pages": {"inspiral": dummy_link, "post_inspiral": dummy_link}]
         )
-        return
+        return links
 
     def make_navbar_for_comparison_page(self):
         return
