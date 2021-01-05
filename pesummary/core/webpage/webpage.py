@@ -457,10 +457,24 @@ class page(Base):
                                 for k in j[1]:
                                     if type(k) == dict:
                                         key = list(k.keys())[0]
-                                        self.add_content(
-                                            "<li class='dropdown-item' href='#' "
-                                            "onclick='grab_html(\"{}\", label=\"{}\")'>"
-                                            "<a>{}</a></li>\n".format(key, k[key], key), indent=18)
+                                        if "external:" in k[key]:
+                                            self.add_content(
+                                                "<li class='dropdown-item' "
+                                                "href='#' onclick='window.location"
+                                                "=\"{}\"'><a>{}</a></li>\n".format(
+                                                    k[key].split("external:")[1],
+                                                    key
+                                                ), indent=18
+                                            )
+                                        else:
+                                            self.add_content(
+                                                "<li class='dropdown-item' "
+                                                "href='#' onclick='grab_html"
+                                                "(\"{}\", label=\"{}\")'>"
+                                                "<a>{}</a></li>\n".format(
+                                                    key, k[key], key
+                                                ), indent=18
+                                            )
                                     else:
                                         self.add_content(
                                             "<li class='dropdown-item' href='#' "
@@ -473,10 +487,24 @@ class page(Base):
                                 for k in j:
                                     if type(k) == dict:
                                         key = list(k.keys())[0]
-                                        self.add_content(
-                                            "<li class='dropdown-item' href='#' "
-                                            "onclick='grab_html(\"{}\", label=\"{}\")'>"
-                                            "<a>{}</a></li>\n".format(key, k[key], key), indent=14)
+                                        if "external:" in k[key]:
+                                            self.add_content(
+                                                "<li class='dropdown-item' "
+                                                "href='#' onclick='window.location"
+                                                "=\"{}\"'><a>{}</a></li>\n".format(
+                                                    k[key].split("external:")[1],
+                                                    key
+                                                ), indent=18
+                                            )
+                                        else:
+                                            self.add_content(
+                                                "<li class='dropdown-item' "
+                                                "href='#' onclick='grab_html"
+                                                "(\"{}\", label=\"{}\")'>"
+                                                "<a>{}</a></li>\n".format(
+                                                    key, k[key], key
+                                                ), indent=14
+                                            )
 
                                     else:
                                         self.add_content(
@@ -487,38 +515,82 @@ class page(Base):
                         else:
                             if type(j[0]) == dict:
                                 key = list(j[0].keys())[0]
-                                self.add_content(
-                                    "<li class='dropdown-item' href='#' "
-                                    "onclick='grab_html(\"{}\", label=\"{}\")'>"
-                                    "<a>{}</a></li>\n".format(key, j[0][key], key), indent=14)
+                                if 'external:' in j[0][key]:
+                                    self.add_content(
+                                        "<li class='dropdown-item' href='#' "
+                                        "onclick='window.location=\"{}\"'>"
+                                        "<a>{}</a></li>\n".format(
+                                            j[0][key].split("external:")[1], key
+                                        ), indent=14
+                                    )
+                                else:
+                                    self.add_content(
+                                        "<li class='dropdown-item' href='#' "
+                                        "onclick='grab_html(\"{}\", label=\"{}\")'>"
+                                        "<a>{}</a></li>\n".format(key, j[0][key], key),
+                                        indent=14
+                                    )
 
                             else:
-                                self.add_content(
-                                    "<li class='dropdown-item' href='#' "
-                                    "onclick='grab_html(\"{}\")'>"
-                                    "<a>{}</a></li>\n".format(j[0], j[0]), indent=14)
+                                if "external:" in j[0]:
+                                    self.add_content(
+                                        "<li class='dropdown-item' href='#' "
+                                        "onclick='window.location=\"{}\"'>"
+                                        "<a>{}</a></li>\n".format(
+                                            j[0].split("external:")[1], j[0]
+                                        ), indent=14
+                                    )
+                                else:
+                                    self.add_content(
+                                        "<li class='dropdown-item' href='#' "
+                                        "onclick='grab_html(\"{}\")'>"
+                                        "<a>{}</a></li>\n".format(j[0], j[0]),
+                                        indent=14
+                                    )
 
                 self.add_content("</ul>\n", indent=12)
                 self.add_content("</li>\n", indent=10)
             else:
                 self.add_content("<li class='nav-item'>\n", indent=8)
                 if i == "home":
-                    self.add_content("<a class='nav-link' "
-                                     "href='#' onclick='grab_html(\"{}\")'"
-                                     ">{}</a>\n".format(i, i), indent=10)
+                    if "external:" in i:
+                        self.add_content(
+                            "<a class='nav-link' href='#' onclick='window.location"
+                            "=\"{}\"'>{}</a>\n".format(i.split("external:")[1], i),
+                            indent=10)
+                    else:
+                        self.add_content("<a class='nav-link' "
+                                         "href='#' onclick='grab_html(\"{}\")'"
+                                         ">{}</a>\n".format(i, i), indent=10)
                 else:
                     if type(i) == dict:
                         key = list(i.keys())[0]
-                        self.add_content(
-                            "<a class='nav-link' "
-                            "href='#' onclick='grab_html(\"{}\", label=\"{}\")'"
-                            ">{}</a>\n".format(key, i[key], key), indent=10)
+                        if "external:" in i[key]:
+                            self.add_content(
+                                "<a class='nav-link' "
+                                "href='#' onclick='window.location=\"{}\"'"
+                                ">{}</a>\n".format(
+                                    i[key].split("external:")[1], key
+                                ), indent=10)
+                        else:
+                            self.add_content(
+                                "<a class='nav-link' "
+                                "href='#' onclick='grab_html(\"{}\", label=\"{}\")'"
+                                ">{}</a>\n".format(key, i[key], key), indent=10)
 
                     else:
-                        self.add_content(
-                            "<a class='nav-link' "
-                            "href='#' onclick='grab_html(\"{}\")'"
-                            ">{}</a>\n".format(i, i), indent=10)
+                        if "external:" in i:
+                            self.add_content(
+                                "<a class='nav-link' "
+                                "href='#' onclick='window.location=\"{}\"'"
+                                ">{}</a>\n".format(
+                                    i.split("external:")[1], i
+                                ), indent=10)
+                        else:
+                            self.add_content(
+                                "<a class='nav-link' "
+                                "href='#' onclick='grab_html(\"{}\")'"
+                                ">{}</a>\n".format(i, i), indent=10)
 
                 self.add_content("</li>\n", indent=8)
         self.add_content("</ul>\n", indent=6)
