@@ -484,7 +484,6 @@ def main(args=None):
 
         test_key_data["imrct"].update(data)
 
-
         if opts.links_to_pe_pages is None:
             try:
                 links_to_pe_pages = [open_files_paths[_label].history["webpage_url"] for _label in opts.labels]
