@@ -263,7 +263,11 @@ class TGRWebpageGeneration(_WebpageGeneration):
         self.generate_specific_javascript()
 
     def make_navbar_for_result_page(self):
-        return
+        links = self.make_navbar_for_homepage
+        # must have the 'external:' syntax
+        dummy_link = "external:https://www.google.com"
+        links.insert(2, ["PE_pages", [{"inspiral": dummy_link, "post_inspiral": dummy_link}]])
+        return links
 
     def make_navbar_for_comparison_page(self):
         return
@@ -345,7 +349,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         """Make the IMR consistency test pages"""
         pages = ["imrct"]
         self.create_blank_html_pages(pages)
-        html_file = self.setup_page("imrct", self.navbar["home"], title="IMR Consistency Test")
+        html_file = self.setup_page("imrct", self.navbar["result_page"], title="IMR Consistency Test")
         html_file.make_banner(approximant="IMR Consistency Test", key=" ")
         desc = "Below we show the executive plots for the IMR consistency test"
         html_file.make_banner(approximant="Executive plots", key=desc, _style="font-size: 26px;")
