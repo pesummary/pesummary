@@ -1,4 +1,4 @@
-from pesummary.gw.file.tgr import imrct_deviation_parameters_from_final_mass_final_spin
+from pesummary.gw.conversions.tgr import imrct_deviation_parameters_from_final_mass_final_spin
 from pesummary.io import read
 
 samples = read("pesummary_samples/GW150914_bilby_pesummary.dat").samples_dict

@@ -19,7 +19,7 @@
 import os
 import pesummary
 from pesummary.core.webpage.main import _WebpageGeneration
-from pesummary.gw.file.tgr import imrct_deviation_parameters_from_final_mass_final_spin
+from pesummary.gw.conversions.tgr import imrct_deviation_parameters_from_final_mass_final_spin
 from pesummary.io import read
 from pesummary.gw.pepredicates import PEPredicates
 from pesummary.gw.p_astro import PAstro
