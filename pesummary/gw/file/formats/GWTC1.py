@@ -81,6 +81,8 @@ class GWTC1(GWSingleAnalysisRead):
     ----------
     path_to_results_file: str
         path to the results file you wish to load in with `GWTC1`
+    pe_algorithm: str
+        name of the algorithm used to generate the posterior samples
     """
     def __init__(self, path_to_results_file, injection_file=None, **kwargs):
         super(GWTC1, self).__init__(path_to_results_file, **kwargs)

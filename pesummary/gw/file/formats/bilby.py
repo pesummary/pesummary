@@ -89,6 +89,8 @@ class Bilby(GWSingleAnalysisRead):
     disable_prior_conversion: Bool, optional
         if True, disable the conversion module from deriving alternative prior
         distributions. Default False
+    pe_algorithm: str
+        name of the algorithm used to generate the posterior samples
 
     Attributes
     ----------

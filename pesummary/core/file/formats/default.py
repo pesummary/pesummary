@@ -42,6 +42,8 @@ class SingleAnalysisDefault(SingleAnalysisRead):
         dictionary of kwargs that were extracted from the result file
     injection_parameters: dict
         dictionary of injection parameters extracted from the result file
+    pe_algorithm: str
+        name of the algorithm used to generate the posterior samples
 
     Methods
     -------
