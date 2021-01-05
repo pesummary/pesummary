@@ -255,9 +255,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         links = self.make_navbar_for_homepage
         # must have the 'external:' syntax
         dummy_link = "external:https://www.google.com"
-        links.insert(
-            2, ["PE_pages", [{"inspiral": dummy_link, "post_inspiral": dummy_link}]]
-        )
+        links.insert(2, ["PE_pages", [{"inspiral": dummy_link, "post_inspiral": dummy_link}]])
         return links
 
     def make_navbar_for_comparison_page(self):
@@ -425,7 +423,11 @@ def main(args=None):
 
         imrct_deviations, data = generate_imrct_deviation_parameters(open_files, evolve_spins=opts.evolve_spins)
         make_imrct_plots(
-            imrct_deviations, open_files, webdir=opts.webdir, evolve_spins=opts.evolve_spins, make_diagnostic_plots=opts.make_diagnostic_plots
+            imrct_deviations,
+            open_files,
+            webdir=opts.webdir,
+            evolve_spins=opts.evolve_spins,
+            make_diagnostic_plots=opts.make_diagnostic_plots,
         )
         test_key_data["imrct"] = data
 
