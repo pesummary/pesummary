@@ -253,10 +253,10 @@ class TGRWebpageGeneration(_WebpageGeneration):
 
     def make_navbar_for_result_page(self):
         links = self.make_navbar_for_homepage
-        # must have the 'external:' syntax
+        # must have the 'external:' syntax
         dummy_link = "external:https://www.google.com"
         links.insert(
-            2, ["PE_pages": {"inspiral": dummy_link, "post_inspiral": dummy_link}]
+            2, ["PE_pages", [{"inspiral": dummy_link, "post_inspiral": dummy_link}]]
         )
         return links
 
