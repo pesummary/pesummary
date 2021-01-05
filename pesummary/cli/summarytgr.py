@@ -66,6 +66,13 @@ def command_line():
         default=None,
     )
     parser.add_argument(
+        "--links_to_pe_pages",
+        dest="links_to_pe_pages",
+        help="Links to PE pages separated by space.",
+        nargs="+",
+        default=None,
+    )
+    parser.add_argument(
         "--make_diagnostic_plots", dest="make_diagnostic_plots", help="Make extra diagnostic plots", action="store_true"
     )
     return parser
@@ -224,6 +231,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         test="all",
         test_key_data={},
         open_files=None,
+        links_to_pe_pages=None,
         input_file_summary={},
         **kwargs
     ):
@@ -234,6 +242,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
             labels = [self.test]
 
         _labels = labels
+        self.links_to_pe_pages = links_to_pe_pages
         if open_files is not None:
             _labels = list(open_files.keys())
         super(TGRWebpageGeneration, self).__init__(
@@ -263,10 +272,21 @@ class TGRWebpageGeneration(_WebpageGeneration):
         self.generate_specific_javascript()
 
     def make_navbar_for_result_page(self):
-        links = self.make_navbar_for_homepage
+        links = self.make_navbar_for_homepage()
         # must have the 'external:' syntax
-        dummy_link = "external:https://www.google.com"
-        links.insert(2, ["PE_pages", [{"inspiral": dummy_link, "post_inspiral": dummy_link}]])
+        # dummy_link = "external:https://www.google.com"
+        if self.links_to_pe_pages is not None:
+            link_format = "external:{}"
+            links.insert(
+                2,
+                [
+                    "PE Pages",
+                    [
+                        {self.labels[0]: link_format.format(self.links_to_pe_pages[0])},
+                        {self.labels[1]: link_format.format(self.links_to_pe_pages[1])},
+                    ],
+                ],
+            )
         return links
 
     def make_navbar_for_comparison_page(self):
@@ -416,8 +436,9 @@ def main(args=None):
     else:
         evolve_spins = "ISCO"
 
+    open_files_paths = {_label: read(path) for _label, path in zip(opts.labels, opts.samples)}
     open_files = MultiAnalysisSamplesDict(
-        {_label: read(path).samples_dict for _label, path in zip(opts.labels, opts.samples)}
+        {_label: open_files_paths[_label].samples_dict for _label in opts.labels}
     )
     test_key_data = {}
     if opts.test == "imrct":
@@ -460,11 +481,26 @@ def main(args=None):
             except (AttributeError, KeyError):
                 logger.info("No Cutoff Frequency information in supplied samples file. Setting to None.")
                 data["Cutoff Frequency"] = None
+
         test_key_data["imrct"].update(data)
+
+
+        if opts.links_to_pe_pages is None:
+            try:
+                links_to_pe_pages = [open_files_paths[_label].history["webpage_url"] for _label in opts.labels]
+            except (AttributeError, KeyError, TypeError):
+                links_to_pe_pages = None
+        else:
+            links_to_pe_pages = opts.links_to_pe_pages
 
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
-        opts.webdir, opts.samples, test=opts.test, open_files=open_files, test_key_data=test_key_data
+        opts.webdir,
+        opts.samples,
+        test=opts.test,
+        open_files=open_files,
+        links_to_pe_pages=links_to_pe_pages,
+        test_key_data=test_key_data,
     )
     webpage.generate_webpages(make_diagnostic_plots=opts.make_diagnostic_plots)
 
