@@ -421,14 +421,16 @@ def main(args=None):
         for key, sample in open_files.items():
             if "final_mass_{}".format(evolve_spins_string) not in sample.keys():
                 logger.info("Remnant properties not in samples, trying to generate them")
-                returned_extra_kwargs = sample.generate_all_posterior_samples(evolve_spins=evolve_spins)
+                returned_extra_kwargs = sample.generate_all_posterior_samples(
+                    evolve_spins=evolve_spins, return_kwargs=True
+                )
                 converted_keys = sample.keys()
                 if "final_mass_{}".format(evolve_spins_string) not in converted_keys:
                     raise KeyError("Remnant properties not in samples and cannot be generated")
                 else:
                     logger.info("Remnant properties generated.")
                     for fit in ["final_mass_NR_fits", "final_spin_NR_fits"]:
-                        test_key_data["imrct"]["{}_{}".format(key, fit)] = returned_extra_kwargs[fit]
+                        test_key_data["imrct"]["{} {}".format(key, fit)] = returned_extra_kwargs["meta_data"][fit]
 
         imrct_deviations, data = generate_imrct_deviation_parameters(open_files, evolve_spins=opts.evolve_spins)
         make_imrct_plots(
