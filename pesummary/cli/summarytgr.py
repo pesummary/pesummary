@@ -17,13 +17,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import socket
 import pesummary
 from pesummary.core.webpage.main import _WebpageGeneration
 from pesummary.gw.conversions.tgr import imrct_deviation_parameters_from_final_mass_final_spin
 from pesummary.io import read
 from pesummary.gw.pepredicates import PEPredicates
 from pesummary.gw.p_astro import PAstro
-from pesummary.utils.utils import make_dir, logger
+from pesummary.utils.utils import make_dir, logger, guess_url
 from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
 from pesummary.utils.exceptions import InputError
 import argparse
@@ -70,7 +71,24 @@ def command_line():
         dest="links_to_pe_pages",
         help="Links to PE pages separated by space.",
         nargs="+",
-        default=None,
+        default=[],
+    )
+    parser.add_argument(
+        "--disable_pe_page_generation", action="store_true", help="Disable PE page generation", default=False
+    )
+    parser.add_argument(
+        "--pe_page_options",
+        dest="pe_page_options",
+        help=(
+            "Additional options to pass to 'summarypages' when generating PE "
+            "webpages. All options should be wrapped in quotation marks like, "
+            "--pe_page_options='--no_ligo_skymap --nsamples 1000 --psd...'. "
+            "See 'summarypages --help' for details. These options are added to "
+            "base executable: 'summarypages --webdir {} --samples {} --labels "
+            "{} --gw'"
+        ),
+        type=str,
+        default="",
     )
     parser.add_argument(
         "--make_diagnostic_plots", dest="make_diagnostic_plots", help="Make extra diagnostic plots", action="store_true"
@@ -207,6 +225,53 @@ def make_imrct_plots(imrct_deviations, samples, webdir=None, evolve_spins=False,
         logger.info("Finished creating diagnostic plots.")
 
 
+def generate_pe_pages(webdir, result_files, labels, additional_options=""):
+    """Launch a subprocess to generate PE pages using `summarypages`
+
+    Parameters
+    ----------
+    webdir: str
+        directory to store the output pages
+    result_files: list
+        list of paths to result files
+    labels: list
+        list of labels to use for each result file
+    additional_options: str, optional
+        additional options to add to the summarypages executable
+    """
+    from .summarytest import launch
+    from subprocess import PIPE
+
+    logger.info("Creating PE summarypages")
+    base_command_line = "summarypages --webdir {} --samples {} --labels {} --gw ".format(
+        webdir, " ".join(result_files), " ".join(labels)
+    )
+    base_command_line += additional_options
+    process = launch(base_command_line, check_call=False, out=PIPE, err=PIPE)
+    return base_command_line, process
+
+
+def check_on_pe_page_generate(command_line, process):
+    """Check on the status of the PE page subprocess
+
+    Parameters
+    ----------
+    command_line: str
+        command line used to generate the PE page
+    process:
+
+    """
+    _running = True
+    while _running:
+        if process.poll() is not None:
+            _running = False
+            if process.returncode != 0:
+                msg = "The PE job: {} failed. The error is: {}"
+                _output, _error = process.communicate()
+                raise ValueError(msg.format(command_line, _error.decode("utf-8")))
+    logger.info("PE page generation complete")
+
+
 class TGRWebpageGeneration(_WebpageGeneration):
     """Class to handle webpage generation displaying the outcome of various
     TGR tests
@@ -312,11 +377,13 @@ class TGRWebpageGeneration(_WebpageGeneration):
             list of pages that you wish to create
         """
         html_file = self.setup_page("home", self.navbar["home"])
-        html_file.make_banner("Tests of General Relativity", key=" ")
+        html_file.make_banner("Tests of General Relativity", key="content", content=" ")
         image_contents = [["plots/imrct_deviations_triangle_plot.png"]]
         html_file = self.make_modal_carousel(html_file, image_contents=image_contents, unique_id=True)
         _banner_desc = "Below we show summary statistics associated with each test of GR"
-        html_file.make_banner(approximant="Summary Statistics", key=_banner_desc, _style="font-size: 26px;")
+        html_file.make_banner(
+            approximant="Summary Statistics", key="content", content=_banner_desc, _style="font-size: 26px;"
+        )
         _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
         _class = "row justify-content-center"
         html_file.make_container(style=_style)
@@ -370,9 +437,9 @@ class TGRWebpageGeneration(_WebpageGeneration):
         pages = ["imrct"]
         self.create_blank_html_pages(pages)
         html_file = self.setup_page("imrct", self.navbar["result_page"], title="IMR Consistency Test")
-        html_file.make_banner(approximant="IMR Consistency Test", key=" ")
+        html_file.make_banner(approximant="IMR Consistency Test", key="content", content=" ")
         desc = "Below we show the executive plots for the IMR consistency test"
-        html_file.make_banner(approximant="Executive plots", key=desc, _style="font-size: 26px;")
+        html_file.make_banner(approximant="Executive plots", key="content", content=desc, _style="font-size: 26px;")
         path = self.image_path["other"]
         base_string = path + "imrct_{}.png"
         image_contents = [[base_string.format("deviations_triangle_plot")]]
@@ -398,7 +465,9 @@ class TGRWebpageGeneration(_WebpageGeneration):
 
         if make_diagnostic_plots:
             desc = "Below we show additional plots generated for the IMR consistency " "test"
-            html_file.make_banner(approximant="Additional plots", key=desc, _style="font-size: 26px;")
+            html_file.make_banner(
+                approximant="Additional plots", key="content", content=desc, _style="font-size: 26px;"
+            )
             image_contents = [
                 [
                     base_string.format("final_mass_non_evolved_final_spin_non_evolved"),
@@ -426,9 +495,11 @@ def main(args=None):
     """Top level interface for `summarytgr`"""
     from pesummary.gw.parser import parser
 
+    CHECKUP = False
     _parser = parser(existing_parser=command_line())
     opts, unknown = _parser.parse_known_args(args=args)
     make_dir(opts.webdir)
+    base_url = guess_url(os.path.abspath(opts.webdir), socket.getfqdn(), os.environ["USER"])
     evolve_spins_string = "evolved"
     if not opts.evolve_spins:
         evolve_spins = opts.evolve_spins
@@ -437,11 +508,16 @@ def main(args=None):
         evolve_spins = "ISCO"
 
     open_files_paths = {_label: read(path) for _label, path in zip(opts.labels, opts.samples)}
-    open_files = MultiAnalysisSamplesDict(
-        {_label: open_files_paths[_label].samples_dict for _label in opts.labels}
-    )
+    open_files = MultiAnalysisSamplesDict({_label: open_files_paths[_label].samples_dict for _label in opts.labels})
     test_key_data = {}
     if opts.test == "imrct":
+        if sorted(opts.labels) != ["inspiral", "postinspiral"]:
+            raise ValueError(
+                "The IMRCT test requires an inspiral and postinspiral result "
+                "file. Please indicate which file is the inspiral and which "
+                "is postinspiral by providing these exact labels to the "
+                "summarytgr executable"
+            )
         test_key_data["imrct"] = {}
         for key, sample in open_files.items():
             if "final_mass_{}".format(evolve_spins_string) not in sample.keys():
@@ -484,13 +560,19 @@ def main(args=None):
 
         test_key_data["imrct"].update(data)
 
-        if opts.links_to_pe_pages is None:
+        if not len(opts.links_to_pe_pages):
             try:
                 links_to_pe_pages = [open_files_paths[_label].history["webpage_url"] for _label in opts.labels]
             except (AttributeError, KeyError, TypeError):
-                links_to_pe_pages = None
+                links_to_pe_pages = []
         else:
             links_to_pe_pages = opts.links_to_pe_pages
+
+        if not len(links_to_pe_pages) and not opts.disable_pe_page_generation:
+            CHECKUP = True
+            _webdir = os.path.join(opts.webdir, "pe_pages")
+            _command_line, process = generate_pe_pages(_webdir, opts.samples, opts.labels, opts.pe_page_options)
+            links_to_pe_pages = ["../pe_pages/html/{0}_{0}.html".format(label) for label in opts.labels]
 
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
@@ -502,6 +584,12 @@ def main(args=None):
         test_key_data=test_key_data,
     )
     webpage.generate_webpages(make_diagnostic_plots=opts.make_diagnostic_plots)
+    msg = "Complete. Webpages can be viewed at the following url {}.".format(base_url + "/home.html")
+    if CHECKUP:
+        msg += "The PE webpages are still being generated. These links will not " "work currently"
+    logger.info(msg)
+    if CHECKUP:
+        check_on_pe_page_generate(command_line, process)
 
 
 if __name__ == "__main__":

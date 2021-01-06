@@ -74,7 +74,9 @@ def command_line():
     return parser
 
 
-def launch(command):
+def launch(
+    command, check_call=True, err=subprocess.DEVNULL, out=subprocess.DEVNULL
+):
     """Launch a subprocess and run a command line
 
     Parameters
@@ -83,7 +85,10 @@ def launch(command):
         command you wish to run
     """
     logger.info("Launching subprocess to run: '{}'".format(command))
-    return subprocess.check_call(command, shell=True)
+    if check_call:
+        return subprocess.check_call(command, shell=True)
+    p = subprocess.Popen(command, shell=True, stdout=out, stderr=err)
+    return p
 
 
 def executables(*args, **kwargs):
