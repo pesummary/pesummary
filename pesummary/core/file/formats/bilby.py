@@ -352,7 +352,7 @@ class Bilby(SingleAnalysisRead):
             conf.log_evidence_error: np.round(f.log_evidence_err, 2),
             conf.log_bayes_factor: np.round(f.log_bayes_factor, 2),
             conf.log_noise_evidence: np.round(f.log_noise_evidence, 2)},
-            "meta_data": {}}
+            "meta_data": {}, "other": f.meta_data}
         return kwargs
 
     @staticmethod
