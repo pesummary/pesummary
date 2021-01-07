@@ -627,7 +627,9 @@ class BilbyFile(BaseRead):
             "log_noise_evidence": 0.1,
             "log_evidence": 0.2,
             "log_evidence_err": 0.1},
-            "meta_data": {'time_marginalization': True}}
+            "meta_data": {'time_marginalization': True},
+            "other": {"likelihood": {"time_marginalization": "True"}}
+        }
         super(BilbyFile, self).test_extra_kwargs(true)
 
     def test_injection_parameters(self, true):
@@ -1509,7 +1511,9 @@ class TestGWJsonBilbyFile(GWBaseRead):
             "log_noise_evidence": 0.1,
             "log_evidence": 0.2,
             "log_evidence_err": 0.1},
-            "meta_data": {"time_marginalization": True}}
+            "meta_data": {"time_marginalization": True},
+            "other": {"likelihood": {"time_marginalization": "True"}}
+        }
         super(TestGWJsonBilbyFile, self).test_extra_kwargs(true)
 
     def test_injection_parameters(self):

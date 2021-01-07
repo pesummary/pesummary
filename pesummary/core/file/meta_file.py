@@ -149,6 +149,8 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path, compression=None):
         data = np.array([value.__module__ + value.__name__], dtype="S")
     elif inspect.ismodule(value):
         data = np.array([value.__name__], dtype="S")
+    elif value is None:
+        data = np.array(["None"], dtype="S")
     else:
         raise TypeError(error_message.format(key, value, type(value)))
     if not SOFTLINK:
