@@ -114,6 +114,15 @@ def read_bilby(
         data["prior"] = {"samples": prior_samples}
         if len(prior_samples):
             data["prior"]["analytic"] = prior_samples.analytic
+    else:
+        try:
+            _prior = bilby_object.priors
+            data["prior"] = {
+                "samples": {},
+                "analytic": {key: str(item) for key, item in _prior.items()}
+            }
+        except (AttributeError, KeyError):
+            pass
     return data
 
 

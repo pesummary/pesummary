@@ -651,7 +651,7 @@ class BilbyFile(BaseRead):
         for param, prior in self.result.priors["samples"].items():
             assert isinstance(prior, np.ndarray)
         f = read_function(self.path, disable_prior=True)
-        assert f.priors is None
+        assert not len(f.priors["samples"])
         f = read_function(self.path, nsamples_for_prior=200)
         params = list(f.priors["samples"].keys())
         assert len(f.priors["samples"][params[0]]) == 200
@@ -1555,7 +1555,7 @@ class TestGWJsonBilbyFile(GWBaseRead):
         f = read_function(self.path, disable_prior_conversion=True)
         assert "final_mass_source_non_evolved" not in f.priors["samples"].keys()
         f = read_function(self.path, disable_prior=True)
-        assert f.priors is None
+        assert not len(f.priors["samples"])
         f = read_function(self.path, nsamples_for_prior=200)
         params = list(f.priors["samples"].keys())
         assert len(f.priors["samples"][params[0]]) == 200
