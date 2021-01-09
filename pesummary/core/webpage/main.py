@@ -123,7 +123,7 @@ class _WebpageGeneration(object):
         disable_comparison=False, disable_interactive=False,
         package_information={"packages": [], "manager": "pypi"},
         mcmc_samples=False, external_hdf5_links=False, key_data=None,
-        existing_plot=None, disable_expert=False
+        existing_plot=None, disable_expert=False, analytic_priors=None
     ):
         self.webdir = webdir
         make_dir(self.webdir)
@@ -153,6 +153,9 @@ class _WebpageGeneration(object):
         self.existing_metafile = existing_metafile
         self.existing_file_kwargs = existing_file_kwargs
         self.add_to_existing = add_to_existing
+        self.analytic_priors = analytic_priors
+        if self.analytic_priors is None:
+            self.analytic_priors = {label: None for label in self.samples.keys()}
         self.key_data = key_data
         if key_data is None:
             self.key_data = {
@@ -992,6 +995,19 @@ class _WebpageGeneration(object):
                     "provided </p></div>"
                 )
                 _fix = True
+            if i in self.analytic_priors.keys():
+                if self.analytic_priors[i] is not None:
+                    html_file.make_div(indent=2, _class='paragraph')
+                    html_file.add_content(
+                        "Below is the prior file for %s" % (i)
+                    )
+                    html_file.end_div()
+                    html_file.make_container()
+                    styles = html_file.make_code_block(
+                        language='ini', contents=self.analytic_priors[i]
+                    )
+                    html_file.end_container()
+                    _fix = False
             html_file.make_footer(
                 user=self.user, rundir=self.webdir, fix_bottom=_fix
             )
