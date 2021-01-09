@@ -18,6 +18,7 @@ import re
 import socket
 from glob import glob
 import pkg_resources
+from pathlib import Path
 
 import math
 import numpy as np
@@ -1543,6 +1544,14 @@ class _Input(object):
                     files_to_copy.append(
                         [i, os.path.join(self.webdir, "config", filename)]
                     )
+        for num, _file in enumerate(self.result_files):
+            if not self.mcmc_samples:
+                filename = "{}_{}".format(self.labels[num], Path(_file).name)
+            else:
+                filename = "chain_{}_{}".format(num, Path(_file).name)
+            files_to_copy.append(
+                [_file, os.path.join(self.webdir, "samples", filename)]
+            )
         return files_to_copy
 
     @staticmethod
