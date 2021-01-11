@@ -195,7 +195,11 @@ def _imrct_deviation_parameters_integrand_series(
 
 
 def imrct_deviation_parameters_integrand(*args, vectorize=False, **kwargs):
-    """"""
+    """
+    vectorize: bool
+        Vectorize the calculation. Note that vectorize=True uses up a lot
+        of memory
+    """
     if vectorize:
         return _imrct_deviation_parameters_integrand_vectorized(*args, **kwargs)
     return _imrct_deviation_parameters_integrand_series(*args, **kwargs)
@@ -217,7 +221,9 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     interp_kwargs=dict(fill_value=0.0, bounds_error=False),
     vectorize=False,
 ):
-    """Compute the IMR Consistency Test deviation parameters
+    """Compute the IMR Consistency Test deviation parameters.
+    Code borrows from the implementation in lalsuite:
+    https://git.ligo.org/lscsoft/lalsuite/-/blob/master/lalinference/python/lalinference/imrtgr/imrtgrutils.py
 
     Parameters
     ----------
