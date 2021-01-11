@@ -75,6 +75,8 @@ class Read(object):
         version of the result file passed.
     extra_kwargs: dict
         dictionary of kwargs that were extracted from the result file
+    pe_algorithm: str
+        name of the algorithm used to generate the posterior samples
 
     Methods
     -------
@@ -142,6 +144,13 @@ class Read(object):
             )
             return Array(np.array(samples).T[ind])
         return None
+
+    @property
+    def pe_algorithm(self):
+        try:
+            return self.extra_kwargs["sampler"]["pe_algorithm"]
+        except KeyError:
+            return None
 
     def __repr__(self):
         return self.summary()

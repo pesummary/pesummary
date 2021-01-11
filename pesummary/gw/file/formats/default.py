@@ -45,6 +45,8 @@ class SingleAnalysisDefault(GWSingleAnalysisRead):
         dictionary of kwargs that were extracted from the result file
     converted_parameters: list
         list of parameters that have been added
+    pe_algorithm: str
+        name of the algorithm used to generate the posterior samples
 
     Methods
     -------

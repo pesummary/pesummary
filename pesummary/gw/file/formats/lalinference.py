@@ -81,6 +81,7 @@ def open_lalinference(path):
                 np.arccos(i[lalinference_names.index("costheta_jn")]))
     extra_kwargs = LALInference.grab_extra_kwargs(path)
     extra_kwargs["sampler"]["nsamples"] = len(samples)
+    extra_kwargs["sampler"]["pe_algorithm"] = "lalinference"
     try:
         version = f[path_to_samples].attrs["VERSION"].decode("utf-8")
     except Exception as e:
@@ -119,6 +120,8 @@ class LALInference(GWSingleAnalysisRead):
         dictionary of kwargs that were extracted from the result file
     converted_parameters: list
         list of parameters that have been added
+    pe_algorithm: str
+        name of the algorithm used to generate the posterior samples
 
     Methods
     -------

@@ -185,6 +185,8 @@ class PESummary(MultiAnalysisRead):
         list of analyses stored in the result file
     weights: dict
         dictionary of weights for each sample for each analysis
+    pe_algorithm: dict
+        name of the algorithm used to generate the each analysis
 
     Methods
     -------
@@ -206,6 +208,17 @@ class PESummary(MultiAnalysisRead):
     @property
     def load_kwargs(self):
         return dict()
+
+    @property
+    def pe_algorithm(self):
+        _algorithm = {label: None for label in self.labels}
+        for num, _kwargs in enumerate(self.extra_kwargs):
+            _label = self.labels[num]
+            try:
+                _algorithm[_label] = _kwargs["sampler"]["pe_algorithm"]
+            except KeyError:
+                pass
+        return _algorithm
 
     @classmethod
     def load_file(cls, path, **kwargs):

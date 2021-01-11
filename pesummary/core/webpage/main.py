@@ -1532,19 +1532,44 @@ class _WebpageGeneration(object):
         base_string: str
             the download string
         """
+        import glob
+        identifier = label if not self.mcmc_samples else "chain"
+        _original = glob.glob(
+            os.path.join(self.webdir, "samples", "{}_*".format(identifier))
+        )
         html_file.add_content(
             "<div class='banner', style='margin-left:-4em'>{}</div>".format(
                 label
             )
         )
-        table_contents = [
+        if not self.mcmc_samples and len(_original) > 0:
+            table_contents = [
+                [
+                    base_string.format(
+                        "Original file provided to PESummary",
+                        self.results_path["other"] + Path(_original[0]).name
+                    )
+                ]
+            ]
+        elif self.mcmc_samples and len(_original) > 0:
+            table_contents = [
+                [
+                    base_string.format(
+                        "Original chain {} provided to PESummary".format(num),
+                        self.results_path["other"] + Path(_original[num]).name
+                    )
+                ] for num in range(len(_original))
+            ]
+        else:
+            table_contents = []
+        table_contents.append(
             [
                 base_string.format(
                     "Dat file containing posterior samples",
                     self.results_path["other"] + "%s_pesummary.dat" % (label)
                 )
             ]
-        ]
+        )
         if self.config is not None and self.config[num] is not None:
             table_contents.append(
                 [

@@ -383,6 +383,11 @@ def _samples_command_line_arguments(parser):
             "provide --path_to_samples None None path/to/samples"
         )
     )
+    sample_group.add_argument(
+        "--pe_algorithm", default=None, nargs="+", help=(
+            "Name of the algorithm used to generate the result file"
+        )
+    )
     return sample_group
 
 

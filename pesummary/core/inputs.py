@@ -18,6 +18,7 @@ import re
 import socket
 from glob import glob
 import pkg_resources
+from pathlib import Path
 
 import math
 import numpy as np
@@ -1399,6 +1400,30 @@ class _Input(object):
         return corner_params
 
     @property
+    def pe_algorithm(self):
+        return self._pe_algorithm
+
+    @pe_algorithm.setter
+    def pe_algorithm(self, pe_algorithm):
+        self._pe_algorithm = pe_algorithm
+        if pe_algorithm is None:
+            return
+        if len(pe_algorithm) != len(self.labels):
+            raise ValueError("Please provide an algorithm for each result file")
+        for num, (label, _algorithm) in enumerate(zip(self.labels, pe_algorithm)):
+            if "pe_algorithm" in self.file_kwargs[label]["sampler"].keys():
+                _stored = self.file_kwargs[label]["sampler"]["pe_algorithm"]
+                if _stored != _algorithm:
+                    logger.warn(
+                        "Overwriting the pe_algorithm extracted from the file "
+                        "'{}': {} with the algorithm provided from the command "
+                        "line: {}".format(
+                            self.result_files[num], _stored, _algorithm
+                        )
+                    )
+            self.file_kwargs[label]["sampler"]["pe_algorithm"] = _algorithm
+
+    @property
     def notes(self):
         return self._notes
 
@@ -1519,6 +1544,14 @@ class _Input(object):
                     files_to_copy.append(
                         [i, os.path.join(self.webdir, "config", filename)]
                     )
+        for num, _file in enumerate(self.result_files):
+            if not self.mcmc_samples:
+                filename = "{}_{}".format(self.labels[num], Path(_file).name)
+            else:
+                filename = "chain_{}_{}".format(num, Path(_file).name)
+            files_to_copy.append(
+                [_file, os.path.join(self.webdir, "samples", filename)]
+            )
         return files_to_copy
 
     @staticmethod
@@ -1790,6 +1823,7 @@ class Input(_Input):
         self.linestyles = self.opts.linestyles
         self.disable_corner = self.opts.disable_corner
         self.notes = self.opts.notes
+        self.pe_algorithm = self.opts.pe_algorithm
         self.disable_comparison = self.opts.disable_comparison
         self.disable_interactive = self.opts.disable_interactive
         self.disable_expert = self.opts.disable_expert

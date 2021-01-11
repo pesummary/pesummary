@@ -195,7 +195,7 @@ class page(Base):
         self.add_content("</script>")
         if fix_bottom:
             self.make_div(
-                _class='container', _style='position: absolute; bottom: 0px; '
+                _class='container', _style='bottom: 0px; '
                 + 'top: 0px; min-height: 100%; left: 0; right: 0;'
                 + 'min-width: 100%; padding-left: 0px; padding-right: 0px'
             )
