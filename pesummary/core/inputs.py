@@ -1998,6 +1998,18 @@ class PostProcessing(object):
             self.samples = {label: self.samples.T for label in self.labels}
 
     @property
+    def analytic_prior_dict(self):
+        return {
+            label: "\n".join(
+                [
+                    "{} = {}".format(key, value) for key, value in
+                    self.priors["analytic"][label].items()
+                ]
+            ) if "analytic" in self.priors.keys() and label in
+            self.priors["analytic"].keys() else None for label in self.labels
+        }
+
+    @property
     def same_parameters(self):
         return self._same_parameters
 

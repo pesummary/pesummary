@@ -304,6 +304,9 @@ class page(Base):
         elif key == "config":
             self.add_content(
                 "Below is the config file for %s" % (approximant))
+        elif key == "prior":
+            self.add_content(
+                "Below is the prior file for %s" % (approximant))
         elif key == "corner":
             self.add_content(
                 "Below is the custom corner plotter for %s" % (approximant))
