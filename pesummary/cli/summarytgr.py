@@ -462,7 +462,18 @@ class TGRWebpageGeneration(_WebpageGeneration):
             extra_div=True,
             autoscale=False,
         )
-
+        _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+        _class = "row justify-content-center"
+        html_file.make_container(style=_style)
+        html_file.make_div(4, _class=_class, _style=None)
+        _data = self.test_key_data["imrct"]
+        table_contents = [list(_data.values())]
+        html_file.make_table(
+            headings=list(_data.keys()), format="table-hover", heading_span=1, contents=table_contents, accordian=False
+        )
+        html_file.end_div(4)
+        html_file.end_container()
+        html_file.export("{}.csv".format("summary_of_IMRCT_test.csv"))
         if make_diagnostic_plots:
             desc = "Below we show additional plots generated for the IMR consistency " "test"
             html_file.make_banner(
