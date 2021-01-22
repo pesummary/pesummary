@@ -52,7 +52,6 @@ def _unpack_and_extract(path_to_file, filename, path=None):
     tar.extract(_path, path=outdir)
     unpacked_file = path_to_file.parent / _path
     if conf.delete_temporary_downloads_at_exit:
-        global _tempfilestodel
         _tempfilestodel.append(unpacked_file)
     return unpacked_file
 
@@ -107,7 +106,6 @@ def _download_authenticated_file(
                     f.write(data)
 
     if conf.delete_temporary_downloads_at_exit:
-        global _tempfilestodel
         _tempfilestodel.append(f.name)
     return f.name
 
@@ -168,7 +166,6 @@ def download_and_read_file(
     shutil.move(local, new_name)
     if not read_file:
         if conf.delete_temporary_downloads_at_exit:
-            global _tempfilestodel
             _tempfilestodel.append(new_name)
         return new_name
     data = read(new_name, **kwargs)
