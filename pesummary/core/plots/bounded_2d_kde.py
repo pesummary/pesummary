@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.stats import gaussian_kde as kde
 
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+
 
 class Bounded_2d_kde(kde):
     """Class to generate a two-dimensional KDE for a probability distribution

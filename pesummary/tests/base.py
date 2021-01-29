@@ -1,9 +1,13 @@
+# Licensed under an MIT style license -- see LICENSE.md
+
 import numpy as np
 from pathlib import Path
 from pesummary.core.command_line import command_line
 from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.gw.inputs import GWInput
 from pesummary.core.inputs import Input
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class Namespace(object):
