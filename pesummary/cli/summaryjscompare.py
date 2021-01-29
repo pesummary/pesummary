@@ -28,6 +28,8 @@ from pesummary.utils.tqdm import tqdm
 from pesummary.utils.utils import jensen_shannon_divergence
 from pesummary.utils.utils import _check_latex_install, get_matplotlib_style_file, logger
 
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+
 matplotlib.style.use(get_matplotlib_style_file())
 _check_latex_install()
 

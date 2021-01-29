@@ -1,18 +1,4 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
-#                     Michael Puerrer <michael.puerrer@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, get_matplotlib_backend
@@ -28,6 +14,11 @@ from pesummary.gw.plots.cmap import colormap_with_fixed_hue
 from pesummary.gw.conversions import mchirp_from_m1_m2, q_from_m1_m2
 import numpy as np
 import copy
+
+__author__ = [
+    "Charlie Hoy <charlie.hoy@ligo.org>",
+    "Michael Puerrer <michael.puerrer@ligo.org>"
+]
 
 seaborn.set(style="whitegrid")
 
