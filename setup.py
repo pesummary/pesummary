@@ -79,7 +79,7 @@ setup(name='pesummary',
            "build_py": VersionedBuildPy,
       },
       install_requires=[
-          'numpy>=1.15.4',
+          'numpy>=1.15.4,<=1.19.5',
           'h5py',
           'matplotlib',
           'seaborn>=0.11.0',

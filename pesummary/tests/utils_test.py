@@ -341,7 +341,10 @@ class TestSamplesDict(object):
     def test_waveforms(self):
         """Test the waveform generation
         """
-        from pycbc.waveform import get_fd_waveform, get_td_waveform
+        try:
+            from pycbc.waveform import get_fd_waveform, get_td_waveform
+        except (ValueError, ImportError):
+            return
         import requests
         from pesummary.io import read
 
