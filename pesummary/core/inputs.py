@@ -297,12 +297,11 @@ class _Input(object):
         if self._result_files is not None:
             for num, ff in enumerate(self._result_files):
                 if not os.path.isfile(ff) and "@" in ff:
-                    from pesummary.core.fetch import scp_and_read_file
+                    from pesummary.io.read import _fetch_from_remote_server
                     logger.info(
                         "Copying file: '{}' to temporary folder".format(ff)
                     )
-                    filename = scp_and_read_file(ff, read_file=False)
-                    self._result_files[num] = str(filename)
+                    self._result_files[num] = _fetch_from_remote_server(ff)
 
     @property
     def seed(self):
