@@ -702,6 +702,17 @@ class _Conversion(object):
             samples[0], samples[1], samples[2], samples[3])
         self.append_data("chi_eff", chi_eff_samples)
 
+    def _aligned_spin_from_magnitude_tilts(self, primary=False, secondary=False):
+        if primary:
+            parameters = ["a_1", "tilt_1"]
+            param_to_add = "spin_1z"
+        elif secondary:
+            parameters = ["a_2", "tilt_2"]
+            param_to_add = "spin_2z"
+        samples = self.specific_parameter_samples(parameters)
+        spin_samples = samples[0] * np.cos(samples[1])
+        self.append_data(param_to_add, spin_samples)
+
     def _cos_tilt_1_from_tilt_1(self):
         samples = self.specific_parameter_samples("tilt_1")
         cos_tilt_1 = np.cos(samples)
@@ -1430,11 +1441,18 @@ class _Conversion(object):
             cond1 = "spin_2x" in self.parameters and "spin_2y" in self.parameters
             if "phi_2" not in self.parameters and cond1:
                 self._phi2_from_spins()
+            if "spin_1z" not in self.parameters:
+                if all(i in self.parameters for i in ["a_1", "tilt_1"]):
+                    self._aligned_spin_from_magnitude_tilts(primary=True)
+            if "spin_2z" not in self.parameters:
+                if all(i in self.parameters for i in ["a_2", "tilt_2"]):
+                    self._aligned_spin_from_magnitude_tilts(secondary=True)
             if "chi_eff" not in self.parameters:
-                if all(i in self.parameters for i in spin_components):
+                if all(i in self.parameters for i in ["spin_1z", "spin_2z"]):
                     self._chi_eff()
             if "chi_p" not in self.parameters:
-                if all(i in self.parameters for i in spin_components):
+                _chi_p_params = ["spin_1x", "spin_1y", "spin_2x", "spin_2y"]
+                if all(i in self.parameters for i in _chi_p_params):
                     self._chi_p()
             polytrope_params = ["log_pressure", "gamma_1", "gamma_2", "gamma_3"]
             if all(param in self.parameters for param in polytrope_params):
