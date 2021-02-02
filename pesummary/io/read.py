@@ -1,5 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+import os
 import importlib
 from pathlib import Path
 from pesummary.core.file.formats.ini import read_ini
@@ -17,6 +18,21 @@ OTHER = {
 }
 
 
+def _fetch_from_remote_server(ff):
+    """Copy file from remote server to a temporary folder ready for reading
+
+    Parameters
+    ----------
+    ff: str
+        path to a results file on a remote server. Must be in the form
+        {username}@{servername}:{path}
+    """
+    from pesummary.core.fetch import scp_and_read_file
+    filename = scp_and_read_file(ff, read_file=False)
+    path = str(filename)
+    return path
+
+
 def read(
     path, package="gw", file_format=None, skymap=False, cls=None,
     checkpoint=False, **kwargs
@@ -26,7 +42,8 @@ def read(
     Parameters
     ----------
     path: str
-        path to results file
+        path to results file. If path is on a remote server, add username and
+        servername in the form {username}@{servername}:{path}
     package: str
         the package you wish to use
     file_format: str
@@ -42,6 +59,8 @@ def read(
         all additional kwargs are passed to the `pesummary.{}.file.read.read`
         function
     """
+    if not os.path.isfile(path) and "@" in path:
+        path = _fetch_from_remote_server(path)
     extension = Path(path).suffix[1:]
     if cls is not None:
         return cls.load_file(path, **kwargs)
