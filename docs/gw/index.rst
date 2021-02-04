@@ -115,6 +115,7 @@ for details:
     ../core/cli/summarycombine_posteriors
     ../core/cli/summarycompare
     cli/summarydetchar
+    ../core/cli/summaryextract
     cli/summarygracedb
     ../core/cli/summarymodify
     ../core/cli/summarypages
