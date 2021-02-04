@@ -63,6 +63,7 @@ for details:
 
     cli/summaryclean
     cli/summarycombine
+    cli/summarycombine_posteriors
     cli/summarycompare
     cli/summarymodify
     cli/summarypages

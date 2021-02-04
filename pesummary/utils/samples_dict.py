@@ -75,6 +75,8 @@ class SamplesDict(Dict):
     generate_all_posterior_samples:
         Convert the posterior samples in the SamplesDict object according to
         a conversion function
+    write:
+        Save the stored posterior samples to file
 
     Examples
     --------
@@ -240,6 +242,17 @@ class SamplesDict(Dict):
             }
         )
         return modified
+
+    def write(self, **kwargs):
+        """Save the stored posterior samples to file
+
+        Parameters
+        ----------
+        **kwargs: dict, optional
+            all additional kwargs passed to the pesummary.io.write function
+        """
+        from pesummary.io import write
+        write(self.parameters, self.samples.T, **kwargs)
 
     def keys(self, *args, **kwargs):
         original = super(SamplesDict, self).keys(*args, **kwargs)
@@ -839,8 +852,6 @@ class _MultiDimensionalSamplesDict(Dict):
     T: pesummary.utils.samples_dict._MultiDimensionalSamplesDict
         Transposed _MultiDimensionalSamplesDict object keyed by parameters
         rather than label
-    combine: pesummary.utils.samples_dict.SamplesDict
-        Combine all samples from all analyses into a single SamplesDict object
     nsamples: int
         Total number of analyses stored in the _MultiDimensionalSamplesDict
         object
@@ -946,32 +957,174 @@ class _MultiDimensionalSamplesDict(Dict):
 
     @property
     def T(self):
-        _params = sorted([param for param in self[self.labels[0]].keys()])
-        if not all(sorted(self[label].keys()) == _params for label in self.labels):
-            raise ValueError(
-                "Unable to transpose as not all samples have the same parameters"
-            )
-        return self.name({
-            param: {
-                label: dataset[param] for label, dataset in self.items()
-            } for param in self[self.labels[0]].keys()
-        }, transpose=True)
-
-    @property
-    def combine(self):
-        if self.transpose:
-            data = SamplesDict({
-                param: np.concatenate(
-                    [self[param][key] for key in self[param].keys()]
-                ) for param in self.parameters
-            }, logger_warn="debug")
+        _transpose = not self.transpose
+        if not self.transpose:
+            _params = sorted([param for param in self[self.labels[0]].keys()])
+            if not all(sorted(self[l].keys()) == _params for l in self.labels):
+                raise ValueError(
+                    "Unable to transpose as not all samples have the same "
+                    "parameters"
+                )
+            transpose_dict = {
+                param: {
+                    label: dataset[param] for label, dataset in self.items()
+                } for param in self[self.labels[0]].keys()
+            }
         else:
-            data = SamplesDict({
-                param: np.concatenate(
-                    [self[key][param] for key in self.keys()]
-                ) for param in self.parameters
-            }, logger_warn="debug")
-        return data
+            transpose_dict = {
+                label: {
+                    param: self[param][label] for param in self.keys()
+                } for label in self.labels
+            }
+        return self.name(transpose_dict, transpose=_transpose)
+
+    def _combine(
+        self, labels=None, use_all=False, weights=None, shuffle=False,
+        logger_level="debug"
+    ):
+        """Combine samples from a select number of analyses into a single
+        SamplesDict object.
+
+        Parameters
+        ----------
+        labels: list, optional
+            analyses you wish to combine. Default use all labels stored in the
+            dictionary
+        use_all: Bool, optional
+            if True, use all of the samples (do not weight). Default False
+        weights: dict, optional
+            dictionary of weights for each of the posteriors. Keys must be the
+            labels you wish to combine and values are the weights you wish to
+            assign to the posterior
+        shuffle: Bool, optional
+            shuffle the combined samples
+        logger_level: str, optional
+            logger level you wish to use. Default debug.
+        """
+        try:
+            _logger = getattr(logger, logger_level)
+        except AttributeError:
+            raise ValueError(
+                "Unknown logger level. Please choose either 'info' or 'debug'"
+            )
+        if labels is None:
+            _provided_labels = False
+            labels = self.labels
+        else:
+            _provided_labels = True
+            if not all(label in self.labels for label in labels):
+                raise ValueError(
+                    "Not all of the provided labels exist in the dictionary. "
+                    "The list of available labels are: {}".format(
+                        ", ".join(self.labels)
+                    )
+                )
+        _logger("Combining the following analyses: {}".format(labels))
+        if use_all and weights is not None:
+            raise ValueError(
+                "Unable to use all samples and provide weights"
+            )
+        elif not use_all and weights is None:
+            weights = {label: 1. for label in labels}
+        elif not use_all and weights is not None:
+            if len(weights) < len(labels):
+                raise ValueError(
+                    "Please provide weights for each set of samples: {}".format(
+                        len(labels)
+                    )
+                )
+            if not _provided_labels and not isinstance(weights, dict):
+                raise ValueError(
+                    "Weights must be provided as a dictionary keyed by the "
+                    "analysis label. The available labels are: {}".format(
+                        ", ".join(labels)
+                    )
+                )
+            elif not isinstance(weights, dict):
+                weights = {
+                    label: weight for label, weight in zip(labels, weights)
+                }
+            if not all(label in labels for label in weights.keys()):
+                for label in labels:
+                    if label not in weights.keys():
+                        weights[label] = 1.
+                        logger.warn(
+                            "No weight given for '{}'. Assigning a weight of "
+                            "1".format(label)
+                        )
+            sum_weights = np.sum([_weight for _weight in weights.values()])
+            weights = {
+                key: item / sum_weights for key, item in weights.items()
+            }
+        if weights is not None:
+            _logger(
+                "Using the following weights for each file, {}".format(
+                    " ".join(
+                        ["{}: {}".format(k, v) for k, v in weights.items()]
+                    )
+                )
+            )
+        _lengths = np.array(
+            [self.number_of_samples[key] for key in labels]
+        )
+        if use_all:
+            draw = _lengths
+        else:
+            draw = np.zeros(len(labels), dtype=int)
+            _weights = np.array([weights[key] for key in labels])
+            inds = np.argwhere(_weights > 0.)
+            # The next 4 lines are inspired from the 'cbcBayesCombinePosteriors'
+            # executable provided by LALSuite. Credit should go to the
+            # authors of that code.
+            initial = _weights[inds] * float(sum(_lengths[inds]))
+            min_index = np.argmin(_lengths[inds] / initial)
+            size = _lengths[inds][min_index] / _weights[inds][min_index]
+            draw[inds] = np.around(_weights[inds] * size).astype(int)
+        _logger(
+            "Randomly drawing the following number of samples from each file, "
+            "{}".format(
+                " ".join(
+                    [
+                        "{}: {}/{}".format(l, draw[n], _lengths[n]) for n, l in
+                        enumerate(labels)
+                    ]
+                )
+            )
+        )
+
+        if self.transpose:
+            _data = self.T
+        else:
+            _data = copy.deepcopy(self)
+        for num, label in enumerate(labels):
+            if draw[num] > 0:
+                _data[label].downsample(draw[num])
+            else:
+                _data[label] = {
+                    param: np.array([]) for param in _data[label].keys()
+                }
+        try:
+            intersection = set.intersection(
+                *[set(_params) for _params in _data.parameters.values()]
+            )
+        except AttributeError:
+            intersection = _data.parameters
+        logger.debug(
+            "Only including the parameters: {} as they are common to all "
+            "analyses".format(", ".join(list(intersection)))
+        )
+        data = {
+            param: np.concatenate([_data[key][param] for key in labels]) for
+            param in intersection
+        }
+        if shuffle:
+            inds = np.random.choice(
+                np.sum(_lengths), size=np.sum(_lengths), replace=False
+            )
+            data = {
+                param: value[inds] for param, value in data.items()
+            }
+        return SamplesDict(data, logger_warn="debug")
 
     @property
     def nsamples(self):
@@ -1144,6 +1297,10 @@ class MCMCSamplesDict(_MultiDimensionalSamplesDict):
             data[param] = value.key_data
         return data
 
+    @property
+    def combine(self):
+        return self._combine(use_all=True, weights=None)
+
     def discard_samples(self, number):
         """Remove the first n samples
 
@@ -1216,8 +1373,6 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
     T: pesummary.utils.samples_dict.MultiAnalysisSamplesDict
         Transposed MultiAnalysisSamplesDict object keyed by parameters
         rather than label
-    combine: pesummary.utils.samples_dict.SamplesDict
-        Combine all samples from all analyses into a single SamplesDict object
     nsamples: int
         Total number of analyses stored in the MultiAnalysisSamplesDict
         object
@@ -1237,6 +1392,9 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
     from_files:
         Initialize the MultiAnalysisSamplesDict class with the contents of
         multiple files
+    combine: pesummary.utils.samples_dict.SamplesDict
+        Combine samples from a select number of analyses into a single
+        SamplesDict object.
     js_divergence: float
         Return the JS divergence between two posterior distributions for a
         given parameter. See pesummary.utils.utils.jensen_shannon_divergence
@@ -1246,6 +1404,8 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
     samples:
         Return a list of samples stored in the MCMCSamplesDict object for a
         given parameter
+    write:
+        Save the stored posterior samples to file
     """
     def __init__(self, *args, labels=None, transpose=False):
         if labels is None and not isinstance(args[0], dict):
@@ -1266,7 +1426,9 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         ----------
         filenames: dict
             dictionary containing the path to the result file you wish to load
-            as the item and a label associated with each result file as the key
+            as the item and a label associated with each result file as the key.
+            If you are providing one or more PESummary metafiles, the key
+            is ignored and labels stored in the metafile are used.
         **kwargs: dict
             all kwargs are passed to the pesummary.io.read function
         """
@@ -1275,23 +1437,33 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
 
         samples = {}
         for label, filename in filenames.items():
-            _samples = read(filename, **kwargs).samples_dict
-            if _Input.is_pesummary_metafile(filename):
+            _file = read(filename, **kwargs)
+            _samples = _file.samples_dict
+            if isinstance(_samples, MultiAnalysisSamplesDict):
                 _stored_labels = _samples.keys()
                 cond1 = any(
-                    _label in filenames.keys() for _label in _stored_labels
+                    _label in filenames.keys() for _label in _stored_labels if
+                    _label != label
                 )
                 cond2 = any(
                     _label in samples.keys() for _label in _stored_labels
                 )
                 if cond1 or cond2:
                     raise ValueError(
-                        "One or more of the labels stored in the PESummary "
-                        "meta file matches another label. Please provide unique "
-                        "labels for each dataset"
+                        "The file '{}' contains the labels: {}. The "
+                        "dictionary already contains the labels: {}. Please "
+                        "provide unique labels for each dataset".format(
+                            filename, ", ".join(_stored_labels),
+                            ", ".join(samples.keys())
+                        )
                     )
                 samples.update(_samples)
             else:
+                if label in samples.keys():
+                    raise ValueError(
+                        "The label '{}' has alreadt been used. Please select "
+                        "another label".format(label)
+                    )
                 samples[label] = _samples
         return cls(samples)
 
@@ -1624,6 +1796,51 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             ylabel=self.latex_labels[parameters[1]], labels=labels,
             plot_density=plot_density, **kwargs
         )
+
+    def combine(self, **kwargs):
+        """Combine samples from a select number of analyses into a single
+        SamplesDict object.
+
+        Parameters
+        ----------
+        labels: list, optional
+            analyses you wish to combine. Default use all labels stored in the
+            dictionary
+        use_all: Bool, optional
+            if True, use all of the samples (do not weight). Default False
+        weights: dict, optional
+            dictionary of weights for each of the posteriors. Keys must be the
+            labels you wish to combine and values are the weights you wish to
+            assign to the posterior
+        logger_level: str, optional
+            logger level you wish to use. Default debug.
+        """
+        return self._combine(**kwargs)
+
+    def write(self, labels=None, **kwargs):
+        """Save the stored posterior samples to file
+
+        Parameters
+        ----------
+        labels: list, optional
+            list of analyses that you wish to save to file. Default save all
+            analyses to file
+        **kwargs: dict, optional
+            all additional kwargs passed to the pesummary.io.write function
+        """
+        if labels is None:
+            labels = self.labels
+        elif not all(label in self.labels for label in labels):
+            for label in labels:
+                if label not in self.labels:
+                    raise ValueError(
+                        "Unable to find analysis: '{}'. The list of "
+                        "available analyses are: {}".format(
+                            label, ", ".join(self.labels)
+                        )
+                    )
+        for label in labels:
+            self[label].write(**kwargs)
 
     def js_divergence(self, parameter, decimal=5):
         """Return the JS divergence between the posterior samples for

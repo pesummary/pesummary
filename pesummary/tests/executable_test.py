@@ -845,6 +845,46 @@ class TestSummaryReview(Base):
         self.launch(command_line)
 
 
+class TestSummaryCombine_Posteriors(Base):
+    """Test the `summarycombine_posteriors` executable
+    """
+    def setup(self):
+        """Setup the SummaryCombine_Posteriors class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        make_result_file(gw=True, extension="json")
+        os.rename(".outdir/test.json", ".outdir/example.json")
+        make_result_file(gw=True, extension="hdf5")
+        os.rename(".outdir/test.h5", ".outdir/example2.h5")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_combine(self):
+        """Test that the two posteriors are combined
+        """
+        from pesummary.io import read
+        command_line = (
+            "summarycombine_posteriors --outdir .outdir --filename test.dat "
+            "--file_format dat --samples .outdir/example.json .outdir/example2.h5 "
+            "--labels one two --weights 0.5 0.5"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(".outdir/test.dat")
+        combined = read(".outdir/test.dat").samples_dict
+        one = read(".outdir/example.json").samples_dict
+        two = read(".outdir/example2.h5").samples_dict
+        nsamples = combined.number_of_samples
+        half = int(nsamples / 2.)
+        for param in combined.keys():
+            assert all(ss in one[param] for ss in combined[param][:half])
+            assert all(ss in two[param] for ss in combined[param][half:])
+
+
 class TestSummaryModify(Base):
     """Test the `summarymodify` executable
     """
