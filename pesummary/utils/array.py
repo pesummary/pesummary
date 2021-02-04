@@ -29,13 +29,18 @@ class Array(np.ndarray):
 
     def __new__(cls, input_array, likelihood=None, prior=None, weights=None):
         obj = np.asarray(input_array).view(cls)
-        obj.standard_deviation = np.std(obj)
-        obj.minimum = np.min(obj)
-        obj.maximum = np.max(obj)
-        obj.maxL = cls._maxL(obj, likelihood)
-        obj.maxP = cls._maxP(obj, log_likelihood=likelihood, log_prior=prior)
-        obj.weights = weights
-        obj.key_data = cls._key_data(obj)
+        try:
+            obj.standard_deviation = np.std(obj)
+            obj.minimum = np.min(obj)
+            obj.maximum = np.max(obj)
+            obj.maxL = cls._maxL(obj, likelihood)
+            obj.maxP = cls._maxP(obj, log_likelihood=likelihood, log_prior=prior)
+            obj.weights = weights
+            obj.key_data = cls._key_data(obj)
+        except Exception:
+            obj.standard_deviation = None
+            obj.minimum, obj.maximum, obj.maxL = None, None, None
+            obj.maxP, obj.key_data = None, {}
         return obj
 
     def __reduce__(self):
