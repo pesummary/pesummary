@@ -1618,12 +1618,12 @@ class _WebpageGeneration(object):
         path = self.webdir + "/js/grab.js"
         existing = open(path)
         existing = existing.readlines()
-        ind = existing.index("    if ( param == approximant ) {\n")
+        ind = existing.index("        if ( param == approximant ) {\n")
         content = existing[:ind]
         for i in [list(j.keys())[0] for j in self._result_page_links()]:
-            content.append("    if ( param == \"%s\" ) {\n" % (i))
-            content.append("        approx = \"None\" \n")
-            content.append("    }\n")
+            content.append("        if ( param == \"%s\" ) {\n" % (i))
+            content.append("            approx = \"None\" \n")
+            content.append("        }\n")
         for i in existing[ind + 1:]:
             content.append(i)
         new_file = open(path, "w")

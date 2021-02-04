@@ -85,61 +85,59 @@ function grab_html(param, label="None") {
     var header=document.getElementsByTagName("h1")[0]
     var el=document.getElementsByTagName("h7")[1]
     var approx = el.innerHTML
-   
-    if ( param == approximant ) {
- 
-    if ( approx == "Comparison" && param == "Comparison" ) {
-        approx = "None"
-    }
-    
     var url = window.location.pathname
     var filename = url.substring(url.lastIndexOf('/')+1)
 
     if ( label == "switch") {
-        var current_label = filename.split('_')[0]
-        if ( current_label == "Comparison" ) {
-            var new_filename = filename.replace(current_label, param + "_" + param)
+        if ( approx == "Comparison" ) {
+            var new_filename = filename.replace(approx, param + "_" + param)
         }
         else if ( param == "Comparison" ) {
-            var new_filename = filename.replace(current_label + "_" + current_label, param)
+            var new_filename = filename.replace(approx + "_" + approx, param)
         } else {
-            var re = new RegExp(current_label, "g")
+            var re = new RegExp(approx, "g")
             var new_filename = filename.replace(re, param);
         }
         setTimeout(function() {window.location = "error.html"}, 150)
         window.location = new_filename
-    }
-    else if ( param == "home" ){
-        if ( filename == "home.html" ) {
-            window.location = "./home.html"
-        } else {
-            window.location = "../home.html"
-        }
-    }
-    else if ( param == "Downloads" ) {
-        if ( filename == "home.html" ) {
-            window.location = "./html/Downloads.html"
-        } else {
-            window.location = "../html/Downloads.html"
-        }
-    }
-    else if (param == "About") {
-        if ( filename == "home.html" ) {
-            window.location = "./html/About.html"
-        } else {
-            window.location = "../html/About.html"
-        }
-    }
-    else if ( param == "Comparison" ) {
-        if ( filename == "home.html" ) {
-            window.location = "./html/Comparison.html"
-        } else {
-            window.location = "../html/Comparison.html"
-        }
-    }
-    else if ( filename == "home.html" ) {
-        _option1(label, approx, param)
     } else {
-        _option2(label, approx, param)
-   }
+        if ( param == approximant ) {
+ 
+        if ( approx == "Comparison" && param == "Comparison" ) {
+            approx = "None"
+        }
+        if ( param == "home" ){
+            if ( filename == "home.html" ) {
+                window.location = "./home.html"
+            } else {
+                window.location = "../home.html"
+            }
+        }
+        else if ( param == "Downloads" ) {
+            if ( filename == "home.html" ) {
+                window.location = "./html/Downloads.html"
+            } else {
+                window.location = "../html/Downloads.html"
+            }
+        }
+        else if (param == "About") {
+            if ( filename == "home.html" ) {
+                window.location = "./html/About.html"
+            } else {
+                window.location = "../html/About.html"
+            }
+        }
+        else if ( param == "Comparison" ) {
+            if ( filename == "home.html" ) {
+                window.location = "./html/Comparison.html"
+            } else {
+                window.location = "../html/Comparison.html"
+            }
+        }
+        else if ( filename == "home.html" ) {
+            _option1(label, approx, param)
+        } else {
+            _option2(label, approx, param)
+       }
+    }
 }
