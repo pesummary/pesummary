@@ -158,7 +158,8 @@ def download_and_read_file(
             _tempfilestodel.append(new_name)
         return new_name
     data = read(new_name, **kwargs)
-    shutil.move(new_name, local)
+    if conf.delete_temporary_downloads_at_exit:
+        shutil.move(new_name, local)
     return data
 
 
