@@ -1,4 +1,4 @@
-# Licensed under an MIT style license -- see LICENSE.md
+# License under an MIT style license -- see LICENSE.md
 
 import os
 import shutil
@@ -843,6 +843,46 @@ class TestSummaryReview(Base):
             "--test core_plots"
         )
         self.launch(command_line)
+
+
+class TestSummaryExtract(Base):
+    """Test the `summaryextract` executable
+    """
+    def setup(self):
+        """Setup the SummaryExtract class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        make_result_file(gw=False, extension="json")
+        os.rename(".outdir/test.json", ".outdir/example.json")
+        make_result_file(gw=False, extension="hdf5")
+        os.rename(".outdir/test.h5", ".outdir/example2.h5")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_extract(self):
+        """Test that a set if posterior samples are correctly extracted
+        """
+        from pesummary.io import read
+        command_line = (
+            "summarycombine --samples .outdir/example.json .outdir/example2.h5 "
+            "--labels one two --webdir .outdir"
+        )
+        self.launch(command_line)
+        command_line = (
+            "summaryextract --outdir .outdir --filename one.dat --file_format dat "
+            "--samples .outdir/samples/posterior_samples.h5 --label one"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(".outdir/one.dat")
+        extracted = read(".outdir/one.dat").samples_dict
+        original = read(".outdir/example.json").samples_dict
+        assert all(param in extracted.keys() for param in original.keys())
+        np.testing.assert_almost_equal(extracted.samples, original.samples)
 
 
 class TestSummaryCombine_Posteriors(Base):

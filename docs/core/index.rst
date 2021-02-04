@@ -65,6 +65,7 @@ for details:
     cli/summarycombine
     cli/summarycombine_posteriors
     cli/summarycompare
+    cli/summaryextract
     cli/summarymodify
     cli/summarypages
     cli/summarypageslw
