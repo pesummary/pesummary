@@ -51,6 +51,9 @@ def command_line():
     parser.add_argument("-s", "--samples", dest="samples", help="Posterior samples hdf5 file", nargs="+", default=None)
     parser.add_argument("--labels", dest="labels", help="labels used to distinguish runs", nargs="+", default=None)
     parser.add_argument(
+        "-a", "--approximant", dest="approximant", help="Approximant used for the runs", nargs="+", default=None
+    )
+    parser.add_argument(
         "--evolve_spins",
         dest="evolve_spins",
         help="Evolve spins while calculating remnant quantities",
@@ -59,8 +62,16 @@ def command_line():
     parser.add_argument(
         "--cutoff_frequency",
         dest="cutoff_frequency",
-        help="Cutoff Frequency for IMRCT. Overrides any cutoff frequency present in the supplied files.",
+        help="Cutoff Frequency for IMRCT. Overrides any cutoff frequency "
+        "present in the supplied files. "
+        "If only one number is supplied, the inspiral maximum frequency "
+        "and the postinspiral maximum frequency are set to the same number. "
+        "If a list of length 2 is supplied, this assumes that the "
+        "one correspoding to the inspiral label is the maximum frequency "
+        "for inspiral and that correspoding to the postinspiral label is the"
+        "minimum frequency for postinspiral_samples_file",
         type=float,
+        nargs="+",
         default=None,
     )
     parser.add_argument(
@@ -320,21 +331,33 @@ def main(args=None):
             make_diagnostic_plots=opts.make_diagnostic_plots,
         )
 
-        if opts.cutoff_frequency is not None:
-            data["Cutoff frequency"] = opts.cutoff_frequency
-        else:
-            logger.info("No Cutoff Frequency supplied on command line. Checking in the samples files.")
-            try:
-                if float(open_files["inspiral"].config["maximum-frequency"]) == float(
-                    open_files["postinspiral"].config["minimum-frequency"]
-                ):
-                    data["Cutoff Frequency"] = float(open_files["inspiral"].config["maximum-frequency"])
-                else:
-                    logger.warning("The minimum and maximum frequencies for inspiral and postinspiral do not match!")
-                    data["Cutoff Frequency"] = None
-            except (AttributeError, KeyError):
-                logger.info("No Cutoff Frequency information in supplied samples file. Setting to None.")
-                data["Cutoff Frequency"] = None
+        frequency_dict = dict()
+        approximant_dict = dict()
+        for _list, _dict in zip([opts.cutoff_frequency, opts.approximant], [frequency_dict, approximant_dict]):
+            if _list is not None:
+                if len(_list) == 1:
+                    _dict["inspiral"] = _list[0]
+                    _dict["postinspiral"] = _list[0]
+                elif len(_list) == 2:
+                    for _label, _list_element in zip(opts.labels, _list):
+                        _dict[_label] = _list_element
+            else:
+                try:
+                    if _list == opts.cutoff_frequency:
+                        _dict["inspiral"] = float(open_files["inspiral"].config["maximum-frequency"])
+                        _dict["postinspiral"] = float(open_files["postinspiral"].config["minimum-frequency"])
+                    elif _list == opts.approximant:
+                        _dict["inspiral"] = float(open_files["inspiral"].config["config"])
+                        _dict["postinspiral"] = float(open_files["postinspiral"].config["config"])
+                except (AttributeError, KeyError):
+                    _dict["inspiral"] = None
+                    _dict["postinspiral"] = None
+
+        data["inspiral maximum frequency (Hz)"] = frequency_dict["inspiral"]
+        data["postinspiral mininum frequency (Hz)"] = frequency_dict["postinspiral"]
+
+        for key in ["inspiral", "postinspiral"]:
+            data["{} approximant".format(key)] = approximant_dict[key]
 
         test_key_data["imrct"].update(data)
 
