@@ -25,6 +25,7 @@ from pesummary.gw.conversions.tgr import (
     imrct_deviation_parameters_from_final_mass_final_spin,
 )
 from pesummary.io import read
+from pesummary.gw.parser import parser as gw_parser
 from pesummary.gw.pepredicates import PEPredicates
 from pesummary.gw.p_astro import PAstro
 from pesummary.utils.utils import make_dir, logger, guess_url
@@ -586,10 +587,43 @@ class TGRWebpageGeneration(_WebpageGeneration):
         html_file.close()
 
 
+def add_dynamic_kwargs_to_namespace(existing_namespace, command_line=None):
+    """Add a dynamic calibration argument to the argparse namespace
+
+    Parameters
+    ----------
+    existing_namespace: argparse.Namespace
+        existing namespace you wish to add the dynamic arguments too
+    command_line: str, optional
+        The command line which you are passing. Default None
+    """
+    from pesummary.gw.command_line import add_dynamic_argparse
+    return add_dynamic_argparse(
+        existing_namespace, "--*_kwargs", example="--{}_kwargs",
+        command_line=command_line
+    )
+
+
+class parser(gw_parser):
+    """Class to handle parsing command line arguments
+
+    Attributes
+    ----------
+    dynamic_argparse: list
+        list of dynamic argparse methods
+    """
+    def __init__(self, existing_parser=None):
+        super(parser, self).__init__(existing_parser=existing_parser)
+
+    @property
+    def dynamic_argparse(self):
+        return [
+            add_dynamic_kwargs_to_namespace
+        ]
+
+
 def main(args=None):
     """Top level interface for `summarytgr`"""
-    from pesummary.gw.parser import parser
-
     CHECKUP = False
     _parser = parser(existing_parser=command_line())
     opts, unknown = _parser.parse_known_args(args=args)
@@ -645,7 +679,7 @@ def main(args=None):
                         ] = returned_extra_kwargs["meta_data"][fit]
 
         imrct_deviations, data = generate_imrct_deviation_parameters(
-            open_files, evolve_spins=opts.evolve_spins, **test_kwargs
+            open_files, evolve_spins=opts.evolve_spins, **opts.IMRCT_kwargs
         )
         make_imrct_plots(
             imrct_deviations,
