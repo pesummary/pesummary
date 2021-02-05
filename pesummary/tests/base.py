@@ -1,9 +1,13 @@
+# Licensed under an MIT style license -- see LICENSE.md
+
 import numpy as np
 from pathlib import Path
 from pesummary.core.command_line import command_line
 from pesummary.gw.command_line import insert_gwspecific_option_group
 from pesummary.gw.inputs import GWInput
 from pesummary.core.inputs import Input
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class Namespace(object):
@@ -37,7 +41,8 @@ def gw_parameters():
         'chirp_mass_source', 'phi_1', 'phi_2', 'cos_theta_jn', 'cos_iota',
         'peak_luminosity_non_evolved', 'final_spin_non_evolved',
         'final_mass_non_evolved', 'final_mass_source_non_evolved',
-        'radiated_energy_non_evolved', 'inverted_mass_ratio'
+        'radiated_energy_non_evolved', 'inverted_mass_ratio',
+        'viewing_angle'
     ]
     return parameters
 

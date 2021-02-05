@@ -1,17 +1,4 @@
-# Copyrigh (C) 2019 Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import os
 import re
@@ -30,6 +17,8 @@ from pesummary.utils.utils import (
     guess_url, logger, make_dir, make_cache_style_file, list_match
 )
 from pesummary import conf
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class _Input(object):
@@ -308,12 +297,11 @@ class _Input(object):
         if self._result_files is not None:
             for num, ff in enumerate(self._result_files):
                 if not os.path.isfile(ff) and "@" in ff:
-                    from pesummary.core.fetch import scp_and_read_file
+                    from pesummary.io.read import _fetch_from_remote_server
                     logger.info(
                         "Copying file: '{}' to temporary folder".format(ff)
                     )
-                    filename = scp_and_read_file(ff, read_file=False)
-                    self._result_files[num] = str(filename)
+                    self._result_files[num] = _fetch_from_remote_server(ff)
 
     @property
     def seed(self):
@@ -1996,6 +1984,18 @@ class PostProcessing(object):
         self.same_parameters = []
         if self.mcmc_samples:
             self.samples = {label: self.samples.T for label in self.labels}
+
+    @property
+    def analytic_prior_dict(self):
+        return {
+            label: "\n".join(
+                [
+                    "{} = {}".format(key, value) for key, value in
+                    self.priors["analytic"][label].items()
+                ]
+            ) if "analytic" in self.priors.keys() and label in
+            self.priors["analytic"].keys() else None for label in self.labels
+        }
 
     @property
     def same_parameters(self):

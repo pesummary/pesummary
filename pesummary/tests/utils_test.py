@@ -1,17 +1,4 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import os
 import shutil
@@ -36,6 +23,8 @@ from pesummary._version_helper import get_version_information
 
 import pytest
 from testfixtures import LogCapture
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 DEFAULT_DIRECTORY = os.getenv("CI_PROJECT_DIR", os.getcwd())
 
@@ -352,7 +341,10 @@ class TestSamplesDict(object):
     def test_waveforms(self):
         """Test the waveform generation
         """
-        from pycbc.waveform import get_fd_waveform, get_td_waveform
+        try:
+            from pycbc.waveform import get_fd_waveform, get_td_waveform
+        except (ValueError, ImportError):
+            return
         import requests
         from pesummary.io import read
 
@@ -532,6 +524,57 @@ class TestMultiAnalysisSamplesDict(object):
         assert dataframe.parameters["three"] == ["a"]
         assert "three" in dataframe.number_of_samples.keys()
 
+    def test_combine(self):
+        """Test that the .combine method is working as expected
+        """
+        data = {
+            "one": {
+                "a": np.random.uniform(10, 0.5, 100),
+                "b": np.random.uniform(5, 0.5, 100)
+            }, "two": {
+                "a": np.random.uniform(100, 0.5, 100),
+                "b": np.random.uniform(50, 0.5, 100)
+            }
+        }
+        dataframe = MultiAnalysisSamplesDict(data)
+        # test that when weights are 0 and 1, we only get the second set of
+        # samples
+        combine = dataframe.combine(weights={"one": 0., "two": 1.})
+        assert "a" in combine.keys()
+        assert "b" in combine.keys()
+        assert all(ss in data["two"]["a"] for ss in combine["a"])
+        assert all(ss in data["two"]["b"] for ss in combine["b"])
+        # test that when weights are equal, the first half of samples are from
+        # one and the second half are from two
+        combine = dataframe.combine(labels=["one", "two"], weights=[0.5, 0.5])
+        nsamples = len(combine["a"])
+        half = int(nsamples / 2)
+        assert all(ss in data["one"]["a"] for ss in combine["a"][:half])
+        assert all(ss in data["two"]["a"] for ss in combine["a"][half:])
+        assert all(ss in data["one"]["b"] for ss in combine["b"][:half])
+        assert all(ss in data["two"]["b"] for ss in combine["b"][half:])
+        # test that the samples maintain order
+        for n in np.random.choice(half, size=10, replace=False):
+            ind = np.argwhere(data["one"]["a"] == combine["a"][n])
+            assert data["one"]["b"][ind] == combine["b"][n]
+        # test that when use_all is provided, all samples are included
+        combine = dataframe.combine(use_all=True)
+        assert len(combine["a"]) == len(data["one"]["a"]) + len(data["two"]["a"])
+        # test shuffle
+        combine = dataframe.combine(
+            labels=["one", "two"], weights=[0.5, 0.5], shuffle=True
+        )
+        for n in np.random.choice(half, size=10, replace=False):
+            if combine["a"][n] in data["one"]["a"]:
+                ind = np.argwhere(data["one"]["a"] == combine["a"][n])
+                assert data["one"]["b"][ind] == combine["b"][n]
+            else:
+                ind = np.argwhere(data["two"]["a"] == combine["a"][n])
+                assert data["two"]["b"][ind] == combine["b"][n]
+        assert len(set(combine["a"])) == len(combine["a"])
+        assert len(set(combine["b"])) == len(combine["b"])
+
+
 class TestMCMCSamplesDict(object):
     """Test the MCMCSamplesDict class
     """
@@ -608,11 +651,10 @@ class TestMCMCSamplesDict(object):
             dataframe.minimum_number_of_samples
         combined = dataframe.combine
         assert combined.number_of_samples == 300
-        np.testing.assert_almost_equal(
-            np.concatenate(
-                [dataframe["chain_0"]["a"], dataframe["chain_1"]["a"]]
-            ), combined["a"]
+        my_combine = np.concatenate(
+            [dataframe["chain_0"]["a"], dataframe["chain_1"]["a"]]
         )
+        assert all(ss in my_combine for ss in combined["a"])
 
     def test_properties(self):
         """Test that the properties of the MCMCSamplesDict class are correct
@@ -642,11 +684,20 @@ class TestMCMCSamplesDict(object):
             transpose.total_number_of_samples
         combined = dataframe.combine
         assert combined.number_of_samples == 200
-        np.testing.assert_almost_equal(
-            np.concatenate(
-                [dataframe["chain_0"]["a"], dataframe["chain_1"]["a"]]
-            ), combined["a"]
+        mycombine = np.concatenate(
+            [dataframe["chain_0"]["a"], dataframe["chain_1"]["a"]]
         )
+        assert all(s in combined["a"] for s in mycombine)
+        transpose_copy = transpose.T
+        assert sorted(list(transpose_copy.keys())) == sorted(list(dataframe.keys()))
+        for level1 in dataframe.keys():
+            assert sorted(list(transpose_copy[level1].keys())) == sorted(
+                list(dataframe[level1].keys())
+            )
+            for level2 in dataframe[level1].keys():
+                np.testing.assert_almost_equal(
+                    transpose_copy[level1][level2], dataframe[level1][level2]
+                )
 
     def test_key_data(self):
         """Test that the key data is correct

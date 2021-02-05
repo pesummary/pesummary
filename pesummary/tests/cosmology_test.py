@@ -1,5 +1,9 @@
+# Licensed under an MIT style license -- see LICENSE.md
+
 from pesummary.gw.cosmology import get_cosmology, available_cosmologies
 import pytest
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class TestCosmology(object):

@@ -1,3 +1,5 @@
+# Licensed under an MIT style license -- see LICENSE.md
+
 import os
 import shutil
 import numpy as np
@@ -8,6 +10,8 @@ from pesummary.gw.file.read import read as GWRead
 from pesummary.core.file.read import read as Read
 from pesummary.io import read, write
 import glob
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class BaseRead(object):

@@ -1,21 +1,10 @@
-# Copyright (C) 2019 Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import os
 from .main import _WebpageGeneration as _GWWebpageGeneration
 from pesummary.core.webpage import webpage
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class _PublicWebpageGeneration(_GWWebpageGeneration):
@@ -34,7 +23,8 @@ class _PublicWebpageGeneration(_GWWebpageGeneration):
         disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False,
         psd=None, priors=None, package_information={"packages": []},
         mcmc_samples=False, external_hdf5_links=False,
-        preliminary_pages=False, existing_plot=None, disable_expert=False
+        preliminary_pages=False, existing_plot=None, disable_expert=False,
+        analytic_priors=None
     ):
         super(_PublicWebpageGeneration, self).__init__(
             webdir=webdir, samples=samples, labels=labels,
@@ -60,7 +50,7 @@ class _PublicWebpageGeneration(_GWWebpageGeneration):
             package_information=package_information,
             mcmc_samples=mcmc_samples, external_hdf5_links=external_hdf5_links,
             preliminary_pages=preliminary_pages, existing_plot=existing_plot,
-            disable_expert=disable_expert
+            disable_expert=disable_expert, analytic_priors=analytic_priors
         )
 
     def setup_page(

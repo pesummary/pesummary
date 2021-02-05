@@ -1,18 +1,6 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
+import os
 import importlib
 from pathlib import Path
 from pesummary.core.file.formats.ini import read_ini
@@ -20,12 +8,29 @@ from pesummary.core.file.formats.pickle import read_pickle
 from pesummary.gw.file.formats.lcf import read_lcf
 from pesummary.gw.file.skymap import SkyMap
 
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+
 OTHER = {
     "fits": SkyMap.from_fits,
     "ini": read_ini,
     "lcf": read_lcf,
     "pickle": read_pickle
 }
+
+
+def _fetch_from_remote_server(ff):
+    """Copy file from remote server to a temporary folder ready for reading
+
+    Parameters
+    ----------
+    ff: str
+        path to a results file on a remote server. Must be in the form
+        {username}@{servername}:{path}
+    """
+    from pesummary.core.fetch import scp_and_read_file
+    filename = scp_and_read_file(ff, read_file=False)
+    path = str(filename)
+    return path
 
 
 def read(
@@ -37,7 +42,8 @@ def read(
     Parameters
     ----------
     path: str
-        path to results file
+        path to results file. If path is on a remote server, add username and
+        servername in the form {username}@{servername}:{path}
     package: str
         the package you wish to use
     file_format: str
@@ -53,6 +59,8 @@ def read(
         all additional kwargs are passed to the `pesummary.{}.file.read.read`
         function
     """
+    if not os.path.isfile(path) and "@" in path:
+        path = _fetch_from_remote_server(path)
     extension = Path(path).suffix[1:]
     if cls is not None:
         return cls.load_file(path, **kwargs)

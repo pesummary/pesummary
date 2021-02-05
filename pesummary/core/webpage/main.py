@@ -1,17 +1,4 @@
-# Copyright (C) 2019 Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import os
 import sys
@@ -31,6 +18,8 @@ from pesummary.utils.utils import (
     logger, LOG_FILE, jensen_shannon_divergence, safe_round, make_dir
 )
 from pesummary.core.webpage import webpage
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class PlotCaption(object):
@@ -123,7 +112,7 @@ class _WebpageGeneration(object):
         disable_comparison=False, disable_interactive=False,
         package_information={"packages": [], "manager": "pypi"},
         mcmc_samples=False, external_hdf5_links=False, key_data=None,
-        existing_plot=None, disable_expert=False
+        existing_plot=None, disable_expert=False, analytic_priors=None
     ):
         self.webdir = webdir
         make_dir(self.webdir)
@@ -153,6 +142,9 @@ class _WebpageGeneration(object):
         self.existing_metafile = existing_metafile
         self.existing_file_kwargs = existing_file_kwargs
         self.add_to_existing = add_to_existing
+        self.analytic_priors = analytic_priors
+        if self.analytic_priors is None:
+            self.analytic_priors = {label: None for label in self.samples.keys()}
         self.key_data = key_data
         _label = self.labels[0]
         if self.samples is not None:
@@ -998,6 +990,19 @@ class _WebpageGeneration(object):
                     "provided </p></div>"
                 )
                 _fix = True
+            if i in self.analytic_priors.keys():
+                if self.analytic_priors[i] is not None:
+                    html_file.make_div(indent=2, _class='paragraph')
+                    html_file.add_content(
+                        "Below is the prior file for %s" % (i)
+                    )
+                    html_file.end_div()
+                    html_file.make_container()
+                    styles = html_file.make_code_block(
+                        language='ini', contents=self.analytic_priors[i]
+                    )
+                    html_file.end_container()
+                    _fix = False
             html_file.make_footer(
                 user=self.user, rundir=self.webdir, fix_bottom=_fix
             )
@@ -1619,12 +1624,12 @@ class _WebpageGeneration(object):
         path = self.webdir + "/js/grab.js"
         existing = open(path)
         existing = existing.readlines()
-        ind = existing.index("    if ( param == approximant ) {\n")
+        ind = existing.index("        if ( param == approximant ) {\n")
         content = existing[:ind]
         for i in [list(j.keys())[0] for j in self._result_page_links()]:
-            content.append("    if ( param == \"%s\" ) {\n" % (i))
-            content.append("        approx = \"None\" \n")
-            content.append("    }\n")
+            content.append("        if ( param == \"%s\" ) {\n" % (i))
+            content.append("            approx = \"None\" \n")
+            content.append("        }\n")
         for i in existing[ind + 1:]:
             content.append(i)
         new_file = open(path, "w")
