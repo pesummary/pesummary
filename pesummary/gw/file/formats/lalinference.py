@@ -1,17 +1,4 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import os
 
@@ -31,7 +18,7 @@ from pesummary.utils.utils import logger
 from pesummary.utils.decorators import open_config
 from pesummary import conf
 
-
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 SAMPLER_KWARGS = {
     "log_bayes_factor": conf.log_bayes_factor,
     "bayes_factor": conf.bayes_factor,
@@ -81,6 +68,7 @@ def open_lalinference(path):
                 np.arccos(i[lalinference_names.index("costheta_jn")]))
     extra_kwargs = LALInference.grab_extra_kwargs(path)
     extra_kwargs["sampler"]["nsamples"] = len(samples)
+    extra_kwargs["sampler"]["pe_algorithm"] = "lalinference"
     try:
         version = f[path_to_samples].attrs["VERSION"].decode("utf-8")
     except Exception as e:
@@ -119,6 +107,8 @@ class LALInference(GWSingleAnalysisRead):
         dictionary of kwargs that were extracted from the result file
     converted_parameters: list
         list of parameters that have been added
+    pe_algorithm: str
+        name of the algorithm used to generate the posterior samples
 
     Methods
     -------

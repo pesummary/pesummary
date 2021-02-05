@@ -1,3 +1,5 @@
+# Licensed under an MIT style license -- see LICENSE.md
+
 import os
 import shutil
 import numpy as np
@@ -8,6 +10,8 @@ from pesummary.gw.file.read import read as GWRead
 from pesummary.core.file.read import read as Read
 from pesummary.io import read, write
 import glob
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class BaseRead(object):
@@ -627,7 +631,9 @@ class BilbyFile(BaseRead):
             "log_noise_evidence": 0.1,
             "log_evidence": 0.2,
             "log_evidence_err": 0.1},
-            "meta_data": {'time_marginalization': True}}
+            "meta_data": {'time_marginalization': True},
+            "other": {"likelihood": {"time_marginalization": "True"}}
+        }
         super(BilbyFile, self).test_extra_kwargs(true)
 
     def test_injection_parameters(self, true):
@@ -649,7 +655,7 @@ class BilbyFile(BaseRead):
         for param, prior in self.result.priors["samples"].items():
             assert isinstance(prior, np.ndarray)
         f = read_function(self.path, disable_prior=True)
-        assert f.priors is None
+        assert not len(f.priors["samples"])
         f = read_function(self.path, nsamples_for_prior=200)
         params = list(f.priors["samples"].keys())
         assert len(f.priors["samples"][params[0]]) == 200
@@ -1509,7 +1515,9 @@ class TestGWJsonBilbyFile(GWBaseRead):
             "log_noise_evidence": 0.1,
             "log_evidence": 0.2,
             "log_evidence_err": 0.1},
-            "meta_data": {"time_marginalization": True}}
+            "meta_data": {"time_marginalization": True},
+            "other": {"likelihood": {"time_marginalization": "True"}}
+        }
         super(TestGWJsonBilbyFile, self).test_extra_kwargs(true)
 
     def test_injection_parameters(self):
@@ -1551,7 +1559,7 @@ class TestGWJsonBilbyFile(GWBaseRead):
         f = read_function(self.path, disable_prior_conversion=True)
         assert "final_mass_source_non_evolved" not in f.priors["samples"].keys()
         f = read_function(self.path, disable_prior=True)
-        assert f.priors is None
+        assert not len(f.priors["samples"])
         f = read_function(self.path, nsamples_for_prior=200)
         params = list(f.priors["samples"].keys())
         assert len(f.priors["samples"][params[0]]) == 200

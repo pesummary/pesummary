@@ -1,17 +1,4 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import inspect
 import os
@@ -27,7 +14,7 @@ from pesummary.utils.utils import make_dir, logger
 from pesummary.utils.decorators import open_config
 from pesummary import conf
 
-
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 DEFAULT_HDF5_KEYS = ["version", "history"]
 
 
@@ -149,6 +136,8 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path, compression=None):
         data = np.array([value.__module__ + value.__name__], dtype="S")
     elif inspect.ismodule(value):
         data = np.array([value.__name__], dtype="S")
+    elif value is None:
+        data = np.array(["None"], dtype="S")
     else:
         raise TypeError(error_message.format(key, value, type(value)))
     if not SOFTLINK:

@@ -1,17 +1,4 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.gw.file.formats.base_read import GWMultiAnalysisRead
 from pesummary.core.file.formats.pesummary import (
@@ -22,6 +9,8 @@ from pesummary.utils.dict import load_recursively
 from pesummary.utils.decorators import deprecation
 import numpy as np
 import warnings
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 def write_pesummary(*args, **kwargs):
@@ -101,6 +90,8 @@ class PESummary(GWMultiAnalysisRead, CorePESummary):
         dictionary of weights for each samples for each analysis
     detectors: list
         list of IFOs used in each analysis
+    pe_algorithm: dict
+        name of the algorithm used to generate the each analysis
 
     Methods
     -------

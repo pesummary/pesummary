@@ -1,17 +1,4 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import os
 import numpy as np
@@ -19,6 +6,8 @@ from pesummary.core.file.formats.base_read import SingleAnalysisRead
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary import conf
 from pesummary.utils.utils import logger
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 def read_bilby(
@@ -86,6 +75,7 @@ def read_bilby(
     except Exception:
         extra_kwargs = {"sampler": {}, "meta_data": {}}
     extra_kwargs["sampler"]["nsamples"] = len(samples)
+    extra_kwargs["sampler"]["pe_algorithm"] = "bilby"
     try:
         version = bilby_object.version
     except Exception as e:
@@ -113,6 +103,15 @@ def read_bilby(
         data["prior"] = {"samples": prior_samples}
         if len(prior_samples):
             data["prior"]["analytic"] = prior_samples.analytic
+    else:
+        try:
+            _prior = bilby_object.priors
+            data["prior"] = {
+                "samples": {},
+                "analytic": {key: str(item) for key, item in _prior.items()}
+            }
+        except (AttributeError, KeyError):
+            pass
     return data
 
 
@@ -313,6 +312,8 @@ class Bilby(SingleAnalysisRead):
     prior: dict
         dictionary of prior samples keyed by parameters. The prior functions
         are evaluated for 5000 samples.
+    pe_algorithm: str
+        name of the algorithm used to generate the posterior samples
 
     Methods
     -------
@@ -349,7 +350,7 @@ class Bilby(SingleAnalysisRead):
             conf.log_evidence_error: np.round(f.log_evidence_err, 2),
             conf.log_bayes_factor: np.round(f.log_bayes_factor, 2),
             conf.log_noise_evidence: np.round(f.log_noise_evidence, 2)},
-            "meta_data": {}}
+            "meta_data": {}, "other": f.meta_data}
         return kwargs
 
     @staticmethod

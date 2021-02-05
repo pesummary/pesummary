@@ -1,19 +1,8 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import numpy as np
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class Array(np.ndarray):
@@ -40,13 +29,18 @@ class Array(np.ndarray):
 
     def __new__(cls, input_array, likelihood=None, prior=None, weights=None):
         obj = np.asarray(input_array).view(cls)
-        obj.standard_deviation = np.std(obj)
-        obj.minimum = np.min(obj)
-        obj.maximum = np.max(obj)
-        obj.maxL = cls._maxL(obj, likelihood)
-        obj.maxP = cls._maxP(obj, log_likelihood=likelihood, log_prior=prior)
-        obj.weights = weights
-        obj.key_data = cls._key_data(obj)
+        try:
+            obj.standard_deviation = np.std(obj)
+            obj.minimum = np.min(obj)
+            obj.maximum = np.max(obj)
+            obj.maxL = cls._maxL(obj, likelihood)
+            obj.maxP = cls._maxP(obj, log_likelihood=likelihood, log_prior=prior)
+            obj.weights = weights
+            obj.key_data = cls._key_data(obj)
+        except Exception:
+            obj.standard_deviation = None
+            obj.minimum, obj.maximum, obj.maxL = None, None, None
+            obj.maxP, obj.key_data = None, {}
         return obj
 
     def __reduce__(self):

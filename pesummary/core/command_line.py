@@ -1,17 +1,4 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import copy
 import os
@@ -20,6 +7,8 @@ import argparse
 import configparser
 import numpy as np
 from pesummary import conf
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class CheckFilesExistAction(argparse.Action):
@@ -381,6 +370,11 @@ def _samples_command_line_arguments(parser):
             "'posterior_samples' group. If more than one result file is "
             "passed, and only the third file requires a path_to_samples "
             "provide --path_to_samples None None path/to/samples"
+        )
+    )
+    sample_group.add_argument(
+        "--pe_algorithm", default=None, nargs="+", help=(
+            "Name of the algorithm used to generate the result file"
         )
     )
     return sample_group

@@ -1,20 +1,9 @@
-# Copyright (C) 2018 Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import numpy as np
 from pesummary.utils.decorators import array_input
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 try:
     from lalsimulation import (
@@ -24,6 +13,18 @@ try:
     from lal import MSUN_SI
 except ImportError:
     pass
+
+
+@array_input
+def viewing_angle_from_inclination(inclination):
+    """Return the viewing angle of the binary given samples for the source
+    inclination angle. For a precessing system, the source inclination angle
+    is theta_jn: the angle between the total angular momentum J and the line of
+    sight N. For a non-precessing system, the source inclination angle is
+    iota: the angle between the total orbital angular momentum L and the line
+    of sight N
+    """
+    return np.min([inclination, np.pi - inclination], axis=0)
 
 
 @array_input

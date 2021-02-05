@@ -1,9 +1,13 @@
+# Licensed under an MIT style license -- see LICENSE.md
+
 import os
 import shutil
 import numpy as np
 import pytest
 
 from pesummary.io import write, read
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class Base(object):

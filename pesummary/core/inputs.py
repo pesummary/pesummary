@@ -1,23 +1,11 @@
-# Copyrigh (C) 2019 Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 import os
 import re
 import socket
 from glob import glob
 import pkg_resources
+from pathlib import Path
 
 import math
 import numpy as np
@@ -29,6 +17,8 @@ from pesummary.utils.utils import (
     guess_url, logger, make_dir, make_cache_style_file, list_match
 )
 from pesummary import conf
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class _Input(object):
@@ -307,12 +297,11 @@ class _Input(object):
         if self._result_files is not None:
             for num, ff in enumerate(self._result_files):
                 if not os.path.isfile(ff) and "@" in ff:
-                    from pesummary.core.fetch import scp_and_read_file
+                    from pesummary.io.read import _fetch_from_remote_server
                     logger.info(
                         "Copying file: '{}' to temporary folder".format(ff)
                     )
-                    filename = scp_and_read_file(ff, read_file=False)
-                    self._result_files[num] = str(filename)
+                    self._result_files[num] = _fetch_from_remote_server(ff)
 
     @property
     def seed(self):
@@ -1399,6 +1388,30 @@ class _Input(object):
         return corner_params
 
     @property
+    def pe_algorithm(self):
+        return self._pe_algorithm
+
+    @pe_algorithm.setter
+    def pe_algorithm(self, pe_algorithm):
+        self._pe_algorithm = pe_algorithm
+        if pe_algorithm is None:
+            return
+        if len(pe_algorithm) != len(self.labels):
+            raise ValueError("Please provide an algorithm for each result file")
+        for num, (label, _algorithm) in enumerate(zip(self.labels, pe_algorithm)):
+            if "pe_algorithm" in self.file_kwargs[label]["sampler"].keys():
+                _stored = self.file_kwargs[label]["sampler"]["pe_algorithm"]
+                if _stored != _algorithm:
+                    logger.warn(
+                        "Overwriting the pe_algorithm extracted from the file "
+                        "'{}': {} with the algorithm provided from the command "
+                        "line: {}".format(
+                            self.result_files[num], _stored, _algorithm
+                        )
+                    )
+            self.file_kwargs[label]["sampler"]["pe_algorithm"] = _algorithm
+
+    @property
     def notes(self):
         return self._notes
 
@@ -1519,6 +1532,14 @@ class _Input(object):
                     files_to_copy.append(
                         [i, os.path.join(self.webdir, "config", filename)]
                     )
+        for num, _file in enumerate(self.result_files):
+            if not self.mcmc_samples:
+                filename = "{}_{}".format(self.labels[num], Path(_file).name)
+            else:
+                filename = "chain_{}_{}".format(num, Path(_file).name)
+            files_to_copy.append(
+                [_file, os.path.join(self.webdir, "samples", filename)]
+            )
         return files_to_copy
 
     @staticmethod
@@ -1790,6 +1811,7 @@ class Input(_Input):
         self.linestyles = self.opts.linestyles
         self.disable_corner = self.opts.disable_corner
         self.notes = self.opts.notes
+        self.pe_algorithm = self.opts.pe_algorithm
         self.disable_comparison = self.opts.disable_comparison
         self.disable_interactive = self.opts.disable_interactive
         self.disable_expert = self.opts.disable_expert
@@ -1962,6 +1984,18 @@ class PostProcessing(object):
         self.same_parameters = []
         if self.mcmc_samples:
             self.samples = {label: self.samples.T for label in self.labels}
+
+    @property
+    def analytic_prior_dict(self):
+        return {
+            label: "\n".join(
+                [
+                    "{} = {}".format(key, value) for key, value in
+                    self.priors["analytic"][label].items()
+                ]
+            ) if "analytic" in self.priors.keys() and label in
+            self.priors["analytic"].keys() else None for label in self.labels
+        }
 
     @property
     def same_parameters(self):

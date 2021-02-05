@@ -1,17 +1,4 @@
-# Copyright (C) 2018 Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 error_msg = (
     "Unable to install '{}'. You will not be able to use some of the inbuilt "
@@ -46,6 +33,7 @@ from .tidal import *
 from .tidal import _check_NSBH_approximant
 from .time import *
 
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 _conversion_doc = """
     Class to calculate all possible derived quantities
 
@@ -714,6 +702,17 @@ class _Conversion(object):
             samples[0], samples[1], samples[2], samples[3])
         self.append_data("chi_eff", chi_eff_samples)
 
+    def _aligned_spin_from_magnitude_tilts(self, primary=False, secondary=False):
+        if primary:
+            parameters = ["a_1", "tilt_1"]
+            param_to_add = "spin_1z"
+        elif secondary:
+            parameters = ["a_2", "tilt_2"]
+            param_to_add = "spin_2z"
+        samples = self.specific_parameter_samples(parameters)
+        spin_samples = samples[0] * np.cos(samples[1])
+        self.append_data(param_to_add, spin_samples)
+
     def _cos_tilt_1_from_tilt_1(self):
         samples = self.specific_parameter_samples("tilt_1")
         cos_tilt_1 = np.cos(samples)
@@ -723,6 +722,11 @@ class _Conversion(object):
         samples = self.specific_parameter_samples("tilt_2")
         cos_tilt_2 = np.cos(samples)
         self.append_data("cos_tilt_2", cos_tilt_2)
+
+    def _viewing_angle(self):
+        samples = self.specific_parameter_samples("theta_jn")
+        viewing_angle = viewing_angle_from_inclination(samples)
+        self.append_data("viewing_angle", viewing_angle)
 
     def _dL_from_z(self):
         samples = self.specific_parameter_samples("redshift")
@@ -1442,11 +1446,18 @@ class _Conversion(object):
             cond1 = "spin_2x" in self.parameters and "spin_2y" in self.parameters
             if "phi_2" not in self.parameters and cond1:
                 self._phi2_from_spins()
+            if "spin_1z" not in self.parameters:
+                if all(i in self.parameters for i in ["a_1", "tilt_1"]):
+                    self._aligned_spin_from_magnitude_tilts(primary=True)
+            if "spin_2z" not in self.parameters:
+                if all(i in self.parameters for i in ["a_2", "tilt_2"]):
+                    self._aligned_spin_from_magnitude_tilts(secondary=True)
             if "chi_eff" not in self.parameters:
-                if all(i in self.parameters for i in spin_components):
+                if all(i in self.parameters for i in ["spin_1z", "spin_2z"]):
                     self._chi_eff()
             if "chi_p" not in self.parameters:
-                if all(i in self.parameters for i in spin_components):
+                _chi_p_params = ["spin_1x", "spin_1y", "spin_2x", "spin_2y"]
+                if all(i in self.parameters for i in _chi_p_params):
                     self._chi_p()
             polytrope_params = ["log_pressure", "gamma_1", "gamma_2", "gamma_3"]
             if all(param in self.parameters for param in polytrope_params):
@@ -1630,6 +1641,8 @@ class _Conversion(object):
                     self._matched_filter_network_snr()
         if "theta_jn" in self.parameters and "cos_theta_jn" not in self.parameters:
             self._cos_angle("cos_theta_jn")
+        if "theta_jn" in self.parameters and "viewing_angle" not in self.parameters:
+            self._viewing_angle()
         if "iota" in self.parameters and "cos_iota" not in self.parameters:
             self._cos_angle("cos_iota")
         remove_parameters = [

@@ -1,17 +1,4 @@
-# Copyright (C) 2018  Charlie Hoy <charlie.hoy@ligo.org>
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Licensed under an MIT style license -- see LICENSE.md
 
 from glob import glob
 import os
@@ -31,6 +18,8 @@ from pesummary.utils.samples_dict import (
 from pesummary.utils.utils import logger
 from pesummary.utils.dict import load_recursively
 from pesummary.utils.decorators import deprecation
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 def write_pesummary(
@@ -185,6 +174,8 @@ class PESummary(MultiAnalysisRead):
         list of analyses stored in the result file
     weights: dict
         dictionary of weights for each sample for each analysis
+    pe_algorithm: dict
+        name of the algorithm used to generate the each analysis
 
     Methods
     -------
@@ -206,6 +197,17 @@ class PESummary(MultiAnalysisRead):
     @property
     def load_kwargs(self):
         return dict()
+
+    @property
+    def pe_algorithm(self):
+        _algorithm = {label: None for label in self.labels}
+        for num, _kwargs in enumerate(self.extra_kwargs):
+            _label = self.labels[num]
+            try:
+                _algorithm[_label] = _kwargs["sampler"]["pe_algorithm"]
+            except KeyError:
+                pass
+        return _algorithm
 
     @classmethod
     def load_file(cls, path, **kwargs):

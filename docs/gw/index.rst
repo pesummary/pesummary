@@ -112,8 +112,10 @@ for details:
     cli/summaryclassification
     ../core/cli/summaryclean
     ../core/cli/summarycombine
+    ../core/cli/summarycombine_posteriors
     ../core/cli/summarycompare
     cli/summarydetchar
+    ../core/cli/summaryextract
     cli/summarygracedb
     ../core/cli/summarymodify
     ../core/cli/summarypages

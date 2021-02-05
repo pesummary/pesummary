@@ -1,3 +1,5 @@
+# Licensed under an MIT style license -- see LICENSE.md
+
 import os
 import shutil
 import glob
@@ -8,6 +10,8 @@ from .base import read_result_file
 from pesummary.utils.utils import functions
 from pesummary.cli.summarypages import WebpageGeneration
 from pesummary.cli.summaryplots import PlotGeneration
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class Base(object):

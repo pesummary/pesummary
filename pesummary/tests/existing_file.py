@@ -1,5 +1,9 @@
+# Licensed under an MIT style license -- see LICENSE.md
+
 import argparse
 import pesummary
+
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 def command_line():
