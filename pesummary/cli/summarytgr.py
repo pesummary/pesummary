@@ -70,17 +70,6 @@ def command_line():
         choices=TESTS,
     )
     parser.add_argument(
-        "--test_kwargs",
-        dest="test_kwargs",
-        help=(
-            "Optional kwargs to pass directly to the test function. Please "
-            "provide in dictionary format kwarg:value"
-        ),
-        default={},
-        nargs="+",
-        action=DictionaryAction,
-    )
-    parser.add_argument(
         "-s",
         "--samples",
         dest="samples",
@@ -644,14 +633,14 @@ def main(args=None):
     open_files = MultiAnalysisSamplesDict(
         {_label: open_files_paths[_label].samples_dict for _label in opts.labels}
     )
-    test_kwargs = opts.test_kwargs
-    for key, value in test_kwargs.items():
-        try:
-            test_kwargs[key] = ast.literal_eval(value)
-        except ValueError:
-            pass
     test_key_data = {}
     if opts.test == "imrct":
+        test_kwargs = opts.imrct_kwargs.copy()
+        for key, value in test_kwargs.items():
+            try:
+                test_kwargs[key] = ast.literal_eval(value)
+            except ValueError:
+                pass
         if sorted(opts.labels) != ["inspiral", "postinspiral"]:
             raise ValueError(
                 "The IMRCT test requires an inspiral and postinspiral result "
@@ -679,7 +668,7 @@ def main(args=None):
                         ] = returned_extra_kwargs["meta_data"][fit]
 
         imrct_deviations, data = generate_imrct_deviation_parameters(
-            open_files, evolve_spins=opts.evolve_spins, **opts.IMRCT_kwargs
+            open_files, evolve_spins=opts.evolve_spins, **test_kwargs
         )
         make_imrct_plots(
             imrct_deviations,
