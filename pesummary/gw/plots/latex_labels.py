@@ -65,6 +65,7 @@ GWlatex_labels = {
     "total_mass_source": r"$M^{\mathrm{source}} [M_{\odot}]$",
     "cos_iota": r"$\cos{\iota}$",
     "theta_jn": r"$\theta_{JN} [\mathrm{rad}]$",
+    "viewing_angle": r"$\Theta [\mathrm{rad}]$",
     "cos_theta_jn": r"$\cos{\theta_{JN}}$",
     "lambda_1": r"$\lambda_{1}$",
     "lambda_2": r"$\lambda_{2}$",

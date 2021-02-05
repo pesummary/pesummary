@@ -41,7 +41,8 @@ def gw_parameters():
         'chirp_mass_source', 'phi_1', 'phi_2', 'cos_theta_jn', 'cos_iota',
         'peak_luminosity_non_evolved', 'final_spin_non_evolved',
         'final_mass_non_evolved', 'final_mass_source_non_evolved',
-        'radiated_energy_non_evolved', 'inverted_mass_ratio'
+        'radiated_energy_non_evolved', 'inverted_mass_ratio',
+        'viewing_angle'
     ]
     return parameters
 

@@ -759,7 +759,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 "accept": ["final", "torus"], "reject": []
             },
             "inclination": {
-                "accept": ["theta", "iota"], "reject": []
+                "accept": ["theta", "iota", "viewing"], "reject": []
             },
             "spins": {
                 "accept": ["spin", "chi_p", "chi_eff", "a_1", "a_2"],

@@ -147,6 +147,7 @@ pycbc_map = {
 pesummary_map = {
     "chirp_mass_source": "chirp_mass_source",
     "delta_lambda": "delta_lambda",
+    "viewing_angle": "viewing_angle",
     "spin_1z": "spin_1z",
     "spin_2z": "spin_2z",
     "peak_luminosity": "peak_luminosity",
