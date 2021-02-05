@@ -16,6 +16,18 @@ except ImportError:
 
 
 @array_input
+def viewing_angle_from_inclination(inclination):
+    """Return the viewing angle of the binary given samples for the source
+    inclination angle. For a precessing system, the source inclination angle
+    is theta_jn: the angle between the total angular momentum J and the line of
+    sight N. For a non-precessing system, the source inclination angle is
+    iota: the angle between the total orbital angular momentum L and the line
+    of sight N
+    """
+    return np.min([inclination, np.pi - inclination], axis=0)
+
+
+@array_input
 def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Return chi_p given samples for mass1, mass2, spin1x, spin1y, spin2x,
     spin2y

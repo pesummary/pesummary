@@ -723,6 +723,11 @@ class _Conversion(object):
         cos_tilt_2 = np.cos(samples)
         self.append_data("cos_tilt_2", cos_tilt_2)
 
+    def _viewing_angle(self):
+        samples = self.specific_parameter_samples("theta_jn")
+        viewing_angle = viewing_angle_from_inclination(samples)
+        self.append_data("viewing_angle", viewing_angle)
+
     def _dL_from_z(self):
         samples = self.specific_parameter_samples("redshift")
         distance = dL_from_z(samples, cosmology=self.cosmology)
@@ -1636,6 +1641,8 @@ class _Conversion(object):
                     self._matched_filter_network_snr()
         if "theta_jn" in self.parameters and "cos_theta_jn" not in self.parameters:
             self._cos_angle("cos_theta_jn")
+        if "theta_jn" in self.parameters and "viewing_angle" not in self.parameters:
+            self._viewing_angle()
         if "iota" in self.parameters and "cos_iota" not in self.parameters:
             self._cos_angle("cos_iota")
         remove_parameters = [
