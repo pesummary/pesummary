@@ -199,7 +199,7 @@ def _imrct_deviation_parameters_integrand_series(
                 [P_final_mass_final_spin_r_interp_object] * len(_v1),
             ]
             kwargs["multi_process"] = 1
-            _args = np.array(args).T
+            _args = np.array(args, dtype=object).T
             _P = pool.starmap(
                 _apply_args_and_kwargs,
                 zip(
