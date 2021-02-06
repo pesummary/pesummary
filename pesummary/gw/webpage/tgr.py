@@ -34,7 +34,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         test="all",
         test_key_data={},
         open_files=None,
-        links_to_pe_pages=None,
+        links_to_pe_pages=[],
         input_file_summary={},
         **kwargs
     ):
@@ -83,7 +83,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
 
     def make_navbar_for_result_page(self):
         links = self.make_navbar_for_homepage()
-        if self.links_to_pe_pages is not None:
+        if len(self.links_to_pe_pages):
             link_format = "external:{}"
             links.insert(
                 2,
