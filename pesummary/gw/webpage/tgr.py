@@ -1,6 +1,7 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 import os
+import glob
 from pesummary.core.webpage.main import _WebpageGeneration
 
 __author__ = [
@@ -75,7 +76,9 @@ class TGRWebpageGeneration(_WebpageGeneration):
         """Generate all webpages for all tests"""
         self.make_home_pages()
         if self.test == "imrct" or self.test == "all":
-            self.make_imrct_pages(make_diagnostic_plots=make_diagnostic_plots)
+            self.make_imrct_pages(
+                make_diagnostic_plots=make_diagnostic_plots
+            )
         self.make_version_page()
         self.make_logging_page()
         self.make_about_page()
@@ -83,18 +86,49 @@ class TGRWebpageGeneration(_WebpageGeneration):
 
     def make_navbar_for_result_page(self):
         links = self.make_navbar_for_homepage()
-        if len(self.links_to_pe_pages):
+        if self.test == "imrct" and len(self.links_to_pe_pages):
             link_format = "external:{}"
-            links.insert(
-                2,
-                [
-                    "PE Pages",
+            if len(self.links_to_pe_pages) > 2:
+                analysis_label = [
+                    label.split(":inspiral")[0] for label in self.samples.keys()
+                    if "inspiral" in label and "post" not in label
+                ]
+                _links = ["PE Pages"]
+                for label in analysis_label:
+                    inspiral_ind = self.labels.index(
+                        "{}:inspiral".format(label)
+                    )
+                    postinspiral_ind = self.labels.index(
+                        "{}:postinspiral".format(label)
+                    )
+                    _links.append(
+                        [
+                            label, [
+                                {
+                                    "inspiral": link_format.format(
+                                        self.links_to_pe_pages[inspiral_ind]
+                                    )
+                                },
+                                {
+                                    "postinspiral": link_format.format(
+                                        self.links_to_pe_pages[postinspiral_ind]
+                                    )
+                                }
+                            ]
+                        ]
+                    )
+                links.insert(2, _links)
+            else:
+                links.insert(
+                    2,
                     [
-                        {self.labels[0]: link_format.format(self.links_to_pe_pages[0])},
-                        {self.labels[1]: link_format.format(self.links_to_pe_pages[1])},
+                        "PE Pages",
+                        [
+                            {self.labels[0]: link_format.format(self.links_to_pe_pages[0])},
+                            {self.labels[1]: link_format.format(self.links_to_pe_pages[1])},
+                        ],
                     ],
-                ],
-            )
+                )
         return links
 
     def make_navbar_for_comparison_page(self):
@@ -121,7 +155,17 @@ class TGRWebpageGeneration(_WebpageGeneration):
         """
         html_file = self.setup_page("home", self.navbar["home"])
         html_file.make_banner("Tests of General Relativity", key="content", content=" ")
-        image_contents = [["plots/imrct_deviations_triangle_plot.png"]]
+        imrct_plots = glob.glob(
+            "{}/plots/combined_imrct_deviations_triangle_plot.png".format(
+                self.webdir
+            )
+        )
+        if len(imrct_plots):
+            image_contents = [
+                [_plot.replace(self.webdir, ".") for _plot in imrct_plots]
+            ]
+        else:
+            image_contents = [["plots/primary_imrct_deviations_triangle_plot.png"]]
         html_file = self.make_modal_carousel(
             html_file, image_contents=image_contents, unique_id=True
         )
@@ -168,38 +212,17 @@ class TGRWebpageGeneration(_WebpageGeneration):
         html_file.end_div(4)
         html_file.end_container()
         html_file.export("{}.csv".format("summary_of_tests_of_GR.csv"))
-        _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
-        _class = "row justify-content-center"
-        for key, value in self.input_file_summary.items():
-            html_file.make_banner(
-                approximant="{} Summary Table".format(key),
-                key="summary_table",
-                _style="font-size: 26px;",
-            )
-            html_file.make_container(style=_style)
-            html_file.make_div(4, _class=_class, _style=None)
-            headings = [" "] + self.key_data_headings.copy()
-            contents = []
-            for j in value.keys():
-                row = []
-                row.append(j)
-                row += self.key_data_table[key][j]
-                contents.append(row)
-            html_file.make_table(
-                headings=headings,
-                contents=contents,
-                heading_span=1,
-                accordian=False,
-                format="table-hover header-fixed",
-                sticky_header=True,
-            )
-            html_file.end_div(4)
-            html_file.end_container()
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 
     def make_imrct_pages(self, make_diagnostic_plots=False):
         """Make the IMR consistency test pages"""
+        analysis_label = [
+            label.split(":inspiral")[0] for label in self.samples.keys() if
+            "inspiral" in label and "post" not in label
+        ]
+        if analysis_label == ["inspiral"]:
+            analysis_label = ["primary"]
         pages = ["imrct"]
         self.create_blank_html_pages(pages)
         html_file = self.setup_page(
@@ -216,23 +239,29 @@ class TGRWebpageGeneration(_WebpageGeneration):
             _style="font-size: 26px;",
         )
         path = self.image_path["other"]
-        base_string = path + "imrct_{}.png"
-        image_contents = [[base_string.format("deviations_triangle_plot")]]
-        captions = [
-            [
-                (
-                    "This triangle plot shows the 2D and marginalized 1D "
-                    "posterior distributions for the fractional parameters "
-                    "fractional_final_mass and fractional_final_spin. The "
-                    "prediction from General Relativity is shown"
-                ),
-            ]
+        base_string = path + "{}_imrct_{}.png"
+        image_contents = [
+            path + base_string.format(analysis_label[num], "deviations_triangle_plot")
+            for num in range(len(analysis_label))
         ]
+        image_contents = [
+            image_contents[i:2 + i] for i in range(0, len(image_contents), 2)
+        ]
+        captions = [
+            (
+                "This triangle plot shows the 2D and marginalized 1D "
+                "posterior distributions for the fractional parameters "
+                "fractional_final_mass and fractional_final_spin for the "
+                "{} analysis. The prediction from General Relativity is "
+                "shown"
+            ).format(analysis_label[num]) for num in range(len(analysis_label))
+        ]
+        captions = [captions[i:2 + i] for i in range(0, len(captions), 2)]
         html_file = self.make_modal_carousel(
             html_file,
             image_contents,
             captions=captions,
-            cli=[[" "]],
+            cli=None,
             unique_id=True,
             extra_div=True,
             autoscale=False,
@@ -242,9 +271,12 @@ class TGRWebpageGeneration(_WebpageGeneration):
         html_file.make_container(style=_style)
         html_file.make_div(4, _class=_class, _style=None)
         _data = self.test_key_data["imrct"]
-        table_contents = [list(_data.values())]
+        headings = [" "] + list(_data[analysis_label[0]].keys())
+        table_contents = [
+            [_label] + list(_data[_label].values()) for _label in analysis_label
+        ]
         html_file.make_table(
-            headings=list(_data.keys()),
+            headings=[" "] + list(_data[analysis_label[0]].keys()),
             format="table-hover",
             heading_span=1,
             contents=table_contents,
@@ -266,28 +298,29 @@ class TGRWebpageGeneration(_WebpageGeneration):
             )
             image_contents = [
                 [
-                    base_string.format("final_mass_non_evolved_final_spin_non_evolved"),
-                    base_string.format("mass_1_mass_2"),
-                    base_string.format("a_1_a_2"),
-                ],
+                    base_string.format(_label, "final_mass_non_evolved_final_spin_non_evolved"),
+                    base_string.format(_label, "mass_1_mass_2"),
+                    base_string.format(_label, "a_1_a_2"),
+                ] for _label in analysis_label
             ]
             _base = (
                 "2D posterior distribution for {} estimated from the inspiral "
-                "and post-inspiral parts of the signal"
+                "and post-inspiral parts of the signal for analysis: {}"
             )
             captions = [
                 [
-                    _base.format("final_mass and final_spin"),
-                    _base.format("mass_1 and mass_2"),
-                    _base.format("a_1 and a_2"),
-                ],
+                    _base.format("final_mass and final_spin", _label),
+                    _base.format("mass_1 and mass_2", _label),
+                    _base.format("a_1 and a_2", _label),
+                ] for _label in analysis_label
             ]
-            cli = [[" ", " ", " "]]
+            cli = None
             html_file = self.make_modal_carousel(
                 html_file,
                 image_contents,
                 captions=captions,
                 cli=cli,
+                extra_div=True,
                 unique_id=True,
                 autoscale=True,
             )
