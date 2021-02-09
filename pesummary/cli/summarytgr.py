@@ -19,7 +19,9 @@
 import ast
 import os
 import socket
+from itertools import cycle
 import pesummary
+from pesummary import conf
 from pesummary.gw.parser import parser as gw_parser
 from pesummary.gw.webpage.tgr import TGRWebpageGeneration
 from pesummary.gw.conversions.tgr import (
@@ -145,7 +147,10 @@ def command_line():
     return parser
 
 
-def generate_imrct_deviation_parameters(samples, evolve_spins=True, **kwargs):
+def generate_imrct_deviation_parameters(
+    samples, evolve_spins=True, inspiral_string="inspiral",
+    postinspiral_string="postinspiral", **kwargs
+):
     """Generate deviation parameter pdfs for the IMR Consistency Test
 
     Parameters
@@ -171,10 +176,10 @@ def generate_imrct_deviation_parameters(samples, evolve_spins=True, **kwargs):
 
     samples_string = "final_{}_" + evolve_spins_string
     imrct_deviations = imrct_deviation_parameters_from_final_mass_final_spin(
-        samples["inspiral"][samples_string.format("mass")],
-        samples["inspiral"][samples_string.format("spin")],
-        samples["postinspiral"][samples_string.format("mass")],
-        samples["postinspiral"][samples_string.format("spin")],
+        samples[inspiral_string][samples_string.format("mass")],
+        samples[inspiral_string][samples_string.format("spin")],
+        samples[postinspiral_string][samples_string.format("mass")],
+        samples[postinspiral_string][samples_string.format("spin")],
         **kwargs,
     )
     gr_quantile = (
@@ -204,6 +209,13 @@ def make_imrct_plots(
     webdir="./",
     evolve_spins=False,
     make_diagnostic_plots=False,
+    plot_label=None,
+    inspiral_string="inspiral", postinspiral_string="postinspiral",
+    cmap="YlOrBr", levels=[0.68, 0.95], level_kwargs={"colors": ["k", "k"]},
+    xlabel=r"$\Delta M_{\mathrm{f}} / \bar{M_{\mathrm{f}}}$",
+    ylabel=r"$\Delta a_{\mathrm{f}} / \bar{a_{\mathrm{f}}}$",
+    save=True,
+    return_fig=False,
     _default_plot_kwargs=DEFAULT_PLOT_KWARGS,
     **plot_kwargs
 ):
@@ -230,32 +242,37 @@ def make_imrct_plots(
     samples_string = "final_{}_" + evolve_spins_string
     plotdir = os.path.join(webdir, "plots")
     make_dir(plotdir)
-    base_string = os.path.join(plotdir, "imrct_{}.png")
+    if plot_label is not None:
+        base_string = os.path.join(plotdir, "%s_imrct_{}.png" % (plot_label))
+    else:
+        base_string = os.path.join(plotdir, "imrct_{}.png")
     logger.debug("Creating IMRCT deviations triangle plot")
-    plot_kwargs = _default_plot_kwargs.copy()
-    plot_kwargs.update(
+    _plot_kwargs = _default_plot_kwargs.copy()
+    _plot_kwargs.update(
         {
-            "cmap": "YlOrBr",
-            "levels": [0.68, 0.95],
-            "level_kwargs": dict(colors=["k", "k"]),
-            "xlabel": r"$\Delta M_{\mathrm{f}} / \bar{M_{\mathrm{f}}}$",
-            "ylabel": r"$\Delta a_{\mathrm{f}} / \bar{a_{\mathrm{f}}}$",
+            "cmap": cmap, "levels": levels, "level_kwargs": level_kwargs,
+            "xlabel": xlabel, "ylabel": ylabel,
         }
     )
-    plot_kwargs.update(plot_kwargs)
-    fig, _, ax_2d, _ = imrct_deviations.plot(
+    _plot_kwargs.update(plot_kwargs)
+    fig, _ax1, ax_2d, _ax3 = imrct_deviations.plot(
         "final_mass_final_spin_deviations",
-        **plot_kwargs,
+        **_plot_kwargs,
     )
     ax_2d.plot(0, 0, "k+", ms=12, mew=2)
-    fig.savefig(base_string.format("deviations_triangle_plot"))
-    fig.close()
+    if save:
+        fig.savefig(base_string.format("deviations_triangle_plot"))
+        fig.close()
+    if return_fig:
+        return [fig, _ax1, ax_2d, _ax3]
     logger.debug("Finished creating IMRCT deviations triangle plot.")
 
     if make_diagnostic_plots:
         logger.info("Creating diagnostic plots")
         plot_kwargs = _default_plot_kwargs.copy()
-        plot_kwargs.update({"fill_alpha": 0.2, "labels": ["inspiral", "postinspiral"]})
+        plot_kwargs.update(
+            {"fill_alpha": 0.2, "labels": [inspiral_string, postinspiral_string]}
+        )
         parameters_to_plot = [
             [samples_string.format("mass"), samples_string.format("spin")],
             ["mass_1", "mass_2"],
@@ -388,24 +405,65 @@ def main(args=None):
                 test_kwargs[key] = ast.literal_eval(value)
             except ValueError:
                 pass
-        if sorted(opts.labels) != ["inspiral", "postinspiral"]:
+        if len(opts.labels) % 2 != 0:
+            raise ValueError(
+                "The IMRCT test requires 2 results files for each analysis. "
+            )
+        elif len(opts.labels) > 2:
+            cond = all(
+                ":inspiral" in label or ":postinspiral" in label for
+                label in opts.labels
+            )
+            if not cond:
+                raise ValueError(
+                    "To compare 2 or more analyses, please provide labels as "
+                    "'{}:inspiral' and '{}:postinspiral' where {} indicates "
+                    "the analysis label"
+                )
+            else:
+                analysis_label = [
+                    label.split(":inspiral")[0] for label in opts.labels if
+                    ":inspiral" in label and "post" not in label
+                ]
+                if len(analysis_label) != len(opts.samples) / 2:
+                    raise ValueError(
+                        "When comparing more than 2 analyses, labels must "
+                        "be of the form '{}:inspiral' and '{}:postinspiral'."
+                    )
+                logger.info(
+                    "Using the labels: {} to distinguish analyses".format(
+                        ", ".join(analysis_label)
+                    )
+                )
+        elif sorted(opts.labels) != ["inspiral", "postinspiral"]:
             raise ValueError(
                 "The IMRCT test requires an inspiral and postinspiral result "
                 "file. Please indicate which file is the inspiral and which "
                 "is postinspiral by providing these exact labels to the "
                 "summarytgr executable"
             )
+        else:
+            analysis_label = ["primary"]
+        for _arg in ["cutoff_frequency", "approximant", "links_to_pe_pages"]:
+            _attr = getattr(opts, _arg)
+            if _attr is not None and len(_attr) and len(_attr) != len(opts.labels):
+                raise ValueError(
+                    "Please provide a {} for each file".format(_arg)
+                )
         test_key_data["imrct"] = {}
         for key, sample in open_files.items():
             if "final_mass_{}".format(evolve_spins_string) not in sample.keys():
-                logger.info("Remnant properties not in samples, trying to generate them")
+                logger.info(
+                    "Remnant properties not in samples, trying to generate them"
+                )
                 returned_extra_kwargs = sample.generate_all_posterior_samples(
                     evolve_spins=evolve_spins, return_kwargs=True
                 )
                 converted_keys = sample.keys()
                 if "final_mass_{}".format(evolve_spins_string) not in converted_keys:
                     raise KeyError(
-                        "Remnant properties not in samples and cannot be generated"
+                        "Remnant properties not in samples and cannot be "
+                        "generated"
                     )
                 else:
                     logger.info("Remnant properties generated.")
@@ -414,54 +472,103 @@ def main(args=None):
                             "{} {}".format(key, fit)
                         ] = returned_extra_kwargs["meta_data"][fit]
 
-        imrct_deviations, data = generate_imrct_deviation_parameters(
-            open_files, evolve_spins=opts.evolve_spins, **test_kwargs
-        )
-        make_imrct_plots(
-            imrct_deviations,
-            open_files,
-            webdir=opts.webdir,
-            evolve_spins=opts.evolve_spins,
-            make_diagnostic_plots=opts.make_diagnostic_plots,
-        )
+        inspiral_keys = [
+            key for key in open_files.keys() if "inspiral" in key and "post"
+            not in key
+        ]
+        postinspiral_keys = [
+            key.replace("inspiral", "postinspiral") for key in inspiral_keys
+        ]
+        _imrct_deviations = []
+        cmap_cycle = cycle(conf.cmapcycle)
+        for num, _inspiral in enumerate(inspiral_keys):
+            _postinspiral = postinspiral_keys[num]
+            _samples = open_files[[_inspiral, _postinspiral]]
+            imrct_deviations, data = generate_imrct_deviation_parameters(
+                _samples, evolve_spins=opts.evolve_spins,
+                inspiral_string=_inspiral, postinspiral_string=_postinspiral,
+                **test_kwargs
+            )
+            _imrct_deviations.append(imrct_deviations)
+            _legend_kwargs = {}
+            if len(analysis_label) > 1:
+                _legend_kwargs = {
+                    "legend": True, "label": analysis_label[num],
+                    "legend_kwargs": {"frameon": True}
+                }
+            make_imrct_plots(
+                imrct_deviations,
+                _samples,
+                plot_label=analysis_label[num],
+                webdir=opts.webdir,
+                cmap=next(cmap_cycle),
+                evolve_spins=opts.evolve_spins,
+                make_diagnostic_plots=opts.make_diagnostic_plots,
+                inspiral_string=_inspiral, postinspiral_string=_postinspiral,
+                **_legend_kwargs
+            )
+            frequency_dict = dict()
+            approximant_dict = dict()
+            zipped = zip(
+                [opts.cutoff_frequency, opts.approximant],
+                [frequency_dict, approximant_dict]
+            )
+            _inspiral_string = inspiral_keys[num]
+            _postinspiral_string = postinspiral_keys[num]
+            for _list, _dict in zipped:
+                if _list is not None and len(_list) == len(opts.labels):
+                    inspiral_ind = opts.labels.index(_inspiral_string)
+                    postinspiral_ind = opts.labels.index(_postinspiral_string)
+                    _dict["inspiral"] = _list[inspiral_ind]
+                    _dict["postinspiral"] = _list[postinspiral_ind]
+                elif _list is not None:
+                    raise ValueError(
+                        "Please provide a 'cutoff_frequency' and 'approximant' "
+                        "for each file"
+                    )
+                else:
+                    try:
+                        if _list == opts.cutoff_frequency:
+                            _dict["inspiral"] = float(
+                                open_files[_inspiral_string].config["maximum-frequency"]
+                            )
+                            _dict["postinspiral"] = float(
+                                open_files[_postinspiral_string].config["minimum-frequency"]
+                            )
+                        elif _list == opts.approximant:
+                            _dict["inspiral"] = float(
+                                open_files[_inspiral_string].config["config"]
+                            )
+                            _dict["postinspiral"] = float(
+                                open_files[_postinspiral_string].config["config"]
+                            )
+                    except (AttributeError, KeyError):
+                        _dict["inspiral"] = None
+                        _dict["postinspiral"] = None
 
-        frequency_dict = dict()
-        approximant_dict = dict()
-        for _list, _dict in zip(
-            [opts.cutoff_frequency, opts.approximant], [frequency_dict, approximant_dict]
-        ):
-            if _list is not None:
-                if len(_list) == 1:
-                    _dict["inspiral"] = _list[0]
-                    _dict["postinspiral"] = _list[0]
-                elif len(_list) == 2:
-                    for _label, _list_element in zip(opts.labels, _list):
-                        _dict[_label] = _list_element
-            else:
-                try:
-                    if _list == opts.cutoff_frequency:
-                        _dict["inspiral"] = float(
-                            open_files["inspiral"].config["maximum-frequency"]
-                        )
-                        _dict["postinspiral"] = float(
-                            open_files["postinspiral"].config["minimum-frequency"]
-                        )
-                    elif _list == opts.approximant:
-                        _dict["inspiral"] = float(open_files["inspiral"].config["config"])
-                        _dict["postinspiral"] = float(
-                            open_files["postinspiral"].config["config"]
-                        )
-                except (AttributeError, KeyError):
-                    _dict["inspiral"] = None
-                    _dict["postinspiral"] = None
+            data["inspiral maximum frequency (Hz)"] = frequency_dict["inspiral"]
+            data["postinspiral mininum frequency (Hz)"] = frequency_dict["postinspiral"]
 
-        data["inspiral maximum frequency (Hz)"] = frequency_dict["inspiral"]
-        data["postinspiral mininum frequency (Hz)"] = frequency_dict["postinspiral"]
+            for key in ["inspiral", "postinspiral"]:
+                data["{} approximant".format(key)] = approximant_dict[key]
+            test_key_data["imrct"][analysis_label[num]] = data
 
-        for key in ["inspiral", "postinspiral"]:
-            data["{} approximant".format(key)] = approximant_dict[key]
-
-        test_key_data["imrct"].update(data)
+        if len(inspiral_keys) > 1:
+            fig = None
+            colors=cycle(conf.colorcycle)
+            for num, _samples in enumerate(_imrct_deviations):
+                save = False
+                if num == len(_imrct_deviations) - 1:
+                    save = True
+                fig = make_imrct_plots(
+                    _samples, {}, webdir=opts.webdir,
+                    evolve_spins=opts.evolve_spins, make_diagnostic_plots=False,
+                    plot_label="combined", cmap="off", levels=[0.95],
+                    level_kwargs={"colors": [next(colors)]},
+                    existing_figure=fig, save=save, return_fig=True,
+                    legend=True, label=analysis_label[num],
+                    legend_kwargs={"frameon": True}
+                )
         if not len(opts.links_to_pe_pages):
             try:
                 links_to_pe_pages = [
