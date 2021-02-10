@@ -259,3 +259,111 @@ class PESummaryDeprecated(PESummary):
         data["psd"] = psd
 
         return data
+
+
+class TGRPESummary(PESummary):
+    """This class handles TGR PESummary result files
+
+    Parameters
+    ----------
+    path_to_results_file: str
+        path to the results file you wish to load
+
+    Attributes
+    ----------
+    parameters: list
+        list of parameters stored in the result file
+    converted_parameters: list
+        list of parameters that have been derived from the sampled distributions
+    samples: 2d list
+        list of samples stored in the result file
+    samples_dict: dict
+        dictionary of samples stored in the result file keyed by parameters
+    labels: list
+        list of analyses stored in the result file
+    imrct_deviation: dict
+        dictionary of pesummary.utils.probability_dict.ProbabilityDict2D
+        objects, one for each analysis
+    """
+    def __init__(self, path_to_results_file, **kwargs):
+        super(PESummary, self).__init__(
+            path_to_results_file=path_to_results_file
+        )
+
+    def load(self, *args, **kwargs):
+        super(TGRPESummary, self).load(*args, **kwargs)
+        self.imrct_deviation = {}
+        if "imrct_deviation" in self.data.keys():
+            if len(self.data["imrct_deviation"]):
+                from pesummary.utils.probability_dict import ProbabilityDict2D
+                analysis_label = [
+                    label.split(":inspiral")[0] for label in self.labels
+                    if "inspiral" in label and "post" not in label
+                ]
+                self.imrct_deviation = {
+                    label: ProbabilityDict2D(
+                        {
+                            "final_mass_final_spin_deviations": [
+                                *self.data["imrct_deviation"][num]
+                            ]
+                        }
+                    ) for num, label in enumerate(analysis_label)
+                }
+                if len(analysis_label) == 1:
+                    self.imrct_deviation = self.imrct_deviation["inspiral"]
+            else:
+                self.imrct_deviation = {}
+
+    @staticmethod
+    def _grab_data_from_dictionary(dictionary):
+        """
+        """
+        labels = list(dictionary.keys())
+        if "version" in labels:
+            labels.remove("version")
+
+        history_dict = None
+        if "history" in labels:
+            history_dict = dictionary["history"]
+            labels.remove("history")
+        parameter_list, sample_list, imrct_deviation = [], [], []
+        _labels = []
+        for num, label in enumerate(labels):
+            if label == "version" or label == "history":
+                continue
+            data, = load_recursively(label, dictionary)
+            posterior_samples = data["posterior_samples"]
+            if "imrct" in data.keys():
+                for analysis in ["inspiral", "postinspiral"]:
+                    if len(labels) > 1:
+                        _labels.append("{}:{}".format(label, analysis))
+                    else:
+                        _labels.append(analysis)
+                    parameters = [
+                        j for j in posterior_samples[analysis].dtype.names
+                    ]
+                    samples = [
+                        np.array(j.tolist()) for j in posterior_samples[analysis]
+                    ]
+                    if isinstance(parameters[0], bytes):
+                        parameters = [
+                            parameter.decode("utf-8") for parameter in parameters
+                        ]
+                    parameter_list.append(parameters)
+                    sample_list.append(samples)
+                imrct_deviation.append(
+                    [
+                        data["imrct"]["final_mass_deviation"],
+                        data["imrct"]["final_spin_deviation"],
+                        data["imrct"]["pdf"]
+                    ]
+                )
+        labels = _labels
+        return {
+            "parameters": parameter_list,
+            "samples": sample_list,
+            "injection": None,
+            "labels": labels,
+            "history": history_dict,
+            "imrct_deviation": imrct_deviation
+        }

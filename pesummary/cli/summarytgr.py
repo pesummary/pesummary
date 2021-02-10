@@ -24,6 +24,7 @@ import pesummary
 from pesummary import conf
 from pesummary.gw.parser import parser as gw_parser
 from pesummary.gw.webpage.tgr import TGRWebpageGeneration
+from pesummary.gw.file.meta_file import TGRMetaFile
 from pesummary.gw.conversions.tgr import (
     imrct_deviation_parameters_from_final_mass_final_spin,
 )
@@ -555,7 +556,7 @@ def main(args=None):
 
         if len(inspiral_keys) > 1:
             fig = None
-            colors=cycle(conf.colorcycle)
+            colors = cycle(conf.colorcycle)
             for num, _samples in enumerate(_imrct_deviations):
                 save = False
                 if num == len(_imrct_deviations) - 1:
@@ -589,7 +590,14 @@ def main(args=None):
             links_to_pe_pages = [
                 "../pe_pages/html/{0}_{0}.html".format(label) for label in opts.labels
             ]
-
+    samplesdir = os.path.join(opts.webdir, "samples")
+    make_dir(samplesdir)
+    TGRMetaFile(
+        open_files, analysis_label, webdir=opts.webdir, imrct_data={
+            label: _imrct_deviations[num] for num, label in
+            enumerate(analysis_label)
+        }
+    )
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
         opts.webdir,
