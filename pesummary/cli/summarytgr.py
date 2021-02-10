@@ -262,7 +262,7 @@ def make_imrct_plots(
     )
     ax_2d.plot(0, 0, "k+", ms=12, mew=2)
     if save:
-        fig.savefig(base_string.format("deviations_triangle_plot"))
+        fig.savefig(base_string.format("deviations_triangle_plot"), bbox_inches="tight")
         fig.close()
     if return_fig:
         return [fig, _ax1, ax_2d, _ax3]
