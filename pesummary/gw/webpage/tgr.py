@@ -72,6 +72,10 @@ class TGRWebpageGeneration(_WebpageGeneration):
             self.input_file_summary = self.key_data
         self.copy_css_and_js_scripts()
 
+    @property
+    def _metafile(self):
+        return "tgr_samples.h5"
+
     def generate_webpages(self, make_diagnostic_plots=False):
         """Generate all webpages for all tests"""
         self.make_home_pages()
@@ -82,6 +86,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         self.make_version_page()
         self.make_logging_page()
         self.make_about_page()
+        self.make_downloads_page()
         self.generate_specific_javascript()
 
     def make_navbar_for_result_page(self):
@@ -326,3 +331,27 @@ class TGRWebpageGeneration(_WebpageGeneration):
             )
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
+
+    def _make_downloads_page(self, pages):
+        """Make a page with links to files which can be downloaded
+
+        Parameters
+        ----------
+        pages: list
+            list of pages you wish to create
+        """
+        return super(TGRWebpageGeneration, self)._make_downloads_page(
+            pages,fix_bottom=True
+        )
+
+    def _make_entry_in_downloads_table(self, html_file, label, num, base_string):
+        """Make a label specific entry into the downloads table
+
+        Parameters
+        ----------
+        label: str
+            the label you wish to add to the downloads table
+        base_string: str
+            the download string
+        """
+        return
