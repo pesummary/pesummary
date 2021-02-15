@@ -204,6 +204,13 @@ class _WebpageGeneration(object):
                 )
 
     @property
+    def _metafile(self):
+        return (
+            "posterior_samples.json" if not self.hdf5 else
+            "posterior_samples.h5"
+        )
+
+    @property
     def _total_number_of_labels(self):
         _number_of_labels = 0
         for item in [self.labels, self.existing_labels]:
@@ -1451,7 +1458,7 @@ class _WebpageGeneration(object):
         self.create_blank_html_pages(pages)
         self._make_downloads_page(pages)
 
-    def _make_downloads_page(self, pages):
+    def _make_downloads_page(self, pages, fix_bottom=False):
         """Make a page with links to files which can be downloaded
 
         Parameters
@@ -1470,16 +1477,12 @@ class _WebpageGeneration(object):
         base_string = "{} can be downloaded <a href={} download>here</a>"
         style = "margin-top:{}; margin-bottom:{};"
         headings = ["Description"]
-        metafile = (
-            "posterior_samples.json" if not self.hdf5 else "posterior_samples.h5"
-        )
-
         metafile_row = [
             [
                 base_string.format(
                     "The complete metafile containing all information "
                     "about the analysis",
-                    self.results_path["other"] + metafile
+                    self.results_path["other"] + self._metafile
                 )
             ]
         ]
@@ -1520,11 +1523,14 @@ class _WebpageGeneration(object):
             table_contents = self._make_entry_in_downloads_table(
                 html_file, i, num, base_string
             )
-            html_file.make_table(
-                headings=headings, contents=table_contents, accordian=False
-            )
+            if table_contents is not None:
+                html_file.make_table(
+                    headings=headings, contents=table_contents, accordian=False
+                )
         html_file.end_container()
-        html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.make_footer(
+            user=self.user, rundir=self.webdir, fix_bottom=fix_bottom
+        )
         html_file.close()
 
     def _make_entry_in_downloads_table(self, html_file, label, num, base_string):
