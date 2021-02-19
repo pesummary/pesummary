@@ -555,9 +555,11 @@ class TestSummaryTGR(Base):
         """Test the `summarytgr` executable for a random result file
         """
         command_line = (
-            "summarytgr --webdir .outdir --samples --test imrct "
-            ".outdir/bilby.json .outdir/bilby.json --labels "
-            "inspiral postinspiral --make-diagnostic-plots"
+            "summarytgr --webdir .outdir "
+            " --samples .outdir/bilby.json .outdir/bilby.json "
+            " --test imrct "
+            " --labels inspiral postinspiral "
+            " --make-diagnostic-plots"
         )
 
         self.launch(command_line)

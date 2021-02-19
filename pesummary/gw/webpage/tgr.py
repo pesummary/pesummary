@@ -341,7 +341,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
             list of pages you wish to create
         """
         return super(TGRWebpageGeneration, self)._make_downloads_page(
-            pages,fix_bottom=True
+            pages, fix_bottom=True
         )
 
     def _make_entry_in_downloads_table(self, html_file, label, num, base_string):

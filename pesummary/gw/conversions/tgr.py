@@ -169,7 +169,24 @@ def _imrct_deviation_parameters_integrand_series(
     multi_process=4,
     **kwargs
 ):
-    """"""
+    """
+    Creates the over the deviation parameter space.
+
+    Parameters
+    ----------
+    final_mass: np.ndarray
+        samples drawn from the final mass posterior distribution
+    final_spin: np.ndarray
+        samples drawn from the final spin posterior distribution
+    v1: np.ndarray
+        array of delta_final_mass/final_mass_bar values
+    v2: np.ndarray
+        array of delta_final_spin/final_spin_bar values
+    P_final_mass_final_spin_i_interp_object:
+        interpolated P_i(final_mass, final_spin)
+    P_final_massfinal_spin_r_interp_object:
+        interpolated P_r(final_mass, final_spin)
+    """
     P = np.zeros(shape=(len(final_mass), len(final_mass)))
     if multi_process == 1:
         logger.debug("Performing calculation on a single cpu. This may take some " "time")
@@ -261,13 +278,26 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         Number of equally spaced bins between [-final_mass_deviation_lim,
         final_mass_deviation_lim] and [-final_spin_deviation_lim,
         final_spin_deviation_lim]
+    multi_process: int, optional
+        Number of parallel processes
+    use_kde: bool, optional
+        If `True`, uses kde instead of interpolation
+    kde: method, optional
+        KDE method to use
+    kde_kwargs: dict, optional
+        Arguments to be passed to the KDE method
+    interp_method: method, optional
+        Interpolation method to use
+    interp_kwargs: dict, optional
+        Arguments to be passed to the interpolation method
     vectorize: Bool, optional
         if True, use vectorized imrct_deviation_parameters_integrand
-        function. This is quicker but does consume more memory. Default False
+        function. This is quicker but does consume more memory. Default: False
 
     Returns
     -------
-    fill this in later
+    imrct_deviations: ProbabilityDict2d
+        Contains the 2d pdf of the IMRCT deviation parameters
     """
     # Find the maximum values
     final_mass_lim = np.max(np.append(final_mass_inspiral, final_mass_postinspiral))
