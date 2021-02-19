@@ -559,16 +559,25 @@ class _GWInput(_Input):
         for num, i in enumerate(list(self.samples.keys())):
             classifications[i] = get_classifications(self.samples[i])
         if self.mcmc_samples:
-            logger.debug(
-                "Averaging classification probability across mcmc samples"
-            )
-            classifications[self.labels[0]] = {
-                prior: {
-                    key: np.round(np.mean(
-                        [val[prior][key] for val in classifications.values()]
-                    ), 3) for key in _probs.keys()
-                } for prior, _probs in list(classifications.values())[0].items()
-            }
+            if any(_probs is None for _probs in classifications.values()):
+                classifications[self.labels[0]] = None
+                logger.warn(
+                    "Unable to average classification probabilities across "
+                    "mcmc chains because one or more chains failed to estimate "
+                    "classifications"
+                )
+            else:
+                logger.debug(
+                    "Averaging classification probability across mcmc samples"
+                )
+                classifications[self.labels[0]] = {
+                    prior: {
+                        key: np.round(np.mean(
+                            [val[prior][key] for val in classifications.values()]
+                        ), 3) for key in _probs.keys()
+                    } for prior, _probs in
+                    list(classifications.values())[0].items()
+                }
         self._pepredicates_probs = classifications
 
     @property
@@ -589,16 +598,24 @@ class _GWInput(_Input):
             else:
                 probabilities[i] = None
         if self.mcmc_samples:
-            logger.debug(
-                "Averaging em_bright probability across mcmc samples"
-            )
-            probabilities[self.labels[0]] = {
-                prior: {
-                    key: np.round(np.mean(
-                        [val[prior][key] for val in probabilities.values()]
-                    ), 3) for key in _probs.keys()
-                } for prior, _probs in list(probabilities.values())[0].items()
-            }
+            if any(_probs is None for _probs in probabilities.values()):
+                probabilities[self.labels[0]] = None
+                logger.warn(
+                    "Unable to average em_bright probabilities across "
+                    "mcmc chains because one or more chains failed to estimate "
+                    "probabilities"
+                )
+            else:
+                logger.debug(
+                    "Averaging em_bright probability across mcmc samples"
+                )
+                probabilities[self.labels[0]] = {
+                    prior: {
+                        key: np.round(np.mean(
+                            [val[prior][key] for val in probabilities.values()]
+                        ), 3) for key in _probs.keys()
+                    } for prior, _probs in list(probabilities.values())[0].items()
+                }
         self._pastro_probs = probabilities
 
     @property
