@@ -282,7 +282,10 @@ class page(Base):
         """
         self._footer(user, rundir, fix_bottom=fix_bottom)
 
-    def make_banner(self, approximant=None, key="Summary", _style=None, link=None):
+    def make_banner(
+        self, approximant=None, key="Summary", _style=None, link=None,
+        custom=""
+    ):
         """Make a banner for the document.
         """
         self.make_div(indent=2, _class='banner', _style=_style)
@@ -388,6 +391,8 @@ class page(Base):
             self.add_content(
                 "Below is information about how these pages were generated"
             )
+        elif key == "custom":
+            self.add_content(custom)
         else:
             self.add_content(
                 "The figures below show the plots for %s" % (approximant))

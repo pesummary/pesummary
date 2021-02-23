@@ -3,7 +3,7 @@
 import os
 import numpy as np
 import h5py
-from pesummary.utils.parameters import Parameters
+from pesummary.utils.parameters import MultiAnalysisParameters, Parameters
 from pesummary.utils.samples_dict import (
     MultiAnalysisSamplesDict, SamplesDict, MCMCSamplesDict, Array
 )
@@ -220,7 +220,11 @@ class Read(object):
         self.data = _data
         if _data is None:
             self.data = self._load(function, **kwargs)
-        self.parameters = Parameters(self.data["parameters"])
+        if isinstance(self.data["parameters"][0], list):
+            _cls = MultiAnalysisParameters
+        else:
+            _cls = Parameters
+        self.parameters = _cls(self.data["parameters"])
         self.converted_parameters = []
         self.samples = self.data["samples"]
         if "mcmc_samples" in self.data.keys():

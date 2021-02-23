@@ -708,7 +708,16 @@ class _WebpageGeneration(object):
                     approximant=i, background_colour=self.colors[num],
                     histogram_download=False, toggle=self.expert_plots
                 )
-                html_file.make_banner(approximant=i, key=i)
+                if j.description != "Unknown parameter description":
+                    _custom = (
+                        "The figures below show the plots for {}: {}"
+                    )
+                    html_file.make_banner(
+                        approximant=i, key="custom",
+                        custom=_custom.format(j, j.description)
+                    )
+                else:
+                    html_file.make_banner(approximant=i, key=i)
                 path = self.image_path["other"]
                 contents = [
                     [path + "{}_1d_posterior_{}.png".format(i, j)],
