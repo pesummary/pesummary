@@ -113,13 +113,18 @@ class _TGRMetaFile(_GWMetaFile):
     """Class to create a single file to contain TGR data
     """
     def __init__(
-        self, samples, labels, imrct_data=None, webdir=None, outdir=None
+        self, samples, labels, imrct_data=None, webdir=None, outdir=None,
+        file_kwargs={}
     ):
         super(_TGRMetaFile, self).__init__(
             samples, labels, None, None, None, None, webdir=webdir,
             outdir=outdir, filename="tgr_samples.h5", hdf5=True
         )
         self.tgr_data = {"imrct": imrct_data}
+        self.file_kwargs = file_kwargs
+        for key in self.tgr_data.keys():
+            if key not in self.file_kwargs:
+                self.file_kwargs[key] = {}
 
     @staticmethod
     def convert_posterior_samples_to_numpy(labels, samples, mcmc_samples=False):
@@ -198,6 +203,10 @@ class _TGRMetaFile(_GWMetaFile):
                     "final_spin_deviation": _imrct_data.y,
                     "pdf": _imrct_data.probs,
                 }
+                _kwargs = self.file_kwargs["imrct"]
+                if label in _kwargs.keys():
+                    _kwargs = _kwargs[label]
+                dictionary[label]["imrct"]["meta_data"] = _kwargs
         self.data = dictionary
 
 
@@ -276,11 +285,13 @@ class TGRMetaFile(_GWMetaFile):
     """Class to create a single file to contain TGR data
     """
     def __init__(
-        self, samples, labels, imrct_data=None, webdir=None, outdir=None
+        self, samples, labels, imrct_data=None, webdir=None, outdir=None,
+        file_kwargs={}
     ):
         logger.info("Starting to generate the meta file")
         meta_file = _TGRMetaFile(
-            samples, labels, imrct_data=imrct_data, webdir=webdir, outdir=outdir
+            samples, labels, imrct_data=imrct_data, webdir=webdir,
+            outdir=outdir, file_kwargs=file_kwargs
         )
         meta_file.make_dictionary()
         meta_file.save_to_hdf5(
