@@ -618,7 +618,7 @@ def main(args=None):
         webdir=opts.webdir,
         imrct_data={
             label: _imrct_deviations[num] for num, label in enumerate(analysis_label)
-        },
+        }, file_kwargs=test_key_data
     )
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(

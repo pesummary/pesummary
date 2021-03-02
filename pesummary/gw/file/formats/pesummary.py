@@ -281,6 +281,8 @@ class TGRPESummary(PESummary):
         dictionary of samples stored in the result file keyed by parameters
     labels: list
         list of analyses stored in the result file
+    file_kwargs: dict
+        dictionary of kwargs associated with each label
     imrct_deviation: dict
         dictionary of pesummary.utils.probability_dict.ProbabilityDict2D
         objects, one for each analysis
@@ -327,6 +329,7 @@ class TGRPESummary(PESummary):
             history_dict = dictionary["history"]
             labels.remove("history")
         parameter_list, sample_list, imrct_deviation = [], [], []
+        file_kwargs = {}
         _labels = []
         for num, label in enumerate(labels):
             if label == "version" or label == "history":
@@ -334,6 +337,11 @@ class TGRPESummary(PESummary):
             data, = load_recursively(label, dictionary)
             posterior_samples = data["posterior_samples"]
             if "imrct" in data.keys():
+                if "meta_data" in data["imrct"].keys():
+                    _meta_data = data["imrct"]["meta_data"]
+                else:
+                    _meta_data = {}
+                file_kwargs[label] = _meta_data
                 for analysis in ["inspiral", "postinspiral"]:
                     if len(labels) > 1:
                         _labels.append("{}:{}".format(label, analysis))
@@ -365,5 +373,6 @@ class TGRPESummary(PESummary):
             "injection": None,
             "labels": labels,
             "history": history_dict,
-            "imrct_deviation": imrct_deviation
+            "imrct_deviation": imrct_deviation,
+            "kwargs": file_kwargs
         }

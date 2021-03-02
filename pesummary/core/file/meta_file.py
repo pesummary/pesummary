@@ -210,7 +210,11 @@ class _MetaFile(object):
         if self.history is None:
             from pesummary.utils.utils import history_dictionary
 
-            self.history = history_dictionary(creator='')
+            try:
+                _user = os.environ["USER"]
+            except KeyError:
+                _user = ''
+            self.history = history_dictionary(creator=_user)
         self.priors = priors
         self.existing_version = existing_version
         self.existing_labels = existing_label
@@ -263,7 +267,7 @@ class _MetaFile(object):
 
     @property
     def meta_file(self):
-        return os.path.join(self.outdir, self.file_name)
+        return os.path.join(os.path.abspath(self.outdir), self.file_name)
 
     def make_dictionary(self):
         """Wrapper function for _make_dictionary
