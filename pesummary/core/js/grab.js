@@ -98,8 +98,8 @@ function grab_html(param, label="None") {
             var re = new RegExp(approx, "g")
             var new_filename = filename.replace(re, param);
         }
-        setTimeout(function() {window.location = "error.html"}, 150)
-        window.location = new_filename
+        setTimeout(function() {window.location = "error.html"}, 450)
+        window.location = "./" + new_filename;
     } else {
         if ( param == approximant ) {
  
