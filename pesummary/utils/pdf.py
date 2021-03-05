@@ -97,6 +97,8 @@ class DiscretePDF(rv_sample):
         InterpolatedPDF object
     percentile:
         calculate a percentile from the discrete PDF
+    write:
+        write the discrete PDF to file using the pesummary.io.write module
 
     Examples
     --------
@@ -167,6 +169,23 @@ class DiscretePDF(rv_sample):
         """
         from pesummary.utils.array import Array
         return Array.percentile(self.x, weights=self.probs, percentile=p)
+
+    def write(self, *args, **kwargs):
+        """Write the discrete PDF to file using the pesummary.io.write module
+
+        Parameters
+        ----------
+        *args: tuple
+            all args passed to pesummary.io.write function
+        **kwargs: dict, optional
+            all kwargs passed to the pesummary.io.write function
+        """
+        from pesummary.io import write
+        if "dataset_name" not in kwargs.keys():
+            kwargs["dataset_name"] = "discrete_pdf"
+        write(
+            ["x", "PDF"], np.array([self.x, self.probs]).T, *args, **kwargs
+        )
 
 
 class DiscretePDF2D(object):
@@ -329,6 +348,32 @@ class DiscretePDF2D(object):
         )(idx)
         return level
 
+    def write(self, *args, include_1d=False, **kwargs):
+        """Write the discrete PDF to file using the pesummary.io.write module
+
+        Parameters
+        ----------
+        *args: tuple
+            all args passed to pesummary.io.write function
+        include_1d: Bool, optional
+            if True, save the 1D marginalized as well as the 2D PDF to file
+        **kwargs: dict, optional
+            all kwargs passed to the pesummary.io.write function
+        """
+        from pesummary.io import write
+        if not include_1d:
+            if "dataset_name" not in kwargs.keys():
+                kwargs["dataset_name"] = "discrete_pdf"
+            X, Y = np.meshgrid(self.x, self.y)
+            write(
+                ["x", "y", "PDF"],
+                np.array([X.ravel(), Y.ravel(), self.probs.flatten()]).T, *args,
+                **kwargs
+            )
+        else:
+            _pdf = self.marginalize()
+            _pdf.write(*args, **kwargs)
+
 
 class DiscretePDF2Dplus1D(object):
     """Class to handle 2D discrete probabilities alongside 1D discrete
@@ -360,6 +405,11 @@ class DiscretePDF2Dplus1D(object):
     probs_xy: DiscretePDF2D
         the joint probability density function for the x and y axes stored as
         DiscretePDF2D object
+
+    Methods
+    -------
+    write:
+        write the discrete PDF to file using the pesummary.io.write module
     """
     def __init__(self, x, y, probabilities, **kwargs):
         self.x = x
@@ -388,3 +438,34 @@ class DiscretePDF2Dplus1D(object):
             else:
                 self.probs_xy = DiscretePDF2D(self.x, self.y, _p)
                 self.probs[num] = self.probs_xy
+
+    def write(self, *args, **kwargs):
+        """Write the 1D and 2D discrete PDF to file using the pesummary.io.write
+        module
+
+        Parameters
+        ----------
+        *args: tuple
+            all args passed to pesummary.io.write function
+        **kwargs: dict, optional
+            all kwargs passed to the pesummary.io.write function
+        """
+        if "filename" in kwargs.keys() and not isinstance(kwargs["filename"], dict):
+            raise ValueError(
+                "Please provide filenames as a dictionary with keys '1d' and "
+                "'2d'"
+            )
+        elif "filename" in kwargs.keys():
+            if not all(k in ["1d", "2d"] for k in kwargs["filename"].keys()):
+                raise ValueError("Filename must be keyed by '1d' and/or '2d'")
+        else:
+            _format = "dat" if "file_format" not in kwargs.keys() else kwargs[
+                "file_format"
+            ]
+            _default = "pesummary_{}_pdf.%s" % (_format)
+            kwargs["filename"] = {
+                "1d": _default.format("1d"), "2d": _default.format("2d")
+            }
+        _filenames = kwargs.pop("filename")
+        self.probs_x.write(*args, filename=_filenames["1d"], **kwargs)
+        self.probs_xy.write(*args, filename=_filenames["2d"], **kwargs)
