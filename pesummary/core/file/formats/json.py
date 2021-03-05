@@ -112,7 +112,8 @@ def read_json(path, path_to_samples=None, decoder=PESummaryJsonDecoder):
 
 def _write_json(
     parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
-    indent=4, sort_keys=True, cls=PESummaryJsonEncoder, **kwargs
+    indent=4, sort_keys=True, dataset_name="posterior_samples",
+    cls=PESummaryJsonEncoder, **kwargs
 ):
     """Write a set of samples to a json file
 
@@ -135,6 +136,8 @@ def _write_json(
         The indentation to use in json.dump. Default 4
     sort_keys: Bool, optional
         Whether or not to sort the keys in json.dump. Default True
+    dataset_name: str, optional
+        name of the dataset to store a set of samples. Default posterior_samples
     cls: class, optional
         Class to use as the JsonEncoder. Default PESumamryJsonEncoder
     """
@@ -147,7 +150,7 @@ def _write_json(
     )
     _samples = np.array(samples).T
     data = {
-        "posterior_samples": {
+        dataset_name: {
             param: _samples[num] for num, param in enumerate(parameters)
         }
     }

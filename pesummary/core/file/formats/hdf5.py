@@ -128,7 +128,7 @@ def _read_hdf5_with_h5py(path, remove_params=None, path_to_samples=None):
 
 def _write_hdf5(
     parameters, samples, outdir="./", label=None, filename=None, overwrite=False,
-    **kwargs
+    dataset_name="posterior_samples", **kwargs
 ):
     """Write a set of samples to a hdf5 file
 
@@ -147,6 +147,8 @@ def _write_hdf5(
         The name of the file that you wish to write
     overwrite: Bool, optional
         If True, an existing file of the same name will be overwritten
+    dataset_name: str, optional
+        name of the dataset to store a set of samples. Default posterior_samples
     """
     from pesummary.utils.samples_dict import SamplesDict
     from pesummary.utils.utils import check_filename
@@ -159,7 +161,7 @@ def _write_hdf5(
     samples = SamplesDict(parameters, np.array(samples).T)
     _samples = samples.to_structured_array()
     with h5py.File(filename, "w") as f:
-        f.create_dataset("posterior_samples", data=_samples)
+        f.create_dataset(dataset_name, data=_samples)
 
 
 def write_hdf5(
