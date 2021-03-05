@@ -709,6 +709,7 @@ def _1d_comparison_histogram_plot(
             _default_inj_kwargs={"linewidth": 4., "linestyle": "-", "alpha": 0.4}
         )
         handles.append(mlines.Line2D([], [], color=colors[num], label=labels[num]))
+    ax = fig.gca()
     ncols = number_of_columns_for_legend(labels)
     legend = ax.legend(handles=handles, ncol=ncols, **legend_kwargs)
     for num, legobj in enumerate(legend.legendHandles):
@@ -716,6 +717,7 @@ def _1d_comparison_histogram_plot(
         legobj.set_linestyle(linestyles[num])
     ax.set_xlabel(latex_label)
     ax.set_ylabel("Probability Density")
+    ax.autoscale(axis='x')
     ax.grid(b=grid)
     fig.tight_layout()
     return fig
