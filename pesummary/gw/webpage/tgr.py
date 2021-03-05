@@ -159,7 +159,9 @@ class TGRWebpageGeneration(_WebpageGeneration):
             list of pages that you wish to create
         """
         html_file = self.setup_page("home", self.navbar["home"])
-        html_file.make_banner("Tests of General Relativity", key="content", content=" ")
+        html_file.make_banner(
+            "Tests of General Relativity", custom=" ", key="custom"
+        )
         imrct_plots = glob.glob(
             "{}/plots/combined_imrct_deviations_triangle_plot.png".format(
                 self.webdir
@@ -179,8 +181,8 @@ class TGRWebpageGeneration(_WebpageGeneration):
         )
         html_file.make_banner(
             approximant="Summary Statistics",
-            key="content",
-            content=_banner_desc,
+            key="custom",
+            custom=_banner_desc,
             _style="font-size: 26px;",
         )
         _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
@@ -234,13 +236,13 @@ class TGRWebpageGeneration(_WebpageGeneration):
             "imrct", self.navbar["result_page"], title="IMR Consistency Test"
         )
         html_file.make_banner(
-            approximant="IMR Consistency Test", key="content", content=" "
+            approximant="IMR Consistency Test", key="custom", custom=" "
         )
         desc = "Below we show the executive plots for the IMR consistency test"
         html_file.make_banner(
             approximant="Executive plots",
-            key="content",
-            content=desc,
+            key="custom",
+            custom=desc,
             _style="font-size: 26px;",
         )
         path = self.image_path["other"]
@@ -297,8 +299,8 @@ class TGRWebpageGeneration(_WebpageGeneration):
             )
             html_file.make_banner(
                 approximant="Additional plots",
-                key="content",
-                content=desc,
+                key="custom",
+                custom=desc,
                 _style="font-size: 26px;",
             )
             image_contents = [
