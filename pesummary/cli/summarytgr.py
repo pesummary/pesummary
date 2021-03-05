@@ -105,8 +105,8 @@ def command_line():
         "If only one number is supplied, the inspiral maximum frequency "
         "and the postinspiral maximum frequency are set to the same number. "
         "If a list of length 2 is supplied, this assumes that the "
-        "one correspoding to the inspiral label is the maximum frequency "
-        "for inspiral and that correspoding to the postinspiral label is the"
+        "one corresponding to the inspiral label is the maximum frequency "
+        "for inspiral and that corresponding to the postinspiral label is the"
         "minimum frequency for postinspiral_samples_file",
         type=float,
         nargs="+",
@@ -162,6 +162,8 @@ def generate_imrct_deviation_parameters(
     ----------
     samples: MultiAnalysisSamplesDict
         Dictionary containing inspiral and postinspiral samples
+    evolve_spins: bool
+        If `True`, evolve spins. Default: True.
     inspiral_string: string
         Identifier for the inspiral samples
     postinspiral_string: string

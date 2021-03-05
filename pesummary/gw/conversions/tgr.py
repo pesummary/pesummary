@@ -69,8 +69,12 @@ def _imrct_deviation_parameters_integrand_vectorized(
         array of delta_final_spin/final_spin_bar values
     P_final_mass_final_spin_i_interp_object:
         interpolated P_i(final_mass, final_spin)
-    P_final_massfinal_spin_r_interp_object:
+    P_final_mass_final_spin_r_interp_object:
         interpolated P_r(final_mass, final_spin)
+    multi_process: int
+    	Number of parallel processes. Default: 4
+    wrapper_function_for_multiprocess: method
+		Wrapper function for the multiprocessing. Default: None
 
     Returns
     -------
@@ -259,6 +263,8 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     """Compute the IMR Consistency Test deviation parameters.
     Code borrows from the implementation in lalsuite:
     https://git.ligo.org/lscsoft/lalsuite/-/blob/master/lalinference/python/lalinference/imrtgr/imrtgrutils.py
+    and
+    https://git.ligo.org/lscsoft/lalsuite/-/blob/master/lalinference/bin/imrtgr_imr_consistency_test.py
 
     Parameters
     ----------
@@ -270,27 +276,28 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         values of final mass calculated from the post-inspiral part
     final_spin_postinspiral: np.ndarray
         values of final spin calculated from the post-inspiral part
-    final_mass_deviation_lim: float, optional
-        Maximum value of the final mass deviation parameter. Default 2.
-    final_spin_deviation_lim: float, optional
-        Maximum value of the final spin deviation parameter. Default 1.
-    N_bins: int, optional
+    final_mass_deviation_lim: float
+        Maximum absolute value of the final mass deviation parameter. Default 1.
+    final_spin_deviation_lim: float
+        Maximum absolute value of the final spin deviation parameter. Default 1.
+    N_bins: int
         Number of equally spaced bins between [-final_mass_deviation_lim,
         final_mass_deviation_lim] and [-final_spin_deviation_lim,
-        final_spin_deviation_lim]
-    multi_process: int, optional
-        Number of parallel processes
-    use_kde: bool, optional
-        If `True`, uses kde instead of interpolation
-    kde: method, optional
-        KDE method to use
-    kde_kwargs: dict, optional
+        final_spin_deviation_lim]. Default is 101.
+    multi_process: int
+        Number of parallel processes. Default is 4.
+    use_kde: bool
+        If `True`, uses kde instead of interpolation. Default is False.
+    kde: method
+        KDE method to use. Default is scipy.stats.gaussian_kde
+    kde_kwargs: dict
         Arguments to be passed to the KDE method
-    interp_method: method, optional
-        Interpolation method to use
+    interp_method: method
+        Interpolation method to use. Default is scipy.interpolate.interp2d
     interp_kwargs: dict, optional
         Arguments to be passed to the interpolation method
-    vectorize: Bool, optional
+        Default is `dict(fill_value=0.0, bounds_error=False)`
+    vectorize: bool
         if True, use vectorized imrct_deviation_parameters_integrand
         function. This is quicker but does consume more memory. Default: False
 
@@ -371,12 +378,6 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         vectorize=vectorize,
         wrapper_function_for_multiprocess=_wrapper_function,
     )[0]
-    # Normalize the distribution
-    P_final_mass_deviation_final_spin_deviation /= (
-        np.sum(P_final_mass_deviation_final_spin_deviation)
-        * diff_final_mass_deviation
-        * diff_final_spin_deviation
-    )
 
     imrct_deviations = ProbabilityDict2D(
         {
