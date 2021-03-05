@@ -308,7 +308,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     """
     # Find the maximum values
     final_mass_lim = np.max(np.append(final_mass_inspiral, final_mass_postinspiral))
-    final_spin_lim = np.max(np.append(final_spin_inspiral, final_spin_postinspiral))
+    final_spin_lim = np.max(np.abs(np.append(final_spin_inspiral, final_spin_postinspiral)))
 
     # bin the data
     final_mass_bins = np.linspace(-final_mass_lim, final_mass_lim, N_bins)
