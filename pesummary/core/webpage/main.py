@@ -112,7 +112,7 @@ class _WebpageGeneration(object):
         disable_comparison=False, disable_interactive=False,
         package_information={"packages": [], "manager": "pypi"},
         mcmc_samples=False, external_hdf5_links=False, key_data=None,
-        existing_plot=None, disable_expert=False, analytic_priors=None
+        existing_plot=None, disable_expert=False, analytic_priors=None,
     ):
         self.webdir = webdir
         make_dir(self.webdir)
@@ -420,7 +420,9 @@ class _WebpageGeneration(object):
             return final_links
         return None
 
-    def categorize_parameters(self, parameters, starting_letter=True):
+    def categorize_parameters(
+        self, parameters, starting_letter=True, heading_all=True
+    ):
         """Categorize the parameters into common headings
 
         Parameters
@@ -437,9 +439,10 @@ class _WebpageGeneration(object):
                     category["accept"], category["reject"],
                     starting_letter=starting_letter
                 )
-                params.append(
-                    [heading, self._partition(cond, parameters)]
-                )
+                part = self._partition(cond, parameters)
+                if heading_all and len(part):
+                    part = ["{}_all".format(heading)] + part
+                params.append([heading, part])
         used_headings = [i[0] for i in params]
         other_index = \
             used_headings.index("others") if "others" in used_headings else None
@@ -702,6 +705,10 @@ class _WebpageGeneration(object):
         ]
         pages += ["{}_{}_Custom".format(i, i) for i in self.labels]
         pages += ["{}_{}_All".format(i, i) for i in self.labels]
+        pages += [
+            "{}_{}_{}_all".format(i, i, j[0]) for i in self.labels for j in
+            self.categorize_parameters(self.samples[i].keys()) if len(j[1])
+        ]
         self.create_blank_html_pages(pages)
         self._make_1d_histogram_pages(pages)
 
@@ -721,7 +728,16 @@ class _WebpageGeneration(object):
                     approximant=i, background_colour=self.colors[num],
                     histogram_download=False, toggle=self.expert_plots
                 )
-                html_file.make_banner(approximant=i, key=i)
+                if j.description != "Unknown parameter description":
+                    _custom = (
+                        "The figures below show the plots for {}: {}"
+                    )
+                    html_file.make_banner(
+                        approximant=i, key="custom",
+                        custom=_custom.format(j, j.description)
+                    )
+                else:
+                    html_file.make_banner(approximant=i, key=i)
                 path = self.image_path["other"]
                 contents = [
                     [path + "{}_1d_posterior_{}.png".format(i, j)],
@@ -835,6 +851,52 @@ class _WebpageGeneration(object):
                 html_file.make_table_of_images(
                     contents=contents, rows=1, columns=2, code="changeimage")
             html_file.close()
+            for j in self.categorize_parameters(self.samples[i].keys()):
+                if not len(j[1]):
+                    continue
+                html_file = self.setup_page(
+                    "{}_{}_all".format(i, j[0]), self.navbar["result_page"][i],
+                    i, title="All posteriors for describing {}".format(j[0]),
+                    approximant=i, background_colour=self.colors[num]
+                )
+                for k in j[1][1:]:
+                    html_file.make_banner(
+                        approximant=k, _style="font-size: 26px;"
+                    )
+                    contents = [
+                        [path + "{}_1d_posterior_{}.png".format(i, k)],
+                        [
+                            path + "{}_sample_evolution_{}.png".format(i, k),
+                            path + "{}_autocorrelation_{}.png".format(i, k)
+                        ]
+                    ]
+                    html_file.make_table_of_images(
+                        contents=contents, rows=1, columns=2, code="changeimage"
+                    )
+                html_file.make_banner(
+                    approximant="Summary Table", key="summary_table",
+                    _style="font-size: 26px;"
+                )
+                _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+                _class = "row justify-content-center"
+                html_file.make_container(style=_style)
+                html_file.make_div(4, _class=_class, _style=None)
+                headings = [" "] + self.key_data_headings.copy()
+                contents = []
+                for k in j[1][1:]:
+                    row = [k]
+                    row += self.key_data_table[i][k]
+                    contents.append(row)
+                html_file.make_table(
+                    headings=headings, contents=contents, heading_span=1,
+                    accordian=False, format="table-hover",
+                    sticky_header=True
+                )
+                html_file.end_div(4)
+                html_file.end_container()
+                html_file.export("{}_summary_{}.csv".format(j[0], i))
+                html_file.make_footer(user=self.user, rundir=self.webdir)
+                html_file.close()
 
     def make_additional_plots_pages(self):
         """Wrapper function for _make_additional_plots_pages
@@ -1022,6 +1084,10 @@ class _WebpageGeneration(object):
         pages += ["Comparison_Custom"]
         pages += ["Comparison_All"]
         pages += ["Comparison"]
+        pages += [
+            "Comparison_{}_all".format(j[0]) for j in
+            self.categorize_parameters(self.same_parameters) if len(j[1])
+        ]
         self.create_blank_html_pages(pages)
         self._make_comparison_pages(pages)
 
@@ -1201,6 +1267,30 @@ class _WebpageGeneration(object):
             html_file.make_table_of_images(
                 contents=contents, rows=1, columns=2, code="changeimage")
         html_file.close()
+        for j in self.categorize_parameters(self.same_parameters):
+            if not len(j[1]):
+                continue
+            html_file = self.setup_page(
+                "Comparison_{}_all".format(j[0]), self.navbar["comparison"],
+                title="All posteriors for describing {}".format(j[0]),
+                approximant="Comparison"
+            )
+            for k in j[1][1:]:
+                html_file.make_banner(
+                    approximant=k, _style="font-size: 26px;"
+                )
+                contents = [
+                    [path + "combined_1d_posterior_{}.png".format(k)],
+                    [
+                        path + "combined_cdf_{}.png".format(k),
+                        path + "combined_boxplot_{}.png".format(k)
+                    ]
+                ]
+                html_file.make_table_of_images(
+                    contents=contents, rows=1, columns=2, code="changeimage"
+                )
+            html_file.make_footer(user=self.user, rundir=self.webdir)
+            html_file.close()
 
     def make_interactive_pages(self):
         """Wrapper function for _make_interactive_pages

@@ -276,7 +276,7 @@ python-3.8-gw:
 
 ligo_skymap:
   stage: consequences
-  image: python:3.6
+  image: python:3.7
   needs:
     - tarball
     - executables

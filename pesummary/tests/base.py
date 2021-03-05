@@ -64,6 +64,13 @@ def get_list_of_files(gw=False, number=1, existing_plot=False):
         "./.outdir/html/Logging.html",
         "./.outdir/html/About.html",
         "./.outdir/html/Downloads.html"]
+    if gw:
+        sections = [
+            "spins", "spin_angles", "timings", "source", "remnant", "others",
+            "masses", "location", "inclination", "energy"
+        ]
+    else:
+        sections = ["A-D", "E-F", "I-L", "M-P", "Q-T"]
     for num in range(number):
         html.append("./.outdir/html/%s%s_%s%s.html" % (label, num, label, num))
         if gw:
@@ -75,6 +82,8 @@ def get_list_of_files(gw=False, number=1, existing_plot=False):
         html.append("./.outdir/html/%s%s_%s%s_Interactive_Corner.html" % (
             label, num, label, num
         ))
+        for section in sections:
+            html.append("./.outdir/html/%s%s_%s%s_%s_all.html" % (label, num, label, num, section))
         for j in parameters:
             html.append("./.outdir/html/%s%s_%s%s_%s.html" % (label, num, label, num, j))
         if existing_plot:
@@ -88,6 +97,8 @@ def get_list_of_files(gw=False, number=1, existing_plot=False):
         for j in parameters:
             if j != "classification":
                 html.append("./.outdir/html/Comparison_%s.html" % (j))
+        for section in sections:
+            html.append("./.outdir/html/Comparison_%s_all.html" % (section))
     return sorted(html)
 
 
