@@ -43,6 +43,24 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
 
 
 @array_input
+def chi_p_2spin(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
+    """Return a modified chi_p which takes into account precessing spin
+    information from both compact objects given samples for mass1, mass2,
+    spin1x, spin1y, spin2x, spin2y. See Eq.9 of arXiv:2012.02209
+    """
+    chi_p_2spin = np.zeros(len(mass1))
+    chi1_perp = np.linalg.norm([spin1x, spin1y], axis=0)
+    chi2_perp = np.linalg.norm([spin2x, spin2y], axis=0)
+    S1_perp = chi1_perp * mass1**2
+    S2_perp = chi2_perp * mass2**2
+    S_perp = S1_perp + S2_perp
+    mask = S1_perp >= S2_perp
+    chi_p_2spin[mask] = (S_perp / (mass1**2 + S2_perp))[mask]
+    chi_p_2spin[~mask] = (S_perp / (mass2**2 + S1_perp))[~mask]
+    return chi_p_2spin
+
+
+@array_input
 def chi_eff(mass1, mass2, spin1z, spin2z):
     """Return chi_eff given samples for mass1, mass2, spin1z, spin2z
     """

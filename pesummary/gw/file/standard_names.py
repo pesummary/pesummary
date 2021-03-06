@@ -150,6 +150,7 @@ pesummary_map = {
     "viewing_angle": "viewing_angle",
     "spin_1z": "spin_1z",
     "spin_2z": "spin_2z",
+    "chi_p_2spin": "chi_p_2spin",
     "peak_luminosity": "peak_luminosity",
     "peak_luminosity_non_evolved": "peak_luminosity_non_evolved",
     "final_mass": "final_mass",
@@ -412,6 +413,10 @@ descriptive_names = {
     ),
     "chi_p": (
         "the effective precession spin parameter"
+    ),
+    "chi_p_2_spin": (
+        "a modified effective precession spin parameter accounting for "
+        "precessing spin information from both compact objects."
     ),
     "phase": (
         "the binary phase defined at a given reference frequency"
