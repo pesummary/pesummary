@@ -381,15 +381,16 @@ class _Conversion(object):
         if self.has_tidal and force_remnant and self.NSBH and self.compute_remnant:
             logger.warning(
                 "Posterior samples for lambda_2 found in the posterior table "
-                "but unable to find samples for lambda_1. Assuming this "
-                "is an NSBH system. 'force_remnant' provided so using BBH "
-                "fits for this system. This may not give sensible results."
+                "and either unable to find samples for lambda_1 or all "
+                "lambda_1 samples are 0. Assuming this is an NSBH system. "
+                "'force_remnant' provided so using BBH fits for this system. "
+                "This may not give sensible results."
             )
         elif self.has_tidal and self.NSBH and self.compute_remnant:
             logger.warning(
                 "Posterior samples for lambda_2 found in the posterior table "
-                "but unable to find samples for lambda_1. Applying NSBH "
-                "fits to this system."
+                "and either unable to find samples for lambda_1 or all "
+                "lambda_1 samples are 0. Applying NSBH fits to this system."
             )
             self.waveform_fit = True
         elif force_remnant and self.has_tidal and self.compute_remnant:
@@ -431,6 +432,10 @@ class _Conversion(object):
         """
         if "lambda_2" in self.parameters and "lambda_1" not in self.parameters:
             return True
+        elif "lambda_2" in self.parameters and "lambda_1" in self.parameters:
+            _lambda_1 = self.specific_parameter_samples(["lambda_1"])
+            if not np.any(_lambda_1):
+                return True
         return False
 
     def remove_posterior(self, parameter):
