@@ -49,6 +49,7 @@ GWlatex_labels = {
     "spin_2z": r"$S_{2z}$",
     "spin_2z_evolved": r"$S_{2z}^{\mathrm{evol}}$",
     "chi_p": r"$\chi_{\mathrm{p}}$",
+    "chi_p_2spin": r"$\chi_{\mathrm{p}}^{\mathrm{2spin}}$",
     "chi_eff": r"$\chi_{\mathrm{eff}}$",
     "mass_ratio": r"$q$",
     "symmetric_mass_ratio": r"$\eta$",
