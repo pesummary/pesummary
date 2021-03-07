@@ -230,7 +230,7 @@ def _imrct_deviation_parameters_integrand_series(
                 ),
             )
         P = np.array([i[0] for i in _P]).reshape(len(final_mass), len(final_spin))
-    return P, None, None
+    return P
 
 
 def imrct_deviation_parameters_integrand(*args, vectorize=False, **kwargs):
@@ -377,7 +377,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         multi_process=multi_process,
         vectorize=vectorize,
         wrapper_function_for_multiprocess=_wrapper_function,
-    )[0]
+    )
 
     imrct_deviations = ProbabilityDict2D(
         {
