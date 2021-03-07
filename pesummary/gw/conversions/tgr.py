@@ -156,7 +156,7 @@ def _imrct_deviation_parameters_integrand_vectorized(
     _prod = np.array(
         [np.sum(_P_i * _P_r * _abs) for _P_i, _P_r in zip(P_i, P_r)]
     ).reshape(_reshape)
-    return _prod, P_i, P_r
+    return _prod
 
 
 def _apply_args_and_kwargs(function, args, kwargs):
@@ -229,7 +229,7 @@ def _imrct_deviation_parameters_integrand_series(
                     [kwargs] * len(_args),
                 ),
             )
-        P = np.array([i[0][0] for i in _P]).reshape(len(final_mass), len(final_spin))
+        P = np.array([i[0] for i in _P]).reshape(len(final_mass), len(final_spin))
     return P, None, None
 
 
