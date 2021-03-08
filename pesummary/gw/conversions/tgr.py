@@ -156,7 +156,7 @@ def _imrct_deviation_parameters_integrand_vectorized(
     _prod = np.array(
         [np.sum(_P_i * _P_r * _abs) for _P_i, _P_r in zip(P_i, P_r)]
     ).reshape(_reshape)
-    return _prod, P_i, P_r
+    return _prod
 
 
 def _apply_args_and_kwargs(function, args, kwargs):
@@ -229,8 +229,8 @@ def _imrct_deviation_parameters_integrand_series(
                     [kwargs] * len(_args),
                 ),
             )
-        P = np.array([i[0][0] for i in _P]).reshape(len(final_mass), len(final_spin))
-    return P, None, None
+        P = np.array([i[0] for i in _P]).reshape(len(final_mass), len(final_spin))
+    return P
 
 
 def imrct_deviation_parameters_integrand(*args, vectorize=False, **kwargs):
@@ -377,7 +377,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         multi_process=multi_process,
         vectorize=vectorize,
         wrapper_function_for_multiprocess=_wrapper_function,
-    )[0]
+    )
 
     imrct_deviations = ProbabilityDict2D(
         {
