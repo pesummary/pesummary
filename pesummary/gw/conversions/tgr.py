@@ -40,7 +40,15 @@ def _wrapper_for_multiprocessing_kde(kde, *args):
 
 
 def _wrapper_for_multiprocessing_interp(interp, *args):
-    """"""
+    """Wrapper to evaluate an interpolant on multiple cpus
+
+    Parameters
+    ----------
+    interp: func
+        interpolant you wish to use
+    *args: tuple
+        all args are passed to the interpolant
+    """
     return interp(*args)
 
 
@@ -60,9 +68,9 @@ def _imrct_deviation_parameters_integrand_vectorized(
     Parameters
     ----------
     final_mass: np.ndarray
-        samples drawn from the final mass posterior distribution
+        vector of values of final mass
     final_spin: np.ndarray
-        samples drawn from the final spin posterior distribution
+        vector of values of final spin
     v1: np.ndarray
         array of delta_final_mass/final_mass_bar values
     v2: np.ndarray
@@ -160,6 +168,17 @@ def _imrct_deviation_parameters_integrand_vectorized(
 
 
 def _apply_args_and_kwargs(function, args, kwargs):
+    """Apply a tuple of args and a dictionary of kwargs to a function
+
+    Parameters
+    ----------
+    function: func
+        function you wish to use
+    args: tuple
+        all args passed to function
+    kwargs: dict
+        all kwargs passed to function
+    """
     return function(*args, **kwargs)
 
 
@@ -179,9 +198,9 @@ def _imrct_deviation_parameters_integrand_series(
     Parameters
     ----------
     final_mass: np.ndarray
-        samples drawn from the final mass posterior distribution
+        vector of values of final mass
     final_spin: np.ndarray
-        samples drawn from the final spin posterior distribution
+        vector of values of final spin
     v1: np.ndarray
         array of delta_final_mass/final_mass_bar values
     v2: np.ndarray
@@ -234,10 +253,21 @@ def _imrct_deviation_parameters_integrand_series(
 
 
 def imrct_deviation_parameters_integrand(*args, vectorize=False, **kwargs):
-    """
+    """Compute the final mass and final spin deviation parameters
+
+    Parameters
+    ----------
+    *args: tuple
+        all args passed to either
+        _imrct_deviation_parameters_integrand_vectorized or
+        _imrct_deviation_parameters_integrand_series
     vectorize: bool
         Vectorize the calculation. Note that vectorize=True uses up a lot
         of memory
+    kwargs: dict, optional
+        all kwargs passed to either
+        _imrct_deviation_parameters_integrand_vectorized or
+        _imrct_deviation_parameters_integrand_series
     """
     if vectorize:
         return _imrct_deviation_parameters_integrand_vectorized(*args, **kwargs)
@@ -319,7 +349,6 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     final_spin_intp = (final_spin_bins[:-1] + final_spin_bins[1:]) * 0.5
     if use_kde:
         logger.debug("Using KDE to interpolate data")
-        # kde the samples for final mass and final spin
         final_mass_intp = np.append(final_mass_intp, final_mass_bins[-1] + final_mass_df)
         final_spin_intp = np.append(final_spin_intp, final_spin_bins[-1] + final_spin_df)
         inspiral_interp = kde(
