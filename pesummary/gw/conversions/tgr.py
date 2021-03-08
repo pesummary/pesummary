@@ -193,7 +193,7 @@ def _imrct_deviation_parameters_integrand_series(
     """
     P = np.zeros(shape=(len(final_mass), len(final_mass)))
     if multi_process == 1:
-        logger.debug("Performing calculation on a single cpu. This may take some " "time")
+        logger.debug("Performing calculation on a single cpu. This may take some time")
         for i, _v2 in enumerate(v2):
             for j, _v1 in enumerate(v1):
                 P[i, j] = _imrct_deviation_parameters_integrand_vectorized(
@@ -312,16 +312,16 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
 
     # bin the data
     final_mass_bins = np.linspace(-final_mass_lim, final_mass_lim, N_bins)
-    final_mass_df = final_mass_bins[1] - final_mass_bins[0]
+    diff_final_mass = final_mass_bins[1] - final_mass_bins[0]
     final_spin_bins = np.linspace(-final_spin_lim, final_spin_lim, N_bins)
-    final_spin_df = final_spin_bins[1] - final_spin_bins[0]
+    diff_final_spin = final_spin_bins[1] - final_spin_bins[0]
     final_mass_intp = (final_mass_bins[:-1] + final_mass_bins[1:]) * 0.5
     final_spin_intp = (final_spin_bins[:-1] + final_spin_bins[1:]) * 0.5
     if use_kde:
         logger.debug("Using KDE to interpolate data")
         # kde the samples for final mass and final spin
-        final_mass_intp = np.append(final_mass_intp, final_mass_bins[-1] + final_mass_df)
-        final_spin_intp = np.append(final_spin_intp, final_spin_bins[-1] + final_spin_df)
+        final_mass_intp = np.append(final_mass_intp, final_mass_bins[-1] + diff_final_mass)
+        final_spin_intp = np.append(final_spin_intp, final_spin_bins[-1] + diff_final_spin)
         inspiral_interp = kde(
             np.array([final_mass_inspiral, final_spin_inspiral]), **kde_kwargs
         )
@@ -364,8 +364,8 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         )
         _wrapper_function = _wrapper_for_multiprocessing_interp
 
-    diff_final_mass_deviation = np.mean(np.diff(final_mass_deviation_vec))
-    diff_final_spin_deviation = np.mean(np.diff(final_spin_deviation_vec))
+    diff_final_mass_deviation = final_mass_deviation_vec[1] - final_mass_deviation_vec[0]
+    diff_final_spin_deviation = final_spin_deviation_vec[1] - final_spin_deviation_vec[0]
 
     P_final_mass_deviation_final_spin_deviation = imrct_deviation_parameters_integrand(
         final_mass_intp,
