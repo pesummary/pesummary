@@ -102,12 +102,14 @@ def command_line():
         dest="cutoff_frequency",
         help="Cutoff Frequency for IMRCT. Overrides any cutoff frequency "
         "present in the supplied files. "
+        "The supplied cutoff frequency will only be used as metadata and "
+        "does not affect the cutoff frequency used in the analysis. "
         "If only one number is supplied, the inspiral maximum frequency "
         "and the postinspiral maximum frequency are set to the same number. "
         "If a list of length 2 is supplied, this assumes that the "
         "one corresponding to the inspiral label is the maximum frequency "
-        "for inspiral and that corresponding to the postinspiral label is the"
-        "minimum frequency for postinspiral_samples_file",
+        "for the inspiral and that corresponding to the postinspiral label is the"
+        "minimum frequency for the postinspiral",
         type=float,
         nargs="+",
         default=None,
