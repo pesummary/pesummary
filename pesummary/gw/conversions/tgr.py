@@ -371,12 +371,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         postinspiral_interp = kde(
             np.array([final_mass_postinspiral, final_spin_postinspiral]), **kde_kwargs
         )
-        final_mass_deviation_vec = np.linspace(
-            -final_mass_deviation_lim, final_mass_deviation_lim, N_bins
-        )
-        final_spin_deviation_vec = np.linspace(
-            -final_spin_deviation_lim, final_spin_deviation_lim, N_bins
-        )
+        N_bins_for_deviation_vec = N_bins
         _wrapper_function = _wrapper_for_multiprocessing_kde
     else:
         logger.debug("Interpolating 2d histogram data")
@@ -398,14 +393,15 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         postinspiral_interp = interp_method(
             final_mass_intp, final_spin_intp, _postinspiral_2d_histogram, **interp_kwargs
         )
-
-        final_mass_deviation_vec = np.linspace(
-            -final_mass_deviation_lim, final_mass_deviation_lim, N_bins - 1
-        )
-        final_spin_deviation_vec = np.linspace(
-            -final_spin_deviation_lim, final_spin_deviation_lim, N_bins - 1
-        )
+        N_bins_for_deviation_vec = N_bins - 1
         _wrapper_function = _wrapper_for_multiprocessing_interp
+
+    final_mass_deviation_vec = np.linspace(
+        -final_mass_deviation_lim, final_mass_deviation_lim, N_bins_for_deviation_vec
+    )
+    final_spin_deviation_vec = np.linspace(
+        -final_spin_deviation_lim, final_spin_deviation_lim, N_bins_for_deviation_vec
+    )
 
     diff_final_mass_deviation = final_mass_deviation_vec[1] - final_mass_deviation_vec[0]
     diff_final_spin_deviation = final_spin_deviation_vec[1] - final_spin_deviation_vec[0]
