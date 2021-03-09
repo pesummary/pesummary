@@ -97,6 +97,16 @@ def _imrct_deviation_parameters_integrand_vectorized(
     v1, v2 = _v1.ravel(), _v2.ravel()
     v1, v2 = v1.reshape(len(v1), 1), v2.reshape(len(v2), 1)
 
+    # Create delta_final_mass and delta_final_spin vectors corresponding
+    # to the given v1 and v2.
+
+    # These vectors have to be monotonically increasing in order to
+    # evaluate the interpolated prob densities. Hence, for v1, v2 < 0,
+    # flip them, evaluate the prob density (in column or row) and flip it back
+
+    # The definition of the delta_* parameters is taken from eq A1 of
+    # Ghosh et al 2018, arXiv:1704.06784.
+
     delta_final_mass_i = ((1.0 + v1 / 2.0)) * final_mass
     delta_final_spin_i = ((1.0 + v2 / 2.0)) * final_spin
     delta_final_mass_r = ((1.0 - v1 / 2.0)) * final_mass
@@ -160,6 +170,9 @@ def _imrct_deviation_parameters_integrand_vectorized(
             P_r[num] = np.fliplr(P_r[num])
         if (1.0 - v2[num] / 2.0) < 0.0:
             P_r[num] = np.flipud(P_r[num])
+
+    # The integration is performed according to eq A2 of Ghosh et al,
+    # arXiv:1704.06784
 
     _prod = np.array(
         [np.sum(_P_i * _P_r * _abs) for _P_i, _P_r in zip(P_i, P_r)]
