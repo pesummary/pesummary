@@ -184,9 +184,9 @@ def generate_imrct_deviation_parameters(
 
     t0 = time.time()
     logger.info("Calculating IMRCT deviation parameters and GR Quantile")
-    evolve_spins_string = "evolved"
+    evolve_spins_string = ""
     if not evolve_spins:
-        evolve_spins_string = "non_" + evolve_spins_string
+        evolve_spins_string = "non_evolved" + evolve_spins_string
 
     samples_string = "final_{}_" + evolve_spins_string
     imrct_deviations = imrct_deviation_parameters_from_final_mass_final_spin(
@@ -204,7 +204,7 @@ def generate_imrct_deviation_parameters(
     )
     t1 = time.time()
     data = kwargs.copy()
-    data["evolve_spin"] = evolve_spins
+    data["evolve_spins"] = evolve_spins
     data["Time (seconds)"] = round(t1 - t0, 2)
     data["GR Quantile (%)"] = round(gr_quantile[0], 2)
 
@@ -586,7 +586,7 @@ def main(args=None):
                 "postinspiral final_spin_NR_fits",
                 "inspiral approximant",
                 "postinspiral approximant",
-                "evolve_spin",
+                "evolve_spins",
                 "N_bins",
                 "Time (seconds)",
             ]
