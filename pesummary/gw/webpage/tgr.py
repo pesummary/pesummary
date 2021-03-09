@@ -187,38 +187,33 @@ class TGRWebpageGeneration(_WebpageGeneration):
         )
         _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
         _class = "row justify-content-center"
-        html_file.make_container(style=_style)
-        html_file.make_div(4, _class=_class, _style=None)
-        base_label = self.labels[0]
-        total_keys = list(self.test_key_data[base_label].keys())
-        if len(self.labels) > 1:
-            for _label in self.labels[1:]:
-                total_keys += [
-                    key
-                    for key in self.test_key_data[_label].keys()
-                    if key not in total_keys
-                ]
-        table_contents = [
-            [i]
-            + [
-                self.test_key_data[i][key]
-                if key in self.test_key_data[i].keys()
-                else "-"
-                for key in total_keys
+        _include = {
+            "imrct": ["GR Quantile (%)"]
+        }
+        for label in self.labels:
+            html_file.make_container(style=_style)
+            html_file.make_div(4, _class=_class, _style=None)
+            analyses = list(self.test_key_data[label].keys())
+            table_contents = [
+                [i]
+                + [
+                    self.test_key_data[label][i][key]
+                    if key in self.test_key_data[label][i].keys()
+                    else "-"
+                    for key in _include[label]
+                ] for i in analyses
             ]
-            for i in self.labels
-        ]
-        _headings = [" "] + total_keys
-        html_file.make_table(
-            headings=_headings,
-            format="table-hover",
-            heading_span=1,
-            contents=table_contents,
-            accordian=False,
-        )
-        html_file.end_div(4)
-        html_file.end_container()
-        html_file.export("{}.csv".format("summary_of_tests_of_GR.csv"))
+            _headings = [label] + _include[label]
+            html_file.make_table(
+                headings=_headings,
+                format="table-hover",
+                heading_span=1,
+                contents=table_contents,
+                accordian=False,
+            )
+            html_file.end_div(4)
+            html_file.end_container()
+            html_file.export("{}.csv".format("summary_of_{}.csv".format(label)))
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
 

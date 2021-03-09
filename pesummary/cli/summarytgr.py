@@ -464,6 +464,7 @@ def main(args=None):
             if _attr is not None and len(_attr) and len(_attr) != len(opts.labels):
                 raise ValueError("Please provide a {} for each file".format(_arg))
         test_key_data["imrct"] = {}
+        fits_data = {}
         for key, sample in open_files.items():
             if "final_mass_{}".format(evolve_spins_string) not in sample.keys():
                 logger.info("Remnant properties not in samples, trying to generate them")
@@ -478,9 +479,9 @@ def main(args=None):
                 else:
                     logger.info("Remnant properties generated.")
                     for fit in ["final_mass_NR_fits", "final_spin_NR_fits"]:
-                        test_key_data["imrct"][
-                            "{} {}".format(key, fit)
-                        ] = returned_extra_kwargs["meta_data"][fit]
+                        fits_data["{} {}".format(key, fit)] = returned_extra_kwargs[
+                            "meta_data"
+                        ][fit]
 
         inspiral_keys = [
             key for key in open_files.keys() if "inspiral" in key and "post" not in key
@@ -500,6 +501,7 @@ def main(args=None):
                 postinspiral_string=_postinspiral,
                 **test_kwargs,
             )
+            data.update(fits_data)
             _imrct_deviations.append(imrct_deviations)
             _legend_kwargs = {}
             if len(analysis_label) > 1:
@@ -524,7 +526,7 @@ def main(args=None):
             approximant_dict = dict()
             zipped = zip(
                 [opts.cutoff_frequency, opts.approximant],
-                [frequency_dict, approximant_dict]
+                [frequency_dict, approximant_dict],
             )
             _inspiral_string = inspiral_keys[num]
             _postinspiral_string = postinspiral_keys[num]
@@ -566,7 +568,31 @@ def main(args=None):
 
             for key in ["inspiral", "postinspiral"]:
                 data["{} approximant".format(key)] = approximant_dict[key]
-            test_key_data["imrct"][analysis_label[num]] = data
+
+            desired_metadata_order = [
+                "GR Quantile (%)",
+                "inspiral maximum frequency (Hz)",
+                "postinspiral mininum frequency (Hz)",
+                "inspiral final_mass_NR_fits",
+                "postinspiral final_mass_NR_fits",
+                "inspiral final_spin_NR_fits",
+                "postinspiral final_spin_NR_fits",
+                "inspiral approximant",
+                "postinspiral approximant",
+                "evolve_spin",
+                "N_bins",
+                "Time (seconds)",
+            ]
+
+            desired_metadata = {}
+
+            for key in desired_metadata_order:
+                try:
+                    desired_metadata[key] = data[key]
+                except KeyError:
+                    continue
+
+            test_key_data["imrct"][analysis_label[num]] = desired_metadata
 
         if len(inspiral_keys) > 1:
             fig = None
@@ -620,7 +646,8 @@ def main(args=None):
         webdir=opts.webdir,
         imrct_data={
             label: _imrct_deviations[num] for num, label in enumerate(analysis_label)
-        }, file_kwargs=test_key_data
+        },
+        file_kwargs=test_key_data,
     )
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
