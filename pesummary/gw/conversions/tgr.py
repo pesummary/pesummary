@@ -80,9 +80,9 @@ def _imrct_deviation_parameters_integrand_vectorized(
     P_final_mass_final_spin_r_interp_object:
         interpolated P_r(final_mass, final_spin)
     multi_process: int
-    	Number of parallel processes. Default: 4
+        Number of parallel processes. Default: 4
     wrapper_function_for_multiprocess: method
-		Wrapper function for the multiprocessing. Default: None
+                Wrapper function for the multiprocessing. Default: None
 
     Returns
     -------
@@ -351,7 +351,9 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     """
     # Find the maximum values
     final_mass_lim = np.max(np.append(final_mass_inspiral, final_mass_postinspiral))
-    final_spin_lim = np.max(np.abs(np.append(final_spin_inspiral, final_spin_postinspiral)))
+    final_spin_lim = np.max(
+        np.abs(np.append(final_spin_inspiral, final_spin_postinspiral))
+    )
 
     # bin the data
     final_mass_bins = np.linspace(-final_mass_lim, final_mass_lim, N_bins)
@@ -363,8 +365,12 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     if use_kde:
         logger.debug("Using KDE to interpolate data")
         # kde the samples for final mass and final spin
-        final_mass_intp = np.append(final_mass_intp, final_mass_bins[-1] + diff_final_mass)
-        final_spin_intp = np.append(final_spin_intp, final_spin_bins[-1] + diff_final_spin)
+        final_mass_intp = np.append(
+            final_mass_intp, final_mass_bins[-1] + diff_final_mass
+        )
+        final_spin_intp = np.append(
+            final_spin_intp, final_spin_bins[-1] + diff_final_spin
+        )
         inspiral_interp = kde(
             np.array([final_mass_inspiral, final_spin_inspiral]), **kde_kwargs
         )
