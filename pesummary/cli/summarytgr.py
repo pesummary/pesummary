@@ -561,10 +561,10 @@ def main(args=None):
                             )
                         elif _list == opts.approximant:
                             _dict["inspiral"] = float(
-                                open_files[_inspiral_string].config["config"]
+                                open_files[_inspiral_string].config["waveform-approximant"]
                             )
                             _dict["postinspiral"] = float(
-                                open_files[_postinspiral_string].config["config"]
+                                open_files[_postinspiral_string].config["waveform-approximant"]
                             )
                     except (AttributeError, KeyError):
                         _dict["inspiral"] = None
