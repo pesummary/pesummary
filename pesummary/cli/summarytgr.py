@@ -414,7 +414,12 @@ def main(args=None):
     )
     test_key_data = {}
     if opts.test == "imrct":
-        test_kwargs = opts.imrct_kwargs.copy()
+        try:
+            test_kwargs = opts.imrct_kwargs.copy()
+            print(opts.imrct_kwargs)
+        except AttributeError:
+            test_kwargs = dict(N_bins=101)
+
         for key, value in test_kwargs.items():
             try:
                 test_kwargs[key] = ast.literal_eval(value)
