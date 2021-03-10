@@ -186,7 +186,7 @@ def generate_imrct_deviation_parameters(
     logger.info("Calculating IMRCT deviation parameters and GR Quantile")
     evolve_spins_string = ""
     if not evolve_spins:
-        evolve_spins_string = "non_evolved" + evolve_spins_string
+        evolve_spins_string = "non_evolved"
 
     samples_string = "final_{}_" + evolve_spins_string
     imrct_deviations = imrct_deviation_parameters_from_final_mass_final_spin(
@@ -418,7 +418,6 @@ def main(args=None):
     if opts.test == "imrct":
         try:
             test_kwargs = opts.imrct_kwargs.copy()
-            print(opts.imrct_kwargs)
         except AttributeError:
             test_kwargs = dict(N_bins=101)
 
