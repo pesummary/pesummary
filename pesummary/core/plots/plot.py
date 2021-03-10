@@ -47,6 +47,8 @@ def _autocorrelation_plot(
     grid: Bool, optional
         if True, plot a grid
     """
+    import warnings
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
     logger.debug("Generating the autocorrelation function for %s" % (param))
     if fig is None:
         fig, ax = figure(gca=True)
