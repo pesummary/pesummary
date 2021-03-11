@@ -406,7 +406,7 @@ def main(args=None):
     )
     evolve_spins_string = ""
     if not opts.evolve_spins:
-        evolve_spins = opts.evolve_spins
+        evolve_spins = False
         evolve_spins_string = "_non_evolved"
     else:
         evolve_spins = "ISCO"
@@ -475,13 +475,19 @@ def main(args=None):
         test_key_data["imrct"] = {}
         fits_data = {}
         for key, sample in open_files.items():
-            if "final_mass{}".format(evolve_spins_string) not in sample.keys():
+            if (
+                "final_mass{}".format(evolve_spins_string)
+                or "final_spin{}".format(evolve_spins_string) not in sample.keys()
+            ):
                 logger.info("Remnant properties not in samples, trying to generate them")
                 returned_extra_kwargs = sample.generate_all_posterior_samples(
                     evolve_spins=evolve_spins, return_kwargs=True
                 )
                 converted_keys = sample.keys()
-                if "final_mass{}".format(evolve_spins_string) not in converted_keys:
+                if (
+                    "final_mass{}".format(evolve_spins_string)
+                    or "final_spin{}".format(evolve_spins_string) not in converted_keys
+                ):
                     raise KeyError(
                         "Remnant properties not in samples and cannot be generated"
                     )
@@ -577,7 +583,7 @@ def main(args=None):
                         _dict["postinspiral"] = None
 
             data["inspiral maximum frequency (Hz)"] = frequency_dict["inspiral"]
-            data["postinspiral mininum frequency (Hz)"] = frequency_dict["postinspiral"]
+            data["postinspiral minimum frequency (Hz)"] = frequency_dict["postinspiral"]
 
             for key in ["inspiral", "postinspiral"]:
                 data["{} approximant".format(key)] = approximant_dict[key]
@@ -585,7 +591,7 @@ def main(args=None):
             desired_metadata_order = [
                 "GR Quantile (%)",
                 "inspiral maximum frequency (Hz)",
-                "postinspiral mininum frequency (Hz)",
+                "postinspiral minimum frequency (Hz)",
                 "inspiral final_mass_NR_fits",
                 "postinspiral final_mass_NR_fits",
                 "inspiral final_spin_NR_fits",
