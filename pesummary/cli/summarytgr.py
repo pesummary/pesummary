@@ -57,6 +57,18 @@ def command_line():
         choices=TESTS,
     )
     parser.add_argument(
+        "--{test}_kwargs",
+        dest="example_test_kwargs",
+        help=(
+            "Kwargs you wish to use when postprocessing the results. Kwargs "
+            "should be provided as a dictionary 'kwarg:value'. For example "
+            "`--imrct_kwargs N_bins:201 multi_process:4` would pass the kwargs "
+            "N_bins=201, multi_process=4 to the IMRCT function. The test name "
+            "'{test}' should match the test provided with the --test flag"
+        ),
+        default=None
+    )
+    parser.add_argument(
         "-s",
         "--samples",
         dest="samples",
