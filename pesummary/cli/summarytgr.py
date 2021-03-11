@@ -126,7 +126,7 @@ def command_line():
         help=(
             "Disable PE page generation for the input samples."
             "This option is only relevant if no URLs for PE results pages are provided"
-            "using --links_to_pe_pages.",
+            "using --links_to_pe_pages."
         ),
     )
 
