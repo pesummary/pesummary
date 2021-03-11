@@ -57,7 +57,6 @@ def command_line():
         help="make page and plots in DIR",
         metavar="DIR",
         required=True,
-        default=None,
     )
     parser.add_argument(
         "-t",
@@ -117,16 +116,20 @@ def command_line():
     parser.add_argument(
         "--links_to_pe_pages",
         dest="links_to_pe_pages",
-        help="Links to PE pages separated by space.",
+        help="URLs for PE results pages separated by spaces.",
         nargs="+",
         default=[],
     )
     parser.add_argument(
         "--disable_pe_page_generation",
         action="store_true",
-        help="Disable PE page generation",
-        default=False,
+        help=(
+            "Disable PE page generation for the input samples."
+            "This option is only relevant if no URLs for PE results pages are provided"
+            "using --links_to_pe_pages.",
+        ),
     )
+
     parser.add_argument(
         "--pe_page_options",
         dest="pe_page_options",
@@ -186,9 +189,9 @@ def generate_imrct_deviation_parameters(
     logger.info("Calculating IMRCT deviation parameters and GR Quantile")
     evolve_spins_string = ""
     if not evolve_spins:
-        evolve_spins_string = "non_evolved"
+        evolve_spins_string = "_non_evolved"
 
-    samples_string = "final_{}_" + evolve_spins_string
+    samples_string = "final_{}" + evolve_spins_string
     imrct_deviations = imrct_deviation_parameters_from_final_mass_final_spin(
         samples[inspiral_string][samples_string.format("mass")],
         samples[inspiral_string][samples_string.format("spin")],
@@ -249,11 +252,11 @@ def make_imrct_plots(
         path to save the files
     """
     logger.info("Starting to generate plots")
-    evolve_spins_string = "evolved"
+    evolve_spins_string = ""
     if not evolve_spins:
-        evolve_spins_string = "non_" + evolve_spins_string
+        evolve_spins_string = "_non_evolved"
 
-    samples_string = "final_{}_" + evolve_spins_string
+    samples_string = "final_{}" + evolve_spins_string
     plotdir = os.path.join(webdir, "plots")
     make_dir(plotdir)
     if plot_label is not None:
@@ -351,7 +354,7 @@ def check_on_pe_page_generate(command_line, process):
         if process.poll() is not None:
             _running = False
             if process.returncode != 0:
-                msg = "The PE job: {} failed. The error is: {}"
+                msg = "The PE  summarypages job: {} failed. The error is: {}"
                 _output, _error = process.communicate()
                 raise ValueError(msg.format(command_line, _error.decode("utf-8")))
         time.sleep(20)
@@ -364,7 +367,7 @@ def add_dynamic_kwargs_to_namespace(existing_namespace, command_line=None):
     Parameters
     ----------
     existing_namespace: argparse.Namespace
-        existing namespace you wish to add the dynamic arguments too
+        existing namespace you wish to add the dynamic arguments to
     command_line: str, optional
         The command line which you are passing. Default None
     """
@@ -401,10 +404,10 @@ def main(args=None):
     base_url = guess_url(
         os.path.abspath(opts.webdir), socket.getfqdn(), os.environ["USER"]
     )
-    evolve_spins_string = "evolved"
+    evolve_spins_string = ""
     if not opts.evolve_spins:
         evolve_spins = opts.evolve_spins
-        evolve_spins_string = "non_" + evolve_spins_string
+        evolve_spins_string = "_non_evolved"
     else:
         evolve_spins = "ISCO"
 
@@ -472,13 +475,13 @@ def main(args=None):
         test_key_data["imrct"] = {}
         fits_data = {}
         for key, sample in open_files.items():
-            if "final_mass_{}".format(evolve_spins_string) not in sample.keys():
+            if "final_mass{}".format(evolve_spins_string) not in sample.keys():
                 logger.info("Remnant properties not in samples, trying to generate them")
                 returned_extra_kwargs = sample.generate_all_posterior_samples(
                     evolve_spins=evolve_spins, return_kwargs=True
                 )
                 converted_keys = sample.keys()
-                if "final_mass_{}".format(evolve_spins_string) not in converted_keys:
+                if "final_mass{}".format(evolve_spins_string) not in converted_keys:
                     raise KeyError(
                         "Remnant properties not in samples and cannot be generated"
                     )
@@ -560,10 +563,14 @@ def main(args=None):
                             )
                         elif _list == opts.approximant:
                             _dict["inspiral"] = float(
-                                open_files[_inspiral_string].config["waveform-approximant"]
+                                open_files[_inspiral_string].config[
+                                    "waveform-approximant"
+                                ]
                             )
                             _dict["postinspiral"] = float(
-                                open_files[_postinspiral_string].config["waveform-approximant"]
+                                open_files[_postinspiral_string].config[
+                                    "waveform-approximant"
+                                ]
                             )
                     except (AttributeError, KeyError):
                         _dict["inspiral"] = None
