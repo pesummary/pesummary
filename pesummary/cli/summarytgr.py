@@ -21,7 +21,7 @@ import argparse
 
 __author__ = [
     "Charlie Hoy <charlie.hoy@ligo.org>",
-    "Aditya Vijaykumar <aditya.vijaykumar@ligo.org>"
+    "Aditya Vijaykumar <aditya.vijaykumar@ligo.org>",
 ]
 __doc__ = """This executable is used to post-process and generate webpages to
 display results from analyses which test the General Theory of Relativity"""
@@ -66,7 +66,7 @@ def command_line():
             "N_bins=201, multi_process=4 to the IMRCT function. The test name "
             "'{test}' should match the test provided with the --test flag"
         ),
-        default=None
+        default=None,
     )
     parser.add_argument(
         "-s",
@@ -478,7 +478,7 @@ def main(args=None):
         for key, sample in open_files.items():
             if (
                 "final_mass{}".format(evolve_spins_string)
-                or "final_spin{}".format(evolve_spins_string) not in sample.keys()
+                and "final_spin{}".format(evolve_spins_string) not in sample.keys()
             ):
                 logger.info("Remnant properties not in samples, trying to generate them")
                 returned_extra_kwargs = sample.generate_all_posterior_samples(
@@ -487,7 +487,7 @@ def main(args=None):
                 converted_keys = sample.keys()
                 if (
                     "final_mass{}".format(evolve_spins_string)
-                    or "final_spin{}".format(evolve_spins_string) not in converted_keys
+                    and "final_spin{}".format(evolve_spins_string) not in converted_keys
                 ):
                     raise KeyError(
                         "Remnant properties not in samples and cannot be generated"
