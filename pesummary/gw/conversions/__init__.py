@@ -381,15 +381,16 @@ class _Conversion(object):
         if self.has_tidal and force_remnant and self.NSBH and self.compute_remnant:
             logger.warning(
                 "Posterior samples for lambda_2 found in the posterior table "
-                "but unable to find samples for lambda_1. Assuming this "
-                "is an NSBH system. 'force_remnant' provided so using BBH "
-                "fits for this system. This may not give sensible results."
+                "and either unable to find samples for lambda_1 or all "
+                "lambda_1 samples are 0. Assuming this is an NSBH system. "
+                "'force_remnant' provided so using BBH fits for this system. "
+                "This may not give sensible results."
             )
         elif self.has_tidal and self.NSBH and self.compute_remnant:
             logger.warning(
                 "Posterior samples for lambda_2 found in the posterior table "
-                "but unable to find samples for lambda_1. Applying NSBH "
-                "fits to this system."
+                "and either unable to find samples for lambda_1 or all "
+                "lambda_1 samples are 0. Applying NSBH fits to this system."
             )
             self.waveform_fit = True
         elif force_remnant and self.has_tidal and self.compute_remnant:
@@ -431,6 +432,10 @@ class _Conversion(object):
         """
         if "lambda_2" in self.parameters and "lambda_1" not in self.parameters:
             return True
+        elif "lambda_2" in self.parameters and "lambda_1" in self.parameters:
+            _lambda_1 = self.specific_parameter_samples(["lambda_1"])
+            if not np.any(_lambda_1):
+                return True
         return False
 
     def remove_posterior(self, parameter):
@@ -694,6 +699,15 @@ class _Conversion(object):
             samples[0], samples[1], samples[2], samples[3], samples[4],
             samples[5])
         self.append_data("chi_p", chi_p_samples)
+
+    def _chi_p_2spin(self):
+        parameters = [
+            "mass_1", "mass_2", "spin_1x", "spin_1y", "spin_2x", "spin_2y"]
+        samples = self.specific_parameter_samples(parameters)
+        chi_p_2spin_samples = chi_p_2spin(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5])
+        self.append_data("chi_p_2spin", chi_p_2spin_samples)
 
     def _chi_eff(self):
         parameters = ["mass_1", "mass_2", "spin_1z", "spin_2z"]
@@ -1455,10 +1469,13 @@ class _Conversion(object):
             if "chi_eff" not in self.parameters:
                 if all(i in self.parameters for i in ["spin_1z", "spin_2z"]):
                     self._chi_eff()
-            if "chi_p" not in self.parameters:
+            if "chi_p" not in self.parameters or "chi_p_2spin" not in self.parameters:
                 _chi_p_params = ["spin_1x", "spin_1y", "spin_2x", "spin_2y"]
                 if all(i in self.parameters for i in _chi_p_params):
-                    self._chi_p()
+                    if "chi_p" not in self.parameters:
+                        self._chi_p()
+                    if "chi_p_2spin" not in self.parameters:
+                        self._chi_p_2spin()
             polytrope_params = ["log_pressure", "gamma_1", "gamma_2", "gamma_3"]
             if all(param in self.parameters for param in polytrope_params):
                 if "lambda_1" not in self.parameters or "lambda_2" not in self.parameters:

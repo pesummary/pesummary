@@ -42,7 +42,7 @@ def gw_parameters():
         'peak_luminosity_non_evolved', 'final_spin_non_evolved',
         'final_mass_non_evolved', 'final_mass_source_non_evolved',
         'radiated_energy_non_evolved', 'inverted_mass_ratio',
-        'viewing_angle'
+        'viewing_angle', 'chi_p_2spin'
     ]
     return parameters
 
