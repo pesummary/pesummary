@@ -341,14 +341,10 @@ class TGRWebpageGeneration(_WebpageGeneration):
             pages, fix_bottom=True
         )
 
-    def _make_entry_in_downloads_table(self, html_file, label, num, base_string):
-        """Make a label specific entry into the downloads table
-
-        Parameters
-        ----------
-        label: str
-            the label you wish to add to the downloads table
-        base_string: str
-            the download string
+    def _make_entry_in_downloads_table(self, *args, **kwargs):
+        """Make a label specific entry into the downloads table. Given that
+        we do not want to have label specific entries in the downloads table
+        this function simply returns None to overwrite the inherited
+        pesummary.core.webpage.main._WebpageGeneration function
         """
         return
