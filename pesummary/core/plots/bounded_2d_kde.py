@@ -9,9 +9,12 @@ class Bounded_2d_kde(kde):
     functon that exists on a bounded domain
     """
     def __init__(self, pts, xlow=None, xhigh=None, ylow=None, yhigh=None,
-                 *args, **kwargs):
+                 transform=None, *args, **kwargs):
         pts = np.atleast_2d(pts)
         assert pts.ndim == 2, 'Bounded_kde can only be two-dimensional'
+        self._transform = transform
+        if transform is not None:
+            pts = transform(pts)
         super(Bounded_2d_kde, self).__init__(pts, *args, **kwargs)
         self._xlow = xlow
         self._xhigh = xhigh
@@ -45,13 +48,13 @@ class Bounded_2d_kde(kde):
     def evaluate(self, pts):
         """Return an estimate of the density evaluated at the given
         points."""
-        pts = np.atleast_2d(pts)
-        assert pts.ndim == 2, 'points must be two-dimensional'
-        if pts.shape[0] != 2 and pts.shape[1] == 2:
-            pts = pts.T
+        _pts = np.atleast_2d(pts)
+        assert _pts.ndim == 2, 'points must be two-dimensional'
+        if _pts.shape[0] != 2 and _pts.shape[1] == 2:
+            _pts = _pts.T
 
-        x, y = pts
-        pdf = super(Bounded_2d_kde, self).evaluate(pts)
+        x, y = _pts
+        pdf = super(Bounded_2d_kde, self).evaluate(_pts)
         if self.xlow is not None:
             pdf += super(Bounded_2d_kde, self).evaluate([2 * self.xlow - x, y])
 
@@ -83,21 +86,21 @@ class Bounded_2d_kde(kde):
         return pdf
 
     def __call__(self, pts):
-        pts = np.atleast_2d(pts)
-        if pts.shape[0] != 2 and pts.shape[1] == 2:
-            pts = pts.T
-
-        out_of_bounds = np.zeros(pts.T.shape[0], dtype='bool')
-
+        _pts = np.atleast_2d(pts)
+        if _pts.shape[0] != 2 and _pts.shape[1] == 2:
+            _pts = _pts.T
+        if self._transform is not None:
+            _pts = self._transform(_pts)
+        transpose = _pts.T
+        out_of_bounds = np.zeros(transpose.shape[0], dtype='bool')
         if self.xlow is not None:
-            out_of_bounds[pts.T[:, 0] < self.xlow] = True
+            out_of_bounds[transpose[:, 0] < self.xlow] = True
         if self.xhigh is not None:
-            out_of_bounds[pts.T[:, 0] > self.xhigh] = True
+            out_of_bounds[transpose[:, 0] > self.xhigh] = True
         if self.ylow is not None:
-            out_of_bounds[pts.T[:, 1] < self.ylow] = True
+            out_of_bounds[transpose[:, 1] < self.ylow] = True
         if self.yhigh is not None:
-            out_of_bounds[pts.T[:, 1] > self.yhigh] = True
-
-        results = self.evaluate(pts)
+            out_of_bounds[transpose[:, 1] > self.yhigh] = True
+        results = self.evaluate(_pts)
         results[out_of_bounds] = 0.
         return results

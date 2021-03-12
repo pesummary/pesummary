@@ -517,7 +517,7 @@ class SamplesDict(Dict):
             ylabel=self.latex_labels[parameters[1]], **kwargs
         )
 
-    def _triangle(self, parameters, **kwargs):
+    def _triangle(self, parameters, module="core", **kwargs):
         """Wrapper for the `pesummary.core.plots.publication.triangle_plot`
         function
 
@@ -528,15 +528,18 @@ class SamplesDict(Dict):
         **kwargs: dict
             all additional kwargs are passed to the `triangle_plot` function
         """
-        from pesummary.core.plots.publication import triangle_plot
-
-        return triangle_plot(
+        _module = importlib.import_module(
+            "pesummary.{}.plots.publication".format(module)
+        )
+        if module == "gw":
+            kwargs["parameters"] = parameters
+        return getattr(_module, "triangle_plot")(
             [self[parameters[0]]], [self[parameters[1]]],
             xlabel=self.latex_labels[parameters[0]],
             ylabel=self.latex_labels[parameters[1]], **kwargs
         )
 
-    def _reverse_triangle(self, parameters, **kwargs):
+    def _reverse_triangle(self, parameters, module="core", **kwargs):
         """Wrapper for the `pesummary.core.plots.publication.reverse_triangle_plot`
         function
 
@@ -547,9 +550,12 @@ class SamplesDict(Dict):
         **kwargs: dict
             all additional kwargs are passed to the `triangle_plot` function
         """
-        from pesummary.core.plots.publication import reverse_triangle_plot
-
-        return reverse_triangle_plot(
+        _module = importlib.import_module(
+            "pesummary.{}.plots.publication".format(module)
+        )
+        if module == "gw":
+            kwargs["parameters"] = parameters
+        return getattr(_module, "reverse_triangle_plot")(
             [self[parameters[0]]], [self[parameters[1]]],
             xlabel=self.latex_labels[parameters[0]],
             ylabel=self.latex_labels[parameters[1]], **kwargs
@@ -1597,7 +1603,7 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             )
         return samples
 
-    def _triangle(self, parameters, labels="all", **kwargs):
+    def _triangle(self, parameters, labels="all", module="core", **kwargs):
         """Wrapper for the `pesummary.core.plots.publication.triangle_plot`
         function
 
@@ -1610,17 +1616,20 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         **kwargs: dict
             all additional kwargs are passed to the `triangle_plot` function
         """
-        from pesummary.core.plots.publication import triangle_plot
-
+        _module = importlib.import_module(
+            "pesummary.{}.plots.publication".format(module)
+        )
         samples = self._base_triangle(parameters, labels=labels)
-        return triangle_plot(
+        if module == "gw":
+            kwargs["parameters"] = parameters
+        return getattr(_module, "triangle_plot")(
             [_samples[parameters[0]] for _samples in samples],
             [_samples[parameters[1]] for _samples in samples],
             xlabel=self.latex_labels[parameters[0]],
             ylabel=self.latex_labels[parameters[1]], labels=labels, **kwargs
         )
 
-    def _reverse_triangle(self, parameters, labels="all", **kwargs):
+    def _reverse_triangle(self, parameters, labels="all", module="core", **kwargs):
         """Wrapper for the `pesummary.core.plots.publication.reverse_triangle_plot`
         function
 
@@ -1633,10 +1642,13 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         **kwargs: dict
             all additional kwargs are passed to the `triangle_plot` function
         """
-        from pesummary.core.plots.publication import reverse_triangle_plot
-
+        _module = importlib.import_module(
+            "pesummary.{}.plots.publication".format(module)
+        )
         samples = self._base_triangle(parameters, labels=labels)
-        return reverse_triangle_plot(
+        if module == "gw":
+            kwargs["parameters"] = parameters
+        return getattr(_module, "reverse_triangle_plot")(
             [_samples[parameters[0]] for _samples in samples],
             [_samples[parameters[1]] for _samples in samples],
             xlabel=self.latex_labels[parameters[0]],
@@ -1774,11 +1786,17 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             "pesummary.{}.plots.publication".format(module)
         )
         samples = self._base_triangle(parameters, labels=labels)
-        if plot_density is not None and plot_density not in labels:
-            raise ValueError(
-                "Unable to plot the density for '{}'. Please choose from: "
-                "{}".format(plot_density, ", ".join(labels))
-            )
+        if plot_density is not None:
+            if isinstance(plot_density, str):
+                plot_density = [plot_density]
+            elif isinstance(plot_density, (bool, np.bool)) and plot_density:
+                plot_density = labels
+            for i in plot_density:
+                if i not in labels:
+                    raise ValueError(
+                        "Unable to plot the density for '{}'. Please choose "
+                        "from: {}".format(plot_density, ", ".join(labels))
+                    )
         if module == "gw":
             return getattr(_module, "twod_contour_plots")(
                 parameters, [
@@ -1787,7 +1805,7 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
                 ], labels, {
                     parameters[0]: self.latex_labels[parameters[0]],
                     parameters[1]: self.latex_labels[parameters[1]]
-                }, **kwargs
+                }, plot_density=plot_density, **kwargs
             )
         return getattr(_module, "comparison_twod_contour_plot")(
             [_samples[parameters[0]] for _samples in samples],
