@@ -421,10 +421,11 @@ def main(args=None):
     )
     test_key_data = {}
     if opts.test == "imrct":
+        test_kwargs = dict(N_bins=101)
         try:
-            test_kwargs = opts.imrct_kwargs.copy()
+            test_kwargs.update(opts.imrct_kwargs)
         except AttributeError:
-            test_kwargs = dict(N_bins=101)
+            test_kwargs = test_kwargs
 
         for key, value in test_kwargs.items():
             try:
