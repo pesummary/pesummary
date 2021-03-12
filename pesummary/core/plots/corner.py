@@ -72,6 +72,8 @@ def hist2d(
     kde_kwargs: dict, optional
         kwargs passed directly to kde
     """
+    x = np.asarray(x)
+    y = np.asarray(y)
     if kde is None:
         kde = gaussian_kde
 
@@ -136,8 +138,13 @@ def hist2d(
     pts = np.vstack([X.ravel(), Y.ravel()])
     z = kernel(pts)
     H = z.reshape(X.shape)
-
     if smooth is not None:
+        if kde_kwargs.get("transform", None) is not None:
+            from pesummary.utils.utils import logger
+            logger.warn(
+                "Smoothing PDF. This may give unwanted effects especially near "
+                "any boundaries"
+            )
         try:
             from scipy.ndimage import gaussian_filter
         except ImportError:
@@ -176,8 +183,17 @@ def hist2d(
                     kde_kwargs.get("{}low".format(axis), -np.inf),
                     kde_kwargs.get("{}high".format(axis), np.inf)
                 ]
-                transpose[idx][np.argwhere(transpose[idx] < limits[0])] = limits[0]
-                transpose[idx][np.argwhere(transpose[idx] > limits[1])] = limits[1]
+                if kde_kwargs.get("transform", None) is None:
+                    if limits[0] is not None:
+                        transpose[idx][
+                            np.argwhere(transpose[idx] < limits[0])
+                        ] = limits[0]
+                    if limits[1] is not None:
+                        transpose[idx][
+                            np.argwhere(transpose[idx] > limits[1])
+                        ] = limits[1]
+                else:
+                    _transform = kde_kwargs["transform"](transpose)
             _contour_set.append(transpose)
         contour_set.append(_contour_set)
 
@@ -191,20 +207,28 @@ def hist2d(
 
     # Plot the contour edge colors.
     if plot_contours:
-        colors = contour_kwargs.get("colors", color)
-        if colors is None:
-            colors = ['k'] * len(contour_set)
-        elif isinstance(colors, str):
-            colors = [color] * len(contour_set)
-        elif len(colors) < len(contour_set):
-            raise ValueError("Please provide a color for each contour")
+        colors = contour_kwargs.pop("colors", color)
+        linestyles = kwargs.pop("linestyles", "-")
+        _list = [colors, linestyles]
+        for num, (prop, default) in enumerate(zip(_list, ['k', '-'])):
+            if prop is None:
+                _list[num] = default * len(contour_set)
+            elif isinstance(prop, str):
+                _list[num] = [prop] * len(contour_set)
+            elif len(prop) < len(contour_set):
+                raise ValueError(
+                    "Please provide a color/linestyle for each contour"
+                )
         for idx, _contour in enumerate(contour_set):
-            if idx == 0:
-                _label = label
-            else:
-                _label = None
-            for _path in _contour:
-                ax.plot(*_path, color=colors[idx], label=_label)
+            for _idx, _path in enumerate(_contour):
+                if _idx == 0:
+                    _label = label
+                else:
+                    _label = None
+                ax.plot(
+                    *_path, color=_list[0][idx], label=_label,
+                    linestyle=_list[1][idx]
+                )
 
     _set_xlim(new_fig, ax, range[0])
     _set_ylim(new_fig, ax, range[1])
