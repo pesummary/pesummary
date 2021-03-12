@@ -82,7 +82,7 @@ def _imrct_deviation_parameters_integrand_vectorized(
     multi_process: int
         Number of parallel processes. Default: 4
     wrapper_function_for_multiprocess: method
-                Wrapper function for the multiprocessing. Default: None
+        Wrapper function for the multiprocessing. Default: None
 
     Returns
     -------
