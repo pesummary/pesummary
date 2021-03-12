@@ -62,9 +62,10 @@ def command_line():
         "-t",
         "--test",
         dest="test",
-        help="What test do you want to run? Currently only supports `imrct`",
-        metavar="DIR",
-        default=None,
+        help="What test do you want to run? Currently only supports {}".format(
+            ", ".join(TESTS)
+        ),
+        required=True,
         choices=TESTS,
     )
     parser.add_argument(
