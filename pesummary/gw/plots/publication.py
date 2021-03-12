@@ -39,62 +39,51 @@ def chirp_mass_and_q_from_mass1_mass2(pts):
     return np.vstack([mc, q])
 
 
-def estimate_2d_posterior(samples, xlow=None, xhigh=None, ylow=None,
-                          yhigh=None, transform=None, gridsize=100):
-    """Estimate a 2 dimensional posterior distribution
+def _return_bounds(parameters, T=True):
+    """Return bounds for KDE
 
     Parameters
     ----------
-    samples: nd list
-        2d list of samples
-    xlow: float
-        bound the KDE to not take x values below xlow
-    xhigh: float
-        bound the KDE to not take x values above xhigh
-    ylow: float
-        bound the KDE to not take y values below ylow
-    yhigh: float
-        bound the KDE to not take y valuesabove ylow
-    transform: func
-        function to transform the parameters
-    gridsize: int
-        the number of points to use when estimating the KDE
+    parameters: list
+        list of parameters being plotted
+    T: Bool, optional
+        if True, modify the parameter bounds if a transform is required
     """
-    x = np.array(samples[0])
-    y = np.array(samples[1])
-
-    if transform is None:
-        transform = lambda x: x
-
-    deltax = 0.1 * (x.max() - x.min())
-    deltay = 0.1 * (y.max() - y.min())
-    x_pts = np.linspace(x.min() - deltax, x.max() + deltax, gridsize)
-    y_pts = np.linspace(y.min() - deltay, y.max() + deltay, gridsize)
-    xx, yy = np.meshgrid(x_pts, y_pts)
-
-    positions = np.vstack([xx.ravel(), yy.ravel()])
-    pts = np.array([x, y])
-    selected_indices = np.random.choice(pts.shape[1], pts.shape[1] // 2, replace=False)
-    kde_sel = np.zeros(pts.shape[1], dtype=bool)
-    kde_sel[selected_indices] = True
-    kde_pts = transform(pts[:, kde_sel])
-    untransformed_den_pts = pts[:, ~kde_sel]
-    den_pts = transform(untransformed_den_pts)
-    Nden = den_pts.shape[1]
-
-    post_kde = Bounded_2d_kde(
-        kde_pts, xlow=xlow, xhigh=xhigh, ylow=ylow, yhigh=yhigh)
-    den = post_kde(den_pts)
-    inds = np.argsort(den)[::-1]
-    den = den[inds]
-
-    z = np.reshape(post_kde(transform(positions)), xx.shape)
-    return {'xx': xx, 'yy': yy, 'z': z, 'kde': den, 'kde_sel': kde_sel}
+    transform = xlow = xhigh = ylow = yhigh = None
+    if parameters[0] in list(default_bounds.keys()):
+        if "low" in list(default_bounds[parameters[0]].keys()):
+            xlow = default_bounds[parameters[0]]["low"]
+        if "high" in list(default_bounds[parameters[0]].keys()):
+            if isinstance(default_bounds[parameters[0]]["high"], str) and T:
+                if "mass_1" in default_bounds[parameters[0]]["high"]:
+                    transform = chirp_mass_and_q_from_mass1_mass2
+                    xhigh = 1.
+            elif isinstance(default_bounds[parameters[0]]["high"], str):
+                xhigh = None
+            else:
+                xhigh = default_bounds[parameters[0]]["high"]
+    if parameters[1] in list(default_bounds.keys()):
+        if "low" in list(default_bounds[parameters[1]].keys()):
+            ylow = default_bounds[parameters[1]]["low"]
+        if "high" in list(default_bounds[parameters[1]].keys()):
+            if isinstance(default_bounds[parameters[1]]["high"], str) and T:
+                if "mass_1" in default_bounds[parameters[1]]["high"]:
+                    transform = chirp_mass_and_q_from_mass1_mass2
+                    yhigh = 1.
+            elif isinstance(default_bounds[parameters[1]]["high"], str):
+                yhigh = None
+            else:
+                yhigh = default_bounds[parameters[1]]["high"]
+    return transform, xlow, xhigh, ylow, yhigh
 
 
 def twod_contour_plots(
     parameters, samples, labels, latex_labels, colors=None, linestyles=None,
-    gridsize=100, return_ax=False, latex_friendly=False
+    return_ax=False, plot_datapoints=False, smooth=None, latex_friendly=False,
+    legend_kwargs={
+        "bbox_to_anchor": (0., 1.02, 1., .102), "loc": 3, "handlelength": 3,
+        "mode": "expand", "borderaxespad": 0., "handleheight": 1.75
+    }, **kwargs
 ):
     """Generate 2d contour plots for a set of samples for given parameters
 
@@ -109,6 +98,9 @@ def twod_contour_plots(
     latex_labels: dict
         dictionary of latex labels
     """
+    from pesummary.core.plots.publication import (
+        comparison_twod_contour_plot as core
+    )
     from matplotlib.patches import Polygon
 
     logger.debug("Generating 2d contour plots for %s" % ("_and_".join(parameters)))
@@ -119,85 +111,107 @@ def twod_contour_plots(
     if linestyles is None:
         linestyles = ["-"] * len(samples)
     fig, ax1 = figure(gca=True)
-    transform = xlow = xhigh = ylow = yhigh = None
-    handles = []
-    for num, i in enumerate(samples):
-        if parameters[0] in list(default_bounds.keys()):
-            if "low" in list(default_bounds[parameters[0]].keys()):
-                xlow = default_bounds[parameters[0]]["low"]
-            if "high" in list(default_bounds[parameters[0]].keys()):
-                if isinstance(default_bounds[parameters[0]]["high"], str):
-                    if "mass_1" in default_bounds[parameters[0]]["high"]:
-                        transform = chirp_mass_and_q_from_mass1_mass2
-                        xhigh = 1.
-                else:
-                    xhigh = default_bounds[parameters[0]]["high"]
-        if parameters[1] in list(default_bounds.keys()):
-            if "low" in list(default_bounds[parameters[1]].keys()):
-                ylow = default_bounds[parameters[1]]["low"]
-            if "high" in list(default_bounds[parameters[1]].keys()):
-                if isinstance(default_bounds[parameters[1]]["high"], str):
-                    if "mass_1" in default_bounds[parameters[1]]["high"]:
-                        transform = chirp_mass_and_q_from_mass1_mass2
-                        yhigh = 1.
-                else:
-                    yhigh = default_bounds[parameters[1]]["high"]
-
-        contour_data = estimate_2d_posterior(
-            i, transform=transform, xlow=xlow, xhigh=xhigh, ylow=ylow,
-            yhigh=yhigh, gridsize=gridsize)
-        xx = contour_data['xx']
-        yy = contour_data['yy']
-        z = contour_data['z']
-        den = contour_data['kde']
-        Nden = len(den)
-        kde_sel = contour_data['kde_sel']
-
-        pts = np.array([i[0], i[1]])
-        levels = [0.9]
-        zvalues = np.empty(len(levels))
-        for i, level in enumerate(levels):
-            ilevel = int(np.ceil(Nden * level))
-            ilevel = min(ilevel, Nden - 1)
-            zvalues[i] = den[ilevel]
-        zvalues.sort()
-
-        cs = ax1.contour(
-            xx, yy, z, levels=zvalues, colors=[palette[num]], linewidths=1.5,
-            linestyles=[linestyles[num]]
-        )
-        handles.append(
-            mlines.Line2D([], [], color=palette[num], label=labels[num])
-        )
+    transform, xlow, xhigh, ylow, yhigh = _return_bounds(parameters)
+    kwargs.update(
+        {
+            "kde": Bounded_2d_kde, "kde_kwargs": {
+                "transform": transform, "xlow": xlow, "xhigh": xhigh,
+                "ylow": ylow, "yhigh": yhigh
+            }
+        }
+    )
+    fig = core(
+        [i[0] for i in samples], [i[1] for i in samples], colors=colors,
+        labels=labels, xlabel=latex_labels[parameters[0]], smooth=smooth,
+        ylabel=latex_labels[parameters[1]], linestyles=linestyles,
+        plot_datapoints=plot_datapoints, **kwargs
+    )
+    ax1 = fig.gca()
     if all("mass_1" in i or "mass_2" in i for i in parameters):
-
         reg = Polygon([[0, 0], [0, 1000], [1000, 1000]], color='gray', alpha=0.75)
         ax1.add_patch(reg)
-    ax1.set_xlabel(latex_labels[parameters[0]])
-    ax1.set_ylabel(latex_labels[parameters[1]])
-
-    _limits = lambda prop, ind: getattr(np, prop)(
-        [getattr(np, prop)(i[ind]) for i in samples]
-    )
-    _xlow, _xhigh = _limits("min", 0), _limits("max", 0)
-    _ylow, _yhigh = _limits("min", 1), _limits("max", 1)
-    _maximum = np.max([np.max(i) for i in samples])
-    ax1.set_xlim(0.9 * _xlow, 1.1 * _xhigh)
-    ax1.set_ylim(0.9 * _ylow, 1.1 * _yhigh)
-
-    if not all(label is None for label in labels):
-        ncols = number_of_columns_for_legend(labels)
-        legend = ax1.legend(
-            handles=handles, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-            handlelength=3, ncol=ncols, mode="expand", borderaxespad=0.
-        )
-        for num, legobj in enumerate(legend.legendHandles):
-            legobj.set_linewidth(1.75)
-            legobj.set_linestyle(linestyles[num])
+    ncols = number_of_columns_for_legend(labels)
+    legend_kwargs.update({"ncol": ncols})
+    legend = ax1.legend(**legend_kwargs)
+    for leg in legend.get_lines():
+        leg.set_linewidth(legend_kwargs.get("handleheight", 1.))
     fig.tight_layout()
     if return_ax:
         return fig, ax1
     return fig
+
+
+def _setup_triangle_plot(parameters, kwargs):
+    """Modify a dictionary of kwargs for bounded KDEs
+
+    Parameters
+    ----------
+    parameters: list
+        list of parameters being plotted
+    kwargs: dict
+        kwargs to be passed to pesummary.gw.plots.publication.triangle_plot
+        or pesummary.gw.plots.publication.reverse_triangle_plot
+    """
+    from pesummary.core.plots.bounded_1d_kde import bounded_1d_kde
+
+    if not len(parameters):
+        raise ValueError("Please provide a list of parameters")
+    transform, xlow, xhigh, ylow, yhigh = _return_bounds(parameters)
+    kwargs.update(
+        {
+            "kde_2d": Bounded_2d_kde, "kde_2d_kwargs": {
+                "transform": transform, "xlow": xlow, "xhigh": xhigh,
+                "ylow": ylow, "yhigh": yhigh
+            }, "kde": bounded_1d_kde
+        }
+    )
+    _, xlow, xhigh, ylow, yhigh = _return_bounds(parameters, T=False)
+    kwargs["kde_kwargs"] = {
+        "x_axis": {"xlow": xlow, "xhigh": xhigh},
+        "y_axis": {"xlow": ylow, "xhigh": yhigh}
+    }
+    return kwargs
+
+
+def triangle_plot(*args, parameters=[], **kwargs):
+    """Generate a triangular plot made of 3 axis. One central axis showing the
+    2d marginalized posterior and two smaller axes showing the marginalized 1d
+    posterior distribution (above and to the right of central axis)
+
+    Parameters
+    ----------
+    *args: tuple
+        all args passed to pesummary.core.plots.publication.triangle_plot
+    parameters: list
+        list of parameters being plotted
+    kwargs: dict, optional
+        all kwargs passed to pesummary.core.plots.publication.triangle_plot
+    """
+    from pesummary.core.plots.publication import triangle_plot as core
+    kwargs = _setup_triangle_plot(parameters, kwargs)
+    return core(*args, **kwargs)
+
+
+def reverse_triangle_plot(*args, parameters=[], **kwargs):
+    """Generate a triangular plot made of 3 axis. One central axis showing the
+    2d marginalized posterior and two smaller axes showing the marginalized 1d
+    posterior distribution (below and to the left of central axis). Only two
+    axes are plotted, each below the 1d marginalized posterior distribution
+
+    Parameters
+    ----------
+    *args: tuple
+        all args passed to
+        pesummary.core.plots.publication.reverse_triangle_plot
+    parameters: list
+        list of parameters being plotted
+    kwargs: dict, optional
+        all kwargs passed to
+        pesummary.core.plots.publication.reverse_triangle_plot
+    """
+    from pesummary.core.plots.publication import reverse_triangle_plot as core
+    kwargs = _setup_triangle_plot(parameters, kwargs)
+    return core(*args, **kwargs)
 
 
 def violin_plots(

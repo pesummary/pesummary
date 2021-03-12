@@ -173,7 +173,7 @@ def twod_contour_plot(
 def comparison_twod_contour_plot(
     x, y, labels=None, plot_density=None, rangex=None, rangey=None,
     legend_kwargs={"loc": "best", "frameon": False},
-    colors=list(conf.colorcycle), **kwargs
+    colors=list(conf.colorcycle), linestyles=None, **kwargs
 ):
     """Generate a comparison 2d contour contour plot for 2 marginalized
     posterior distributions from multiple analyses
@@ -199,6 +199,8 @@ def comparison_twod_contour_plot(
         kwargs to use for the legend
     colors: list, optional
         list of colors to use for each contour
+    linestyles: list, optional
+        linestyles to use for each contour
     **kwargs: dict, optional
         all additional kwargs are passed to the
         `pesummary.core.plots.publication.twod_contour_plot` function
@@ -221,17 +223,30 @@ def comparison_twod_contour_plot(
     for num, (_x, _y) in enumerate(zip(x, y)):
         if plot_density is not None and plot_density == labels[num]:
             plot_density = True
+        elif plot_density is not None and isinstance(plot_density, list):
+            if labels[num] in plot_density:
+                plot_density = True
+            else:
+                plot_density = False
         elif plot_density is not None and plot_density == "both":
             plot_density = True
         else:
             plot_density = False
 
+        _label = _color = None
+        if labels is not None:
+            _label = labels[num]
+        if colors is not None:
+            _color = colors[num]
+        if linestyles is not None:
+            _linestyle = linestyles[num]
         fig = twod_contour_plot(
-            _x, _y, plot_density=plot_density, label=labels[num], fig=fig,
-            rangex=rangex, rangey=rangey, color=colors[num], **kwargs
+            _x, _y, plot_density=plot_density, label=_label, fig=fig,
+            rangex=rangex, rangey=rangey, color=_color, linestyles=_linestyle,
+            **kwargs
         )
     ax = fig.gca()
-    ax.legend(**legend_kwargs)
+    legend = ax.legend(**legend_kwargs)
     return fig
 
 
@@ -455,7 +470,7 @@ def _triangle_plot(
     percentile_plot=None, fig_kwargs={}, labels=None, plot_datapoints=False,
     rangex=None, rangey=None, grid=False, latex_friendly=False, kde_2d=None,
     kde_2d_kwargs={}, legend_kwargs={"loc": "best", "frameon": False},
-    truth=None, **kwargs
+    truth=None, _contour_function=twod_contour_plot, **kwargs
 ):
     """Base function to generate a triangular plot
 
@@ -607,8 +622,8 @@ def _triangle_plot(
             _smooth = smooth[labels[num]]
         else:
             _smooth = smooth
-        twod_contour_plot(
-            x[num], y[num], bins=300, ax=ax3, levels=levels, smooth=_smooth,
+        _contour_function(
+            x[num], y[num], ax=ax3, levels=levels, smooth=_smooth,
             rangex=[xlow, xhigh], rangey=[ylow, yhigh], color=colors[num],
             plot_density=plot_density, contour_kwargs=dict(
                 linestyles=[linestyles[num]], linewidths=linewidths[num]
