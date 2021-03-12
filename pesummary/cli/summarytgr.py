@@ -5,6 +5,7 @@
 import ast
 import os
 import socket
+import numpy as np
 from itertools import cycle
 import pesummary
 from pesummary import conf
@@ -97,6 +98,12 @@ def command_line():
         dest="evolve_spins",
         help="Evolve spins while calculating remnant quantities",
         action="store_true",
+    )
+    parser.add_argument(
+        "--f_low", dest="f_low", help=(
+            "Low frequency cutoff used to generate the samples. Only used when "
+            "evolving spins"
+        ), nargs='+', default=None
     )
     parser.add_argument(
         "--cutoff_frequency",
@@ -476,29 +483,74 @@ def main(args=None):
                 raise ValueError("Please provide a {} for each file".format(_arg))
         test_key_data["imrct"] = {}
         fits_data = {}
-        for key, sample in open_files.items():
-            if (
-                "final_mass{}".format(evolve_spins_string)
-                and "final_spin{}".format(evolve_spins_string) not in sample.keys()
-            ):
-                logger.info("Remnant properties not in samples, trying to generate them")
-                returned_extra_kwargs = sample.generate_all_posterior_samples(
-                    evolve_spins=evolve_spins, return_kwargs=True
+        remnant_condition = lambda _dictionary, _suffix: all(
+            "{}{}".format(param, _suffix) not in _dictionary.keys() for
+            param in ["final_mass", "final_spin"]
+        )
+        evolved = np.ones_like(analysis_label, dtype=bool)
+        for idx, (key, sample) in enumerate(open_files.items()):
+            suffix = [""]
+            evolve_spins = ["ISCO"]
+            evolve_spins_kwargs = {
+                prop: getattr(opts, prop)[idx] if getattr(opts, prop) is not
+                None else None for prop in ["f_low", "approximant"]
+            }
+            if not opts.evolve_spins:
+                suffix = ["_non_evolved"] + suffix
+                evolve_spins = [False, False]
+            zipped = zip(suffix, evolve_spins)
+            for num, (_suffix, _evolve_spins) in enumerate(zipped):
+                cond = remnant_condition(sample, _suffix)
+                _found_msg = (
+                    "Found {} remnant properties in the posterior table  "
+                    "for {}. Using these for calculation."
                 )
-                converted_keys = sample.keys()
-                if (
-                    "final_mass{}".format(evolve_spins_string)
-                    and "final_spin{}".format(evolve_spins_string) not in converted_keys
-                ):
-                    raise KeyError(
-                        "Remnant properties not in samples and cannot be generated"
+                if not cond:
+                    logger.info(
+                        _found_msg.format(
+                            "evolved" if not len(_suffix) else "non-evolved",
+                            key
+                        )
                     )
+                    if len(_suffix):
+                        evolved[num] = False
+                    break
+                elif not remnant_condition(sample, ""):
+                    logger.info(_found_msg.format("evolved", key))
+                    evolved[num] = True
+                    break
                 else:
-                    logger.info("Remnant properties generated.")
-                    for fit in ["final_mass_NR_fits", "final_spin_NR_fits"]:
-                        fits_data["{} {}".format(key, fit)] = returned_extra_kwargs[
-                            "meta_data"
-                        ][fit]
+                    logger.warning(
+                        "{} remnant properties not found in the posterior "
+                        "table for {}. Trying to calculate them.".format(
+                            "Evolved" if not len(_suffix) else "Non-evolved",
+                            key
+                        )
+                    )
+                    returned_extra_kwargs = sample.generate_all_posterior_samples(
+                        evolve_spins=_evolve_spins, return_kwargs=True,
+                        **evolve_spins_kwargs
+                    )
+                    _cond = remnant_condition(sample, _suffix)
+                    if not _cond:
+                        logger.info(
+                            "{} remnant properties generated. Using these "
+                            "samples for calculation".format(
+                                "Evolved" if not len(_suffix) else "Non-evolved"
+                            )
+                        )
+                        for fit in ["final_mass_NR_fits", "final_spin_NR_fits"]:
+                            fits_data["{} {}".format(key, fit)] = returned_extra_kwargs[
+                                "meta_data"
+                            ][fit]
+                        if len(_suffix):
+                            evolved[num] = False
+                        break
+                
+                    if num == 1:
+                        raise ValueError(
+                            "Unable to compute the remnant properties"
+                        )
 
         inspiral_keys = [
             key for key in open_files.keys() if "inspiral" in key and "post" not in key
@@ -513,7 +565,7 @@ def main(args=None):
             _samples = open_files[[_inspiral, _postinspiral]]
             imrct_deviations, data = generate_imrct_deviation_parameters(
                 _samples,
-                evolve_spins=opts.evolve_spins,
+                evolve_spins=evolved[num],
                 inspiral_string=_inspiral,
                 postinspiral_string=_postinspiral,
                 **test_kwargs,
