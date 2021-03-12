@@ -81,7 +81,15 @@ def command_line():
     parser.add_argument(
         "--labels",
         dest="labels",
-        help="labels used to distinguish runs",
+        help=(
+            "Labels used to distinguish runs. The label format is dependent "
+            "on the TGR test you wish to use. For the IMRCT test, labels "
+            "need to be inspiral and postinspiral if analysing a single event "
+            "or {label1}:inspiral,{label1}:postinspiral,{label2}:inspiral,"
+            "{label2}:postinspiral,... if analysing two or more events (where "
+            "label1/label2 is a unique string to distinguish files from a "
+            "single event)."
+        ),
         nargs="+",
         default=None,
     )
