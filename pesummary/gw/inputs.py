@@ -1,5 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+import ast
 import os
 import math
 import numpy as np
@@ -1108,3 +1109,176 @@ class GWPostProcessing(PostProcessing):
         for i in self.labels:
             maxL_samples[i]["approximant"] = self.approximant[i]
         self._maxL_samples = maxL_samples
+
+
+class IMRCTInput(_Input):
+    """Class to handle the TGR specific command line arguments
+    """
+    @property
+    def labels(self):
+        return self._labels
+
+    @labels.setter
+    def labels(self, labels):
+        self._labels = labels
+        if len(labels) % 2 != 0:
+            raise ValueError(
+                "The IMRCT test requires 2 results files for each analysis. "
+            )
+        elif len(labels) > 2:
+            cond = all(
+                ":inspiral" in label or ":postinspiral" in label for label in labels
+            )
+            if not cond:
+                raise ValueError(
+                    "To compare 2 or more analyses, please provide labels as "
+                    "'{}:inspiral' and '{}:postinspiral' where {} indicates "
+                    "the analysis label"
+                )
+            else:
+                self.analysis_label = [
+                    label.split(":inspiral")[0]
+                    for label in labels
+                    if ":inspiral" in label and "post" not in label
+                ]
+                if len(self.analysis_label) != len(self.result_files) / 2:
+                    raise ValueError(
+                        "When comparing more than 2 analyses, labels must "
+                        "be of the form '{}:inspiral' and '{}:postinspiral'."
+                    )
+                logger.info(
+                    "Using the labels: {} to distinguish analyses".format(
+                        ", ".join(self.analysis_label)
+                    )
+                )
+        elif sorted(labels) != ["inspiral", "postinspiral"]:
+            raise ValueError(
+                "The IMRCT test requires an inspiral and postinspiral result "
+                "file. Please indicate which file is the inspiral and which "
+                "is postinspiral by providing these exact labels to the "
+                "summarytgr executable"
+            )
+        else:
+            self.analysis_label = ["primary"]
+
+    @property
+    def samples(self):
+        return self._samples
+
+    @samples.setter
+    def samples(self, samples):
+        from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
+        self._read_samples = {
+            _label: GWRead(_path) for _label, _path in zip(
+                self.labels, self.result_files
+            )
+        }
+        self._samples = MultiAnalysisSamplesDict(
+            {_label: value.samples_dict for _label, value in self._read_samples.items()}
+        )
+
+    @property
+    def imrct_kwargs(self):
+        return self._imrct_kwargs
+
+    @imrct_kwargs.setter
+    def imrct_kwargs(self, imrct_kwargs):
+        test_kwargs = dict(N_bins=101)
+        try:
+            test_kwargs.update(imrct_kwargs)
+        except AttributeError:
+            test_kwargs = test_kwargs
+
+        for key, value in test_kwargs.items():
+            try:
+                test_kwargs[key] = ast.literal_eval(value)
+            except ValueError:
+                pass
+        self._imrct_kwargs = test_kwargs
+
+    @property
+    def meta_data(self):
+        return self._meta_data
+
+    @meta_data.setter
+    def meta_data(self, meta_data):
+        self._meta_data = {}
+        for num, _inspiral in enumerate(self.inspiral_keys):
+            frequency_dict = dict()
+            approximant_dict = dict()
+            zipped = zip(
+                [self.cutoff_frequency, self.approximant],
+                [frequency_dict, approximant_dict],
+            )
+            _inspiral_string = self.inspiral_keys[num]
+            _postinspiral_string = self.postinspiral_keys[num]
+            for _list, _dict in zipped:
+                if _list is not None and len(_list) == len(self.labels):
+                    inspiral_ind = self.labels.index(_inspiral_string)
+                    postinspiral_ind = self.labels.index(_postinspiral_string)
+                    _dict["inspiral"] = _list[inspiral_ind]
+                    _dict["postinspiral"] = _list[postinspiral_ind]
+                elif _list is not None:
+                    raise ValueError(
+                        "Please provide a 'cutoff_frequency' and 'approximant' "
+                        "for each file"
+                    )
+                else:
+                    try:
+                        if _list == self.cutoff_frequency:
+                            _dict["inspiral"] = float(
+                                self._read_samples[_inspiral_string].config["maximum-frequency"]
+                            )
+                            _dict["postinspiral"] = float(
+                                self._read_samples[_postinspiral_string].config[
+                                    "minimum-frequency"
+                                ]
+                            )
+                        elif _list == self.approximant:
+                            _dict["inspiral"] = float(
+                                self._read_samples[_inspiral_string].config[
+                                    "waveform-approximant"
+                                ]
+                            )
+                            _dict["postinspiral"] = float(
+                                self._read_samples[_postinspiral_string].config[
+                                    "waveform-approximant"
+                                ]
+                            )
+                    except (AttributeError, KeyError, TypeError):
+                        _dict["inspiral"] = None
+                        _dict["postinspiral"] = None
+
+            self._meta_data[self.analysis_label[num]] = {
+                "inspiral maximum frequency (Hz)": frequency_dict["inspiral"],
+                "postinspiral minimum frequency (Hz)": frequency_dict["postinspiral"],
+                "inspiral approximant": approximant_dict["inspiral"],
+                "postinspiral approximant": approximant_dict["postinspiral"]
+            }
+
+    def __init__(self, opts):
+        self.opts = opts
+        self.existing = None
+        self.webdir = self.opts.webdir
+        self.user = None
+        self.baseurl = None
+        self.result_files = self.opts.samples
+        self.labels = self.opts.labels
+        self.samples = self.opts.samples
+        self.inspiral_keys = [
+            key for key in self.samples.keys() if "inspiral" in key and "post"
+            not in key
+        ]
+        self.postinspiral_keys = [
+            key.replace("inspiral", "postinspiral") for key in self.inspiral_keys
+        ]
+        self.imrct_kwargs = self.opts.imrct_kwargs
+        for _arg in ["cutoff_frequency", "approximant", "links_to_pe_pages", "f_low"]:
+            _attr = getattr(self.opts, _arg)
+            if _attr is not None and len(_attr) and len(_attr) != len(self.labels):
+                raise ValueError("Please provide a {} for each file".format(_arg))
+            setattr(self, _arg, _attr)
+        self.meta_data = None
+        self.default_directories = ["samples", "plots", "js", "html", "css"]
+        self.publication = False
+        self.make_directories()
