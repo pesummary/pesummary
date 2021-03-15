@@ -235,3 +235,19 @@ def add_dynamic_calibration_to_namespace(existing_namespace, command_line=None):
         existing_namespace, "--*_calibration", example="--{}_calibration",
         command_line=command_line
     )
+
+
+def add_dynamic_tgr_kwargs_to_namespace(existing_namespace, command_line=None):
+    """Add a dynamic TGR kwargs argument to the argparse namespace
+
+    Parameters
+    ----------
+    existing_namespace: argparse.Namespace
+        existing namespace you wish to add the dynamic arguments to
+    command_line: str, optional
+        The command line which you are passing. Default None
+    """
+    return add_dynamic_argparse(
+        existing_namespace, "--*_kwargs", example="--{}_kwargs",
+        command_line=command_line
+    )

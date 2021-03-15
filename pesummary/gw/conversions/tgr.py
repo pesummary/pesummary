@@ -435,3 +435,152 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         }
     )
     return imrct_deviations
+
+
+def generate_imrct_deviation_parameters(
+    samples, evolve_spins_forward=True, inspiral_string="inspiral",
+    postinspiral_string="postinspiral", approximant=None, f_low=None,
+    **kwargs
+):
+    """Generate deviation parameter pdfs for the IMR Consistency Test
+
+    Parameters
+    ----------
+    samples: MultiAnalysisSamplesDict
+        Dictionary containing inspiral and postinspiral samples
+    evolve_spins_forward: bool
+        If `True`, evolve spins to the ISCO frequency. Default: True.
+    inspiral_string: string
+        Identifier for the inspiral samples
+    postinspiral_string: string
+        Identifier for the post-inspiral samples
+    approximant: dict, optional
+        The approximant used for the inspiral and postinspiral analyses.
+        Keys of the dictionary must be the same as the inspiral_string and
+        postinspiral_string. Default None
+    f_low: dict, optional
+        The low frequency cut-off used for the inspiral and postinspiral
+        analyses. Keys of the dictionary must be the same as the inspiral_string
+        and postinspiral_string. Default None
+    kwargs: dict, optional
+        Keywords to be passed to imrct_deviation_parameters_from_final_mass_final_spin
+
+    Returns
+    -------
+    imrct_deviations: ProbabilityDict2d
+        2d pdf of the IMRCT deviation parameters
+    data: dict
+        Metadata
+    """
+    import time
+
+    remnant_condition = lambda _dictionary, _suffix: all(
+        "{}{}".format(param, _suffix) not in _dictionary.keys() for
+        param in ["final_mass", "final_spin"]
+    )
+    evolved = np.ones(2, dtype=bool)
+    suffix = [""]
+    evolve_spins = ["ISCO"]
+    if not evolve_spins_forward:
+        suffix = ["_non_evolved"] + suffix
+        evolve_spins = [False, False]
+    fits_data = {}
+    for idx, (key, sample) in enumerate(samples.items()):
+        zipped = zip(suffix, evolve_spins)
+        for num, (_suffix, _evolve_spins) in enumerate(zipped):
+            cond = remnant_condition(sample, _suffix)
+            _found_msg = (
+                "Found {} remnant properties in the posterior table  "
+                "for {}. Using these for calculation."
+            )
+            if not cond:
+                logger.info(
+                    _found_msg.format(
+                        "evolved" if not len(_suffix) else "non-evolved",
+                        key
+                    )
+                )
+                if len(_suffix):
+                    evolved[idx] = False
+                break
+            elif not remnant_condition(sample, ""):
+                logger.info(_found_msg.format("evolved", key))
+                evolved[idx] = True
+                break
+            else:
+                logger.warning(
+                    "{} remnant properties not found in the posterior "
+                    "table for {}. Trying to calculate them.".format(
+                        "Evolved" if not len(_suffix) else "Non-evolved",
+                        key
+                    )
+                )
+                returned_extra_kwargs = sample.generate_all_posterior_samples(
+                    evolve_spins=_evolve_spins, return_kwargs=True,
+                    approximant=(
+                        approximant[key] if approximant is not None else None
+                    ), f_low=f_low[key] if f_low is not None else None
+                )
+                _cond = remnant_condition(sample, _suffix)
+                if not _cond:
+                    logger.info(
+                        "{} remnant properties generated. Using these "
+                        "samples for calculation".format(
+                            "Evolved" if not len(_suffix) else "Non-evolved"
+                        )
+                    )
+                    for fit in ["final_mass_NR_fits", "final_spin_NR_fits"]:
+                        fits_data["{} {}".format(key, fit)] = returned_extra_kwargs[
+                            "meta_data"
+                        ][fit]
+                    if len(_suffix):
+                        evolved[idx] = False
+                    break
+
+            if num == 1:
+                raise ValueError(
+                    "Unable to compute the remnant properties"
+                )
+    if not all(_evolved == evolved[0] for _evolved in evolved):
+        keys = list(samples.keys())
+        _inspiral_index = keys.index(inspiral_string)
+        _postinspiral_index = keys.index(postinspiral_string)
+        raise ValueError(
+            "Using {} remnant properties for the inspiral and {} remnant "
+            "properties for the postinspiral. This must be the same for "
+            "the calculation".format(
+                "evolved" if evolved[_inspiral_index] else "non-evolved",
+                "non-evolved" if not evolved[_postinspiral_index] else "evolved"
+            )
+        )
+    samples_string = "final_{}"
+    if not evolved[0]:
+        samples_string += "_non_evolved"
+
+    logger.info("Calculating IMRCT deviation parameters and GR Quantile")
+    t0 = time.time()
+    imrct_deviations = imrct_deviation_parameters_from_final_mass_final_spin(
+        samples[inspiral_string][samples_string.format("mass")],
+        samples[inspiral_string][samples_string.format("spin")],
+        samples[postinspiral_string][samples_string.format("mass")],
+        samples[postinspiral_string][samples_string.format("spin")],
+        **kwargs,
+    )
+    gr_quantile = (
+        imrct_deviations[
+            "final_mass_final_spin_deviations"
+        ].minimum_encompassing_contour_level(0.0, 0.0)
+        * 100
+    )
+    t1 = time.time()
+    data = kwargs.copy()
+    data["evolve_spins"] = evolve_spins
+    data["Time (seconds)"] = round(t1 - t0, 2)
+    data["GR Quantile (%)"] = round(gr_quantile[0], 2)
+    data.update(fits_data)
+    logger.info(
+        "Calculation Finished in {} seconds. GR Quantile is {} %.".format(
+            data["Time (seconds)"], data["GR Quantile (%)"]
+        )
+    )
+    return imrct_deviations, data, evolved[0]
