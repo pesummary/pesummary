@@ -111,8 +111,8 @@ def command_line():
         "and the postinspiral maximum frequency are set to the same number. "
         "If a list of length 2 is supplied, this assumes that the "
         "one corresponding to the inspiral label is the maximum frequency "
-        "for the inspiral and that corresponding to the postinspiral label is the"
-        "minimum frequency for the postinspiral",
+        "for the inspiral and that corresponding to the postinspiral label is "
+        "the minimum frequency for the postinspiral",
         type=float,
         nargs="+",
         default=None,
@@ -128,9 +128,9 @@ def command_line():
         "--disable_pe_page_generation",
         action="store_true",
         help=(
-            "Disable PE page generation for the input samples."
-            "This option is only relevant if no URLs for PE results pages are provided"
-            "using --links_to_pe_pages."
+            "Disable PE page generation for the input samples. This option is "
+            "only relevant if no URLs for PE results pages are provided using "
+            "--links_to_pe_pages."
         ),
     )
 
@@ -174,13 +174,158 @@ def generate_pe_pages(webdir, result_files, labels, additional_options=""):
     from .summarytest import launch
 
     logger.info("Creating PE summarypages")
-    base_command_line = "summarypages --webdir {} --samples {} --labels {} --gw ".format(
-        webdir, " ".join(result_files), " ".join(labels)
+    base_command_line = (
+        "summarypages --webdir {} --samples {} --labels {} --gw ".format(
+            webdir, " ".join(result_files), " ".join(labels)
+        )
     )
     base_command_line += additional_options
     launch(base_command_line, check_call=True)
     logger.info("PE summarypages created")
     return
+
+
+def imrct(opts):
+    """Postprocess the IMR consistency test results
+
+    Parameters
+    ----------
+    opts: argparse.Namespace
+        Namespace object containing the command line options
+
+    Returns
+    -------
+    args: pesummary.gw.inputs.IMRCTInput
+        IMRCTInput object containing the command line arguments
+    data: list
+        a list of length 3 containing a dictionary of key data associated with
+        the IMR consistency test results, alist containing links to PE pages
+        displaying the posterior samples for the inspiral and postinspiral
+        analyses and a list containing the IMRCT deviation PDFs for each
+        analysis
+    """
+    from pesummary.gw.inputs import IMRCTInput
+
+    args = IMRCTInput(opts)
+    test_key_data = {}
+    fits_data = {}
+    _imrct_deviations = []
+    cmap_cycle = cycle(conf.cmapcycle)
+    evolved = np.ones_like(args.inspiral_keys, dtype=bool)
+    for num, _inspiral in enumerate(args.inspiral_keys):
+        _postinspiral = args.postinspiral_keys[num]
+        _samples = args.samples[[_inspiral, _postinspiral]]
+        args.imrct_kwargs.update({
+            prop: {
+                _key: (
+                    getattr(args, prop)[args.labels.index(_key)] if
+                    getattr(args, prop) is not None else None
+                ) for _key in [_inspiral, _postinspiral]
+            } for prop in ["approximant", "f_low"]
+        })
+        imrct_deviations, data, _evolved = generate_imrct_deviation_parameters(
+            _samples,
+            evolve_spins_forward=opts.evolve_spins,
+            inspiral_string=_inspiral,
+            postinspiral_string=_postinspiral,
+            **args.imrct_kwargs,
+        )
+        evolved[num] = _evolved
+        data.update(fits_data)
+        _imrct_deviations.append(imrct_deviations)
+        _legend_kwargs = {}
+        if len(args.analysis_label) > 1:
+            _legend_kwargs = {
+                "legend": True,
+                "label": args.analysis_label[num],
+                "legend_kwargs": {"frameon": True},
+            }
+        logger.info("Starting to generate plots")
+        make_and_save_imrct_plots(
+            imrct_deviations,
+            samples=_samples,
+            plot_label=args.analysis_label[num],
+            webdir=args.webdir,
+            cmap=next(cmap_cycle),
+            evolve_spins=evolved[num],
+            make_diagnostic_plots=opts.make_diagnostic_plots,
+            inspiral_string=_inspiral,
+            postinspiral_string=_postinspiral,
+            **_legend_kwargs,
+        )
+        logger.info("Finished generating plots")
+        _keys = [
+            "inspiral maximum frequency (Hz)",
+            "postinspiral minimum frequency (Hz)",
+            "inspiral approximant",
+            "postinspiral approximant"
+        ]
+        for key in _keys:
+            data[key] = args.meta_data[args.analysis_label[num]][key]
+
+        desired_metadata_order = [
+            "GR Quantile (%)",
+            "inspiral maximum frequency (Hz)",
+            "postinspiral minimum frequency (Hz)",
+            "inspiral final_mass_NR_fits",
+            "postinspiral final_mass_NR_fits",
+            "inspiral final_spin_NR_fits",
+            "postinspiral final_spin_NR_fits",
+            "inspiral approximant",
+            "postinspiral approximant",
+            "evolve_spins",
+            "N_bins",
+            "Time (seconds)",
+        ]
+
+        desired_metadata = {}
+        for key in desired_metadata_order:
+            try:
+                desired_metadata[key] = data[key]
+            except KeyError:
+                continue
+        test_key_data[args.analysis_label[num]] = desired_metadata
+    if len(args.inspiral_keys) > 1:
+        fig = None
+        colors = cycle(conf.colorcycle)
+        for num, _samples in enumerate(_imrct_deviations):
+            save = False
+            if num == len(_imrct_deviations) - 1:
+                save = True
+            fig = make_and_save_imrct_plots(
+                _samples,
+                samples={},
+                webdir=args.webdir,
+                evolve_spins=evolved[num],
+                make_diagnostic_plots=False,
+                plot_label="combined",
+                cmap="off",
+                levels=[0.95],
+                level_kwargs={"colors": [next(colors)]},
+                existing_figure=fig,
+                save=save,
+                return_fig=True,
+                legend=True,
+                label=args.analysis_label[num],
+                legend_kwargs={"frameon": True},
+            )
+    if not len(args.links_to_pe_pages):
+        try:
+            links_to_pe_pages = [
+                args.samples_paths[_label].history["webpage_url"]
+                for _label in args.labels
+            ]
+        except (AttributeError, KeyError, TypeError):
+            links_to_pe_pages = []
+    else:
+        links_to_pe_pages = args.links_to_pe_pages
+
+    if not len(links_to_pe_pages) and not opts.disable_pe_page_generation:
+        links_to_pe_pages = [
+            "../pe_pages/html/{0}_{0}.html".format(label) for label in
+            args.labels
+        ]
+    return args, [test_key_data, links_to_pe_pages, _imrct_deviations]
 
 
 def main(args=None):
@@ -189,135 +334,17 @@ def main(args=None):
     opts, unknown = _parser.parse_known_args(args=args)
     test_key_data = {}
     if opts.test == "imrct":
-        from pesummary.gw.inputs import IMRCTInput
-        args = IMRCTInput(opts)
-        test_key_data["imrct"] = {}
-        fits_data = {}
-        _imrct_deviations = []
-        cmap_cycle = cycle(conf.cmapcycle)
-        evolved = np.ones_like(args.inspiral_keys, dtype=bool)
-        for num, _inspiral in enumerate(args.inspiral_keys):
-            _postinspiral = args.postinspiral_keys[num]
-            _samples = args.samples[[_inspiral, _postinspiral]]
-            args.imrct_kwargs.update({
-                prop: {
-                    _key: (
-                        getattr(args, prop)[args.labels.index(_key)] if
-                        getattr(args, prop) is not None else None
-                    ) for _key in [_inspiral, _postinspiral]
-                } for prop in ["approximant", "f_low"]
-            })
-            imrct_deviations, data, _evolved = generate_imrct_deviation_parameters(
-                _samples,
-                evolve_spins_forward=opts.evolve_spins,
-                inspiral_string=_inspiral,
-                postinspiral_string=_postinspiral,
-                **args.imrct_kwargs,
-            )
-            evolved[num] = _evolved
-            data.update(fits_data)
-            _imrct_deviations.append(imrct_deviations)
-            _legend_kwargs = {}
-            if len(args.analysis_label) > 1:
-                _legend_kwargs = {
-                    "legend": True,
-                    "label": args.analysis_label[num],
-                    "legend_kwargs": {"frameon": True},
-                }
-            logger.info("Starting to generate plots")
-            make_and_save_imrct_plots(
-                imrct_deviations,
-                samples=_samples,
-                plot_label=args.analysis_label[num],
-                webdir=args.webdir,
-                cmap=next(cmap_cycle),
-                evolve_spins=evolved[num],
-                make_diagnostic_plots=opts.make_diagnostic_plots,
-                inspiral_string=_inspiral,
-                postinspiral_string=_postinspiral,
-                **_legend_kwargs,
-            )
-            logger.info("Finished generating plots")
-            _keys = [
-                "inspiral maximum frequency (Hz)",
-                "postinspiral minimum frequency (Hz)",
-                "inspiral approximant",
-                "postinspiral approximant"
-            ]
-            for key in _keys:
-                data[key] = args.meta_data[args.analysis_label[num]][key]
-
-            desired_metadata_order = [
-                "GR Quantile (%)",
-                "inspiral maximum frequency (Hz)",
-                "postinspiral minimum frequency (Hz)",
-                "inspiral final_mass_NR_fits",
-                "postinspiral final_mass_NR_fits",
-                "inspiral final_spin_NR_fits",
-                "postinspiral final_spin_NR_fits",
-                "inspiral approximant",
-                "postinspiral approximant",
-                "evolve_spins",
-                "N_bins",
-                "Time (seconds)",
-            ]
-
-            desired_metadata = {}
-
-            for key in desired_metadata_order:
-                try:
-                    desired_metadata[key] = data[key]
-                except KeyError:
-                    continue
-
-            test_key_data["imrct"][args.analysis_label[num]] = desired_metadata
-
-        if len(args.inspiral_keys) > 1:
-            fig = None
-            colors = cycle(conf.colorcycle)
-            for num, _samples in enumerate(_imrct_deviations):
-                save = False
-                if num == len(_imrct_deviations) - 1:
-                    save = True
-                fig = make_and_save_imrct_plots(
-                    _samples,
-                    samples={},
-                    webdir=opts.webdir,
-                    evolve_spins=evolved[num],
-                    make_diagnostic_plots=False,
-                    plot_label="combined",
-                    cmap="off",
-                    levels=[0.95],
-                    level_kwargs={"colors": [next(colors)]},
-                    existing_figure=fig,
-                    save=save,
-                    return_fig=True,
-                    legend=True,
-                    label=args.analysis_label[num],
-                    legend_kwargs={"frameon": True},
-                )
-        if not len(args.links_to_pe_pages):
-            try:
-                links_to_pe_pages = [
-                    args.samples_paths[_label].history["webpage_url"]
-                    for _label in args.labels
-                ]
-            except (AttributeError, KeyError, TypeError):
-                links_to_pe_pages = []
-        else:
-            links_to_pe_pages = args.links_to_pe_pages
-
-        if not len(links_to_pe_pages) and not opts.disable_pe_page_generation:
-            links_to_pe_pages = [
-                "../pe_pages/html/{0}_{0}.html".format(label) for label in args.labels
-            ]
+        args, _data = imrct(opts)
+        test_key_data["imrct"], links_to_pe_pages, _imrct_deviations = _data
     samplesdir = os.path.join(args.webdir, "samples")
     TGRMetaFile(
         args.samples,
         args.analysis_label,
         webdir=opts.webdir,
         imrct_data={
-            label: _imrct_deviations[num] for num, label in enumerate(args.analysis_label)
+            label: _imrct_deviations[num] for num, label in enumerate(
+                args.analysis_label
+            )
         },
         file_kwargs=test_key_data,
     )
