@@ -240,7 +240,7 @@ def _imrct_deviation_parameters_integrand_series(
                 )
     else:
         logger.debug("Splitting the calculation across {} cpus".format(multi_process))
-        _v2, _v1 = np.meshgrid(v2, v1)
+        _v1, _v2 = np.meshgrid(v1, v2)
         _v1, _v2 = _v1.ravel(), _v2.ravel()
         with multiprocessing.Pool(multi_process) as pool:
             args = [
@@ -393,6 +393,13 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
             bins=(final_mass_bins, final_spin_bins),
             density=True,
         )
+        # transpose density to go from (X,Y) indexing returned by
+        # np.histogram2d() to array (i,j) indexing for further computations.
+        # From now onwards, different rows (i) correspond to different values
+        # of final mass and different columns (j) correspond to different
+        # values of final_spin
+        _inspiral_2d_histogram = _inspiral_2d_histogram.T
+        _postinspiral_2d_histogram = _postinspiral_2d_histogram.T
         inspiral_interp = interp_method(
             final_mass_intp, final_spin_intp, _inspiral_2d_histogram, **interp_kwargs
         )
