@@ -255,7 +255,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
                 "posterior distributions for the fractional parameters "
                 "fractional_final_mass and fractional_final_spin for the "
                 "{} analysis. The prediction from General Relativity is "
-                "shown"
+                "shown as a plus."
             ).format(analysis_label[num]) for num in range(len(analysis_label))
         ]
         captions = [captions[i:2 + i] for i in range(0, len(captions), 2)]

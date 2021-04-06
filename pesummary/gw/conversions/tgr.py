@@ -223,7 +223,7 @@ def _imrct_deviation_parameters_integrand_series(
     P_final_massfinal_spin_r_interp_object:
         interpolated P_r(final_mass, final_spin)
     """
-    P = np.zeros(shape=(len(final_mass), len(final_mass)))
+    P = np.zeros(shape=(len(v1), len(v2)))
     if multi_process == 1:
         logger.debug("Performing calculation on a single cpu. This may take some time")
         for i, _v2 in enumerate(v2):
@@ -261,7 +261,7 @@ def _imrct_deviation_parameters_integrand_series(
                     [kwargs] * len(_args),
                 ),
             )
-        P = np.array([i[0] for i in _P]).reshape(len(final_mass), len(final_spin))
+        P = np.array([i[0] for i in _P]).reshape(len(v1), len(v2))
     return P
 
 
@@ -377,7 +377,6 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         postinspiral_interp = kde(
             np.array([final_mass_postinspiral, final_spin_postinspiral]), **kde_kwargs
         )
-        N_bins_for_deviation_vec = N_bins
         _wrapper_function = _wrapper_for_multiprocessing_kde
     else:
         logger.debug("Interpolating 2d histogram data")
@@ -406,14 +405,13 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         postinspiral_interp = interp_method(
             final_mass_intp, final_spin_intp, _postinspiral_2d_histogram, **interp_kwargs
         )
-        N_bins_for_deviation_vec = N_bins - 1
         _wrapper_function = _wrapper_for_multiprocessing_interp
 
     final_mass_deviation_vec = np.linspace(
-        -final_mass_deviation_lim, final_mass_deviation_lim, N_bins_for_deviation_vec
+        -final_mass_deviation_lim, final_mass_deviation_lim, N_bins
     )
     final_spin_deviation_vec = np.linspace(
-        -final_spin_deviation_lim, final_spin_deviation_lim, N_bins_for_deviation_vec
+        -final_spin_deviation_lim, final_spin_deviation_lim, N_bins
     )
 
     diff_final_mass_deviation = final_mass_deviation_vec[1] - final_mass_deviation_vec[0]
@@ -583,11 +581,11 @@ def generate_imrct_deviation_parameters(
     data = kwargs.copy()
     data["evolve_spins"] = evolve_spins
     data["Time (seconds)"] = round(t1 - t0, 2)
-    data["GR Quantile (%)"] = round(gr_quantile[0], 2)
+    data["GR Quantile (%)"] = gr_quantile[0]
     data.update(fits_data)
     logger.info(
         "Calculation Finished in {} seconds. GR Quantile is {} %.".format(
-            data["Time (seconds)"], data["GR Quantile (%)"]
+            data["Time (seconds)"], round(data["GR Quantile (%)"], 2)
         )
     )
     return imrct_deviations, data, evolved[0]
