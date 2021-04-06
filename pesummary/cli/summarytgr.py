@@ -348,6 +348,11 @@ def main(args=None):
         },
         file_kwargs=test_key_data,
     )
+    test_key_data_for_webpage = test_key_data
+    for key in test_key_data_for_webpage["imrct"].keys():
+        test_key_data_for_webpage["imrct"][key]["GR Quantile (%)"] = round(
+        test_key_data_for_webpage["imrct"][key]["GR Quantile (%)"], 2
+    )
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
         args.webdir,
@@ -355,7 +360,7 @@ def main(args=None):
         test=opts.test,
         open_files=args.samples,
         links_to_pe_pages=links_to_pe_pages,
-        test_key_data=test_key_data,
+        test_key_data=test_key_data_for_webpage,
     )
     webpage.generate_webpages(make_diagnostic_plots=opts.make_diagnostic_plots)
     msg = "Complete. Webpages can be viewed at the following url {}.".format(
