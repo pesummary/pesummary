@@ -75,7 +75,11 @@ def command_line():
             "or {label1}:inspiral,{label1}:postinspiral,{label2}:inspiral,"
             "{label2}:postinspiral,... if analysing two or more events (where "
             "label1/label2 is a unique string to distinguish files from a "
-            "single event)."
+            "single event). If a metafile is provided, labels need to be "
+            "{inspiral_label}:inspiral {postinspiral_label}:postinspiral "
+            "where inspiral_label and postinspiral_label are the "
+            "pesummary labels for the inspiral and postinspiral analyses "
+            "respectively."
         ),
         nargs="+",
         default=None,
