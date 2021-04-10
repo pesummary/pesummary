@@ -1152,11 +1152,66 @@ class IMRCTInput(_Input):
                     )
                 )
         elif sorted(labels) != ["inspiral", "postinspiral"]:
-            raise ValueError(
-                "The IMRCT test requires an inspiral and postinspiral result "
-                "file. Please indicate which file is the inspiral and which "
-                "is postinspiral by providing these exact labels to the "
-                "summarytgr executable"
+            if all(self.is_pesummary_metafile(ff) for ff in self.result_files):
+                meta_file_labels = []
+                for suffix in [":inspiral", ":postinspiral"]:
+                    if any(suffix in label for label in labels):
+                        ind = [
+                            num for num, label in enumerate(labels) if
+                            suffix in label
+                        ]
+                        if len(ind) > 1:
+                            raise ValueError(
+                                "Please provide a single {} label".format(
+                                    suffix.split(":")[1]
+                                )
+                            )
+                        meta_file_labels.append(
+                            labels[ind[0]].split(suffix)[0]
+                        )
+                    else:
+                        raise ValueError(
+                            "Please provide labels as {inspiral_label}:inspiral "
+                            "and {postinspiral_label}:postinspiral where "
+                            "inspiral_label and postinspiral_label are the "
+                            "PESummary labels for the inspiral and postinspiral "
+                            "analyses respectively. "
+                        )
+                if len(self.result_files) == 1:
+                    logger.info(
+                        "Using the {} samples for the inspiral analysis and {} "
+                        "samples for the postinspiral analysis from the file "
+                        "{}".format(
+                            meta_file_labels[0], meta_file_labels[1],
+                            self.result_files[0]
+                        )
+                    )
+                elif len(self.result_files) == 2:
+                    logger.info(
+                        "Using the {} samples for the inspiral analysis from "
+                        "the file {}. Using the {} samples for the "
+                        "postinspiral analysis from the file {}".format(
+                            meta_file_labels[0], self.result_files[0],
+                            meta_file_labels[1], self.result_files[1]
+                        )
+                    )
+                else:
+                    raise ValueError(
+                        "Currently, you can only provide at most 2 pesummary "
+                        "metafiles. If one is provided, both the inspiral and "
+                        "postinspiral are extracted from that single file. If "
+                        "two are provided, the inspiral is extracted from one "
+                        "file and the postinspiral is extracted from the other."
+                    )
+                self._labels = ["inspiral", "postinspiral"]
+                self._meta_file_labels = meta_file_labels
+                self.analysis_label = ["primary"]
+            else:
+                raise ValueError(
+                    "The IMRCT test requires an inspiral and postinspiral result "
+                    "file. Please indicate which file is the inspiral and which "
+                    "is postinspiral by providing these exact labels to the "
+                    "summarytgr executable"
             )
         else:
             self.analysis_label = ["primary"]
@@ -1173,9 +1228,32 @@ class IMRCTInput(_Input):
                 self.labels, self.result_files
             )
         }
-        self._samples = MultiAnalysisSamplesDict(
-            {_label: value.samples_dict for _label, value in self._read_samples.items()}
-        )
+        _samples_dict = {}
+        for label, _open in self._read_samples.items():
+            if isinstance(_open.samples_dict, MultiAnalysisSamplesDict):
+                if not len(self._meta_file_labels):
+                    raise ValueError(
+                        "Currently you can only pass a file containing a "
+                        "single analysis or a valid PESummary metafile "
+                        "containing multiple analyses"
+                    )
+                _labels = _open.labels
+                if len(self._read_samples) == 1:
+                    _samples_dict = {
+                        label: _open.samples_dict[meta_file_label] for
+                        label, meta_file_label in zip(
+                            self.labels, self._meta_file_labels
+                        )
+                    }
+                    break
+                else:
+                    ind = self.labels.index(label)
+                    _samples_dict[label] = _open.samples_dict[
+                        self._meta_file_labels[ind]
+                    ]
+            else:
+                _samples_dict[label] = _open.samples_dict
+        self._samples = MultiAnalysisSamplesDict(_samples_dict)
 
     @property
     def imrct_kwargs(self):
