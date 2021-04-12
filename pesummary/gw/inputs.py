@@ -1216,6 +1216,70 @@ class IMRCTInput(_Input):
         else:
             self.analysis_label = ["primary"]
 
+    def _extract_stored_approximant(self, opened_file, label):
+        """Extract the approximant used for a given analysis stored in a
+        PESummary metafile
+
+        Parameters
+        ----------
+        opened_file: pesummary.gw.file.formats.pesummary.PESummary
+            opened metafile that contains the analysis 'label'
+        label: str
+            analysis label which is stored in the PESummary metafile
+        """
+        if opened_file.approximant is not None:
+            if label not in opened_file.labels:
+                raise ValueError(
+                    "Invalid label. The list of available labels are {}".format(
+                        ", ".join(opened_file.labels)
+                    )
+                )
+            _index = opened_file.labels.index(label)
+            return opened_file.approximant[_index]
+        return
+
+    def _extract_stored_cutoff_frequency(self, opened_file, label):
+        """Extract the cutoff frequencies used for a given analysis stored in a
+        PESummary metafile
+
+        Parameters
+        ----------
+        opened_file: pesummary.gw.file.formats.pesummary.PESummary
+            opened metafile that contains the analysis 'label'
+        label: str
+            analysis label which is stored in the PESummary metafile
+        """
+        frequencies = {}
+        if opened_file.config is not None:
+            if label not in opened_file.labels:
+                raise ValueError(
+                    "Invalid label. The list of available labels are {}".format(
+                        ", ".join(opened_file.labels)
+                    )
+                )
+            if opened_file.config[label] is not None:
+                _config = opened_file.config[label]
+                if "config" in _config.keys():
+                    if "maximum-frequency" in _config["config"].keys():
+                        frequencies["fhigh"] = _config["config"][
+                            "maximum-frequency"
+                        ]
+                    if "minimum-frequency" in _config["config"].keys():
+                        frequencies["flow"] = _config["config"][
+                            "minimum-frequency"
+                        ]
+                elif "lalinference" in _config.keys():
+                    if "fhigh" in _config["lalinference"].keys():
+                        frequencies["fhigh"] = _config["lalinference"][
+                            "fhigh"
+                        ]
+                    if "flow" in _config["lalinference"].keys():
+                        frequencies["flow"] = _config["lalinference"][
+                            "flow"
+                        ]
+            return frequencies
+        return
+
     @property
     def samples(self):
         return self._samples
@@ -1229,6 +1293,8 @@ class IMRCTInput(_Input):
             )
         }
         _samples_dict = {}
+        _approximant_dict = {}
+        _cutoff_frequency_dict = {}
         for label, _open in self._read_samples.items():
             if isinstance(_open.samples_dict, MultiAnalysisSamplesDict):
                 if not len(self._meta_file_labels):
@@ -1245,15 +1311,58 @@ class IMRCTInput(_Input):
                             self.labels, self._meta_file_labels
                         )
                     }
+                    for label, meta_file_label in zip(self.labels, self._meta_file_labels):
+                        _stored_approx = self._extract_stored_approximant(
+                            _open, meta_file_label
+                        )
+                        _stored_frequencies = self._extract_stored_cutoff_frequency(
+                            _open, meta_file_label
+                        )
+                        if _stored_approx is not None:
+                            _approximant_dict[label] = _stored_approx
+                        if _stored_frequencies is not None:
+                            if label == "inspiral":
+                                if "fhigh" in _stored_frequencies.keys():
+                                    _cutoff_frequency_dict[label] = _stored_frequencies[
+                                        "fhigh"
+                                    ]
+                            if label == "postinspiral":
+                                if "flow" in _stored_frequencies.keys():
+                                    _cutoff_frequency_dict[label] = _stored_frequencies[
+                                        "flow"
+                                    ]
                     break
                 else:
                     ind = self.labels.index(label)
                     _samples_dict[label] = _open.samples_dict[
                         self._meta_file_labels[ind]
                     ]
+                    _stored_approx = self._extract_stored_approximant(
+                        _open, self._meta_file_labels[ind]
+                    )
+                    _stored_frequencies = self._extract_stored_cutoff_frequency(
+                        _open, self._meta_file_labels[ind]
+                    )
+                    if _stored_approx is not None:
+                        _approximant_dict[label] = _stored_approx
+                    if _stored_frequencies is not None:
+                        if label == "inspiral":
+                            if "fhigh" in _stored_frequencies.keys():
+                                _cutoff_frequency_dict[label] = _stored_frequencies[
+                                    "fhigh"
+                                ]
+                        if label == "postinspiral":
+                            if "flow" in _stored_frequencies.keys():
+                                _cutoff_frequency_dict[label] = _stored_frequencies[
+                                    "flow"
+                                ]
             else:
                 _samples_dict[label] = _open.samples_dict
         self._samples = MultiAnalysisSamplesDict(_samples_dict)
+        if len(_approximant_dict):
+            self._approximant_dict = _approximant_dict
+        if len(_cutoff_frequency_dict):
+            self._cutoff_frequency_dict = _cutoff_frequency_dict
 
     @property
     def imrct_kwargs(self):
@@ -1287,10 +1396,11 @@ class IMRCTInput(_Input):
             zipped = zip(
                 [self.cutoff_frequency, self.approximant],
                 [frequency_dict, approximant_dict],
+                ["cutoff_frequency", "approximant"]
             )
             _inspiral_string = self.inspiral_keys[num]
             _postinspiral_string = self.postinspiral_keys[num]
-            for _list, _dict in zipped:
+            for _list, _dict, name in zipped:
                 if _list is not None and len(_list) == len(self.labels):
                     inspiral_ind = self.labels.index(_inspiral_string)
                     postinspiral_ind = self.labels.index(_postinspiral_string)
@@ -1303,26 +1413,24 @@ class IMRCTInput(_Input):
                     )
                 else:
                     try:
-                        if _list == self.cutoff_frequency:
-                            _dict["inspiral"] = float(
-                                self._read_samples[_inspiral_string].config["maximum-frequency"]
-                            )
-                            _dict["postinspiral"] = float(
-                                self._read_samples[_postinspiral_string].config[
-                                    "minimum-frequency"
+                        if name == "cutoff_frequency":
+                            if "inspiral" in self._cutoff_frequency_dict.keys():
+                                _dict["inspiral"] = self._cutoff_frequency_dict[
+                                    "inspiral"
+                                 ]
+                            if "postinspiral" in self._cutoff_frequency_dict.keys():
+                                _dict["postinspiral"] = self._cutoff_frequency_dict[
+                                    "postinspiral"
                                 ]
-                            )
-                        elif _list == self.approximant:
-                            _dict["inspiral"] = float(
-                                self._read_samples[_inspiral_string].config[
-                                    "waveform-approximant"
+                        elif name == "approximant":
+                            if "inspiral" in self._approximant_dict.keys():
+                                _dict["inspiral"] = self._approximant_dict[
+                                    "inspiral"
                                 ]
-                            )
-                            _dict["postinspiral"] = float(
-                                self._read_samples[_postinspiral_string].config[
-                                    "waveform-approximant"
+                            if "postinspiral" in self._approximant_dict.keys():
+                                _dict["postinspiral"] = self._approximant_dict[
+                                    "postinspiral"
                                 ]
-                            )
                     except (AttributeError, KeyError, TypeError):
                         _dict["inspiral"] = None
                         _dict["postinspiral"] = None
