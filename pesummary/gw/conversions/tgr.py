@@ -579,7 +579,7 @@ def generate_imrct_deviation_parameters(
     )
     t1 = time.time()
     data = kwargs.copy()
-    data["evolve_spins"] = evolve_spins
+    data["evolve_spins"] = evolved
     data["Time (seconds)"] = round(t1 - t0, 2)
     data["GR Quantile (%)"] = gr_quantile[0]
     data.update(fits_data)
