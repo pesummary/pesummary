@@ -262,10 +262,22 @@ def imrct(opts):
             "inspiral maximum frequency (Hz)",
             "postinspiral minimum frequency (Hz)",
             "inspiral approximant",
-            "postinspiral approximant"
+            "postinspiral approximant",
+            "inspiral remnant fits",
+            "postinspiral remnant fits"
         ]
         for key in _keys:
-            data[key] = args.meta_data[args.analysis_label[num]][key]
+            if "remnant" not in key:
+                data[key] = args.meta_data[args.analysis_label[num]][key]
+            else:
+                _meta_data = args.meta_data[args.analysis_label[num]][key]
+                _fits = [
+                    "final_mass_NR_fits", "final_spin_NR_fits"
+                ]
+                prefix = key.split(" remnant fits")[0]
+                for _fit in _fits:
+                    if _meta_data is not None and _fit in _meta_data.keys():
+                        data["{} {}".format(prefix, _fit)] = _meta_data[_fit]
 
         desired_metadata_order = [
             "GR Quantile (%)",

@@ -1238,6 +1238,37 @@ class IMRCTInput(_Input):
             return opened_file.approximant[_index]
         return
 
+    def _extract_stored_remnant_fits(self, opened_file, label):
+        """Extract the remnant fits used for a given analysis stored in a
+        PESummary metafile
+
+        Parameters
+        ----------
+        opened_file: pesummary.gw.file.formats.pesummary.PESummary
+            opened metafile that contains the analysis 'label'
+        label: str
+            analysis label which is stored in the PESummary metafile
+        """
+        fits = {}
+        fit_strings = [
+            "final_spin_NR_fits", "final_mass_NR_fits"
+        ]
+        if label not in opened_file.labels:
+            raise ValueError(
+                "Invalid label. The list of available labels are {}".format(
+                    ", ".join(opened_file.labels)
+                )
+            )
+        _index = opened_file.labels.index(label)
+        _meta_data = opened_file.extra_kwargs[_index]
+        if "meta_data" in _meta_data.keys():
+            for key in fit_strings:
+                if key in _meta_data["meta_data"].keys():
+                    fits[key] = _meta_data["meta_data"][key]
+        if len(fits):
+            return fits
+        return
+
     def _extract_stored_cutoff_frequency(self, opened_file, label):
         """Extract the cutoff frequencies used for a given analysis stored in a
         PESummary metafile
@@ -1295,6 +1326,7 @@ class IMRCTInput(_Input):
         _samples_dict = {}
         _approximant_dict = {}
         _cutoff_frequency_dict = {}
+        _remnant_fits_dict = {}
         for label, _open in self._read_samples.items():
             if isinstance(_open.samples_dict, MultiAnalysisSamplesDict):
                 if not len(self._meta_file_labels):
@@ -1318,8 +1350,13 @@ class IMRCTInput(_Input):
                         _stored_frequencies = self._extract_stored_cutoff_frequency(
                             _open, meta_file_label
                         )
+                        _stored_remnant_fits = self._extract_stored_remnant_fits(
+                            _open, meta_file_label
+                        )
                         if _stored_approx is not None:
                             _approximant_dict[label] = _stored_approx
+                        if _stored_remnant_fits is not None:
+                            _remnant_fits_dict[label] = _stored_remnant_fits
                         if _stored_frequencies is not None:
                             if label == "inspiral":
                                 if "fhigh" in _stored_frequencies.keys():
@@ -1343,8 +1380,13 @@ class IMRCTInput(_Input):
                     _stored_frequencies = self._extract_stored_cutoff_frequency(
                         _open, self._meta_file_labels[ind]
                     )
+                    _stored_remnant_fits = self._extract_stored_remnant_fits(
+                        _open, self._meta_file_labels[ind]
+                    )
                     if _stored_approx is not None:
                         _approximant_dict[label] = _stored_approx
+                    if _stored_remnant_fits is not None:
+                        _remnant_fits_dict[label] = _stored_remnant_fits
                     if _stored_frequencies is not None:
                         if label == "inspiral":
                             if "fhigh" in _stored_frequencies.keys():
@@ -1363,6 +1405,8 @@ class IMRCTInput(_Input):
             self._approximant_dict = _approximant_dict
         if len(_cutoff_frequency_dict):
             self._cutoff_frequency_dict = _cutoff_frequency_dict
+        if len(_remnant_fits_dict):
+            self._remnant_fits_dict = _remnant_fits_dict
 
     @property
     def imrct_kwargs(self):
@@ -1393,10 +1437,11 @@ class IMRCTInput(_Input):
         for num, _inspiral in enumerate(self.inspiral_keys):
             frequency_dict = dict()
             approximant_dict = dict()
+            remnant_dict = dict()
             zipped = zip(
-                [self.cutoff_frequency, self.approximant],
-                [frequency_dict, approximant_dict],
-                ["cutoff_frequency", "approximant"]
+                [self.cutoff_frequency, self.approximant, None],
+                [frequency_dict, approximant_dict, remnant_dict],
+                ["cutoff_frequency", "approximant", "remnant_fits"]
             )
             _inspiral_string = self.inspiral_keys[num]
             _postinspiral_string = self.postinspiral_keys[num]
@@ -1431,6 +1476,15 @@ class IMRCTInput(_Input):
                                 _dict["postinspiral"] = self._approximant_dict[
                                     "postinspiral"
                                 ]
+                        elif name == "remnant_fits":
+                            if "inspiral" in self._remnant_fits_dict.keys():
+                                _dict["inspiral"] = self._remnant_fits_dict[
+                                    "inspiral"
+                                ]
+                            if "postinspiral" in self._remnant_fits_dict.keys():
+                                _dict["postinspiral"] = self._remnant_fits_dict[
+                                    "postinspiral"
+                                ]
                     except (AttributeError, KeyError, TypeError):
                         _dict["inspiral"] = None
                         _dict["postinspiral"] = None
@@ -1439,7 +1493,9 @@ class IMRCTInput(_Input):
                 "inspiral maximum frequency (Hz)": frequency_dict["inspiral"],
                 "postinspiral minimum frequency (Hz)": frequency_dict["postinspiral"],
                 "inspiral approximant": approximant_dict["inspiral"],
-                "postinspiral approximant": approximant_dict["postinspiral"]
+                "postinspiral approximant": approximant_dict["postinspiral"],
+                "inspiral remnant fits": remnant_dict["inspiral"],
+                "postinspiral remnant fits": remnant_dict["postinspiral"]
             }
 
     def __init__(self, opts):
