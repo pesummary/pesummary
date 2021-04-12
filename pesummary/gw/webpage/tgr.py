@@ -96,7 +96,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
             if len(self.links_to_pe_pages) > 2:
                 analysis_label = [
                     label.split(":inspiral")[0] for label in self.samples.keys()
-                    if "inspiral" in label and "post" not in label
+                    if "inspiral" in label and "postinspiral" not in label
                 ]
                 _links = ["PE Pages"]
                 for label in analysis_label:
@@ -221,7 +221,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
         """Make the IMR consistency test pages"""
         analysis_label = [
             label.split(":inspiral")[0] for label in self.samples.keys() if
-            "inspiral" in label and "post" not in label
+            "inspiral" in label and "postinspiral" not in label
         ]
         if analysis_label == ["inspiral"]:
             analysis_label = ["primary"]

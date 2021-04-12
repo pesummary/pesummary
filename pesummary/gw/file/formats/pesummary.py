@@ -300,7 +300,7 @@ class TGRPESummary(PESummary):
                 from pesummary.utils.probability_dict import ProbabilityDict2D
                 analysis_label = [
                     label.split(":inspiral")[0] for label in self.labels
-                    if "inspiral" in label and "post" not in label
+                    if "inspiral" in label and "postinspiral" not in label
                 ]
                 self.imrct_deviation = {
                     label: ProbabilityDict2D(
