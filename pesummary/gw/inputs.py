@@ -1127,7 +1127,8 @@ class IMRCTInput(_Input):
             )
         elif len(labels) > 2:
             cond = all(
-                ":inspiral" in label or ":postinspiral" in label for label in labels
+                ":inspiral" in label or ":postinspiral" in label for label in
+                labels
             )
             if not cond:
                 raise ValueError(
@@ -1139,7 +1140,7 @@ class IMRCTInput(_Input):
                 self.analysis_label = [
                     label.split(":inspiral")[0]
                     for label in labels
-                    if ":inspiral" in label and "post" not in label
+                    if ":inspiral" in label and ":postinspiral" not in label
                 ]
                 if len(self.analysis_label) != len(self.result_files) / 2:
                     raise ValueError(
@@ -1508,8 +1509,8 @@ class IMRCTInput(_Input):
         self.labels = self.opts.labels
         self.samples = self.opts.samples
         self.inspiral_keys = [
-            key for key in self.samples.keys() if "inspiral" in key and "post"
-            not in key
+            key for key in self.samples.keys() if "inspiral" in key and
+            ":postinspiral" not in key
         ]
         self.postinspiral_keys = [
             key.replace("inspiral", "postinspiral") for key in self.inspiral_keys
