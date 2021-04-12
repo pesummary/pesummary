@@ -367,8 +367,8 @@ def main(args=None):
     test_key_data_for_webpage = test_key_data
     for key in test_key_data_for_webpage["imrct"].keys():
         test_key_data_for_webpage["imrct"][key]["GR Quantile (%)"] = round(
-        test_key_data_for_webpage["imrct"][key]["GR Quantile (%)"], 2
-    )
+            test_key_data_for_webpage["imrct"][key]["GR Quantile (%)"], 2
+        )
     logger.info("Creating webpages for IMRCT")
     webpage = TGRWebpageGeneration(
         args.webdir,

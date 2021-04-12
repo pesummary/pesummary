@@ -878,6 +878,7 @@ class GWInput(_GWInput, Input):
     public: Bool
         if True, public facing summarypages are produced
     """
+
     def __init__(self, opts):
         super(GWInput, self).__init__(
             opts, ignore_copy=True, extra_options=[
@@ -1063,6 +1064,7 @@ class GWPostProcessing(PostProcessing):
     public: Bool
         if True, public facing summarypages are produced
     """
+
     def __init__(self, inputs, colors="default"):
         super(GWPostProcessing, self).__init__(inputs, colors=colors)
         if self.existing is not None:
@@ -1213,7 +1215,7 @@ class IMRCTInput(_Input):
                     "file. Please indicate which file is the inspiral and which "
                     "is postinspiral by providing these exact labels to the "
                     "summarytgr executable"
-            )
+                )
         else:
             self.analysis_label = ["primary"]
 
@@ -1463,7 +1465,7 @@ class IMRCTInput(_Input):
                             if "inspiral" in self._cutoff_frequency_dict.keys():
                                 _dict["inspiral"] = self._cutoff_frequency_dict[
                                     "inspiral"
-                                 ]
+                                ]
                             if "postinspiral" in self._cutoff_frequency_dict.keys():
                                 _dict["postinspiral"] = self._cutoff_frequency_dict[
                                     "postinspiral"
@@ -1509,8 +1511,8 @@ class IMRCTInput(_Input):
         self.labels = self.opts.labels
         self.samples = self.opts.samples
         self.inspiral_keys = [
-            key for key in self.samples.keys() if "inspiral" in key and
-            ":postinspiral" not in key
+            key for key in self.samples.keys() if "inspiral" in key
+            and ":postinspiral" not in key
         ]
         self.postinspiral_keys = [
             key.replace("inspiral", "postinspiral") for key in self.inspiral_keys
