@@ -1288,7 +1288,7 @@ class IMRCTInput(_Input):
     def samples(self, samples):
         from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
         self._read_samples = {
-            _label: GWRead(_path) for _label, _path in zip(
+            _label: GWRead(_path, disable_prior=True) for _label, _path in zip(
                 self.labels, self.result_files
             )
         }
@@ -1358,6 +1358,26 @@ class IMRCTInput(_Input):
                                 ]
             else:
                 _samples_dict[label] = _open.samples_dict
+                extra_kwargs = _open.extra_kwargs
+                if "pe_algorithm" in extra_kwargs["sampler"].keys():
+                    if extra_kwargs["sampler"]["pe_algorithm"] == "bilby":
+                        try:
+                            subkwargs = extra_kwargs["other"]["likelihood"][
+                                "waveform_arguments"
+                            ]
+                            _approximant_dict[label] = (
+                                subkwargs["waveform_approximant"]
+                            )
+                            if "inspiral" in label and "postinspiral" not in label:
+                                _cutoff_frequency_dict[label] = (
+                                    subkwargs["maximum_frequency"]
+                                )
+                            elif "postinspiral" in label:
+                                _cutoff_frequency_dict[label] = (
+                                    subkwargs["minimum_frequency"]
+                                )
+                        except KeyError:
+                            pass
         self._samples = MultiAnalysisSamplesDict(_samples_dict)
         if len(_approximant_dict):
             self._approximant_dict = _approximant_dict
