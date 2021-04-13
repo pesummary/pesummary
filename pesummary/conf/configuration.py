@@ -41,7 +41,7 @@ color = 'b'
 colorcycle = "brgkmc"
 
 # color cycle for different cmaps
-cmapcycle = ["YlOrBr", "Blues", "Purples", "greens", "PuRd", "inferno"]
+cmapcycle = ["YlOrBr", "Blues", "Purples", "Greens", "PuRd", "inferno"]
 
 # color for injection lines
 injection_color = 'orange'
