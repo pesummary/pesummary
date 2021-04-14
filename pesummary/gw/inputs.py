@@ -1482,29 +1482,44 @@ class IMRCTInput(_Input):
                 else:
                     try:
                         if name == "cutoff_frequency":
-                            if "inspiral" in self._cutoff_frequency_dict.keys():
+                            cond = (
+                                "inspiral" in self._cutoff_frequency_dict.keys()
+                                and "postinspiral" not in
+                                self._cutoff_frequency_dict.keys()
+                            )
+                            if cond:
                                 _dict["inspiral"] = self._cutoff_frequency_dict[
                                     "inspiral"
                                 ]
-                            if "postinspiral" in self._cutoff_frequency_dict.keys():
+                            elif "postinspiral" in self._cutoff_frequency_dict.keys():
                                 _dict["postinspiral"] = self._cutoff_frequency_dict[
                                     "postinspiral"
                                 ]
                         elif name == "approximant":
-                            if "inspiral" in self._approximant_dict.keys():
+                            cond = (
+                                "inspiral" in self._approximant_dict.keys()
+                                and "postinspiral" not in
+                                self._approximant_dict.keys()
+                            )
+                            if cond:
                                 _dict["inspiral"] = self._approximant_dict[
                                     "inspiral"
                                 ]
-                            if "postinspiral" in self._approximant_dict.keys():
+                            elif "postinspiral" in self._approximant_dict.keys():
                                 _dict["postinspiral"] = self._approximant_dict[
                                     "postinspiral"
                                 ]
                         elif name == "remnant_fits":
-                            if "inspiral" in self._remnant_fits_dict.keys():
+                            cond = (
+                                "inspiral" in self._remnant_fits_dict.keys()
+                                and "postinspiral" not in
+                                self._remnant_fits_dict.keys()
+                            )
+                            if cond:
                                 _dict["inspiral"] = self._remnant_fits_dict[
                                     "inspiral"
                                 ]
-                            if "postinspiral" in self._remnant_fits_dict.keys():
+                            elif "postinspiral" in self._remnant_fits_dict.keys():
                                 _dict["postinspiral"] = self._remnant_fits_dict[
                                     "postinspiral"
                                 ]
@@ -1532,7 +1547,7 @@ class IMRCTInput(_Input):
         self.samples = self.opts.samples
         self.inspiral_keys = [
             key for key in self.samples.keys() if "inspiral" in key
-            and ":postinspiral" not in key
+            and "postinspiral" not in key
         ]
         self.postinspiral_keys = [
             key.replace("inspiral", "postinspiral") for key in self.inspiral_keys
