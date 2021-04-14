@@ -31,7 +31,11 @@ with open(os.path.join(path, "requirements.txt"), "r") as f:
     requirements = ' \\\n'.join(_requirements)
 
 with open(os.path.join(path, "optional_requirements.txt"), "r") as f:
-    optional = ' \\\n'.join(f.read().strip().split("\n"))
+    _requirements = f.read().strip().split("\n")
+    _requirements = [
+        "'{}'".format(r) if '<=' in r else r for r in _requirements
+    ]
+    optional = ' \\\n'.join(_requirements)
 
 Docker_filename = "Dockerfile-pesummary-python{}{}".format(
     python_major_version, python_minor_version

@@ -99,7 +99,7 @@ def _check_tgr_pesummary_file(f):
         else:
             return False
     except Exception:
-        raise False
+        return False
 
 
 GW_HDF5_LOAD = {
