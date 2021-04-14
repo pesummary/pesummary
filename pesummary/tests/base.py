@@ -321,10 +321,11 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
         for num, i in enumerate(data):
             data[num][12] = distance[num]
         mass_1 = np.random.random(1000) * 100
+        q = np.random.random(1000) * 100
         for num, i in enumerate(data):
             data[num][0] = mass_1[num]
         for num, i in enumerate(data):
-            data[num][1] = mass_1[num]
+            data[num][1] = mass_1[num] * q[num]
     else:
         import string
 

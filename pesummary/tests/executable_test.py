@@ -521,6 +521,7 @@ class TestSummaryClassification(Base):
         self.launch(command_line)
         self.check_output()
 
+
 class TestSummaryTGR(Base):
     """Test the `summarytgr` executable
     """
@@ -540,14 +541,19 @@ class TestSummaryTGR(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
-    def check_output(self):
+    def check_output(self, diagnostic=True):
         """Check the output from the `summarytgr` executable
         """
         import glob
 
         image_files = glob.glob(".outdir/plots/*")
-        image_base_string = ".outdir/plots/imrct_{}.png"
-        file_strings = ["deviations_triangle_plot", "mass_1_mass_2", "a_1_a_2", "final_mass_non_evolved_final_spin_non_evolved"]
+        image_base_string = ".outdir/plots/primary_imrct_{}.png"
+        file_strings = ["deviations_triangle_plot"]
+        if diagnostic:
+            file_strings += [
+                "mass_1_mass_2", "a_1_a_2",
+                "final_mass_non_evolved_final_spin_non_evolved"
+            ]
         for file_string in file_strings:
             assert image_base_string.format(file_string) in image_files
 
@@ -556,12 +562,13 @@ class TestSummaryTGR(Base):
         """
         command_line = (
             "summarytgr --webdir .outdir "
-            " --samples .outdir/bilby.json .outdir/bilby.json "
-            " --test imrct "
-            " --labels inspiral postinspiral "
-            " --make-diagnostic-plots"
+            "--samples .outdir/bilby.json .outdir/bilby.json "
+            "--test imrct "
+            "--labels inspiral postinspiral "
+            "--imrct_kwargs N_bins:11 "
+            "--make_diagnostic_plots "
+            "--disable_pe_page_generation"
         )
-
         self.launch(command_line)
         self.check_output()
 
@@ -569,12 +576,14 @@ class TestSummaryTGR(Base):
         """Test the `summarytgr` executable for a pesummary metafile
         """
         command_line = (
-            "summarytgr --webdir .outdir --samples --test imrct "
+            "summarytgr --webdir .outdir --samples "
             ".outdir/pesummary.json .outdir/pesummary.json --labels "
-            "inspiral postinspiral --make-diagnostic-plots"
+            "test:inspiral test:postinspiral --test imrct --imrct_kwargs "
+            "N_bins:11 --disable_pe_page_generation"
         )
         self.launch(command_line)
-        self.check_output()
+        self.check_output(diagnostic=False)
+
 
 class TestSummaryClean(Base):
     """Test the `summaryclean` executable

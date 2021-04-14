@@ -1552,7 +1552,10 @@ class IMRCTInput(_Input):
         self.postinspiral_keys = [
             key.replace("inspiral", "postinspiral") for key in self.inspiral_keys
         ]
-        self.imrct_kwargs = self.opts.imrct_kwargs
+        try:
+            self.imrct_kwargs = self.opts.imrct_kwargs
+        except AttributeError:
+            self.imrct_kwargs = {}
         for _arg in ["cutoff_frequency", "approximant", "links_to_pe_pages", "f_low"]:
             _attr = getattr(self.opts, _arg)
             if _attr is not None and len(_attr) and len(_attr) != len(self.labels):
