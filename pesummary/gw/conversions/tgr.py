@@ -292,7 +292,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     final_spin_inspiral,
     final_mass_postinspiral,
     final_spin_postinspiral,
-    N_bins,
+    N_bins=101,
     final_mass_deviation_lim=1,
     final_spin_deviation_lim=1,
     multi_process=4,
@@ -323,7 +323,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         Maximum absolute value of the final mass deviation parameter. Default 1.
     final_spin_deviation_lim: float
         Maximum absolute value of the final spin deviation parameter. Default 1.
-    N_bins: int
+    N_bins: int, optional
         Number of equally spaced bins between [-final_mass_deviation_lim,
         final_mass_deviation_lim] and [-final_spin_deviation_lim,
         final_spin_deviation_lim]. Default is 101.
