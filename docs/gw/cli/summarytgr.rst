@@ -27,8 +27,8 @@ argument.
     only parameter estimation analysis for one or more analyses.
 
 You may tailor the postprocessing by passing a selection of kwargs specific
-to the IMRCT postprocessing. All kwargs are passed to the
-:code:`imrct_deviation_parameters_from_final_mass_final_spin` function in
+to the IMRCT postprocessing (:code:`--imrct_kwargs`). All kwargs are passed to
+the :code:`imrct_deviation_parameters_from_final_mass_final_spin` function in
 :code:`pesummary.gw.conversions.tgr`. For details about the allowed kwargs
 see `the conversion docs <../Conversion.html#tgr>`_.
 
