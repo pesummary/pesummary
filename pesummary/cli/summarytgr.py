@@ -227,13 +227,16 @@ def imrct(opts):
                 ) for _key in [_inspiral, _postinspiral]
             } for prop in ["approximant", "f_low"]
         })
-        imrct_deviations, data, _evolved = generate_imrct_deviation_parameters(
+        imrct_deviations, data, _evolved, samples = generate_imrct_deviation_parameters(
             _samples,
             evolve_spins_forward=opts.evolve_spins,
             inspiral_string=_inspiral,
             postinspiral_string=_postinspiral,
+            return_samples_used=True,
             **args.imrct_kwargs,
         )
+        for key, value in samples.items():
+            args.samples[key] = value
         evolved[num] = _evolved
         data.update(fits_data)
         _imrct_deviations.append(imrct_deviations)
