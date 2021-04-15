@@ -61,7 +61,11 @@ def command_line():
         "-s",
         "--samples",
         dest="samples",
-        help="Posterior samples hdf5 file",
+        help=(
+            "Path to posterior samples file(s). See documentation for allowed "
+            "formats. If path is on a remote server, add username and "
+            "servername in the form {username}@{servername}:{path}"
+        ),
         nargs="+",
         default=None,
     )
