@@ -59,9 +59,7 @@ class parser(object):
         """
         opts, unknown = self._parser.parse_known_args(args=args)
         for dynamic in self.dynamic_argparse:
-            _, _unknown = dynamic(
-                opts, command_line=" ".join(args)
-            )
+            _, _unknown = dynamic(opts, command_line=args)
             unknown = self.intersection(unknown, _unknown)
         getattr(logger, logger_level["known"])(
             "Command line arguments: %s" % (opts)
