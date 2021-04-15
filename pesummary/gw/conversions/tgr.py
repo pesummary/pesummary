@@ -445,7 +445,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
 def generate_imrct_deviation_parameters(
     samples, evolve_spins_forward=True, inspiral_string="inspiral",
     postinspiral_string="postinspiral", approximant=None, f_low=None,
-    **kwargs
+    return_samples_used=False, **kwargs
 ):
     """Generate deviation parameter pdfs for the IMR Consistency Test
 
@@ -467,6 +467,10 @@ def generate_imrct_deviation_parameters(
         The low frequency cut-off used for the inspiral and postinspiral
         analyses. Keys of the dictionary must be the same as the inspiral_string
         and postinspiral_string. Default None
+    return_samples_used: Bool, optional
+        if True, return the samples which were used to generate the IMRCT deviation
+        parameters. These samples will match the input but may include remnant
+        samples if they were not previously present
     kwargs: dict, optional
         Keywords to be passed to imrct_deviation_parameters_from_final_mass_final_spin
 
@@ -588,4 +592,6 @@ def generate_imrct_deviation_parameters(
             data["Time (seconds)"], round(data["GR Quantile (%)"], 2)
         )
     )
+    if return_samples_used:
+        return imrct_deviations, data, evolved[0], samples
     return imrct_deviations, data, evolved[0]
