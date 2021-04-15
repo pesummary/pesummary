@@ -584,6 +584,35 @@ class TestSummaryTGR(Base):
         self.launch(command_line)
         self.check_output(diagnostic=False)
 
+    def test_pdfs_and_gr_quantile(self):
+        """Test that the GR quantile and pdf matches the LAL implementation
+        The LAL files were produced by the executable imrtgr_imr_consistency_test
+        with N_bins=201 dMfbyMf_lim=3 dchifbychif_lim=3 and bbh_average_fits_precessing
+        """
+        from pesummary.io import read
+
+        make_result_file(outdir="./", extension="dat", gw=True, random_seed=123456789)
+        os.rename("./test.dat", ".outdir/inspiral.dat")
+        make_result_file(outdir="./", extension="dat", gw=True, random_seed=987654321)
+        os.rename("./test.dat", ".outdir/postinspiral.dat")
+        command_line = (
+                "summarytgr --webdir .outdir "
+                "--samples .outdir/inspiral.dat .outdir/postinspiral.dat "
+                "--test imrct "
+                "--labels inspiral postinspiral "
+                "--imrct_kwargs N_bins:201 final_mass_deviation_lim:3 final_spin_deviation_lim:3 "
+                "--disable_pe_page_generation"
+        )
+        self.launch(command_line)
+        f = read(".outdir/samples/tgr_samples.h5")
+        pesummary_quantile = f.extra_kwargs["primary"]["GR Quantile (%)"]
+        probdict = f.imrct_deviation["final_mass_final_spin_deviations"]
+        lal_pdf = np.loadtxt(os.path.join(data_dir, "lal_pdf_for_summarytgr.dat.gz"))
+        pesummary_pdf = probdict.probs / probdict.dx / probdict.dy
+
+        np.testing.assert_almost_equal(pesummary_quantile, 3.276372814744687306)
+        np.testing.assert_almost_equal(pesummary_pdf, lal_pdf)
+
 
 class TestSummaryClean(Base):
     """Test the `summaryclean` executable
