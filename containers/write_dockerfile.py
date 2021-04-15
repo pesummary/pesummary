@@ -6,6 +6,24 @@ from datetime import date
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
+
+def format_requirements(path):
+    """Format a file of requirements for a Docker file
+
+    Parameters
+    ----------
+    path: str
+        path to the file of requirements
+    """
+    with open(path, "r") as f:
+        _requirements = f.read().strip().split("\n")
+        _requirements = [
+            "'{}'".format(r) if '<=' in r else r for r in _requirements
+        ]
+        requirements = ' \\\n'.join(_requirements)
+    return requirements
+
+
 python_major_version, python_minor_version = (3, 6)
 pesummary_version = "0.9.1"
 major, minor, build = pesummary_version.split(".")
@@ -23,15 +41,8 @@ else:
 with open(os.path.join(path, "containers", "Dockerfile-template"), "r") as f:
     template = f.read()
 
-with open(os.path.join(path, "requirements.txt"), "r") as f:
-    _requirements = f.read().strip().split("\n")
-    _requirements = [
-        "'{}'".format(r) if '<=' in r else r for r in _requirements
-    ]
-    requirements = ' \\\n'.join(_requirements)
-
-with open(os.path.join(path, "optional_requirements.txt"), "r") as f:
-    optional = ' \\\n'.join(f.read().strip().split("\n"))
+requirements = format_requirements(os.path.join(path, "requirements.txt"))
+optional = format_requirements(os.path.join(path, "optional_requirements.txt"))
 
 Docker_filename = "Dockerfile-pesummary-python{}{}".format(
     python_major_version, python_minor_version
