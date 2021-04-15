@@ -613,10 +613,29 @@ def bbh_final_spin_average_precessing(
     return_fits_used: Bool, optional
         if True, return the fits that were used to calculate the average
     """
-    return _bbh_average_quantity(
+    data = _bbh_average_quantity(
         *args, fits=fits, cls=FinalSpinPrecessingFits, quantity="final spin",
         return_fits_used=return_fits_used
     )
+    if return_fits_used:
+        final_spin = data[0]
+    else:
+        final_spin = data
+    inds = np.argwhere(np.array(final_spin) > 1.)
+    if len(inds):
+        logger.warn(
+            "{}/{} ({}%) samples have final spin greater than the Kerr limit. "
+            "Truncating these samples to 1".format(
+                len(inds), len(final_spin),
+                np.round(len(inds) / len(final_spin) * 100., 1)
+            )
+        )
+        final_spin[inds] = 1.
+        if return_fits_used:
+            data[0] = final_spin
+        else:
+            data = final_spin
+    return data
 
 
 def bbh_peak_luminosity_average(*args, fits=LPEAK_FITS, return_fits_used=False):
