@@ -1258,8 +1258,8 @@ class IMRCTInput(_Input):
         ]
         if label not in opened_file.labels:
             raise ValueError(
-                "Invalid label. The list of available labels are {}".format(
-                    ", ".join(opened_file.labels)
+                "Invalid label {}. The list of available labels are {}".format(
+                    label, ", ".join(opened_file.labels)
                 )
             )
         _index = opened_file.labels.index(label)
@@ -1287,8 +1287,8 @@ class IMRCTInput(_Input):
         if opened_file.config is not None:
             if label not in opened_file.labels:
                 raise ValueError(
-                    "Invalid label. The list of available labels are {}".format(
-                        ", ".join(opened_file.labels)
+                    "Invalid label {}. The list of available labels are {}".format(
+                        label, ", ".join(opened_file.labels)
                     )
                 )
             if opened_file.config[label] is not None:
