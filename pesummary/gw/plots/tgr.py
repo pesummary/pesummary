@@ -22,8 +22,8 @@ def imrct_plot(
     cmap="YlOrBr",
     levels=[0.68, 0.95],
     level_kwargs={"colors": ["k", "k"]},
-    xlabel=r"$\Delta M_{\mathrm{f}} / \bar{M_{\mathrm{f}}}$",
-    ylabel=r"$\Delta a_{\mathrm{f}} / \bar{a_{\mathrm{f}}}$",
+    xlabel=r"$\Delta M_{\mathrm{f}} / \bar{M}_{\mathrm{f}}$",
+    ylabel=r"$\Delta a_{\mathrm{f}} / \bar{a}_{\mathrm{f}}$",
     _default_plot_kwargs=DEFAULT_PLOT_KWARGS,
     **plot_kwargs
 ):

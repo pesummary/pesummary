@@ -207,7 +207,7 @@ def imrct(opts):
         IMRCTInput object containing the command line arguments
     data: list
         a list of length 3 containing a dictionary of key data associated with
-        the IMR consistency test results, alist containing links to PE pages
+        the IMR consistency test results, a list containing links to PE pages
         displaying the posterior samples for the inspiral and postinspiral
         analyses and a list containing the IMRCT deviation PDFs for each
         analysis
