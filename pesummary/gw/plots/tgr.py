@@ -61,10 +61,10 @@ def imrct_plot(
         {'colors': ['k', 'k']}
     xlabel: str, optional
         the xlabel to use in the IMRCT deviation triangle plot. Default
-        r'$\Delta M_{\mathrm{f}} / \bar{M_{\mathrm{f}}}$'
+        r'$\Delta M_{\mathrm{f}} / \bar{M}_{\mathrm{f}}$'
     ylabel: str, optional
         the ylabel to use in the IMRCT deviation triangle plot. Default
-        r'$\Delta a_{\mathrm{f}} / \bar{a_{\mathrm{f}}}$'
+        r'$\Delta a_{\mathrm{f}} / \bar{a}_{\mathrm{f}}$'
     plot_kwargs: dict, optional
         all additional kwargs passed to the IMRCT deviation triangle plot
 
