@@ -28,6 +28,9 @@ standard names can be seen `here <parameters.html>`_. This is to allow
 the samples from different codes (where different naming conventions are used)
 to be compared.
 
+For details about how to read in a Testing General Relativity specific result
+file, see the `pesummary TGR file <./tgr_samples.html>`_ documentation. 
+
 Converting samples
 ------------------
 
