@@ -2,6 +2,7 @@
 
 import numpy as np
 from pesummary.utils.utils import logger
+from pesummary.utils.decorators import bound_samples
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -43,6 +44,7 @@ def bbh_final_mass_non_spinning_Panetal(*args):
     return nrutils.bbh_final_mass_non_spinning_Panetal(*args)
 
 
+@bound_samples(minimum=-1., maximum=1., logger_level="debug")
 def bbh_final_spin_non_spinning_Panetal(*args):
     """Return the final spin of the BH resulting from the merger of a non
     spinning BBH using the fit from Pan et al: Phys Rev D 84, 124052 (2011).
@@ -57,6 +59,7 @@ def bbh_final_spin_non_spinning_Panetal(*args):
     return nrutils.bbh_final_spin_non_spinning_Panetal(*args)
 
 
+@bound_samples(minimum=-1., maximum=1., logger_level="debug")
 def bbh_final_spin_non_precessing_Healyetal(*args, **kwargs):
     """Return the final spin of the BH resulting from the merger of a BBH for an
     aligned-spin system using the fit from Healy and Lousto: arXiv:1610.09713
@@ -126,6 +129,7 @@ def bbh_final_mass_non_precessing_Husaetal(*args):
     return nrutils.bbh_final_mass_non_precessing_Husaetal(*args)
 
 
+@bound_samples(minimum=-1., maximum=1., logger_level="debug")
 def bbh_final_spin_non_precessing_Husaetal(*args):
     """Return the final spin of the BH resulting from the merger of a BBH for an
     aligned-spin system using the fit from Husa et al: arXiv:1508.07250
@@ -164,6 +168,7 @@ def bbh_final_mass_non_precessing_UIB2016(*args, **kwargs):
     return nrutils.bbh_final_mass_non_precessing_UIB2016(*args, **kwargs)
 
 
+@bound_samples(minimum=-1., maximum=1., logger_level="debug")
 def bbh_final_spin_non_precessing_UIB2016(*args, **kwargs):
     """Return the final spin of the BH resulting from the merger of a BBH for an
     aligned-spin system using the fit from https://arxiv.org/abs/1611.00332
@@ -184,6 +189,7 @@ def bbh_final_spin_non_precessing_UIB2016(*args, **kwargs):
     return nrutils.bbh_final_spin_non_precessing_UIB2016(*args, **kwargs)
 
 
+@bound_samples(minimum=-1., maximum=1., logger_level="debug")
 def bbh_final_spin_non_precessing_HBR2016(*args, **kwargs):
     """Return the final spin of the BH resulting from the merger of a BBH for an
     aligned-spin system using the fit from Hofmann, Barausse, and Rezzolla
@@ -205,6 +211,7 @@ def bbh_final_spin_non_precessing_HBR2016(*args, **kwargs):
     return nrutils.bbh_final_spin_non_precessing_HBR2016(*args, **kwargs)
 
 
+@bound_samples(maximum=1., logger_level="debug")
 def _bbh_final_spin_precessing_using_non_precessing_fit(
     mass_1, mass_2, spin_1z, spin_2z, fit
 ):
@@ -288,6 +295,7 @@ def bbh_final_spin_precessing_UIB2016(*args):
     return _bbh_final_spin_precessing_using_non_precessing_fit(*args, "UIB2016")
 
 
+@bound_samples(maximum=1., logger_level="debug")
 def _bbh_final_spin_precessing_projected(
     mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, function=None
 ):
@@ -389,6 +397,7 @@ def bbh_final_spin_precessing_projected_UIB2016(*args):
     )
 
 
+@bound_samples(maximum=1., logger_level="debug")
 def bbh_final_spin_precessing_HBR2016(*args, **kwargs):
     """Return the final spin of the BH resulting from the merger of a BBH for a
     precessing system using the fit from Hofmann, Barausse, and Rezzolla ApJL
