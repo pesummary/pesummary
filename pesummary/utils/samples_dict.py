@@ -941,9 +941,13 @@ class _MultiDimensionalSamplesDict(Dict):
     def _update_latex_labels(self):
         """Update the stored latex labels
         """
+        _parameters = [
+            list(value.keys()) for value in self.values()
+        ]
+        _parameters = [item for sublist in _parameters for item in sublist]
         self._latex_labels = {
             param: latex_labels[param] if param in latex_labels.keys() else
-            param for param in self.total_list_of_parameters
+            param for param in self.total_list_of_parameters + _parameters
         }
 
     def __setitem__(self, key, value):
@@ -1524,6 +1528,7 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
                 )
             )
 
+        self._update_latex_labels()
         if labels == "all":
             labels = self.labels
         elif isinstance(labels, list):

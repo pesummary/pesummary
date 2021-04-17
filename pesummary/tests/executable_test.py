@@ -522,6 +522,98 @@ class TestSummaryClassification(Base):
         self.check_output()
 
 
+class TestSummaryTGR(Base):
+    """Test the `summarytgr` executable
+    """
+    def setup(self):
+        """Setup the SummaryTGR class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        make_result_file(pesummary=True, gw=True, pesummary_label="test")
+        os.rename(".outdir/test.json", ".outdir/pesummary.json")
+        make_result_file(bilby=True, gw=True)
+        os.rename(".outdir/test.json", ".outdir/bilby.json")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def check_output(self, diagnostic=True):
+        """Check the output from the `summarytgr` executable
+        """
+        import glob
+
+        image_files = glob.glob(".outdir/plots/*")
+        image_base_string = ".outdir/plots/primary_imrct_{}.png"
+        file_strings = ["deviations_triangle_plot"]
+        if diagnostic:
+            file_strings += [
+                "mass_1_mass_2", "a_1_a_2",
+                "final_mass_non_evolved_final_spin_non_evolved"
+            ]
+        for file_string in file_strings:
+            assert image_base_string.format(file_string) in image_files
+
+    def test_result_file(self):
+        """Test the `summarytgr` executable for a random result file
+        """
+        command_line = (
+            "summarytgr --webdir .outdir "
+            "--samples .outdir/bilby.json .outdir/bilby.json "
+            "--test imrct "
+            "--labels inspiral postinspiral "
+            "--imrct_kwargs N_bins:11 "
+            "--make_diagnostic_plots "
+            "--disable_pe_page_generation"
+        )
+        self.launch(command_line)
+        self.check_output()
+
+    def test_pesummary_file(self):
+        """Test the `summarytgr` executable for a pesummary metafile
+        """
+        command_line = (
+            "summarytgr --webdir .outdir --samples "
+            ".outdir/pesummary.json .outdir/pesummary.json --labels "
+            "test:inspiral test:postinspiral --test imrct --imrct_kwargs "
+            "N_bins:11 --disable_pe_page_generation"
+        )
+        self.launch(command_line)
+        self.check_output(diagnostic=False)
+
+    def test_pdfs_and_gr_quantile(self):
+        """Test that the GR quantile and pdf matches the LAL implementation
+        The LAL files were produced by the executable imrtgr_imr_consistency_test
+        with N_bins=201 dMfbyMf_lim=3 dchifbychif_lim=3 and bbh_average_fits_precessing
+        """
+        from pesummary.io import read
+
+        make_result_file(outdir="./", extension="dat", gw=True, random_seed=123456789)
+        os.rename("./test.dat", ".outdir/inspiral.dat")
+        make_result_file(outdir="./", extension="dat", gw=True, random_seed=987654321)
+        os.rename("./test.dat", ".outdir/postinspiral.dat")
+        command_line = (
+                "summarytgr --webdir .outdir "
+                "--samples .outdir/inspiral.dat .outdir/postinspiral.dat "
+                "--test imrct "
+                "--labels inspiral postinspiral "
+                "--imrct_kwargs N_bins:201 final_mass_deviation_lim:3 final_spin_deviation_lim:3 "
+                "--disable_pe_page_generation"
+        )
+        self.launch(command_line)
+        f = read(".outdir/samples/tgr_samples.h5")
+        pesummary_quantile = f.extra_kwargs["primary"]["GR Quantile (%)"]
+        probdict = f.imrct_deviation["final_mass_final_spin_deviations"]
+        lal_pdf = np.loadtxt(os.path.join(data_dir, "lal_pdf_for_summarytgr.dat.gz"))
+        pesummary_pdf = probdict.probs / probdict.dx / probdict.dy
+
+        np.testing.assert_almost_equal(pesummary_quantile, 3.276372814744687306)
+        np.testing.assert_almost_equal(pesummary_pdf, lal_pdf)
+
+
 class TestSummaryClean(Base):
     """Test the `summaryclean` executable
     """

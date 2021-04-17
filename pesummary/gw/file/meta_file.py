@@ -1,5 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+import numpy as np
 from pesummary.utils.utils import logger
 from pesummary.core.file.meta_file import (
     _MetaFile, recursively_save_dictionary_to_hdf5_file,
@@ -97,15 +98,116 @@ class _GWMetaFile(_MetaFile):
     @staticmethod
     def save_to_hdf5(
         data, labels, samples, meta_file, no_convert=False, mcmc_samples=False,
-        external_hdf5_links=False, compression=None
+        external_hdf5_links=False, compression=None, _class=None
     ):
         """Save the metafile as a hdf5 file
         """
         _MetaFile.save_to_hdf5(
             data, labels, samples, meta_file, no_convert=no_convert,
-            extra_keys=CORE_HDF5_KEYS, mcmc_samples=mcmc_samples,
+            extra_keys=CORE_HDF5_KEYS, mcmc_samples=mcmc_samples, _class=_class,
             external_hdf5_links=external_hdf5_links, compression=compression
         )
+
+
+class _TGRMetaFile(_GWMetaFile):
+    """Class to create a single file to contain TGR data
+    """
+    def __init__(
+        self, samples, labels, imrct_data=None, webdir=None, outdir=None,
+        file_kwargs={}
+    ):
+        super(_TGRMetaFile, self).__init__(
+            samples, labels, None, None, None, None, webdir=webdir,
+            outdir=outdir, filename="tgr_samples.h5", hdf5=True
+        )
+        self.tgr_data = {"imrct": imrct_data}
+        self.file_kwargs = file_kwargs
+        for key in self.tgr_data.keys():
+            if key not in self.file_kwargs:
+                self.file_kwargs[key] = {}
+
+    @staticmethod
+    def convert_posterior_samples_to_numpy(labels, samples, mcmc_samples=False):
+        """Convert a dictionary of multiple posterior samples from a
+        column-major dictionary to a row-major numpy array
+
+        Parameters
+        ----------
+        labels: list
+            list of unique labels for each analysis
+        samples: MultiAnalysisSamplesDict
+            dictionary of multiple posterior samples to convert to a numpy
+            array.
+        mcmc_samples: Bool, optional
+            if True, the dictionary contains seperate mcmc chains
+
+        Examples
+        --------
+        >>> dictionary = MultiAnalysisSamplesDict(
+        ...     {"label": {"mass_1": [1,2,3], "mass_2": [1,2,3]}}
+        ... )
+        >>> dictionary = _Metafile.convert_posterior_samples_to_numpy(
+        ...     dictionary.keys(), dictionary
+        ... )
+        >>> print(dictionary)
+        ... {"label": rec.array([(1., 1.), (2., 2.), (3., 3.)],
+        ...           dtype=[('mass_1', '<f4'), ('mass_2', '<f4')])}
+        """
+        _convert_function = _GWMetaFile._convert_posterior_samples_to_numpy
+        converted_samples = {label: {} for label in labels}
+        for label in labels:
+            for key in ["inspiral", "postinspiral"]:
+                if "{}:{}".format(label, key) in samples.keys():
+                    _samples_key = "{}:{}".format(label, key)
+                else:
+                    _samples_key = key
+                converted_samples[label][key] = _convert_function(
+                    samples[_samples_key], mcmc_samples=False
+                )
+        return converted_samples
+
+    @staticmethod
+    def save_to_hdf5(*args, **kwargs):
+        """Save the metafile as a hdf5 file
+        """
+        return _GWMetaFile.save_to_hdf5(*args, _class=_TGRMetaFile, **kwargs)
+
+    def _make_dictionary(self):
+        """Generate a single dictionary which stores all information
+        """
+        dictionary = self._dictionary_structure
+        dictionary.update(
+            {
+                label: {key: {} for key in self.tgr_data.keys()} for label in
+                self.labels
+            }
+        )
+        for label in self.labels:
+            dictionary[label]["posterior_samples"] = {}
+            if self.tgr_data["imrct"] is not None:
+                for analysis in ["inspiral", "postinspiral"]:
+                    try:
+                        _samples = self.samples["{}:{}".format(label, analysis)]
+                    except KeyError:
+                        _samples = self.samples[analysis]
+                    parameters = _samples.keys()
+                    samples = np.array([_samples[i] for i in parameters]).T
+                    dictionary[label]["posterior_samples"][analysis] = {
+                        "parameter_names": list(parameters),
+                        "samples": samples.tolist()
+                    }
+                deviations = "final_mass_final_spin_deviations"
+                _imrct_data = self.tgr_data["imrct"][label][deviations]
+                dictionary[label]["imrct"] = {
+                    "final_mass_deviation": _imrct_data.x,
+                    "final_spin_deviation": _imrct_data.y,
+                    "pdf": _imrct_data.probs,
+                }
+                _kwargs = self.file_kwargs["imrct"]
+                if label in _kwargs.keys():
+                    _kwargs = _kwargs[label]
+                dictionary[label]["imrct"]["meta_data"] = _kwargs
+        self.data = dictionary
 
 
 class GWMetaFile(GWPostProcessing):
@@ -175,5 +277,28 @@ class GWMetaFile(GWPostProcessing):
         meta_file.write_marginalized_posterior_to_dat()
         logger.info(
             "Finishing generating the meta file. The meta file can be viewed "
+            "here: {}".format(meta_file.meta_file)
+        )
+
+
+class TGRMetaFile(_GWMetaFile):
+    """Class to create a single file to contain TGR data
+    """
+    def __init__(
+        self, samples, labels, imrct_data=None, webdir=None, outdir=None,
+        file_kwargs={}
+    ):
+        logger.info("Starting to generate the meta file")
+        meta_file = _TGRMetaFile(
+            samples, labels, imrct_data=imrct_data, webdir=webdir,
+            outdir=outdir, file_kwargs=file_kwargs
+        )
+        meta_file.make_dictionary()
+        meta_file.save_to_hdf5(
+            meta_file.data, meta_file.labels, meta_file.samples,
+            meta_file.meta_file, mcmc_samples=False
+        )
+        logger.info(
+            "Finished generating the meta file. The meta file can be viewed "
             "here: {}".format(meta_file.meta_file)
         )
