@@ -6,4 +6,4 @@ include pesummary/core/js/*.js
 include pesummary/core/css/*.css
 include versioneer.py
 include pesummary/_version.py
-recursive-include pesummary/tests *ini *txt *xml *.sh *gz
+recursive-include pesummary/tests *ini *txt *xml *.sh

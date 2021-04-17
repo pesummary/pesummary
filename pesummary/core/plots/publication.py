@@ -10,13 +10,11 @@ from .corner import hist2d
 from pesummary import conf
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
-DEFAULT_LEGEND_KWARGS = {"loc": "best", "frameon": False}
 
 
 def pcolormesh(
     x, y, density, ax=None, levels=None, smooth=None, bins=None, label=None,
-    level_kwargs={}, range=None, grid=True, legend=False, legend_kwargs={},
-    **kwargs
+    level_kwargs={}, range=None, grid=True, **kwargs
 ):
     """Generate a colormesh plot on a given axis
 
@@ -52,12 +50,7 @@ def pcolormesh(
     if not _off:
         ax.pcolormesh(x, y, density, zorder=_zorder, **kwargs)
     if levels is not None:
-        CS = ax.contour(x, y, density, levels=levels, **level_kwargs)
-        if legend:
-            _legend_kwargs = DEFAULT_LEGEND_KWARGS.copy()
-            _legend_kwargs.update(legend_kwargs)
-            CS.collections[0].set_label(label)
-            ax.legend(**_legend_kwargs)
+        ax.contour(x, y, density, levels=levels, **level_kwargs)
     return ax
 
 
@@ -296,9 +289,7 @@ def _triangle_axes(
     return fig, ax1, ax2, ax3, ax4
 
 
-def _generate_triangle_plot(
-    *args, function=None, fig_kwargs={}, existing_figure=None, **kwargs
-):
+def _generate_triangle_plot(*args, function=None, fig_kwargs={}, **kwargs):
     """Generate a triangle plot according to a given function
 
     Parameters
@@ -311,11 +302,8 @@ def _generate_triangle_plot(
     **kwargs: dict, optional
         all kwargs passed to function
     """
-    if existing_figure is None:
-        fig, ax1, ax2, ax3, ax4 = _triangle_axes(**fig_kwargs)
-        ax2.axis("off")
-    else:
-        fig, ax1, ax3, ax4 = existing_figure
+    fig, ax1, ax2, ax3, ax4 = _triangle_axes(**fig_kwargs)
+    ax2.axis("off")
     if function is None:
         function = _triangle_plot
     return function(fig, [ax1, ax3, ax4], *args, **kwargs)
@@ -456,13 +444,8 @@ def _analytic_triangle_plot(
     analytic_twod_contour_plot(
         x, y, probs_xy, ax=ax3, smooth=smooth, grid=grid, **kwargs
     )
-    level_kwargs = kwargs.get("level_kwargs", None)
-    if level_kwargs is not None and "colors" in level_kwargs.keys():
-        color = level_kwargs["colors"][0]
-    else:
-        color = None
-    ax1.plot(x, probs_x, color=color)
-    ax4.plot(probs_y, y, color=color)
+    ax1.plot(x, probs_x)
+    ax4.plot(probs_y, y)
     fontsize = kwargs.get("fontsize", {"label": 12})
     if xlabel is not None:
         ax3.set_xlabel(xlabel, fontsize=fontsize["label"])

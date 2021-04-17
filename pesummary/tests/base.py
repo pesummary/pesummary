@@ -298,8 +298,7 @@ def make_injection_file(
 
 def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False,
                      lalinference=False, pesummary=False, pesummary_label="label",
-                     config=None, psd=None, calibration=None, random_seed=None,
-                     n_samples=1000):
+                     config=None, psd=None, calibration=None):
     """Make a result file that can be read in by PESummary
 
     Parameters
@@ -311,26 +310,21 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
     gw: Bool
         if True, gw parameters will be used
     """
-    if random_seed is not None:
-        np.random.seed(random_seed)
     print(extension, gw, bilby, lalinference, pesummary)
-    data = np.array([np.random.random(18) for i in range(n_samples)])
+    data = np.array([np.random.random(18) for i in range(1000)])
     if gw:
         parameters = ["mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2",
                       "phi_jl", "phi_12", "psi", "theta_jn", "ra", "dec",
                       "luminosity_distance", "geocent_time", "redshift",
                       "mass_1_source", "mass_2_source", "log_likelihood"]
-        distance = np.random.random(n_samples) * 500
-        mass_1 = np.random.random(n_samples) * 100
-        q = np.random.random(n_samples) * 100
-        a_1 = np.random.uniform(0, 0.99, n_samples)
-        a_2 = np.random.uniform(0, 0.99, n_samples)
+        distance = np.random.random(1000) * 500
         for num, i in enumerate(data):
             data[num][12] = distance[num]
+        mass_1 = np.random.random(1000) * 100
+        for num, i in enumerate(data):
             data[num][0] = mass_1[num]
-            data[num][1] = mass_1[num] * q[num]
-            data[num][2] = a_1[num]
-            data[num][3] = a_2[num]
+        for num, i in enumerate(data):
+            data[num][1] = mass_1[num]
     else:
         import string
 

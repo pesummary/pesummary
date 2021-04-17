@@ -135,12 +135,3 @@ Below are functions that deal with the event time,
 
 .. automodule:: pesummary.gw.conversions.time
     :members:
-
-TGR
-+++
-
-Below are functions that generate parameters required for testing General
-Relativity
-
-.. automodule:: pesummary.gw.conversions.tgr
-    :members:

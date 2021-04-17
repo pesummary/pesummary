@@ -125,7 +125,6 @@ for details:
     cli/summaryrecreate
     cli/summaryreview
     ../core/cli/summaryversion
-    cli/summarytgr
 
 The webpages
 ++++++++++++

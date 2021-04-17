@@ -210,11 +210,7 @@ class _MetaFile(object):
         if self.history is None:
             from pesummary.utils.utils import history_dictionary
 
-            try:
-                _user = os.environ["USER"]
-            except KeyError:
-                _user = ''
-            self.history = history_dictionary(creator=_user)
+            self.history = history_dictionary(creator='')
         self.priors = priors
         self.existing_version = existing_version
         self.existing_labels = existing_label
@@ -227,9 +223,6 @@ class _MetaFile(object):
         self.existing = existing
         self.outdir = outdir
         self.package_information = package_information
-        if not len(package_information):
-            from pesummary.core.inputs import _Input
-            self.package_information = _Input.get_package_information()
         self.mcmc_samples = mcmc_samples
 
         if self.existing_labels is None:
@@ -267,15 +260,16 @@ class _MetaFile(object):
 
     @property
     def meta_file(self):
-        return os.path.join(os.path.abspath(self.outdir), self.file_name)
+        return os.path.join(self.outdir, self.file_name)
 
     def make_dictionary(self):
         """Wrapper function for _make_dictionary
         """
         self._make_dictionary()
 
-    @property
-    def _dictionary_structure(self):
+    def _make_dictionary(self):
+        """Generate a single dictionary which stores all information
+        """
         if self.mcmc_samples:
             posterior = "mcmc_chains"
         else:
@@ -289,16 +283,6 @@ class _MetaFile(object):
         dictionary["version"] = self.package_information
         dictionary["version"]["pesummary"] = [__version__]
         dictionary["history"] = self.history
-        return dictionary
-
-    def _make_dictionary(self):
-        """Generate a single dictionary which stores all information
-        """
-        if self.mcmc_samples:
-            posterior = "mcmc_chains"
-        else:
-            posterior = "posterior_samples"
-        dictionary = self._dictionary_structure
         if self.file_kwargs is not None and isinstance(self.file_kwargs, dict):
             if "webpage_url" in self.file_kwargs.keys():
                 dictionary["history"]["webpage_url"] = self.file_kwargs["webpage_url"]
@@ -503,71 +487,33 @@ class _MetaFile(object):
         return meta_file_data, sub_file_data
 
     @staticmethod
-    def convert_posterior_samples_to_numpy(labels, samples, mcmc_samples=False):
-        """Convert a dictionary of multiple posterior samples from a
-        column-major dictionary to a row-major numpy array
-
-        Parameters
-        ----------
-        labels: list
-            list of unique labels for each analysis
-        samples: MultiAnalysisSamplesDict
-            dictionary of multiple posterior samples to convert to a numpy
-            array.
-        mcmc_samples: Bool, optional
-            if True, the dictionary contains seperate mcmc chains
-
-        Examples
-        --------
-        >>> dictionary = MultiAnalysisSamplesDict(
-        ...     {"label": {"mass_1": [1,2,3], "mass_2": [1,2,3]}}
-        ... )
-        >>> dictionary = _Metafile.convert_posterior_samples_to_numpy(
-        ...     dictionary.keys(), dictionary
-        ... )
-        >>> print(dictionary)
-        ... {"label": rec.array([(1., 1.), (2., 2.), (3., 3.)],
-        ...           dtype=[('mass_1', '<f4'), ('mass_2', '<f4')])}
-        """
-        converted_samples = {
-            label: _MetaFile._convert_posterior_samples_to_numpy(
-                samples[label], mcmc_samples=mcmc_samples
-            ) for label in labels
-        }
-        return converted_samples
-
-    @staticmethod
     def save_to_hdf5(
         data, labels, samples, meta_file, no_convert=False,
         extra_keys=DEFAULT_HDF5_KEYS, mcmc_samples=False,
-        external_hdf5_links=False, compression=None, _class=None
+        external_hdf5_links=False, compression=None
     ):
         """Save the metafile as a hdf5 file
         """
         import h5py
 
-        if _class is None:
-            _class = _MetaFile
         if mcmc_samples:
             key = "mcmc_chains"
         else:
             key = "posterior_samples"
         if not no_convert:
-            _samples = _class.convert_posterior_samples_to_numpy(
-                labels, samples, mcmc_samples=mcmc_samples
-            )
             for label in labels:
-                data[label][key] = _samples[label]
-                if "injection_data" in data[label].keys():
-                    data[label]["injection_data"] = \
-                        _class._convert_posterior_samples_to_numpy(
-                            SamplesDict({
-                                param: samp for param, samp in zip(
-                                    data[label]["injection_data"]["parameters"],
-                                    data[label]["injection_data"]["samples"]
-                                )
-                            }), index=[0]
-                    )
+                data[label][key] = _MetaFile._convert_posterior_samples_to_numpy(
+                    samples[label], mcmc_samples=mcmc_samples
+                )
+                data[label]["injection_data"] = \
+                    _MetaFile._convert_posterior_samples_to_numpy(
+                        SamplesDict({
+                            param: samp for param, samp in zip(
+                                data[label]["injection_data"]["parameters"],
+                                data[label]["injection_data"]["samples"]
+                            )
+                        }), index=[0]
+                )
         if external_hdf5_links:
             from pathlib import Path
 
