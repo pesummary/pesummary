@@ -91,7 +91,7 @@ def bound_samples(minimum=-np.inf, maximum=np.inf, logger_level="debug"):
     def decorator(func):
         @functools.wraps(func)
         def wrapper_function(*args, **kwargs):
-            value = np.array(func(*args, **kwargs))
+            value = np.atleast_1d(func(*args, **kwargs))
             _minimum_inds = np.argwhere(value < minimum)
             _maximum_inds = np.argwhere(value > maximum)
             zipped = zip([_minimum_inds, _maximum_inds], [minimum, maximum])
