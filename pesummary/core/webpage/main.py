@@ -6,7 +6,7 @@ import uuid
 from glob import glob
 from operator import itemgetter
 from pathlib import Path
-from shutil import which
+import shutil
 
 from scipy import stats
 import numpy as np
@@ -146,23 +146,24 @@ class _WebpageGeneration(object):
         if self.analytic_priors is None:
             self.analytic_priors = {label: None for label in self.samples.keys()}
         self.key_data = key_data
-        if key_data is None:
-            self.key_data = {
-                label: _samples.key_data for label, _samples in
-                self.samples.items()
-            }
         _label = self.labels[0]
-        self.key_data_headings = sorted(
-            list(self.key_data[_label][list(self.samples[_label].keys())[0]])
-        )
-        self.key_data_table = {
-            label: {
-                param: [
-                    safe_round(self.key_data[label][param][key], 3) for key in
-                    self.key_data_headings
-                ] for param in self.samples[label].keys()
-            } for label in self.labels
-        }
+        if self.samples is not None:
+            if key_data is None:
+                self.key_data = {
+                    label: _samples.key_data for label, _samples in
+                    self.samples.items()
+                }
+            self.key_data_headings = sorted(
+                list(self.key_data[_label][list(self.samples[_label].keys())[0]])
+            )
+            self.key_data_table = {
+                label: {
+                    param: [
+                        safe_round(self.key_data[label][param][key], 3) for key
+                        in self.key_data_headings
+                    ] for param in self.samples[label].keys()
+                } for label in self.labels
+            }
         self.notes = notes
         self.make_interactive = not disable_interactive
         self.package_information = package_information
@@ -201,6 +202,13 @@ class _WebpageGeneration(object):
                     "Failed to generate comparison statistics because {}. As a "
                     "result they will not be added to the webpages".format(e)
                 )
+
+    @property
+    def _metafile(self):
+        return (
+            "posterior_samples.json" if not self.hdf5 else
+            "posterior_samples.h5"
+        )
 
     @property
     def _total_number_of_labels(self):
@@ -322,7 +330,7 @@ class _WebpageGeneration(object):
         executable: str
             the name of the executable you wish to find
         """
-        return which(
+        return shutil.which(
             executable,
             path=os.pathsep.join((
                 os.getenv("PATH", ""),
@@ -599,7 +607,8 @@ class _WebpageGeneration(object):
         self._make_home_pages(pages)
 
     def _make_home_pages(
-        self, pages, title=None, banner="Summary", make_home=True
+        self, pages, title=None, banner="Summary", make_home=True,
+        make_result=True, return_html=False
     ):
         """Make the home pages
 
@@ -611,6 +620,10 @@ class _WebpageGeneration(object):
         if make_home:
             html_file = self.setup_page("home", self.navbar["home"], title=title)
             html_file.make_banner(approximant=banner, key="Summary")
+            if return_html:
+                return html_file
+        if not make_result:
+            return
 
         for num, i in enumerate(self.labels):
             html_file = self.setup_page(
@@ -1535,7 +1548,7 @@ class _WebpageGeneration(object):
         self.create_blank_html_pages(pages)
         self._make_downloads_page(pages)
 
-    def _make_downloads_page(self, pages):
+    def _make_downloads_page(self, pages, fix_bottom=False):
         """Make a page with links to files which can be downloaded
 
         Parameters
@@ -1554,16 +1567,12 @@ class _WebpageGeneration(object):
         base_string = "{} can be downloaded <a href={} download>here</a>"
         style = "margin-top:{}; margin-bottom:{};"
         headings = ["Description"]
-        metafile = (
-            "posterior_samples.json" if not self.hdf5 else "posterior_samples.h5"
-        )
-
         metafile_row = [
             [
                 base_string.format(
                     "The complete metafile containing all information "
                     "about the analysis",
-                    self.results_path["other"] + metafile
+                    self.results_path["other"] + self._metafile
                 )
             ]
         ]
@@ -1604,11 +1613,14 @@ class _WebpageGeneration(object):
             table_contents = self._make_entry_in_downloads_table(
                 html_file, i, num, base_string
             )
-            html_file.make_table(
-                headings=headings, contents=table_contents, accordian=False
-            )
+            if table_contents is not None:
+                html_file.make_table(
+                    headings=headings, contents=table_contents, accordian=False
+                )
         html_file.end_container()
-        html_file.make_footer(user=self.user, rundir=self.webdir)
+        html_file.make_footer(
+            user=self.user, rundir=self.webdir, fix_bottom=fix_bottom
+        )
         html_file.close()
 
     def _make_entry_in_downloads_table(self, html_file, label, num, base_string):
