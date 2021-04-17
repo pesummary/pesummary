@@ -971,8 +971,6 @@ def history_dictionary(program=None, creator=conf.user, command_line=None):
                 command_line
             )
         )
-    else:
-        _dict["command_line"] = " ".join(sys.argv)
     if program is not None:
         _dict["program"] = program
     return _dict

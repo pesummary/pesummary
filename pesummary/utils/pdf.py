@@ -328,7 +328,7 @@ class DiscretePDF2D(object):
         except TypeError:
             return level
 
-    def minimum_encompassing_contour_level(self, x, y, interpolate=False):
+    def minimum_encompassing_contour_level(self, x, y):
         """Return the minimum encompassing contour level that encompasses a
         specific point
 
@@ -338,21 +338,11 @@ class DiscretePDF2D(object):
             the point you wish to find the minimum encompassing contour for
         """
         _sorted = self.sort()
-        if interpolate:
-            _interp = self.interpolate()
-            _idx = _interp.interpolant(x, y)
-        else:
-            _x = min(
-                range(len(self.x)), key=lambda i: abs(self.x[i] - x)
-            )
-            _y = min(
-                range(len(self.y)), key=lambda i: abs(self.y[i] - y)
-            )
-            _idx = [self.probs[_x, _y]]
+        _interp = self.interpolate()
         idx = interp1d(
             _sorted[::-1], np.arange(len(_sorted))[::-1], bounds_error=False,
             fill_value=len(_sorted)
-        )(_idx)
+        )(_interp.interpolant(x, y))
         level = interp1d(
             np.arange(len(_sorted)), self.cdf(), bounds_error=False, fill_value=1.
         )(idx)

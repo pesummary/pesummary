@@ -60,59 +60,6 @@ def open_config(index=0):
     return decorator
 
 
-def bound_samples(minimum=-np.inf, maximum=np.inf, logger_level="debug"):
-    """Bound samples to be within a specified range. If any samples lie
-    outside of this range, we set these invalid samples to equal the value at
-    the boundary.
-
-    Parameters
-    ----------
-    minimum: float
-        lower boundary. Default -np.inf
-    maximum: float
-        upper boundary. Default np.inf
-    logger_level: str
-        level to use for any logger messages
-
-    Examples
-    --------
-    @bound_samples(minimum=-1., maximum=1., logger_level="info")
-    def random_samples():
-        return np.random.uniform(-2, 2, 10000)
-
-    >>> random_samples()
-    PESummary INFO    : 2576/10000 (25.76%) samples lie outside of the specified
-    range for the function random_samples (< -1.0). Truncating these samples to
-    -1.0.
-    PESummary INFO    : 2495/10000 (24.95%) samples lie outside of the specified
-    range for the function random_samples (> 1.0). Truncating these samples to
-    1.0.
-    """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper_function(*args, **kwargs):
-            value = np.atleast_1d(func(*args, **kwargs))
-            _minimum_inds = np.argwhere(value < minimum)
-            _maximum_inds = np.argwhere(value > maximum)
-            zipped = zip([_minimum_inds, _maximum_inds], [minimum, maximum])
-            for invalid, bound in zipped:
-                if len(invalid):
-                    getattr(logger, logger_level)(
-                        "{}/{} ({}%) samples lie outside of the specified "
-                        "range for the function {} ({} {}). Truncating these "
-                        "samples to {}.".format(
-                            len(invalid), len(value),
-                            np.round(len(invalid) / len(value) * 100, 2),
-                            func.__name__, "<" if bound == minimum else ">",
-                            bound, bound
-                        )
-                    )
-                    value[invalid] = bound
-            return value
-        return wrapper_function
-    return decorator
-
-
 def no_latex_plot(func):
     """Turn off latex plotting for a given function
     """

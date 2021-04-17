@@ -151,12 +151,7 @@ def download_and_read_file(
     if os.path.isdir(filename):
         new_name = Path(outdir)
     else:
-        if not os.path.isfile(Path(outdir) / filename):
-            new_name = Path(outdir) / filename
-        else:
-            new_name = Path(outdir) / (
-                Path(NamedTemporaryFile().name).name + "_" + filename
-            )
+        new_name = Path(outdir) / filename
     shutil.move(local, new_name)
     if not read_file:
         if conf.delete_temporary_downloads_at_exit:
