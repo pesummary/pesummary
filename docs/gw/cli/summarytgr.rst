@@ -14,6 +14,15 @@ To see help for this executable please run:
 
 .. program-output:: summarytgr --help
 
+TGR output file
+---------------
+
+As part of the `summarytgr` pipelines, a pesummary metafile is produced
+containing all data. This metafile is, by default, called `tgr_samples.h5`. For
+details about how to read this file and extract data see the
+`Extract information from a pesummary TGR file <../tgr_file.html>`_
+tutorial.
+
 IMRCT
 -----
 

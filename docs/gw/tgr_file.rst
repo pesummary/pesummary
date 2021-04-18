@@ -57,7 +57,7 @@ following:
     <class 'pesummary.utils.pdf.DiscretePDF2Dplus1D'>
 
 The output is the a
-`ProbabilityDict2Dplus1D class <../core/ProbabilityDict2Dplus1D.html>`_. We may
+`DiscretePDF2Dplus1D class <../core/pdf.html>`_. We may
 then use the input class methods to extract the PDF for the final mass deviation:
 
 .. code-block:: python
