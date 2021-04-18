@@ -103,8 +103,9 @@ Releasing samples
 Executables
 +++++++++++
 
-PESummary boasts several executables to make it even easier to use, see below
-for details:
+PESummary boasts several executables to make it even easier to use. For a
+description of each executable see
+`this summary table <./cli/executable_descriptions.html>`_.
 
 .. toctree::
     :maxdepth: 1
