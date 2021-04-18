@@ -219,6 +219,30 @@ def generate_parameter_descriptions(_):
             print('\"{}\",\"{}\"\n'.format(key, value), file=file)
 
 
+def generate_executable_table(_):
+    import pkgutil
+    import importlib
+    import pesummary.cli
+    logger = logging.getLogger("executable_descriptions")
+    executables = [
+        modname for _, modname, _ in pkgutil.walk_packages(
+            path=pesummary.cli.__path__, prefix=pesummary.cli.__name__+"."
+        )
+    ]
+    docs = {}
+    logger.info("writing gw/executable_table.csv")
+    for mod in executables:
+        exe = importlib.import_module(mod)
+        name = mod.split(".")[-1]
+        try:
+            docs[name] = exe.__doc__.replace("\n", " ")
+        except AttributeError:
+            docs[name] = "No description found"
+    with (SPHINX_DIR / "gw" / "executable_table.csv").open("w") as file:
+        for key, value in docs.items():
+            print('\"{}\",\"{}\"\n'.format(key, value), file=file)
+
+
 def make_public_notebook(_):
     """Generate a notebook for the GW150914 public example
     """
@@ -254,4 +278,5 @@ def make_public_notebook(_):
 
 def setup(app):
     app.connect('builder-inited', generate_parameter_descriptions)
+    app.connect('builder-inited', generate_executable_table)
     app.connect('builder-inited', make_public_notebook)
