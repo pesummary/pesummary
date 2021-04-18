@@ -124,8 +124,8 @@ for details:
     ../core/cli/summarypublication
     cli/summaryrecreate
     cli/summaryreview
-    ../core/cli/summaryversion
     cli/summarytgr
+    ../core/cli/summaryversion
 
 The webpages
 ++++++++++++
