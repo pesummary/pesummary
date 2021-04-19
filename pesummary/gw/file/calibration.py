@@ -56,6 +56,25 @@ class Calibration(np.ndarray):
             )
         return obj
 
+    @classmethod
+    def read(cls, path_to_file, IFO=None, **kwargs):
+        """Read in a file and initialize the Calibration class
+
+        Parameters
+        ----------
+        path_to_file: str
+            the path to the file you wish to load
+        IFO: str, optional
+            name of the IFO which relates to the input file
+        **kwargs: dict
+            all kwargs are passed to the np.genfromtxt method
+        """
+        try:
+            f = np.genfromtxt(path_to_file, **kwargs)
+            return cls(f)
+        except Exception:
+            raise
+
     def save_to_file(self, file_name, comments="#", delimiter=conf.delimiter):
         """Save the calibration data to file
 
