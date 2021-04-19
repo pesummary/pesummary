@@ -18,11 +18,15 @@ def is_bilby_hdf5_file(path):
     path: str
         path to the results file
     """
-    import deepdish
+    import h5py
     try:
-        f = deepdish.io.load(path)
+        f = h5py.File(path, "r")
         if "bilby" in f["version"]:
             return True
+        elif "bilby" in str(f["version"][0]):
+            return True
+        else:
+            return False
     except Exception:
         return False
     return False
@@ -41,6 +45,8 @@ def is_bilby_json_file(path):
         data = json.load(f)
     try:
         if "bilby" in data["version"]:
+            return True
+        elif "bilby" in data["version"][0]:
             return True
         else:
             return False
