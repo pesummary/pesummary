@@ -78,6 +78,8 @@ def read_bilby(
     extra_kwargs["sampler"]["pe_algorithm"] = "bilby"
     try:
         version = bilby_object.version
+        if isinstance(version, (list, np.ndarray)):
+            version = version[0]
     except Exception as e:
         version = None
 
