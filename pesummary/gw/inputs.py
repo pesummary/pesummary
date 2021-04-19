@@ -654,6 +654,37 @@ class _GWInput(_Input):
             logger.warn(msg)
 
     @staticmethod
+    def _extract_IFO_data_from_file(file, cls, desc, IFO=None):
+        """Return IFO data stored in a file
+
+        Parameters
+        ----------
+        file: path
+            path to a file containing the IFO data
+        cls: obj
+            class you wish to use when loading the file. This class must have
+            a '.read' method
+        desc: str
+            description of the IFO data stored in the file
+        IFO: str, optional
+            the IFO which the data belongs to
+        """
+        general = (
+            "Failed to read in %s data because {}. The %s plot will not be "
+            "generated and the %s data will not be added to the metafile."
+        ) % (desc, desc, desc)
+        try:
+            return cls.read(file, IFO=IFO)
+        except FileNotFoundError:
+            logger.warn(
+                general.format("the file {} does not exist".format(file))
+            )
+            return {}
+        except ValueError as e:
+            logger.warn(general.format(e))
+            return {}
+
+    @staticmethod
     def extract_psd_data_from_file(file, IFO=None):
         """Return the data stored in a psd file
 
@@ -663,21 +694,7 @@ class _GWInput(_Input):
             path to a file containing the psd data
         """
         from pesummary.gw.file.psd import PSD
-
-        general = (
-            "Failed to read in PSD data because {}. The PSD plot will be "
-            "generated and the PSD data will not be added to the metafile."
-        )
-        try:
-            return PSD.read(file, IFO=IFO)
-        except FileNotFoundError:
-            logger.info(
-                general.format("the file {} does not exist".format(file))
-            )
-            return {}
-        except ValueError as e:
-            logger.info(general.format(e))
-            return {}
+        return _GWInput._extract_IFO_data_from_file(file, PSD, "PSD", IFO=IFO)
 
     @staticmethod
     def extract_calibration_data_from_file(file, **kwargs):
@@ -688,24 +705,10 @@ class _GWInput(_Input):
         file: path
             path to a file containing the calibration data
         """
-        general = (
-            "Failed to read in calibration data because {}. The calibration "
-            "plot will not be generated and the calibration data will not be "
-            "added to the metafile"
-        )
         from pesummary.gw.file.calibration import Calibration
-
-        try:
-            f = np.genfromtxt(file)
-            return Calibration(f)
-        except FileNotFoundError:
-            logger.info(
-                general.format("the file {} does not exist".format(file))
-            )
-            return {}
-        except ValueError as e:
-            logger.info(general.format(e))
-            return {}
+        return _GWInput._extract_IFO_data_from_file(
+            file, Calibration, "calibration", **kwargs
+        )
 
     @staticmethod
     def get_ifo_from_file_name(file):
@@ -940,9 +943,13 @@ class GWInput(_GWInput, Input):
     def copy_files(self):
         """Copy the relevant file to the web directory
         """
+        _error = "Failed to save the {} to file"
         for label in self.labels:
             if self.psd[label] != {}:
                 for ifo in self.psd[label].keys():
+                    if not isinstance(self.psd[label][ifo], PSD):
+                        logger.warn(_error.format("{} PSD".format(ifo)))
+                        continue
                     self.psd[label][ifo].save_to_file(
                         os.path.join(self.webdir, "psds", "{}_{}_psd.dat".format(
                             label, ifo
@@ -951,6 +958,18 @@ class GWInput(_GWInput, Input):
             if label in self.priors["calibration"].keys():
                 if self.priors["calibration"][label] != {}:
                     for ifo in self.priors["calibration"][label].keys():
+                        _instance = isinstance(
+                            self.priors["calibration"][label][ifo], Calibration
+                        )
+                        if not _instance:
+                            logger.warn(
+                                _error.format(
+                                    "{} calibration envelope".format(
+                                        ifo
+                                    )
+                                )
+                            )
+                            continue
                         self.priors["calibration"][label][ifo].save_to_file(
                             os.path.join(self.webdir, "calibration", "{}_{}_cal.txt".format(
                                 label, ifo

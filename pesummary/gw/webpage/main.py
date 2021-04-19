@@ -665,17 +665,18 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         if self.priors is not None and "calibration" in self.priors.keys():
             if label in self.priors["calibration"].keys():
                 for ifo in self.priors["calibration"][label].keys():
-                    table.append(
-                        [
-                            base_string.format(
-                                "%s calibration envelope file used for this "
-                                "analysis" % (ifo), os.path.join(
-                                    self.calibration_path["other"],
-                                    "%s_%s_cal.txt" % (label, ifo)
+                    if len(self.priors["calibration"][label][ifo]):
+                        table.append(
+                            [
+                                base_string.format(
+                                    "%s calibration envelope file used for "
+                                    "this analysis" % (ifo), os.path.join(
+                                        self.calibration_path["other"],
+                                        "%s_%s_cal.txt" % (label, ifo)
+                                    )
                                 )
-                            )
-                        ]
-                    )
+                            ]
+                        )
         return table
 
     def default_images_for_result_page(self, label):
