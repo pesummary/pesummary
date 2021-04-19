@@ -411,10 +411,11 @@ class PESummary(MultiAnalysisRead):
             name of the file you wish to write the config data to. Default
             '{label}_config.ini'
         """
-        return PESummary.write(
+        PESummary.write(
             self, _config=True, labels=[label], outdir=outdir, overwrite=True,
             filenames={label: filename}, **kwargs
         )
+        return filename
 
     def _labels_for_write(self, labels):
         """Check the input labels and raise an exception if the label does not exist

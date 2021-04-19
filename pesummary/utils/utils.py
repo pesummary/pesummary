@@ -290,6 +290,8 @@ def _add_existing_data(namespace):
         if hasattr(namespace, "config"):
             if namespace.existing_config[num] not in namespace.config:
                 namespace.config.append(namespace.existing_config[num])
+            elif namespace.existing_config[num] is None:
+                namespace.config.append(None)
         if hasattr(namespace, "priors"):
             if hasattr(namespace, "existing_priors"):
                 for key, item in namespace.existing_priors.items():
