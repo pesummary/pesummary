@@ -1186,7 +1186,7 @@ class TestSummaryModify(Base):
         self.launch(command_line)
         command_line = (
             "summarypages --webdir .outdir/webpage --gw --no_conversion "
-            "--samples .outdir/modified_posterior_samples.h5"
+            "--samples .outdir/modified_posterior_samples.h5 --disable_expert"
         )
         self.launch(command_line)
         data = h5py.File(".outdir/webpage/samples/posterior_samples.h5", "r")
