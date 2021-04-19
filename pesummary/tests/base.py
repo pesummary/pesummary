@@ -378,7 +378,7 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
             injection_parameters=injection_parameters,
             priors=priors,
             log_bayes_factor=0.5, log_evidence_err=0.1, log_noise_evidence=0.1,
-            log_evidence=0.2, version=["bilby=1.1.0"],
+            log_evidence=0.2, version=["bilby=0.5.3:"],
             meta_data={"likelihood": {"time_marginalization": "True"}})
         if extension == "json":
             bilby_object.save_to_file(
