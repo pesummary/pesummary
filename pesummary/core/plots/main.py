@@ -2,20 +2,23 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
+import numpy as np
 import os
 import importlib
 from multiprocessing import Pool, Manager
 
 from pesummary.core.plots.latex_labels import latex_labels
-from pesummary.utils.utils import logger, get_matplotlib_backend, make_dir
+from pesummary.utils.utils import (
+    logger, get_matplotlib_backend, make_dir, get_matplotlib_style_file
+)
 from pesummary.core.plots import plot as core
 from pesummary.core.plots import interactive
 
 import matplotlib
-matplotlib.use(get_matplotlib_backend(parallel=True))
-import numpy as np
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+matplotlib.use(get_matplotlib_backend(parallel=True))
+matplotlib.style.use(get_matplotlib_style_file())
 
 
 class _PlotGeneration(object):

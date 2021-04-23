@@ -11,15 +11,14 @@ from pesummary.core.plots.figure import figure
 from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.utils import (
-    logger, resample_posterior_distribution, get_matplotlib_backend
+    logger, resample_posterior_distribution, get_matplotlib_backend,
+    get_matplotlib_style_file
 )
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots import publication
 from pesummary.gw.plots import plot as gw
 from pesummary import conf
 
-import matplotlib
-matplotlib.use(get_matplotlib_backend(parallel=True))
 import multiprocessing as mp
 import numpy as np
 

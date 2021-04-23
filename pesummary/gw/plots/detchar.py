@@ -10,8 +10,6 @@ import matplotlib.style
 import numpy as np
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
-
-matplotlib.style.use(get_matplotlib_style_file())
 _check_latex_install()
 
 
