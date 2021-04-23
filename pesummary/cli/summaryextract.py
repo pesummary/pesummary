@@ -7,7 +7,7 @@ import argparse
 from pesummary.core.command_line import CheckFilesExistAction
 from pesummary.core.parser import parser
 from pesummary.utils.utils import logger
-from pesummary.io import read
+from pesummary.io import read, available_formats
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 __doc__ = """This executable is used to extract a set of posterior samples
@@ -18,7 +18,7 @@ metafile"""
 def command_line():
     """Generate an Argument Parser object to control the command line options
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--label", dest="label", default=None, required=True,
         help="Analysis that you wish to extract from the file"
@@ -31,7 +31,7 @@ def command_line():
     )
     parser.add_argument(
         "--file_format", dest="file_format", type=str, default="dat",
-        help="Format of output file"
+        help="Format of output file", choices=available_formats()[1]
     )
     parser.add_argument(
         "--filename", dest="filename", type=str, default=None,
