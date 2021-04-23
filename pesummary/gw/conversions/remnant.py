@@ -31,29 +31,29 @@ DEFAULT_SEOBFLAGS = {
 
 @array_input
 def final_mass_of_merger_from_NSBH(
-    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+    mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
     """Calculate the final mass resulting from an NSBH merger using NSBH
-    waveform models given samples for mass_1, mass_2, a_1 and lambda_2.
+    waveform models given samples for mass_1, mass_2, spin_1z and lambda_2.
     mass_1 and mass_2 should be in solar mass units.
     """
     from .tidal import _check_NSBH_approximant
     return _check_NSBH_approximant(
-        approximant, mass_1, mass_2, a_1, lambda_2
+        approximant, mass_1, mass_2, spin_1z, lambda_2
     )[4]
 
 
 @array_input
 def final_spin_of_merger_from_NSBH(
-    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+    mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
     """Calculate the final spin resulting from an NSBH merger using NSBH
-    waveform models given samples for mass_1, mass_2, a_1 and lambda_2.
+    waveform models given samples for mass_1, mass_2, spin_1z and lambda_2.
     mass_1 and mass_2 should be in solar mass units.
     """
     from .tidal import _check_NSBH_approximant
     return _check_NSBH_approximant(
-        approximant, mass_1, mass_2, a_1, lambda_2
+        approximant, mass_1, mass_2, spin_1z, lambda_2
     )[5]
 
 
