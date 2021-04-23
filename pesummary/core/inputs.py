@@ -1032,7 +1032,7 @@ class _Input(object):
                         self._existing_plot[key] = allowed
                 else:
                     if not os.path.isfile(_plot):
-                        logger.warn(_does_not_exist.format(_subplot))
+                        logger.warn(_does_not_exist.format(_plot))
                         keys_to_remove.append(key)
                     else:
                         _filename = os.path.join(
