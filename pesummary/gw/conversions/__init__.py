@@ -1116,9 +1116,11 @@ class _Conversion(object):
     ):
         approximant = self._retrieve_approximant()
         if source:
-            sample_params = ["mass_1_source", "mass_2_source", "a_1", "lambda_2"]
+            sample_params = [
+                "mass_1_source", "mass_2_source", "spin_1z", "lambda_2"
+            ]
         else:
-            sample_params = ["mass_1", "mass_2", "a_1", "lambda_2"]
+            sample_params = ["mass_1", "mass_2", "spin_1z", "lambda_2"]
         samples = self.specific_parameter_samples(sample_params)
         _data = _check_NSBH_approximant(
             approximant, samples[0], samples[1], samples[2], samples[3],
@@ -1549,7 +1551,7 @@ class _Conversion(object):
                         parameters.append(param)
                 # We already know that lambda_2 is in the posterior table if
                 # self.NSBH = True
-                if self.NSBH and "a_1" in self.parameters:
+                if self.NSBH and "spin_1z" in self.parameters:
                     self._final_remnant_properties_from_NSBH_waveform()
                 elif all(i in self.parameters for i in final_spin_params):
                     function(non_precessing=False, parameters=parameters)
@@ -1576,7 +1578,7 @@ class _Conversion(object):
 
             # if NSBH system and self.compute_remnant = False and/or BBH fits
             # fits used, only calculate baryonic_torus_mass
-            if self.NSBH and "a_1" in self.parameters:
+            if self.NSBH and "spin_1z" in self.parameters:
                 if "baryonic_torus_mass" not in self.parameters:
                     self._final_remnant_properties_from_NSBH_waveform(
                         parameters=["baryonic_torus_mass"]
@@ -1627,7 +1629,7 @@ class _Conversion(object):
                 )
                 if condition_radiated_energy or self.force_non_evolved:
                     self._radiated_energy(evolved=evolve_condition)
-        if self.NSBH and "a_1" in self.parameters:
+        if self.NSBH and "spin_1z" in self.parameters:
             if all(_p in self.parameters for _p in ["mass_1_source", "mass_2_source"]):
                 _NSBH_parameters = []
                 if "tidal_disruption_frequency" not in self.parameters:

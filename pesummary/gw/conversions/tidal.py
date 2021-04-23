@@ -259,16 +259,16 @@ def NS_baryonic_mass(compactness, NS_mass):
 
 
 @array_input
-def _IMRPhenomNSBH_properties(mass_1, mass_2, a_1, lambda_2):
+def _IMRPhenomNSBH_properties(mass_1, mass_2, spin_1z, lambda_2):
     """Calculate NSBH specific properties using the IMRPhenomNSBH waveform
-    model given samples for mass_1, mass_2, a_1 and lambda_2. mass_1 and
+    model given samples for mass_1, mass_2, spin_1z and lambda_2. mass_1 and
     mass_2 should be in solar mass units
     """
     data = np.zeros((len(mass_1), 6))
     for num in range(len(mass_1)):
         data[num] = SimIMRPhenomNSBHProperties(
             float(mass_1[num]) * MSUN_SI, float(mass_2[num]) * MSUN_SI,
-            float(a_1[num]), float(lambda_2[num])
+            float(spin_1z[num]), float(lambda_2[num])
         )
     transpose_data = data.T
     # convert final mass and torus mass to solar masses
@@ -295,7 +295,7 @@ def _check_NSBH_approximant(approximant, *args, _raise=True):
 
 @array_input
 def NSBH_merger_type(
-    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH",
+    mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH",
     percentages=True, percentage_round=2, _ringdown=None, _disruption=None,
     _torus=None
 ):
@@ -309,7 +309,7 @@ def NSBH_merger_type(
     _type[:] = "disruptive"
     if not all(param is not None for param in [_ringdown, _disruption, _torus]):
         ringdown, disruption, torus, _, _, _ = _check_NSBH_approximant(
-            approximant, mass_1, mass_2, a_1, lambda_2
+            approximant, mass_1, mass_2, spin_1z, lambda_2
         )
     else:
         ringdown = _ringdown
@@ -336,47 +336,47 @@ def NSBH_merger_type(
 
 @array_input
 def NSBH_ringdown_frequency(
-    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+    mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
-    """Calculate the ringdown frequency given samples for mass_1, mass_2, a_1,
-    lambda_2. mass_1 and mass_2 should be in solar mass units.
+    """Calculate the ringdown frequency given samples for mass_1, mass_2,
+    spin_1z, lambda_2. mass_1 and mass_2 should be in solar mass units.
     """
     return _check_NSBH_approximant(
-        approximant, mass_1, mass_2, a_1, lambda_2
+        approximant, mass_1, mass_2, spin_1z, lambda_2
     )[0]
 
 
 @array_input
 def NSBH_tidal_disruption_frequency(
-    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+    mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
     """Calculate the tidal disruption frequency given samples for mass_1,
-    mass_2, a_1, lambda_2. mass_1 and mass_2 should be in solar mass units.
+    mass_2, spin_1z, lambda_2. mass_1 and mass_2 should be in solar mass units.
     """
     return _check_NSBH_approximant(
-        approximant, mass_1, mass_2, a_1, lambda_2
+        approximant, mass_1, mass_2, spin_1z, lambda_2
     )[1]
 
 
 @array_input
 def NSBH_baryonic_torus_mass(
-    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+    mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
-    """Calculate the baryonic torus mass given samples for mass_1, mass_2, a_1,
-    lambda_2. mass_1 and mass_2 should be in solar mass units.
+    """Calculate the baryonic torus mass given samples for mass_1, mass_2,
+    spin_1z, lambda_2. mass_1 and mass_2 should be in solar mass units.
     """
     return _check_NSBH_approximant(
-        approximant, mass_1, mass_2, a_1, lambda_2
+        approximant, mass_1, mass_2, spin_1z, lambda_2
     )[2]
 
 
 @array_input
 def NS_compactness_from_NSBH(
-    mass_1, mass_2, a_1, lambda_2, approximant="IMRPhenomNSBH"
+    mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
     """Calculate the neutron star compactness given samples for mass_1, mass_2,
-    a_1, lambda_2. mass_1 and mass_2 should be in solar mass units.
+    spin_1z, lambda_2. mass_1 and mass_2 should be in solar mass units.
     """
     return _check_NSBH_approximant(
-        approximant, mass_1, mass_2, a_1, lambda_2
+        approximant, mass_1, mass_2, spin_1z, lambda_2
     )[3]
