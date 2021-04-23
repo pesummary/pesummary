@@ -6,6 +6,10 @@ import os
 _path = pkg_resources.resource_filename("pesummary", "conf")
 style_file = os.path.join(_path, "matplotlib_rcparams.sty")
 
+# checkpoint file
+checkpoint_dir = lambda webdir: os.path.join(webdir, "checkpoint")
+resume_file = "pesummary_resume.pickle"
+
 # Overwrite message
 overwrite = "Overwriting {} from {} to {}"
 

@@ -882,14 +882,14 @@ class GWInput(_GWInput, Input):
         if True, public facing summarypages are produced
     """
 
-    def __init__(self, opts):
+    def __init__(self, opts, checkpoint=None):
         super(GWInput, self).__init__(
             opts, ignore_copy=True, extra_options=[
                 "evolve_spins", "NRSur_fits", "f_low", "f_ref",
                 "waveform_fits", "redshift_method", "cosmology",
                 "no_conversion", "disable_remnant",
                 "force_BBH_remnant_computation"
-            ]
+            ], checkpoint=checkpoint, gw=True
         )
         if self._restarted_from_checkpoint:
             return
