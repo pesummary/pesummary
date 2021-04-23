@@ -14,4 +14,5 @@ python-ligo-lw
 ligo-gracedb
 gwpy>=2.0.2
 plotly
+pillow
 tqdm>=4.44.0,<=4.54.1
