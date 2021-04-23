@@ -19,10 +19,7 @@ import numpy as np
 import math
 from scipy.ndimage import gaussian_filter
 from astropy.time import Time
-from gwpy.timeseries import TimeSeries
-from gwpy.plot.colors import GW_OBSERVATORY_COLORS
 
-matplotlib.style.use(get_matplotlib_style_file())
 _check_latex_install()
 
 from lal import MSUN_SI, PC_SI
@@ -378,6 +375,7 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     kwargs: dict
         dictionary of optional keyword arguments
     """
+    from gwpy.plot.colors import GW_OBSERVATORY_COLORS
     if math.isnan(maxL_params["mass_1"]):
         return
     logger.debug("Generating the maximum likelihood waveform plot")
@@ -1027,6 +1025,8 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
     kwargs: dict
         dictionary of optional keyword arguments
     """
+    from gwpy.timeseries import TimeSeries
+    from gwpy.plot.colors import GW_OBSERVATORY_COLORS
     if math.isnan(maxL_params["mass_1"]):
         return
     logger.debug("Generating the maximum likelihood waveform time domain plot")
@@ -1096,6 +1096,7 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
     kwargs: dict
         dictionary of optional keyword arguments
     """
+    from gwpy.timeseries import TimeSeries
     logger.debug("Generating the maximum likelihood time domain waveform "
                  "comparison plot for H1")
     if not LALSIMULATION:
@@ -1165,6 +1166,7 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
     fmin: optional, float
         starting frequency of the plot
     """
+    from gwpy.plot.colors import GW_OBSERVATORY_COLORS
     fig, ax = figure(gca=True)
     if not colors and all(i in GW_OBSERVATORY_COLORS.keys() for i in labels):
         colors = [GW_OBSERVATORY_COLORS[i] for i in labels]
@@ -1207,6 +1209,8 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
     prior: list, optional
         list containing the prior calibration envelope data for different IFOs
     """
+    from gwpy.plot.colors import GW_OBSERVATORY_COLORS
+
     def interpolate_calibration(data):
         """Interpolate the calibration data using spline
 
@@ -1302,6 +1306,7 @@ def _strain_plot(strain, maxL_params, **kwargs):
     """
     logger.debug("Generating the strain plot")
     from pesummary.gw.conversions import time_in_each_ifo
+    from gwpy.timeseries import TimeSeries
 
     fig, ax = figure(gca=True)
     time = maxL_params["geocent_time"]

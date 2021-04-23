@@ -20,8 +20,6 @@ __author__ = [
     "Michael Puerrer <michael.puerrer@ligo.org>"
 ]
 
-seaborn.set(style="whitegrid")
-
 
 def chirp_mass_and_q_from_mass1_mass2(pts):
     """Transform the component masses to chirp mass and mass ratio

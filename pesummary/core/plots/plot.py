@@ -18,8 +18,6 @@ import numpy as np
 from scipy import signal
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
-
-matplotlib.style.use(get_matplotlib_style_file())
 _check_latex_install()
 
 _default_legend_kwargs = dict(

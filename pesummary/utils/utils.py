@@ -592,7 +592,7 @@ def iterator(
         return iterable
 
 
-def _check_latex_install():
+def _check_latex_install(force_tex=False):
     from matplotlib import rcParams
     from distutils.spawn import find_executable
 
@@ -603,6 +603,8 @@ def _check_latex_install():
 
             texmanager = TexManager()
             texmanager.make_dvi(r"$mass_{1}$", 12)
+            if force_tex:
+                original = True
             rcParams["text.usetex"] = original
         except RuntimeError:
             rcParams["text.usetex"] = False
