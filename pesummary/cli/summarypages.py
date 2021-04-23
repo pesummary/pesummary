@@ -198,12 +198,30 @@ def main(args=None):
 
     _parser = parser()
     opts, unknown = _parser.parse_known_args(args=args)
-    func = functions(opts)
-    args = func["input"](opts)
+    if opts.restart_from_checkpoint:
+        from pesummary.core.inputs import load_current_state
+        from pesummary import conf
+        import os
+        if opts.webdir is None:
+            raise ValueError(
+                "In order to restart from checkpoint please provide a webdir"
+            )
+        resume_file_dir = conf.checkpoint_dir(opts.webdir)
+        resume_file = conf.resume_file
+        state = load_current_state(os.path.join(resume_file_dir, resume_file))
+        if state is not None:
+            _gw = state.gw
+        else:
+            _gw = False
+        func = functions(opts, gw=_gw)
+        args = func["input"](opts, checkpoint=state)
+    else:
+        func = functions(opts)
+        args = func["input"](opts)
     from .summaryplots import PlotGeneration
 
-    plotting_object = PlotGeneration(args, gw=gw_results_file(opts))
-    WebpageGeneration(args, gw=gw_results_file(opts))
+    plotting_object = PlotGeneration(args, gw=args.gw)
+    WebpageGeneration(args, gw=args.gw)
     _history = history_dictionary(
         program=_parser.prog, creator=args.user,
         command_line=_parser.command_line

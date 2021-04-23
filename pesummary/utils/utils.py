@@ -195,7 +195,7 @@ def gw_results_file(opts):
         return False
 
 
-def functions(opts):
+def functions(opts, gw=False):
     """Return a dictionary of functions that are either specific to GW results
     files or core.
     """
@@ -207,10 +207,10 @@ def functions(opts):
     from pesummary.gw.finish import GWFinishingTouches
 
     dictionary = {}
-    dictionary["input"] = GWInput if gw_results_file(opts) else Input
-    dictionary["MetaFile"] = GWMetaFile if gw_results_file(opts) else MetaFile
+    dictionary["input"] = GWInput if gw_results_file(opts) or gw else Input
+    dictionary["MetaFile"] = GWMetaFile if gw_results_file(opts) or gw else MetaFile
     dictionary["FinishingTouches"] = \
-        GWFinishingTouches if gw_results_file(opts) else FinishingTouches
+        GWFinishingTouches if gw_results_file(opts) or gw else FinishingTouches
     return dictionary
 
 

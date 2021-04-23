@@ -1718,10 +1718,23 @@ class Input(_Input):
     disable_expert: Bool
         if True, expert diagnostic plots are not produced
     """
-    def __init__(self, opts, ignore_copy=False, extra_options=None):
+    def __init__(
+        self, opts, ignore_copy=False, extra_options=None, checkpoint=None,
+        gw=False
+    ):
         self.opts = opts
-        self.seed = self.opts.seed
+        self.gw = gw
         self.restart_from_checkpoint = self.opts.restart_from_checkpoint
+        if checkpoint is not None:
+            for key, item in vars(checkpoint).items():
+                setattr(self, key, item)
+            logger.info(
+                "Loaded command line arguments: {}".format(self.opts)
+            )
+            self.restart_from_checkpoint = True
+            self._restarted_from_checkpoint = True
+            return
+        self.seed = self.opts.seed
         self.style_file = self.opts.style_file
         self.result_files = self.opts.samples
         if self.result_files is not None:
@@ -1760,20 +1773,11 @@ class Input(_Input):
         self.user = self.opts.user
         self.webdir = self.opts.webdir
         self._restarted_from_checkpoint = False
-        self.resume_file_dir = os.path.join(self.webdir, "checkpoint")
-        self.resume_file = "pesummary_resume.pickle"
+        self.resume_file_dir = conf.checkpoint_dir(self.webdir)
+        self.resume_file = conf.resume_file
         self._resume_file_path = os.path.join(
             self.resume_file_dir, self.resume_file
         )
-        if self.webdir is not None and self.restart_from_checkpoint:
-            if os.path.isfile(self._resume_file_path):
-                self.load_current_state()
-                self._restarted_from_checkpoint = True
-                return
-            else:
-                logger.info(
-                    "Unable to find resume file. Not restarting from checkpoint"
-                )
         self.baseurl = self.opts.baseurl
         self.filename = self.opts.filename
         self.mcmc_samples = self.opts.mcmc_samples
@@ -1827,18 +1831,6 @@ class Input(_Input):
         if not ignore_copy:
             self.copy_files()
         self.write_current_state()
-
-    def load_current_state(self):
-        """
-        """
-        from pesummary.io import read
-        logger.info(
-            "Reading checkpoint file: {}".format(self._resume_file_path)
-        )
-        state = read(self._resume_file_path, checkpoint=True)
-        for key, item in vars(state).items():
-            setattr(self, key, item)
-        self.restart_from_checkpoint = True
 
     def write_current_state(self):
         """Write the current state of the input class to file
@@ -2028,3 +2020,24 @@ class PostProcessing(object):
                     ) else _inj
                 )
         return key_data
+
+
+def load_current_state(resume_file):
+    """Load a pickle file containing checkpoint information
+
+    Parameters
+    ----------
+    resume_file: str
+        path to a checkpoint file
+    """
+    from pesummary.io import read
+    if not os.path.isfile(resume_file):
+        logger.info(
+            "Unable to find resume file. Not restarting from checkpoint"
+        )
+        return
+    logger.info(
+        "Reading checkpoint file: {}".format(resume_file)
+    )
+    state = read(resume_file, checkpoint=True)
+    return state
