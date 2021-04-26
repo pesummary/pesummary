@@ -176,6 +176,15 @@ class _WebpageGeneration(object):
         )
         self.preliminary_pages = {label: False for label in self.labels}
         self.all_pages_preliminary = False
+        self._additional_1d_pages = {label: [] for label in self.labels}
+        if self.additional_1d_pages is not None:
+            for j, _parameters in self.additional_1d_pages.items():
+                for i in self.labels:
+                    if all(
+                            param in self.samples[i].keys() for param in
+                            _parameters
+                    ):
+                        self._additional_1d_pages[i].append(j)
         self.categories = self.default_categories()
         self.popular_options = self.default_popular_options()
         self.navbar = {
@@ -366,7 +375,10 @@ class _WebpageGeneration(object):
             self.labels
         }
         for num, label in enumerate(self.labels):
-            for j in self.categorize_parameters(self.samples[label].keys()):
+            _params = list(self.samples[label].keys())
+            if len(self._additional_1d_pages[label]):
+                _params += self._additional_1d_pages[label]
+            for j in self.categorize_parameters(_params):
                 j = [j[0], [{k: label} for k in j[1]]]
                 links[label].append(j)
 
@@ -705,6 +717,12 @@ class _WebpageGeneration(object):
         ]
         pages += ["{}_{}_Custom".format(i, i) for i in self.labels]
         pages += ["{}_{}_All".format(i, i) for i in self.labels]
+        for i in self.labels:
+            if len(self._additional_1d_pages[i]):
+                pages += [
+                    "{}_{}_{}".format(i, i, j) for j in
+                    self._additional_1d_pages[i]
+                ]
         pages += [
             "{}_{}_{}_all".format(i, i, j[0]) for i in self.labels for j in
             self.categorize_parameters(self.samples[i].keys()) if len(j[1])
@@ -721,6 +739,50 @@ class _WebpageGeneration(object):
             list of pages that you wish to create
         """
         for num, i in enumerate(self.labels):
+            if len(self._additional_1d_pages[i]):
+                for j in self._additional_1d_pages[i]:
+                    _parameters = self.additional_1d_pages[j]
+                    html_file = self.setup_page(
+                        "{}_{}".format(i, j), self.navbar["result_page"][i],
+                        i, title="{} Posterior PDFs describing {}".format(i, j),
+                        approximant=i, background_colour=self.colors[num],
+                        histogram_download=False, toggle=self.expert_plots
+                    )
+                    html_file.make_banner(approximant=i, key=i)
+                    path = self.image_path["other"]
+                    _plots = [
+                        path + "{}_1d_posterior_{}.png".format(i, param) for
+                        param in _parameters
+                    ]
+                    contents = [
+                        _plots[i:2 + i] for i in range(0, len(_plots), 2)
+                    ]
+                    html_file.make_table_of_images(
+                        contents=contents, code="changeimage",
+                        mcmc_samples=self.mcmc_samples, autoscale=True
+                    )
+                    key_data = self.key_data
+                    contents = []
+                    headings = [" "] + self.key_data_headings.copy()
+                    _injection = False
+                    rows = []
+                    for param in _parameters:
+                        _row = [param]
+                        _row += self.key_data_table[i][param]
+                        rows.append(_row)
+                    _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+                    _class = "row justify-content-center"
+                    html_file.make_container(style=_style)
+                    html_file.make_div(4, _class=_class, _style=None)
+                    html_file.make_table(
+                        headings=headings, contents=rows, heading_span=1,
+                        accordian=False, format="table-hover"
+                    )
+                    html_file.end_div(4)
+                    html_file.end_container()
+                    html_file.export("summary_information_{}.csv".format(i))
+                    html_file.make_footer(user=self.user, rundir=self.webdir)
+                    html_file.close()
             for j in self.samples[i].keys():
                 html_file = self.setup_page(
                     "{}_{}".format(i, j), self.navbar["result_page"][i],
@@ -772,14 +834,24 @@ class _WebpageGeneration(object):
                             j, "log_likelihood"
                         ),
                         PlotCaption("1d_histogram_bootstrap").format(100, j, 1000)
-                    ]
+                    ],
                 ]
                 if self.expert_plots:
                     html_file.make_table_of_images(
                         contents=contents, rows=1, columns=2, code="changeimage",
                         captions=captions, mcmc_samples=self.mcmc_samples,
-                        display='none', container_id='expert_div'
+                        display='none', container_id='expert_div',
+                        close_container=False
                     )
+                    _additional = self.add_to_expert_pages(path, i)
+                    if _additional is not None and j in _additional.keys():
+                        html_file.make_table_of_images(
+                            contents=_additional[j], code="changeimage",
+                            mcmc_samples=self.mcmc_samples,
+                            autoscale=True, display='none',
+                            add_to_open_container=True,
+                        )
+                    html_file.end_div()
                 html_file.export(
                     "", csv=False, json=False, shell=False, margin_bottom="1em",
                     histogram_dat=os.path.join(
@@ -1787,3 +1859,28 @@ class _WebpageGeneration(object):
         from pesummary.utils.utils import _add_existing_data
 
         self = _add_existing_data(self)
+
+    def add_to_expert_pages(self, path, label):
+        """Additional expert plots to add beyond the default. This returns a
+        dictionary keyed by the parameter, with values providing the path
+        to the additional plots you wish to add. The plots are a 2d list
+        where each sublist represents a row in the table of images.
+
+        Parameters
+        ----------
+        path: str
+            path to the image directory
+        label: str
+            label of the plot you wish to add
+        """
+        return None
+
+    @property
+    def additional_1d_pages(self):
+        """Additional 1d histogram pages beyond one for each parameter. You may,
+        for instance, want a 1d histogram page which combines multiple
+        parameters. This returns a dictionary, keyed by the new 1d histogram
+        page, with values indicating the parameters you wish to include on this
+        page. Only the 1d marginalized histograms are shown.
+        """
+        return None

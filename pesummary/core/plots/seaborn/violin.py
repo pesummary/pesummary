@@ -5,6 +5,7 @@ import matplotlib as mpl
 from textwrap import dedent
 import colorsys
 import numpy as np
+import math
 from scipy import stats
 import pandas as pd
 from matplotlib.collections import PatchCollection
@@ -29,7 +30,7 @@ class ViolinPlotter(_ViolinPlotter):
                  bw="scott", cut=2, scale="area", scale_hue=True, gridsize=100,
                  width=.8, inner="box", split=False, dodge=True, orient=None,
                  linewidth=None, color=None, palette=None, saturation=.75,
-                 ax=None, outer=None, kde=gaussian_kde, kde_kwargs={},
+                 ax=None, outer=None, inj=None, kde=gaussian_kde, kde_kwargs={},
                  weights=None, **kwargs):
         self.multi_color = False
         self.kde = kde
@@ -43,6 +44,7 @@ class ViolinPlotter(_ViolinPlotter):
         self.gridsize = gridsize
         self.width = width
         self.dodge = dodge
+        self.inj = inj
 
         if inner is not None:
             if not any([inner.startswith("quart"),
@@ -406,6 +408,14 @@ class ViolinPlotter(_ViolinPlotter):
                 else:
                     self.draw_external_range(ax, violin_data, support, density, i)
 
+                if self.inj is None:
+                    continue
+
+                else:
+                    self.draw_injected_line(
+                        ax, self.inj[i], violin_data, support, density, i
+                    )
+
             # Option 2: we have nested grouping by a hue variable
             # ---------------------------------------------------
 
@@ -481,6 +491,15 @@ class ViolinPlotter(_ViolinPlotter):
                                                      support, density, i,
                                                      ["left", "right"][j],
                                                      weights=self.weights_data[i][hue_mask])
+
+                        if self.inj is None:
+                            continue
+
+                        else:
+                            self.draw_injected_line(
+                                ax, self.inj[i], violin_data, support, density, i,
+                                ["left", "right"][j]
+                            )
 
                         # The box and point interior plots are drawn for
                         # all data at the group level, so we just do that once
@@ -695,6 +714,14 @@ class ViolinPlotter(_ViolinPlotter):
                     ax, center, injection, density, split=split, color="r"
                 )
 
+    def draw_injected_line(self, ax, inj, data, support, density,
+                           center, split=None):
+        """Mark the injected value on the violin"""
+        width = self.dwidth * np.max(density) * 1.1
+        if math.isnan(inj):
+            return
+        self._plot_single_line(ax, center, inj, density, split=split, color='r')
+
     def plot(self, ax):
         """Make the violin plot."""
         self.draw_violins(ax)
@@ -707,14 +734,14 @@ def violinplot(x=None, y=None, hue=None, data=None, order=None, hue_order=None,
                bw="scott", cut=2, scale="area", scale_hue=True, gridsize=100,
                width=.8, inner="box", split=False, dodge=True, orient=None,
                linewidth=None, color=None, palette=None, saturation=.75,
-               ax=None, outer=None, kde=gaussian_kde, kde_kwargs={},
+               ax=None, outer=None, inj=None, kde=gaussian_kde, kde_kwargs={},
                weights=None, **kwargs):
 
     plotter = ViolinPlotter(x, y, hue, data, order, hue_order,
                             bw, cut, scale, scale_hue, gridsize,
                             width, inner, split, dodge, orient, linewidth,
                             color, palette, saturation, outer=outer,
-                            kde=kde, kde_kwargs=kde_kwargs, weights=weights)
+                            inj=inj, kde=kde, kde_kwargs=kde_kwargs, weights=weights)
 
     if ax is None:
         ax = plt.gca()

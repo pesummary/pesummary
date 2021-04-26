@@ -34,7 +34,10 @@ class GWInjection(Injection):
                 self[key] = value
 
     @classmethod
-    def read(cls, path, conversion=True, conversion_kwargs={}, **kwargs):
+    def read(
+        cls, path, conversion=True, conversion_kwargs={}, additional_xml_map={},
+        **kwargs
+    ):
         """Read an injection file and initalize the Injection class
 
         Parameters
@@ -50,10 +53,10 @@ class GWInjection(Injection):
             All kwargs passed to the format specific read function
         """
         if Read.extension_from_path(path) == "xml":
-            data = GWInjection._grab_injection_from_xml_file(path, **kwargs)
-            return cls(
-                data, conversion=conversion, conversion_kwargs=conversion_kwargs
+            data = GWInjection._grab_injection_from_xml_file(
+                path, additional_xml_map=additional_xml_map, **kwargs
             )
+            return cls(data, conversion=conversion, conversion_kwargs=conversion_kwargs)
         else:
             return super(GWInjection, cls).read(
                 path, conversion=conversion, conversion_kwargs=conversion_kwargs
@@ -61,7 +64,8 @@ class GWInjection(Injection):
 
     @staticmethod
     def _grab_injection_from_xml_file(
-        injection_file, format="ligolw", tablename="sim_inspiral", num=0
+        injection_file, format="ligolw", tablename="sim_inspiral", num=0,
+        additional_xml_map={}
     ):
         """Grab the data from an xml injection file
 
@@ -75,6 +79,10 @@ class GWInjection(Injection):
             Name of the table you wish to load. Default is 'sim_inspiral'
         num: int, optional
             The injection row you wish to load. Default is 0
+        additional_xml_map: dict, optional
+            Additional mapping of non standard names. Key is the
+            standard parameter name and item is the name stored in
+            the xml file
         """
         from gwpy.table import Table
         from pesummary.gw.file.standard_names import standard_names
@@ -86,4 +94,8 @@ class GWInjection(Injection):
             standard_names[key]: [table[key][num]] for key in table.colnames
             if key in standard_names.keys()
         }
+        if "beta" in injection.keys():
+            del injection["beta"]
+        for key, item in additional_xml_map.items():
+            injection[key] = [table[item][0]]
         return injection

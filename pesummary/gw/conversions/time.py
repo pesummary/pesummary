@@ -13,7 +13,7 @@ except ImportError:
     pass
 
 
-@array_input
+@array_input()
 def time_in_each_ifo(detector, ra, dec, time_gps):
     """Return the event time in a given detector, given samples for ra, dec,
     time

@@ -29,7 +29,7 @@ DEFAULT_SEOBFLAGS = {
 }
 
 
-@array_input
+@array_input()
 def final_mass_of_merger_from_NSBH(
     mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
@@ -43,7 +43,7 @@ def final_mass_of_merger_from_NSBH(
     )[4]
 
 
-@array_input
+@array_input()
 def final_spin_of_merger_from_NSBH(
     mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
@@ -57,7 +57,7 @@ def final_spin_of_merger_from_NSBH(
     )[5]
 
 
-@array_input
+@array_input()
 def _final_from_initial_NSBH(*args, **kwargs):
     """Calculate the final mass and final spin given the initial parameters
     of the binary using the approximant directly
@@ -169,7 +169,7 @@ def _setup_SEOBNRv4P_args(mode=[2, 2], seob_flags=DEFAULT_SEOBFLAGS):
     return mode_array, _seob_flags
 
 
-@array_input
+@array_input()
 def _final_from_initial_BBH(
     mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
     approximant="SEOBNRv4", iota=None, luminosity_distance=None, f_ref=None,

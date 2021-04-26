@@ -30,6 +30,63 @@ class Base(object):
         return module.main(args=[i for i in cla if i != " " and i != ""])
 
 
+class TestSummaryPublication(Base):
+    """Test the `summarypublication` executable with trivial examples
+    """
+    def setup(self):
+        """Setup the SummaryPublication class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        make_result_file(bilby=True, gw=True)
+        os.rename(".outdir/test.json", ".outdir/bilby.json")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_2d_contour(self):
+        """Test the 2d contour plot generation
+        """
+        command_line = (
+            "summarypublication --webdir .outdir --samples .outdir/bilby.json "
+            "--labels test --parameters mass_1 mass_2 --levels 0.9 0.5 "
+            "--plot 2d_contour --palette colorblind"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(
+            os.path.join(".outdir", "2d_contour_plot_mass_1_and_mass_2.png")
+        )
+
+    def test_violin(self):
+        """Test the violin plot generation
+        """
+        command_line = (
+            "summarypublication --webdir .outdir --samples .outdir/bilby.json "
+            "--labels test --parameters mass_1 --plot violin "
+            "--palette colorblind"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(
+            os.path.join(".outdir", "violin_plot_mass_1.png")
+        )
+
+    def test_spin_disk(self):
+        """Test the spin disk generation
+        """
+        command_line = (
+            "summarypublication --webdir .outdir --samples .outdir/bilby.json "
+            "--labels test --parameters mass_1 --plot spin_disk "
+            "--palette colorblind"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(
+            os.path.join(".outdir", "spin_disk_plot_test.png")
+        )
+
+
 class TestSummaryPipe(Base):
     """Test the `summarypipe` executable with trivial examples
     """

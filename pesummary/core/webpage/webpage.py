@@ -810,7 +810,7 @@ class page(Base):
                              code="modal", cli=None, autoscale=False,
                              unique_id=None, captions=None, extra_div=False,
                              mcmc_samples=False, margin_left=None, display=None,
-                             container_id=None):
+                             container_id=None, **kwargs):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -833,7 +833,7 @@ class page(Base):
                                        extra_div=extra_div, display=display,
                                        mcmc_samples=mcmc_samples,
                                        margin_left=margin_left,
-                                       container_id=container_id)
+                                       container_id=container_id, **kwargs)
         table.make()
 
     def insert_image(self, path, justify="center", code=None):

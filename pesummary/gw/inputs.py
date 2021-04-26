@@ -36,9 +36,15 @@ class _GWInput(_Input):
             list of labels for events stored in an existing metafile that you
             wish to compare
         """
+        _replace_kwargs = {
+            "psd": "{file}.psd['{label}']"
+        }
+        if "psd_default" in kwargs.keys():
+            _replace_kwargs["psd_default"] = kwargs["psd_default"]
         data = _Input.grab_data_from_metafile(
             existing_file, webdir, compare=compare, read_function=GWRead,
-            nsamples=nsamples, **kwargs
+            nsamples=nsamples, _replace_with_pesummary_kwargs=_replace_kwargs,
+            **kwargs
         )
         f = GWRead(existing_file)
 
@@ -81,38 +87,48 @@ class _GWInput(_Input):
     @property
     def grab_data_kwargs(self):
         kwargs = super(_GWInput, self).grab_data_kwargs
-        if self.f_low is None:
-            self._f_low = [None] * len(self.labels)
-        if self.f_ref is None:
-            self._f_ref = [None] * len(self.labels)
+        for _property in ["f_low", "f_ref", "f_final", "delta_f"]:
+            if getattr(self, _property) is None:
+                setattr(self, "_{}".format(_property), [None] * len(self.labels))
+            elif len(getattr(self, _property)) == 1 and len(self.labels) != 1:
+                setattr(
+                    self, "_{}".format(_property),
+                    getattr(self, _property) * len(self.labels)
+                )
         if self.opts.approximant is None:
             approx = [None] * len(self.labels)
         else:
             approx = self.opts.approximant
-        if self.restart_from_checkpoint:
-            resume_file = [
-                os.path.join(
-                    self.webdir, "checkpoint",
-                    "{}_conversion_class.pickle".format(label)
-                ) for label in self.labels
-            ]
-        else:
-            resume_file = [None] * len(self.labels)
+        resume_file = [
+            os.path.join(
+                self.webdir, "checkpoint",
+                "{}_conversion_class.pickle".format(label)
+            ) for label in self.labels
+        ]
 
         try:
             for num, label in enumerate(self.labels):
+                try:
+                    psd = self.psd[label]
+                except KeyError:
+                    psd = {}
                 kwargs[label].update(dict(
                     evolve_spins=self.evolve_spins, f_low=self.f_low[num],
                     approximant=approx[num], f_ref=self.f_ref[num],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
+                    precessing_snr=self.calculate_precessing_snr,
+                    psd=psd, f_final=self.f_final[num],
                     waveform_fits=self.waveform_fits,
                     multi_process=self.opts.multi_process,
                     redshift_method=self.redshift_method,
                     cosmology=self.cosmology,
                     no_conversion=self.no_conversion,
-                    add_zero_spin=True, disable_remnant=self.disable_remnant,
+                    add_zero_spin=True, delta_f=self.delta_f[num],
+                    psd_default=self.psd_default,
+                    disable_remnant=self.disable_remnant,
                     force_BBH_remnant_computation=self.force_BBH_remnant_computation,
-                    resume_file=resume_file[num]
+                    resume_file=resume_file[num],
+                    restart_from_checkpoint=self.restart_from_checkpoint
                 ))
             return kwargs
         except IndexError:
@@ -128,14 +144,19 @@ class _GWInput(_Input):
                     evolve_spins=self.evolve_spins, f_low=self.f_low[0],
                     approximant=approx[0], f_ref=self.f_ref[0],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
+                    precessing_snr=self.calculate_precessing_snr,
+                    psd=self.psd[self.labels[0]], f_final=self.f_final[0],
                     waveform_fits=self.waveform_fits,
                     multi_process=self.opts.multi_process,
                     redshift_method=self.redshift_method,
                     cosmology=self.cosmology,
                     no_conversion=self.no_conversion,
-                    add_zero_spin=True,
+                    add_zero_spin=True, delta_f=self.delta_f[0],
+                    psd_default=self.psd_default,
+                    disable_remnant=self.disable_remnant,
                     force_BBH_remnant_computation=self.force_BBH_remnant_computation,
-                    resume_file=resume_file[num]
+                    resume_file=resume_file[num],
+                    restart_from_checkpoint=self.restart_from_checkpoint
                 ))
             return kwargs
 
@@ -549,6 +570,57 @@ class _GWInput(_Input):
             self._f_ref = [float(i) for i in f_ref]
 
     @property
+    def f_final(self):
+        return self._f_final
+
+    @f_final.setter
+    def f_final(self, f_final):
+        self._f_final = f_final
+        if f_final is not None:
+            self._f_final = [float(i) for i in f_final]
+
+    @property
+    def delta_f(self):
+        return self._delta_f
+
+    @delta_f.setter
+    def delta_f(self, delta_f):
+        self._delta_f = delta_f
+        if delta_f is not None:
+            self._delta_f = [float(i) for i in delta_f]
+
+    @property
+    def psd_default(self):
+        return self._psd_default
+
+    @psd_default.setter
+    def psd_default(self, psd_default):
+        self._psd_default = psd_default
+        if "stored:" in psd_default:
+            label = psd_default.split("stored:")[1]
+            self._psd_default = "{file}.psd['%s']" % (label)
+            return
+        try:
+            from pycbc import psd
+
+            self._psd_default = getattr(psd, psd_default)
+        except ImportError:
+            logger.warn(
+                "Unable to import 'pycbc'. Unable to generate a default PSD"
+            )
+            psd_default = None
+        except AttributeError:
+            logger.warn(
+                "'pycbc' does not have the '{}' psd available. Using '{}' as "
+                "the default PSD".format(psd_default, conf.psd)
+            )
+            psd_default = getattr(psd, conf.psd)
+        except ValueError as e:
+            logger.warn("Setting 'psd_default' to None because {}".format(e))
+            psd_default = None
+        self._psd_default = psd_default
+
+    @property
     def pepredicates_probs(self):
         return self._pepredicates_probs
 
@@ -885,10 +957,10 @@ class GWInput(_GWInput, Input):
     def __init__(self, opts, checkpoint=None):
         super(GWInput, self).__init__(
             opts, ignore_copy=True, extra_options=[
-                "evolve_spins", "NRSur_fits", "f_low", "f_ref",
-                "waveform_fits", "redshift_method", "cosmology",
-                "no_conversion", "disable_remnant",
-                "force_BBH_remnant_computation"
+                "evolve_spins", "NRSur_fits", "calculate_precessing_snr", "f_low",
+                "f_ref", "f_final", "psd", "waveform_fits", "redshift_method",
+                "cosmology", "no_conversion", "delta_f", "psd_default",
+                "disable_remnant", "force_BBH_remnant_computation"
             ], checkpoint=checkpoint, gw=True
         )
         if self._restarted_from_checkpoint:
@@ -914,7 +986,6 @@ class GWInput(_GWInput, Input):
         self.detectors = None
         self.skymap = None
         self.calibration = self.opts.calibration
-        self.psd = self.opts.psd
         self.nsamples_for_skymap = self.opts.nsamples_for_skymap
         self.sensitivity = self.opts.sensitivity
         self.no_ligo_skymap = self.opts.no_ligo_skymap

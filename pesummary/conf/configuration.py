@@ -59,6 +59,15 @@ public = False
 # Number of cores to run on
 multi_process = 1
 
+# Default f_low to use for GW specific conversions
+default_flow = 20.0
+
+# Default f_final to use for GW specific conversions
+default_f_final = 1024.0
+
+# Default delta_f to use for GW specific conversions
+default_delta_f = 1. / 256
+
 # Standard meta_data names
 log_evidence = "ln_evidence"
 evidence = "evidence"
@@ -99,7 +108,7 @@ gw_source_frame_corner_parameters = [
 
 # List of precessing angles
 precessing_angles = [
-    "tilt_1", "tilt_2", "phi_12", "phi_jl"
+    "cos_tilt_1", "cos_tilt_2", "tilt_1", "tilt_2", "phi_12", "phi_jl"
 ]
 # Parameters to use for GW extrinsic corner plot
 gw_extrinsic_corner_parameters = ["luminosity_distance", "psi", "ra", "dec"]
@@ -107,8 +116,17 @@ gw_extrinsic_corner_parameters = ["luminosity_distance", "psi", "ra", "dec"]
 # Cosmology to use when calculating redshift
 cosmology = "Planck15"
 
+# Analytic PSD to use for conversions when no PSD file is provided
+psd = "aLIGOZeroDetHighPower"
+
 # GraceDB service url to use
 gracedb_server = "https://gracedb.ligo.org/api/"
 
 # Information required for reproducing a GW analysis
 gw_reproducibility = ["config", "psd"]
+
+# Additional 1d histogram pages that combine multiple GW marginalized posterior
+# distributions
+additional_1d_pages = {
+    "precession": ["chi_p", "chi_p_2spin", "network_precessing_snr", "beta"]
+}

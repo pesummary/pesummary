@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 
-@array_input
+@array_input()
 def _z_from_dL_exact(luminosity_distance, cosmology):
     """Return the redshift given samples for the luminosity distance for a
     given cosmology
@@ -48,7 +48,7 @@ def z_from_dL_exact(luminosity_distance, cosmology="Planck15", multi_process=1):
     return z
 
 
-@array_input
+@array_input()
 def z_from_dL_approx(
     luminosity_distance, N=100, cosmology="Planck15", **kwargs
 ):
@@ -68,7 +68,7 @@ def z_from_dL_approx(
     return zvals
 
 
-@array_input
+@array_input()
 def dL_from_z(redshift, cosmology="Planck15"):
     """Return the luminosity distance given samples for the redshift
     """
@@ -76,7 +76,7 @@ def dL_from_z(redshift, cosmology="Planck15"):
     return cosmo.luminosity_distance(redshift).value
 
 
-@array_input
+@array_input()
 def comoving_distance_from_z(redshift, cosmology="Planck15"):
     """Return the comoving distance given samples for the redshift
     """
@@ -98,7 +98,7 @@ def _detector_from_source(parameter, z):
     return parameter * (1. + z)
 
 
-@array_input
+@array_input()
 def m1_source_from_m1_z(mass_1, z):
     """Return the source-frame primary mass given samples for the
     detector-frame primary mass and the redshift
@@ -106,7 +106,7 @@ def m1_source_from_m1_z(mass_1, z):
     return _source_from_detector(mass_1, z)
 
 
-@array_input
+@array_input()
 def m1_from_m1_source_z(mass_1_source, z):
     """Return the detector-frame primary mass given samples for the
     source-frame primary mass and the redshift
@@ -114,7 +114,7 @@ def m1_from_m1_source_z(mass_1_source, z):
     return _detector_from_source(mass_1_source, z)
 
 
-@array_input
+@array_input()
 def m2_source_from_m2_z(mass_2, z):
     """Return the source-frame secondary mass given samples for the
     detector-frame secondary mass and the redshift
@@ -122,7 +122,7 @@ def m2_source_from_m2_z(mass_2, z):
     return _source_from_detector(mass_2, z)
 
 
-@array_input
+@array_input()
 def m2_from_m2_source_z(mass_2_source, z):
     """Return the detector-frame secondary mass given samples for the
     source-frame secondary mass and the redshift
@@ -130,7 +130,7 @@ def m2_from_m2_source_z(mass_2_source, z):
     return _detector_from_source(mass_2_source, z)
 
 
-@array_input
+@array_input()
 def m_total_source_from_mtotal_z(total_mass, z):
     """Return the source-frame total mass of the binary given samples for
     the detector-frame total mass and redshift
@@ -138,7 +138,7 @@ def m_total_source_from_mtotal_z(total_mass, z):
     return _source_from_detector(total_mass, z)
 
 
-@array_input
+@array_input()
 def mtotal_from_mtotal_source_z(total_mass_source, z):
     """Return the detector-frame total mass of the binary given samples for
     the source-frame total mass and redshift
@@ -146,7 +146,7 @@ def mtotal_from_mtotal_source_z(total_mass_source, z):
     return _detector_from_source(total_mass_source, z)
 
 
-@array_input
+@array_input()
 def mchirp_source_from_mchirp_z(mchirp, z):
     """Return the source-frame chirp mass of the binary given samples for
     detector-frame chirp mass and redshift
@@ -154,7 +154,7 @@ def mchirp_source_from_mchirp_z(mchirp, z):
     return _source_from_detector(mchirp, z)
 
 
-@array_input
+@array_input()
 def mchirp_from_mchirp_source_z(mchirp_source, z):
     """Return the detector-frame chirp mass of the binary given samples for
     the source-frame chirp mass and redshift

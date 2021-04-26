@@ -19,7 +19,7 @@ except ImportError:
     pass
 
 
-@array_input
+@array_input()
 def lambda1_plus_lambda2(lambda1, lambda2):
     """Return the sum of the primary objects tidal deformability and the
     secondary objects tidal deformability
@@ -27,7 +27,7 @@ def lambda1_plus_lambda2(lambda1, lambda2):
     return lambda1 + lambda2
 
 
-@array_input
+@array_input()
 def lambda1_minus_lambda2(lambda1, lambda2):
     """Return the primary objects tidal deformability minus the secondary
     objests tidal deformability
@@ -35,7 +35,7 @@ def lambda1_minus_lambda2(lambda1, lambda2):
     return lambda1 - lambda2
 
 
-@array_input
+@array_input()
 def lambda_tilde_from_lambda1_lambda2(lambda1, lambda2, mass1, mass2):
     """Return the dominant tidal term given samples for lambda1 and lambda2
     """
@@ -49,7 +49,7 @@ def lambda_tilde_from_lambda1_lambda2(lambda1, lambda2, mass1, mass2):
     return lambda_tilde
 
 
-@array_input
+@array_input()
 def delta_lambda_from_lambda1_lambda2(lambda1, lambda2, mass1, mass2):
     """Return the second dominant tidal term given samples for lambda1 and
     lambda 2
@@ -65,7 +65,7 @@ def delta_lambda_from_lambda1_lambda2(lambda1, lambda2, mass1, mass2):
     return delta_lambda
 
 
-@array_input
+@array_input()
 def lambda1_from_lambda_tilde(lambda_tilde, mass1, mass2):
     """Return the individual tidal parameter given samples for lambda_tilde
     """
@@ -78,7 +78,7 @@ def lambda1_from_lambda_tilde(lambda_tilde, mass1, mass2):
     return lambda1
 
 
-@array_input
+@array_input()
 def lambda2_from_lambda1(lambda1, mass1, mass2):
     """Return the individual tidal parameter given samples for lambda1
     """
@@ -163,7 +163,7 @@ def _lambda1_lambda2_from_eos_multiprocess(function, args, multi_process=1):
     return lambdas[0], lambdas[1]
 
 
-@array_input
+@array_input()
 def lambda1_lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
     log_pressure, gamma_1, gamma_2, gamma_3, mass_1, mass_2, multi_process=1
 ):
@@ -185,7 +185,7 @@ def lambda1_lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
     )
 
 
-@array_input
+@array_input()
 def lambda1_lambda2_from_spectral_decomposition(
     spectral_decomposition_gamma_0, spectral_decomposition_gamma_1,
     spectral_decomposition_gamma_2, spectral_decomposition_gamma_3,
@@ -211,7 +211,7 @@ def lambda1_lambda2_from_spectral_decomposition(
     )
 
 
-@array_input
+@array_input()
 def lambda1_from_4_parameter_piecewise_polytrope_equation_of_state(
     log_pressure, gamma_1, gamma_2, gamma_3, mass_1, mass_2
 ):
@@ -223,7 +223,7 @@ def lambda1_from_4_parameter_piecewise_polytrope_equation_of_state(
     )[0]
 
 
-@array_input
+@array_input()
 def lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
     log_pressure, gamma_1, gamma_2, gamma_3, mass_1, mass_2
 ):
@@ -235,7 +235,7 @@ def lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
     )[1]
 
 
-@array_input
+@array_input()
 def NS_compactness_from_lambda(lambda_x):
     """Calculate neutron star compactness from its tidal deformability
     """
@@ -245,7 +245,7 @@ def NS_compactness_from_lambda(lambda_x):
     return data
 
 
-@array_input
+@array_input()
 def NS_baryonic_mass(compactness, NS_mass):
     """Calculate the neutron star baryonic mass from its compactness and
     gravitational mass in solar masses
@@ -258,7 +258,7 @@ def NS_baryonic_mass(compactness, NS_mass):
     return data
 
 
-@array_input
+@array_input()
 def _IMRPhenomNSBH_properties(mass_1, mass_2, spin_1z, lambda_2):
     """Calculate NSBH specific properties using the IMRPhenomNSBH waveform
     model given samples for mass_1, mass_2, spin_1z and lambda_2. mass_1 and
@@ -293,7 +293,7 @@ def _check_NSBH_approximant(approximant, *args, _raise=True):
         raise ValueError(msg)
 
 
-@array_input
+@array_input()
 def NSBH_merger_type(
     mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH",
     percentages=True, percentage_round=2, _ringdown=None, _disruption=None,
@@ -334,7 +334,7 @@ def NSBH_merger_type(
     return _type
 
 
-@array_input
+@array_input()
 def NSBH_ringdown_frequency(
     mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
@@ -346,7 +346,7 @@ def NSBH_ringdown_frequency(
     )[0]
 
 
-@array_input
+@array_input()
 def NSBH_tidal_disruption_frequency(
     mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
@@ -358,7 +358,7 @@ def NSBH_tidal_disruption_frequency(
     )[1]
 
 
-@array_input
+@array_input()
 def NSBH_baryonic_torus_mass(
     mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):
@@ -370,7 +370,7 @@ def NSBH_baryonic_torus_mass(
     )[2]
 
 
-@array_input
+@array_input()
 def NS_compactness_from_NSBH(
     mass_1, mass_2, spin_1z, lambda_2, approximant="IMRPhenomNSBH"
 ):

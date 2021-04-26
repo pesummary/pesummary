@@ -763,11 +763,11 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 "accept": ["theta", "iota", "viewing"], "reject": []
             },
             "spins": {
-                "accept": ["spin", "chi_p", "chi_eff", "a_1", "a_2"],
-                "reject": ["lambda", "final", "gamma"]
+                "accept": ["spin", "chi_p", "chi_eff", "a_1", "a_2", "precession"],
+                "reject": ["lambda", "final", "gamma", "order"]
             },
             "spin_angles": {
-                "accept": ["phi", "tilt"], "reject": []
+                "accept": ["phi", "tilt", "beta"], "reject": []
             },
             "tidal": {
                 "accept": [
@@ -829,3 +829,37 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         plotting function
         """
         return conf.gw_corner_parameters
+
+    def add_to_expert_pages(self, path, label):
+        """Additional expert plots to add beyond the default. This returns a
+        dictionary keyed by the parameter, with values providing the path
+        to the additional plots you wish to add. The plots are a 2d list
+        where each sublist represents a row in the table of images.
+
+        Parameters
+        ----------
+        path: str
+            path to the image directory
+        label: str
+            label of the plot you wish to add
+        """
+        contour_base = path + "{}_2d_contour_{}_log_likelihood.png"
+        mydict = {
+            "network_precessing_snr": [
+                [
+                    contour_base.format(label, "_b_bar"),
+                    contour_base.format(label, "_precessing_harmonics_overlap"),
+                ]
+            ]
+        }
+        return mydict
+
+    @property
+    def additional_1d_pages(self):
+        """Additional 1d histogram pages beyond one for each parameter. You may,
+        for instance, want a 1d histogram page which combines multiple
+        parameters. This returns a dictionary, keyed by the new 1d histogram
+        page, with values indicating the parameters you wish to include on this
+        page. Only the 1d marginalized histograms are shown.
+        """
+        return conf.additional_1d_pages

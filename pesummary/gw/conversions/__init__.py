@@ -4,6 +4,7 @@ error_msg = (
     "Unable to install '{}'. You will not be able to use some of the inbuilt "
     "functions."
 )
+import copy
 import numpy as np
 from pathlib import Path
 
@@ -21,6 +22,7 @@ try:
 except ImportError:
     logger.warn(error_msg.format("astropy"))
 
+from .angles import *
 from .cosmology import *
 from .cosmology import _source_from_detector
 from .mass import *
@@ -48,6 +50,8 @@ _conversion_doc = """
         the low frequency cut-off to use when evolving the spins
     f_ref: float, optional
         the reference frequency when spins are defined
+    f_final: float, optional
+        the final frequency to use when integrating over frequencies
     approximant: str, optional
         the approximant to use when evolving the spins
     evolve_spins: float/str, optional
@@ -58,6 +62,11 @@ _conversion_doc = """
     NRSur_fits: float/str, optional
         the NRSurrogate model to use to calculate the remnant fits. If nothing
         passed, the average NR fits are used instead
+    precessing_snr: Bool, optional
+        if True, the precessing SNR is calculated from the posterior samples.
+    psd: dict, optional
+        dictionary containing a psd frequency series for each detector you wish
+        to include in calculations
     waveform_fits: Bool, optional
         if True, the approximant is used to calculate the remnant fits. Default
         is False which means that the average NR fits are used
@@ -84,6 +93,8 @@ _conversion_doc = """
     add_zero_spin: Bool, optional
         if no spins are present in the posterior table, add spins with 0 value.
         Default False.
+    psd_default: str/pycbc.psd obj, optional
+        Default PSD to use for conversions when no other PSD is provided.
     regenerate: list, optional
         list of posterior distributions that you wish to regenerate
     return_dict: Bool, optional
@@ -114,10 +125,10 @@ _conversion_doc = """
 
 
 @set_docstring(_conversion_doc % {"function": "convert"})
-def convert(*args, resume_file=None, **kwargs):
+def convert(*args, restart_from_checkpoint=False, resume_file=None, **kwargs):
     import os
     if resume_file is not None:
-        if os.path.isfile(resume_file):
+        if os.path.isfile(resume_file) and restart_from_checkpoint:
             return _Conversion.load_current_state(resume_file)
         logger.info(
             "Unable to find resume file for conversion. Not restarting from "
@@ -205,6 +216,30 @@ class _Conversion(object):
         extra_kwargs = kwargs.get("extra_kwargs", {"sampler": {}, "meta_data": {}})
         f_low = kwargs.get("f_low", None)
         f_ref = kwargs.get("f_ref", None)
+        f_final = kwargs.get("f_final", None)
+        delta_f = kwargs.get("delta_f", None)
+
+        for param, value in {"f_final": f_final, "delta_f": delta_f}.items():
+            if value is not None and param in extra_kwargs["meta_data"].keys():
+                logger.warn(
+                    base_replace.format(
+                        param, extra_kwargs["meta_data"][param], value
+                    )
+                )
+                extra_kwargs["meta_data"][param] = value
+            elif value is not None:
+                extra_kwargs["meta_data"][param] = value
+            else:
+                logger.warn(
+                    "Could not find {} in input file and one was not passed "
+                    "from the command line. Using {}Hz as default".format(
+                        param, getattr(conf, "default_{}".format(param))
+                    )
+                )
+                extra_kwargs["meta_data"][param] = getattr(
+                    conf, "default_{}".format(param)
+                )
+
         approximant = kwargs.get("approximant", None)
         NRSurrogate = kwargs.get("NRSur_fits", False)
         redshift_method = kwargs.get("redshift_method", "approx")
@@ -291,6 +326,7 @@ class _Conversion(object):
                 )
             evolve_spins = False
 
+        precessing_snr = kwargs.get("precessing_snr", False)
         if f_low is not None and "f_low" in extra_kwargs["meta_data"].keys():
             logger.warning(
                 base_replace.format(
@@ -300,6 +336,13 @@ class _Conversion(object):
             extra_kwargs["meta_data"]["f_low"] = f_low
         elif f_low is not None:
             extra_kwargs["meta_data"]["f_low"] = f_low
+        else:
+            logger.warn(
+                "Could not find minimum frequency in input file and "
+                "one was not passed from the command line. Using {}Hz "
+                "as default".format(conf.default_flow)
+            )
+            extra_kwargs["meta_data"]["f_low"] = conf.default_flow
         if approximant is not None and "approximant" in extra_kwargs["meta_data"].keys():
             logger.warning(
                 base_replace.format(
@@ -323,13 +366,36 @@ class _Conversion(object):
         multi_process = kwargs.get("multi_process", None)
         if multi_process is not None:
             multi_process = int(multi_process)
+        psd_default = kwargs.get("psd_default", "aLIGOZeroDetHighPower")
+        psd = kwargs.get("psd", {})
+        if psd is None:
+            psd = {}
+        elif psd is not None and not isinstance(psd, dict):
+            raise ValueError(
+                "'psd' must be a dictionary of frequency series for each detector"
+            )
+        ifos = list(psd.keys())
+        pycbc_psd = copy.deepcopy(psd)
+        if psd != {}:
+            from pesummary.gw.file.psd import PSD
+            if isinstance(psd[ifos[0]], PSD):
+                for ifo in ifos:
+                    try:
+                        pycbc_psd[ifo] = pycbc_psd[ifo].to_pycbc(
+                            extra_kwargs["meta_data"]["f_low"],
+                            f_high=extra_kwargs["meta_data"]["f_final"],
+                            f_high_override=True
+                        )
+                    except (ImportError, IndexError, ValueError):
+                        pass
         obj.__init__(
             parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
             waveform_fits, multi_process, regenerate, redshift_method,
             cosmology, force_non_evolved, force_remnant,
             kwargs.get("add_zero_spin", False), disable_remnant,
             kwargs.get("return_kwargs", False), kwargs.get("return_dict", True),
-            kwargs.get("resume_file", None)
+            kwargs.get("resume_file", None), precessing_snr, pycbc_psd,
+            psd_default
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -348,7 +414,8 @@ class _Conversion(object):
         self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
         waveform_fits, multi_process, regenerate, redshift_method,
         cosmology, force_non_evolved, force_remnant, add_zero_spin,
-        disable_remnant, return_kwargs, return_dict, resume_file
+        disable_remnant, return_kwargs, return_dict, resume_file,
+        precessing_snr, psd, psd_default
     ):
         self.parameters = parameters
         self.samples = samples
@@ -366,15 +433,32 @@ class _Conversion(object):
         self.return_kwargs = return_kwargs
         self.return_dict = return_dict
         self.resume_file = resume_file
+        self.precessing_snr = precessing_snr
+        self.psd = psd
+        self.psd_default = psd_default
         self.non_precessing = False
         if not any(param in self.parameters for param in conf.precessing_angles):
             self.non_precessing = True
+        if "chi_p" in self.parameters:
+            _chi_p = self.specific_parameter_samples(["chi_p"])
+            if not np.any(_chi_p):
+                logger.info(
+                    "chi_p = 0 for all samples. Treating this as a "
+                    "non-precessing system"
+                )
+                self.non_precessing = True
         if self.non_precessing and evolve_spins:
             logger.info(
                 "Spin evolution is trivial for a non-precessing system. No additional "
                 "transformation required."
             )
             evolve_spins = False
+        if self.non_precessing and precessing_snr:
+            logger.info(
+                "Precessing SNR is 0 for a non-precessing system. No additional "
+                "conversion required."
+            )
+            self.precessing_snr = False
         self.has_tidal = self._check_for_tidal_parameters()
         self.NSBH = self._check_for_NSBH_system()
         self.compute_remnant = not self.disable_remnant
@@ -798,6 +882,24 @@ class _Conversion(object):
         chirp_mass_source = mchirp_source_from_mchirp_z(samples[0], samples[1])
         self.append_data("chirp_mass_source", chirp_mass_source)
 
+    def _beta(self):
+        samples = self.specific_parameter_samples([
+            "mass_1", "mass_2", "phi_jl", "tilt_1", "tilt_2", "phi_12",
+            "a_1", "a_2", "reference_frequency", "phase"
+        ])
+        beta = opening_angle(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5], samples[6], samples[7], samples[8], samples[9]
+        )
+        self.append_data("beta", beta)
+
+    def _psi_J(self):
+        samples = self.specific_parameter_samples([
+            "psi", "theta_jn", "phi_jl", "beta"
+        ])
+        psi = psi_J(samples[0], samples[1], samples[2], samples[3])
+        self.append_data("psi_J", psi)
+
     def _time_in_each_ifo(self):
         detectors = []
         if "IFOs" in list(self.extra_kwargs["meta_data"].keys()):
@@ -947,6 +1049,59 @@ class _Conversion(object):
                 "while we find from the 'matched_filter_snrs', the detector "
                 "network is: {}".format(_opt_detectors, _mf_detectors)
             )
+
+    def _rho_p(self):
+        required = [
+            "mass_1", "mass_2", "beta", "psi_J", "a_1", "a_2", "tilt_1",
+            "tilt_2", "phi_12", "theta_jn", "ra", "dec", "geocent_time",
+            "phi_jl", "reference_frequency", "luminosity_distance", "phase"
+        ]
+        samples = self.specific_parameter_samples(required)
+        try:
+            spins = self.specific_parameter_samples(["spin_1z", "spin_2z"])
+        except ValueError:
+            spins = [None, None]
+        _f_low = self._retrieve_f_low()
+        if isinstance(_f_low, (np.ndarray)):
+            f_low = _f_low() * len(samples[0])
+        else:
+            f_low = [_f_low] * len(samples[0])
+        [rho_p, b_bar, overlap, snrs], data_used = precessing_snr(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5], samples[6], samples[7], samples[8], samples[9], samples[10],
+            samples[11], samples[12], samples[13], samples[15], samples[16], f_low=f_low,
+            spin_1z=spins[0], spin_2z=spins[1], psd=self.psd, return_data_used=True,
+            f_final=self.extra_kwargs["meta_data"]["f_final"], f_ref=samples[14],
+            multi_process=self.multi_process, psd_default=self.psd_default,
+            df=self.extra_kwargs["meta_data"]["delta_f"], debug=True
+        )
+        self.append_data("network_precessing_snr", rho_p)
+        self.append_data("_b_bar", b_bar)
+        self.append_data("_precessing_harmonics_overlap", overlap)
+        nbreakdown = len(np.argwhere(b_bar > 0.3))
+        if nbreakdown > 0:
+            logger.warning(
+                "{}/{} ({}%) samples have b_bar greater than 0.3. For these "
+                "samples, the two-harmonic approximation used to calculate "
+                "the precession SNR may not be valid".format(
+                    nbreakdown, len(b_bar),
+                    np.round((nbreakdown / len(b_bar)) * 100, 2)
+                )
+            )
+        try:
+            _samples = self.specific_parameter_samples("network_optimal_snr")
+            if np.logical_or(
+                    np.median(snrs) > 1.1 * np.median(_samples),
+                    np.median(snrs) < 0.9 * np.median(_samples)
+            ):
+                logger.warn(
+                    "The two-harmonic SNR is different from the stored SNR. "
+                    "This indicates that the provided PSD may be different "
+                    "from the one used in the sampling."
+                )
+        except Exception:
+            pass
+        self.extra_kwargs["meta_data"]["precessing_snr"] = data_used
 
     def _retrieve_f_low(self):
         extra_kwargs = self.extra_kwargs["meta_data"]
@@ -1478,6 +1633,13 @@ class _Conversion(object):
                         self._chi_p()
                     if "chi_p_2spin" not in self.parameters:
                         self._chi_p_2spin()
+            if "beta" not in self.parameters:
+                beta_components = [
+                    "mass_1", "mass_2", "phi_jl", "tilt_1", "tilt_2", "phi_12",
+                    "a_1", "a_2", "reference_frequency", "phase"
+                ]
+                if all(i in self.parameters for i in beta_components):
+                    self._beta()
             polytrope_params = ["log_pressure", "gamma_1", "gamma_2", "gamma_3"]
             if all(param in self.parameters for param in polytrope_params):
                 if "lambda_1" not in self.parameters or "lambda_2" not in self.parameters:
@@ -1498,6 +1660,11 @@ class _Conversion(object):
                     self._lambda_tilde_from_lambda1_lambda2()
                 if "delta_lambda" not in self.parameters:
                     self._delta_lambda_from_lambda1_lambda2()
+            if "psi" in self.parameters:
+                dpsi_parameters = ["theta_jn", "phi_jl", "beta"]
+                if all(i in self.parameters for i in dpsi_parameters):
+                    if "psi_J" not in self.parameters:
+                        self._psi_J()
 
             evolve_suffix = "_non_evolved"
             final_spin_params = ["a_1", "a_2"]
@@ -1658,6 +1825,30 @@ class _Conversion(object):
             if any("_matched_filter_snr" in i for i in self.parameters):
                 if "network_matched_filter_snr" not in self.parameters:
                     self._matched_filter_network_snr()
+        if "network_precessing_snr" not in self.parameters and self.precessing_snr:
+            rho_p_parameters = [
+                "mass_1", "mass_2", "beta", "psi_J", "a_1", "a_2", "tilt_1",
+                "tilt_2", "phi_12", "theta_jn", "phi_jl", "ra", "dec", "geocent_time",
+                "phi_jl"
+            ]
+            if all(i in self.parameters for i in rho_p_parameters):
+                try:
+                    logger.warn(
+                        "Starting to calculate the precessing SNR. This may take "
+                        "some time"
+                    )
+                    self._rho_p()
+                except ImportError as e:
+                    logger.warn(e)
+            else:
+                logger.warn(
+                    "Unable to calculate the precessing SNR because requires "
+                    "samples for {}".format(
+                        ", ".join(
+                            [i for i in rho_p_parameters if i not in self.parameters]
+                        )
+                    )
+                )
         if "theta_jn" in self.parameters and "cos_theta_jn" not in self.parameters:
             self._cos_angle("cos_theta_jn")
         if "theta_jn" in self.parameters and "viewing_angle" not in self.parameters:
