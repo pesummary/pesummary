@@ -8,7 +8,7 @@ from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.gw.plots import publication as pub
 from pesummary.core.plots import population as pop
 from pesummary.core.plots.latex_labels import latex_labels
-from pesummary.utils.utils import make_dir, logger
+from pesummary.utils.utils import make_dir, logger, _check_latex_install
 from pesummary.core.command_line import DictionaryAction
 import argparse
 import seaborn
@@ -17,6 +17,7 @@ import numpy as np
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 __doc__ = """This executable is used to generate publication quality plots given
 result files"""
+_check_latex_install()
 
 
 def command_line():
@@ -30,7 +31,6 @@ def command_line():
                         help="Posterior samples hdf5 file", nargs='+',
                         default=None)
     parser.add_argument("--labels", dest="labels",
-
                         help="labels used to distinguish runs", nargs='+',
                         default=None)
     parser.add_argument("--plot", dest="plot",
@@ -56,6 +56,8 @@ def command_line():
                         help=("Linestyles you wish to use to distinguish result "
                               "files"),
                         nargs='+', default=None)
+    parser.add_argument("--levels", dest="levels", default=[0.9], nargs='+',
+                        help="Contour levels you wish to plot", type=float)
     return parser
 
 
@@ -186,7 +188,8 @@ def make_2d_contour_plot(opts):
         )
         fig, ax = pub.twod_contour_plots(
             i, twod_samples, opts.labels, latex_labels, colors=colors,
-            linestyles=linestyles, gridsize=gridsize, return_ax=True
+            linestyles=linestyles, gridsize=gridsize, levels=opts.levels,
+            return_ax=True
         )
         current_xlow, current_xhigh = ax.get_xlim()
         current_ylow, current_yhigh = ax.get_ylim()
@@ -248,8 +251,10 @@ def make_violin_plot(opts):
             fig = pub.violin_plots(i, samples, opts.labels, latex_labels)
             fig.savefig("%s/violin_plot_%s.png" % (opts.webdir, i))
             fig.close()
-        except Exception:
-            logger.info("Failed to generate a violin plot for %s" % (i))
+        except Exception as e:
+            logger.info(
+                "Failed to generate a violin plot for %s because %s" % (i, e)
+            )
             continue
 
 
@@ -261,7 +266,7 @@ def make_spin_disk_plot(opts):
     colors, linestyles = get_colors_and_linestyles(opts)
     parameters, samples = read_samples(opts.samples)
 
-    required_parameters = ["a_1", "a_2", "tilt_1", "tilt_2"]
+    required_parameters = ["a_1", "a_2", "cos_tilt_1", "cos_tilt_2"]
     for num, i in enumerate(parameters):
         if not all(j in i for j in required_parameters):
             logger.info("Failed to generate spin disk plots for %s because "

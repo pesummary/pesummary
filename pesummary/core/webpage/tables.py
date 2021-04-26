@@ -10,7 +10,8 @@ class table_of_images(Base):
     def __init__(self, content, rows, columns, html_file, code, cli,
                  autoscale=False, unique_id=None, captions=None, extra_div=False,
                  mcmc_samples=False, margin_left=None, display=None,
-                 container_id=None):
+                 container_id=None, close_container=True,
+                 add_to_open_container=False):
         """
 
         Parameters
@@ -33,6 +34,8 @@ class table_of_images(Base):
         self.margin_left = margin_left
         self.display = display
         self.container_id = container_id
+        self.close_container = close_container
+        self.add_to_open_container = add_to_open_container
         if self.unique_id is not None:
             self.modal_id = "Modal_{}".format(self.unique_id)
             self.demo_id = "demo_{}".format(self.unique_id)
@@ -56,18 +59,21 @@ class table_of_images(Base):
         self.add_content(string, indent=indent)
 
     def make(self):
-        self.add_content("<script>")
-        self.add_content("$(document).ready(function(){", indent=2)
-        self.add_content("$('[data-toggle=\"popover\"]').popover();", indent=4)
-        self.add_content("});", indent=2)
-        self.add_content("</script>")
-        self.add_content("<style>")
-        self.add_content(".popover {", indent=2)
-        self.add_content("max-width: 550px;", indent=4)
-        self.add_content("width: 550px;", indent=4)
-        self.add_content("}", indent=2)
-        self.add_content("</style>")
-        self.make_container(display=self.display, container_id=self.container_id)
+        if not self.add_to_open_container:
+            self.add_content("<script>")
+            self.add_content("$(document).ready(function(){", indent=2)
+            self.add_content("$('[data-toggle=\"popover\"]').popover();", indent=4)
+            self.add_content("});", indent=2)
+            self.add_content("</script>")
+            self.add_content("<style>")
+            self.add_content(".popover {", indent=2)
+            self.add_content("max-width: 550px;", indent=4)
+            self.add_content("width: 550px;", indent=4)
+            self.add_content("}", indent=2)
+            self.add_content("</style>")
+            self.make_container(
+                display=self.display, container_id=self.container_id
+            )
         self.make_div(2, _class="mx-auto d-block", _style=None)
         if self.rows == 1:
             _id = self.content[0][0].split("/")[-1][:-4]
@@ -166,4 +172,5 @@ class table_of_images(Base):
             self.end_div(6)
             self.end_div(4)
         self.end_div(2)
-        self.end_container()
+        if self.close_container:
+            self.end_container()

@@ -3,7 +3,6 @@
 import os
 import numpy as np
 from pesummary import conf
-from pesummary.core.file.formats.base_read import Read
 from pesummary.utils.utils import logger, check_file_exists_and_rename
 from pesummary.utils.dict import Dict
 
@@ -89,7 +88,17 @@ class PSD(np.ndarray):
             raise ValueError(
                 "Invalid input data. See the docs for instructions"
             )
+        obj.delta_f = cls.delta_f(obj)
+        obj.f_high = cls.f_high(obj)
         return obj
+
+    @staticmethod
+    def delta_f(array):
+        return array.T[0][1] - array.T[0][0]
+
+    @staticmethod
+    def f_high(array):
+        return array.T[0][-1]
 
     @classmethod
     def read(cls, path_to_file, **kwargs):
@@ -102,6 +111,8 @@ class PSD(np.ndarray):
         **kwargs: dict
             all kwargs are passed to the read methods
         """
+        from pesummary.core.file.formats.base_read import Read
+
         mapping = {
             "dat": PSD.read_from_dat,
             "txt": PSD.read_from_dat,
@@ -183,3 +194,51 @@ class PSD(np.ndarray):
     def __array_finalize__(self, obj):
         if obj is None:
             return
+        self.delta_f = getattr(obj, "delta_f", None)
+        self.f_high = getattr(obj, "f_high", None)
+
+    def to_pycbc(
+        self, low_freq_cutoff, f_high=None, length=None, delta_f=None,
+        f_high_override=False
+    ):
+        """Convert the PSD object to an interpolated pycbc.types.FrequencySeries
+
+        Parameters
+        ----------
+        length : int, optional
+            Length of the frequency series in samples.
+        delta_f : float, optional
+            Frequency resolution of the frequency series in Herz.
+        low_freq_cutoff : float, optional
+            Frequencies below this value are set to zero.
+        f_high_override: Bool, optional
+            Override the final frequency if it is above the maximum stored.
+            Default False
+        """
+        from pycbc.psd.read import from_numpy_arrays
+
+        if delta_f is None:
+            delta_f = self.delta_f
+        if f_high is None:
+            f_high = self.f_high
+        elif f_high > self.f_high:
+            msg = (
+                "Specified value of final frequency: {} is above the maximum "
+                "frequency stored: {}. ".format(f_high, self.f_high)
+            )
+            if f_high_override:
+                msg += "Overwriting the final frequency"
+                f_high = self.f_high
+            else:
+                msg += (
+                    "This will result in an interpolation error. Either change "
+                    "the final frequency specified or set the 'f_high_override' "
+                    "kwarg to True"
+                )
+            logger.warn(msg)
+        if length is None:
+            length = int(f_high / delta_f) + 1
+        pycbc_psd = from_numpy_arrays(
+            self.T[0], self.T[1], length, delta_f, low_freq_cutoff
+        )
+        return pycbc_psd

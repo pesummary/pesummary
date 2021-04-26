@@ -49,7 +49,7 @@ class CheckFilesExistAction(argparse.Action):
         ff: str
             path to file you wish to check
         """
-        if not os.path.isfile(ff):
+        if not os.path.isfile(ff) and "@" not in ff:
             raise FileNotFoundError(
                 "The file '{}' provided for '{}' does not exist".format(
                     ff, self.dest

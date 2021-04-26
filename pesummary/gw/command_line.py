@@ -125,6 +125,14 @@ def insert_gwspecific_option_group(parser):
                                 "ligo.skymap. These samples will be randomly "
                                 "drawn from the posterior distributions"),
                           default=None)
+    gw_group.add_argument("--calculate_precessing_snr", action="store_true",
+                          help=("Calculate the precessing SNR based on the posterior "
+                                "samples"),
+                          default=False)
+    gw_group.add_argument("--psd_default", dest="psd_default",
+                          help=("The PSD to use for conversions when no psd file is "
+                                "provided. Default aLIGOZeroDetHighPower"),
+                          default="aLIGOZeroDetHighPower")
     gw_group.add_argument("--f_low", dest="f_low",
                           help=("Low frequency cutoff used to generate the "
                                 "samples"),
@@ -133,6 +141,14 @@ def insert_gwspecific_option_group(parser):
                           help=("Reference frequency used to generate the "
                                 "samples"),
                           nargs='+', default=None)
+    gw_group.add_argument("--f_final", dest="f_final",
+                          help=("Final frequency to use when calculating the "
+                                "precessing snr"),
+                          nargs='+', type=float)
+    gw_group.add_argument("--delta_f", dest="delta_f",
+                          help=("Difference in frequency samples when calculating "
+                                "the precessing snr"),
+                          nargs='+', type=float)
     gw_group.add_argument("--no_ligo_skymap", action="store_true",
                           help="do not generate a skymap with ligo.skymap",
                           default=False)
@@ -251,3 +267,13 @@ def add_dynamic_tgr_kwargs_to_namespace(existing_namespace, command_line=None):
         existing_namespace, "--*_kwargs", example="--{}_kwargs",
         command_line=command_line
     )
+
+
+def _all_gw_options():
+    """Return a list of all GW specific command line arguments
+    """
+    parser = argparse.ArgumentParser()
+    parser = insert_gwspecific_option_group(parser)
+    opts = [i.dest for i in vars(parser)["_actions"]]
+    defaults = [i.default for i in vars(parser)["_actions"]]
+    return opts, defaults

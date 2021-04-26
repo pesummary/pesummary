@@ -873,6 +873,7 @@ class _PlotGeneration(_BasePlotGeneration):
         violin_plots = ["mass_ratio", "chi_eff", "chi_p", "luminosity_distance"]
 
         for plot in violin_plots:
+            injection = [self.injection_data[label][plot] for label in self.labels]
             if not all(plot in self.samples[j].keys() for j in self.labels):
                 logger.warning(
                     "Failed to generate violin plots for {} because {} is not "
@@ -881,7 +882,7 @@ class _PlotGeneration(_BasePlotGeneration):
             samples = [self.samples[i][plot] for i in self.labels]
             arguments = [
                 self.savedir, plot, samples, self.labels, latex_labels[plot],
-                self.preliminary_comparison_pages, self.checkpoint
+                injection, self.preliminary_comparison_pages, self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._violin_plot, error_message % (plot)
@@ -889,7 +890,7 @@ class _PlotGeneration(_BasePlotGeneration):
 
     @staticmethod
     def _violin_plot(
-        savedir, plot_parameter, samples, labels, latex_label,
+        savedir, plot_parameter, samples, labels, latex_label, inj_values=None,
         preliminary=False, checkpoint=False, kde=Bounded_1d_kde,
         default_bounds=True
     ):
@@ -907,6 +908,8 @@ class _PlotGeneration(_BasePlotGeneration):
             list of labels used to distinguish each result file
         latex_label: str
              latex_label correspondig to parameter
+        inj_value: list
+             list of injected values for each sample
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
@@ -922,7 +925,7 @@ class _PlotGeneration(_BasePlotGeneration):
             )
         fig = publication.violin_plots(
             plot_parameter, samples, labels, latex_labels, kde=kde,
-            kde_kwargs={"xlow": xlow, "xhigh": xhigh}
+            kde_kwargs={"xlow": xlow, "xhigh": xhigh}, inj_values=inj_values
         )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary

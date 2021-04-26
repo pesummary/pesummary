@@ -15,7 +15,7 @@ except ImportError:
     pass
 
 
-@array_input
+@array_input()
 def viewing_angle_from_inclination(inclination):
     """Return the viewing angle of the binary given samples for the source
     inclination angle. For a precessing system, the source inclination angle
@@ -27,7 +27,7 @@ def viewing_angle_from_inclination(inclination):
     return np.min([inclination, np.pi - inclination], axis=0)
 
 
-@array_input
+@array_input()
 def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Return chi_p given samples for mass1, mass2, spin1x, spin1y, spin2x,
     spin2y
@@ -42,7 +42,7 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     return chi_p
 
 
-@array_input
+@array_input()
 def chi_p_2spin(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Return a modified chi_p which takes into account precessing spin
     information from both compact objects given samples for mass1, mass2,
@@ -60,14 +60,14 @@ def chi_p_2spin(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     return chi_p_2spin
 
 
-@array_input
+@array_input()
 def chi_eff(mass1, mass2, spin1z, spin2z):
     """Return chi_eff given samples for mass1, mass2, spin1z, spin2z
     """
     return (spin1z * mass1 + spin2z * mass2) / (mass1 + mass2)
 
 
-@array_input
+@array_input()
 def phi_12_from_phi1_phi2(phi1, phi2):
     """Return the difference in azimuthal angle between S1 and S2 given samples
     for phi1 and phi2
@@ -81,7 +81,7 @@ def phi_12_from_phi1_phi2(phi1, phi2):
     return phi12
 
 
-@array_input
+@array_input()
 def phi1_from_spins(spin_1x, spin_1y):
     """Return phi_1 given samples for spin_1x and spin_1y
     """
@@ -89,14 +89,14 @@ def phi1_from_spins(spin_1x, spin_1y):
     return phi_1
 
 
-@array_input
+@array_input()
 def phi2_from_spins(spin_2x, spin_2y):
     """Return phi_2 given samples for spin_2x and spin_2y
     """
     return phi1_from_spins(spin_2x, spin_2y)
 
 
-@array_input
+@array_input()
 def spin_angles(mass_1, mass_2, inc, spin1x, spin1y, spin1z, spin2x, spin2y,
                 spin2z, f_ref, phase):
     """Return the spin angles given samples for mass_1, mass_2, inc, spin1x,
@@ -130,7 +130,7 @@ def spin_angles(mass_1, mass_2, inc, spin1x, spin1y, spin1z, spin2x, spin2y,
     return data
 
 
-@array_input
+@array_input()
 def component_spins(theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1,
                     mass_2, f_ref, phase):
     """Return the component spins given samples for theta_jn, phi_jl, tilt_1,
@@ -147,7 +147,7 @@ def component_spins(theta_jn, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, mass_1,
     return data
 
 
-@array_input
+@array_input()
 def spin_angles_from_azimuthal_and_polar_angles(
         a_1, a_2, a_1_azimuthal, a_1_polar, a_2_azimuthal, a_2_polar):
     """Return the spin angles given samples for a_1, a_2, a_1_azimuthal,
@@ -166,7 +166,7 @@ def spin_angles_from_azimuthal_and_polar_angles(
     return data
 
 
-@array_input
+@array_input()
 def tilt_angles_and_phi_12_from_spin_vectors_and_L(a_1, a_2, Ln):
     """Return the tilt angles and phi_12 given samples for the spin vectors
     and the orbital angular momentum
@@ -198,3 +198,21 @@ def tilt_angles_and_phi_12_from_spin_vectors_and_L(a_1, a_2, Ln):
         phi_12 = 2. * np.pi - phi_12
 
     return np.arccos(cos_tilt_1), np.arccos(cos_tilt_2), phi_12
+
+
+@array_input()
+def opening_angle(
+    mass_1, mass_2, phi_jl, tilt_1, tilt_2, phi_12, a_1, a_2, f_ref, phase
+):
+    """Return the opening angle of the system given samples for mass_1, mass_2,
+    cartesian spins and a reference frequency
+    """
+    data = []
+    for i in range(len(mass_1)):
+        beta, _, _, _, _, _, _ = \
+            SimInspiralTransformPrecessingNewInitialConditions(
+                0., phi_jl[i], tilt_1[i], tilt_2[i], phi_12[i],
+                a_1[i], a_2[i], mass_1[i] * MSUN_SI, mass_2[i] * MSUN_SI,
+                float(f_ref[i]), float(phase[i]))
+        data.append(beta)
+    return data

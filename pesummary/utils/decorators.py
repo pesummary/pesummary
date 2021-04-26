@@ -167,7 +167,7 @@ def tmp_directory(func):
     return wrapper_function
 
 
-def array_input(func):
+def array_input(ignore_args=None, ignore_kwargs=None):
     """Convert the input into an np.ndarray and return either a float or a
     np.ndarray depending on what was input.
 
@@ -183,39 +183,45 @@ def array_input(func):
     >>> print(total_mass([30, 3], [10, 1]))
     [40 4]
     """
-    @functools.wraps(func)
-    def wrapper_function(*args, **kwargs):
-        new_args = list(copy.deepcopy(args))
-        new_kwargs = kwargs.copy()
-        return_float = False
-        for num, arg in enumerate(args):
-            if isinstance(arg, (float, int)):
-                new_args[num] = np.array([arg])
-                return_float = True
-            elif isinstance(arg, (list, np.ndarray)):
-                new_args[num] = np.array(arg)
-            else:
-                pass
-        for key, item in kwargs.items():
-            if isinstance(item, (float, int)):
-                new_kwargs[key] = np.array([item])
-            elif isinstance(item, (list, np.ndarray)):
-                new_kwargs[key] = np.array(item)
-        output = func(*new_args, **new_kwargs)
-        if isinstance(output, dict):
-            return output
-        value = np.array(output)
-        if return_float:
-            new_value = copy.deepcopy(value)
-            if len(new_value) > 1:
-                new_value = np.array([arg[0] for arg in value])
-            elif new_value.ndim == 2:
-                new_value = new_value[0]
-            else:
-                new_value = float(new_value)
-            return new_value
-        return value
-    return wrapper_function
+    def _array_input(func):
+        @functools.wraps(func)
+        def wrapper_function(*args, **kwargs):
+            new_args = list(copy.deepcopy(args))
+            new_kwargs = kwargs.copy()
+            return_float = False
+            for num, arg in enumerate(args):
+                if ignore_args is not None and num in ignore_args:
+                    pass
+                elif isinstance(arg, (float, int)):
+                    new_args[num] = np.array([arg])
+                    return_float = True
+                elif isinstance(arg, (list, np.ndarray)):
+                    new_args[num] = np.array(arg)
+                else:
+                    pass
+            for key, item in kwargs.items():
+                if ignore_kwargs is not None and key in ignore_kwargs:
+                    pass
+                elif isinstance(item, (float, int)):
+                    new_kwargs[key] = np.array([item])
+                elif isinstance(item, (list, np.ndarray)):
+                    new_kwargs[key] = np.array(item)
+            output = func(*new_args, **new_kwargs)
+            if isinstance(output, dict):
+                return output
+            value = np.array(output)
+            if return_float:
+                new_value = copy.deepcopy(value)
+                if len(new_value) > 1:
+                    new_value = np.array([arg[0] for arg in value])
+                elif new_value.ndim == 2:
+                    new_value = new_value[0]
+                else:
+                    new_value = float(new_value)
+                return new_value
+            return value
+        return wrapper_function
+    return _array_input
 
 
 def docstring_subfunction(*args):

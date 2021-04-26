@@ -333,8 +333,15 @@ def __antenna_response(name, ra, dec, psi, time_gps):
     time_gps: float
         gps time of merger
     """
-    gmst = Time(time_gps, format='gps', location=(0, 0))
-    corrected_ra = gmst.sidereal_time('mean').rad - ra
+    # Following 8 lines taken from pycbc.detector.Detector
+    from astropy.units.si import sday
+    reference_time = 1126259462.0
+    gmst_reference = Time(
+        reference_time, format='gps', scale='utc', location=(0, 0)
+    ).sidereal_time('mean').rad
+    dphase = (time_gps - reference_time) / float(sday.si.scale) * (2.0 * np.pi)
+    gmst = (gmst_reference + dphase) % (2.0 * np.pi)
+    corrected_ra = gmst - ra
     if not LALSIMULATION:
         raise Exception("lalsimulation could not be imported. please install "
                         "lalsuite to be able to use all features")
@@ -356,8 +363,12 @@ def __antenna_response(name, ra, dec, psi, time_gps):
     y = np.array([y0, y1, y2])
     dy = detector.response.dot(y)
 
-    fplus = (x * dx - y * dy).sum()
-    fcross = (x * dy + y * dx).sum()
+    if hasattr(dx, "shape"):
+        fplus = (x * dx - y * dy).sum(axis=0)
+        fcross = (x * dy + y * dx).sum(axis=0)
+    else:
+        fplus = (x * dx - y * dy).sum()
+        fcross = (x * dy + y * dx).sum()
 
     return fplus, fcross
 
@@ -715,6 +726,8 @@ def _default_skymap_plot(ra, dec, weights=None, injection=None, **kwargs):
         list of samples for right ascension
     dec: list
         list of samples for declination
+    injection: list, optional
+        list containing the injected value of ra and dec
     kwargs: dict
         optional keyword arguments
     """

@@ -75,6 +75,8 @@ class SamplesDict(Dict):
     generate_all_posterior_samples:
         Convert the posterior samples in the SamplesDict object according to
         a conversion function
+    debug_keys: list
+        list of keys with an '_' as their first character
     write:
         Save the stored posterior samples to file
 
@@ -112,6 +114,8 @@ class SamplesDict(Dict):
                 self.parameters,
                 [i[key.start:key.stop:key.step] for i in self.samples]
             )
+        elif key[0] == "_":
+            return self.samples[self.parameters.index(key)]
         return super(SamplesDict, self).__getitem__(key)
 
     def __setitem__(self, key, value):
@@ -243,6 +247,17 @@ class SamplesDict(Dict):
         )
         return modified
 
+    def debug_keys(self, *args, **kwargs):
+        _keys = self.keys()
+        _total = self.keys(remove_debug=False)
+        return Parameters([key for key in _total if key not in _keys])
+
+    def keys(self, *args, remove_debug=True, **kwargs):
+        original = super(SamplesDict, self).keys(*args, **kwargs)
+        if remove_debug:
+            return Parameters([key for key in original if key[0] != "_"])
+        return Parameters(original)
+
     def write(self, **kwargs):
         """Save the stored posterior samples to file
 
@@ -254,9 +269,11 @@ class SamplesDict(Dict):
         from pesummary.io import write
         write(self.parameters, self.samples.T, **kwargs)
 
-    def keys(self, *args, **kwargs):
-        original = super(SamplesDict, self).keys(*args, **kwargs)
-        return Parameters(original)
+    def items(self, *args, remove_debug=True, **kwargs):
+        items = super(SamplesDict, self).items(*args, **kwargs)
+        if remove_debug:
+            return [item for item in items if item[0][0] != "_"]
+        return items
 
     def to_pandas(self, **kwargs):
         """Convert a SamplesDict object to a pandas dataframe
@@ -588,11 +605,14 @@ class SamplesDict(Dict):
             return classifications[prior]
         return classifications
 
-    def _waveform_args(self, ind=0, longAscNodes=0., eccentricity=0.):
+    def _waveform_args(self, f_ref=20., ind=0, longAscNodes=0., eccentricity=0.):
         """Arguments to be passed to waveform generation
 
         Parameters
         ----------
+        f_ref: float, optional
+            reference frequency to use when converting spherical spins to
+            cartesian spins
         ind: int, optional
             index for the sample you wish to plot
         longAscNodes: float, optional
@@ -605,7 +625,7 @@ class SamplesDict(Dict):
 
         _samples = {key: value[ind] for key, value in self.items()}
         required = [
-            "mass_1", "mass_2", "luminosity_distance", "iota"
+            "mass_1", "mass_2", "luminosity_distance"
         ]
         if not all(param in _samples.keys() for param in required):
             raise ValueError(
@@ -615,18 +635,48 @@ class SamplesDict(Dict):
         waveform_args = [
             _samples["mass_1"] * MSUN_SI, _samples["mass_2"] * MSUN_SI
         ]
-        spins = [
-            _samples[param] if param in _samples.keys() else 0. for param in
-            ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
+        spin_angles = [
+            "theta_jn", "phi_jl", "tilt_1", "tilt_2", "phi_12", "a_1", "a_2",
+            "phase"
         ]
+        spin_angles_condition = all(
+            spin in _samples.keys() for spin in spin_angles
+        )
+        cartesian_spins = [
+            "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"
+        ]
+        cartesian_spins_condition = any(
+            spin in _samples.keys() for spin in cartesian_spins
+        )
+        if spin_angles_condition and not cartesian_spins_condition:
+            from pesummary.gw.conversions import component_spins
+            data = component_spins(
+                _samples["theta_jn"], _samples["phi_jl"], _samples["tilt_1"],
+                _samples["tilt_2"], _samples["phi_12"], _samples["a_1"],
+                _samples["a_2"], _samples["mass_1"], _samples["mass_2"],
+                f_ref, _samples["phase"]
+            )
+            iota, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z = data.T
+            spins = [spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z]
+        else:
+            iota = _samples["iota"]
+            spins = [
+                _samples[param] if param in _samples.keys() else 0. for param in
+                ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
+            ]
         waveform_args += spins
         phase = _samples["phase"] if "phase" in _samples.keys() else 0.
         waveform_args += [
-            _samples["luminosity_distance"] * PC_SI * 10**6,
-            _samples["iota"], phase
+            _samples["luminosity_distance"] * PC_SI * 10**6, iota, phase
         ]
         waveform_args += [longAscNodes, eccentricity, 0.]
         return waveform_args, _samples
+
+    def antenna_response(self, ifo):
+        """
+        """
+        from pesummary.gw.waveform import antenna_response
+        return antenna_response(self, ifo)
 
     def _project_waveform(self, ifo, hp, hc, ra, dec, psi, time):
         """Project a waveform onto a given detector
@@ -656,10 +706,7 @@ class SamplesDict(Dict):
         ht = hp * antenna[0] + hc * antenna[1]
         return ht
 
-    def fd_waveform(
-        self, approximant, delta_f, f_low, f_high, f_ref=20., project=None,
-        ind=0, longAscNodes=0., eccentricity=0., LAL_parameters=None
-    ):
+    def fd_waveform(self, approximant, delta_f, f_low, f_high, **kwargs):
         """Generate a gravitational wave in the frequency domain
 
         Parameters
@@ -686,31 +733,14 @@ class SamplesDict(Dict):
             eccentricity at reference frequency. Default 0.
         LAL_parameters: dict, optional
             LAL dictioanry containing accessory parameters. Default None
+        pycbc: Bool, optional
+            return a the waveform as a pycbc.frequencyseries.FrequencySeries
+            object
         """
-        from gwpy.frequencyseries import FrequencySeries
-        import lalsimulation as lalsim
+        from pesummary.gw.waveform import fd_waveform
+        return fd_waveform(self, approximant, delta_f, f_low, f_high, **kwargs)
 
-        waveform_args, _samples = self._waveform_args(
-            ind=ind, longAscNodes=longAscNodes, eccentricity=eccentricity
-        )
-        approx = lalsim.GetApproximantFromString(approximant)
-        hp, hc = lalsim.SimInspiralChooseFDWaveform(
-            *waveform_args, delta_f, f_low, f_high, f_ref, LAL_parameters, approx
-        )
-        hp = FrequencySeries(hp.data.data, df=hp.deltaF, f0=0.)
-        hc = FrequencySeries(hc.data.data, df=hc.deltaF, f0=0.)
-        if project is None:
-            return {"h_plus": hp, "h_cross": hc}
-        ht = self._project_waveform(
-            project, hp, hc, _samples["ra"], _samples["dec"], _samples["psi"],
-            _samples["geocent_time"]
-        )
-        return ht
-
-    def td_waveform(
-        self, approximant, delta_t, f_low, f_ref=20., project=None, ind=0,
-        longAscNodes=0., eccentricity=0., LAL_parameters=None
-    ):
+    def td_waveform(self, approximant, delta_t, f_low, **kwargs):
         """Generate a gravitational wave in the time domain
 
         Parameters
@@ -735,31 +765,11 @@ class SamplesDict(Dict):
             eccentricity at reference frequency. Default 0.
         LAL_parameters: dict, optional
             LAL dictioanry containing accessory parameters. Default None
+        pycbc: Bool, optional
+            return a the waveform as a pycbc.timeseries.TimeSeries object
         """
-        from gwpy.timeseries import TimeSeries
-        import lalsimulation as lalsim
-        from astropy.units import Quantity
-
-        waveform_args, _samples = self._waveform_args(
-            ind=ind, longAscNodes=longAscNodes, eccentricity=eccentricity
-        )
-        approx = lalsim.GetApproximantFromString(approximant)
-        hp, hc = lalsim.SimInspiralChooseTDWaveform(
-            *waveform_args, delta_t, f_low, f_ref, LAL_parameters, approx
-        )
-        hp = TimeSeries(hp.data.data, dt=hp.deltaT, t0=hp.epoch)
-        hc = TimeSeries(hc.data.data, dt=hc.deltaT, t0=hc.epoch)
-        if project is None:
-            return {"h_plus": hp, "h_cross": hc}
-        ht = self._project_waveform(
-            project, hp, hc, _samples["ra"], _samples["dec"], _samples["psi"],
-            _samples["geocent_time"]
-        )
-        ht.times = (
-            Quantity(ht.times, unit="s")
-            + Quantity(_samples["{}_time".format(project)], unit="s")
-        )
-        return ht
+        from pesummary.gw.waveform import td_waveform
+        return td_waveform(self, approximant, delta_t, f_low, **kwargs)
 
     def _maxL_waveform(self, func, *args, **kwargs):
         """Return the maximum likelihood waveform in a given domain

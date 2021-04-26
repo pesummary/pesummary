@@ -184,15 +184,16 @@ def command_line_dict():
 def gw_results_file(opts):
     """Determine if a GW results file is passed
     """
-    cond1 = hasattr(opts, "gw") and opts.gw
-    cond2 = hasattr(opts, "calibration") and opts.calibration
-    cond3 = hasattr(opts, "gracedb") and opts.gracedb
-    cond4 = hasattr(opts, "approximant") and opts.approximant
-    cond5 = hasattr(opts, "psd") and opts.psd
-    if cond1 or cond2 or cond3 or cond4 or cond5:
+    from pesummary.gw.command_line import _all_gw_options
+
+    attrs, defaults = _all_gw_options()
+    condition = any(
+        hasattr(opts, attr) and getattr(opts, attr) and getattr(opts, attr)
+        != default for attr, default in zip(attrs, defaults)
+    )
+    if condition:
         return True
-    else:
-        return False
+    return False
 
 
 def functions(opts, gw=False):

@@ -30,7 +30,6 @@ def conversion_check(
 
 
 class TestConversions(object):
-
     @classmethod
     def setup_class(cls):
         class Arguments(object):
@@ -663,6 +662,123 @@ class TestConversions(object):
             q_from_m1_m2(dictionary["mass_1"], dictionary["mass_2"]), 8
        ) is None
 
+
+class TestPrecessingSNR(object):
+    """Test the precessing_snr conversion
+    """
+    def setup(self):
+        """Setup the testing class
+        """
+        np.random.seed(1234)
+        self.n_samples = 20
+        self.approx = "IMRPhenomPv2"
+        self.mass_1 = np.random.uniform(20, 100, self.n_samples)
+        self.mass_2 = np.random.uniform(5, self.mass_1, self.n_samples)
+        self.a_1 = np.random.uniform(0, 1, self.n_samples)
+        self.a_2 = np.random.uniform(0, 1, self.n_samples)
+        self.tilt_1 = np.arccos(np.random.uniform(-1, 1, self.n_samples))
+        self.tilt_2 = np.arccos(np.random.uniform(-1, 1, self.n_samples))
+        self.phi_12 = np.random.uniform(0, 1, self.n_samples)
+        self.theta_jn = np.arccos(np.random.uniform(-1, 1, self.n_samples))
+        self.phi_jl = np.random.uniform(0, 1, self.n_samples)
+        self.f_low = [20.] * self.n_samples
+        self.f_final = [1024.] * self.n_samples
+        self.phase = np.random.uniform(0, 1, self.n_samples)
+        self.distance = np.random.uniform(100, 500, self.n_samples)
+        self.ra = np.random.uniform(0, np.pi, self.n_samples)
+        self.dec = np.arccos(np.random.uniform(-1, 1, self.n_samples))
+        self.psi_l = np.random.uniform(0, 1, self.n_samples)
+        self.time = [10000.] * self.n_samples
+        self.beta = opening_angle(
+            self.mass_1, self.mass_2, self.phi_jl, self.tilt_1,
+            self.tilt_2, self.phi_12, self.a_1, self.a_2,
+            [20.] * self.n_samples, self.phase
+        )
+        self.spin_1z = self.a_1 * np.cos(self.tilt_1)
+        self.spin_2z = self.a_2 * np.cos(self.tilt_2)
+        self.psi_J = psi_J(self.psi_l, self.theta_jn, self.phi_jl, self.beta)
+
+    def test_harmonic_overlap(self):
+        """Test that the sum of 5 precessing harmonics matches exactly to the
+        original precessing waveform.
+        """
+        from pycbc import pnutils
+        from pycbc.psd import aLIGOZeroDetHighPower
+        from pycbc.detector import Detector
+        from pesummary.gw.conversions.snr import (
+            _calculate_precessing_harmonics, _dphi,
+            _make_waveform_from_precessing_harmonics
+        )
+        from pesummary.gw.waveform import fd_waveform
+
+        for i in range(self.n_samples):
+            duration = pnutils.get_imr_duration(
+                self.mass_1[i], self.mass_2[i], self.spin_1z[i],
+                self.spin_2z[i], self.f_low[i], "IMRPhenomD"
+            )
+            t_len = 2**np.ceil(np.log2(duration) + 1)
+            df = 1./t_len
+            flen = int(self.f_final[i] / df) + 1
+            aLIGOpsd = aLIGOZeroDetHighPower(flen, df, self.f_low[i])
+            psd = aLIGOpsd
+            h = fd_waveform(
+                {
+                    "theta_jn": self.theta_jn[i], "phase": self.phase[i],
+                    "phi_jl": self.phi_jl[i], "psi": self.psi_l[i],
+                    "mass_1": self.mass_1[i], "mass_2": self.mass_2[i],
+                    "tilt_1": self.tilt_1[i], "tilt_2": self.tilt_2[i],
+                    "phi_12": self.phi_12[i], "a_1": self.a_1[i],
+                    "a_2": self.a_2[i], "luminosity_distance": self.distance[i],
+                    "ra": self.ra[i], "dec": self.dec[i],
+                    "geocent_time": self.time[i]
+               }, self.approx, df, self.f_low[i], self.f_final[i],
+               f_ref=self.f_low[i], flen=flen, pycbc=True, project="L1"
+            )
+            harmonics = _calculate_precessing_harmonics(
+                self.mass_1[i], self.mass_2[i], self.a_1[i],
+                self.a_2[i], self.tilt_1[i], self.tilt_2[i],
+                self.phi_12[i], self.beta[i], self.distance[i],
+                approx=self.approx, f_final=self.f_final[i],
+                flen=flen, f_ref=self.f_low[i], f_low=self.f_low[i],
+                df=df, harmonics=[0, 1, 2, 3, 4]
+            )
+            dphi = _dphi(
+                self.theta_jn[i], self.phi_jl[i], self.beta[i]
+            )
+            f_plus_j, f_cross_j = Detector("L1").antenna_pattern(
+                self.ra[i], self.dec[i], self.psi_J[i], self.time[i]
+            )
+            h_all = _make_waveform_from_precessing_harmonics(
+                harmonics, self.theta_jn[i], self.phi_jl[i],
+                self.phase[i] - dphi, f_plus_j, f_cross_j
+            )
+            overlap = compute_the_overlap(
+                h, h_all, psd, low_frequency_cutoff=self.f_low[i],
+                high_frequency_cutoff=self.f_final[i], normalized=True
+            )
+            np.testing.assert_almost_equal(np.abs(overlap), 1.0)
+            np.testing.assert_almost_equal(np.angle(overlap), 0.0)
+
+    def test_precessing_snr(self):
+        """Test the pesummary.gw.conversions.snr.precessing_snr function
+        """
+        # Use default PSD
+        rho_p = precessing_snr(
+            self.mass_1, self.mass_2, self.beta, self.psi_J, self.a_1, self.a_2,
+            self.tilt_1, self.tilt_2, self.phi_12, self.theta_jn,
+            self.ra, self.dec, self.time, self.phi_jl, self.distance,
+            self.phase, f_low=self.f_low, spin_1z=self.spin_1z,
+            spin_2z=self.spin_2z, multi_process=2, debug=False
+        )
+        assert len(rho_p) == len(self.mass_1)
+        np.testing.assert_almost_equal(
+            rho_p, [
+                0.68377795, 4.44612704, 1.50235258, 16.36949527, 8.35617321,
+                10.75820936, 5.56308683, 38.71224512, 19.0201054, 46.01320268,
+                11.04007564, 22.14077344, 21.81204471, 0.52877289, 18.51382876,
+                60.31991201, 20.90260283, 7.59837535, 28.78524904, 4.79727718
+            ]
+        )
 
 class TestNRutils(object):
 

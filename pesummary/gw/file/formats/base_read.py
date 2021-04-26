@@ -734,7 +734,7 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
             samples_logl.append(ss)
         return parameters_logl, samples_logl
 
-    def generate_all_posterior_samples(self, **conversion_kwargs):
+    def generate_all_posterior_samples(self, labels=None, **conversion_kwargs):
         if "no_conversion" in conversion_kwargs.keys():
             no_conversion = conversion_kwargs.pop("no_conversion")
         else:
@@ -745,15 +745,26 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
 
         converted_params, converted_samples, converted_kwargs = [], [], []
         _converted_params = []
-        for param, samples, kwargs in zip(
-                self.parameters, self.samples, self.extra_kwargs
+        for label, param, samples, kwargs in zip(
+                self.labels, self.parameters, self.samples, self.extra_kwargs
         ):
-            if conversion_kwargs.get("evolve_spins", False):
-                if not conversion_kwargs.get("return_kwargs", False):
-                    conversion_kwargs["return_kwargs"] = True
+            if labels is not None and label not in labels:
+                converted_params.append(param)
+                _converted_params.append([])
+                converted_samples.append(samples)
+                if kwargs.get("return_kwargs", False):
+                    converted_kwargs.append(kwargs)
+                continue
+            if label in conversion_kwargs.keys():
+                _conversion_kwargs = conversion_kwargs[label]
+            else:
+                _conversion_kwargs = conversion_kwargs
+            if _conversion_kwargs.get("evolve_spins", False):
+                if not _conversion_kwargs.get("return_kwargs", False):
+                    _conversion_kwargs["return_kwargs"] = True
             data = convert(
                 param, samples, extra_kwargs=kwargs, return_dict=False,
-                **conversion_kwargs
+                **_conversion_kwargs
             )
             converted_params.append(data[0])
             _converted_params.append(data[0].added)

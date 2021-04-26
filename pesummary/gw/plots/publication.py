@@ -78,7 +78,7 @@ def _return_bounds(parameters, T=True):
 def twod_contour_plots(
     parameters, samples, labels, latex_labels, colors=None, linestyles=None,
     return_ax=False, plot_datapoints=False, smooth=None, latex_friendly=False,
-    legend_kwargs={
+    levels=[0.9], legend_kwargs={
         "bbox_to_anchor": (0., 1.02, 1., .102), "loc": 3, "handlelength": 3,
         "mode": "expand", "borderaxespad": 0., "handleheight": 1.75
     }, **kwargs
@@ -122,7 +122,7 @@ def twod_contour_plots(
         [i[0] for i in samples], [i[1] for i in samples], colors=colors,
         labels=labels, xlabel=latex_labels[parameters[0]], smooth=smooth,
         ylabel=latex_labels[parameters[1]], linestyles=linestyles,
-        plot_datapoints=plot_datapoints, **kwargs
+        plot_datapoints=plot_datapoints, levels=levels, **kwargs
     )
     ax1 = fig.gca()
     if all("mass_1" in i or "mass_2" in i for i in parameters):
@@ -213,7 +213,7 @@ def reverse_triangle_plot(*args, parameters=[], **kwargs):
 
 
 def violin_plots(
-    parameter, samples, labels, latex_labels, cut=0,
+    parameter, samples, labels, latex_labels, inj_values=None, cut=0,
     _default_kwargs={"palette": "pastel", "inner": "line", "outer": "percent: 90"},
     latex_friendly=True, **kwargs
 ):
@@ -229,12 +229,14 @@ def violin_plots(
         list of labels corresponding to each set of samples
     latex_labels: dict
         dictionary of latex labels
+    inj_values: list
+        list of injected values for each set of samples
     """
     logger.debug("Generating violin plots for %s" % (parameter))
     fig, ax1 = figure(gca=True)
     _default_kwargs.update(kwargs)
     ax1 = violin.violinplot(
-        data=samples, cut=cut, ax=ax1, scale="width", **_default_kwargs
+        data=samples, cut=cut, ax=ax1, scale="width", inj=inj_values, **_default_kwargs
     )
     if latex_friendly:
         labels = copy.deepcopy(labels)

@@ -221,7 +221,7 @@ def hist2d(
                 )
         for idx, _contour in enumerate(contour_set):
             for _idx, _path in enumerate(_contour):
-                if _idx == 0:
+                if idx == 0 and _idx == 0:
                     _label = label
                 else:
                     _label = None

@@ -719,6 +719,7 @@ class _PlotGeneration(object):
         iterator, samples, function = self._mcmc_iterator(
             label, "_2d_contour_plot"
         )
+        _debug = self.samples[label].debug_keys()
         arguments = [
             (
                 [
@@ -730,7 +731,7 @@ class _PlotGeneration(object):
                         np.max(samples["log_likelihood"]),
                     ], self.checkpoint
                 ], function, error_message % (param)
-            ) for param in iterator
+            ) for param in iterator + _debug
         ]
         self.pool.starmap(self._try_to_make_a_plot, arguments)
         error_message = (

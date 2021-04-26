@@ -64,6 +64,7 @@ lalinference_map = {
     "l_peak_nonevol": "peak_luminosity_non_evolved",
     "e_rad_nonevol": "radiated_energy_non_evolved",
     "e_rad_evol_avg": "radiated_energy",
+    "beta": "beta"
 }
 
 
@@ -145,6 +146,7 @@ pycbc_map = {
 
 
 pesummary_map = {
+    "network_precessing_snr": "network_precessing_snr",
     "chirp_mass_source": "chirp_mass_source",
     "delta_lambda": "delta_lambda",
     "viewing_angle": "viewing_angle",
@@ -160,6 +162,11 @@ pesummary_map = {
     "radiated_energy": "radiated_energy",
     "radiated_energy_non_evolved": "radiated_energy_non_evolved",
     "weights": "weights",
+    "psi_J": "psi_J",
+    "polarization_J": "psi_J",
+    "opening_angle": "beta",
+    "beta0": "beta",
+    "rho_p": "network_precessing_snr",
     "final_kick": "final_kick",
     "tidal_disruption_frequency": "tidal_disruption_frequency",
     "tidal_disruption_frequency_ratio": "tidal_disruption_frequency_ratio",
@@ -301,7 +308,6 @@ standard_names = {}
 standard_names.update(lalinference_map)
 standard_names.update(bilby_map)
 standard_names.update(other_map)
-
 
 descriptive_names = {
     "log_likelihood": (

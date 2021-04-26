@@ -64,7 +64,8 @@ class _Input(object):
     @staticmethod
     def grab_data_from_metafile(
         existing_file, webdir, compare=None, read_function=Read,
-        nsamples=None, disable_injection=False, **kwargs
+        _replace_with_pesummary_kwargs={}, nsamples=None,
+        disable_injection=False, **kwargs
     ):
         """Grab data from an existing PESummary metafile
 
@@ -79,6 +80,9 @@ class _Input(object):
             wish to compare
         read_function: func, optional
             PESummary function to use to read in the existing file
+        _replace_with_pesummary_kwargs: dict, optional
+            dictionary of kwargs that you wish to replace with the data stored
+            in the PESummary file
         nsamples: int, optional
             Number of samples to use. Default all available samples
         kwargs: dict
@@ -86,15 +90,29 @@ class _Input(object):
             method
         """
         f = read_function(existing_file)
+        for ind, label in enumerate(f.labels):
+            kwargs[label] = kwargs.copy()
+            for key, item in _replace_with_pesummary_kwargs.items():
+                try:
+                    kwargs[label][key] = eval(
+                        item.format(file="f", ind=ind, label=label)
+                    )
+                except TypeError:
+                    _item = item.split("['{label}']")[0]
+                    kwargs[label][key] = eval(
+                        _item.format(file="f", ind=ind, label=label)
+                    )
+                except (AttributeError, KeyError, NameError):
+                    pass
+
         if nsamples is not None:
             f.downsample(nsamples)
+
         if not f.mcmc_samples:
-            f.generate_all_posterior_samples(**kwargs)
             labels = f.labels
-            indicies = np.arange(len(labels))
         else:
             labels = list(f.samples_dict.keys())
-            indicies = np.arange(len(labels))
+        indicies = np.arange(len(labels))
 
         if compare:
             indicies = []
@@ -106,6 +124,9 @@ class _Input(object):
                     )
                 indicies.append(labels.index(i))
             labels = compare
+
+        if not f.mcmc_samples:
+            f.generate_all_posterior_samples(labels=labels, **kwargs)
 
         parameters = f.parameters
         if not f.mcmc_samples:
@@ -2000,7 +2021,9 @@ class PostProcessing(object):
 
     @same_parameters.setter
     def same_parameters(self, same_parameters):
-        parameters = [list(self.samples[key]) for key in self.samples.keys()]
+        parameters = [
+            list(self.samples[key].keys()) for key in self.samples.keys()
+        ]
         params = list(set.intersection(*[set(l) for l in parameters]))
         self._same_parameters = params
 

@@ -366,9 +366,9 @@ class TestInput(object):
         with open("./.outdir/psd.dat", "w") as f:
             f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
         assert self.inputs.psd == {"example": {}}
-        self.add_argument(["--psd", "./.outdir/psd.dat"])
+        self.add_argument(["--psd", "./.outdir/psd.dat", "--f_low", "1.0", "--f_final", "3.0"])
         assert list(self.inputs.psd["example"].keys()) == ["psd.dat"]
-        self.add_argument(["--psd", "H1:./.outdir/psd.dat"])
+        self.add_argument(["--psd", "H1:./.outdir/psd.dat", "--f_low", "1.0", "--f_final", "3.0"])
         assert list(self.inputs.psd["example"].keys()) == ["H1"]
         np.testing.assert_almost_equal(
             self.inputs.psd["example"]["H1"],
@@ -502,7 +502,8 @@ class TestInput(object):
             "--labels", "test", "test2",
             "--test_psd", "L1:./.outdir/psd.dat",
             "--test2_psd", "V1:./.outdir/psd.dat",
-            "--gw"
+            "--f_low", "1.0", "1.0", "--f_final",
+            "3.0", "3.0", "--gw"
         ]
         opts, unknown = parser.parse_known_args(default_arguments)
         add_dynamic_PSD_to_namespace(opts, command_line=default_arguments)
@@ -649,7 +650,8 @@ class TestPostProcessing(object):
             "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
             "./.outdir/bilby_example.h5", "./.outdir/lalinference_example.h5",
             "--psd", "L1:./.outdir/psd.dat", "L1:./.outdir/psd.dat",
-            "--labels", "example", "example2"])
+            "--labels", "example", "example2", "--f_low", "1.0", "1.0", "--f_final",
+            "3.0", "3.0", "--gw"])
         inputs = GWInput(opts)
         postprocessing = GWPostProcessing(inputs)
         assert sorted(list(postprocessing.psd["example"].keys())) == ["L1"]
