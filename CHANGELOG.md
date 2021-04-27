@@ -1,3 +1,54 @@
+## 0.12.0 [27/04/2021]
+
+### Changed
+
+- NSBH conversions - bug fix in the NSBH conversions where the primary
+  spin magnitude was incorrectly used. The conversions now correctly use
+  spin_1z
+- matplotlib rcParams - prevent seaborn/gwpy/pesummary affecting the matplotlib
+  rcParams when pesummary is imported within a python console
+- pandas - unpin the pandas requirement
+- IndexError - fix a bug where an IndexError was raised when adding to an
+  existing webpage
+- m1--m2 triangle plot - use the Bounded_2d_kde class when generating an
+  m1--m2 triangle plot to handle the q=1 boundary
+- NSBH conversions 2 - use the NSBH fits when lambda_1 samples exist in the
+  posterior table but are all 0
+- License - change license at the top of each file
+- Conversions - move all conversions from pesummary.gw.file.conversions to
+  pesummary.gw.conversions
+- Key data - display key data for a given parameter on the 1d_histogram pages
+
+### Added
+
+- Added the conversion to calculate the precession SNR from Fairhurst et al.
+  see https://arxiv.org/abs/1908.05707
+- Added the conversion to calculate the modified chi_p from L. M. Thomas et al.
+  see https://arxiv.org/abs/2012.02209
+- Added the conversion to calculate the viewing_angle
+- Added a new `summaryextract` executable which extracts the posterior samples
+  for a given analysis stored within a pesummary metafile and writes it to a
+  separate file
+- Added a new `summarycombine_posteriors` executable which performs the same
+  task as `cbcBayesCombinePosteriors`
+- Added a new `summarytgr` executable which performs the post-processing for
+  the IMRCT of General Relativity
+- Added checkpointing to pesummary. You may now restart from checkpoint by
+  passing the `--restart_from_checkpoint` flag
+- Add an all tab for each 1d_histogram category when running with the gw
+  module. This means that all mass 1d posteriors can easily be compared
+- Allow the user to read a file from a remote server
+- Display the bilby prior file on the config tab when running with the gw module
+- Add new `pe_algorithm` property of the read object which aims to identify
+  which algorithm/software was used to generate the posterior samples
+- Generate a set of 'expert plots' when running with the gw module. These are
+  displayed on the webpages when the toggle is activated. These may be
+  disabled with the new `--disable_expert` flag
+- Added a new argparse action to check that the files exist before continuing
+  with the rest of the workflow
+- Add a property to the `Parameter` class which stores the parameter description
+- Extract the config file stored within a bilby result file
+
 ## 0.11.0 [15/12/2020]
 
 ### Changed
