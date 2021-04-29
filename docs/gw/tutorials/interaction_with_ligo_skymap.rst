@@ -45,7 +45,7 @@ be produced by running,
 
 If, however, the skymap data is not stored in the meta file, a skymap can be
 produced by following the instructions below.
-=======
+
 Generating a fits file with the `ligo.skymap` executables
 ---------------------------------------------------------
 

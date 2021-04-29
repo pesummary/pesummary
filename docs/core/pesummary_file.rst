@@ -1,5 +1,5 @@
 =========================================
-Extract information from a pesummary file
+Extract information from a PESummary file
 =========================================
 
 Identifying the label for a specific run

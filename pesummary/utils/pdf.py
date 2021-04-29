@@ -102,6 +102,7 @@ class DiscretePDF(rv_sample):
 
     Examples
     --------
+    >>> from pesummary.utils.pdf import DiscretePDF
     >>> numbers = [1, 2, 3, 4]
     >>> distribution = [0.1, 0.2, 0.3, 0.4]
     >>> probs = DiscretePDF(numbers, distribution)
@@ -220,6 +221,7 @@ class DiscretePDF2D(object):
 
     Examples
     --------
+    >>> from pesummary.utils.pdf import DiscretePDF2D
     >>> x = [1., 2., 3.]
     >>> y = [0.1, 0.2, 0.3]
     >>> probs = [

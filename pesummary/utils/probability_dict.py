@@ -31,6 +31,7 @@ class ProbabilityDict(Dict):
 
     Examples
     --------
+    >>> from pesummary.utils.probability_dict import ProbabilityDict
     >>> numbers = [1,2,3,4]
     >>> probabilities = [0.1, 0.2, 0.3, 0.4]
     >>> pdf = ProbabilityDict({"parameter": [numbers, probabilities]})
@@ -165,6 +166,7 @@ class ProbabilityDict2D(Dict):
 
     Examples
     --------
+    >>> from  pesummary.utils.probability_dict.ProbabilityDict2D
     >>> x = [-1., 0., 1.]
     >>> y = [-1., 0., 1.]
     >>> prob_xy = [
@@ -172,7 +174,7 @@ class ProbabilityDict2D(Dict):
     ...     [1./9, 1./9, 1./9],
     ...     [1./9, 1./9, 1./9]
     ... ]
-    >>> pdf = ProbabilityDict2D({"x_y": [x, y, prob_xy]]})
+    >>> pdf = ProbabilityDict2D({"x_y": [x, y, prob_xy]})
     >>> print(type(pdf["x_y"]))
     <class 'pesummary.utils.pdf.DiscretePDF2D'>
     """

@@ -17,7 +17,7 @@ of samples for each parameter,
 
 .. code-block:: python
 
-    >>> from pesummary.utils.utils import SamplesDict
+    >>> from pesummary.utils.samples_dict import SamplesDict
     >>> parameters = ["a", "b"]
     >>> samples = [[1,2,3,4,5,6], [6,5,4,3,2,1]]
     >>> samplesdict = SamplesDict(parameters, samples)
