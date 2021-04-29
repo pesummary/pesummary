@@ -30,7 +30,7 @@ result file,
                             --labels GW150914
     $ ls ./
     GW150914_default_prior_pe_classification.json
-    GW150914_population_prir_pe_classification.json
+    GW150914_population_prior_pe_classification.json
     GW150914_population_pepredicates_bar.png
 
 `pesummary.gw.pepredicates`

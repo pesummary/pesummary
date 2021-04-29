@@ -5,7 +5,7 @@ summaryclean
 Sometimes, non-physical samples are produced from your sampler and stored in
 your result file. In order to fix this, the `summaryclean` executable removes
 these non-physical points from your result file, derives other possible
-posterior samples (using the `conversion module <../data/conversion.html>`_),
+posterior samples (using the `conversion module <../../gw/Conversion.html>`_),
 and saves the cleaned data as either a `dat`, `hdf5` or `json` file ready to
 use with PESummary.
 

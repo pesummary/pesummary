@@ -9,11 +9,12 @@ will not accurately capture the true shape of the distribution. For cases like
 this, we require a bounded KDE.
 
 There are a number of ways to take into account the bounded nature of the
-distribution. The common methods include treating the boundary as being
-reflective, meaning that the derivative on the boundary is 0, and transforming
-to new coordinates where your PDF does not have a boundary and looks reasonably
-Gaussian, since then the `scipy.stats.gaussian_kde` will have an easier time
-representing it.
+distribution. The common methods include:
+- Reflective: Making the boundaries reflective, i.e. the derivative is 
+zero at the boundary.
+- Transform: Where the values are transformed to new coordinates in which the 
+PDF does not have a boundary and looks close to Gaussian. This makes it easier 
+for `scipy.stats.gaussian_kde` to represent the distribution.
 
 `pesummary` handles bounded KDEs through the `pesummary.core.plots.bounded_1d_kde`
 module. Below is an example which shows a distribution which is bounded in the
@@ -35,7 +36,7 @@ domain `0 < x < 1`. We show how each method handles the boundary:
     >>> transform = bounded_1d_kde(transf, xlow=0., xhigh=1., method="Transform", smooth=2)
     >>> plt.plot(xsmooth, unbounded_kde(xsmooth), label="gaussiankde")
     >>> plt.plot(xsmooth, reflection(xsmooth), label="reflection")
-    >>> plt.plot(*transform(xsmooth), label="transform")
+    >>> plt.plot(xsmooth, transform(xsmooth), label="transform")
     >>> plt.ylabel("Probability Density")
     >>> plt.legend()
     >>> plt.show()

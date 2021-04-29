@@ -18,7 +18,7 @@ is also provided.
 
 At the bottom of the page, we provide the
 `KS <https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test>`_ and
-`JS <https://en.wikipedia.org/wiki/Jensen–Shannon_divergence>` statistics, used
+`JS <https://en.wikipedia.org/wiki/Jensen–Shannon_divergence>`_ statistics, used
 to compare two posterior distrubitons. Again, like the other tables on these
 webpages, these may be exported to `csv` by clicking on the export to csv button.
 
