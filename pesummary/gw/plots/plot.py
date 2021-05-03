@@ -1321,7 +1321,7 @@ def _strain_plot(strain, maxL_params, **kwargs):
     from pesummary.gw.conversions import time_in_each_ifo
     from gwpy.timeseries import TimeSeries
 
-    fig, ax = figure(gca=True)
+    fig, axs = subplots(nrows=len(strain.keys()), sharex=True)
     time = maxL_params["geocent_time"]
     delta_t = 1. / 4096.
     minimum_frequency = kwargs.get("f_min", 5.)
@@ -1333,21 +1333,37 @@ def _strain_plot(strain, maxL_params, **kwargs):
     mass_1 = maxL_params["mass_1"] * MSUN_SI
     mass_2 = maxL_params["mass_2"] * MSUN_SI
     luminosity_distance = maxL_params["luminosity_distance"] * PC_SI * 10**6
-    if "phi_jl" in maxL_params.keys():
-        iota, S1x, S1y, S1z, S2x, S2y, S2z = \
-            lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                maxL_params["theta_jn"], maxL_params["phi_jl"], maxL_params["tilt_1"],
-                maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
-                maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-                maxL_params["phase"])
-    else:
-        iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params["iota"], 0., 0., 0., \
-            0., 0., 0.
     phase = maxL_params["phase"] if "phase" in maxL_params.keys() else 0.0
+    cartesian = [
+        "iota", "spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"
+    ]
+    if not all(param in maxL_params.keys() for param in cartesian):
+        if "phi_jl" in maxL_params.keys():
+            iota, S1x, S1y, S1z, S2x, S2y, S2z = \
+                lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+                    maxL_params["theta_jn"], maxL_params["phi_jl"],
+                    maxL_params["tilt_1"], maxL_params["tilt_2"],
+                    maxL_params["phi_12"], maxL_params["a_1"],
+                    maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
+                    phase
+                )
+        else:
+            iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params["iota"], 0., 0., \
+                0., 0., 0., 0.
+    else:
+        iota, S1x, S1y, S1z, S2x, S2y, S2z = [
+            maxL_params[param] for param in cartesian
+        ]
     h_plus, h_cross = lalsim.SimInspiralChooseTDWaveform(
         mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance, iota,
         phase, 0.0, 0.0, 0.0, delta_t, minimum_frequency,
         kwargs.get("f_ref", 10.), None, approx)
+    h_plus = TimeSeries(
+        h_plus.data.data[:], dt=h_plus.deltaT, t0=h_plus.epoch
+    )
+    h_cross = TimeSeries(
+        h_cross.data.data[:], dt=h_cross.deltaT, t0=h_cross.epoch
+    )
 
     for num, key in enumerate(list(strain.keys())):
         ifo_time = time_in_each_ifo(key, maxL_params["ra"], maxL_params["dec"],
@@ -1364,8 +1380,7 @@ def _strain_plot(strain, maxL_params, **kwargs):
         ar = __antenna_response(key, maxL_params["ra"], maxL_params["dec"],
                                 maxL_params["psi"], maxL_params["geocent_time"])
 
-        h_t = ar[0] * h_plus.data.data + ar[1] * h_cross.data.data
-        h_t = TimeSeries(h_t[:], dt=h_plus.deltaT, t0=h_plus.epoch)
+        h_t = ar[0] * h_plus + ar[1] * h_cross
         h_t_frequency = h_t.fft()
         asd_interp = asd.interpolate(float(np.array(h_t_frequency.df)))
         asd_interp = asd_interp[:len(h_t_frequency)]
@@ -1374,23 +1389,22 @@ def _strain_plot(strain, maxL_params, **kwargs):
         h_t_time = h_t_time.lowpass(300)
         h_t_time.times = [float(np.array(i)) + ifo_time for i in h_t.times]
 
-        strain_data_crop = strain_data_time.crop(ifo_time - 0.1, ifo_time + 0.06)
+        strain_data_crop = strain_data_time.crop(ifo_time - 0.2, ifo_time + 0.06)
         try:
-            h_t_time = h_t_time.crop(ifo_time - 0.1, ifo_time + 0.06)
+            h_t_time = h_t_time.crop(ifo_time - 0.2, ifo_time + 0.06)
         except Exception:
             pass
         max_strain = np.max(strain_data_crop).value
 
-        _, ax = subplots(len(strain.keys()), 1, num + 1)
-        ax.plot(strain_data_crop, color='grey', alpha=0.75, label="data")
-        ax.plot(h_t_time, color='orange', label="template")
-        ax.set_xlim([ifo_time - 0.1, ifo_time + 0.06])
+        axs[num].plot(strain_data_crop, color='grey', alpha=0.75, label="data")
+        axs[num].plot(h_t_time, color='orange', label="template")
+        axs[num].set_xlim([ifo_time - 0.2, ifo_time + 0.06])
         if not math.isnan(max_strain):
-            ax.set_ylim([-max_strain * 1.5, max_strain * 1.5])
-        ax.set_ylabel("Whitened %s strain" % (key), fontsize=8)
-        ax.grid(False)
-        ax.legend(loc="best", prop={'size': 8})
-    ax._set_xlabel("Time $[s]$", fontsize=16)
+            axs[num].set_ylim([-max_strain * 1.5, max_strain * 1.5])
+        axs[num].set_ylabel("Whitened %s strain" % (key), fontsize=8)
+        axs[num].grid(False)
+        axs[num].legend(loc="best", prop={'size': 8})
+    axs[-1].set_xlabel("Time $[s]$", fontsize=16)
     fig.tight_layout()
     return fig
 

@@ -1,9 +1,61 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from gwpy.timeseries import TimeSeries
+from pesummary.utils.utils import logger
+from pesummary.utils.dict import Dict
 from pesummary.utils.decorators import docstring_subfunction
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+
+
+class StrainDataDict(Dict):
+    """Class to store multiple StrainData objects from different IFOs
+
+    Parameters
+    ----------
+    data: dict
+        dict keyed by IFO and values StrainData objects
+
+    Examples
+    --------
+    >>> from pesummary.gw.file.strain import StrainDataDict
+    >>> data = {
+    ...     "H1": "./H-H1_LOSC_4_V2-1126257414-4096.gwf",
+    ...     "L1": "./L-L1_LOSC_4_V2-1126257414-4096.gwf"
+    ... }
+    >>> channels = {"H1": "H1:LOSC-STRAIN", "L1": "L1:LOSC-STRAIN"}
+    >>> strain = StrainDataDict.read(data, channels)
+    """
+    def __init__(self, *args):
+        super(StrainDataDict, self).__init__(*args, value_class=StrainData)
+
+    @classmethod
+    def read(cls, data, channels={}):
+        strain_data = {}
+        if not len(channels):
+            _data = {}
+            for key in data.keys():
+                if ":" in key:
+                    try:
+                        IFO, _ = key.split(":")
+                        channels[IFO] = key
+                        _data[IFO] = data[key]
+                        logger.debug(
+                            "Found ':' in '{}'. Assuming '{}' is the IFO and "
+                            "'{}' is the channel".format(key, IFO, key)
+                        )
+                    except ValueError:
+                        _data[key] = data[key]
+            data = _data
+        if not all(IFO in channels.keys() for IFO in data.keys()):
+            raise ValueError("Please provide a channel for each IFO")
+        for IFO in data.keys():
+            strain_data[IFO] = StrainData.read(data[IFO], channels[IFO], IFO=IFO)
+        return cls(strain_data)
+
+    @property
+    def detectors(self):
+        return list(self.keys())
 
 
 class StrainData(TimeSeries):
@@ -48,6 +100,20 @@ class StrainData(TimeSeries):
 
     @classmethod
     def read(cls, *args, IFO="H1", **kwargs):
+        from pesummary.gw.file.formats.base_read import GWRead
+        if len(args) and isinstance(args[0], str):
+            if GWRead.extension_from_path(args[0]) == "pickle":
+                try:
+                    from pesummary.gw.file.formats.bilby import Bilby
+                    obj = Bilby._timeseries_from_bilby_pickle(args[0])
+                    return StrainDataDict(obj)
+                except Exception as e:
+                    pass
+            elif GWRead.extension_from_path(args[0]) == "lcf":
+                from glue.lal import Cache
+                with open(args[0], "r") as f:
+                    data = Cache.fromfile(f)
+                args[0] = data
         obj = super(StrainData, cls).read(*args, **kwargs)
         return cls(obj, IFO=IFO)
 
