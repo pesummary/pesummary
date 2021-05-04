@@ -476,7 +476,7 @@ class _GWInput(_Input):
 
     @gwdata.setter
     def gwdata(self, gwdata):
-        from pesummary.gw.file.formats.base_read import GWRead as StrainFile
+        from pesummary.gw.file.strain import StrainDataDict
 
         self._gwdata = gwdata
         if gwdata is not None:
@@ -487,21 +487,14 @@ class _GWInput(_Input):
                             "The file {} does not exist. Please check the path "
                             "to your strain file".format(gwdata[i])
                         )
+                self._gwdata = StrainDataDict.read(gwdata)
             else:
-                if len(gwdata) > 1:
-                    logger.warning(
-                        "Multiple files passed. Only using {}".format(
-                            gwdata[0]
-                        )
-                    )
-                if not os.path.isfile(gwdata[0]):
-                    raise InputError(
-                        "The file {} does not exist. Please check the path "
-                        "to your strain file".format(gwdata[0])
-                    )
-                gwdata = gwdata[0]
-            timeseries = StrainFile.load_strain_data(gwdata)
-            self._gwdata = timeseries
+                logger.warn(
+                    "Please provide gwdata as a dictionary with keys "
+                    "displaying the channel and item giving the path to the "
+                    "strain file"
+                )
+                self._gwdata = None
 
     @property
     def evolve_spins(self):

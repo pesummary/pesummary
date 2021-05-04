@@ -66,7 +66,7 @@ def read_strain(dictionary):
     dictionary: dict
         dictionary of channels and cache files
     """
-    from pesummary.gw.file.formats.base_read import GWRead
+    from pesummary.gw.file.strain import StrainDataDict
 
     for i in dictionary.keys():
         if not os.path.isfile(dictionary[i]):
@@ -74,7 +74,7 @@ def read_strain(dictionary):
                 "The file {} does not exist. Please check the path to "
                 "your strain file".format(dictionary[i])
             )
-    timeseries = GWRead.load_strain_data(dictionary)
+    timeseries = StrainDataDict.read(dictionary)
     return timeseries
 
 

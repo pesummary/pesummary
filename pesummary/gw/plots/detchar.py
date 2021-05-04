@@ -43,12 +43,14 @@ def spectrogram(
                 ) ** (1 / 2.)
             except Exception as e:
                 specgram = strain[key].spectrogram(strain[key].duration / 2.)
-            ax.pcolormesh(specgram, vmin=vmin, vmax=vmax, norm='log', cmap=cmap)
+            im = ax.pcolormesh(
+                specgram, vmin=vmin, vmax=vmax, norm='log', cmap=cmap
+            )
             ax.set_ylim(ylim)
             ax.set_ylabel(r'Frequency [$Hz$]')
             ax.set_yscale('log')
             ax.set_xscale('minutes', epoch=strain[key].times[0])
-            cbar = figs[key].colorbar()
+            cbar = figs[key].colorbar(im)
             cbar.set_label(r"ASD [strain/$\sqrt{Hz}$]")
         except Exception as e:
             logger.info(
@@ -95,12 +97,12 @@ def omegascan(
             except Exception as e:
                 qtransform = strain[key].q_transform(gps=gps, logf=True)
             figs[key], ax = figure(figsize=(12, 6), gca=True)
-            ax.pcolormesh(qtransform, vmin=vmin, vmax=vmax, cmap=cmap)
+            im = ax.pcolormesh(qtransform, vmin=vmin, vmax=vmax, cmap=cmap)
             ax.set_ylim(ylim)
             ax.set_ylabel(r'Frequency [$Hz$]')
             ax.set_xscale('seconds', epoch=gps)
             ax.set_yscale('log')
-            cbar = figs[key].colorbar()
+            cbar = figs[key].colorbar(im)
             cbar.set_label("Signal-to-noise ratio")
         except Exception as e:
             logger.info(
