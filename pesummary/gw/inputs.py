@@ -393,11 +393,11 @@ class _GWInput(_Input):
                 else:
                     f = GWRead(i, disable_prior=True)
                 try:
-                    calibration_data = f.calibration_data_in_results_file
-                except Exception:
+                    calibration_data = f.interpolate_calibration_spline_posterior()
+                except Exception as e:
                     logger.warning(
                         "Failed to extract calibration data from the result "
-                        "file: {}".format(i)
+                        "file: {} because {}".format(i, e)
                     )
                     calibration_data = None
                 labels = list(self.samples.keys())

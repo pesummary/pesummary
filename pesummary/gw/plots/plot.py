@@ -1236,11 +1236,11 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
             np.interp(frequency, data[:, 0], data[:, j], left=k, right=k)
             for j, k in zip(range(1, 7), [1, 0, 1, 0, 1, 0])
         ]
-        amp_median = (1 - interp[0]) * 100
+        amp_median = (interp[0] - 1) * 100
         phase_median = interp[1] * 180. / np.pi
-        amp_lower_sigma = (1 - interp[2]) * 100
+        amp_lower_sigma = (interp[2] - 1) * 100
         phase_lower_sigma = interp[3] * 180. / np.pi
-        amp_upper_sigma = (1 - interp[4]) * 100
+        amp_upper_sigma = (interp[4] - 1) * 100
         phase_upper_sigma = interp[5] * 180. / np.pi
         data_dict = {
             "amplitude": {
