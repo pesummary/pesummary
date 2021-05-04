@@ -168,55 +168,42 @@ class Bilby(GWSingleAnalysisRead):
             pass
         return kwargs
 
-    @staticmethod
-    def _check_for_calibration_data_in_bilby_file(path):
-        """
-        """
-        from bilby.core.result import read_in_result
-
-        bilby_object = read_in_result(filename=path)
-        parameters = bilby_object.search_parameter_keys
-        if any("recalib_" in i for i in parameters):
-            return True
-        return False
-
     @property
-    def calibration_data_in_results_file(self):
-        """
-        """
-        check = Bilby._check_for_calibration_data_in_bilby_file
-        grab = Bilby._grab_calibration_data_from_bilby_file
-        if self.check_for_calibration_data(check, self.path_to_results_file):
-            return self.grab_calibration_data(grab, self.path_to_results_file)
-        return None
-
-    @staticmethod
-    def _grab_calibration_data_from_bilby_file(path):
-        """
-        """
-        from bilby.core.result import read_in_result
-
-        logger.debug("Interpolating the calibration posterior")
-        bilby_object = read_in_result(filename=path)
-        posterior = bilby_object.posterior
-        parameters = list(posterior.keys())
+    def calibration_spline_posterior(self):
+        if not any("recalib_" in i for i in self.parameters):
+            return super(Bilby, self).calibration_parameters
         ifos = np.unique(
-            [param.split('_')[1] for param in parameters if 'recalib_' in param])
-
+            [
+                param.split('_')[1] for param in self.parameters if 'recalib_'
+                in param
+            ]
+        )
         amp_params, phase_params, log_freqs = {}, {}, {}
         for ifo in ifos:
             amp_params[ifo], phase_params[ifo] = [], []
             freq_params = np.sort(
-                [param for param in parameters if 'recalib_%s_frequency_' % (ifo)
-                 in param])
-            log_freqs[ifo] = np.log([posterior[param].iloc[0] for param in freq_params])
+                [
+                    param for param in self.parameters if
+                    'recalib_%s_frequency_' % (ifo) in param
+                ]
+            )
+            posterior = self.samples_dict
+            log_freqs[ifo] = np.log(
+                [posterior[param][0] for param in freq_params]
+            )
             amp_parameters = np.sort(
-                [param for param in parameters if 'recalib_%s_amplitude_' % (ifo)
-                 in param])
+                [
+                    param for param in self.parameters if
+                    'recalib_%s_amplitude_' % (ifo) in param
+                ]
+            )
             amplitude = np.array([posterior[param] for param in amp_parameters])
             phase_parameters = np.sort(
-                [param for param in parameters if 'recalib_%s_phase_' % (ifo)
-                 in param])
+                [
+                    param for param in self.parameters if
+                    'recalib_%s_phase_' % (ifo) in param
+                ]
+            )
             phase = np.array([posterior[param] for param in phase_parameters])
             for num, i in enumerate(amplitude):
                 amp_params[ifo].append(i)

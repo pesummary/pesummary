@@ -231,9 +231,3 @@ class Default(CoreDefault):
             "injection": Default._default_injection(parameters),
             "kwargs": extra_kwargs
         }
-
-    @property
-    def calibration_data_in_results_file(self):
-        """
-        """
-        return None

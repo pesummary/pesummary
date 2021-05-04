@@ -178,26 +178,45 @@ class LALInference(GWSingleAnalysisRead):
         samples = [list(i) for i in f[path_to_samples]]
         return samples
 
-    @staticmethod
-    def _check_for_calibration_data_in_lalinference_file(path):
-        """
-        """
-        f = h5py.File(path, 'r')
-        path_to_samples = GWRead.guess_path_to_samples(path)
-        lalinference_names = list(f[path_to_samples].dtype.names)
-        if any("_spcal_amp" in i for i in lalinference_names):
-            return True
-        return False
-
     @property
-    def calibration_data_in_results_file(self):
-        """
-        """
-        check = LALInference._check_for_calibration_data_in_lalinference_file
-        grab = LALInference._grab_calibration_data_from_lalinference_file
-        if self.check_for_calibration_data(check, self.path_to_results_file):
-            return self.grab_calibration_data(grab, self.path_to_results_file)
-        return None
+    def calibration_spline_posterior(self):
+        if not any("_spcal_amp" in i for i in self.parameters):
+            return super(LALInference, self).calibration_parameters
+        keys_amp = np.sort(
+            [param for param in self.parameters if "_spcal_amp" in param]
+        )
+        keys_phase = np.sort(
+            [param for param in self.parameters if "_spcal_phase" in param]
+        )
+        IFOs = np.unique(
+            [
+                param.split("_")[0] for param in self.parameters if
+                "_spcal_" in param
+            ]
+        )
+        log_frequencies = {ifo: [] for ifo in IFOs}
+        for key, value in self.extra_kwargs["other"].items():
+            if "_spcal_logfreq" in key:
+                cond = (
+                    key.replace("logfreq", "freq") not in
+                    self.extra_kwargs["other"].keys()
+                )
+                if cond:
+                    log_frequencies[key.split("_")[0]].append(float(value))
+            elif "_spcal_freq" in key:
+                log_frequencies[key.split("_")[0]].append(np.log(float(value)))
+        amp_params = {ifo: [] for ifo in IFOs}
+        phase_params = {ifo: [] for ifo in IFOs}
+        zipped = zip(
+            [keys_amp, keys_phase], [amp_params, phase_params]
+        )
+        _samples = self.samples_dict
+        for keys, dictionary in zipped:
+            for key in keys:
+                ifo = key.split("_")[0]
+                ind = self.parameters.index(key)
+                dictionary[ifo].append(_samples[key])
+        return log_frequencies, amp_params, phase_params
 
     @staticmethod
     def grab_extra_kwargs(path):
@@ -240,45 +259,6 @@ class LALInference(GWSingleAnalysisRead):
                 kwargs["other"][kwarg] = item
         f.close()
         return kwargs
-
-    @staticmethod
-    def _grab_calibration_data_from_lalinference_file(path):
-        """
-        """
-        logger.debug("Interpolating the calibration posterior")
-        f = h5py.File(path, 'r')
-        path_to_samples = GWRead.guess_path_to_samples(path)
-        attributes = f[path_to_samples].attrs.items()
-        lalinference_names = list(f[path_to_samples].dtype.names)
-        samples = [list(i) for i in f[path_to_samples]]
-        keys_amp = np.sort([
-            param for param in lalinference_names if "_spcal_amp" in param])
-        keys_phase = np.sort([
-            param for param in lalinference_names if "_spcal_phase" in
-            param])
-        log_frequencies = {
-            key.split("_")[0]: [] for key, value in attributes if
-            "_spcal_logfreq" in key or "_spcal_freq" in key}
-        attribute_keys = [key for key, value in attributes]
-        for key, value in attributes:
-            if "_spcal_logfreq" in key:
-                if key.replace("logfreq", "freq") not in attribute_keys:
-                    log_frequencies[key.split("_")[0]].append(float(value))
-            elif "_spcal_freq" in key:
-                log_frequencies[key.split("_")[0]].append(np.log(float(value)))
-
-        amp_params = {ifo: [] for ifo in log_frequencies.keys()}
-        phase_params = {ifo: [] for ifo in log_frequencies.keys()}
-        for key in keys_amp:
-            ifo = key.split("_")[0]
-            ind = lalinference_names.index(key)
-            amp_params[ifo].append([float(i[ind]) for i in samples])
-        for key in keys_phase:
-            ifo = key.split("_")[0]
-            ind = lalinference_names.index(key)
-            phase_params[ifo].append([float(i[ind]) for i in samples])
-        f.close()
-        return log_frequencies, amp_params, phase_params
 
     @staticmethod
     def _grab_data_from_lalinference_file(path):

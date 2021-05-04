@@ -1,7 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 import numpy as np
-from scipy.interpolate import interp1d
 from pesummary.gw.file.standard_names import standard_names
 from pesummary.core.file.formats.base_read import (
     Read, SingleAnalysisRead, MultiAnalysisRead
@@ -163,6 +162,10 @@ class GWRead(Read):
     def __init__(self, path_to_results_file, **kwargs):
         super(GWRead, self).__init__(path_to_results_file, **kwargs)
 
+    @property
+    def calibration_spline_posterior(self):
+        return None
+
     Read.attrs.update({"approximant": "approximant"})
 
     def load(self, function, _data=None, **kwargs):
@@ -261,54 +264,27 @@ class GWRead(Read):
         """
         pass
 
-    @staticmethod
-    def check_for_calibration_data(function, path_to_results_file):
-        """Check to see if there is any calibration data in the results file
-
-        Parameters
-        ----------
-        function: func
-            callable function that will check to see if calibration data is in
-            the results file
-        path_to_results_file: str
-            path to the results file
-        """
-        return function(path_to_results_file)
-
-    @staticmethod
-    def grab_calibration_data(function, path_to_results_file):
-        """Grab the calibration data from the results file
-
-        Parameters
-        ----------
-        function: func
-            callable function that will grab the calibration data from the
-            results file
-        path_to_results_file: str
-            path to the results file
-        """
-        log_frequencies, amp_params, phase_params = function(path_to_results_file)
+    def interpolate_calibration_spline_posterior(self, **kwargs):
+        from pesummary.gw.file.calibration import Calibration
+        from pesummary.utils.utils import iterator
+        if self.calibration_spline_posterior is None:
+            return
         total = []
-        for key in log_frequencies.keys():
-            f = np.exp(log_frequencies[key])
-            fs = np.linspace(np.min(f), np.max(f), 100)
-            data = [interp1d(log_frequencies[key], samp, kind="cubic",
-                             fill_value=0, bounds_error=False)(np.log(fs)) for samp
-                    in np.column_stack(amp_params[key])]
-            amplitude_upper = 1. - np.mean(data, axis=0) + np.std(data, axis=0)
-            amplitude_lower = 1. - np.mean(data, axis=0) - np.std(data, axis=0)
-            amplitude_median = 1 - np.median(data, axis=0)
-
-            data = [interp1d(log_frequencies[key], samp, kind="cubic",
-                             fill_value=0, bounds_error=False)(np.log(fs)) for samp
-                    in np.column_stack(phase_params[key])]
-
-            phase_upper = np.mean(data, axis=0) + np.std(data, axis=0)
-            phase_lower = np.mean(data, axis=0) - np.std(data, axis=0)
-            phase_median = np.median(data, axis=0)
-            total.append(np.column_stack(
-                [fs, amplitude_median, phase_median, amplitude_lower,
-                 phase_lower, amplitude_upper, phase_upper]))
+        log_frequencies, amplitudes, phases = self.calibration_spline_posterior
+        keys = list(log_frequencies.keys())
+        _iterator = iterator(
+            None, desc="Interpolating calibration posterior", logger=logger,
+            tqdm=True, total=len(self.samples) * 2 * len(keys)
+        )
+        with _iterator as pbar:
+            for key in keys:
+                total.append(
+                    Calibration.from_spline_posterior_samples(
+                        np.array(log_frequencies[key]),
+                        np.array(amplitudes[key]), np.array(phases[key]),
+                        pbar=pbar, **kwargs
+                    )
+                )
         return total, log_frequencies.keys()
 
     @staticmethod
