@@ -65,6 +65,23 @@ can still be read in with,
 
     >>> skymap = read("skymap.gz", skymap=True)
 
+A frame file containing gravitational wave strain data can be read in with
+the following,
+
+.. code-block:: python
+
+     >>> strain = read("frame_file.gwf", channel="channel")
+
+All files with a :code:`gwf` or :code:`lcf` extension are treated as frame
+files. If your frame file does not have this extension, this frame file
+can still be read in with,
+
+.. code-block:: python
+
+     >>> strain = read("frame_file.gwf", channel="channel", strain=True)
+
+:code:`strain` is a :code:`pesummary.gw.file.strain.StrainData` object. For
+details about this object see `Strain Data in PESummary <../gw/strain.html>`_.
 
 Custom functions
 ----------------
