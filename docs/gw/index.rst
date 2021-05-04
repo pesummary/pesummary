@@ -53,6 +53,14 @@ Manipulating PSD and Calibration data
     psd
     calibration
 
+Manipulating frame files
+++++++++++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    strain
+
 The pesummary metafile
 ++++++++++++++++++++++
 

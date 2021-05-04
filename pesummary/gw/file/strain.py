@@ -24,7 +24,7 @@ class StrainDataDict(Dict):
     ...     "L1": "./L-L1_LOSC_4_V2-1126257414-4096.gwf"
     ... }
     >>> channels = {"H1": "H1:LOSC-STRAIN", "L1": "L1:LOSC-STRAIN"}
-    >>> strain = StrainDataDict.read(data, channels)
+    >>> strain = StrainDataDict.read(data, channels=channels)
     """
     def __init__(self, *args):
         super(StrainDataDict, self).__init__(*args, value_class=StrainData)

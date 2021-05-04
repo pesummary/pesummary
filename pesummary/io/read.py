@@ -5,7 +5,7 @@ import importlib
 from pathlib import Path
 from pesummary.core.file.formats.ini import read_ini
 from pesummary.core.file.formats.pickle import read_pickle
-from pesummary.gw.file.formats.lcf import read_lcf
+from pesummary.gw.file.strain import StrainData
 from pesummary.gw.file.skymap import SkyMap
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -13,7 +13,8 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 OTHER = {
     "fits": SkyMap.from_fits,
     "ini": read_ini,
-    "lcf": read_lcf,
+    "gwf": StrainData.read,
+    "lcf": StrainData.read,
     "pickle": read_pickle
 }
 
@@ -34,7 +35,7 @@ def _fetch_from_remote_server(ff):
 
 
 def read(
-    path, package="gw", file_format=None, skymap=False, cls=None,
+    path, package="gw", file_format=None, skymap=False, strain=False, cls=None,
     checkpoint=False, **kwargs
 ):
     """Read in a results file.
@@ -51,6 +52,10 @@ def read(
         function loops through all possible options
     skymap: Bool, optional
         if True, path is the path to a fits file generated with `ligo.skymap`
+    strain: Bool, optional
+        if True, path is the path to a frame file containing gravitational
+        wave data. All kwargs are passed to
+        pesummary.gw.file.strain.StrainData.read
     cls: func, optional
         class to use when reading in a result file
     checkpoint: Bool, optional
@@ -70,6 +75,8 @@ def read(
         return OTHER["ini"](path, **kwargs)
     elif skymap:
         return OTHER["fits"](path, **kwargs)
+    elif strain:
+        return OTHER["gwf"](path, **kwargs)
     elif checkpoint:
         return OTHER["pickle"](path, **kwargs)
 
