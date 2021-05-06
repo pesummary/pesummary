@@ -237,6 +237,9 @@ class PESummary(MultiAnalysisRead):
         mydict = {}
         for key, item in dictionary[path].items():
             if isinstance(item, h5py._hl.dataset.Dataset):
+                _attrs = dict(item.attrs)
+                if len(_attrs):
+                    mydict["{}_attrs".format(key)] = _attrs
                 mydict[key] = np.array(item)
             elif isinstance(item, h5py._hl.group.Group):
                 mydict[key] = PESummary._convert_hdf5_to_dict(
@@ -264,7 +267,7 @@ class PESummary(MultiAnalysisRead):
         return function(data)
 
     @staticmethod
-    def _grab_data_from_dictionary(dictionary):
+    def _grab_data_from_dictionary(dictionary, ignore=[]):
         """
         """
         labels = list(dictionary.keys())
@@ -275,6 +278,11 @@ class PESummary(MultiAnalysisRead):
         if "history" in labels:
             history_dict = dictionary["history"]
             labels.remove("history")
+
+        if len(ignore):
+            for _ignore in ignore:
+                if _ignore in labels:
+                    labels.remove(_ignore)
 
         parameter_list, sample_list, inj_list, ver_list = [], [], [], []
         meta_data_list, weights_list = [], []

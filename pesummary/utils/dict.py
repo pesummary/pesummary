@@ -132,7 +132,8 @@ class Dict(dict):
     """
     def __init__(
         self, *args, value_class=np.array, value_columns=None, _init=True,
-        make_dict_kwargs={}, logger_warn="warn", latex_labels={}, **kwargs
+        make_dict_kwargs={}, logger_warn="warn", latex_labels={},
+        extra_kwargs={}, **kwargs
     ):
         super(Dict, self).__init__()
         if not _init:
@@ -167,6 +168,7 @@ class Dict(dict):
         for key, item in kwargs.items():
             setattr(self, key, item)
         self._update_latex_labels()
+        self.extra_kwargs = extra_kwargs
 
     def __getitem__(self, key):
         """Return an object representing the specialization of Dict

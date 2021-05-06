@@ -575,6 +575,21 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
                 })
             except (KeyError, AttributeError):
                 self.skymap = self.data["skymap"]
+        if "gwdata" in self.data.keys():
+            try:
+                from pesummary.gw.file.strain import StrainDataDict, StrainData
+                from pesummary.utils.dict import Dict
+                mydict = {}
+                for IFO, value in self.data["gwdata"].items():
+                    channel = [ch for ch in value.keys() if "_attrs" not in ch][0]
+                    if "{}_attrs".format(channel) in value.keys():
+                        _attrs = value["{}_attrs".format(channel)]
+                    else:
+                        _attrs = {}
+                    mydict[IFO] = StrainData(value[channel], **_attrs)
+                self.gwdata = StrainDataDict(mydict)
+            except (KeyError, AttributeError):
+                pass
 
     def convert_and_translate_prior_samples(self, priors, disable_convert=False):
         """

@@ -388,6 +388,36 @@ class TestSummaryPages(Base):
             f.priors["calibration"]["test"]["L1"], calibration
         )
 
+    def test_strain_data(self):
+        """Test that the gravitational wave data is passed appropiately
+        """
+        from pesummary.io import read
+        from gwpy.timeseries import TimeSeries
+
+        H1_series = TimeSeries(
+            np.random.uniform(-1, 1, 1000), t0=101, dt=0.1, name="H1:test"
+        )
+        H1_series.write(".outdir/H1.gwf", format="gwf")
+        L1_series = TimeSeries(
+            np.random.uniform(-1, 1, 1000), t0=201, dt=0.2, name="L1:test"
+        )
+        L1_series.write(".outdir/L1.hdf", format="hdf5")
+        command_line = (
+            "summarypages --webdir .outdir --samples .outdir/example.json "
+            "--gwdata H1:test:.outdir/H1.gwf L1:test:.outdir/L1.hdf "
+            "--labels test --disable_expert --disable_corner --disable_interactive"
+        )
+        self.launch(command_line)
+        f = read(".outdir/samples/posterior_samples.h5")
+        gwdata = f.gwdata
+        assert all(IFO in gwdata.detectors for IFO in ["H1", "L1"])
+        strain = {"H1": H1_series, "L1": L1_series}
+        for IFO in gwdata.detectors:
+            np.testing.assert_almost_equal(gwdata[IFO].value, strain[IFO].value)
+            assert gwdata[IFO].t0 == strain[IFO].t0
+            assert gwdata[IFO].dt == strain[IFO].dt
+            assert gwdata[IFO].unit == strain[IFO].unit
+
     def test_gracedb(self):
         """Test that when the gracedb ID is passed from the command line it is
         correctly stored in the meta data

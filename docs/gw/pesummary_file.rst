@@ -22,6 +22,24 @@ running:
     >>> print(kwargs["area90"])
     '1234.0'
 
+Extracting strain data
+----------------------
+
+If passed from the command line, the gravitational wave strain data used during
+the analysis  is also stored in the PESummary metafile. You can extract it by
+running:
+
+.. code-block:: python
+
+    >>> strain_data = data.gwdata
+    >>> IFOs = strain_data.detectors
+    >>> strain = strain_data[IFOs[0]]
+
+Here :code:`strain_data` is a :code:`pesummary.gw.file.strain.StrainDataDict`
+object and :code:`strain` is a :code:`pesummary.gw.file.strain.StrainData`
+object. For details about these objects see the
+`<Strain Data in PESummary <./strain.html>`_ tutorial.
+
 Loading the calibration envelope for a specific run
 ---------------------------------------------------
 
