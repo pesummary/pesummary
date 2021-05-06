@@ -9,6 +9,7 @@ import copy
 import pesummary
 from pesummary import __version__
 from pesummary.core.inputs import PostProcessing
+from pesummary.utils.dict import Dict
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.utils import make_dir, logger
 from pesummary.utils.decorators import open_config
@@ -54,13 +55,19 @@ def recursively_save_dictionary_to_hdf5_file(
                 f, v, path, extra_keys=extra_keys, compression=compression
             )
         else:
+            if isinstance(dictionary, Dict):
+                attrs = dictionary.extra_kwargs
+            else:
+                attrs = {}
             create_hdf5_dataset(
                 key=k, value=v, hdf5_file=f, current_path=current_path,
-                compression=compression
+                compression=compression, attrs=attrs
             )
 
 
-def create_hdf5_dataset(key, value, hdf5_file, current_path, compression=None):
+def create_hdf5_dataset(
+    key, value, hdf5_file, current_path, compression=None, attrs={}
+):
     """
     Create a hdf5 dataset in place
 
@@ -80,6 +87,8 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path, compression=None):
     compression: int, optional
         optional filter to apply for compression. If you do not want to
         apply compression, compression = None. Default None.
+    attrs: dict, optional
+        optional list of attributes to store alongside the dataset
     """
     error_message = "Cannot process {}={} from list with type {} for hdf5"
     array_types = (list, pesummary.utils.samples_dict.Array, np.ndarray)
@@ -146,11 +155,13 @@ def create_hdf5_dataset(key, value, hdf5_file, current_path, compression=None):
         else:
             kwargs = {}
         try:
-            hdf5_file["/".join(current_path)].create_dataset(
+            dset = hdf5_file["/".join(current_path)].create_dataset(
                 key, data=data, **kwargs
             )
         except ValueError:
-            hdf5_file.create_dataset(key, data=data, **kwargs)
+            dset = hdf5_file.create_dataset(key, data=data, **kwargs)
+        if len(attrs):
+            dset.attrs.update(attrs)
 
 
 class PESummaryJsonEncoder(json.JSONEncoder):

@@ -443,7 +443,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         from astropy.time import Time
 
         executable = self.get_executable("summarydetchar")
-        command_line = command_line_dict()
+        try:
+            command_line = command_line_dict()
+        except SystemExit:
+            command_line = {"gwdata": {}}
         if isinstance(command_line["gwdata"], dict):
             gwdata_command_line = [
                 "{}:{}".format(key, val) for key, val in
@@ -451,6 +454,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             ]
         else:
             gwdata_command_line = command_line["gwdata"]
+            if gwdata_command_line is None:
+                gwdata_command_line = []
         general_cli = "%s --webdir %s --gwdata %s --plot {}{}" % (
             executable, os.path.join(self.webdir, "plots"),
             " ".join(gwdata_command_line)
@@ -494,6 +499,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             )
         else:
             link = None
+            gps_time, window = None, None
         for det in self.gwdata.keys():
             html_file = self.setup_page(
                 det, self.navbar["home"], title="{} Detchar".format(det)

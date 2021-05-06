@@ -84,6 +84,8 @@ class PESummary(GWMultiAnalysisRead, CorePESummary):
     skymap: dict
         dictionary containing the skymap probabilities keyed by the analysis
         label
+    gwdata: pesummary.gw.file.strain.StrainDataDict
+        dictionary containing the strain data used in the analysis
     prior: dict
         dictionary containing the prior samples for each analysis
     weights: dict
@@ -123,7 +125,7 @@ class PESummary(GWMultiAnalysisRead, CorePESummary):
         """
         """
         stored_data = CorePESummary._grab_data_from_dictionary(
-            dictionary=dictionary
+            dictionary=dictionary, ignore=["strain"]
         )
 
         approx_list = list()
@@ -145,6 +147,8 @@ class PESummary(GWMultiAnalysisRead, CorePESummary):
         stored_data["calibration"] = cal_dict
         stored_data["psd"] = psd_dict
         stored_data["skymap"] = skymap_dict
+        if "strain" in dictionary.keys():
+            stored_data["gwdata"] = dictionary["strain"]
         return stored_data
 
     @property

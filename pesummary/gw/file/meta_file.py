@@ -32,7 +32,7 @@ class _GWMetaFile(_MetaFile):
         existing_priors={}, existing_metafile=None, package_information={},
         mcmc_samples=False, skymap=None, existing_skymap=None,
         filename=None, external_hdf5_links=False, hdf5_compression=None,
-        history=None
+        history=None, gwdata=None
     ):
         self.calibration = calibration
         self.psds = psd
@@ -42,6 +42,7 @@ class _GWMetaFile(_MetaFile):
         self.existing_approximant = existing_approximant
         self.skymap = skymap
         self.existing_skymap = existing_skymap
+        self.gwdata = gwdata
         super(_GWMetaFile, self).__init__(
             samples, labels, config, injection_data, file_versions,
             file_kwargs, webdir=webdir, result_files=result_files, hdf5=hdf5,
@@ -94,17 +95,38 @@ class _GWMetaFile(_MetaFile):
                             self.skymap[label].meta_data.items()
                         }
                     }
+        if self.gwdata is not None and len(self.gwdata):
+            try:
+                from gwpy.types.io.hdf5 import format_index_array_attrs
+                from pesummary.utils.dict import Dict
+                self.data["strain"] = {}
+                for key, item in self.gwdata.items():
+                    if item is None:
+                        continue
+                    _name = item.name if item.name is not None else "unknown_name"
+                    self.data["strain"][key] = Dict(
+                        {_name: item.value},
+                        extra_kwargs=format_index_array_attrs(item)
+                    )
+            except Exception:
+                logger.warn(
+                    "Failed to store the gravitational wave strain data"
+                )
 
     @staticmethod
     def save_to_hdf5(
         data, labels, samples, meta_file, no_convert=False, mcmc_samples=False,
-        external_hdf5_links=False, compression=None, _class=None
+        external_hdf5_links=False, compression=None, _class=None, gwdata=None
     ):
         """Save the metafile as a hdf5 file
         """
+        if gwdata is not None and len(gwdata):
+            extra_keys = CORE_HDF5_KEYS + ["strain"]
+        else:
+            extra_keys = CORE_HDF5_KEYS
         _MetaFile.save_to_hdf5(
             data, labels, samples, meta_file, no_convert=no_convert,
-            extra_keys=CORE_HDF5_KEYS, mcmc_samples=mcmc_samples, _class=_class,
+            extra_keys=extra_keys, mcmc_samples=mcmc_samples, _class=_class,
             external_hdf5_links=external_hdf5_links, compression=compression
         )
 
@@ -261,7 +283,8 @@ class GWMetaFile(GWPostProcessing):
             mcmc_samples=self.mcmc_samples, skymap=self.skymap,
             existing_skymap=self.existing_skymap, filename=self.filename,
             external_hdf5_links=self.external_hdf5_links,
-            hdf5_compression=self.hdf5_compression, history=history
+            hdf5_compression=self.hdf5_compression, history=history,
+            gwdata=self.gwdata
         )
         meta_file.make_dictionary()
         if not self.hdf5:
@@ -271,7 +294,8 @@ class GWMetaFile(GWPostProcessing):
                 meta_file.data, meta_file.labels, meta_file.samples,
                 meta_file.meta_file, mcmc_samples=meta_file.mcmc_samples,
                 external_hdf5_links=meta_file.external_hdf5_links,
-                compression=meta_file.hdf5_compression
+                compression=meta_file.hdf5_compression,
+                gwdata=meta_file.gwdata
             )
         meta_file.save_to_dat()
         meta_file.write_marginalized_posterior_to_dat()

@@ -169,12 +169,12 @@ def _check_pesummary_file(f):
     try:
         if all(
                 "posterior_samples" in f[label].keys() for label in labels if
-                label != "version" and label != "history"
+                label != "version" and label != "history" and label != "strain"
         ):
             return True
         elif all(
                 "mcmc_chains" in f[label].keys() for label in labels if
-                label != "version" and label != "history"
+                label != "version" and label != "history" and label != "strain"
         ):
             return True
         else:

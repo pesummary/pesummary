@@ -77,3 +77,14 @@ psd_data = {
         ]
     ) for i in IFOs
 }
+
+# Now lets show how to extract the strain data used in the analysis. We use
+# the GWPy TimeSeries.read method
+from gwpy.timeseries import TimeSeries
+if "strain" not in data.keys():
+    print("No strain data is stored")
+
+strain = data["strain"]
+gwpy_strain_data = {
+    IFO: TimeSeries.read(timeseries) for IFO, timeseries in strain.items()
+}
