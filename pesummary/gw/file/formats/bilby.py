@@ -171,7 +171,7 @@ class Bilby(GWSingleAnalysisRead):
     @property
     def calibration_spline_posterior(self):
         if not any("recalib_" in i for i in self.parameters):
-            return super(Bilby, self).calibration_parameters
+            return super(Bilby, self).calibration_spline_posterior
         ifos = np.unique(
             [
                 param.split('_')[1] for param in self.parameters if 'recalib_'

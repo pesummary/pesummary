@@ -6,6 +6,7 @@ import sys
 import pesummary
 from pesummary.utils.utils import logger
 from pesummary.utils.decorators import tmp_directory
+import numpy as np
 import argparse
 import glob
 from pathlib import Path
@@ -13,7 +14,7 @@ from pathlib import Path
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 ALLOWED = [
     "executables", "imports", "tests", "workflow", "skymap", "bilby",
-    "lalinference", "GW190412", "GW190425", "GWTC1", "examples"
+    "lalinference", "GWTC1", "GWTC2", "examples"
 ]
 
 PESUMMARY_DIR = Path(pesummary.__file__).parent.parent
@@ -165,41 +166,53 @@ def bilby(*args, **kwargs):
     return launch(command_line)
 
 
-def _old_pesummary_result_file(GW190412=False, GW190425=False):
+def _public_pesummary_result_file(event):
     """Test that pesummary can load in a previously released pesummary result
     file
     """
-    if GW190412:
-        URL = "https://dcc.ligo.org/public/0163/P190412/012/GW190412_posterior_samples_v3.h5"
-        NAME = "GW190412"
-    elif GW190425:
-        URL = "https://dcc.ligo.org/public/0165/P2000026/001/GW190425_posterior_samples.h5"
-        NAME = "GW190425"
-    else:
-        raise ValueError("Unsupported existing file")
-    command_line = "curl {} -o {}_posterior_samples.h5".format(URL, NAME)
-    launch(command_line)
-    command_line = "{} {} -f {}_posterior_samples.h5".format(
+    from pesummary.gw.fetch import fetch_open_data
+
+    download = fetch_open_data(
+        event, read_file=False, delete_on_exit=False, outdir="./", unpack=True
+    )
+    command_line = "{} {} -f {}.h5".format(
         sys.executable,
         os.path.join(PESUMMARY_DIR, "pesummary", "tests", "existing_file.py"),
-        NAME
+        os.path.join(download, download)
     )
     return launch(command_line)
 
 
 @tmp_directory
-def GW190412(*args, **kwargs):
-    """Test that pesummary can load the GW190412 public data release file
-    file
-    """
-    return _old_pesummary_result_file(GW190412=True)
+def GWTC2(*args, size=5, include_exceptional=True, **kwargs):
+    """Test that pesummary can load a random selection of samples from the
+    GWTC-2 data release
 
-
-@tmp_directory
-def GW190425(*args, **kwargs):
-    """Test that pesummary can load the GW190425 public data release file
+    Parameters
+    ----------
+    size: int, optional
+        number of events to randomly draw. Default 5
+    include_exceptional: Bool, optional
+        if True, add the exceptional event candidates to the random selection
+        of events. This means that the total number of events could be as
+        large as size + 4.
     """
-    return _old_pesummary_result_file(GW190425=True)
+    from bs4 import BeautifulSoup
+    import requests
+    page = requests.get("https://www.gw-openscience.org/eventapi/html/GWTC-2/")
+    soup = BeautifulSoup(page.content, 'html.parser')
+    entries = soup.find_all("td")
+    events = [
+        e.text for e in entries if "GW" in e.text and "GWTC" not in e.text
+    ]
+    specified = np.random.choice(events, replace=False, size=size).tolist()
+    if include_exceptional:
+        for event in ["GW190412", "GW190425", "GW190521", "GW190814"]:
+            if event not in specified:
+                specified.append(event)
+    for event in specified:
+        _ = _public_pesummary_result_file(event)
+    return
 
 
 @tmp_directory

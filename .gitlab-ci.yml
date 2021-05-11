@@ -308,23 +308,7 @@ lalinference:
     - schedule
     - pushes
 
-##bilby:
-##  stage: consequences
-##  image: python:3.6
-##  needs:
-##    - tarball
-##    - executables
-##    - imports
-##    - style
-##  script:
-##    - pip install pesummary-*.tar.*
-##    - summarytest --type bilby
-##  only:
-##    - schedule
-##    - pushes
-
-
-GW190412:
+bilby:
   stage: consequences
   image: python:3.6
   needs:
@@ -334,27 +318,7 @@ GW190412:
     - style
   script:
     - pip install pesummary-*.tar.*
-    - mkdir _testing
-    - cd _testing
-    - summarytest --type GW190412
-  only:
-    - schedule
-    - pushes
-
-
-GW190425:
-  stage: consequences
-  image: python:3.6
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
-  script:
-    - pip install pesummary-*.tar.*
-    - mkdir _testing
-    - cd _testing
-    - summarytest --type GW190425
+    - summarytest --type bilby
   only:
     - schedule
     - pushes
@@ -373,6 +337,21 @@ GWTC1:
     - mkdir _testing
     - cd _testing
     - summarytest --type GWTC1
+
+
+GWTC2:
+  stage: consequences
+  image: python:3.6
+  needs:
+    - tarball
+    - executables
+    - imports
+    - style
+  script:
+    - pip install pesummary-*.tar.*
+    - mkdir _testing
+    - cd _testing
+    - summarytest --type GWTC2
 
 
 build_examples:
@@ -417,8 +396,8 @@ pages:
     - python-3.8-gw
     ##- bilby
     - lalinference
-    - GW190412
-    - GW190425
+    - GWTC1
+    - GWTC2
   script:
     - mkdir public/
     - mv docs/_build/html/* public/
