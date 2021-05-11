@@ -139,6 +139,9 @@ def create_hdf5_dataset(
         data = np.array([value])
     elif isinstance(value, (bool, np.bool_)):
         data = np.array([str(value)], dtype="S")
+    elif isinstance(value, np.complex):
+        key += "_amp"
+        data = np.array(np.abs(value))
     elif value == {}:
         data = np.array(np.array("NaN"))
     elif inspect.isclass(value) or inspect.isfunction(value):

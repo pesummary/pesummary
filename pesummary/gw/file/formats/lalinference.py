@@ -181,7 +181,7 @@ class LALInference(GWSingleAnalysisRead):
     @property
     def calibration_spline_posterior(self):
         if not any("_spcal_amp" in i for i in self.parameters):
-            return super(LALInference, self).calibration_parameters
+            return super(LALInference, self).calibration_spline_posterior
         keys_amp = np.sort(
             [param for param in self.parameters if "_spcal_amp" in param]
         )
