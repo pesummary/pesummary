@@ -584,12 +584,13 @@ class PESummaryDeprecated(PESummary):
             posterior_samples = dictionary["posterior_samples"][label]
             if isinstance(posterior_samples, (h5py._hl.dataset.Dataset, np.ndarray)):
                 parameters = [j for j in posterior_samples.dtype.names]
-                samples = [j.tolist() for j in posterior_samples]
+                samples = [np.array(j).tolist() for j in posterior_samples]
             else:
                 parameters = \
                     dictionary["posterior_samples"][label]["parameter_names"].copy()
                 samples = [
-                    j.tolist() for j in dictionary["posterior_samples"][label]["samples"]
+                    np.array(j).tolist() for j in
+                    dictionary["posterior_samples"][label]["samples"]
                 ].copy()
                 if isinstance(parameters[0], bytes):
                     parameters = [
