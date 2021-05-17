@@ -90,7 +90,7 @@ GWlatex_labels = {
     ),
     "final_mass_source": r"$M_{\mathrm{final}}^{\mathrm{source}} [M_{\odot}]$",
     "final_mass_source_non_evolved": (
-        r"$M_{final}^{\mathrm{source, nonevol}} [M_{\odot}]$"
+        r"$M_{\mathrm{final}}^{\mathrm{source, nonevol}} [M_{\odot}]$"
     ),
     "final_spin": r"$a_{\mathrm{final}}$",
     "final_spin_non_evolved": r"$a_{\mathrm{final}}^{\mathrm{nonevol}}$",

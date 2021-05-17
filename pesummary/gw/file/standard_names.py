@@ -329,6 +329,11 @@ descriptive_names = {
         "the cosine of the zenith angle between the total orbital angular "
         "momentum, L, and the secondary spin, S2"
     ),
+    "beta": (
+        "the zenith angle between the total orbital angular momentum, L, and "
+        "the total angular momentum J. For a non-precessing system, beta is "
+        "zero by definition"
+    ),
     "redshift": (
         "the redshift depending on specified cosmology"
     ),
@@ -535,8 +540,8 @@ descriptive_names = {
         "the ISCO frequency"
     ),
     "final_mass_non_evolved": (
-        "the detector-frame remnant mass estimated using the spins evolved to "
-        "the ISCO frequency"
+        "the detector-frame remnant mass estimated using the spins defined at "
+        "the reference frequency"
     ),
     "final_mass_source_non_evolved": (
         "the source-frame remnant mass estimated using the spins defined at "
