@@ -1,13 +1,14 @@
 astropy >=3.2.3
+bilby >=1.1.1
 corner
 deepdish
-gwpy
+gwpy >=2.0.2
 h5py
 ligo.skymap
 matplotlib-base
 numpy >=1.15.4
 p_astro
-pandas <1.0.0a0
+pandas
 pepredicates >=0.0.2
 plotly
 pygments
@@ -16,5 +17,6 @@ python-lal
 python-lalsimulation >=2.0.0
 python-lalinference
 scipy
-seaborn
+seaborn >=0.11.0
 statsmodels
+tqdm >=4.44.0,<=4.54.1
