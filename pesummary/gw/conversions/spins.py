@@ -44,20 +44,20 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
 
 @array_input()
 def chi_p_2spin(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
-    """Return a modified chi_p which takes into account precessing spin
-    information from both compact objects given samples for mass1, mass2,
-    spin1x, spin1y, spin2x, spin2y. See Eq.9 of arXiv:2012.02209
+    """Return the magnitude of a modified chi_p which takes into account
+    precessing spin information from both compact objects given samples for
+    mass1, mass2, spin1x, spin1y, spin2x, spin2y. See Eq.9 of arXiv:2012.02209
     """
-    chi_p_2spin = np.zeros(len(mass1))
-    chi1_perp = np.linalg.norm([spin1x, spin1y], axis=0)
-    chi2_perp = np.linalg.norm([spin2x, spin2y], axis=0)
-    S1_perp = chi1_perp * mass1**2
-    S2_perp = chi2_perp * mass2**2
-    S_perp = S1_perp + S2_perp
-    mask = S1_perp >= S2_perp
-    chi_p_2spin[mask] = (S_perp / (mass1**2 + S2_perp))[mask]
-    chi_p_2spin[~mask] = (S_perp / (mass2**2 + S1_perp))[~mask]
-    return chi_p_2spin
+    chi_p_2spin = np.zeros((2, len(mass1)))
+    S1_perp = mass1**2 * np.array([spin1x, spin1y])
+    S2_perp = mass2**2 * np.array([spin2x, spin2y])
+    S_perp = np.sum([S1_perp, S2_perp], axis=0)
+    S1_perp_mag = np.linalg.norm(S1_perp, axis=0)
+    S2_perp_mag = np.linalg.norm(S2_perp, axis=0)
+    mask = S1_perp_mag >= S2_perp_mag
+    chi_p_2spin[:, mask] = (S_perp / (mass1**2 + S2_perp_mag))[:, mask]
+    chi_p_2spin[:, ~mask] = (S_perp / (mass2**2 + S1_perp_mag))[:, ~mask]
+    return np.linalg.norm(chi_p_2spin, axis=0)
 
 
 @array_input()
