@@ -1,3 +1,24 @@
+## 0.12.1 [18/05/2021]
+
+### Changed
+
+- `chi_p_2spin` conversion - bug fix in the
+  `pesummary.gw.conversions.spins.chi_p_2spin` function in order to ensure that
+  the conversion matches Eqs. 8,9 in arXiv:2012.02209
+- AttributeError when loading Deprecated metafile - fix the
+  `pesummary.core.file.formats.pesummary.PESummaryDeprecated` class to prevent
+  an AttributeError from being raised when loading a Deprecated JSON file
+- `numpy` requirement - unpin the `numpy` requirement
+- Calibration posterior - tidy up how pesummary interacts with the calibration
+  posterior samples
+
+### Added
+
+- Added a test in the CI to ensure that all builds can read in a random
+  selection of result files released as part of GWTC-2
+- Add the functionality to store gravitational wave strain data in the
+  metafile if requested
+
 ## 0.12.0 [27/04/2021]
 
 ### Changed
