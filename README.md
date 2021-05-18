@@ -9,7 +9,7 @@
 
 [![License](https://img.shields.io/pypi/l/pesummary.svg)](https://choosealicense.com/licenses/mit/)
 [![Python versions](https://img.shields.io/pypi/pyversions/pesummary.svg)](https://img.shields.io/pypi/pyversions/pesummary.svg)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3937807.svg)](https://doi.org/10.5281/zenodo.3937807)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4771187.svg)](https://doi.org/10.5281/zenodo.4771187)
 
 ## Development status
 
