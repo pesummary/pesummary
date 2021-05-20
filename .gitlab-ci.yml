@@ -241,6 +241,23 @@ python-3.8:
     - summarytest --pytest_config ${BASE}/setup.cfg --type tests --ignore ${PESUMMARY_TESTING_DIR}/workflow_test.py ${PESUMMARY_TESTING_DIR}/ligo_skymap_test.py ${PESUMMARY_TESTING_DIR}/conversion_test.py ${PESUMMARY_TESTING_DIR}/pycbc_test.py ${PESUMMARY_TESTING_DIR}/waveform_test.py
 
 
+python-3.9:
+  stage: test
+  image: python:3.9
+  needs:
+    - tarball
+    - executables
+    - imports
+    - style
+  script:
+    - pip install pesummary-*.tar.*
+    - BASE=`pwd`
+    - mkdir _testing
+    - cd _testing
+    - export PESUMMARY_TESTING_DIR=`python -c "import pkg_resources; print(pkg_resources.resource_filename('pesummary', 'tests'))"`
+    - summarytest --pytest_config ${BASE}/setup.cfg --type tests --ignore ${PESUMMARY_TESTING_DIR}/workflow_test.py ${PESUMMARY_TESTING_DIR}/ligo_skymap_test.py ${PESUMMARY_TESTING_DIR}/conversion_test.py ${PESUMMARY_TESTING_DIR}/pycbc_test.py ${PESUMMARY_TESTING_DIR}/waveform_test.py
+  allow_failure: true
+
 python-3.6-core:
   <<: *core_workflow
   image: python:3.6
@@ -256,6 +273,11 @@ python-3.8-core:
   image: python:3.8
 
 
+python-3.9-core:
+  <<: *core_workflow
+  image: python:3.9
+
+
 python-3.6-gw:
   <<: *gw_workflow
   image: python:3.6
@@ -269,6 +291,11 @@ python-3.7-gw:
 python-3.8-gw:
   <<: *gw_workflow
   image: python:3.8
+
+
+python-3.9-gw:
+  <<: *gw_workflow
+  image: python:3.9
 
 
 ligo_skymap:
@@ -307,6 +334,7 @@ lalinference:
   only:
     - schedule
     - pushes
+
 
 bilby:
   stage: consequences
@@ -388,12 +416,15 @@ pages:
     - python-3.6
     - python-3.7
     - python-3.8
+    - python-3.9
     - python-3.6-core
     - python-3.7-core
     - python-3.8-core
+    - python-3.9-core
     - python-3.6-gw
     - python-3.7-gw
     - python-3.8-gw
+    - python-3.9-gw
     ##- bilby
     - lalinference
     - GWTC1
