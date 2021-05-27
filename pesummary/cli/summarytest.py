@@ -13,7 +13,7 @@ from pathlib import Path
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 ALLOWED = [
-    "executables", "imports", "tests", "workflow", "skymap", "bilby",
+    "executables", "imports", "tests", "workflow", "skymap", "bilby", "pycbc",
     "lalinference", "GWTC1", "GWTC2", "examples"
 ]
 
@@ -162,6 +162,16 @@ def bilby(*args, **kwargs):
     """
     command_line = "bash {}".format(
         os.path.join(PESUMMARY_DIR, "pesummary", "tests", "bilby.sh")
+    )
+    return launch(command_line)
+
+
+@tmp_directory
+def pycbc(*args, **kwargs):
+    """Test a pycbc run
+    """
+    command_line = "bash {}".format(
+        os.path.join(PESUMMARY_DIR, "pesummary", "tests", "pycbc.sh")
     )
     return launch(command_line)
 

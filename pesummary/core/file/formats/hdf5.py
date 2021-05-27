@@ -94,10 +94,16 @@ def _read_hdf5_with_h5py(path, remove_params=None, path_to_samples=None):
         else:
             parameters = copy.deepcopy(original_parameters)
         n_samples = len(f[path_to_samples][parameters[0]])
-        samples = [
-            [float(f[path_to_samples][original_parameters.index(i)][num])
-             for i in parameters] for num in range(n_samples)
-        ]
+        try:
+            samples = [
+                [float(f[path_to_samples][original_parameters.index(i)][num])
+                 for i in parameters] for num in range(n_samples)
+            ]
+        except (AttributeError, KeyError):
+            samples = [
+                [float(f[path_to_samples][i][num]) for i in parameters] for num
+                in range(n_samples)
+            ]
         cond1 = "loglr" not in parameters or "log_likelihood" not in \
             parameters
         cond2 = "likelihood_stats" in f.keys() and "loglr" in \

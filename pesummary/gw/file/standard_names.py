@@ -142,6 +142,7 @@ for detector in _IFOS:
 pycbc_map = {
     "mchirp": "chirp_mass",
     "coa_phase": "phase",
+    "loglikelihood": "log_likelihood",
 }
 
 
@@ -307,6 +308,7 @@ for detector in _IFOS:
 standard_names = {}
 standard_names.update(lalinference_map)
 standard_names.update(bilby_map)
+standard_names.update(pycbc_map)
 standard_names.update(other_map)
 
 descriptive_names = {
