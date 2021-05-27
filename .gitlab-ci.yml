@@ -3,7 +3,7 @@ stages:
   - basic
   - test
   - end-to-end
-  - consequences
+  - compatability
   - deploy
 
 
@@ -299,7 +299,7 @@ python-3.9-gw:
 
 
 ligo_skymap:
-  stage: consequences
+  stage: compatability
   image: python:3.7
   needs:
     - tarball
@@ -317,7 +317,7 @@ ligo_skymap:
 
 
 lalinference:
-  stage: consequences
+  stage: compatability
   image: python:3.6
   needs:
     - tarball
@@ -337,7 +337,7 @@ lalinference:
 
 
 bilby:
-  stage: consequences
+  stage: compatability
   image: python:3.6
   needs:
     - tarball
@@ -352,8 +352,24 @@ bilby:
     - pushes
 
 
+pycbc:
+  stage: compatability
+  image: python:3.6
+  needs:
+    - tarball
+    - executables
+    - imports
+    - style
+  script:
+    - pip install pesummary-*.tar.*
+    - summarytest --type pycbc
+  only:
+    - schedule
+    - pushes
+
+
 GWTC1:
-  stage: consequences
+  stage: compatability
   image: python:3.6
   needs:
     - tarball
@@ -368,7 +384,7 @@ GWTC1:
 
 
 GWTC2:
-  stage: consequences
+  stage: compatability
   image: python:3.6
   needs:
     - tarball

@@ -1476,6 +1476,12 @@ class _Conversion(object):
             self._cos_angle("tilt_1", reverse=True)
         if "cos_tilt_2" in self.parameters and "tilt_2" not in self.parameters:
             self._cos_angle("tilt_2", reverse=True)
+        angles = [
+            "a_1", "a_2", "a_1_azimuthal", "a_1_polar", "a_2_azimuthal",
+            "a_2_polar"
+        ]
+        if all(i in self.parameters for i in angles):
+            self._component_spins_from_azimuthal_and_polar_angles()
         spin_magnitudes = ["a_1", "a_2"]
         angles = ["phi_jl", "tilt_1", "tilt_2", "phi_12"]
         cartesian = ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
@@ -1483,7 +1489,7 @@ class _Conversion(object):
         cond2 = all(i in self.parameters for i in angles)
         cond3 = all(i in self.parameters for i in cartesian)
         for _param in spin_magnitudes:
-            if _param in self.parameters and not cond2:
+            if _param in self.parameters and not cond2 and not cond3:
                 _index = _param.split("a_")[1]
                 _spin = self.specific_parameter_samples(_param)
                 _tilt = np.arccos(np.sign(_spin))
@@ -1581,11 +1587,6 @@ class _Conversion(object):
         condition2 = "phi_1" in self.parameters and "phi_2" in self.parameters
         if condition1 and condition2:
             self._phi_12_from_phi1_phi2()
-        angles = [
-            "a_1", "a_2", "a_1_azimuthal", "a_1_polar", "a_2_azimuthal",
-            "a_2_polar"]
-        if all(i in self.parameters for i in angles):
-            self._component_spins_from_azimuthal_and_polar_angles()
 
         check_for_evolved_parameter = lambda suffix, param, params: (
             param not in params and param + suffix not in params if
