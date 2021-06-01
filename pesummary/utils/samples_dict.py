@@ -1457,7 +1457,10 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
 
         samples = {}
         for label, filename in filenames.items():
-            _file = read(filename, **kwargs)
+            _kwargs = kwargs
+            if label in kwargs.keys():
+                _kwargs = kwargs[label]
+            _file = read(filename, **_kwargs)
             _samples = _file.samples_dict
             if isinstance(_samples, MultiAnalysisSamplesDict):
                 _stored_labels = _samples.keys()
