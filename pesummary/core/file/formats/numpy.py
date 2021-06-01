@@ -45,8 +45,21 @@ def read_numpy(path, **kwargs):
     **kwargs: dict, optional
         all additional kwargs are passed to the `np.load` function
     """
-    data = np.load(path, **kwargs)
+    data = load(path, **kwargs)
     return _parameters_and_samples_from_structured_array(data)
+
+
+def load(*args, **kwargs):
+    """Load a .npy file using the `np.load` function
+
+    Parameters
+    ----------
+    *args: tuple
+        all args passed to `np.load`
+    **kwargs: dict
+        all kwargs passed to `np.load`
+    """
+    return np.load(*args, **kwargs)
 
 
 def _write_numpy(

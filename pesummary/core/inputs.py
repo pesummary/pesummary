@@ -625,14 +625,21 @@ class _Input(object):
             self._file_format = [None] * len(self.labels)
         elif len(file_format) == 1 and len(file_format) != len(self.labels):
             logger.warning(
-                "Only one file format specified. Assuming all files are of this format"
+                "Only one file format specified. Assuming all files are of "
+                "this format"
             )
-            self._file_format = [file_format] * len(self.labels)
+            self._file_format = [file_format[0]] * len(self.labels)
         elif len(file_format) != len(self.labels):
             raise InputError(
-                "Please provide a file format for each result file"
+                "Please provide a file format for each result file. If you "
+                "wish to specify the file format for the second result file "
+                "and not for any of the others, for example, simply pass 'None "
+                "{format} None'"
             )
         else:
+            for num, ff in enumerate(file_format):
+                if ff.lower() == "none":
+                    file_format[num] = None
             self._file_format = file_format
 
     @property

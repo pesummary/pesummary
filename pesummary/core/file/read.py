@@ -297,4 +297,4 @@ def read(
         options = _file_format(file_format, JSON_LOAD)
         return _read(path, options, default=DEFAULT, **kwargs)
     else:
-        return DEFAULT["default"](path, **kwargs)
+        return DEFAULT["default"](path, file_format=file_format, **kwargs)
