@@ -19,6 +19,34 @@ OTHER = {
 }
 
 
+def _fetch(ff, function):
+    """Copy a file from a remote location to a temporary folder ready for
+    reading
+
+    Parameters
+    ----------
+    ff: str
+        path to file you wish to read
+    function: func
+        function you wish to use for fetching the file from a remote location
+    """
+    filename = function(ff, read_file=False)
+    path = str(filename)
+    return path
+
+
+def _fetch_from_url(url):
+    """Copy file from url to a temporary folder ready for reading
+
+    Parameters
+    ----------
+    url: str
+        url of a result file you wish to load
+    """
+    from pesummary.core.fetch import download_and_read_file
+    return _fetch(url, download_and_read_file)
+
+
 def _fetch_from_remote_server(ff):
     """Copy file from remote server to a temporary folder ready for reading
 
@@ -29,9 +57,7 @@ def _fetch_from_remote_server(ff):
         {username}@{servername}:{path}
     """
     from pesummary.core.fetch import scp_and_read_file
-    filename = scp_and_read_file(ff, read_file=False)
-    path = str(filename)
-    return path
+    return _fetch(ff, scp_and_read_file)
 
 
 def read(
@@ -64,7 +90,9 @@ def read(
         all additional kwargs are passed to the `pesummary.{}.file.read.read`
         function
     """
-    if not os.path.isfile(path) and "@" in path:
+    if not os.path.isfile(path) and "https://" in path:
+        path = _fetch_from_url(path)
+    elif not os.path.isfile(path) and "@" in path:
         path = _fetch_from_remote_server(path)
     extension = Path(path).suffix[1:]
     if cls is not None:

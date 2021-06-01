@@ -322,12 +322,18 @@ class _Input(object):
         self._result_files = result_files
         if self._result_files is not None:
             for num, ff in enumerate(self._result_files):
+                func = None
                 if not os.path.isfile(ff) and "@" in ff:
                     from pesummary.io.read import _fetch_from_remote_server
+                    func = _fetch_from_remote_server
+                elif not os.path.isfile(ff) and "https://" in ff:
+                    from pesummary.io.read import _fetch_from_url
+                    func = _fetch_from_url
+                if func is not None:
                     logger.info(
                         "Copying file: '{}' to temporary folder".format(ff)
                     )
-                    self._result_files[num] = _fetch_from_remote_server(ff)
+                    self._result_files[num] = func(ff)
 
     @property
     def seed(self):
