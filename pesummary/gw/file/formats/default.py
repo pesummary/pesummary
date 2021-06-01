@@ -211,6 +211,32 @@ class Default(CoreDefault):
         )
 
     @staticmethod
+    def _grab_data_from_numpy_file(path, file_format=None, **kwargs):
+        """Grab the data stored in a .npy file
+        """
+        if file_format is not None:
+            try:
+                import importlib
+                module = importlib.import_module(
+                    "pesummary.gw.file.formats.{}".format(file_format)
+                )
+                data = getattr(module, "read_{}".format(file_format))(path, **kwargs)
+                return {
+                    "parameters": data[0], "samples": data[1],
+                    "injection": Default._default_injection(data[0])
+                }
+            except ModuleNotFoundError:
+                from pesummary.utils.utils import logger
+                logger.warn(
+                    "Failed to find the module '{}'. Therefore ignoring "
+                    "file_format={} and using default load".format(
+                        "pesummary.gw.file.formats.{}".format(file_format),
+                        file_format
+                    )
+                )
+        return CoreDefault._grab_data_from_numpy_file(path, **kwargs)
+
+    @staticmethod
     def _grab_data_from_prior_file(path, **kwargs):
         """Grab the data stored in a .prior file
         """
