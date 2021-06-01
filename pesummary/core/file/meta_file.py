@@ -109,6 +109,8 @@ def create_hdf5_dataset(
             data = value
         elif all(isinstance(_value, (bool, np.bool_)) for _value in value):
             data = np.array([str(_value) for _value in value], dtype="S")
+        elif all(_value is None for _value in value):
+            data = np.array(["None"] * len(value), dtype="S")
         elif isinstance(value[0], np.void) and value.dtype.names:
             data = value
         elif math.isnan(value[0]):

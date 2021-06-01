@@ -14,7 +14,17 @@ except ImportError:
     pass
 
 
-@array_input()
+def _wrapper_for_z_from_dL_exact(args):
+    """Wrapper function for _z_from_dL_exact for a pool of workers
+
+    Parameters
+    ----------
+    args: tuple
+        All args passed to _z_from_dL_exact
+    """
+    return _z_from_dL_exact(*args)
+
+
 def _z_from_dL_exact(luminosity_distance, cosmology):
     """Return the redshift given samples for the luminosity distance for a
     given cosmology
@@ -31,10 +41,12 @@ def _z_from_dL_exact(luminosity_distance, cosmology):
     )
 
 
+@array_input(ignore_kwargs=["cosmology", "multi_process"])
 def z_from_dL_exact(luminosity_distance, cosmology="Planck15", multi_process=1):
     """Return the redshift given samples for the luminosity distance
     """
     import multiprocessing
+    from pesummary.utils.utils import iterator
 
     logger.warning("Estimating the exact redshift for every luminosity "
                    "distance. This may take a few minutes.")
@@ -44,11 +56,19 @@ def z_from_dL_exact(luminosity_distance, cosmology="Planck15", multi_process=1):
         dtype=object
     ).T
     with multiprocessing.Pool(multi_process) as pool:
-        z = pool.starmap(_z_from_dL_exact, args)
+        z = np.array(
+            list(
+                iterator(
+                    pool.imap(_wrapper_for_z_from_dL_exact, args), tqdm=True,
+                    desc="Calculating redshift", logger=logger,
+                    total=len(luminosity_distance)
+                )
+            )
+        )
     return z
 
 
-@array_input()
+@array_input(ignore_kwargs=["N", "cosmology"])
 def z_from_dL_approx(
     luminosity_distance, N=100, cosmology="Planck15", **kwargs
 ):
@@ -68,7 +88,7 @@ def z_from_dL_approx(
     return zvals
 
 
-@array_input()
+@array_input(ignore_kwargs=["cosmology"])
 def dL_from_z(redshift, cosmology="Planck15"):
     """Return the luminosity distance given samples for the redshift
     """
@@ -76,7 +96,7 @@ def dL_from_z(redshift, cosmology="Planck15"):
     return cosmo.luminosity_distance(redshift).value
 
 
-@array_input()
+@array_input(ignore_kwargs=["cosmology"])
 def comoving_distance_from_z(redshift, cosmology="Planck15"):
     """Return the comoving distance given samples for the redshift
     """
