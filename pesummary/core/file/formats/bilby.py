@@ -10,9 +10,21 @@ from pesummary.utils.utils import logger
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
+def _load_bilby(path):
+    """Wrapper for `bilby.core.result.read_in_result`
+
+    Parameters
+    ----------
+    path: str
+        path to the bilby result file you wish to load
+    """
+    from bilby.core.result import read_in_result
+    return read_in_result(filename=path)
+
+
 def read_bilby(
     path, disable_prior=False, complex_params=[], latex_dict=latex_labels,
-    nsamples_for_prior=None, **kwargs
+    nsamples_for_prior=None, _bilby_class=None, **kwargs
 ):
     """Grab the parameters and samples in a bilby file
 
@@ -32,9 +44,9 @@ def read_bilby(
     nsamples_for_prior: int, optional
         number of samples to draw from the analytic priors
     """
-    from bilby.core.result import read_in_result
-
-    bilby_object = read_in_result(filename=path)
+    if _bilby_class is None:
+        _bilby_class = Bilby
+    bilby_object = _load_bilby(path)
     posterior = bilby_object.posterior
     _original_keys = posterior.keys()
     for key in _original_keys:
@@ -71,7 +83,7 @@ def read_bilby(
                     [key])[0]
                 latex_dict[key] = label
     try:
-        extra_kwargs = Bilby.grab_extra_kwargs(bilby_object)
+        extra_kwargs = _bilby_class.grab_extra_kwargs(bilby_object)
     except Exception:
         extra_kwargs = {"sampler": {}, "meta_data": {}}
     extra_kwargs["sampler"]["nsamples"] = len(samples)
@@ -230,6 +242,37 @@ def write_bilby(
         meta_data=meta_data, file_format="bilby", labels=labels,
         _return=True, **kwargs
     )
+
+
+def config_from_file(path):
+    """Extract the configuration file stored within a bilby result file
+
+    Parameters
+    ----------
+    path: str
+        path to the bilby result file you wish to load
+    """
+    bilby_object = _load_bilby(path)
+    return config_from_object(bilby_object)
+
+
+def config_from_object(bilby_object):
+    """Extract the configuration file stored within a `bilby.core.result.Result`
+    object (or alike)
+
+    Parameters
+    ----------
+    bilby_object: bilby.core.result.Result (or alike)
+        a bilby.core.result.Result object (or alike) you wish to extract the
+        configuration file from
+    """
+    config = {}
+    if bilby_object.meta_data is not None:
+        if "command_line_args" in bilby_object.meta_data.keys():
+            config = {
+                "config": bilby_object.meta_data["command_line_args"]
+            }
+    return config
 
 
 def prior_samples_from_file(path, cls="PriorDict", nsamples=5000, **kwargs):

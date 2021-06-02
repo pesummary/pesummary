@@ -36,7 +36,7 @@ def read_bilby(
 
     return _read_bilby(
         path, disable_prior=disable_prior, latex_dict=latex_dict,
-        complex_params=complex_params, **kwargs
+        complex_params=complex_params, _bilby_class=Bilby, **kwargs
     )
 
 
@@ -138,8 +138,10 @@ class Bilby(GWSingleAnalysisRead):
 
     @staticmethod
     def grab_extra_kwargs(bilby_object):
-        """Grab any additional information stored in the lalinference file
+        """Grab any additional information stored in the bilby file
         """
+        from pesummary.core.file.formats.bilby import config_from_object
+
         f = bilby_object
         kwargs = CoreBilby.grab_extra_kwargs(bilby_object)
         try:
@@ -166,6 +168,27 @@ class Bilby(GWSingleAnalysisRead):
                 " ".join(f.meta_data["likelihood"]["interferometers"].keys())
         except Exception:
             pass
+        _config = config_from_object(f)
+        if len(_config):
+            if "config" in _config.keys():
+                _config = _config["config"]
+            options = [
+                "minimum_frequency", "reference_frequency",
+                "waveform_approximant"
+            ]
+            pesummary_names = ["f_low", "f_ref", "approximant"]
+            for opt, name in zip(options, pesummary_names):
+                if opt in _config.keys():
+                    try:
+                        import ast
+                        _option = ast.literal_eval(_config[opt])
+                    except ValueError:
+                        _option = _config[opt]
+                    if isinstance(_option, dict):
+                        _value = np.min(list(_option.values()))
+                    else:
+                        _value = _option
+                    kwargs["meta_data"][name] = _value
         return kwargs
 
     @property
