@@ -682,6 +682,13 @@ class _Input(object):
                 )
             )
             self.labels = self.labels[:len(samples)]
+        _samples_generator = (self.is_pesummary_metafile(s) for s in samples)
+        if any(_samples_generator) and not all(_samples_generator):
+            raise InputError(
+                "It seems that you have passed a combination of pesummary "
+                "metafiles and non-pesummary metafiles. This is currently "
+                "not supported."
+            )
         labels, labels_dict = None, {}
         weights_dict = {}
         if self.mcmc_samples:
