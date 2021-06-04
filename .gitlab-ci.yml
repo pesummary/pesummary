@@ -9,6 +9,8 @@ stages:
 
 variables:
   PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pip"
+  XDG_CACHE_HOME: "${CI_PROJECT_DIR}/.cache"
+
 cache:
   key: "${CI_JOB_NAME}"
   paths:
