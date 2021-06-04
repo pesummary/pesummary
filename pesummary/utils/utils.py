@@ -22,7 +22,13 @@ try:
 except ImportError:
     LogFormatter = logging.Formatter
 
-CACHE_DIR = os.path.expanduser(os.path.join("~", ".cache", "pesummary"))
+CACHE_DIR = os.path.join(
+    os.getenv(
+        "XDG_CACHE_HOME",
+        os.path.expanduser(os.path.join("~", ".cache")),
+    ),
+    "pesummary",
+)
 STYLE_CACHE = os.path.join(CACHE_DIR, "style")
 LOG_CACHE = os.path.join(CACHE_DIR, "log")
 
