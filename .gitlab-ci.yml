@@ -3,7 +3,7 @@ stages:
   - basic
   - test
   - end-to-end
-  - compatability
+  - compatibility
   - deploy
 
 
@@ -299,7 +299,7 @@ python-3.9-gw:
 
 
 ligo_skymap:
-  stage: compatability
+  stage: compatibility
   image: python:3.7
   needs:
     - tarball
@@ -322,7 +322,7 @@ ligo_skymap:
 
 
 lalinference:
-  stage: compatability
+  stage: compatibility
   image: python:3.6
   needs:
     - tarball
@@ -342,7 +342,7 @@ lalinference:
 
 
 bilby:
-  stage: compatability
+  stage: compatibility
   image: python:3.6
   needs:
     - tarball
@@ -358,7 +358,7 @@ bilby:
 
 
 pycbc:
-  stage: compatability
+  stage: compatibility
   image: python:3.6
   needs:
     - tarball
@@ -374,7 +374,7 @@ pycbc:
 
 
 GWTC1:
-  stage: compatability
+  stage: compatibility
   image: python:3.6
   needs:
     - tarball
@@ -389,7 +389,7 @@ GWTC1:
 
 
 GWTC2:
-  stage: compatability
+  stage: compatibility
   image: python:3.6
   needs:
     - tarball
