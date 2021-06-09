@@ -877,9 +877,8 @@ def test_jensen_shannon_divergence():
 def test_make_cache_style_file():
     """Test that the `make_cache_style_file` works as expected
     """
-    from pesummary.utils.utils import make_cache_style_file
-
-    sty = os.path.expanduser("~/.cache/pesummary/style/matplotlib_rcparams.sty")
+    from pesummary.utils.utils import make_cache_style_file, CACHE_DIR
+    sty = os.path.expanduser("{}/style/matplotlib_rcparams.sty".format(CACHE_DIR))
     with open("test.sty", "w") as f:
         f.writelines(["test : 10"])
     make_cache_style_file("test.sty")
