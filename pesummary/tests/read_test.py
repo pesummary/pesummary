@@ -33,27 +33,33 @@ class BaseRead(object):
         if pesummary:
             assert len(self.result.samples[0]) == 1000
             assert len(self.result.samples[0][0]) == 18
-            true_flat = [item for sublist in true for item in sublist]
-            flat = [item for sublist in self.result.samples[0] for item in sublist]
-            assert all(i in true_flat for i in flat)
-            assert all(i in flat for i in true_flat)
+            samples = self.result.samples[0]
+            parameters = self.result.parameters[0]
         else:
             assert len(self.result.samples) == 1000
             assert len(self.result.samples[0]) == 18
-            true_flat = [item for sublist in true for item in sublist]
-            flat = [item for sublist in self.result.samples for item in sublist]
-            assert all(i in true_flat for i in flat)
-            assert all(i in flat for i in true_flat)
+            samples = self.result.samples
+            parameters = self.result.parameters
+
+        idxs = [self.parameters.index(i) for i in parameters]
+        np.testing.assert_almost_equal(
+            np.array(samples), np.array(self.samples)[:, idxs]
+        )
+        for ind, param in enumerate(parameters):
+            samp = np.array(samples).T[ind]
+            idx = self.parameters.index(param)
+            np.testing.assert_almost_equal(samp, np.array(self.samples).T[idx])
 
     def test_samples_dict(self, true):
         """Test the samples_dict property
         """
         parameters = true[0]
         samples = true[1]
+
         for num, param in enumerate(parameters):
             specific_samples = [i[num] for i in samples]
             drawn_samples = self.result.samples_dict[param]
-            assert all(i == j for i, j in zip(drawn_samples, specific_samples))
+            np.testing.assert_almost_equal(drawn_samples, specific_samples)
 
     def test_version(self, true=None):
         """Test the version property
@@ -67,7 +73,9 @@ class BaseRead(object):
         """Test the extra_kwargs property
         """
         if true is None:
-            assert self.result.extra_kwargs == {"sampler": {"nsamples": 1000}, "meta_data": {}}
+            assert self.result.extra_kwargs == {
+                "sampler": {"nsamples": 1000}, "meta_data": {}
+            }
         else:
             assert sorted(self.result.extra_kwargs) == sorted(true)
 
@@ -118,16 +126,17 @@ class BaseRead(object):
         old_samples_dict = self.result.samples_dict
         nsamples = 50
         self.result.downsample(nsamples)
-        assert self.result.samples_dict.number_of_samples == nsamples
+        new_samples_dict = self.result.samples_dict
+        assert new_samples_dict.number_of_samples == nsamples
         for param in self.parameters:
             assert all(
                 samp in old_samples_dict[param] for samp in
-                self.result.samples_dict[param]
+                new_samples_dict[param]
             )
         for num in range(nsamples):
             samp_inds = [
                 old_samples_dict[param].tolist().index(
-                    self.result.samples_dict[param][num]
+                    new_samples_dict[param][num]
                 ) for param in self.parameters
             ]
             assert len(set(samp_inds)) == 1
@@ -860,7 +869,7 @@ class PESummaryFile(BaseRead):
         for num, param in enumerate(parameters):
             specific_samples = [i[num] for i in samples]
             drawn_samples = self.result.samples_dict["label"][param]
-            assert all(i == j for i, j in zip(drawn_samples, specific_samples))
+            np.testing.assert_almost_equal(drawn_samples, specific_samples)
 
     def test_to_bilby(self):
         """Test the to_bilby method
@@ -1472,7 +1481,7 @@ class TestGWJsonBilbyFile(GWBaseRead):
         self.parameters, self.samples = make_result_file(
             extension="json", gw=True, bilby=True)
         self.path = os.path.join(".outdir", "test.json")
-        self.result = GWRead(self.path)
+        self.result = GWRead(self.path, disable_prior=True)
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -1552,6 +1561,7 @@ class TestGWJsonBilbyFile(GWBaseRead):
         """Test that the priors are correctly extracted from the bilby result
         file
         """
+        self.result = GWRead(self.path)
         assert "final_mass_source_non_evolved" not in self.result.parameters
         for param, prior in self.result.priors["samples"].items():
             assert isinstance(prior, np.ndarray)
@@ -1749,7 +1759,7 @@ class TestSingleAnalysisChangeFormat(object):
         self.result.write(
             file_format=file_format, outdir=".outdir", filename=filename
         )
-        result = read(os.path.join(".outdir", filename))
+        result = read(os.path.join(".outdir", filename), disable_prior=True)
         if pesummary:
             assert result.parameters[0] == self.parameters
             np.testing.assert_almost_equal(result.samples[0], self.samples)
@@ -1848,7 +1858,7 @@ class TestMultipleAnalysisChangeFormat(object):
             files = sorted(glob.glob(".outdir/{}_*.{}".format(*filename.split("."))))
             assert len(files) == 2
             for num, _file in enumerate(files):
-                result = read(_file)
+                result = read(_file, disable_prior=True)
                 original = result.parameters
                 sorted_params = sorted(result.parameters)
                 idxs = [original.index(i) for i in sorted_params]
@@ -1857,7 +1867,7 @@ class TestMultipleAnalysisChangeFormat(object):
                     np.array(result.samples)[:, idxs], self.samples[num]
                 )
         else:
-            result = read(os.path.join(".outdir", filename))
+            result = read(os.path.join(".outdir", filename), disable_prior=True)
             original = result.parameters
             sorted_params = sorted(result.parameters)
             idxs = [original.index(i) for i in sorted_params]
@@ -1913,12 +1923,13 @@ def test_add_log_likelihood():
     ]).T
     write(parameters, samples, filename="test.dat", outdir=".outdir")
     f = read(".outdir/test.dat")
+    _samples_dict = f.samples_dict
     assert sorted(f.parameters) == ["a", "b", "log_likelihood"]
     np.testing.assert_almost_equal(
-        f.samples_dict["log_likelihood"], np.zeros(1000)
+        _samples_dict["log_likelihood"], np.zeros(1000)
     )
-    np.testing.assert_almost_equal(f.samples_dict["a"], samples.T[0])
-    np.testing.assert_almost_equal(f.samples_dict["b"], samples.T[1])
+    np.testing.assert_almost_equal(_samples_dict["a"], samples.T[0])
+    np.testing.assert_almost_equal(_samples_dict["b"], samples.T[1])
     parameters = [["a", "b"], ["c", "d"]]
     samples = [
         np.array([np.random.uniform(1, 5, 1000), np.random.uniform(1, 2, 1000)]).T,
@@ -1935,11 +1946,12 @@ def test_add_log_likelihood():
         data, file_format="pesummary", filename="multi.h5", outdir=".outdir",
     )
     f = read(".outdir/multi.h5")
+    _samples_dict = f.samples_dict
     np.testing.assert_almost_equal(
-        f.samples_dict["one"]["log_likelihood"], np.zeros(1000)
+        _samples_dict["one"]["log_likelihood"], np.zeros(1000)
     )
     np.testing.assert_almost_equal(
-        f.samples_dict["two"]["log_likelihood"], np.zeros(1000)
+        _samples_dict["two"]["log_likelihood"], np.zeros(1000)
     )
     if os.path.isdir(".outdir"):
         shutil.rmtree(".outdir")

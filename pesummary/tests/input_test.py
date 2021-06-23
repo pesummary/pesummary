@@ -140,7 +140,8 @@ class TestInputExceptions(object):
         assert os.path.isdir("./.outdir/path") == False
         opts = self.parser.parse_args(['--webdir', './.outdir/path',
                                        '--approximant', 'IMRPhenomPv2',
-                                       '--samples', "./.outdir/bilby_example.h5"])
+                                       '--samples', "./.outdir/bilby_example.h5",
+                                       '--disable_prior_sampling', "--no_conversion"])
         x = GWInput(opts)
         assert os.path.isdir("./.outdir/path") == True
 
@@ -188,6 +189,7 @@ class TestInputExceptions(object):
         opts = self.parser.parse_args(["--webdir", "./.outdir",
                                        "--samples", "./.outdir/bilby_example.h5",
                                        "./.outdir/bilby_example.h5",
+                                       "--disable_prior_sampling", "--no_conversion",
                                        "--approximant", "IMRPhenomPv2"])
         with pytest.raises(Exception) as info:
             x = GWInput(opts)
@@ -210,8 +212,8 @@ class TestInput(object):
             "--webdir", "./.outdir",
             "--samples", "./.outdir/bilby_example.h5",
             "--email", "albert.einstein@ligo.org",
-            "--gracedb", "Grace",
-            "--labels", "example"]
+            "--gracedb", "Grace", "--no_conversion",
+            "--labels", "example", "--disable_prior_sampling"]
         self.original_arguments = copy.deepcopy(self.default_arguments)
         self.make_input_object()
 
@@ -310,8 +312,8 @@ class TestInput(object):
             "--webdir", "./.outdir",
             "--samples", "./.outdir/bilby_example.h5",
             "--email", "albert.einstein@ligo.org",
-            "--gracedb", "Mock",
-            "--labels", "example"]
+            "--gracedb", "Mock", "--disable_prior_sampling",
+            "--labels", "example", "--no_conversion"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         assert inputs.gracedb is None
@@ -334,8 +336,8 @@ class TestInput(object):
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--existing_webdir", "./.outdir",
-            "--samples", "./.outdir/bilby_example.h5",
-            "--gracedb", "Grace"]
+            "--samples", "./.outdir/bilby_example.h5", "--no_conversion",
+            "--gracedb", "Grace", "--disable_prior_sampling"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
         assert inputs.existing_labels == ["example"]
@@ -460,7 +462,7 @@ class TestInput(object):
             "--webdir", "./.outdir",
             "--samples", "./.outdir/bilby_example.h5", "./.outdir/bilby_example.h5",
             "--email", "albert.einstein@ligo.org",
-            "--gracedb", "Grace",
+            "--gracedb", "Grace", "--no_conversion",
             "--labels", "example", "example2"]
         self.original_arguments = copy.deepcopy(self.default_arguments)
         self.make_input_object()
@@ -503,7 +505,7 @@ class TestInput(object):
             "--test_psd", "L1:./.outdir/psd.dat",
             "--test2_psd", "V1:./.outdir/psd.dat",
             "--f_low", "1.0", "1.0", "--f_final",
-            "3.0", "3.0", "--gw"
+            "3.0", "3.0", "--gw", "--no_conversion"
         ]
         opts, unknown = parser.parse_known_args(default_arguments)
         add_dynamic_PSD_to_namespace(opts, command_line=default_arguments)
@@ -606,7 +608,7 @@ class TestPostProcessing(object):
         self.opts = self.parser.parse_args(["--approximant", "IMRPhenomPv2",
             "--webdir", "./.outdir", "--samples", "./.outdir/bilby_example.h5",
             "--email", "albert.einstein@ligo.org", "--gracedb", "Grace",
-            "--labels", "example"])
+            "--labels", "example", "--no_conversion"])
         self.inputs = GWInput(self.opts)
         self.postprocessing = GWPostProcessing(self.inputs)
 
@@ -651,7 +653,7 @@ class TestPostProcessing(object):
             "./.outdir/bilby_example.h5", "./.outdir/lalinference_example.h5",
             "--psd", "L1:./.outdir/psd.dat", "L1:./.outdir/psd.dat",
             "--labels", "example", "example2", "--f_low", "1.0", "1.0", "--f_final",
-            "3.0", "3.0", "--gw"])
+            "3.0", "3.0", "--gw", "--no_conversion"])
         inputs = GWInput(opts)
         postprocessing = GWPostProcessing(inputs)
         assert sorted(list(postprocessing.psd["example"].keys())) == ["L1"]
