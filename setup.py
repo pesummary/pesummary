@@ -80,7 +80,7 @@ setup(name='pesummary',
       },
       install_requires=[
           'numpy>=1.15.4',
-          'h5py<=3.2.1',
+          'h5py',
           'matplotlib',
           'seaborn>=0.11.0',
           'statsmodels',
