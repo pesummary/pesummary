@@ -286,7 +286,7 @@ class Read(object):
                 c3 = isinstance(item, h5py._hl.group.Group) and isinstance(
                     item[0], (float, int, np.number)
                 )
-            except AttributeError:
+            except (TypeError, AttributeError):
                 c3 = False
             c4 = (
                 isinstance(item, h5py._hl.group.Group) and "parameter_names" in
