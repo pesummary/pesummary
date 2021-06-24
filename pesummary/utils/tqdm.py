@@ -24,10 +24,8 @@ class tqdm(_tqdm):
 
     @staticmethod
     def status_printer(file, logger=None, logger_prefix='%(message)s', **kwargs):
-        """
-        Manage the printing and in-place updating of a line of characters.
-        Note that if the string is longer than a line, then in-place
-        updating may not work (it will print a new line at each refresh).
+        """Extension of the tqdm.status_printer function to allow for tqdm
+        to interact with logger
         """
         fp = file
         fp_flush = getattr(fp, 'flush', lambda: None)  # pragma: no cover
@@ -57,54 +55,36 @@ class tqdm(_tqdm):
 
     @property
     def format_dict(self):
-        """Public API for read-only member access."""
-
-        base = dict(
-            n=self.n, total=self.total,
-            elapsed=self._time() - self.start_t
-            if hasattr(self, 'start_t') else 0,
-            asctime=time.strftime("%Y-%m-%d  %H:%M:%S"),
-            ncols=self.dynamic_ncols(self.fp)
-            if self.dynamic_ncols else self.ncols,
-            prefix=self.desc, ascii=self.ascii, unit=self.unit,
-            unit_scale=self.unit_scale,
-            rate=1 / self.avg_time if self.avg_time else None,
-            bar_format=self.bar_format, postfix=self.postfix,
-            unit_divisor=self.unit_divisor)
+        """Extension of the tqdm.format_dict property to add extra quantities
+        """
+        base = super(tqdm, self).format_dict
         if self.logger is not None:
             base.update(
                 {"levelname": self.logger_level, "name": self.logger.name}
             )
+        base.update({"asctime": time.strftime("%Y-%m-%d  %H:%M:%S")})
         return base
 
+    def __str__(self):
+        """Hack of the tqdm.__str__ function to prevent duplicating the entirety
+        of the tqdm.display function
+        """
+        if hasattr(self, "display_msg") and self.display_msg is not None:
+            return self.display_msg
+        return super(tqdm, self).__str__()
+
     def display(self, msg=None, pos=None):
+        """Extension of the tqdm.display function to allow for the time to be
+        passed to the status_printer function
         """
-        Use `self.sp` to display `msg` in the specified `pos`.
-        Consider overloading this function when inheriting to use e.g.:
-        `self.some_frontend(**self.format_dict)` instead of `self.sp`.
-        Parameters
-        ----------
-        msg  : str, optional. What to display (default: `repr(self)`).
-        pos  : int, optional. Position to `moveto`
-          (default: `abs(self.pos)`).
-        """
-        if pos is None:
-            pos = abs(self.pos)
-
-        nrows = self.nrows or 20
-        if pos >= nrows - 1:
-            if pos >= nrows:
-                return False
-            if msg or msg is None:  # override at `nrows - 1`
-                msg = " ... (more hidden) ..."
-
-        if pos:
-            self.moveto(pos)
-        _msg = self.__repr__() if msg is None else msg
-        self.sp(_msg, time.strftime("%Y-%m-%d  %H:%M:%S"))
-        if pos:
-            self.moveto(-pos)
-        return True
+        self.display_msg = msg
+        _original_sp = self.sp
+        self.sp = lambda _msg: _original_sp(
+            _msg, time.strftime("%Y-%m-%d  %H:%M:%S")
+        )
+        _ = super(tqdm, self).display(msg=None, pos=pos)
+        self.sp = _original_sp
+        return _
 
 
 def trange(*args, **kwargs):
