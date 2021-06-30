@@ -64,7 +64,7 @@ def evolve_spins(
         steps in time for the integration, in terms of the mass of the binary
     multi_process: int, optional
         number of cores to run on when evolving the spins. Default: 1
-    evolve_approximant: str
+    evolution_approximant: str
         name of the approximant you wish to use to evolve the spins. Default
         is SpinTaylorT5. Other choices are SpinTaylorT1 or SpinTaylorT4
     """
@@ -148,13 +148,19 @@ def _evolve_spins(
         tolerance
     dt: float
         steps in time for the integration, in terms of the mass of the binary
-    evolve_approximant: str
+    evolution_approximant: str
         name of the approximant you wish to use to evolve the spins.
     """
+    from packaging import version
     if np.logical_or(a_1 > tolerance, a_2 > tolerance):
         # Total mass in seconds
         total_mass = (mass_1 + mass_2) * MTSUN_SI
         f_final = final_velocity ** 3 / (total_mass * np.pi)
+        _approx = getattr(lalsimulation, evolution_approximant)
+        if version.parse(lalsimulation.__version__) >= version.parse("2.5.2"):
+            spinO = 6
+        else:
+            spinO = 7
         data = SimInspiralSpinTaylorPNEvolveOrbit(
             deltaT=dt * total_mass, m1=mass_1 * MSUN_SI,
             m2=mass_2 * MSUN_SI, fStart=f_start, fEnd=f_final,
@@ -164,8 +170,8 @@ def _evolve_spins(
             s2y=a_2 * np.sin(tilt_2) * np.sin(phi_12),
             s2z=a_2 * np.cos(tilt_2), lnhatx=0., lnhaty=0., lnhatz=1.,
             e1x=1., e1y=0., e1z=0., lambda1=0., lambda2=0., quadparam1=1.,
-            quadparam2=1., spinO=7, tideO=0, phaseO=7, lscorr=0,
-            approx=getattr(lalsimulation, evolution_approximant)
+            quadparam2=1., spinO=spinO, tideO=0, phaseO=7, lscorr=0,
+            approx=_approx
         )
         # Set index to take from array output by SimInspiralSpinTaylorPNEvolveOrbit:
         # -1 for evolving forward in time and 0 for evolving backward in time
