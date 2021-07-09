@@ -553,14 +553,12 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
             except (KeyError, AttributeError):
                 self.calibration = self.data["calibration"]
         if "prior" in self.data.keys() and "calibration" in self.data["prior"].keys():
-            from pesummary.gw.file.calibration import Calibration
+            from pesummary.gw.file.calibration import CalibrationDict
 
             try:
                 self.priors["calibration"] = {
-                    label: {
-                        ifo: Calibration(value) for ifo, value in
-                        calibration_data.items()
-                    } for label, calibration_data in
+                    label: CalibrationDict(calibration_data) for
+                    label, calibration_data in
                     self.data["prior"]["calibration"].items()
                 }
             except (KeyError, AttributeError):
