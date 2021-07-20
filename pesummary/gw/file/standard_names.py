@@ -151,6 +151,22 @@ pesummary_map = {
     "chirp_mass_source": "chirp_mass_source",
     "delta_lambda": "delta_lambda",
     "viewing_angle": "viewing_angle",
+    "tilt_1_infinity": "tilt_1_infinity",
+    "spin_1z_infinity": "spin_1z_infinity",
+    "spin_1z_infinity_only_prec_avg": "spin_1z_infinity_only_prec_avg",
+    "tilt_2_infinity": "tilt_2_infinity",
+    "spin_2z_infinity": "spin_2z_infinity",
+    "spin_2z_infinity_only_prec_avg": "spin_2z_infinity_only_prec_avg",
+    "tilt_1_infinity_only_prec_avg": "tilt_1_infinity_only_prec_avg",
+    "tilt_2_infinity_only_prec_avg": "tilt_2_infinity_only_prec_avg",
+    "chi_eff_infinity": "chi_eff_infinity",
+    "chi_eff_infinity_only_prec_avg": "chi_eff_infinity_only_prec_avg",
+    "chi_p_infinity": "chi_p_infinity",
+    "chi_p_infinity_only_prec_avg": "chi_p_infinity_only_prec_avg",
+    "cos_tilt_1_infinity": "cos_tilt_1_infinity",
+    "cos_tilt_2_infinity": "cos_tilt_2_infinity",
+    "cos_tilt_1_infinity_only_prec_avg": "cos_tilt_1_infinity_only_prec_avg",
+    "cos_tilt_2_infinity_only_prec_avg": "cos_tilt_2_infinity_only_prec_avg",
     "spin_1z": "spin_1z",
     "spin_2z": "spin_2z",
     "chi_p_2spin": "chi_p_2spin",
@@ -316,20 +332,56 @@ descriptive_names = {
         "the logarithm of the likelihood"
     ),
     "tilt_1": (
-        "the zenith angle between the total orbital angular momentum, L, and "
+        "the zenith angle between the Newtonian orbital angular momentum, L, and "
         "the primary spin, S1"
     ),
     "tilt_2": (
-        "the zenith angle between the total orbital angular momentum, L, and "
+        "the zenith angle between the Newtonian orbital angular momentum, L, and "
         "the secondary spin, S2"
     ),
+    "tilt_1_infinity_only_prec_avg": (
+        "the zenith angle between the Newtonian orbital angular momentum, L, and "
+        "the primary spin, S1, defined at infinite binary separation computed "
+        "using only the precession-averaged approximation"
+    ),
+    "tilt_2_infinity_only_prec_avg": (
+        "the zenith angle between the Newtonian orbital angular momentum, L, and "
+        "the secondary spin, S2, defined at infinite binary separation computed "
+        "using only the precession-averaged approximation"
+    ),
+    "tilt_1_infinity": (
+        "the zenith angle between the Newtonian orbital angular momentum, L, and "
+        "the primary spin, S1, defined at infinite binary separation"
+    ),
+    "tilt_2_infinity": (
+        "the zenith angle between the Newtonian orbital angular momentum, L, and "
+        "the secondary spin, S2, defined at infinite binary separation"
+    ),
     "cos_tilt_1": (
-        "the cosine of the zenith angle between the total orbital angular "
+        "the cosine of the zenith angle between the Newtonian orbital angular momentum "
         "momentum, L, and the primary spin, S1"
     ),
     "cos_tilt_2": (
-        "the cosine of the zenith angle between the total orbital angular "
+        "the cosine of the zenith angle between the Newtonian orbital angular momentum "
         "momentum, L, and the secondary spin, S2"
+    ),
+    "cos_tilt_1_infinity": (
+        "the cosine of the zenith angle between the Newtonian orbital angular momentum "
+        "momentum, L, and the primary spin, S1, defined at infinite binary separation"
+    ),
+    "cos_tilt_2_infinity": (
+        "the cosine of the zenith angle between the Newtonian orbital angular momentum "
+        "momentum, L, and the secondary spin, S2, defined at infinite binary separation"
+    ),
+    "cos_tilt_1_infinity_only_prec_avg": (
+        "the cosine of the zenith angle between the Newtonian orbital angular momentum "
+        "momentum, L, and the primary spin, S1, defined at infinite binary separation "
+        "computed using only the precession-averaged approximation"
+    ),
+    "cos_tilt_2_infinity_only_prec_avg": (
+        "the cosine of the zenith angle between the Newtonian orbital angular momentum "
+        "momentum, L, and the secondary spin, S2, defined at infinite binary separation "
+        "computed using only the precession-averaged approximation"
     ),
     "beta": (
         "the zenith angle between the total orbital angular momentum, L, and "
@@ -391,7 +443,7 @@ descriptive_names = {
     ),
     "phi_12": (
         "the difference between the azimuthal angles of the individual spin "
-        "vectors of the primary and secondary objects"
+        "vectors of the primary and secondary object's"
     ),
     "phi_jl": (
         "the difference between total and orbital angular momentum azimuthal "
@@ -401,33 +453,58 @@ descriptive_names = {
         "the dimensionless spin magnitude of the primary object"
     ),
     "spin_1x": (
-        "the xth component of the primary objects spin in Euclidean coordinates"
+        "the x-component of the primary object's spin in Euclidean coordinates"
     ),
     "spin_1y": (
-        "the yth component of the primary objects spin in Euclidean coordinates"
+        "the y-component of the primary object's spin in Euclidean coordinates"
     ),
     "spin_1z": (
-        "the zth component of the primary objects spin in Euclidean coordinates"
+        "the z-component of the primary object's spin in Euclidean coordinates"
+    ),
+    "spin_1z_infinity": (
+        "the z-component of the primary object's spin in Euclidean coordinates "
+        "defined at infinite binary separation"
+    ),
+    "spin_1z_infinity_only_prec_avg": (
+        "the z-component of the primary object's spin in Euclidean coordinates "
+        "defined at infinite binary separation computed using only the "
+        "precession-averaged approximation"
     ),
     "a_2": (
         "the dimensionless spin magnitude of the secondary object"
     ),
     "spin_2x": (
-        "the xth component of the secondary objects spin in Euclidean "
+        "the x-component of the secondary object's spin in Euclidean "
         "coordinates"
     ),
     "spin_2y": (
-        "the yth component of the secondary objects spin in Euclidean "
+        "the y-component of the secondary object's spin in Euclidean "
         "coordinates"
     ),
     "spin_2z": (
-        "the zth component of the secondary objects spin in Euclidean "
+        "the z-component of the secondary object's spin in Euclidean "
         "coordinates"
+    ),
+    "spin_2z_infinity": (
+        "the z-component of the secondary object's spin in Euclidean coordinates "
+        "defined at infinite binary separation"
+    ),
+    "spin_2z_infinity_only_prec_avg": (
+        "the z-component of the secondary object's spin in Euclidean coordinates "
+        "defined at infinite binary separation computed using only the "
+        "precession-averaged approximation"
     ),
     "chi_p": (
         "the effective precession spin parameter"
     ),
-    "chi_p_2_spin": (
+    "chi_p_infinity": (
+        "the effective precession spin parameter defined at infinite binary separation"
+    ),
+    "chi_p_infinity_only_prec_avg": (
+        "the effective precession spin parameter defined at infinite binary separation "
+        "computed using only the precession-averaged approximation"
+    ),
+    "chi_p_2spin": (
         "a modified effective precession spin parameter accounting for "
         "precessing spin information from both compact objects."
     ),
@@ -442,6 +519,13 @@ descriptive_names = {
     ),
     "chi_eff": (
         "the effective inspiral spin parameter"
+    ),
+    "chi_eff_infinity": (
+        "the effective inspiral spin parameter defined at infinite binary separation"
+    ),
+    "chi_eff_infinity_only_prec_avg": (
+        "the effective inspiral spin parameter defined at infinite binary separation "
+        "computed using only the precession-averaged approximation"
     ),
     "total_mass_source": (
         "the source-frame combined mass of the primary and secondary masses "

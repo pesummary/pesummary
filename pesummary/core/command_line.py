@@ -58,6 +58,30 @@ class CheckFilesExistAction(argparse.Action):
         return True
 
 
+class DeprecatedStoreTrueAction(object):
+    """Class to handle deprecated argparse options
+    """
+    class _DeprecatedStoreTrueAction(argparse._StoreTrueAction):
+        def __init__(self, *args, **kwargs):
+            super(self.__class__, self).__init__(*args, **kwargs)
+
+        def __call__(self, *args, **kwargs):
+            import warnings
+            msg = (
+                "The option '{}' is out-of-date and may not be supported in future "
+                "releases.".format(self.option_strings[0])
+            )
+            if _new_option is not None:
+                msg += " Please use '{}'".format(_new_option)
+            warnings.warn(msg)
+            return super(self.__class__, self).__call__(*args, **kwargs)
+
+    def __new__(cls, *args, new_option=None, **kwargs):
+        global _new_option
+        _new_option = new_option
+        return cls._DeprecatedStoreTrueAction
+
+
 class ConfigAction(argparse.Action):
     """Class to extend the argparse.Action to handle dictionaries as input
     """

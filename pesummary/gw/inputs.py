@@ -113,7 +113,9 @@ class _GWInput(_Input):
                 except KeyError:
                     psd = {}
                 kwargs[label].update(dict(
-                    evolve_spins=self.evolve_spins, f_low=self.f_low[num],
+                    evolve_spins_forwards=self.evolve_spins_forwards,
+                    evolve_spins_backwards=self.evolve_spins_backwards,
+                    f_low=self.f_low[num],
                     approximant=approx[num], f_ref=self.f_ref[num],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
                     precessing_snr=self.calculate_precessing_snr,
@@ -128,7 +130,8 @@ class _GWInput(_Input):
                     disable_remnant=self.disable_remnant,
                     force_BBH_remnant_computation=self.force_BBH_remnant_computation,
                     resume_file=resume_file[num],
-                    restart_from_checkpoint=self.restart_from_checkpoint
+                    restart_from_checkpoint=self.restart_from_checkpoint,
+                    force_BH_spin_evolution=self.force_BH_spin_evolution,
                 ))
             return kwargs
         except IndexError:
@@ -141,7 +144,9 @@ class _GWInput(_Input):
             )
             for num, label in enumerate(self.labels):
                 kwargs[label].update(dict(
-                    evolve_spins=self.evolve_spins, f_low=self.f_low[0],
+                    evolve_spins_forwards=self.evolve_spins_forwards,
+                    evolve_spins_backwards=self.evolve_spins_backwards,
+                    f_low=self.f_low[0],
                     approximant=approx[0], f_ref=self.f_ref[0],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
                     precessing_snr=self.calculate_precessing_snr,
@@ -156,7 +161,8 @@ class _GWInput(_Input):
                     disable_remnant=self.disable_remnant,
                     force_BBH_remnant_computation=self.force_BBH_remnant_computation,
                     resume_file=resume_file[num],
-                    restart_from_checkpoint=self.restart_from_checkpoint
+                    restart_from_checkpoint=self.restart_from_checkpoint,
+                    force_BH_spin_evolution=self.force_BH_spin_evolution
                 ))
             return kwargs
 
@@ -497,17 +503,33 @@ class _GWInput(_Input):
                 self._gwdata = None
 
     @property
-    def evolve_spins(self):
-        return self._evolve_spins
+    def evolve_spins_forwards(self):
+        return self._evolve_spins_forwards
 
-    @evolve_spins.setter
-    def evolve_spins(self, evolve_spins):
-        self._evolve_spins = evolve_spins
-        if evolve_spins:
-            logger.info(
-                "Spins will be evolved up to the Schwarzschild ISCO frequency"
-            )
-            self._evolve_spins = 6. ** -0.5
+    @evolve_spins_forwards.setter
+    def evolve_spins_forwards(self, evolve_spins_forwards):
+        self._evolve_spins_forwards = evolve_spins_forwards
+        _msg = "Spins will be evolved up to {}"
+        if evolve_spins_forwards:
+            logger.info(_msg.format("Schwarzschild ISCO frequency"))
+            self._evolve_spins_forwards = 6. ** -0.5
+
+    @property
+    def evolve_spins_backwards(self):
+        return self._evolve_spins_backwards
+
+    @evolve_spins_backwards.setter
+    def evolve_spins_backwards(self, evolve_spins_backwards):
+        self._evolve_spins_backwards = evolve_spins_backwards
+        _msg = (
+            "Spins will be evolved backwards to an infinite separation using the '{}' "
+            "method"
+        )
+        if isinstance(evolve_spins_backwards, (str, bytes)):
+            logger.info(_msg.format(evolve_spins_backwards))
+        elif evolve_spins_backwards is None:
+            logger.info(_msg.format("precession_averaged"))
+            self._evolve_spins_backwards = "precession_averaged"
 
     @property
     def NRSur_fits(self):
@@ -950,10 +972,11 @@ class GWInput(_GWInput, Input):
     def __init__(self, opts, checkpoint=None):
         super(GWInput, self).__init__(
             opts, ignore_copy=True, extra_options=[
-                "evolve_spins", "NRSur_fits", "calculate_precessing_snr", "f_low",
-                "f_ref", "f_final", "psd", "waveform_fits", "redshift_method",
-                "cosmology", "no_conversion", "delta_f", "psd_default",
-                "disable_remnant", "force_BBH_remnant_computation"
+                "evolve_spins_forwards", "evolve_spins_backwards", "NRSur_fits",
+                "calculate_precessing_snr", "f_low", "f_ref", "f_final", "psd",
+                "waveform_fits", "redshift_method", "cosmology", "no_conversion",
+                "delta_f", "psd_default", "disable_remnant",
+                "force_BBH_remnant_computation", "force_BH_spin_evolution"
             ], checkpoint=checkpoint, gw=True
         )
         if self._restarted_from_checkpoint:

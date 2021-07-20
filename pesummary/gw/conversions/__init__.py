@@ -54,8 +54,10 @@ _conversion_doc = """
         the final frequency to use when integrating over frequencies
     approximant: str, optional
         the approximant to use when evolving the spins
-    evolve_spins: float/str, optional
+    evolve_spins_forwards: float/str, optional
         the final velocity to evolve the spins up to.
+    evolve_spins_backwards: str, optional
+        method to use when evolving the spins backwards to an infinite separation
     return_kwargs: Bool, optional
         if True, return a modified dictionary of kwargs containing information
         about the conversion
@@ -87,6 +89,10 @@ _conversion_doc = """
     force_BBH_remnant_computation: Bool, optional
         force BBH remnant quantities to be calculated for systems that include
         tidal deformability parameters where BBH fits may not be applicable.
+        Default False.
+    force_BH_spin_evolution: Bool, optional
+        force BH spin evolution methods to be applied for systems that include
+        tidal deformability parameters where these methods may not be applicable.
         Default False.
     disable_remnant: Bool, optional
         disable all remnant quantities from being calculated. Default False.
@@ -159,7 +165,9 @@ class _Conversion(object):
         state = read(resume_file, checkpoint=True)
         return cls(
             state.parameters, state.samples, extra_kwargs=state.extra_kwargs,
-            evolve_spins=state.evolve_spins, NRSur_fits=state.NRSurrogate,
+            evolve_spins_forwards=state.evolve_spins_forwards,
+            evolve_spins_backwards=state.evolve_spins_backwards,
+            NRSur_fits=state.NRSurrogate,
             waveform_fits=state.waveform_fit, multi_process=state.multi_process,
             redshift_method=state.redshift_method, cosmology=state.cosmology,
             force_non_evolved=state.force_non_evolved,
@@ -246,6 +254,7 @@ class _Conversion(object):
         cosmology = kwargs.get("cosmology", "Planck15")
         force_non_evolved = kwargs.get("force_non_evolved", False)
         force_remnant = kwargs.get("force_BBH_remnant_computation", False)
+        force_evolve = kwargs.get("force_BH_spin_evolution", False)
         disable_remnant = kwargs.get("disable_remnant", False)
         if redshift_method not in ["approx", "exact"]:
             raise ValueError(
@@ -260,10 +269,11 @@ class _Conversion(object):
                 "quantities"
             )
         waveform_fits = kwargs.get("waveform_fits", False)
-        evolve_spins = kwargs.get("evolve_spins", False)
+        evolve_spins_forwards = kwargs.get("evolve_spins_forwards", False)
+        evolve_spins_backwards = kwargs.get("evolve_spins_backwards", False)
         if disable_remnant and (
                 force_non_evolved or force_remnant
-                or NRSurrogate or waveform_fits or evolve_spins
+                or NRSurrogate or waveform_fits or evolve_spins_forwards
         ):
             _disable = []
             if force_non_evolved:
@@ -278,9 +288,9 @@ class _Conversion(object):
             if waveform_fits:
                 _disable.append("waveform_fits")
                 waveform_fits = False
-            if evolve_spins:
-                _disable.append("evolve_spins")
-                evolve_spins = False
+            if evolve_spins_forwards:
+                _disable.append("evolve_spins_forwards")
+                evolve_spins_forwards = False
             logger.warn(
                 "Unable to use 'disable_remnant' and {}. Setting "
                 "{} and disabling all remnant quantities from being "
@@ -296,13 +306,13 @@ class _Conversion(object):
                     approximant
                 )
             )
-        if isinstance(evolve_spins, bool) and evolve_spins:
+        if isinstance(evolve_spins_forwards, bool) and evolve_spins_forwards:
             raise ValueError(
-                "'evolve_spins' must be a float, the final velocity to "
+                "'evolve_spins_forwards' must be a float, the final velocity to "
                 "evolve the spins up to, or a string, 'ISCO', meaning "
                 "evolve the spins up to the ISCO frequency"
             )
-        if not evolve_spins and (NRSurrogate or waveform_fits):
+        if not evolve_spins_forwards and (NRSurrogate or waveform_fits):
             if (approximant is not None and "eob" in approximant) or NRSurrogate:
                 logger.warning(
                     "Only evolved spin remnant quantities are returned by the "
@@ -310,7 +320,7 @@ class _Conversion(object):
                         "NRSurrogate" if NRSurrogate else approximant
                     )
                 )
-        elif evolve_spins and (NRSurrogate or waveform_fits):
+        elif evolve_spins_forwards and (NRSurrogate or waveform_fits):
             if (approximant is not None and "eob" in approximant) or NRSurrogate:
                 logger.warning(
                     "The {} fits already evolve the spins. Therefore "
@@ -324,7 +334,7 @@ class _Conversion(object):
                         approximant
                     )
                 )
-            evolve_spins = False
+            evolve_spins_forwards = False
 
         precessing_snr = kwargs.get("precessing_snr", False)
         if f_low is not None and "f_low" in extra_kwargs["meta_data"].keys():
@@ -389,13 +399,13 @@ class _Conversion(object):
                     except (ImportError, IndexError, ValueError):
                         pass
         obj.__init__(
-            parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
+            parameters, samples, extra_kwargs, evolve_spins_forwards, NRSurrogate,
             waveform_fits, multi_process, regenerate, redshift_method,
             cosmology, force_non_evolved, force_remnant,
             kwargs.get("add_zero_spin", False), disable_remnant,
             kwargs.get("return_kwargs", False), kwargs.get("return_dict", True),
             kwargs.get("resume_file", None), precessing_snr, pycbc_psd,
-            psd_default
+            psd_default, evolve_spins_backwards, force_evolve
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -411,16 +421,17 @@ class _Conversion(object):
             return obj.parameters, obj.samples
 
     def __init__(
-        self, parameters, samples, extra_kwargs, evolve_spins, NRSurrogate,
+        self, parameters, samples, extra_kwargs, evolve_spins_forwards, NRSurrogate,
         waveform_fits, multi_process, regenerate, redshift_method,
         cosmology, force_non_evolved, force_remnant, add_zero_spin,
         disable_remnant, return_kwargs, return_dict, resume_file,
-        precessing_snr, psd, psd_default
+        precessing_snr, psd, psd_default, evolve_spins_backwards, force_evolve
     ):
         self.parameters = parameters
         self.samples = samples
         self.extra_kwargs = extra_kwargs
-        self.evolve_spins = evolve_spins
+        self.evolve_spins_forwards = evolve_spins_forwards
+        self.evolve_spins_backwards = evolve_spins_backwards
         self.NRSurrogate = NRSurrogate
         self.waveform_fit = waveform_fits
         self.multi_process = multi_process
@@ -429,6 +440,7 @@ class _Conversion(object):
         self.cosmology = cosmology
         self.force_non_evolved = force_non_evolved
         self.force_remnant = force_remnant
+        self.force_evolve = force_evolve
         self.disable_remnant = disable_remnant
         self.return_kwargs = return_kwargs
         self.return_dict = return_dict
@@ -447,12 +459,15 @@ class _Conversion(object):
                     "non-precessing system"
                 )
                 self.non_precessing = True
-        if self.non_precessing and evolve_spins:
+        cond1 = self.non_precessing and evolve_spins_forwards
+        cond2 = self.non_precessing and evolve_spins_backwards
+        if cond1 or cond2:
             logger.info(
                 "Spin evolution is trivial for a non-precessing system. No additional "
                 "transformation required."
             )
-            evolve_spins = False
+            self.evolve_spins_forwards = False
+            self.evolve_spins_backwards = False
         if self.non_precessing and precessing_snr:
             logger.info(
                 "Precessing SNR is 0 for a non-precessing system. No additional "
@@ -462,44 +477,54 @@ class _Conversion(object):
         self.has_tidal = self._check_for_tidal_parameters()
         self.NSBH = self._check_for_NSBH_system()
         self.compute_remnant = not self.disable_remnant
-        if self.has_tidal and force_remnant and self.NSBH and self.compute_remnant:
-            logger.warning(
-                "Posterior samples for lambda_2 found in the posterior table "
-                "and either unable to find samples for lambda_1 or all "
-                "lambda_1 samples are 0. Assuming this is an NSBH system. "
-                "'force_remnant' provided so using BBH fits for this system. "
-                "This may not give sensible results."
-            )
-        elif self.has_tidal and self.NSBH and self.compute_remnant:
-            logger.warning(
-                "Posterior samples for lambda_2 found in the posterior table "
-                "and either unable to find samples for lambda_1 or all "
-                "lambda_1 samples are 0. Applying NSBH fits to this system."
-            )
-            self.waveform_fit = True
-        elif force_remnant and self.has_tidal and self.compute_remnant:
-            logger.warning(
-                "Posterior samples for tidal deformability found in the "
-                "posterior table. Applying BBH remnant fits to this system. "
-                "This may not give sensible results."
-            )
-        elif self.has_tidal and self.compute_remnant:
-            if evolve_spins:
-                msg = (
-                    "Not applying spin evolution as tidal parameters found "
-                    "in the posterior table."
+        if self.has_tidal:
+            if force_evolve and (self.evolve_spins_forwards or self.evolve_spins_backwards):
+                logger.warning(
+                    "Posterior samples for tidal deformability found in the "
+                    "posterior table. 'force_evolve' provided so using BH spin "
+                    "evolution methods for this system. This may not give "
+                    "sensible results"
                 )
-                logger.info(msg)
-            logger.debug(
-                "Skipping remnant calculations as tidal deformability "
-                "parameters found in the posterior table."
-            )
-            self.compute_remnant = False
+            elif self.evolve_spins_forwards or self.evolve_spins_backwards:
+                logger.warning(
+                    "Tidal deformability parameters found in the posterior table. "
+                    "Skipping spin evolution as current methods are only valid "
+                    "for BHs."
+                )
+                self.evolve_spins_forwards = False
+                self.evolve_spins_backwards = False
+
+            if force_remnant and self.NSBH and self.compute_remnant:
+                logger.warning(
+                    "Posterior samples for lambda_2 found in the posterior table "
+                    "but unable to find samples for lambda_1. Assuming this "
+                    "is an NSBH system. 'force_remnant' provided so using BBH remnant "
+                    "fits for this system. This may not give sensible results"
+                )
+            elif self.NSBH and self.compute_remnant:
+                logger.warning(
+                    "Posterior samples for lambda_2 found in the posterior table "
+                    "but unable to find samples for lambda_1. Applying NSBH "
+                    "fits to this system."
+                )
+                self.waveform_fit = True
+            elif force_remnant and self.compute_remnant:
+                logger.warning(
+                    "Posterior samples for tidal deformability found in the "
+                    "posterior table. Applying BBH remnant fits to this system. "
+                    "This may not give sensible results."
+                )
+            elif self.compute_remnant:
+                logger.info(
+                    "Skipping remnant calculations as tidal deformability "
+                    "parameters found in the posterior table."
+                )
+                self.compute_remnant = False
         if self.regenerate is not None:
             for param in self.regenerate:
                 self.remove_posterior(param)
         self.add_zero_spin = add_zero_spin
-        self.generate_all_posterior_samples(evolve_spins=evolve_spins)
+        self.generate_all_posterior_samples(evolve_spins_forwards=evolve_spins_forwards)
 
     def _check_for_tidal_parameters(self):
         """Check to see if any tidal parameters are stored in the table
@@ -784,6 +809,18 @@ class _Conversion(object):
             samples[5])
         self.append_data("chi_p", chi_p_samples)
 
+    def _chi_p_from_tilts(self, suffix=""):
+        parameters = [
+            "mass_1", "mass_2", "a_1", "tilt_1{}".format(suffix), "a_2",
+            "tilt_2{}".format(suffix)
+        ]
+        samples = self.specific_parameter_samples(parameters)
+        chi_p_samples = chi_p_from_tilts(
+            samples[0], samples[1], samples[2], samples[3], samples[4],
+            samples[5]
+        )
+        self.append_data("chi_p{}".format(suffix), chi_p_samples)
+
     def _chi_p_2spin(self):
         parameters = [
             "mass_1", "mass_2", "spin_1x", "spin_1y", "spin_2x", "spin_2y"]
@@ -793,20 +830,25 @@ class _Conversion(object):
             samples[5])
         self.append_data("chi_p_2spin", chi_p_2spin_samples)
 
-    def _chi_eff(self):
-        parameters = ["mass_1", "mass_2", "spin_1z", "spin_2z"]
+    def _chi_eff(self, suffix=""):
+        parameters = [
+            "mass_1", "mass_2", "spin_1z{}".format(suffix),
+            "spin_2z{}".format(suffix)
+        ]
         samples = self.specific_parameter_samples(parameters)
         chi_eff_samples = chi_eff(
             samples[0], samples[1], samples[2], samples[3])
-        self.append_data("chi_eff", chi_eff_samples)
+        self.append_data("chi_eff{}".format(suffix), chi_eff_samples)
 
-    def _aligned_spin_from_magnitude_tilts(self, primary=False, secondary=False):
+    def _aligned_spin_from_magnitude_tilts(
+        self, primary=False, secondary=False, suffix=""
+    ):
         if primary:
-            parameters = ["a_1", "tilt_1"]
-            param_to_add = "spin_1z"
+            parameters = ["a_1", "tilt_1{}".format(suffix)]
+            param_to_add = "spin_1z{}".format(suffix)
         elif secondary:
-            parameters = ["a_2", "tilt_2"]
-            param_to_add = "spin_2z"
+            parameters = ["a_2", "tilt_2{}".format(suffix)]
+            param_to_add = "spin_2z{}".format(suffix)
         samples = self.specific_parameter_samples(parameters)
         spin_samples = samples[0] * np.cos(samples[1])
         self.append_data(param_to_add, spin_samples)
@@ -1125,29 +1167,45 @@ class _Conversion(object):
             )
         return approximant
 
-    def _evolve_spins(self, final_velocity="ISCO"):
+    def _evolve_spins(self, final_velocity="ISCO", forward=True):
         from .evolve import evolve_spins
 
-        f_low = self._retrieve_f_low()
-        approximant = self._retrieve_approximant()
-        if not hasattr(lalsimulation, approximant):
-            _msg = (
-                'Not evolving spins: approximant {0} unknown to '
-                'lalsimulation'.format(approximant)
-            )
-            logger.warning(_msg)
-            raise EvolveSpinError(_msg)
         parameters = ["tilt_1", "tilt_2", "phi_12", "spin_1z", "spin_2z"]
         samples = self.specific_parameter_samples(
             ["mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2",
              "phi_12", "reference_frequency"]
         )
-        tilt_1_evolved, tilt_2_evolved, phi_12_evolved = evolve_spins(
-            samples[0], samples[1], samples[2], samples[3], samples[4],
-            samples[5], samples[6], f_low, samples[7][0],
-            approximant, final_velocity=final_velocity,
-            multi_process=self.multi_process
-        )
+        if not forward:
+            [tilt_1_evolved, tilt_2_evolved, phi_12_evolved], fits_used = evolve_spins(
+                samples[0], samples[1], samples[2], samples[3], samples[4],
+                samples[5], samples[6], samples[7][0],
+                evolve_limit="infinite_separation", multi_process=self.multi_process,
+                return_fits_used=True, method=self.evolve_spins_backwards
+            )
+            suffix = ""
+            if self.evolve_spins_backwards.lower() == "precession_averaged":
+                suffix = "_only_prec_avg"
+            self.append_data("tilt_1_infinity{}".format(suffix), tilt_1_evolved)
+            self.append_data("tilt_2_infinity{}".format(suffix), tilt_2_evolved)
+            self.extra_kwargs["meta_data"]["backward_spin_evolution"] = fits_used
+            return
+        else:
+            f_low = self._retrieve_f_low()
+            approximant = self._retrieve_approximant()
+            if not hasattr(lalsimulation, approximant):
+                _msg = (
+                    'Not evolving spins: approximant {0} unknown to '
+                    'lalsimulation'.format(approximant)
+                )
+                logger.warning(_msg)
+                raise EvolveSpinError(_msg)
+            tilt_1_evolved, tilt_2_evolved, phi_12_evolved = evolve_spins(
+                samples[0], samples[1], samples[2], samples[3], samples[4],
+                samples[5], samples[6], f_low, samples[7][0],
+                approximant, final_velocity=final_velocity,
+                multi_process=self.multi_process
+            )
+            self.extra_kwargs["meta_data"]["forward_spin_evolution"] = final_velocity
         spin_1z_evolved = samples[2] * np.cos(tilt_1_evolved)
         spin_2z_evolved = samples[3] * np.cos(tilt_2_evolved)
         self.append_data("tilt_1_evolved", tilt_1_evolved)
@@ -1463,10 +1521,10 @@ class _Conversion(object):
                     for i in np.arange(len(ind) - 1, -1, -1):
                         self.samples.remove(list(np.array(self.samples)[ind[i][0]]))
 
-    def generate_all_posterior_samples(self, evolve_spins=False):
+    def generate_all_posterior_samples(self, evolve_spins_forwards=False):
         logger.debug("Starting to generate all derived posteriors")
         evolve_condition = (
-            True if evolve_spins and self.compute_remnant else False
+            True if evolve_spins_forwards and self.compute_remnant else False
         )
         if "cos_theta_jn" in self.parameters and "theta_jn" not in self.parameters:
             self._cos_angle("theta_jn", reverse=True)
@@ -1618,22 +1676,44 @@ class _Conversion(object):
             cond1 = "spin_2x" in self.parameters and "spin_2y" in self.parameters
             if "phi_2" not in self.parameters and cond1:
                 self._phi2_from_spins()
-            if "spin_1z" not in self.parameters:
-                if all(i in self.parameters for i in ["a_1", "tilt_1"]):
-                    self._aligned_spin_from_magnitude_tilts(primary=True)
-            if "spin_2z" not in self.parameters:
-                if all(i in self.parameters for i in ["a_2", "tilt_2"]):
-                    self._aligned_spin_from_magnitude_tilts(secondary=True)
-            if "chi_eff" not in self.parameters:
-                if all(i in self.parameters for i in ["spin_1z", "spin_2z"]):
-                    self._chi_eff()
-            if "chi_p" not in self.parameters or "chi_p_2spin" not in self.parameters:
-                _chi_p_params = ["spin_1x", "spin_1y", "spin_2x", "spin_2y"]
-                if all(i in self.parameters for i in _chi_p_params):
-                    if "chi_p" not in self.parameters:
-                        self._chi_p()
+            evolve_spins_params = ["tilt_1", "tilt_2", "phi_12"]
+            if self.evolve_spins_backwards:
+                if all(i in self.parameters for i in evolve_spins_params):
+                    self._evolve_spins(forward=False)
+            for suffix in ["_infinity", "_infinity_only_prec_avg", ""]:
+                if "spin_1z{}".format(suffix) not in self.parameters:
+                    _params = ["a_1", "tilt_1{}".format(suffix)]
+                    if all(i in self.parameters for i in _params):
+                        self._aligned_spin_from_magnitude_tilts(
+                            primary=True, suffix=suffix
+                        )
+                if "spin_2z{}".format(suffix) not in self.parameters:
+                    _params = ["a_2", "tilt_2{}".format(suffix)]
+                    if all(i in self.parameters for i in _params):
+                        self._aligned_spin_from_magnitude_tilts(
+                            secondary=True, suffix=suffix
+                        )
+                if "chi_eff{}".format(suffix) not in self.parameters:
+                    _params = ["spin_1z{}".format(suffix), "spin_2z{}".format(suffix)]
+                    if all(i in self.parameters for i in _params):
+                        self._chi_eff(suffix=suffix)
+                if any(
+                        _p.format(suffix) not in self.parameters for _p in
+                        ["chi_p{}", "chi_p_2spin"]
+                ):
+                    _params = [
+                        "a_1", "tilt_1{}".format(suffix), "a_2",
+                        "tilt_2{}".format(suffix)
+                    ]
+                    _cartesian_params = ["spin_1x", "spin_1y", "spin_2x", "spin_2y"]
+                    if "chi_p{}".format(suffix) not in self.parameters:
+                        if all(i in self.parameters for i in _params):
+                            self._chi_p_from_tilts(suffix=suffix)
+                        elif all(i in self.parameters for i in _cartesian_params):
+                            self._chi_p()
                     if "chi_p_2spin" not in self.parameters:
-                        self._chi_p_2spin()
+                        if all(i in self.parameters for i in _cartesian_params):
+                            self._chi_p_2spin()
             if "beta" not in self.parameters:
                 beta_components = [
                     "mass_1", "mass_2", "phi_jl", "tilt_1", "tilt_2", "phi_12",
@@ -1678,10 +1758,9 @@ class _Conversion(object):
                     "{}_evolved".format(i) for i in non_precessing_NR_params
                 ]
                 evolve_suffix = "_evolved"
-                evolve_spins_params = ["tilt_1", "tilt_2", "phi_12"]
                 if all(i in self.parameters for i in evolve_spins_params):
                     try:
-                        self._evolve_spins(final_velocity=evolve_spins)
+                        self._evolve_spins(final_velocity=evolve_spins_forwards)
                     except EvolveSpinError:
                         # Raised when approximant is unknown to lalsimulation or
                         # lalsimulation.SimInspiralGetSpinFreqFromApproximant is
@@ -1760,10 +1839,12 @@ class _Conversion(object):
             self._NS_compactness_from_lambda(parameter="lambda_2")
             if "mass_2" in self.parameters and "baryonic_mass_2" not in self.parameters:
                 self._NS_baryonic_mass(primary=False)
-        if "cos_tilt_1" not in self.parameters and "tilt_1" in self.parameters:
-            self._cos_tilt_1_from_tilt_1()
-        if "cos_tilt_2" not in self.parameters and "tilt_2" in self.parameters:
-            self._cos_tilt_2_from_tilt_2()
+        for suffix in ["_infinity", "_infinity_only_prec_avg", ""]:
+            for tilt in ["tilt_1", "tilt_2"]:
+                cond1 = "cos_{}{}".format(tilt, suffix) not in self.parameters
+                cond2 = "{}{}".format(tilt, suffix) in self.parameters
+                if cond1 and cond2:
+                    self._cos_angle("cos_{}{}".format(tilt, suffix))
         evolve_suffix = "_non_evolved"
         if evolve_condition or self.NRSurrogate or self.waveform_fit or self.non_precessing:
             evolve_suffix = ""

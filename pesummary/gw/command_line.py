@@ -6,7 +6,7 @@ import collections
 import sys
 import fnmatch
 from pesummary.utils.utils import command_line_arguments
-from pesummary.core.command_line import DictionaryAction
+from pesummary.core.command_line import DictionaryAction, DeprecatedStoreTrueAction
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -38,10 +38,32 @@ def _remnant_command_line_arguments(parser):
         )
     )
     remnant_group.add_argument(
-        "--evolve_spins", action="store_true",
+        "--force_BH_spin_evolution", action="store_true",
+        help=(
+            "Use BH spin evolution methods to evolve spins in systems that include "
+            "tidal deformability parameters"
+        )
+    )
+    remnant_group.add_argument(
+        "--evolve_spins", dest="evolve_spins_forwards",
+        action=DeprecatedStoreTrueAction(new_option="--evolve_spins_forwards"),
         help=(
             "Evolve the spins up to the Schwarzschild ISCO frequency for "
             "remnant fits evaluation"
+        ), default=False
+    )
+    remnant_group.add_argument(
+        "--evolve_spins_forwards", action="store_true",
+        help=(
+            "Evolve the spins up to the Schwarzschild ISCO frequency for "
+            "remnant fits evaluation"
+        ), default=False
+    )
+    remnant_group.add_argument(
+        "--evolve_spins_backwards", nargs="?", dest="evolve_spins_backwards",
+        choices=["precession_averaged", "hybrid_orbit_averaged"], help=(
+            "Method to use when evolving spins backwards to infinite separation. "
+            "Default 'precession_averaged'."
         ), default=False
     )
     remnant_group.add_argument(

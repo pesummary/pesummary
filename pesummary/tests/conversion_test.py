@@ -926,3 +926,49 @@ class TestConvert(object):
         checkpoint = self._convert(resume_file=".outdir/checkpoint.pickle")
         for param, value in no_checkpoint.items():
             np.testing.assert_almost_equal(value, checkpoint[param])
+
+
+def test_evolve_angles_backwards():
+    """Check that the pesummary.gw.conversions.evolve.evolve_angles_backwards
+    function works as expected
+    """
+    from pesummary.gw.conversions.evolve import evolve_spins
+    from lal import MSUN_SI
+    from packaging import version
+    import lalsimulation
+    if version.parse(lalsimulation.__version__) < version.parse("2.5.2"):
+        return
+    input_data = [
+        (
+            1.3862687342652575e+32, 1.5853186050191907e+31, 0.8768912154180827,
+            0.9635416612042661, 2.8861591668037119, 2.7423707262813442,
+            4.750537251642867, 8.000000000000000, 2.8861301463160993, 2.7425208816155378,
+            2.8861542118177956, 2.7426347054696230, 'v1'
+        ),
+        (
+            4.0380177255695994e+31, 2.1111685497317552e+31, 0.9442047756726544,
+            0.2197148251155545, 2.7060072810080551, 0.8920951236808333,
+            1.7330264974887994, 14.0000000000000, 2.7082295817672812, 0.8821772303625787,
+            2.7084623305332132, 0.8811491121799003, 'v1'
+        ),
+        (
+            1.4778236544770486e+32, 2.6197742077777032e+31, 0.4650532384488123,
+            0.4135203147241133, 2.5477872046486589, 1.3374887745402186,
+            5.8300235171959054, 15.0000000000000, 2.5307614455226255, 1.3999636874375283,
+            2.5310639813744329, 1.4020896531141123, 'v1'
+        )
+    ]
+    for num, method in enumerate(["precession_averaged", "hybrid_orbit_averaged"]):
+        for sample in input_data:
+            _sample = np.array(sample[:8])
+            _sample[:2] = _sample[:2] / MSUN_SI
+            tilt_1_inf, tilt_2_inf, phi_12 = evolve_spins(
+                *_sample, method=method, multi_process=1,
+                evolve_limit="infinite_separation", version=sample[-1]
+            )
+            if num == 0:
+                np.testing.assert_almost_equal(tilt_1_inf, sample[8], 5)
+                np.testing.assert_almost_equal(tilt_2_inf, sample[9], 5)
+            else:
+                np.testing.assert_almost_equal(tilt_1_inf, sample[10], 5)
+                np.testing.assert_almost_equal(tilt_2_inf, sample[11], 5)
