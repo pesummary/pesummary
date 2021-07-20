@@ -28,18 +28,34 @@ def viewing_angle_from_inclination(inclination):
 
 
 @array_input()
-def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
-    """Return chi_p given samples for mass1, mass2, spin1x, spin1y, spin2x,
-    spin2y
+def _chi_p(mass1, mass2, S1_perp, S2_perp):
+    """Return chi_p given samples for mass1, mass2, S1_perp, S2_perp
     """
     mass_ratio = mass2 / mass1
-    S1_perp = ((spin1x)**2 + (spin1y)**2)**0.5
-    S2_perp = ((spin2x)**2 + (spin2y)**2)**0.5
     chi_p = np.maximum(
         S1_perp, (4 * mass_ratio + 3) / (3 * mass_ratio + 4) * mass_ratio
         * S2_perp
     )
     return chi_p
+
+
+@array_input()
+def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
+    """Return chi_p given samples for mass1, mass2, spin1x, spin1y, spin2x,
+    spin2y
+    """
+    S1_perp = np.linalg.norm([spin1x, spin1y], axis=0)
+    S2_perp = np.linalg.norm([spin2x, spin2y], axis=0)
+    return _chi_p(mass1, mass2, S1_perp, S2_perp)
+
+
+@array_input()
+def chi_p_from_tilts(mass1, mass2, a_1, tilt_1, a_2, tilt_2):
+    """Return chi_p given samples for mass1, mass2, a_1, tilt_2, a_2, tilt_2
+    """
+    S1_perp = a_1 * np.sin(tilt_1)
+    S2_perp = a_2 * np.sin(tilt_2)
+    return _chi_p(mass1, mass2, S1_perp, S2_perp)
 
 
 @array_input()

@@ -37,11 +37,9 @@ Alternatively,
     >>> print(data.keys())
     dict_keys(['mass_1', 'mass_2', 'a_1', 'a_2', 'mass_ratio', 'inverted_mass_ratio', 'total_mass', 'chirp_mass', 'symmetric_mass_ratio'])
 
-Keyword Arguments
------------------
-
-Extra keyword arguments can be passed to the `convert` function to aid in
-parameter conversion. These include,
+The `convert` function takes a range of keyword arguments, some of which are
+required for certain conversions, and others allow the user to run often
+time-consuming conversions. A full list of the kwargs can be seen below,
 
 .. autofunction:: pesummary.gw.conversions.convert
 

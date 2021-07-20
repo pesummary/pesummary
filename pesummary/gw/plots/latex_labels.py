@@ -15,7 +15,15 @@ GWlatex_labels = {
     "psi_J": r"$\Psi_{J} [\mathrm{rad}]$",
     "iota": r"$\iota [\mathrm{rad}]$",
     "tilt_1": r"$\theta_{1} [\mathrm{rad}]$",
+    "tilt_1_infinity": r"$\theta_{1,\infty} [\mathrm{rad}]$",
+    "tilt_1_infinity_only_prec_avg": (
+        r"$\theta_{1,\infty}^{\mathrm{only\, prec\, avg}} [\mathrm{rad}]$"
+    ),
     "tilt_2": r"$\theta_{2} [\mathrm{rad}]$",
+    "tilt_2_infinity": r"$\theta_{2,\infty} [\mathrm{rad}]$",
+    "tilt_2_infinity_only_prec_avg": (
+        r"$\theta_{2,\infty}^{\mathrm{only\, prec\, avg}} [\mathrm{rad}]$"
+    ),
     "phi_12": r"$\phi_{12} [\mathrm{rad}]$",
     "mass_2": r"$m_{2} [M_{\odot}]$",
     "mass_1": r"$m_{1} [M_{\odot}]$",
@@ -48,13 +56,29 @@ GWlatex_labels = {
     "spin_1y": r"$S_{1y}$",
     "spin_1z": r"$S_{1z}$",
     "spin_1z_evolved": r"$S_{1z}^{\mathrm{evol}}$",
+    "spin_1z_infinity": r"$S_{1z,\infty}$",
+    "spin_1z_infinity_only_prec_avg": (
+        r"$S_{1z,\infty}^{\mathrm{only\, prec\, avg}}$"
+    ),
     "spin_2x": r"$S_{2x}$",
     "spin_2y": r"$S_{2y}$",
     "spin_2z": r"$S_{2z}$",
     "spin_2z_evolved": r"$S_{2z}^{\mathrm{evol}}$",
+    "spin_2z_infinity": r"$S_{2z,\infty}$",
+    "spin_2z_infinity_only_prec_avg": (
+        r"$S_{2z,\infty}^{\mathrm{only\, prec\, avg}}$"
+    ),
     "chi_p": r"$\chi_{\mathrm{p}}$",
+    "chi_p_infinity": r"$\chi_{\mathrm{p},\infty}$",
+    "chi_p_infinity_only_prec_avg": (
+        r"$\chi_{\mathrm{p},\infty}^{\mathrm{only\, prec\, avg}}$"
+    ),
     "chi_p_2spin": r"$\chi_{\mathrm{p}}^{\mathrm{2spin}}$",
     "chi_eff": r"$\chi_{\mathrm{eff}}$",
+    "chi_eff_infinity": r"$\chi_{\mathrm{eff},\infty}$",
+    "chi_eff_infinity_only_prec_avg": (
+        r"$\chi_{\mathrm{eff},\infty}^{\mathrm{only\, prec\, avg}}$"
+    ),
     "mass_ratio": r"$q$",
     "symmetric_mass_ratio": r"$\eta$",
     "beta": r"$\beta$",
@@ -63,6 +87,14 @@ GWlatex_labels = {
     "phi_2": r"$\phi_{2} [\mathrm{rad}]$",
     "cos_tilt_1": r"$\cos{\theta_{1}}$",
     "cos_tilt_2": r"$\cos{\theta_{2}}$",
+    "cos_tilt_1_infinity": r"$\cos{\theta_{1,\infty}}$",
+    "cos_tilt_2_infinity": r"$\cos{\theta_{2,\infty}}$",
+    "cos_tilt_1_infinity_only_prec_avg": (
+        r"$\cos{\theta_{1,\infty}^{\mathrm{only\, prec\, avg}}}$"
+    ),
+    "cos_tilt_2_infinity_only_prec_avg": (
+        r"$\cos{\theta_{2,\infty}^{\mathrm{only\, prec\, avg}}}$"
+    ),
     "redshift": r"$z$",
     "comoving_distance": r"$d_{com} [\mathrm{Mpc}]$",
     "mass_1_source": r"$m_{1}^{\mathrm{source}} [M_{\odot}]$",
