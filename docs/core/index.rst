@@ -70,4 +70,5 @@ for details:
     cli/summarypages
     cli/summarypageslw
     cli/summarypublication
+    cli/summarysplit
     cli/summaryversion

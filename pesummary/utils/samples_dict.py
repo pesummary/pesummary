@@ -111,8 +111,9 @@ class SamplesDict(Dict):
         """
         if isinstance(key, slice):
             return SamplesDict(
-                self.parameters,
-                [i[key.start:key.stop:key.step] for i in self.samples]
+                self.parameters, np.array(
+                    [i[key.start:key.stop:key.step] for i in self.samples]
+                )
             )
         elif key[0] == "_":
             return self.samples[self.parameters.index(key)]
