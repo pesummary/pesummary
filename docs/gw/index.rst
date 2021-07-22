@@ -134,6 +134,7 @@ description of each executable see
     ../core/cli/summarypublication
     cli/summaryrecreate
     cli/summaryreview
+    ../core/cli/summarysplit
     cli/summarytgr
     ../core/cli/summaryversion
 

@@ -1024,6 +1024,105 @@ class TestSummaryReview(Base):
         self.launch(command_line)
 
 
+class TestSummarySplit(Base):
+    """Test the `summarysplit` executable
+    """
+    def setup(self):
+        """Setup the SummarySplit class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        make_result_file(gw=False, extension="json")
+        make_result_file(gw=False, extension="hdf5", n_samples=500)
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_split_single_analysis(self):
+        """Test that a file containing a single analysis is successfully split
+        into N_samples result files
+        """
+        from pesummary.io import read
+        command_line = (
+            "summarysplit --samples .outdir/test.json --file_format json "
+            "--outdir .outdir/split"
+        )
+        self.launch(command_line)
+        original = read(".outdir/test.json").samples_dict
+        files = glob.glob(".outdir/split/*.json")
+        assert len(files) == original.number_of_samples
+        for num, f in enumerate(files):
+            g = read(f).samples_dict
+            assert g.number_of_samples == 1
+            idx = int(f.split("/")[-1].split("_")[-1].split(".")[0])
+            for param in g.keys():
+                assert g[param] == original[param][idx]
+        command_line = (
+            "summarycombine_posteriors --use_all --samples {} "
+            "--outdir .outdir --filename combined_split.dat "
+            "--file_format dat --labels {}"
+        ).format(
+            " ".join(files), " ".join(
+                np.arange(original.number_of_samples).astype(str)
+            )
+        )
+        self.launch(command_line)
+        combined = read(".outdir/combined_split.dat").samples_dict
+        assert all(param in original.keys() for param in combined.keys())
+        for param in original.keys():
+            assert all(sample in combined[param] for sample in original[param])
+            assert all(sample in original[param] for sample in combined[param])
+
+    def test_split_single_analysis_specific_N_files(self):
+        """Test that a file containing a single analysis is successfully split
+        into 10 result files
+        """
+        from pesummary.io import read
+        command_line = (
+            "summarysplit --samples .outdir/test.json --file_format json "
+            "--outdir .outdir/split --N_files 10"
+        )
+        self.launch(command_line)
+        original = read(".outdir/test.json").samples_dict
+        files = glob.glob(".outdir/split/*.json")
+        assert len(files) == 10
+        for num, f in enumerate(files):
+            g = read(f).samples_dict
+            for param in g.keys():
+                assert all(sample in original[param] for sample in g[param])
+
+    def test_split_multi_analysis(self):
+        """Test that a file containing multiple analyses is successfully split
+        into N_samples result files
+        """
+        from pesummary.io import read
+        command_line = (
+            "summarycombine --webdir .outdir --samples .outdir/test.json "
+            ".outdir/test.h5 --labels one two"
+        )
+        self.launch(command_line)
+        command_line = (
+            "summarysplit --samples .outdir/samples/posterior_samples.h5 "
+            "--file_format hdf5 --outdir .outdir/split"
+        )
+        self.launch(command_line)
+        assert os.path.isdir(".outdir/split/one")
+        assert os.path.isdir(".outdir/split/two")
+        zipped = zip(["one", "two"], [".outdir/test.json", ".outdir/test.h5"])
+        for analysis, f in zipped:
+            original = read(f).samples_dict
+            files = glob.glob(".outdir/split/{}/*.hdf5".format(analysis))
+            assert len(files) == original.number_of_samples
+            for num, g in enumerate(files):
+                h = read(g).samples_dict
+                assert h.number_of_samples == 1
+                idx = int(g.split("/")[-1].split("_")[-1].split(".")[0])
+                for param in h.keys():
+                    assert h[param] == original[param][idx]
+
 class TestSummaryExtract(Base):
     """Test the `summaryextract` executable
     """
