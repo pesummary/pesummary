@@ -251,7 +251,7 @@ def _wrapper_for_evolve_angles_backwards(args):
 @array_input(
     ignore_kwargs=[
         "method", "multi_process", "return_fits_used", "version"
-    ]
+    ], force_return_array=True
 )
 def evolve_angles_backwards(
     mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, f_ref,

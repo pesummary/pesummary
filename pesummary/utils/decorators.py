@@ -167,7 +167,7 @@ def tmp_directory(func):
     return wrapper_function
 
 
-def array_input(ignore_args=None, ignore_kwargs=None):
+def array_input(ignore_args=None, ignore_kwargs=None, force_return_array=False):
     """Convert the input into an np.ndarray and return either a float or a
     np.ndarray depending on what was input.
 
@@ -210,7 +210,7 @@ def array_input(ignore_args=None, ignore_kwargs=None):
             if isinstance(output, dict):
                 return output
             value = np.array(output)
-            if return_float:
+            if return_float and not force_return_array:
                 new_value = copy.deepcopy(value)
                 if len(new_value) > 1:
                     new_value = np.array([arg[0] for arg in value])
