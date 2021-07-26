@@ -135,6 +135,7 @@ class Dict(dict):
         make_dict_kwargs={}, logger_warn="warn", latex_labels={},
         extra_kwargs={}, **kwargs
     ):
+        from .parameters import Parameters
         super(Dict, self).__init__()
         if not _init:
             return
@@ -169,6 +170,7 @@ class Dict(dict):
             setattr(self, key, item)
         self._update_latex_labels()
         self.extra_kwargs = extra_kwargs
+        self.parameters = Parameters(self.parameters)
 
     def __getitem__(self, key):
         """Return an object representing the specialization of Dict
