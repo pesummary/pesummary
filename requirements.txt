@@ -9,7 +9,7 @@ tables
 deepdish
 pandas
 pygments
-astropy>=3.2.3
+astropy>=3.2.3,<=4.2.1
 lalsuite>=6.70.0
 python-ligo-lw
 ligo-gracedb

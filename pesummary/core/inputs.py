@@ -329,11 +329,24 @@ class _Input(object):
                 elif not os.path.isfile(ff) and "https://" in ff:
                     from pesummary.io.read import _fetch_from_url
                     func = _fetch_from_url
+                elif not os.path.isfile(ff) and "*" in ff:
+                    from pesummary.utils.utils import glob_directory
+                    func = glob_directory
                 if func is not None:
-                    logger.info(
-                        "Copying file: '{}' to temporary folder".format(ff)
-                    )
-                    self._result_files[num] = func(ff)
+                    _data = func(ff)
+                    if isinstance(_data, np.ndarray) and len(_data) > 0:
+                        self._result_files[num] = _data[0]
+                        if len(_data) > 1:
+                            _ = [
+                                self._result_files.insert(num + 1, d) for d in
+                                _data[1:][::-1]
+                            ]
+                    elif isinstance(_data, np.ndarray):
+                        raise InputError(
+                            "Unable to find any files matching '{}'".format(ff)
+                        )
+                    else:
+                        self._result_files[num] = _data
 
     @property
     def seed(self):
@@ -552,6 +565,24 @@ class _Input(object):
                             "The label '%s' already exists in the existing "
                             "metafile. Please pass another unique label"
                         )
+
+            if len(self.result_files) != len(labels) and not self.mcmc_samples:
+                import copy
+                _new_labels = copy.deepcopy(labels)
+                idx = 1
+                while len(_new_labels) < len(self.result_files):
+                    _new_labels.extend(
+                        [_label + str(idx) for _label in labels]
+                    )
+                    idx += 1
+                _new_labels = _new_labels[:len(self.result_files)]
+                logger.info(
+                    "You have passed {} result files and {} labels. Setting "
+                    "labels = {}".format(
+                        len(self.result_files), len(labels), _new_labels
+                    )
+                )
+                labels = _new_labels
             self._labels = labels
 
     @property
@@ -674,14 +705,6 @@ class _Input(object):
         """
         if not samples:
             raise InputError("Please provide a results file")
-        if len(samples) != len(self.labels) and not self.mcmc_samples:
-            logger.info(
-                "You have passed {} result files and {} labels. Setting "
-                "labels = {}".format(
-                    len(samples), len(self.labels), self.labels[:len(samples)]
-                )
-            )
-            self.labels = self.labels[:len(samples)]
         _samples_generator = (self.is_pesummary_metafile(s) for s in samples)
         if any(_samples_generator) and not all(_samples_generator):
             raise InputError(
