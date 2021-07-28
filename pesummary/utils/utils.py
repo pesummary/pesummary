@@ -919,6 +919,21 @@ def string_match(string, substring):
         return string_match(string, fnmatch.translate(substring))
 
 
+def glob_directory(base):
+    """Return a list of files matching base
+
+    Parameters
+    ----------
+    base: str
+        string you wish to match e.g. "./", "./*.py"
+    """
+    from pathlib import Path
+    if "*" not in base:
+        base = os.path.join(base, "*")
+    _base = Path(base)
+    return np.array(list(_base.parent.glob(_base.name))).astype(str)
+
+
 def list_match(list_to_match, substring, return_true=True, return_false=False):
     """Match a list of strings to a substring. This substring may include
     wildcards
