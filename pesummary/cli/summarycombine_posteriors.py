@@ -7,6 +7,7 @@ import argparse
 from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
 from pesummary.core.command_line import CheckFilesExistAction
 from pesummary.core.parser import parser
+from pesummary.core.inputs import _Input
 from pesummary.io import write
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -37,7 +38,11 @@ def command_line():
         "-s", "--samples", dest="samples", default=None, nargs='+',
         required=True, action=CheckFilesExistAction, help=(
             "Path to posterior samples file(s). See documentation for allowed "
-            "formats."
+            "formats. If path is on a remote server, add username and "
+            "servername in the form {username}@{servername}:{path}. If path "
+            "is on a public webpage, ensure the path starts with https://. "
+            "You may also pass a string such as posterior_samples*.dat and "
+            "all matching files will be used"
         )
     )
     parser.add_argument(
@@ -67,19 +72,43 @@ def command_line():
     return parser
 
 
+class Input(_Input):
+    """Class to handle the core command line arguments
+
+    Parameters
+    ----------
+    opts: argparse.Namespace
+        Namespace object containing the command line options
+
+    Attributes
+    ----------
+    result_files: list
+        list of result files passed
+    labels: list
+        list of labels used to distinguish the result files
+    """
+    def __init__(self, opts):
+        self.opts = opts
+        self.result_files = self.opts.samples
+        self.mcmc_samples = False
+        self.add_to_existing = False
+        self.labels = self.opts.labels
+
+
 def main(args=None):
     """Top level interface for `summarycombine_posteriors`
     """
     _parser = parser(existing_parser=command_line())
     opts, unknown = _parser.parse_known_args(args=args)
+    args = Input(opts)
     samples = {
-        label: samples for label, samples in zip(opts.labels, opts.samples)
+        label: samples for label, samples in zip(args.labels, args.result_files)
     }
     mydict = MultiAnalysisSamplesDict.from_files(
         samples, disable_prior=True, disable_injection_conversion=True
     )
     combined = mydict.combine(
-        use_all=opts.use_all, weights=opts.weights, labels=opts.labels,
+        use_all=opts.use_all, weights=opts.weights, labels=args.labels,
         shuffle=opts.shuffle, logger_level="info"
     )
     combined.write(

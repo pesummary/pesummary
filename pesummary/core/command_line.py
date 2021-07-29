@@ -294,7 +294,10 @@ def _core_command_line_arguments(parser):
         action=CheckFilesExistAction, help=(
             "Path to posterior samples file(s). See documentation for allowed "
             "formats. If path is on a remote server, add username and "
-            "servername in the form {username}@{servername}:{path}"
+            "servername in the form {username}@{servername}:{path}. If path "
+            "is on a public webpage, ensure the path starts with https://. "
+            "You may also pass a string such as posterior_samples*.dat and "
+            "all matching files will be used"
         )
     )
     core_group.add_argument(
