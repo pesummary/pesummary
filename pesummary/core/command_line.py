@@ -49,7 +49,8 @@ class CheckFilesExistAction(argparse.Action):
         ff: str
             path to file you wish to check
         """
-        if not os.path.isfile(ff) and "@" not in ff and "https://" not in ff:
+        cond = any(_str in ff for _str in ["*", "@", "https://"])
+        if not os.path.isfile(ff) and not cond:
             raise FileNotFoundError(
                 "The file '{}' provided for '{}' does not exist".format(
                     ff, self.dest
