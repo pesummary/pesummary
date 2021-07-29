@@ -927,11 +927,10 @@ def glob_directory(base):
     base: str
         string you wish to match e.g. "./", "./*.py"
     """
-    from pathlib import Path
+    import glob
     if "*" not in base:
         base = os.path.join(base, "*")
-    _base = Path(base)
-    return np.array(list(_base.parent.glob(_base.name))).astype(str)
+    return glob.glob(base)
 
 
 def list_match(list_to_match, substring, return_true=True, return_false=False):

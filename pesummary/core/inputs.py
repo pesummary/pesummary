@@ -334,7 +334,7 @@ class _Input(object):
                     func = glob_directory
                 if func is not None:
                     _data = func(ff)
-                    if isinstance(_data, np.ndarray) and len(_data) > 0:
+                    if isinstance(_data, (np.ndarray, list)) and len(_data) > 0:
                         self._result_files[num] = _data[0]
                         if len(_data) > 1:
                             _ = [
