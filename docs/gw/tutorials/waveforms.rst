@@ -38,3 +38,8 @@ We can also generate a waveform in the frequency domain with,
    :linenos:
 
 .. image:: ./examples/waveform_fd.png
+
+For more details about the waveform generator in :code:`pesummary` see,
+
+.. automodule:: pesummary.gw.waveform
+    :members:

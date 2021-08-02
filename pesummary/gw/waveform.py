@@ -412,8 +412,22 @@ def _td_waveform(
         project, hp, hc, samples["ra"], samples["dec"], samples["psi"],
         samples["geocent_time"]
     )
+    if "{}_time".format(project) not in samples.keys():
+        from pesummary.gw.conversions import time_in_each_ifo
+        try:
+            _detector_time = time_in_each_ifo(
+                project, samples["ra"], samples["dec"], samples["geocent_time"]
+            )
+        except Exception:
+            logger.warn(
+                "Unable to calculate samples for '{}_time' using the provided "
+                "posterior samples. Unable to shift merger to merger time in "
+                "the detector".format(project)
+            )
+            return ht
+    else:
+        _detector_time = samples["{}_time".format(project)]
     ht.times = (
-        Quantity(ht.times, unit="s")
-        + Quantity(samples["{}_time".format(project)], unit="s")
+        Quantity(ht.times, unit="s") + Quantity(_detector_time, unit="s")
     )
     return ht
