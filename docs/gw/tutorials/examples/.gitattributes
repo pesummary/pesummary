@@ -4,3 +4,4 @@
 violin_plot_mass_ratio.png filter=lfs diff=lfs merge=lfs -text
 event_scatter_plot_total_mass_and_redshift.png filter=lfs diff=lfs merge=lfs -text
 comparison_for_GW150914.png filter=lfs diff=lfs merge=lfs -text
+uncertainty_waveform_td.png filter=lfs diff=lfs merge=lfs -text

@@ -741,7 +741,9 @@ class SamplesDict(Dict):
         from pesummary.gw.waveform import fd_waveform
         return fd_waveform(self, approximant, delta_f, f_low, f_high, **kwargs)
 
-    def td_waveform(self, approximant, delta_t, f_low, **kwargs):
+    def td_waveform(
+        self, approximant, delta_t, f_low, **kwargs
+    ):
         """Generate a gravitational wave in the time domain
 
         Parameters
@@ -768,9 +770,14 @@ class SamplesDict(Dict):
             LAL dictioanry containing accessory parameters. Default None
         pycbc: Bool, optional
             return a the waveform as a pycbc.timeseries.TimeSeries object
+        level: list, optional
+            the symmetric confidence interval of the time domain waveform. Level
+            must be greater than 0 and less than 1
         """
         from pesummary.gw.waveform import td_waveform
-        return td_waveform(self, approximant, delta_t, f_low, **kwargs)
+        return td_waveform(
+            self, approximant, delta_t, f_low, **kwargs
+        )
 
     def _maxL_waveform(self, func, *args, **kwargs):
         """Return the maximum likelihood waveform in a given domain
@@ -812,6 +819,9 @@ class SamplesDict(Dict):
             eccentricity at reference frequency. Default 0.
         LAL_parameters: dict, optional
             LAL dictioanry containing accessory parameters. Default None
+        level: list, optional
+            the symmetric confidence interval of the time domain waveform. Level
+            must be greater than 0 and less than 1
         """
         return self._maxL_waveform(self.td_waveform, *args, **kwargs)
 
