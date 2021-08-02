@@ -33,6 +33,7 @@ Manipulating posterior samples
     ../core/MCMCSamplesDict
     MultiAnalysisSamplesDict
     Conversion
+    ./tutorials/conversions_and_condor
 
 Manipulating PDFs
 +++++++++++++++++
