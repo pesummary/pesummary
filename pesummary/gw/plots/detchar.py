@@ -156,14 +156,25 @@ def time_domain_strain_data(
             x = _strain.times
             xlabel = "GPS [$s$]"
         if template is not None:
-            _x = template[key].times.value
+            if not isinstance(template[key], dict):
+                template[key] = {"template": template[key]}
+            _x = template[key]["template"].times.value
             if merger_time is not None:
                 _x -= merger_time
             ax.plot(
-                _x, template[key], color='lightgray', linewidth=4.,
+                _x, template[key], color='gray', linewidth=3.,
                 path_effects=[pe.Stroke(linewidth=4.5, foreground='k'), pe.Normal()],
                 label="Template"
             )
+            _bounds = ["upper", "lower", "bound_times"]
+            if all(bound in template[key].keys() for bound in _bounds):
+                _x = template[key]["bound_times"]
+                if merger_time is not None:
+                    _x -= merger_time
+                ax.fill_between(
+                    _x, template[key]["upper"], template[key]["lower"],
+                    color='lightgray', label="Uncertainty"
+                )
         ax.plot(
             x, _strain, color=GW_OBSERVATORY_COLORS[key], linewidth=3.,
             label="Detector data"

@@ -49,13 +49,20 @@ Unified input/output
     io/write
     io/read
 
-Packages
-++++++++
+Core Package
+++++++++++++
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 3
 
     core/index
+
+GW Package
+++++++++++
+
+.. toctree::
+    :maxdepth: 3
+
     gw/index
 
 
