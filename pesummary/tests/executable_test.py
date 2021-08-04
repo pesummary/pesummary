@@ -252,13 +252,14 @@ class TestSummaryPages(Base):
                 shutil.rmtree(dd)
 
     def check_output(
-        self, number=1, mcmc=False, existing_plot=False, expert=False
+        self, number=1, mcmc=False, existing_plot=False, expert=False,
+        gw=False
     ):
         """Check the output from the summarypages executable
         """
         assert os.path.isfile(".outdir/home.html")
         plots = get_list_of_plots(
-            gw=False, number=number, mcmc=mcmc, existing_plot=existing_plot,
+            gw=gw, number=number, mcmc=mcmc, existing_plot=existing_plot,
             expert=expert
         )
         assert all(
@@ -267,13 +268,43 @@ class TestSummaryPages(Base):
             )
         )
         files = get_list_of_files(
-            gw=False, number=number, existing_plot=existing_plot
+            gw=gw, number=number, existing_plot=existing_plot
         )
         assert all(
             i == j for i, j in zip(
                 sorted(files), sorted(glob.glob("./.outdir/html/*.html"))
             )
         )
+
+    def test_reweight(self):
+        """Check that summarypages reweights the posterior samples if the
+        `--reweight_samples` flag is provided
+        """
+        from pesummary.io import read
+        make_result_file(gw=True, extension="json")
+        command_line = (
+            "summarypages --webdir .outdir --samples .outdir/test.json --gw "
+            "--labels gw0 --nsamples 100 --disable_expert --disable_corner "
+            "--reweight_samples uniform_in_comoving_volume "
+        )
+        self.launch(command_line)
+        self.check_output(number=1, expert=False, gw=True)
+        original = read(".outdir/test.json").samples_dict
+        _reweighted = read(".outdir/samples/posterior_samples.h5")
+        reweighted = _reweighted.samples_dict
+        assert original.number_of_samples >= reweighted["gw0"].number_of_samples
+        inds = np.array([
+            original.parameters.index(param) for param in
+            reweighted["gw0"].parameters if param in original.parameters
+        ])
+        assert all(
+            reweighted_sample[inds] in original.samples.T for reweighted_sample
+            in reweighted["gw0"].samples.T
+        )
+        _kwargs = _reweighted.extra_kwargs[0]
+        assert _kwargs["sampler"]["nsamples_before_reweighting"] == 100
+        assert _kwargs["sampler"]["nsamples"] == reweighted["gw0"].number_of_samples
+        assert _kwargs["meta_data"]["reweighting"] == "uniform_in_comoving_volume"
 
     def test_checkpoint(self):
         """Check that when restarting from checkpoint, the outputs are

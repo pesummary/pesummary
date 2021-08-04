@@ -849,15 +849,18 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         label: str
             label of the plot you wish to add
         """
+        mydict = super(_WebpageGeneration, self).add_to_expert_pages(
+            path, label
+        )
         contour_base = path + "{}_2d_contour_{}_log_likelihood.png"
-        mydict = {
+        mydict.update({
             "network_precessing_snr": [
                 [
                     contour_base.format(label, "_b_bar"),
                     contour_base.format(label, "_precessing_harmonics_overlap"),
                 ]
             ]
-        }
+        })
         return mydict
 
     @property

@@ -1873,7 +1873,20 @@ class _WebpageGeneration(object):
         label: str
             label of the plot you wish to add
         """
-        return None
+        mydict = {}
+        contour_base = path + "{}_2d_contour_{}_{}.png"
+        histogram_base = path + "{}_1d_posterior_{}_{}.png"
+        if not hasattr(self.samples[label], "debug_keys"):
+            return mydict
+        for param in self.samples[label].debug_keys():
+            if "_non_reweighted" in param:
+                base_param = param.split("_non_reweighted")[0][1:]
+                if base_param in self.samples[label].keys():
+                    mydict[base_param] = [[
+                        histogram_base.format(label, base_param, param),
+                        contour_base.format(label, base_param, param)
+                    ]]
+        return mydict
 
     @property
     def additional_1d_pages(self):
