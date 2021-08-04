@@ -405,6 +405,12 @@ def _samples_command_line_arguments(parser):
             "Name of the algorithm used to generate the result file"
         )
     )
+    sample_group.add_argument(
+        "--reweight_samples", default=False, help=(
+            "Method to use when reweighting posterior and/or prior samples. "
+            "Default do not reweight samples."
+        )
+    )
     return sample_group
 
 

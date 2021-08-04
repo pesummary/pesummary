@@ -142,13 +142,17 @@ class Dict(dict):
         self.logger_warn = logger_warn
         self.all_latex_labels = latex_labels
         if isinstance(args[0], dict):
-            self.parameters = list(args[0].keys())
+            if args[0].__class__.__name__ == "SamplesDict":
+                self.parameters = list(args[0].keys(remove_debug=False))
+                _iterator = args[0].items(remove_debug=False)
+            else:
+                self.parameters = list(args[0].keys())
+                _iterator = args[0].items()
             _samples = [args[0][param] for param in self.parameters]
             try:
                 self.samples = np.array(_samples)
             except ValueError:
                 self.samples = _samples
-            _iterator = args[0].items()
         else:
             self.parameters, self.samples = args
             _iterator = zip(self.parameters, self.samples)

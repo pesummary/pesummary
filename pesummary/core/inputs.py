@@ -65,7 +65,7 @@ class _Input(object):
     def grab_data_from_metafile(
         existing_file, webdir, compare=None, read_function=Read,
         _replace_with_pesummary_kwargs={}, nsamples=None,
-        disable_injection=False, **kwargs
+        disable_injection=False, reweight_samples=False, **kwargs
     ):
         """Grab data from an existing PESummary metafile
 
@@ -127,6 +127,8 @@ class _Input(object):
 
         if not f.mcmc_samples:
             f.generate_all_posterior_samples(labels=labels, **kwargs)
+        if reweight_samples:
+            f.reweight_samples(reweight_samples, labels=labels, **kwargs)
 
         parameters = f.parameters
         if not f.mcmc_samples:
@@ -220,7 +222,8 @@ class _Input(object):
     def grab_data_from_file(
         file, label, webdir, config=None, injection=None, read_function=Read,
         file_format=None, nsamples=None, disable_prior_sampling=False,
-        nsamples_for_prior=None, path_to_samples=None, **kwargs
+        nsamples_for_prior=None, path_to_samples=None, reweight_samples=False,
+        **kwargs
     ):
         """Grab data from a result file containing posterior samples
 
@@ -257,6 +260,8 @@ class _Input(object):
             f.add_injection_parameters_from_file(
                 injection, conversion_kwargs=kwargs
             )
+        if reweight_samples:
+            f.reweight_samples(reweight_samples)
         parameters = f.parameters
         samples = np.array(f.samples).T
         DataFrame = {label: SamplesDict(parameters, samples)}
@@ -953,6 +958,26 @@ class _Input(object):
             self._nsamples = int(nsamples)
 
     @property
+    def reweight_samples(self):
+        return self._reweight_samples
+
+    @reweight_samples.setter
+    def reweight_samples(self, reweight_samples):
+        from pesummary.core.reweight import options
+        self._reweight_samples = self._check_reweight_samples(
+            reweight_samples, options
+        )
+
+    def _check_reweight_samples(self, reweight_samples, options):
+        if reweight_samples and reweight_samples not in options.keys():
+            logger.warn(
+                "Unknown reweight function: '{}'. Not reweighting posterior "
+                "and/or prior samples".format(reweight_samples)
+            )
+            return False
+        return reweight_samples
+
+    @property
     def path_to_samples(self):
         return self._path_to_samples
 
@@ -1267,7 +1292,7 @@ class _Input(object):
         if self.is_pesummary_metafile(file):
             data = self.grab_data_from_metafile(
                 file, self.webdir, compare=self.compare_results,
-                nsamples=self.nsamples,
+                nsamples=self.nsamples, reweight_samples=self.reweight_samples,
                 disable_injection=self.disable_injection, **grab_data_kwargs
             )
         else:
@@ -1277,7 +1302,7 @@ class _Input(object):
                 disable_prior_sampling=self.disable_prior_sampling,
                 nsamples_for_prior=self.nsamples_for_prior,
                 path_to_samples=self.path_to_samples[label],
-                **grab_data_kwargs
+                reweight_samples=self.reweight_samples, **grab_data_kwargs
             )
         self._open_result_files.update({file: data["open_file"]})
         return data
@@ -1867,6 +1892,7 @@ class Input(_Input):
         self.path_to_samples = self.opts.path_to_samples
         self.file_format = self.opts.file_format
         self.nsamples = self.opts.nsamples
+        self.reweight_samples = self.opts.reweight_samples
         self.samples = self.opts.samples
         self.ignore_parameters = self.opts.ignore_parameters
         self.burnin_method = self.opts.burnin_method

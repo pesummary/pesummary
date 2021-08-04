@@ -77,6 +77,8 @@ class SamplesDict(Dict):
         a conversion function
     debug_keys: list
         list of keys with an '_' as their first character
+    reweight:
+        Reweight the posterior samples according to a new prior
     write:
         Save the stored posterior samples to file
 
@@ -114,6 +116,10 @@ class SamplesDict(Dict):
                 self.parameters, np.array(
                     [i[key.start:key.stop:key.step] for i in self.samples]
                 )
+            )
+        elif isinstance(key, (list, np.ndarray)):
+            return SamplesDict(
+                self.parameters, np.array([i[key] for i in self.samples])
             )
         elif key[0] == "_":
             return self.samples[self.parameters.index(key)]
@@ -422,6 +428,38 @@ class SamplesDict(Dict):
             if key not in _keys:
                 self[key] = item
         return extra_kwargs
+
+    def reweight(
+        self, function, ignore_debug_params=["recalib", "spcal"], **kwargs
+    ):
+        """Reweight the posterior samples according to a new prior
+
+        Parameters
+        ----------
+        function: func/str
+            function to use when resampling
+        ignore_debug_params: list, optional
+            params to ignore when storing unweighted posterior distributions.
+            Default any param with ['recalib', 'spcal'] in their name
+        """
+        from pesummary.gw.reweight import options
+        if isinstance(function, str) and function in options.keys():
+            function = options[function]
+        elif isinstance(function, str):
+            raise ValueError(
+                "Unknown function '{}'. Please provide a function for "
+                "reweighting or select one of the following: {}".format(
+                    function, ", ".join(list(options.keys()))
+                )
+            )
+        _samples = SamplesDict(self.copy())
+        new_samples = function(_samples, **kwargs)
+        _samples.downsample(new_samples.number_of_samples)
+        for key, item in new_samples.items():
+            if not any(param in key for param in ignore_debug_params):
+                _samples["_{}_non_reweighted".format(key)] = _samples[key]
+            _samples[key] = item
+        return SamplesDict(_samples)
 
     def _marginalized_posterior(self, parameter, module="core", **kwargs):
         """Wrapper for the `pesummary.core.plots.plot._1d_histogram_plot` or

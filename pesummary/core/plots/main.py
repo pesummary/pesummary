@@ -120,7 +120,12 @@ class _PlotGeneration(object):
             self.same_samples = None
 
         for i in self.samples.keys():
-            self.check_latex_labels(self.samples[i].keys())
+            try:
+                self.check_latex_labels(
+                    self.samples[i].keys(remove_debug=False)
+                )
+            except TypeError:
+                pass
 
         self.plot_type_dictionary = {
             "oned_histogram": self.oned_histogram_plot,
@@ -495,7 +500,7 @@ class _PlotGeneration(object):
                 self.savedir, param, self.same_samples[param],
                 latex_labels[param], self.colors, injection, self.kde_plot,
                 self.linestyles, self.package,
-                self.preliminary_comparison_pages, self.checkpoint
+                self.preliminary_comparison_pages, self.checkpoint, None
             ]
             self._try_to_make_a_plot(
                 arguments, self._oned_histogram_comparison_plot,
@@ -506,7 +511,8 @@ class _PlotGeneration(object):
     @staticmethod
     def _oned_histogram_comparison_plot(
         savedir, parameter, samples, latex_label, colors, injection, kde=False,
-        linestyles=None, package="core", preliminary=False, checkpoint=False
+        linestyles=None, package="core", preliminary=False, checkpoint=False,
+        filename=None
     ):
         """Generate a oned comparison histogram plot for a given parameter
 
@@ -538,9 +544,10 @@ class _PlotGeneration(object):
         module = importlib.import_module(
             "pesummary.{}.plots.plot".format(package)
         )
-        filename = os.path.join(
-            savedir, "combined_1d_posterior_{}.png".format(parameter)
-        )
+        if filename is None:
+            filename = os.path.join(
+                savedir, "combined_1d_posterior_{}.png".format(parameter)
+            )
         if os.path.isfile(filename) and checkpoint:
             return
         hist = not kde
@@ -734,6 +741,50 @@ class _PlotGeneration(object):
             ) for param in iterator + _debug
         ]
         self.pool.starmap(self._try_to_make_a_plot, arguments)
+        _reweight_keys = [
+            param for param in self.samples[label].debug_keys() if
+            "_non_reweighted" in param
+        ]
+        if len(_reweight_keys):
+            error_message = (
+                "Failed to generate %s-%s 2d contour plot because {}"
+            )
+            _base_param = lambda p: p.split("_non_reweighted")[0][1:]
+            arguments = [
+                (
+                    [
+                        self.savedir, label, _base_param(param), param,
+                        samples[_base_param(param)], samples[param],
+                        latex_labels[_base_param(param)], latex_labels[param],
+                        self.preliminary_pages[label], None, self.checkpoint
+                    ], function, error_message % (_base_param(param), param)
+                ) for param in _reweight_keys
+            ]
+            self.pool.starmap(self._try_to_make_a_plot, arguments)
+            error_message = (
+                "Failed to generate a histogram plot comparing %s and %s "
+                "because {}"
+            )
+            arguments = [
+                (
+                    [
+                        self.savedir, _base_param(param), {
+                            "reweighted": samples[_base_param(param)],
+                            "non-reweighted": samples[param]
+                        }, latex_labels[_base_param(param)], ['b', 'r'],
+                        [np.nan, np.nan], True, None, self.package,
+                        self.preliminary_comparison_pages, self.checkpoint,
+                        os.path.join(
+                            self.savedir, "{}_1d_posterior_{}_{}.png".format(
+                                label, _base_param(param), param
+                            )
+                        )
+                    ], self._oned_histogram_comparison_plot,
+                    error_message % (_base_param(param), param)
+                ) for param in _reweight_keys
+            ]
+            self.pool.starmap(self._try_to_make_a_plot, arguments)
+
         error_message = (
             "Failed to generate log_likelihood-%s sample_evolution plot "
             "because {}"

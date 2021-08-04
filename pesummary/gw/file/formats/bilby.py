@@ -198,7 +198,7 @@ class Bilby(GWSingleAnalysisRead):
         ifos = np.unique(
             [
                 param.split('_')[1] for param in self.parameters if 'recalib_'
-                in param
+                in param and "non_reweighted" not in param
             ]
         )
         amp_params, phase_params, log_freqs = {}, {}, {}
@@ -208,6 +208,7 @@ class Bilby(GWSingleAnalysisRead):
                 [
                     param for param in self.parameters if
                     'recalib_%s_frequency_' % (ifo) in param
+                    and "non_reweighted" not in param
                 ]
             )
             posterior = self.samples_dict
@@ -218,6 +219,7 @@ class Bilby(GWSingleAnalysisRead):
                 [
                     param for param in self.parameters if
                     'recalib_%s_amplitude_' % (ifo) in param
+                    and "non_reweighted" not in param
                 ]
             )
             amplitude = np.array([posterior[param] for param in amp_parameters])
@@ -225,6 +227,7 @@ class Bilby(GWSingleAnalysisRead):
                 [
                     param for param in self.parameters if
                     'recalib_%s_phase_' % (ifo) in param
+                    and "non_reweighted" not in param
                 ]
             )
             phase = np.array([posterior[param] for param in phase_parameters])

@@ -560,6 +560,8 @@ class SingleAnalysisRead(Read):
         convert the posterior samples to a latex table
     generate_latex_macros:
         generate a set of latex macros for the stored posterior samples
+    reweight_samples:
+        reweight the posterior and/or samples according to a new prior
     """
     def __init__(self, *args, **kwargs):
         super(SingleAnalysisRead, self).__init__(*args, **kwargs)
@@ -689,6 +691,32 @@ class SingleAnalysisRead(Read):
         """
         return self.write(file_format="dat", **kwargs)
 
+    def reweight_samples(self, function, **kwargs):
+        """Reweight the posterior and/or prior samples according to a new prior
+        """
+        if self.mcmc_samples:
+            return ValueError("Cannot currently reweight MCMC chains")
+        _samples = self.samples_dict
+        new_samples = _samples.reweight(function, **kwargs)
+        self.parameters = Parameters(new_samples.parameters)
+        self.samples = np.array(new_samples.samples).T
+        self.extra_kwargs["sampler"].update(
+            {
+                "nsamples": new_samples.number_of_samples,
+                "nsamples_before_reweighting": _samples.number_of_samples
+            }
+        )
+        self.extra_kwargs["meta_data"]["reweighting"] = function
+        if not hasattr(self, "priors"):
+            return
+        if (self.priors is None) or ("samples" not in self.priors.keys()):
+            return
+        prior_samples = self.priors["samples"]
+        if not len(prior_samples):
+            return
+        new_prior_samples = prior_samples.reweight(function, **kwargs)
+        self.priors["samples"] = new_prior_samples
+
 
 class MultiAnalysisRead(Read):
     """Base class to read in a results file which contains multiple analyses
@@ -721,6 +749,8 @@ class MultiAnalysisRead(Read):
         convert the posterior samples to a latex table
     generate_latex_macros:
         generate a set of latex macros for the stored posterior samples
+    reweight_samples:
+        reweight the posterior and/or samples according to a new prior
     """
     def __init__(self, *args, **kwargs):
         super(MultiAnalysisRead, self).__init__(*args, **kwargs)
@@ -911,3 +941,38 @@ class MultiAnalysisRead(Read):
         else:
             with open(save_to_file, "w") as f:
                 f.writelines([macros])
+
+    def reweight_samples(self, function, labels=None, **kwargs):
+        """Reweight the posterior and/or prior samples according to a new prior
+
+        Parameters
+        ----------
+        labels: list, optional
+            list of analyses you wish to reweight. Default reweight all
+            analyses
+        """
+        _samples_dict = self.samples_dict
+        for idx, label in enumerate(self.labels):
+            if labels is not None and label not in labels:
+                continue
+            new_samples = _samples_dict[label].reweight(function, **kwargs)
+            self.parameters[idx] = Parameters(new_samples.parameters)
+            self.samples[idx] = np.array(new_samples.samples).T
+            self.extra_kwargs[idx]["sampler"].update(
+                {
+                    "nsamples": new_samples.number_of_samples,
+                    "nsamples_before_reweighting": (
+                        _samples_dict[label].number_of_samples
+                    )
+                }
+            )
+            self.extra_kwargs[idx]["meta_data"]["reweighting"] = function
+            if not hasattr(self, "priors"):
+                continue
+            if "samples" not in self.priors.keys():
+                continue
+            prior_samples = self.priors["samples"][label]
+            if not len(prior_samples):
+                continue
+            new_prior_samples = prior_samples.reweight(function, **kwargs)
+            self.priors["samples"][label] = new_prior_samples

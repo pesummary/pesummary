@@ -194,6 +194,17 @@ class _GWInput(_Input):
         )
         return data
 
+    @property
+    def reweight_samples(self):
+        return self._reweight_samples
+
+    @reweight_samples.setter
+    def reweight_samples(self, reweight_samples):
+        from pesummary.gw.reweight import options
+        self._reweight_samples = self._check_reweight_samples(
+            reweight_samples, options
+        )
+
     def _set_samples(self, *args, **kwargs):
         super(_GWInput, self)._set_samples(*args, **kwargs)
         if "calibration" not in self.priors:
