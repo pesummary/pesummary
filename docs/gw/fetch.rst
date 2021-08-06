@@ -18,7 +18,15 @@ and then opens the file with the `pesummary.io.read <read.html>`_ module. For
 details about how to plot the data stored in this file, see the
 `Plotting from a meta file <./tutorials/plotting_from_metafile.html>`_ tutorial.
 
-.. autofunction:: pesummary.gw.fetch.fetch_open_data
+.. autofunction:: pesummary.gw.fetch.fetch_open_samples
+
+We may also download publicly available strain data with,
+
+.. literalinclude:: ../../../examples/gw/fetch_open_strain.py
+    :language: python
+    :linenos:
+
+.. autofunction:: pesummary.gw.fetch.fetch_open_strain
 
 Authenticated data
 ++++++++++++++++++

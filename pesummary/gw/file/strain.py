@@ -1,5 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+import pathlib
 from gwpy.timeseries import TimeSeries
 from pesummary.utils.utils import logger
 from pesummary.utils.dict import Dict
@@ -114,8 +115,31 @@ class StrainData(TimeSeries):
                 with open(args[0], "r") as f:
                     data = Cache.fromfile(f)
                 args[0] = data
+        if len(args) and isinstance(args[0], pathlib.PosixPath):
+            args = list(args)
+            args[0] = str(args[0])
         obj = super(StrainData, cls).read(*args, **kwargs)
         return cls(obj, IFO=IFO)
+
+    @classmethod
+    def fetch_open_frame(cls, event, **kwargs):
+        """Fetch open frame files for a given event
+
+        Parameters
+        ----------
+        sampling_rate: int, optional
+            sampling rate of strain data you wish to download. Default 16384
+        format: str, optional
+            format of strain data you wish to download. Default "gwf"
+        duration: int, optional
+            duration of strain data you wish to download. Default 32
+        IFO: str, optional
+            detector strain data you wish to download. Default 'L1'
+        **kwargs: dict, optional
+            all additional kwargs passed to StrainData.read
+        """
+        from ..fetch import fetch_open_strain
+        return fetch_open_strain(event, read_file=True, **kwargs)
 
     @classmethod
     def fetch_open_data(cls, *args, **kwargs):

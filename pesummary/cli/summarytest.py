@@ -180,9 +180,9 @@ def _public_pesummary_result_file(event):
     """Test that pesummary can load in a previously released pesummary result
     file
     """
-    from pesummary.gw.fetch import fetch_open_data
+    from pesummary.gw.fetch import fetch_open_samples
 
-    download = fetch_open_data(
+    download = fetch_open_samples(
         event, read_file=False, delete_on_exit=False, outdir="./", unpack=True
     )
     command_line = "{} {} -f {}.h5".format(

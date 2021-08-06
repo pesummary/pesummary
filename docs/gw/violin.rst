@@ -88,8 +88,8 @@ and the `fetch module <fetch.html>`_ both implemented in `pesummary`),
 
 .. code-block:: python
 
-    >>> from pesummary.gw.fetch import fetch_open_data
-    >>> f = fetch_open_data("GW190412")
+    >>> from pesummary.gw.fetch import fetch_open_samples
+    >>> f = fetch_open_samples("GW190412")
     >>> posterior = f.samples_dict
     >>> parameter = "chi_p"
     >>> prior = f.priors["samples"]["combined"]
