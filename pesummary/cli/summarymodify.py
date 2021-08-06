@@ -199,6 +199,14 @@ class Input(_Input):
         self.overwrite = self.opts.overwrite
         self.force_replace = self.opts.force_replace
         self.data = None
+        if self.opts.descriptions is not None:
+            import copy
+            self._labels_copy = copy.deepcopy(self._labels)
+            self._labels = self.data.keys()
+            self.descriptions = self.opts.descriptions
+            self._labels = self._labels_copy
+        else:
+            self._descriptions = None
 
 
 def command_line():
@@ -210,6 +218,13 @@ def command_line():
         help=("labels you wish to modify. Syntax: `--labels existing:new` "
               "where ':' is the default delimiter"),
         default=None
+    )
+    parser.add_argument(
+        "--descriptions", nargs="+", action=DelimiterSplitAction, help=(
+            "descriptions you wish to modify. Syntax `--descriptions label:desc` "
+            "where label is the analysis you wish to change and desc is the "
+            "new description"
+        ), default=None
     )
     parser.add_argument(
         "-s", "--samples", dest="samples", default=None, nargs='+',
@@ -312,6 +327,30 @@ def _modify_labels(data, labels=None):
                     data[key][new] = data[key].pop(existing)
         else:
             data[new] = data.pop(existing)
+    return data
+
+
+def _modify_descriptions(data, descriptions={}):
+    """Modify the existing descriptions in the data
+
+    Parameters
+    ----------
+    data: dict
+        dictionary containing the data
+    descriptions: dict
+        dictionary of descriptions with label as the key and new description as
+        the item
+    """
+    message = (
+        "Unable to find label '{}' in the metafile. Unable to modify "
+        "description"
+    )
+    for label, new_desc in descriptions.items():
+        check = _check_label(data, label, message.format(label))
+        if check:
+            if "description" not in data[label].keys():
+                data[label]["description"] = []
+            data[label]["description"] = [new_desc]
     return data
 
 
@@ -471,6 +510,7 @@ def modify(data, function, **kwargs):
     """
     func_map = {
         "labels": _modify_labels,
+        "descriptions": _modify_descriptions,
         "kwargs": _modify_kwargs,
         "add_posterior": _modify_posterior,
         "rm_posterior": _remove_posterior,
@@ -494,6 +534,10 @@ def _main(opts):
         meta_file = args.samples
     if args.labels is not None:
         modified_data = modify(args.data, "labels", labels=args.labels)
+    if args.descriptions is not None:
+        modified_data = modify(
+            args.data, "descriptions", descriptions=args.descriptions
+        )
     if args.kwargs is not None:
         modified_data = modify(args.data, "kwargs", kwargs=args.kwargs)
     if args.replace_posterior is not None:

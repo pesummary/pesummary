@@ -256,6 +256,8 @@ class DelimiterSplitAction(argparse.Action):
                 items[value[0]] = [items[value[0]]]
             if value[0] in items.keys():
                 items[value[0]].append(value[1])
+            elif len(value) == 1 and len(values) == 1:
+                items = [value[0]]
             else:
                 items[value[0]] = value[1]
         setattr(namespace, self.dest, items)
@@ -409,6 +411,15 @@ def _samples_command_line_arguments(parser):
         "--reweight_samples", default=False, help=(
             "Method to use when reweighting posterior and/or prior samples. "
             "Default do not reweight samples."
+        )
+    )
+    sample_group.add_argument(
+        "--descriptions", default={}, action=DictionaryAction, nargs="+",
+        help=(
+            "JSON file containing a set of descriptions for each analysis or "
+            "dictionary giving descriptions for each analysis directly from "
+            "the command line (e.g. `--descriptions label1:'description'`). "
+            "These descriptions are then saved in the output."
         )
     )
     return sample_group

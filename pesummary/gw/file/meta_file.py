@@ -32,7 +32,7 @@ class _GWMetaFile(_MetaFile):
         existing_priors={}, existing_metafile=None, package_information={},
         mcmc_samples=False, skymap=None, existing_skymap=None,
         filename=None, external_hdf5_links=False, hdf5_compression=None,
-        history=None, gwdata=None
+        history=None, descriptions=None, gwdata=None
     ):
         self.calibration = calibration
         self.psds = psd
@@ -55,7 +55,8 @@ class _GWMetaFile(_MetaFile):
             existing=existing, existing_metafile=existing_metafile,
             mcmc_samples=mcmc_samples, filename=filename,
             external_hdf5_links=external_hdf5_links,
-            hdf5_compression=hdf5_compression, history=history
+            hdf5_compression=hdf5_compression, history=history,
+            descriptions=descriptions
         )
         if self.calibration is None:
             self.calibration = {label: {} for label in self.labels}
@@ -284,7 +285,7 @@ class GWMetaFile(GWPostProcessing):
             existing_skymap=self.existing_skymap, filename=self.filename,
             external_hdf5_links=self.external_hdf5_links,
             hdf5_compression=self.hdf5_compression, history=history,
-            gwdata=self.gwdata
+            gwdata=self.gwdata, descriptions=self.descriptions
         )
         meta_file.make_dictionary()
         if not self.hdf5:

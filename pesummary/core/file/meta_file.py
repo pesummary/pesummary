@@ -207,7 +207,8 @@ class _MetaFile(object):
         existing_injection=None, existing_metadata=None, existing_config=None,
         existing_priors={}, existing_metafile=None, outdir=None, existing=None,
         package_information={}, mcmc_samples=False, filename=None,
-        external_hdf5_links=False, hdf5_compression=None, history=None
+        external_hdf5_links=False, hdf5_compression=None, history=None,
+        descriptions=None
     ):
         self.data = {}
         self.webdir = webdir
@@ -223,6 +224,7 @@ class _MetaFile(object):
         self.external_hdf5_links = external_hdf5_links
         self.hdf5_compression = hdf5_compression
         self.history = history
+        self.descriptions = descriptions
         if self.history is None:
             from pesummary.utils.utils import history_dictionary
 
@@ -231,6 +233,14 @@ class _MetaFile(object):
             except KeyError:
                 _user = ''
             self.history = history_dictionary(creator=_user)
+        if self.descriptions is None:
+            self.descriptions = {
+                label: "No description found" for label in self.labels
+            }
+        elif not all(label in self.descriptions.keys() for label in self.labels):
+            for label in self.labels:
+                if label not in self.descriptions.keys():
+                    self.descriptions[label] = "No description found"
         self.priors = priors
         self.existing_version = existing_version
         self.existing_labels = existing_label
@@ -333,6 +343,7 @@ class _MetaFile(object):
                 ]
             }
             dictionary[label]["version"] = [self.file_versions[label]]
+            dictionary[label]["description"] = [self.descriptions[label]]
             dictionary[label]["meta_data"] = self.file_kwargs[label]
             if self.config != {} and self.config[num] is not None and \
                     not isinstance(self.config[num], dict):
@@ -669,7 +680,8 @@ class MetaFile(PostProcessing):
             package_information=self.package_information,
             mcmc_samples=self.mcmc_samples, filename=self.filename,
             external_hdf5_links=self.external_hdf5_links,
-            hdf5_compression=self.hdf5_compression, history=history
+            hdf5_compression=self.hdf5_compression, history=history,
+            descriptions=self.descriptions
         )
         meta_file.make_dictionary()
         if not self.hdf5:

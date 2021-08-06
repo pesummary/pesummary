@@ -192,7 +192,8 @@ class Read(object):
     attrs = {
         "input_version": "version", "extra_kwargs": "kwargs",
         "priors": "prior", "analytic": "analytic", "labels": "labels",
-        "config": "config", "weights": "weights", "history": "history"
+        "config": "config", "weights": "weights", "history": "history",
+        "description": "description"
     }
 
     def _load(self, function, **kwargs):
@@ -253,6 +254,8 @@ class Read(object):
             self.input_version = self._default_version
         if self.extra_kwargs is None:
             self.extra_kwargs = self._default_kwargs
+        if self.description is None:
+            self.description = self._default_description
         if self.weights is None:
             self.weights = self.check_for_weights(
                 self.data["parameters"], self.data["samples"]
@@ -584,6 +587,10 @@ class SingleAnalysisRead(Read):
         _kwargs["sampler"]["nsamples"] = len(self.data["samples"])
         return _kwargs
 
+    @property
+    def _default_description(self):
+        return "No description found"
+
     def _add_fixed_parameters_from_config_file(self, config_file, function):
         """Search the conifiguration file and add fixed parameters to the
         list of parameters and samples
@@ -788,6 +795,10 @@ class MultiAnalysisRead(Read):
             _kwargs[num]["sampler"]["nsamples"] = len(ss)
         return _kwargs
 
+    @property
+    def _default_description(self):
+        return {label: "No description found" for label in self.labels}
+
     def write(self, package="core", file_format="dat", **kwargs):
         """Save the data to file
 
@@ -831,6 +842,7 @@ class MultiAnalysisRead(Read):
         for num, label in enumerate(self.labels):
             string += "{}\n".format(label)
             string += "-" * len(label) + "\n"
+            string += "description: {}\n".format(self.description[label])
             string += "nsamples: {}\n".format(len(self.samples[num]))
             string += "parameters: {}\n\n".format(
                 self._parameter_summary(
