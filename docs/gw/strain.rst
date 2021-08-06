@@ -26,6 +26,18 @@ contain the gravitational wave strain. For example,
 
     >>> f = StrainData.read("bilby_strain_data.pickle")
 
+The :code:`StrainData` class also offers the :code:`fetch_open_frame` method
+which allows the user to fetch frame files from
+`GWOSC <https://www.gw-openscience.org/about/>`_ for a given event,
+
+.. code-block:: python
+
+    >>> from pesummary.gw.file.strain import StrainData
+    >>> f = StrainData.fetch_open_frame(
+    ...    "GW190412", IFO="L1", sampling_rate=4096., duration=32,
+    ...    channel="L1:GWOSC-4KHZ_R1_STRAIN"
+    ... )
+
 .. autoclass:: pesummary.gw.file.strain.StrainData
     :members:
 

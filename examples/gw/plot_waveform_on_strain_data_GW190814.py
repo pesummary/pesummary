@@ -1,10 +1,10 @@
 from pesummary.gw.file.strain import StrainData
-from pesummary.gw.fetch import fetch_open_data
+from pesummary.gw.fetch import fetch_open_samples
 import requests
 
 # First we download the GW190814 posterior samples and generate the maximum
 # likelihood waveform in the time domain
-data = fetch_open_data("GW190814", unpack=True, path="GW190814.h5")
+data = fetch_open_samples("GW190814", unpack=True, path="GW190814.h5")
 samples = data.samples_dict["C01:SEOBNRv4PHM"]
 maxL = samples.maxL_td_waveform("SEOBNRv4PHM", 1. / 4096, 20., project="L1")
 

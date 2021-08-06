@@ -1,4 +1,4 @@
-from pesummary.gw.fetch import fetch_open_data
+from pesummary.gw.fetch import fetch_open_samples
 from pesummary.utils.utils import draw_conditioned_prior_samples
 import matplotlib.pyplot as plt
 from pesummary.core.plots.bounded_1d_kde import bounded_1d_kde
@@ -7,7 +7,7 @@ import numpy as np
 np.random.seed(21)
 
 # First lets download and read the publicly available data
-f = fetch_open_data("GW190412", unpack=True, path="GW190412.h5")
+f = fetch_open_samples("GW190412", unpack=True, path="GW190412.h5")
 posterior = f.samples_dict
 prior = f.priors["samples"]["C01:SEOBNRv4PHM"]
 unconditioned = prior["chi_p"]

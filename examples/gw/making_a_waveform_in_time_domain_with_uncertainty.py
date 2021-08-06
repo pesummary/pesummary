@@ -1,8 +1,8 @@
-from pesummary.gw.fetch import fetch_open_data
+from pesummary.gw.fetch import fetch_open_samples
 import matplotlib.pyplot as plt
 import requests
 
-f = fetch_open_data("GW190814", unpack=True, path="GW190814.h5")
+f = fetch_open_samples("GW190814", unpack=True, path="GW190814.h5")
 samples = f.samples_dict
 EOB = samples["C01:SEOBNRv4PHM"]
 _ = EOB.downsample(1000)
