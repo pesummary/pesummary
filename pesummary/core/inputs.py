@@ -215,7 +215,8 @@ class _Input(object):
             "weights": weights,
             "indicies": indicies,
             "mcmc_samples": f.mcmc_samples,
-            "open_file": f
+            "open_file": f,
+            "descriptions": f.description
         }
 
     @staticmethod
@@ -294,7 +295,8 @@ class _Input(object):
             "file_kwargs": {label: kwargs},
             "prior": priors,
             "weights": {label: weights},
-            "open_file": f
+            "open_file": f,
+            "descriptions": {label: f.description}
         }
         if hasattr(f, "config") and f.config is not None:
             if config is None:
@@ -1532,6 +1534,84 @@ class _Input(object):
                 )
 
     @property
+    def descriptions(self):
+        return self._descriptions
+
+    @descriptions.setter
+    def descriptions(self, descriptions):
+        import json
+        if hasattr(self, "_descriptions") and not len(descriptions):
+            return
+        elif not len(descriptions):
+            self._descriptions = None
+            return
+
+        if len(descriptions) and isinstance(descriptions, dict):
+            data = descriptions
+        elif len(descriptions):
+            descriptions = descriptions[0]
+        _is_file = not isinstance(descriptions, dict)
+        if hasattr(self, "_descriptions"):
+            logger.warning(
+                "Ignoring descriptions found in result file and using "
+                "descriptions in '{}'".format(descriptions)
+            )
+        self._descriptions = None
+        if _is_file and not os.path.isfile(descriptions):
+            logger.warning(
+                "No such file called {}. Unable to add descriptions".format(
+                    descriptions
+                )
+            )
+            return
+        if _is_file:
+            try:
+                with open(descriptions, "r") as f:
+                    data = json.load(f)
+            except json.decoder.JSONDecodeError:
+                logger.warning(
+                    "Unable to open file '{}'. Not storing descriptions".format(
+                        descriptions
+                    )
+                )
+                return
+        if not all(label in data.keys() for label in self.labels):
+            not_included = [
+                label for label in self.labels if label not in data.keys()
+            ]
+            logger.debug(
+                "No description found for '{}'. Using default "
+                "description".format(", ".join(not_included))
+            )
+            for label in not_included:
+                data[label] = "No description found"
+        if len(data.keys()) > len(self.labels):
+            logger.warning(
+                "Descriptions file contains descriptions for analyses other "
+                "than {}. Ignoring other descriptions".format(
+                    ", ".join(self.labels)
+                )
+            )
+            other = [
+                analysis for analysis in data.keys() if analysis not in
+                self.labels
+            ]
+            for analysis in other:
+                _ = data.pop(analysis)
+        _remove = []
+        for key, desc in data.items():
+            if not isinstance(desc, (str, bytes)):
+                logger.warning(
+                    "Unknown description '{}' for '{}'. The description should "
+                    "be a string or bytes object"
+                )
+                _remove.append(key)
+        if len(_remove):
+            for analysis in _remove:
+                _ = data.pop(analysis)
+        self._descriptions = data
+
+    @property
     def public(self):
         return self._public
 
@@ -1910,6 +1990,7 @@ class Input(_Input):
         self.linestyles = self.opts.linestyles
         self.disable_corner = self.opts.disable_corner
         self.notes = self.opts.notes
+        self.descriptions = self.opts.descriptions
         self.pe_algorithm = self.opts.pe_algorithm
         self.disable_comparison = self.opts.disable_comparison
         self.disable_interactive = self.opts.disable_interactive
@@ -2060,6 +2141,7 @@ class PostProcessing(object):
         self.linestyles = self.inputs.linestyles
         self.include_prior = self.inputs.include_prior
         self.notes = self.inputs.notes
+        self.descriptions = self.inputs.descriptions
         self.disable_comparison = self.inputs.disable_comparison
         self.disable_interactive = self.inputs.disable_interactive
         self.disable_expert = self.inputs.disable_expert

@@ -276,6 +276,34 @@ class TestSummaryPages(Base):
             )
         )
 
+    def test_descriptions(self):
+        """Check that summarypages stores the correct descriptions when the
+        `--descriptions` flag is provided
+        """
+        import json
+        from pesummary.io import read
+        command_line = (
+            "summarypages --webdir .outdir --samples .outdir/example.json "
+            ".outdir/example.json --labels core0 core1 --nsamples 100 "
+            "--disable_expert --disable_corner --descriptions core0:Description"
+        )
+        self.launch(command_line)
+        opened = read(".outdir/samples/posterior_samples.h5")
+        assert opened.description["core0"] == "Description"
+        assert opened.description["core1"] == "No description found"
+
+        with open(".outdir/descriptions.json", "w") as f:
+            json.dump({"core0": "Testing description", "core1": "Test"}, f)
+        command_line = (
+            "summarypages --webdir .outdir --samples .outdir/example.json "
+            ".outdir/example.json --labels core0 core1 --nsamples 100 "
+            "--disable_expert --disable_corner --descriptions .outdir/descriptions.json"
+        )
+        self.launch(command_line)
+        opened = read(".outdir/samples/posterior_samples.h5")
+        assert opened.description["core0"] == "Testing description"
+        assert opened.description["core1"] == "Test"
+
     def test_reweight(self):
         """Check that summarypages reweights the posterior samples if the
         `--reweight_samples` flag is provided
@@ -1251,6 +1279,38 @@ class TestSummaryModify(Base):
         """
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
+
+    def test_descriptions(self):
+        """Test that the descriptions are correctly replaced in the meta file
+        """
+        import json
+        import h5py
+
+        command_line = (
+            'summarymodify --webdir .outdir --samples .outdir/test.h5 '
+            '--descriptions replace:TestingSummarymodify'
+        )
+        self.launch(command_line)
+        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        original_data = h5py.File(".outdir/test.h5", "r")
+        data = h5py.File(".outdir/test.h5", "r")
+        if "description" in original_data["replace"].keys():
+            assert original_data["replace"]["description"][0] != b'TestingSummarymodify'
+        assert modified_data["replace"]["description"][0] == b'TestingSummarymodify'
+        modified_data.close()
+        original_data.close()
+
+        with open(".outdir/descriptions.json", "w") as f:
+            json.dump({"replace": "NewDescription"}, f)
+
+        command_line = (
+            'summarymodify --webdir .outdir --samples .outdir/test.h5 '
+            '--descriptions .outdir/descriptions.json'
+        )
+        self.launch(command_line)
+        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        assert modified_data["replace"]["description"][0] == b'NewDescription'
+        modified_data.close()
 
     def test_modify_kwargs_replace(self):
         """Test that kwargs are correctly replaced in the meta file

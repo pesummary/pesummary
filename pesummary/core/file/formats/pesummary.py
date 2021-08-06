@@ -286,7 +286,7 @@ class PESummary(MultiAnalysisRead):
 
         parameter_list, sample_list, inj_list, ver_list = [], [], [], []
         meta_data_list, weights_list = [], []
-        prior_dict, config_dict = {}, {}
+        description_dict, prior_dict, config_dict = {}, {}, {}
         mcmc_samples = False
         for num, label in enumerate(labels):
             if label == "version" or label == "history":
@@ -368,6 +368,11 @@ class PESummary(MultiAnalysisRead):
             else:
                 version = "No version information found"
             ver_list.append(version)
+            if "description" in data.keys():
+                description = data["description"]
+            else:
+                description = "No description found"
+            description_dict[label] = description
             if "priors" in data.keys():
                 priors = data["priors"]
             else:
@@ -391,7 +396,8 @@ class PESummary(MultiAnalysisRead):
             "config": config_dict,
             "prior": reversed_prior_dict,
             "mcmc_samples": mcmc_samples,
-            "history": history_dict
+            "history": history_dict,
+            "description": description_dict
         }
 
     @property
