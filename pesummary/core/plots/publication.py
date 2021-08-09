@@ -240,7 +240,7 @@ def comparison_twod_contour_plot(
         else:
             plot_density = False
 
-        _label = _color = None
+        _label = _color = _linestyle = None
         if labels is not None:
             _label = labels[num]
         if colors is not None:
