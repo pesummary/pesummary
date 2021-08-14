@@ -642,6 +642,7 @@ def _triangle_plot(
         _contour_function(
             x[num], y[num], ax=ax3, levels=levels, smooth=_smooth,
             rangex=[xlow, xhigh], rangey=[ylow, yhigh], color=colors[num],
+            linestyles=linestyles[num],
             plot_density=plot_density, contour_kwargs=dict(
                 linestyles=[linestyles[num]], linewidths=linewidths[num]
             ), plot_datapoints=plot_datapoints, kde=kde_2d,
