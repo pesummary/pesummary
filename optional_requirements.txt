@@ -8,6 +8,7 @@ beautifulsoup4
 Sphinx>=1.2.2
 sphinx-argparse
 sphinx_rtd_theme
+sphinx-panels
 sphinxcontrib-programoutput
 testfixtures
 ligo.skymap
