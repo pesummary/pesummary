@@ -36,7 +36,7 @@ except ModuleNotFoundError:
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.ifconfig', 'sphinx.ext.napoleon']
 extensions += ['sphinxarg.ext', 'sphinxcontrib.programoutput']
-extensions += ['sphinx.ext.viewcode', 'nbsphinx']
+extensions += ['sphinx.ext.viewcode', 'nbsphinx', 'sphinx_panels']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
