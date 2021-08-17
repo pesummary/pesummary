@@ -141,7 +141,7 @@ style:
 
 documentation:
   stage: basic
-  image: python:3.6
+  image: python:3.6-buster
   needs:
     - tarball
   script:
@@ -325,7 +325,7 @@ ligo_skymap:
 
 lalinference:
   stage: compatibility
-  image: python:3.6
+  image: python:3.6-buster
   needs:
     - tarball
     - executables
