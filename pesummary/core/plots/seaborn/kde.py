@@ -71,6 +71,7 @@ class _DistributionPlotter(SeabornDistributionPlotter):
         fill,
         legend,
         estimate_kws,
+        variance_atol,
         **plot_kws,
     ):
 
@@ -104,6 +105,7 @@ class _DistributionPlotter(SeabornDistributionPlotter):
             common_grid,
             estimate_kws,
             log_scale,
+            variance_atol,
         )
 
         # Note: raises when no hue and multiple != layer. A problem?
@@ -231,6 +233,7 @@ class _DistributionPlotter(SeabornDistributionPlotter):
         common_grid,
         estimate_kws,
         log_scale,
+        variance_atol,
     ):
 
         # Initialize the estimator object
@@ -254,7 +257,7 @@ class _DistributionPlotter(SeabornDistributionPlotter):
             observations = sub_data[data_variable]
 
             observation_variance = observations.var()
-            if np.isclose(observation_variance, 0) or np.isnan(observation_variance):
+            if np.isclose(observation_variance, 0, atol=variance_atol) or np.isnan(observation_variance):
                 msg = "Dataset has 0 variance; skipping density estimate."
                 warnings.warn(msg, UserWarning)
                 continue
@@ -303,6 +306,7 @@ def kdeplot(
     levels=10, thresh=.05,
     bw_method="scott", bw_adjust=1, log_scale=None,
     color=None, fill=None, kde_kernel=stats.gaussian_kde, kde_kwargs={},
+    variance_atol=1e-8,
 
     # Renamed params
     data=None, data2=None,
@@ -433,6 +437,7 @@ def kdeplot(
             fill=fill,
             legend=legend,
             estimate_kws=estimate_kws,
+            variance_atol=variance_atol,
             **plot_kws,
         )
 
