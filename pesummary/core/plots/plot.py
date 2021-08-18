@@ -517,6 +517,7 @@ def _1d_histogram_plot(
             kwargs.update({
                 "kde_kwargs": _kde_kwargs,
                 "kde_kernel": _kde_kwargs.pop("kde_kernel", None),
+                "variance_atol": _kde_kwargs.pop("variance_atol", 1e-8),
                 "weights": weights
             })
             kwargs.update(plot_kwargs)
