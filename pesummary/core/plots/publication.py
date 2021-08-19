@@ -672,7 +672,7 @@ def _triangle_plot(
 
 
 def _generate_reverse_triangle_plot(
-    *args, xlabel=None, ylabel=None, function=None, **kwargs
+    *args, xlabel=None, ylabel=None, function=None, existing_figure=None, **kwargs
 ):
     """Generate a reverse triangle plot according to a given function
 
@@ -689,10 +689,13 @@ def _generate_reverse_triangle_plot(
     **kwargs: dict, optional
         all kwargs passed to function
     """
-    fig, ax1, ax2, ax3, ax4 = _triangle_axes(
-        width_ratios=[1, 4], height_ratios=[4, 1]
-    )
-    ax3.axis("off")
+    if existing_figure is None:
+        fig, ax1, ax2, ax3, ax4 = _triangle_axes(
+            width_ratios=[1, 4], height_ratios=[4, 1]
+        )
+        ax3.axis("off")
+    else:
+        fig, ax1, ax2, ax4 = existing_figure
     if function is None:
         function = _triangle_plot
     fig, ax4, ax2, ax1 = function(fig, [ax4, ax2, ax1], *args, **kwargs)
