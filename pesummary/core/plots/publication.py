@@ -46,9 +46,10 @@ def pcolormesh(
     _off = False
     if _cmap is not None and isinstance(_cmap, str) and _cmap.lower() == "off":
         _off = True
-    _zorder = 10.
-    if grid:
+    if grid and "zorder" not in kwargs:
         _zorder = -10
+    else:
+        _zorder = kwargs.pop("zorder", 10)
     if not _off:
         ax.pcolormesh(x, y, density, zorder=_zorder, **kwargs)
     if levels is not None:
@@ -469,7 +470,8 @@ def _analytic_triangle_plot(
     if ylabel is not None:
         ax3.set_ylabel(ylabel, fontsize=fontsize["label"])
     ax1.grid(grid)
-    ax3.grid(grid, zorder=10)
+    if grid:
+        ax3.grid(grid, zorder=10)
     ax4.grid(grid)
     xlims = ax3.get_xlim()
     ax1.set_xlim(xlims)
