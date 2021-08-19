@@ -377,18 +377,19 @@ def _1d_analytic_plot(
     injection_color: str, optional
         color of vertical line showing the injected value
     """
-    from pesummary.utils.pdf import DiscretePDF
+    from pesummary.utils.array import Array
 
-    pdf = DiscretePDF(x, pdf)
     if ax is None and fig is None:
         fig, ax = figure(gca=True)
     elif ax is None:
         ax = fig.gca()
 
-    ax.plot(pdf.x, pdf.probs, color=color, linestyle=linestyle, label=label)
+    pdf = Array(x, weights=pdf)
+
+    ax.plot(pdf, pdf.weights, color=color, linestyle=linestyle, label=label)
     _xlims = ax.get_xlim()
-    percentile = pdf.percentile([5, 95])
-    median = pdf.percentile([50])[0]
+    percentile = pdf.confidence_interval([5, 95])
+    median = pdf.average("median")
     if title:
         upper = np.round(percentile[1] - median, 2)
         lower = np.round(median - percentile[0], 2)

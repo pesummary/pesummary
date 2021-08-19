@@ -104,7 +104,7 @@ class Array(np.ndarray):
         """
         if weights is None:
             return np.median(array)
-        return Array.percentile(array, weights=weights, percentile=0.5)
+        return Array.percentile(array, weights=weights, percentile=50)
 
     @staticmethod
     def _maxL(array, likelihood=None):
