@@ -213,7 +213,8 @@ def GWTC2(*args, size=5, include_exceptional=True, **kwargs):
     soup = BeautifulSoup(page.content, 'html.parser')
     entries = soup.find_all("td")
     events = [
-        e.text for e in entries if "GW" in e.text and "GWTC" not in e.text
+        e.text.strip().replace(" ", "") for e in entries if "GW" in e.text
+        and "GWTC" not in e.text
     ]
     specified = np.random.choice(events, replace=False, size=size).tolist()
     if include_exceptional:
