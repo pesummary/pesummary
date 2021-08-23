@@ -2,13 +2,14 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
+import numpy as np
 import argparse
 
 from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
 from pesummary.core.command_line import CheckFilesExistAction
 from pesummary.core.parser import parser
 from pesummary.core.inputs import _Input
-from pesummary.io import write
+from pesummary.io import read, write
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 __doc__ = """This executable is used to combine posterior samples. This is
@@ -69,6 +70,10 @@ def command_line():
         "--outdir", dest="outdir", type=str, default="./",
         help="Directory to save the file"
     )
+    parser.add_argument(
+        "--seed", dest="seed", default=123456789, type=int,
+        help="Random seed to used through the analysis. Default 123456789"
+    )
     return parser
 
 
@@ -89,10 +94,26 @@ class Input(_Input):
     """
     def __init__(self, opts):
         self.opts = opts
+        self.seed = self.opts.seed
         self.result_files = self.opts.samples
         self.mcmc_samples = False
         self.add_to_existing = False
-        self.labels = self.opts.labels
+        cond = np.sum([self.is_pesummary_metafile(f) for f in self.result_files])
+        if cond > 1:
+            raise ValueError(
+                "Can only combine analyses from a single PESummary metafile"
+            )
+        elif cond == 1 and len(self.result_files) > 1:
+            raise ValueError(
+                "Can only combine analyses from a single PESummary metafile "
+                "or multiple non-PESummary metafiles"
+            )
+        self.pesummary = False
+        if self.is_pesummary_metafile(self.result_files[0]):
+            self.pesummary = True
+            self._labels = self.opts.labels
+        else:
+            self.labels = self.opts.labels
 
 
 def main(args=None):
@@ -101,12 +122,19 @@ def main(args=None):
     _parser = parser(existing_parser=command_line())
     opts, unknown = _parser.parse_known_args(args=args)
     args = Input(opts)
-    samples = {
-        label: samples for label, samples in zip(args.labels, args.result_files)
-    }
-    mydict = MultiAnalysisSamplesDict.from_files(
-        samples, disable_prior=True, disable_injection_conversion=True
-    )
+    if not args.pesummary:
+        samples = {
+            label: samples for label, samples in
+            zip(args.labels, args.result_files)
+        }
+        mydict = MultiAnalysisSamplesDict.from_files(
+            samples, disable_prior=True, disable_injection_conversion=True
+        )
+    else:
+        mydict = read(
+            args.result_files[0], disable_prior=True,
+            disable_injection_conversion=True
+        ).samples_dict
     combined = mydict.combine(
         use_all=opts.use_all, weights=opts.weights, labels=args.labels,
         shuffle=opts.shuffle, logger_level="info"
