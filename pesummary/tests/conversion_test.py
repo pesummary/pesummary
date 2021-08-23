@@ -936,8 +936,6 @@ def test_evolve_angles_backwards():
     from lal import MSUN_SI
     from packaging import version
     import lalsimulation
-    if version.parse(lalsimulation.__version__) < version.parse("2.5.2"):
-        return
     input_data = [
         (
             1.3862687342652575e+32, 1.5853186050191907e+31, 0.8768912154180827,

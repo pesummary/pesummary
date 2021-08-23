@@ -79,8 +79,8 @@ conda:
   before_script: []
   script:
     - . /opt/conda/etc/profile.d/conda.sh
-    - conda create --name py37 python=3.7
-    - conda activate py37
+    - conda create --name py38 python=3.8
+    - conda activate py38
     - conda install --file conda_requirements.txt -c conda-forge
     - python setup.py install
     - conda deactivate
