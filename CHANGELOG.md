@@ -1,3 +1,40 @@
+## 0.13.0 [23/08/2021]
+
+### Changed
+
+- `pycbc_inference` - update pesummary.core.file.formats.hdf5 and testing suite
+  to ensure compatibility with `pycbc_inference`.
+- `f_low` - try and extract `f_low` from the config file stored within a `bilby`
+  result file (if present) if it cannot be extracted from the `bilby` metadata
+- unpin `tqdm` - unpin the `tqdm` requirement
+- `lalsuite >= 7.0.0` - update lalsuite requirement
+
+### Added
+
+- Update testing suite to test PESummary with python3.9
+- add the `pesummary.gw.file.formats.princeton` module to read in samples
+  released by Venumadhav et al.
+- Update docs to explain how to compare samples from non-LIGO GW groups
+- logger message for redshift computation - Display logger message when running
+  the `pesummary.gw.conversions.cosmology.z_from_dL_exact` method notifying the
+  user of the progress
+- Add a new `summarysplit` executable which splits a set of posterior samples
+  stored in a given file into N separate files
+- Add a conversion to calculate the spins at infinite separation. See
+  Johnson-McDaniel et al. for details. This can be performed with `summarypages`
+  by passing the `--evolve_spins_backwards` flag
+- Allow the user to pass e.g. `--samples *.dat` to pesummay executables
+- Allow the user to calculate and plot the time domain waveform uncertainty
+  associated with a table of posterior samples.
+- Allow the user to reweight a set of posterior samples a different prior.
+  Currently the user can only reweigh to a uniform_in_comoving_volume prior.
+  This can be performed with `summarypages` with the
+  `--reweight uniform_in_comoving_volume` flag
+- Add a new field to the pesummary metafile which allows the user to store a
+  short string which describes a given analysis. This description can be
+  added via `summarypages` with the `--descriptions` flag.
+
+
 ## 0.12.1 [18/05/2021]
 
 ### Changed
