@@ -1324,6 +1324,33 @@ class TestSummaryCombine_Posteriors(Base):
             assert all(ss in one[param] for ss in combined[param][:half])
             assert all(ss in two[param] for ss in combined[param][half:])
 
+        # test that you add the samples to the original file
+        command_line = (
+            "summarycombine_posteriors --outdir .outdir --filename test.dat "
+            "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
+            "--labels one two --weights 0.5 0.5 --seed 12345 --add_to_existing"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(".outdir/posterior_samples_combined.h5")
+        combined = read(".outdir/posterior_samples_combined.h5")
+        combined_samples = combined.samples_dict
+        assert "one_two_combined" in combined.labels
+        assert "one_two_combined" in combined_samples.keys()
+        combined_samples = combined_samples["one_two_combined"]
+        for param in combined_samples.keys():
+            assert all(ss in one[param] for ss in combined_samples[param][:half])
+            assert all(ss in two[param] for ss in combined_samples[param][half:])
+        # check that summarypages works fine on output
+        command_line = (
+            "summarypages --webdir .outdir/combined --disable_expert "
+            " --no_conversion --samples .outdir/posterior_samples_combined.h5 "
+            "--disable_corner --disable_interactive --gw"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(".outdir/combined/samples/posterior_samples.h5")
+        output = read(".outdir/combined/samples/posterior_samples.h5")
+        assert "one_two_combined" in output.labels
+
 
 class TestSummaryModify(Base):
     """Test the `summarymodify` executable

@@ -74,6 +74,14 @@ def command_line():
         "--seed", dest="seed", default=123456789, type=int,
         help="Random seed to used through the analysis. Default 123456789"
     )
+    parser.add_argument(
+        "--add_to_existing", action="store_true", default=False, help=(
+            "Add the combined samples to an existing metafile. Only used when "
+            "a PESummary metafile is provided via the `--samples` option. If "
+            "this option is provided, the `--file_format` and `--filename` "
+            "options are ignored"
+        )
+    )
     return parser
 
 
@@ -139,6 +147,44 @@ def main(args=None):
         use_all=opts.use_all, weights=opts.weights, labels=args.labels,
         shuffle=opts.shuffle, logger_level="info"
     )
+    if opts.add_to_existing and args.pesummary:
+        from .summarymodify import _Input as _ModifyInput
+        from pesummary.gw.file.meta_file import _GWMetaFile
+        from pathlib import Path
+        import os
+
+        class PESummaryInput(_ModifyInput):
+            def __init__(self, samples):
+                self.samples = samples
+                self.data = None
+
+        _args = PESummaryInput(args.result_files)
+        data = _args.data
+        data["{}_combined".format("_".join(args.labels))] = {
+            "posterior_samples": combined.to_structured_array(),
+            "meta_data": {
+                "sampler": {"nsamples": combined.number_of_samples},
+                "meta_data": {"combined": ", ".join(args.labels)}
+            }
+        }
+        input_file = Path(args.result_files[0])
+        _metafile = os.path.join(
+            opts.outdir, input_file.stem + "_combined" + input_file.suffix
+        )
+        if input_file.suffix in [".h5", ".hdf5"]:
+            _GWMetaFile.save_to_hdf5(
+                data, list(data.keys()), None, _metafile, no_convert=True
+            )
+        else:
+            _GWMetaFile.save_to_json(data, _metafile)
+        return
+    elif opts.add_to_existing:
+        from pesummary.utils.utils import logger
+        logger.warn(
+            "Can only use the `--add_to_existing` option when a PESummary "
+            "metafile is provided via the `--samples` option. Writing "
+            "combined samples to a `dat` file"
+        )
     combined.write(
         file_format=opts.file_format, filename=opts.filename, outdir=opts.outdir
     )
