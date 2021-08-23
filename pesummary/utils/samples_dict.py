@@ -1188,7 +1188,7 @@ class _MultiDimensionalSamplesDict(Dict):
         }
         if shuffle:
             inds = np.random.choice(
-                np.sum(_lengths), size=np.sum(_lengths), replace=False
+                np.sum(draw), size=np.sum(draw), replace=False
             )
             data = {
                 param: value[inds] for param, value in data.items()

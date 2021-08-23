@@ -146,7 +146,13 @@ def _check_pesummary_file_deprecated(f):
 
             labels = f["posterior_samples"].keys()
             if isinstance(labels, collections.abc.KeysView):
-                return True
+                _label = list(labels)[0]
+                try:
+                    _param = list(f["posterior_samples"][_label].keys())[0]
+                    samples = f["posterior_samples"][_label][_param]
+                    return True
+                except Exception:
+                    return False
             else:
                 return False
         except Exception:

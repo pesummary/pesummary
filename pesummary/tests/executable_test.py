@@ -1234,6 +1234,8 @@ class TestSummaryCombine_Posteriors(Base):
         os.rename(".outdir/test.json", ".outdir/example.json")
         make_result_file(gw=True, extension="hdf5")
         os.rename(".outdir/test.h5", ".outdir/example2.h5")
+        make_result_file(gw=True, extension="dat")
+        os.rename(".outdir/test.dat", ".outdir/example3.dat")
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -1248,7 +1250,68 @@ class TestSummaryCombine_Posteriors(Base):
         command_line = (
             "summarycombine_posteriors --outdir .outdir --filename test.dat "
             "--file_format dat --samples .outdir/example.json .outdir/example2.h5 "
-            "--labels one two --weights 0.5 0.5"
+            "--labels one two --weights 0.5 0.5 --seed 12345"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(".outdir/test.dat")
+        combined = read(".outdir/test.dat").samples_dict
+        one = read(".outdir/example.json").samples_dict
+        two = read(".outdir/example2.h5").samples_dict
+        nsamples = combined.number_of_samples
+        half = int(nsamples / 2.)
+        for param in combined.keys():
+            assert all(ss in one[param] for ss in combined[param][:half])
+            assert all(ss in two[param] for ss in combined[param][half:])
+
+    def test_combine_metafile_failures(self):
+        """Test that errors are raised when incorrect labels are passed when "
+        trying to combine posteriors from a single metafile and when trying
+        to combine posteriors from multiple metafiles
+        """
+        command_line = (
+            "summarycombine --samples .outdir/example.json .outdir/example2.h5 "
+            ".outdir/example3.dat --labels one two three --webdir .outdir "
+            "--no_conversion"
+        )
+        self.launch(command_line)
+        with pytest.raises(Exception):
+            command_line = (
+                "summarycombine_posteriors --outdir .outdir --filename test.dat "
+                "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
+                "--labels one four --weights 0.5 0.5 --seed 12345"
+            )
+            self.launch(command_line)
+        with pytest.raises(Exception):
+            command_line = (
+                "summarycombine_posteriors --outdir .outdir --filename test.dat "
+                "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
+                ".outdir/samples/posterior_samples.h5 --labels one two "
+                "--weights 0.5 0.5 --seed 12345"
+            )
+            self.launch(command_line)
+        with pytest.raises(Exception):
+            command_line = (
+                "summarycombine_posteriors --outdir .outdir --filename test.dat "
+                "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
+                ".outdir/example3.dat --labels one two --weights 0.5 0.5 --seed 12345"
+            )
+            self.launch(command_line)
+
+    def test_combine_metafile(self):
+        """Test that the two posteriors are combined when a single metafile
+        is provided
+        """
+        from pesummary.io import read
+        command_line = (
+            "summarycombine --samples .outdir/example.json .outdir/example2.h5 "
+            ".outdir/example3.dat --labels one two three --webdir .outdir "
+            "--no_conversion"
+        )
+        self.launch(command_line)
+        command_line = (
+            "summarycombine_posteriors --outdir .outdir --filename test.dat "
+            "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
+            "--labels one two --weights 0.5 0.5 --seed 12345"
         )
         self.launch(command_line)
         assert os.path.isfile(".outdir/test.dat")
