@@ -157,8 +157,10 @@ def guess_url(web_dir, host, user):
             url = "https://galahad.aei.mpg.de/~{}".format(user)
         elif 'atlas' in host:
             url = "https://atlas1.atlas.aei.uni-hannover.de/~{}".format(user)
-        elif 'iucca' in host:
+        elif 'iucaa' in host:
             url = "https://ldas-jobs.gw.iucaa.in/~{}".format(user)
+        elif 'alice' in host:
+            url = "https://dumpty.alice.icts.res.in/~{}".format(user)
         elif 'hawk' in host:
             url = "https://ligo.gravity.cf.ac.uk/~{}".format(user)
         else:
