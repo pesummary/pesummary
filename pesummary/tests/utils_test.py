@@ -152,7 +152,7 @@ class TestUtils(object):
 
     def test_url_guess(self):
         host = ["raven", "cit", "ligo-wa", "uwm", "phy.syr.edu", "vulcan",
-                "atlas", "iucca"]
+                "atlas", "iucaa", "alice"]
         expected = ["https://geo2.arcca.cf.ac.uk/~albert.einstein/test",
                     "https://ldas-jobs.ligo.caltech.edu/~albert.einstein/test",
                     "https://ldas-jobs.ligo-wa.caltech.edu/~albert.einstein/test",
@@ -160,7 +160,8 @@ class TestUtils(object):
                     "https://sugar-jobs.phy.syr.edu/~albert.einstein/test",
                     "https://galahad.aei.mpg.de/~albert.einstein/test",
                     "https://atlas1.atlas.aei.uni-hannover.de/~albert.einstein/test",
-                    "https://ldas-jobs.gw.iucaa.in/~albert.einstein/test"]
+                    "https://ldas-jobs.gw.iucaa.in/~albert.einstein/test",
+                    "https://dumpty.alice.icts.res.in/~albert.einstein/test"]
         user = "albert.einstein"
         webdir = '/home/albert.einstein/public_html/test'
         for i,j in zip(host, expected):
