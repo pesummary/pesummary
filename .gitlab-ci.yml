@@ -19,8 +19,8 @@ cache:
 
 before_script:
   - pip install -r requirements.txt
-  - pip install -r optional_requirements.txt
   - pip install -r testing_requirements.txt
+  - pip install -r optional_requirements.txt
   - 'apt-get update -y && bash && apt-get -y install pandoc'
   - export USER=albert.einstein
 

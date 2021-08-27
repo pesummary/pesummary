@@ -4,12 +4,11 @@ matplotlib
 seaborn>=0.11.0
 statsmodels
 corner
-cython>=0.28.5
 tables
 deepdish
 pandas
 pygments
-astropy>=3.2.3,!=4.3.0
+astropy>=3.2.3
 lalsuite>=7.0.0
 python-ligo-lw
 ligo-gracedb
