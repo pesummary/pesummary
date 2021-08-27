@@ -962,7 +962,8 @@ def test_evolve_angles_backwards():
             _sample[:2] = _sample[:2] / MSUN_SI
             tilt_1_inf, tilt_2_inf, phi_12 = evolve_spins(
                 *_sample, method=method, multi_process=1,
-                evolve_limit="infinite_separation", version=sample[-1]
+                evolve_limit="infinite_separation", version=sample[-1],
+                approx="SpinTaylorT5"
             )
             if num == 0:
                 np.testing.assert_almost_equal(tilt_1_inf, sample[8], 5)
