@@ -1,3 +1,14 @@
+## 0.13.1 [31/08/2021]
+
+### Changed
+
+- `astropy pin` - removed the temporary `astropy<=4.2.1` pin
+- `SpinTaylorT4` - use the `SpinTaylorT4` approximant for the backwards spin
+  evolution by default after a bug was found in the `SpinTaylorT5` approximant
+  which is the default approximant used in the LALSimulation function
+
+### Added
+
 ## 0.13.0 [23/08/2021]
 
 ### Changed
