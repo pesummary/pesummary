@@ -53,7 +53,7 @@ Core Package
 ++++++++++++
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
     core/index
 
@@ -61,7 +61,7 @@ GW Package
 ++++++++++
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
     gw/index
 
