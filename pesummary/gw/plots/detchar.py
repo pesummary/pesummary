@@ -162,7 +162,7 @@ def time_domain_strain_data(
             if merger_time is not None:
                 _x -= merger_time
             ax.plot(
-                _x, template[key], color='gray', linewidth=3.,
+                _x, template[key]["template"], color='gray', linewidth=3.,
                 path_effects=[pe.Stroke(linewidth=4.5, foreground='k'), pe.Normal()],
                 label="Template"
             )
