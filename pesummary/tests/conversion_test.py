@@ -637,11 +637,13 @@ class TestConversions(object):
             'cos_iota': Array([0.52575756])
         }
         for key in true.keys():
-            assert np.round(true[key][0], 8) == np.round(data[key][0], 8)
+            np.testing.assert_almost_equal(
+                true[key][0], data[key][0], 5
+            )
         convert = convert_to_lal_binary_black_hole_parameters(dictionary)[0]
         for key, item in convert.items():
             assert np.testing.assert_almost_equal(
-                item, true[key], 8
+                item, true[key], 5
             ) is None
 
     def test_remove_parameter(self):

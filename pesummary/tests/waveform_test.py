@@ -27,7 +27,7 @@ class TestWaveformModule():
         self.phi_12 = np.random.uniform(0, 1, self.n_samples)
         self.theta_jn = np.arccos(np.random.uniform(-1, 1, self.n_samples))
         self.phi_jl = np.random.uniform(0, 1, self.n_samples)
-        self.f_low = [20.] * self.n_samples
+        self.f_low = [10.] * self.n_samples
         self.f_final = [1024.] * self.n_samples
         self.phase = np.random.uniform(0, 1, self.n_samples)
         self.distance = np.random.uniform(100, 500, self.n_samples)
