@@ -356,7 +356,8 @@ def td_waveform(
             lower = lower["h_t"]
 
     waveform_args, _samples = _waveform_args(
-        samples, ind=ind, longAscNodes=longAscNodes, eccentricity=eccentricity
+        samples, ind=ind, longAscNodes=longAscNodes, eccentricity=eccentricity,
+        f_ref=f_ref
     )
     waveform = _td_waveform(
         waveform_args, approx, delta_t, f_low, f_ref, LAL_parameters, _samples,
