@@ -227,7 +227,7 @@ class Default(CoreDefault):
                 }
             except ModuleNotFoundError:
                 from pesummary.utils.utils import logger
-                logger.warn(
+                logger.warning(
                     "Failed to find the module '{}'. Therefore ignoring "
                     "file_format={} and using default load".format(
                         "pesummary.gw.file.formats.{}".format(file_format),

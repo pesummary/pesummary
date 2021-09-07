@@ -703,7 +703,7 @@ def _1d_comparison_histogram_plot(
 
     flat_injection = np.array([_ for _ in inj_value if _ is not None]).flatten()
     if len(set(flat_injection)) > max_inj_line:
-        logger.warn(
+        logger.warning(
             "Number of unique injection values ({}) is more than the maximum "
             "allowed injection value ({}). Not plotting injection value. If "
             "this is a mistake, please increase `max_inj_line`".format(

@@ -354,7 +354,7 @@ class Base(object):
                     )
                 )
                 if multiple_warn is not None:
-                    logger.warn(multiple_warn)
+                    logger.warning(multiple_warn)
                 return files[0]
             raise ValueError(
                 "Multiple {}s found in {}: {}. Please either specify one from the command "
@@ -390,7 +390,7 @@ class Base(object):
             cla = "--{}".format(key)
             if cla in other:
                 ind = other.index(cla)
-                logger.warn(
+                logger.warning(
                     "Ignoring {}={} extracted from config file and using input "
                     "from command line {}={}".format(
                         key, val, other[ind].replace("-", ""), other[ind + 1]
@@ -733,7 +733,7 @@ class Bilby(Base):
                 if os.path.isfile(os.path.join(config_dir, value[0])):
                     data_dict[key] = os.path.join(config_dir, value[0])
                 else:
-                    logger.warn(
+                    logger.warning(
                         "Found file: '{}' in the config file, but it  "
                         "does not exist. This is likely because the config "
                         "was run on a different cluster. Ignoring from final "

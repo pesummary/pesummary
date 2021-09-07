@@ -117,7 +117,7 @@ def _split_posterior_samples(
     """
     n_samples = posterior_samples.number_of_samples
     if N_files > n_samples:
-        logger.warn(
+        logger.warning(
             "Number of requested files '{}' greater than number of samples "
             "'{}'. Reducing the number of files to '{}'".format(
                 N_files, n_samples, n_samples

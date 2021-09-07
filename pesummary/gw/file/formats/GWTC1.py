@@ -103,7 +103,7 @@ class GWTC1(GWSingleAnalysisRead):
             parameters = list(data.dtype.names)
             samples = [list(i) for i in data]
             return SamplesDict(parameters, np.array(samples).T)
-        logger.warn(
+        logger.warning(
             "Failed to draw prior samples because there is not an entry for "
             "'prior' or 'priors' in the result file"
         )

@@ -506,7 +506,7 @@ class _GWInput(_Input):
                         )
                 self._gwdata = StrainDataDict.read(gwdata)
             else:
-                logger.warn(
+                logger.warning(
                     "Please provide gwdata as a dictionary with keys "
                     "displaying the channel and item giving the path to the "
                     "strain file"
@@ -631,18 +631,18 @@ class _GWInput(_Input):
 
             self._psd_default = getattr(psd, psd_default)
         except ImportError:
-            logger.warn(
+            logger.warning(
                 "Unable to import 'pycbc'. Unable to generate a default PSD"
             )
             psd_default = None
         except AttributeError:
-            logger.warn(
+            logger.warning(
                 "'pycbc' does not have the '{}' psd available. Using '{}' as "
                 "the default PSD".format(psd_default, conf.psd)
             )
             psd_default = getattr(psd, conf.psd)
         except ValueError as e:
-            logger.warn("Setting 'psd_default' to None because {}".format(e))
+            logger.warning("Setting 'psd_default' to None because {}".format(e))
             psd_default = None
         self._psd_default = psd_default
 
@@ -660,7 +660,7 @@ class _GWInput(_Input):
         if self.mcmc_samples:
             if any(_probs is None for _probs in classifications.values()):
                 classifications[self.labels[0]] = None
-                logger.warn(
+                logger.warning(
                     "Unable to average classification probabilities across "
                     "mcmc chains because one or more chains failed to estimate "
                     "classifications"
@@ -699,7 +699,7 @@ class _GWInput(_Input):
         if self.mcmc_samples:
             if any(_probs is None for _probs in probabilities.values()):
                 probabilities[self.labels[0]] = None
-                logger.warn(
+                logger.warning(
                     "Unable to average em_bright probabilities across "
                     "mcmc chains because one or more chains failed to estimate "
                     "probabilities"
@@ -749,7 +749,7 @@ class _GWInput(_Input):
                     " or ".join(required)
                 )
             )
-            logger.warn(msg)
+            logger.warning(msg)
 
     @staticmethod
     def _extract_IFO_data_from_file(file, cls, desc, IFO=None):
@@ -774,12 +774,12 @@ class _GWInput(_Input):
         try:
             return cls.read(file, IFO=IFO)
         except FileNotFoundError:
-            logger.warn(
+            logger.warning(
                 general.format("the file {} does not exist".format(file))
             )
             return {}
         except ValueError as e:
-            logger.warn(general.format(e))
+            logger.warning(general.format(e))
             return {}
 
     @staticmethod
@@ -1046,7 +1046,7 @@ class GWInput(_GWInput, Input):
             if self.psd[label] != {}:
                 for ifo in self.psd[label].keys():
                     if not isinstance(self.psd[label][ifo], PSD):
-                        logger.warn(_error.format("{} PSD".format(ifo)))
+                        logger.warning(_error.format("{} PSD".format(ifo)))
                         continue
                     self.psd[label][ifo].save_to_file(
                         os.path.join(self.webdir, "psds", "{}_{}_psd.dat".format(
@@ -1060,7 +1060,7 @@ class GWInput(_GWInput, Input):
                             self.priors["calibration"][label][ifo], Calibration
                         )
                         if not _instance:
-                            logger.warn(
+                            logger.warning(
                                 _error.format(
                                     "{} calibration envelope".format(
                                         ifo

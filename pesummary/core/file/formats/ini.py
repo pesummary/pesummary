@@ -39,7 +39,7 @@ def save_config_dictionary_to_file(
     if config_dict is None:
         if _raise:
             raise ValueError("No config data found. Unable to write to file")
-        logger.warn("No config data found. Unable to write to file")
+        logger.warning("No config data found. Unable to write to file")
         return
 
     for key in config_dict.keys():

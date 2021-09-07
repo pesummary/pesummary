@@ -480,7 +480,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     } for i in self.labels
                 }
             except KeyError:
-                logger.warn(
+                logger.warning(
                     "Failed to find a time parameter to link to detchar/"
                     "summary pages. Not adding link to webpages."
                 )

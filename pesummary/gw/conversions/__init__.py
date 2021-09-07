@@ -16,11 +16,11 @@ from pesummary.utils.utils import logger
 try:
     import lalsimulation
 except ImportError:
-    logger.warn(error_msg.format("lalsimulation"))
+    logger.warning(error_msg.format("lalsimulation"))
 try:
     import astropy
 except ImportError:
-    logger.warn(error_msg.format("astropy"))
+    logger.warning(error_msg.format("astropy"))
 
 from .angles import *
 from .cosmology import *
@@ -229,7 +229,7 @@ class _Conversion(object):
 
         for param, value in {"f_final": f_final, "delta_f": delta_f}.items():
             if value is not None and param in extra_kwargs["meta_data"].keys():
-                logger.warn(
+                logger.warning(
                     base_replace.format(
                         param, extra_kwargs["meta_data"][param], value
                     )
@@ -238,7 +238,7 @@ class _Conversion(object):
             elif value is not None:
                 extra_kwargs["meta_data"][param] = value
             else:
-                logger.warn(
+                logger.warning(
                     "Could not find {} in input file and one was not passed "
                     "from the command line. Using {}Hz as default".format(
                         param, getattr(conf, "default_{}".format(param))
@@ -291,7 +291,7 @@ class _Conversion(object):
             if evolve_spins_forwards:
                 _disable.append("evolve_spins_forwards")
                 evolve_spins_forwards = False
-            logger.warn(
+            logger.warning(
                 "Unable to use 'disable_remnant' and {}. Setting "
                 "{} and disabling all remnant quantities from being "
                 "calculated".format(
@@ -347,7 +347,7 @@ class _Conversion(object):
         elif f_low is not None:
             extra_kwargs["meta_data"]["f_low"] = f_low
         else:
-            logger.warn(
+            logger.warning(
                 "Could not find minimum frequency in input file and "
                 "one was not passed from the command line. Using {}Hz "
                 "as default".format(conf.default_flow)
@@ -985,7 +985,7 @@ class _Conversion(object):
 
     def _NS_compactness_from_lambda(self, parameter="lambda_1"):
         if parameter not in ["lambda_1", "lambda_2"]:
-            logger.warn(
+            logger.warning(
                 "Can only use Love-compactness relation for 'lambda_1' and/or "
                 "'lambda_2'. Skipping conversion"
             )
@@ -1083,7 +1083,7 @@ class _Conversion(object):
             snr = network_matched_filter_snr(mf_samples, opt_samples)
             self.append_data("network_matched_filter_snr", snr)
         else:
-            logger.warn(
+            logger.warning(
                 "Unable to generate 'network_matched_filter_snr' as "
                 "there is an inconsistency in the detector network based on "
                 "the 'optimal_snrs' and the 'matched_filter_snrs'. We find "
@@ -1136,7 +1136,7 @@ class _Conversion(object):
                     np.median(snrs) > 1.1 * np.median(_samples),
                     np.median(snrs) < 0.9 * np.median(_samples)
             ):
-                logger.warn(
+                logger.warning(
                     "The two-harmonic SNR is different from the stored SNR. "
                     "This indicates that the provided PSD may be different "
                     "from the one used in the sampling."
@@ -1915,15 +1915,15 @@ class _Conversion(object):
             ]
             if all(i in self.parameters for i in rho_p_parameters):
                 try:
-                    logger.warn(
+                    logger.warning(
                         "Starting to calculate the precessing SNR. This may take "
                         "some time"
                     )
                     self._rho_p()
                 except ImportError as e:
-                    logger.warn(e)
+                    logger.warning(e)
             else:
-                logger.warn(
+                logger.warning(
                     "Unable to calculate the precessing SNR because requires "
                     "samples for {}".format(
                         ", ".join(
