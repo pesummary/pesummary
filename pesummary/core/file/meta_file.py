@@ -141,7 +141,7 @@ def create_hdf5_dataset(
         data = np.array([value])
     elif isinstance(value, (bool, np.bool_)):
         data = np.array([str(value)], dtype="S")
-    elif isinstance(value, np.complex):
+    elif isinstance(value, complex):
         key += "_amp"
         data = np.array(np.abs(value))
     elif value == {}:
@@ -188,7 +188,7 @@ class PESummaryJsonEncoder(json.JSONEncoder):
             return int(obj)
         elif isinstance(obj, np.floating):
             return float(obj)
-        elif isinstance(obj, (np.bool, np.bool_, bool)):
+        elif isinstance(obj, (bool, np.bool_)):
             return str(obj)
         elif isinstance(obj, bytes):
             return str(obj)

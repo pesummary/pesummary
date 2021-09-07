@@ -123,7 +123,7 @@ class ViolinPlotter(_ViolinPlotter):
                 weights_data = [weights]
             else:
                 weights_data = weights
-            weights_data = [np.asarray(d, np.float) for d in weights_data]
+            weights_data = [np.asarray(d, float) for d in weights_data]
         self.weights_data = weights_data
 
     def establish_colors(self, color, palette, saturation):
