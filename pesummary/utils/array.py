@@ -228,7 +228,7 @@ class Array(np.ndarray):
             inds = np.argwhere(Sn >= p)[0]
             data[num] = np.interp(percentile, Sn[inds], sorted_data[inds])[0]
 
-        if isinstance(_type, (int, float, np.int, np.float64, np.float32)):
+        if isinstance(_type, (int, float, np.float64, np.float32)):
             return float(data[0])
         return data
 

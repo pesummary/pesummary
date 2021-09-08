@@ -293,7 +293,7 @@ class SamplesDict(Dict):
         """Convert a SamplesDict object to a structured numpy array
         """
         return self.to_pandas(**kwargs).to_records(
-            index=False, column_dtypes=np.float
+            index=False, column_dtypes=float
         )
 
     def pop(self, parameter):
@@ -1856,7 +1856,7 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
         if plot_density is not None:
             if isinstance(plot_density, str):
                 plot_density = [plot_density]
-            elif isinstance(plot_density, (bool, np.bool)) and plot_density:
+            elif isinstance(plot_density, bool) and plot_density:
                 plot_density = labels
             for i in plot_density:
                 if i not in labels:

@@ -140,7 +140,7 @@ class _Input(_GWInput):
                     try:
                         data[label]["posterior_samples"] = DataFrame(
                             data[label]["posterior_samples"]
-                        ).to_records(index=False, column_dtypes=np.float)
+                        ).to_records(index=False, column_dtypes=float)
                     except KeyError:
                         pass
                     except Exception:
@@ -157,7 +157,7 @@ class _Input(_GWInput):
                                 param: samples.T[num] for num, param in
                                 enumerate(parameters)
                             }
-                        ).to_records(index=False, column_dtypes=np.float)
+                        ).to_records(index=False, column_dtypes=float)
                 self._data = data
         elif extension == ".json":
             with open(self.samples, "r") as f:

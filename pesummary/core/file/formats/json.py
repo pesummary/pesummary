@@ -27,7 +27,7 @@ class PESummaryJsonEncoder(json.JSONEncoder):
             return int(obj)
         elif isinstance(obj, np.floating):
             return float(obj)
-        elif isinstance(obj, (np.bool, np.bool_, bool)):
+        elif isinstance(obj, (bool, np.bool_)):
             return str(obj)
         elif isinstance(obj, bytes):
             return str(obj)
