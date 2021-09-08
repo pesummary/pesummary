@@ -972,7 +972,7 @@ class _Input(object):
 
     def _check_reweight_samples(self, reweight_samples, options):
         if reweight_samples and reweight_samples not in options.keys():
-            logger.warn(
+            logger.warning(
                 "Unknown reweight function: '{}'. Not reweighting posterior "
                 "and/or prior samples".format(reweight_samples)
             )
@@ -1088,7 +1088,7 @@ class _Input(object):
             from pathlib import Path
             import shutil
             if isinstance(self._existing_plot, list):
-                logger.warn(
+                logger.warning(
                     "Assigning {} to all labels".format(
                         ", ".join(self._existing_plot)
                     )
@@ -1105,7 +1105,7 @@ class _Input(object):
                     allowed = []
                     for _subplot in _plot:
                         if not os.path.isfile(_subplot):
-                            logger.warn(_does_not_exist.format(_subplot))
+                            logger.warning(_does_not_exist.format(_subplot))
                         else:
                             _filename = os.path.join(
                                 self.webdir, "plots", Path(_subplot).name
@@ -1123,7 +1123,7 @@ class _Input(object):
                         self._existing_plot[key] = allowed
                 else:
                     if not os.path.isfile(_plot):
-                        logger.warn(_does_not_exist.format(_plot))
+                        logger.warning(_does_not_exist.format(_plot))
                         keys_to_remove.append(key)
                     else:
                         _filename = os.path.join(
@@ -1498,7 +1498,7 @@ class _Input(object):
             if "pe_algorithm" in self.file_kwargs[label]["sampler"].keys():
                 _stored = self.file_kwargs[label]["sampler"]["pe_algorithm"]
                 if _stored != _algorithm:
-                    logger.warn(
+                    logger.warning(
                         "Overwriting the pe_algorithm extracted from the file "
                         "'{}': {} with the algorithm provided from the command "
                         "line: {}".format(

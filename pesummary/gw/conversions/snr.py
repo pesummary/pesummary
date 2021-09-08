@@ -509,7 +509,7 @@ def precessing_snr(
     detectors = list(psd.keys())
     if df != psd[detectors[0]].delta_f:
         from pycbc.psd import estimate
-        logger.warn(
+        logger.warning(
             "Provided PSD has df={} and {} has been specified. Interpolation "
             "will be used".format(psd[detectors[0]].delta_f, df)
         )
@@ -520,14 +520,14 @@ def precessing_snr(
     if f_final is None:
         f_final = _f_final
     elif f_final != _f_final:
-        logger.warn(
+        logger.warning(
             "The provided final frequency: {} does not match the final "
             "frequency in the PSD: {}. Using the final frequency stored in the "
             "PSD to prevent interpolation errors".format(f_final, _f_final)
         )
         f_final = _f_final
     if f_ref is None:
-        logger.warn("No reference frequency provided. Using f_low as default")
+        logger.warning("No reference frequency provided. Using f_low as default")
         f_ref = f_low
     elif isinstance(f_ref, (list, np.ndarray)):
         f_ref = f_ref[0]

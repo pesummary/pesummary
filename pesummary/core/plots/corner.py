@@ -141,7 +141,7 @@ def hist2d(
     if smooth is not None:
         if kde_kwargs.get("transform", None) is not None:
             from pesummary.utils.utils import logger
-            logger.warn(
+            logger.warning(
                 "Smoothing PDF. This may give unwanted effects especially near "
                 "any boundaries"
             )

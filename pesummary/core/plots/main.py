@@ -96,7 +96,7 @@ class _PlotGeneration(object):
         self.corner_params = corner_params
         self.expert_plots = expert_plots
         if self.mcmc_samples and self.expert_plots:
-            logger.warn("Unable to generate expert plots for mcmc samples")
+            logger.warning("Unable to generate expert plots for mcmc samples")
             self.expert_plots = False
         self.checkpoint = checkpoint
         self.multi_process = multi_process

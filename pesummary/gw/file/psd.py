@@ -235,7 +235,7 @@ class PSD(np.ndarray):
                     "the final frequency specified or set the 'f_high_override' "
                     "kwarg to True"
                 )
-            logger.warn(msg)
+            logger.warning(msg)
         if length is None:
             length = int(f_high / delta_f) + 1
         pycbc_psd = from_numpy_arrays(

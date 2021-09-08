@@ -420,7 +420,7 @@ def _td_waveform(
                 project, samples["ra"], samples["dec"], samples["geocent_time"]
             )
         except Exception:
-            logger.warn(
+            logger.warning(
                 "Unable to calculate samples for '{}_time' using the provided "
                 "posterior samples. Unable to shift merger to merger time in "
                 "the detector".format(project)

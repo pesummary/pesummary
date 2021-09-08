@@ -170,7 +170,7 @@ def lambda1_lambda2_from_4_parameter_piecewise_polytrope_equation_of_state(
     """Convert 4 parameter piecewise polytrope EOS parameters to the tidal
     deformability parameters lambda_1, lambda_2
     """
-    logger.warn(
+    logger.warning(
         "Calculating the tidal deformability parameters based on the 4 "
         "parameter piecewise polytrope equation of state parameters. This may "
         "take some time"
@@ -194,7 +194,7 @@ def lambda1_lambda2_from_spectral_decomposition(
     """Convert spectral decomposition parameters to the tidal deformability
     parameters lambda_1, lambda_2
     """
-    logger.warn(
+    logger.warning(
         "Calculating the tidal deformability parameters from the spectral "
         "decomposition equation of state parameters. This may take some time"
     )
@@ -288,7 +288,7 @@ def _check_NSBH_approximant(approximant, *args, _raise=True):
         "the NSBH conversion".format(approximant)
     )
     if not _raise:
-        logger.warn(msg)
+        logger.warning(msg)
     else:
         raise ValueError(msg)
 

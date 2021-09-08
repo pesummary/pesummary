@@ -825,7 +825,7 @@ def main(args=None):
         w = WebpageGeneration(opts.webdir, opts.samples, test=opts.test)
         w.generate_webpages()
     except Exception as e:
-        logger.warn("Unable to generate webpages because {}".format(e))
+        logger.warning("Unable to generate webpages because {}".format(e))
 
 
 if __name__ == "__main__":

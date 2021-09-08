@@ -1117,7 +1117,7 @@ class _MultiDimensionalSamplesDict(Dict):
                 for label in labels:
                     if label not in weights.keys():
                         weights[label] = 1.
-                        logger.warn(
+                        logger.warning(
                             "No weight given for '{}'. Assigning a weight of "
                             "1".format(label)
                         )
@@ -1753,7 +1753,7 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             )
         elif len(_labels) != len(labels):
             no = list(set(labels) - set(_labels))
-            logger.warn(
+            logger.warning(
                 "Unable to generate a violin plot for {} because {} is not "
                 "in their posterior samples table".format(
                     " or ".join(no), parameter

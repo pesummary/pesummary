@@ -9,7 +9,7 @@ import numpy as np
 try:
     import pycbc
 except ImportError:
-    logger.warn(error_msg.format("pycbc"))
+    logger.warning(error_msg.format("pycbc"))
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -104,7 +104,7 @@ def pycbc_default_psd(
 
         psd = getattr(pycbc.psd, psd)
 
-    logger.warn("No PSD provided. Using '{}' for the psd".format(psd.__name__))
+    logger.warning("No PSD provided. Using '{}' for the psd".format(psd.__name__))
     _required = [mass_1, mass_2]
     if df is None:
         cond1 = all(i is not None for i in _required + [spin_1z, spin_2z])
@@ -114,7 +114,7 @@ def pycbc_default_psd(
                 mass_1, mass_2, spin_1z, spin_2z, f_low
             )
         elif cond2 and duration is None:
-            logger.warn(
+            logger.warning(
                 "Could not find samples for spin_1z and spin_2z. We will "
                 "assume that spin_1z = spin_2z = chi_eff to estimate the "
                 "maximum IMR duration. This is used to estimate delta_f for "

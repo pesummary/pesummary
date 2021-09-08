@@ -180,7 +180,7 @@ def main(args=None):
         return
     elif opts.add_to_existing:
         from pesummary.utils.utils import logger
-        logger.warn(
+        logger.warning(
             "Can only use the `--add_to_existing` option when a PESummary "
             "metafile is provided via the `--samples` option. Writing "
             "combined samples to a `dat` file"

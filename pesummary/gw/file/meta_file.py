@@ -110,7 +110,7 @@ class _GWMetaFile(_MetaFile):
                         extra_kwargs=format_index_array_attrs(item)
                     )
             except Exception:
-                logger.warn(
+                logger.warning(
                     "Failed to store the gravitational wave strain data"
                 )
 
