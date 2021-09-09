@@ -1612,6 +1612,49 @@ class _Input(object):
         self._descriptions = data
 
     @property
+    def preferred(self):
+        return self._preferred
+
+    @preferred.setter
+    def preferred(self, preferred):
+        if preferred is not None and preferred not in self.labels:
+            logger.warning(
+                "'{}' not in list of labels. Unable to stored as the "
+                "preferred analysis".format(preferred)
+            )
+            self._preferred = None
+        elif preferred is not None:
+            logger.debug(
+                "Setting '{}' as the preferred analysis".format(preferred)
+            )
+            self._preferred = preferred
+        elif len(self.labels) == 1:
+            self._preferred = self.labels[0]
+        else:
+            self._preferred = None
+        if self._preferred is not None:
+            try:
+                self.file_kwargs[self._preferred]["other"].update(
+                    {"preferred": "True"}
+                )
+            except KeyError:
+                self.file_kwargs[self._preferred].update(
+                    {"other": {"preferred": "True"}}
+                )
+        for _label in self.labels:
+            if self._preferred is not None and _label == self._preferred:
+                continue
+            try:
+                self.file_kwargs[_label]["other"].update(
+                    {"preferred": "False"}
+                )
+            except KeyError:
+                self.file_kwargs[_label].update(
+                    {"other": {"preferred": "False"}}
+                )
+        return
+
+    @property
     def public(self):
         return self._public
 
@@ -1991,6 +2034,7 @@ class Input(_Input):
         self.disable_corner = self.opts.disable_corner
         self.notes = self.opts.notes
         self.descriptions = self.opts.descriptions
+        self.preferred = self.opts.preferred
         self.pe_algorithm = self.opts.pe_algorithm
         self.disable_comparison = self.opts.disable_comparison
         self.disable_interactive = self.opts.disable_interactive

@@ -1056,6 +1056,37 @@ class TestSummaryCombine(Base):
             original.samples[0], new.samples[0]
         )
 
+    def test_preferred(self):
+        """Test that the preferred analysis is correctly stored in the metafile
+        """
+        from pesummary.io import read
+        make_result_file(gw=True, extension="json")
+        make_result_file(gw=True, extension="hdf5")
+        command_line = (
+            "summarycombine --webdir .outdir --samples "
+            ".outdir/test.json .outdir/test.h5 --label gw0 gw1 --no_conversion "
+            "--gw --nsamples 10"
+        )
+        self.launch(command_line)
+        f = read(".outdir/samples/posterior_samples.h5")
+        assert f.preferred is None
+        command_line = (
+            "summarycombine --webdir .outdir --samples "
+            ".outdir/test.json .outdir/test.h5 --label gw0 gw1 --no_conversion "
+            "--gw --nsamples 10 --preferred gw1"
+        )
+        self.launch(command_line)
+        f = read(".outdir/samples/posterior_samples.h5")
+        assert f.preferred == "gw1"
+        command_line = (
+            "summarycombine --webdir .outdir --samples "
+            ".outdir/test.json .outdir/test.h5 --label gw0 gw1 --no_conversion "
+            "--gw --nsamples 10 --preferred gw2"
+        )
+        self.launch(command_line)
+        f = read(".outdir/samples/posterior_samples.h5")
+        assert f.preferred is None
+
 
 class TestSummaryReview(Base):
     """Test the `summaryreview` executable
@@ -1369,6 +1400,28 @@ class TestSummaryModify(Base):
         """
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
+
+    def test_preferred(self):
+        """Test that the preferred run is correctly specified in the meta file
+        """
+        from pesummary.io import read
+        make_result_file(extension="json", bilby=True, gw=True)
+        make_result_file(extension="dat", gw=True)
+        command_line = (
+            "summarycombine --webdir ./.outdir --samples .outdir/test.json "
+            ".outdir/test.dat --no_conversions --gw --labels one two "
+            "--nsamples 100"
+        )
+        self.launch(command_line)
+        f = read("./.outdir/samples/posterior_samples.h5")
+        assert f.preferred is None
+        command_line = (
+            "summarymodify --samples ./.outdir/samples/posterior_samples.h5 "
+            "--webdir .outdir --preferred two"
+        )
+        self.launch(command_line)
+        f = read(".outdir/modified_posterior_samples.h5")
+        assert f.preferred == "two"
 
     def test_descriptions(self):
         """Test that the descriptions are correctly replaced in the meta file

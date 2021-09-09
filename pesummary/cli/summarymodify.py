@@ -199,10 +199,14 @@ class Input(_Input):
         self.overwrite = self.opts.overwrite
         self.force_replace = self.opts.force_replace
         self.data = None
+        self.stored_labels = [
+            key for key in self.data.keys() if key not in
+            ["history", "strain", "version"]
+        ]
         if self.opts.descriptions is not None:
             import copy
             self._labels_copy = copy.deepcopy(self._labels)
-            self._labels = self.data.keys()
+            self._labels = self.stored_labels
             self.descriptions = self.opts.descriptions
             self._labels = self._labels_copy
         else:
@@ -248,6 +252,10 @@ def command_line():
               "where '/' is a delimiter of your choosing (it cannot be ':'), "
               "kwarg is the kwarg name and item is the value of the kwarg"),
         default=None
+    )
+    parser.add_argument(
+        "--preferred", dest="preferred", default=None,
+        help="label to set as the preferred run"
     )
     parser.add_argument(
         "--overwrite", action="store_true", default=False,
@@ -532,6 +540,15 @@ def _main(opts):
         check_file_exists_and_rename(meta_file)
     else:
         meta_file = args.samples
+    if opts.preferred is not None and args.kwargs is None:
+        args.kwargs = {opts.preferred: "preferred:True"}
+    if opts.preferred is not None:
+        args.kwargs.update(
+            {
+                _label: "preferred:False" for _label in args.stored_labels
+                if _label != opts.preferred
+            }
+        )
     if args.labels is not None:
         modified_data = modify(args.data, "labels", labels=args.labels)
     if args.descriptions is not None:
