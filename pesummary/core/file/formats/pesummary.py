@@ -176,6 +176,8 @@ class PESummary(MultiAnalysisRead):
         dictionary of weights for each sample for each analysis
     pe_algorithm: dict
         name of the algorithm used to generate the each analysis
+    preferred: str
+        name of the preferred analysis in the result file
 
     Methods
     -------
@@ -208,6 +210,19 @@ class PESummary(MultiAnalysisRead):
             except KeyError:
                 pass
         return _algorithm
+
+    @property
+    def preferred(self):
+        _preferred = None
+        for num, _kwargs in enumerate(self.extra_kwargs):
+            if "other" in _kwargs.keys() and "preferred" in _kwargs["other"].keys():
+                import ast
+                if ast.literal_eval(_kwargs["other"]["preferred"]):
+                    _preferred = self.labels[num]
+                    break
+        if _preferred is None and len(self.labels) == 1:
+            _preferred = self.labels[0]
+        return _preferred
 
     @classmethod
     def load_file(cls, path, **kwargs):

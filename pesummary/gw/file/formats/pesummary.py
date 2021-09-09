@@ -94,6 +94,8 @@ class PESummary(GWMultiAnalysisRead, CorePESummary):
         list of IFOs used in each analysis
     pe_algorithm: dict
         name of the algorithm used to generate the each analysis
+    preferred: str
+        name of the preferred analysis in the result file
 
     Methods
     -------

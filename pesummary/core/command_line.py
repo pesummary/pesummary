@@ -342,6 +342,12 @@ def _core_command_line_arguments(parser):
         "-v", "--verbose", action="store_true",
         help="print useful information for debugging purposes"
     )
+    core_group.add_argument(
+        "--preferred", dest="preferred", default=None, help=(
+            "label of the preferred run. If only one result file is passed "
+            "this label is the preferred analysis by default"
+        )
+    )
     return core_group
 
 
