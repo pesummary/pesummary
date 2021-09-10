@@ -1,3 +1,22 @@
+## 0.13.2 [10/09/2021]
+
+### Changed
+
+- pycbc dependent tests - perform `pycbc` dependent tests in all python
+  environments
+- logger.warning - replace `logger.warn` with `logger.warning`
+- numpy aliases - replace deprecated numpy aliases of builtins with the builtins
+  they aliased 
+- Adding waveform to strain plot - Prevent ValueError from being raised when
+  adding a waveform to a strain plot
+
+### Added
+
+- Added a new command line argument `--preferred` to allow the user to set a
+  preferred analysis within a pesummary metafile. The preferred analysis can be
+  printed with the `.preferred` property
+
+
 ## 0.13.1 [31/08/2021]
 
 ### Changed
