@@ -64,6 +64,10 @@ _conversion_doc = """
     NRSur_fits: float/str, optional
         the NRSurrogate model to use to calculate the remnant fits. If nothing
         passed, the average NR fits are used instead
+    multipole_snr: Bool, optional
+        if True, the SNR in the (l, m) = [(2, 1), (3, 3), (4, 4)] multipoles are
+        calculated from the posterior samples.
+        samples.
     precessing_snr: Bool, optional
         if True, the precessing SNR is calculated from the posterior samples.
     psd: dict, optional
@@ -336,6 +340,7 @@ class _Conversion(object):
                 )
             evolve_spins_forwards = False
 
+        multipole_snr = kwargs.get("multipole_snr", False)
         precessing_snr = kwargs.get("precessing_snr", False)
         if f_low is not None and "f_low" in extra_kwargs["meta_data"].keys():
             logger.warning(
@@ -404,8 +409,8 @@ class _Conversion(object):
             cosmology, force_non_evolved, force_remnant,
             kwargs.get("add_zero_spin", False), disable_remnant,
             kwargs.get("return_kwargs", False), kwargs.get("return_dict", True),
-            kwargs.get("resume_file", None), precessing_snr, pycbc_psd,
-            psd_default, evolve_spins_backwards, force_evolve
+            kwargs.get("resume_file", None), multipole_snr, precessing_snr,
+            pycbc_psd, psd_default, evolve_spins_backwards, force_evolve
         )
         return_kwargs = kwargs.get("return_kwargs", False)
         if kwargs.get("return_dict", True) and return_kwargs:
@@ -424,7 +429,7 @@ class _Conversion(object):
         self, parameters, samples, extra_kwargs, evolve_spins_forwards, NRSurrogate,
         waveform_fits, multi_process, regenerate, redshift_method,
         cosmology, force_non_evolved, force_remnant, add_zero_spin,
-        disable_remnant, return_kwargs, return_dict, resume_file,
+        disable_remnant, return_kwargs, return_dict, resume_file, multipole_snr,
         precessing_snr, psd, psd_default, evolve_spins_backwards, force_evolve
     ):
         self.parameters = parameters
@@ -445,6 +450,7 @@ class _Conversion(object):
         self.return_kwargs = return_kwargs
         self.return_dict = return_dict
         self.resume_file = resume_file
+        self.multipole_snr = multipole_snr
         self.precessing_snr = precessing_snr
         self.psd = psd
         self.psd_default = psd_default
@@ -468,6 +474,13 @@ class _Conversion(object):
             )
             self.evolve_spins_forwards = False
             self.evolve_spins_backwards = False
+        if not self.non_precessing and multipole_snr:
+            logger.warning(
+                "The calculation for computing the SNR in subdominant "
+                "multipoles assumes that the system is non-precessing. "
+                "Since precessing samples are provided, this may give incorrect "
+                "results"
+            )
         if self.non_precessing and precessing_snr:
             logger.info(
                 "Precessing SNR is 0 for a non-precessing system. No additional "
@@ -1091,6 +1104,31 @@ class _Conversion(object):
                 "while we find from the 'matched_filter_snrs', the detector "
                 "network is: {}".format(_opt_detectors, _mf_detectors)
             )
+
+    def _rho_hm(self, multipoles):
+        import copy
+        required = [
+            "mass_1", "mass_2", "spin_1z", "spin_2z", "psi", "iota", "ra",
+            "dec", "geocent_time", "luminosity_distance", "phase",
+            "reference_frequency"
+        ]
+        samples = self.specific_parameter_samples(required)
+        _f_low = self._retrieve_f_low()
+        if isinstance(_f_low, (np.ndarray)):
+            f_low = _f_low() * len(samples[0])
+        else:
+            f_low = [_f_low] * len(samples[0])
+        original_list = copy.deepcopy(multipoles)
+        rho, data_used = multipole_snr(
+            *samples[:-1], f_low=f_low, psd=self.psd, f_ref=samples[-1],
+            f_final=self.extra_kwargs["meta_data"]["f_final"],
+            return_data_used=True, multi_process=self.multi_process,
+            psd_default=self.psd_default, multipole=multipoles,
+            df=self.extra_kwargs["meta_data"]["delta_f"]
+        )
+        for num, mm in enumerate(original_list):
+            self.append_data("network_{}_multipole_snr".format(mm), rho[num])
+        self.extra_kwargs["meta_data"]["multipole_snr"] = data_used
 
     def _rho_p(self):
         required = [
@@ -1907,6 +1945,36 @@ class _Conversion(object):
             if any("_matched_filter_snr" in i for i in self.parameters):
                 if "network_matched_filter_snr" not in self.parameters:
                     self._matched_filter_network_snr()
+        if self.multipole_snr:
+            rho_hm_parameters = [
+                "mass_1", "mass_2", "spin_1z", "spin_2z", "psi", "iota", "ra",
+                "dec", "geocent_time", "luminosity_distance", "phase"
+            ]
+            cond = [
+                int(mm) for mm in ['21', '33', '44'] if
+                "network_{}_multipole_snr".format(mm) not in self.parameters
+            ]
+            if all(i in self.parameters for i in rho_hm_parameters) and len(cond):
+                try:
+                    logger.warning(
+                        "Starting to calculate the SNR in the {} multipole{}. "
+                        "This may take some time".format(
+                            " and ".join([str(mm) for mm in cond]),
+                            "s" if len(cond) > 1 else ""
+                        )
+                    )
+                    self._rho_hm(cond)
+                except ImportError as e:
+                    logger.warning(e)
+            elif len(cond):
+                logger.warning(
+                    "Unable to calculate the multipole SNR because it requires "
+                    "samples for {}".format(
+                        ", ".join(
+                            [i for i in rho_hm_parameters if i not in self.parameters]
+                        )
+                    )
+                )
         if "network_precessing_snr" not in self.parameters and self.precessing_snr:
             rho_p_parameters = [
                 "mass_1", "mass_2", "beta", "psi_J", "a_1", "a_2", "tilt_1",

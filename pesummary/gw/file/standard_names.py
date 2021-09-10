@@ -147,6 +147,9 @@ pycbc_map = {
 
 
 pesummary_map = {
+    "network_21_multipole_snr": "network_21_multipole_snr",
+    "network_33_multipole_snr": "network_33_multipole_snr",
+    "network_44_multipole_snr": "network_44_multipole_snr",
     "network_precessing_snr": "network_precessing_snr",
     "chirp_mass_source": "chirp_mass_source",
     "delta_lambda": "delta_lambda",
@@ -183,6 +186,12 @@ pesummary_map = {
     "polarization_J": "psi_J",
     "opening_angle": "beta",
     "beta0": "beta",
+    "rho_21": "network_21_multipole_snr",
+    "network_rho_21_perp": "network_21_multipole_snr",
+    "rho_33": "network_33_multipole_snr",
+    "network_rho_33_perp": "network_33_multipole_snr",
+    "rho_44": "network_44_multipole_snr",
+    "network_rho_44_perp": "network_44_multipole_snr",
     "rho_p": "network_precessing_snr",
     "final_kick": "final_kick",
     "tidal_disruption_frequency": "tidal_disruption_frequency",
@@ -690,6 +699,18 @@ descriptive_names = {
     "baryonic_mass_2_source": (
         "the source-frame baryonic mass of the secondary object"
     ),
+    "network_21_multipole_snr": (
+        "the network SNR in the 21 subdominant multipole when assuming that the "
+        "system is non-precessing"
+    ),
+    "network_33_multipole_snr": (
+        "the network SNR in the 33 subdominant multipole when assuming that the "
+        "system is non-precessing"
+    ),
+    "network_44_multipole_snr": (
+        "the network SNR in the 44 subdominant multipole when assuming that the "
+        "system is non-precessing"
+    )
 }
 
 for detector in _IFOS:

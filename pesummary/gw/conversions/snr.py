@@ -10,6 +10,7 @@ __author__ = [
     "Stephen Fairhurst <stephen.fairhurst@ligo.org>",
     "Rhys Green <rhys.green@ligo.org>",
     "Charlie Hoy <charlie.hoy@ligo.org>",
+    "Cameron Mills <joseph.mills@ligo.org>"
 ]
 
 
@@ -80,7 +81,42 @@ def network_matched_filter_snr(IFO_matched_filter_snrs, IFO_optimal_snrs):
     return network_matched_filter_snr
 
 
-def _setup_psd(psd, psd_default, **psd_default_kwargs):
+def _setup_frequencies(f_low, f_final, f_ref, psd):
+    """Setup the final frequency and reference frequency to be compatible with
+    the provided PSD.
+
+    Parameters
+    ----------
+    f_low: float
+        starting frequency you wish to use
+    f_final: float
+        final frequency you wish to use
+    f_ref: float
+        reference frequency you wish to use
+    psd: dict
+        dictionary of pycbc.frequencyseries.FrequencySeries objects containing
+        the psd. Keys must be the detector identifier, e.g. H1, L1, ...
+    """
+    detectors = list(psd.keys())
+    _f_final = psd[detectors[0]].sample_frequencies[-1]
+    if f_final is None:
+        f_final = _f_final
+    elif f_final > _f_final:
+        logger.warning(
+            "The provided final frequency: {} does not match the final "
+            "frequency in the PSD: {}. Using the final frequency stored in the "
+            "PSD to prevent interpolation errors".format(f_final, _f_final)
+        )
+        f_final = _f_final
+    if f_ref is None:
+        logger.warning("No reference frequency provided. Using f_low as default")
+        f_ref = f_low
+    elif isinstance(f_ref, (list, np.ndarray)):
+        f_ref = f_ref[0]
+    return f_final, f_ref
+
+
+def _setup_psd(psd, psd_default, df=1. / 256, **psd_default_kwargs):
     """Setup the PSD dictionary. If the provided PSD is empty, construct a
     PSD based on the default, this could either be analytic or not. If the
     provided PSD is not empty, simply return the provided PSD unchanged.
@@ -106,6 +142,7 @@ def _setup_psd(psd, psd_default, **psd_default_kwargs):
     )
     f_low = psd_default_kwargs.get("f_low", None)
     f_final = psd_default_kwargs.get("f_final", None)
+    psd_default_kwargs.update({"df": df})
     frequency_cond = any(param is None for param in [f_low, f_final])
     if psd == {} and condition:
         if frequency_cond:
@@ -127,12 +164,23 @@ def _setup_psd(psd, psd_default, **psd_default_kwargs):
         ANALYTIC = True
         psd_default_kwargs.update({"psd": psd_default})
         psd = pycbc_default_psd(**psd_default_kwargs)
+
+    detectors = list(psd.keys())
+    if df != psd[detectors[0]].delta_f:
+        from pycbc.psd import estimate
+        logger.warning(
+            "Provided PSD has df={} and {} has been specified. Interpolation "
+            "will be used".format(psd[detectors[0]].delta_f, df)
+        )
+        psd = {
+            ifo: estimate.interpolate(psd[ifo], df) for ifo in psd.keys()
+        }
     return psd, ANALYTIC
 
 
 def _make_waveform(
     approx, theta_jn, phi_jl, phase, psi_J, mass_1, mass_2, tilt_1, tilt_2,
-    phi_12, a_1, a_2, beta, distance, **kwargs
+    phi_12, a_1, a_2, beta, distance, apply_detector_response=True, **kwargs
 ):
     """Generate a frequency domain waveform
 
@@ -166,6 +214,9 @@ def _make_waveform(
     beta: float
         The opening angle of the system. Defined as the angle between the
         orbital angular momentum, L, and the total angular momentum J.
+    apply_detector_response: Bool, optional
+        if True apply an effective detector response and return
+        fp * hp + fc * hc else return hp, hc. Default True
     **kwargs: dict
         All additional kwargs are passed to the
         pesummary.gw.waveform.fd_waveform function
@@ -178,15 +229,18 @@ def _make_waveform(
         "a_2": [a_2], "luminosity_distance": [distance]
     }
     waveforms = fd_waveform(
-        _samples, "IMRPhenomPv2", kwargs.get("df", 1. / 256),
+        _samples, approx, kwargs.get("df", 1. / 256),
         kwargs.get("f_low", 20.), kwargs.get("f_final", 1024.),
-        f_ref=kwargs.get("f_ref", 20.), ind=0, pycbc=True
+        f_ref=kwargs.get("f_ref", 20.), ind=0, pycbc=True,
+        mode_array=kwargs.get("mode_array", None)
     )
     hp, hc = waveforms["h_plus"], waveforms["h_cross"]
     if kwargs.get("flen", None) is not None:
         flen = kwargs.get("flen")
         hp.resize(flen)
         hc.resize(flen)
+    if not apply_detector_response:
+        return hp, hc
     dpsi = _dpsi(theta_jn, phi_jl, beta)
     fp = np.cos(2 * (psi_J - dpsi))
     fc = -1. * np.sin(2 * (psi_J - dpsi))
@@ -416,6 +470,126 @@ def _prec_ratio_plus_cross(theta_jn, phi_jl, f_plus, f_cross, b_bar):
 
 @array_input(
     ignore_kwargs=[
+        "f_low", "f_final", "psd", "approx", "f_ref", "return_data_used",
+        "multi_process", "df", "multipole"
+    ]
+)
+def multipole_snr(
+    mass_1, mass_2, spin_1z, spin_2z, psi, iota, ra, dec, time, distance, phase,
+    f_low=20., f_final=1024., psd={}, approx="IMRPhenomXHM", f_ref=None,
+    return_data_used=False, multi_process=6, df=1. / 256,
+    multipole=[21, 33, 44], psd_default="aLIGOZeroDetHighPower"
+):
+    """Calculate the multipole snr as defined in Mills et al.
+    arXiv:
+
+    Parameters
+    ----------
+    mass_1: float/np.ndarray
+        Primary mass of the bianry
+    mass_2: float/np.ndarray
+        Secondary mass of the binary
+    spin_1z: float/np.ndarray
+        The primary spin aligned with the total orbital angular momentum
+    spin_2z: float/np.ndarray
+        The secondary spin aligned with the total orbital angular momentum
+    psi: float/np.ndarray
+        The polarization angle of the binary
+    iota: float/np.ndarray
+        The angle between the total orbital angular momentum and the line of
+        sight
+    ra: float/np.ndarray
+        The right ascension of the source
+    dec: float/np.ndarray
+        The declination of the source
+    time: float/np.ndarray
+        The merger time of the binary
+    distance: float/np.ndarray
+        The luminosity distance of the source
+    phase: float/np.ndarray
+        The phase of the source
+    f_low: float, optional
+        Low frequency to use for integration. Default 20Hz
+    f_final: float, optional
+        Final frequency to use for integration. Default 1024Hz
+    psd: dict, optional
+        Dictionary of pycbc.types.frequencyseries.FrequencySeries objects, one
+        for each detector. Default is to use the aLIGOZeroDetHighPower PSD
+    approx: str, optional
+        The aligned spin higher order multipole approximant you wish to use.
+        Default IMRPhenomXHM
+    f_ref: float, optional
+        Reference frequency where the spins are defined. Default is f_low
+    return_data_used: Bool, optional
+        if True, return a dictionary containing information about what data was
+        used. Default False
+    multi_process: int, optional
+        The number of cpus to use when computing the precessing_snr. Default 6
+    df: float, optional
+        Frequency spacing between frequency samples. Default 1./256
+    multipole: list, optional
+        List of multipoles to calculate the SNR for. Default [21, 33, 44]
+    """
+    from pesummary.gw.waveform import antenna_response
+    from pesummary.utils.utils import iterator
+    import multiprocessing
+
+    if isinstance(f_low, (list, np.ndarray)):
+        f_low = f_low[0]
+    if any(mm not in [21, 33, 44] for mm in multipole):
+        raise ValueError(
+            "Currently, only the SNR in the (l, m) = [(2, 1), (3, 3), (4, 4)] "
+            "multipoles can be calculated. Please provide any multipole within "
+            "multipole=[21, 33, 44]"
+        )
+    multipole += [22]
+    psd, ANALYTIC = _setup_psd(
+        psd, psd_default, mass_1=mass_1, mass_2=mass_2, spin_1z=spin_1z,
+        spin_2z=spin_2z, f_low=f_low, detectors=["H1", "L1"], f_final=f_final,
+        df=df
+    )
+    f_final, f_ref = _setup_frequencies(f_low, f_final, f_ref, psd)
+    flen = int(f_final / df) + 1
+    _samples = {"ra": ra, "dec": dec, "psi": psi, "geocent_time": time}
+    detectors = list(psd.keys())
+    antenna = {
+        detector: antenna_response(_samples, detector) for detector in detectors
+    }
+    _f_plus = {key: value[0] for key, value in antenna.items()}
+    _f_cross = {key: value[1] for key, value in antenna.items()}
+    with multiprocessing.Pool(multi_process) as pool:
+        f_plus = np.array(
+            [dict(zip(_f_plus, item)) for item in zip(*_f_plus.values())]
+        )
+        f_cross = np.array(
+            [dict(zip(_f_cross, item)) for item in zip(*_f_cross.values())]
+        )
+        args = np.array([
+            mass_1, mass_2, spin_1z, spin_2z, psi, iota, ra, dec, time, distance,
+            phase, [f_low] * len(mass_1), [f_final] * len(mass_1),
+            [psd] * len(mass_1), [approx] * len(mass_1), [f_ref] * len(mass_1),
+            [df] * len(mass_1), [flen] * len(mass_1), [multipole] * len(mass_1),
+            f_plus, f_cross
+        ], dtype=object).T
+        rho_hm = np.array(
+            list(
+                iterator(
+                    pool.imap(_wrapper_for_multipole_snr, args), tqdm=True,
+                    desc="Calculating rho_hm", logger=logger, total=len(mass_1)
+                )
+            ), dtype=object
+        )
+        rho_hm = np.asarray(np.nan_to_num(rho_hm, 0).T, dtype=np.float64)
+    rho_hm = np.sqrt(rho_hm)
+    if return_data_used:
+        psd_used = "stored" if not ANALYTIC else list(psd.values())[0].__name__
+        data_used = {"psd": psd_used, "approximant": approx, "f_final": f_final}
+        return rho_hm, data_used
+    return rho_hm
+
+
+@array_input(
+    ignore_kwargs=[
         "f_low", "psd", "approx", "f_final", "f_ref", "return_data_used",
         "multi_process", "duration", "df", "psd_default", "debug"
     ]
@@ -424,7 +598,7 @@ def precessing_snr(
     mass_1, mass_2, beta, psi_J, a_1, a_2, tilt_1, tilt_2, phi_12, theta_jn,
     ra, dec, time, phi_jl, distance, phase, f_low=20., psd={}, spin_1z=None,
     spin_2z=None, chi_eff=None, approx="IMRPhenomPv2", f_final=1024.,
-    f_ref=None, return_data_used=False, multi_process=6., duration=None,
+    f_ref=None, return_data_used=False, multi_process=6, duration=None,
     df=1. / 256, psd_default="aLIGOZeroDetHighPower", debug=True
 ):
     """Calculate the precessing snr as defined in Fairhurst et al.
@@ -506,34 +680,10 @@ def precessing_snr(
         spin_2z=spin_2z, chi_eff=chi_eff, f_low=f_low, duration=duration,
         detectors=["H1", "L1"], f_final=f_final, df=df
     )
-    detectors = list(psd.keys())
-    if df != psd[detectors[0]].delta_f:
-        from pycbc.psd import estimate
-        logger.warning(
-            "Provided PSD has df={} and {} has been specified. Interpolation "
-            "will be used".format(psd[detectors[0]].delta_f, df)
-        )
-        psd = {
-            ifo: estimate.interpolate(psd[ifo], df) for ifo in psd.keys()
-        }
-    _f_final = psd[detectors[0]].sample_frequencies[-1]
-    if f_final is None:
-        f_final = _f_final
-    elif f_final != _f_final:
-        logger.warning(
-            "The provided final frequency: {} does not match the final "
-            "frequency in the PSD: {}. Using the final frequency stored in the "
-            "PSD to prevent interpolation errors".format(f_final, _f_final)
-        )
-        f_final = _f_final
-    if f_ref is None:
-        logger.warning("No reference frequency provided. Using f_low as default")
-        f_ref = f_low
-    elif isinstance(f_ref, (list, np.ndarray)):
-        f_ref = f_ref[0]
-
+    f_final, f_ref = _setup_frequencies(f_low, f_final, f_ref, psd)
     flen = int(f_final / df) + 1
     _samples = {"ra": ra, "dec": dec, "psi": psi_J, "geocent_time": time}
+    detectors = list(psd.keys())
     antenna = {
         detector: antenna_response(_samples, detector) for detector in detectors
     }
@@ -590,6 +740,17 @@ def precessing_snr(
     return _return
 
 
+def _wrapper_for_multipole_snr(args):
+    """Wrapper function for _multipole_snr for a pool of workers
+
+    Parameters
+    ----------
+    args: tuple
+        All args passed to _precessing_snr
+    """
+    return _multipole_snr(*args)
+
+
 def _wrapper_for_precessing_snr(args):
     """Wrapper function for _precessing_snr for a pool of workers
 
@@ -638,6 +799,133 @@ def _calculate_b_bar(
     if return_snrs:
         return b_bar, rhos
     return b_bar
+
+
+def _mode_array_map(mode_key, approx):
+    """Return the mode_array in pycbc format for requested mode
+
+    Parameters
+    ----------
+    mode_key: int/str
+        Mode key e.g. 22/'22'.
+    approx: str
+        Waveform approximant.
+
+    Returns
+    -------
+    mode_array: list
+        pesummary.gw.waveform.fd_waveform appropriate list of lm modes.
+    """
+    mode_array_dict = {
+        "22": [[2, 2], [2, -2]],
+        "32": [[3, 2], [3, -2]],
+        "21": [[2, 1], [2, -1]],
+        "44": [[4, 4], [4, -4]],
+        "33": [[3, 3], [3, -3]],
+        "43": [[4, 3], [4, -3]],
+    }
+    # don't include negative m modes in Cardiff Phenom models
+    # as will throw an error - they are automatically
+    # added by these models. Note: Must include
+    # negative m modes for phenomXHM.
+    if approx in ["IMRPhenomPv3HM", "IMRPhenomHM"]:
+        mode_array_idx = -1
+    else:
+        mode_array_idx = None
+
+    return mode_array_dict[str(mode_key)][:mode_array_idx]
+
+
+def _multipole_snr(
+    mass_1, mass_2, spin_1z, spin_2z, psi, iota, ra, dec, time, distance, phase,
+    f_low, f_final, psd, approx, f_ref, df, flen, multipole, f_plus, f_cross
+):
+    """Calculate the square of the multipole SNR for a given detector network
+
+    Parameters
+    ----------
+    mass_1: float
+        Primary mass of the bianry
+    mass_2: float
+        Secondary mass of the binary
+    spin_1z: float
+        The primary spin aligned with the total orbital angular momentum
+    spin_2z: float
+        The secondary spin aligned with the total orbital angular momentum
+    psi: float
+        The polarization angle of the binary
+    iota: float
+        The angle between the total orbital angular momentum and the line of
+        sight
+    ra: float
+        The right ascension of the source
+    dec: float
+        The declination of the source
+    time: float
+        The merger time of the binary
+    distance: float
+        The luminosity distance of the source
+    phase: float
+        The phase of the source
+    f_low: float
+        Low frequency to use for integration
+    f_final: float
+        Final frequency to use for integration
+    psd: dict
+        Dictionary of pycbc.types.frequencyseries.FrequencySeries objects, one
+        for each detector.
+    approx: str
+        The aligned spin higher order multipole approximant you wish to use.
+    f_ref: float
+        Reference frequency where the spins are defined.
+    df: float
+        Frequency spacing between frequency samples
+    flen: int
+        Length of frequency array to use when generating the frequency domain
+        waveform
+    multipole: list
+        List of multipoles to calculate the SNR for.
+    f_plus: float
+        Detector response function for the plus polarization
+    f_cross:
+        Detector response function for the cross polarization
+    """
+    from pesummary.gw.pycbc import compute_the_overlap
+    from pycbc.filter import sigmasq
+    h = {}
+    # geocenter waveforms
+    for mode in multipole:
+        mode_array = _mode_array_map(mode, approx)
+        tilt_1, tilt_2 = np.arccos(np.sign(spin_1z)), np.arccos(np.sign(spin_2z))
+        a_1, a_2 = np.abs(spin_1z), np.abs(spin_2z)
+        h[mode] = _make_waveform(
+            approx, iota, 0., phase, psi, mass_1, mass_2, tilt_1, tilt_2,
+            0., a_1, a_2, 0., distance, df=df, f_low=f_low, f_final=f_final,
+            f_ref=f_ref, mode_array=mode_array, apply_detector_response=False
+        )
+    rhosq_22 = 0
+    rhosq_hm = {mode: 0 for mode in multipole}
+    for det, _psd in psd.items():
+        _22 = h[22][0] * f_plus[det] + h[22][1] * f_cross[det]
+        for mode in multipole:
+            if mode == 22:
+                continue
+            _mode = h[mode][0] * f_plus[det] + h[mode][1] * f_cross[det]
+            _rhosq_hm = sigmasq(
+                _mode, _psd, low_frequency_cutoff=f_low,
+                high_frequency_cutoff=f_final
+            )
+            # calculate the mode power perpindicular to the 22 mode
+            # don't calculate the overlap if SNR ~ 0
+            if (_rhosq_hm < 1e-14):
+                oo = 0
+            else:
+                oo = compute_the_overlap(
+                    _22, _mode, _psd, low_frequency_cutoff=f_low,
+                    high_frequency_cutoff=f_final, normalized=True
+                )
+            rhosq_hm[mode] += _rhosq_hm * (1 - abs(oo) ** 2)
+    return [snr for mode, snr in rhosq_hm.items() if mode != 22]
 
 
 def _precessing_snr(

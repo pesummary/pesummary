@@ -794,7 +794,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 "accept": ["time"], "reject": []
             },
             "SNR": {
-                "accept": ["snr"], "reject": []
+                "accept": ["snr", "subdominant_multipoles"], "reject": []
             },
             "calibration": {
                 "accept": ["spcal", "recalib", "frequency"],
