@@ -4,7 +4,31 @@ import os
 import glob
 from datetime import date
 
+import pkg_resources
+
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+
+
+def read_requirements(file):
+    """Yield requirements out of a (nested) pip-style requirements file
+
+    Parameters
+    ----------
+    file : file object
+        an open file to read
+
+    Yields
+    ------
+    req : pkg_resources.Requirement
+        a formatted `Requirement` object
+    """
+    for line in file:
+        if line.startswith("-r "):
+            name = line[3:].rstrip()
+            with open(name, "r") as file2:
+                yield from read_requirements(file2)
+        else:
+            yield from pkg_resources.parse_requirements(line)
 
 
 def format_requirements(path):
@@ -15,13 +39,11 @@ def format_requirements(path):
     path: str
         path to the file of requirements
     """
+    requirements = []
     with open(path, "r") as f:
-        _requirements = f.read().strip().split("\n")
-        _requirements = [
-            "'{}'".format(r) if '<=' in r else r for r in _requirements
-        ]
-        requirements = ' \\\n'.join(_requirements)
-    return requirements
+        for req in read_requirements(f):
+            requirements.append("{}{}".format(req.name, req.specifier))
+    return " \\\n".join(map(repr, requirements))
 
 
 python_major_version, python_minor_version = (3, 6)
