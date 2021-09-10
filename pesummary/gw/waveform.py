@@ -103,6 +103,11 @@ def _waveform_args(samples, f_ref=20., ind=0, longAscNodes=0., eccentricity=0.):
             _samples[param] if param in _samples.keys() else 0. for param in
             ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
         ]
+    _zero_spins = np.isclose(spins, 0.)
+    if sum(_zero_spins):
+        spins = np.array(spins)
+        spins[_zero_spins] = 0.
+        spins = list(spins)
     waveform_args += spins
     phase = _samples["phase"] if "phase" in _samples.keys() else 0.
     waveform_args += [

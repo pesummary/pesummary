@@ -128,5 +128,9 @@ gw_reproducibility = ["config", "psd"]
 # Additional 1d histogram pages that combine multiple GW marginalized posterior
 # distributions
 additional_1d_pages = {
-    "precession": ["chi_p", "chi_p_2spin", "network_precessing_snr", "beta"]
+    "precession": ["chi_p", "chi_p_2spin", "network_precessing_snr", "beta"],
+    "subdominant_multipoles": [
+        "network_matched_filter_snr", "network_21_multipole_snr",
+        "network_33_multipole_snr", "network_44_multipole_snr"
+    ]
 }

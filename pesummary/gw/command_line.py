@@ -147,6 +147,11 @@ def insert_gwspecific_option_group(parser):
                                 "ligo.skymap. These samples will be randomly "
                                 "drawn from the posterior distributions"),
                           default=None)
+    gw_group.add_argument("--calculate_multipole_snr", action="store_true",
+                          help=("Calculate the SNR in the (ell, m) = [(2, 1), "
+                                "(3, 3), (4, 4)] subdominant multipoles based "
+                                " on the posterior samples"),
+                          default=False)
     gw_group.add_argument("--calculate_precessing_snr", action="store_true",
                           help=("Calculate the precessing SNR based on the posterior "
                                 "samples"),

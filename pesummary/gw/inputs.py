@@ -118,6 +118,7 @@ class _GWInput(_Input):
                     f_low=self.f_low[num],
                     approximant=approx[num], f_ref=self.f_ref[num],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
+                    multipole_snr=self.calculate_multipole_snr,
                     precessing_snr=self.calculate_precessing_snr,
                     psd=psd, f_final=self.f_final[num],
                     waveform_fits=self.waveform_fits,
@@ -149,6 +150,7 @@ class _GWInput(_Input):
                     f_low=self.f_low[0],
                     approximant=approx[0], f_ref=self.f_ref[0],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
+                    multipole_snr=self.calculate_multipole_snr,
                     precessing_snr=self.calculate_precessing_snr,
                     psd=self.psd[self.labels[0]], f_final=self.f_final[0],
                     waveform_fits=self.waveform_fits,
@@ -984,10 +986,11 @@ class GWInput(_GWInput, Input):
         super(GWInput, self).__init__(
             opts, ignore_copy=True, extra_options=[
                 "evolve_spins_forwards", "evolve_spins_backwards", "NRSur_fits",
-                "calculate_precessing_snr", "f_low", "f_ref", "f_final", "psd",
-                "waveform_fits", "redshift_method", "cosmology", "no_conversion",
-                "delta_f", "psd_default", "disable_remnant",
-                "force_BBH_remnant_computation", "force_BH_spin_evolution"
+                "calculate_multipole_snr", "calculate_precessing_snr", "f_low",
+                "f_ref", "f_final", "psd", "waveform_fits", "redshift_method",
+                "cosmology", "no_conversion", "delta_f", "psd_default",
+                "disable_remnant", "force_BBH_remnant_computation",
+                "force_BH_spin_evolution"
             ], checkpoint=checkpoint, gw=True
         )
         if self._restarted_from_checkpoint:

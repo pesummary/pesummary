@@ -770,17 +770,74 @@ class TestPrecessingSNR(object):
             self.tilt_1, self.tilt_2, self.phi_12, self.theta_jn,
             self.ra, self.dec, self.time, self.phi_jl, self.distance,
             self.phase, f_low=self.f_low, spin_1z=self.spin_1z,
-            spin_2z=self.spin_2z, multi_process=2, debug=False
+            spin_2z=self.spin_2z, multi_process=2, debug=False, df=1./8
         )
+        print(rho_p)
         assert len(rho_p) == len(self.mass_1)
         np.testing.assert_almost_equal(
             rho_p, [
-                0.68377795, 4.44612704, 1.50235258, 16.36949527, 8.35617321,
-                10.75820936, 5.56308683, 38.71224512, 19.0201054, 46.01320268,
-                11.04007564, 22.14077344, 21.81204471, 0.52877289, 18.51382876,
-                60.31991201, 20.90260283, 7.59837535, 28.78524904, 4.79727718
+                0.68388587, 4.44970478, 1.50271424, 16.3827856, 8.36573959,
+                10.76045285, 5.56389147, 38.75092541, 19.04936638, 46.08235277,
+                11.04476231, 22.15809248, 21.83931442, 0.52940244, 18.51671761,
+                60.36654193, 20.90566198, 7.59963958, 28.81494436, 4.8044846
             ]
         )
+
+
+class TestMultipoleSNR(TestPrecessingSNR):
+    """Test the multipole_snr conversion
+    """
+    def setup(self):
+        super(TestMultipoleSNR, self).setup()
+
+    @pytest.mark.skip(reason="Inherited test")
+    def test_harmonic_overlap(self):
+        pass
+
+    @pytest.mark.skip(reason="Inherited test")
+    def test_precessing_snr(self):
+        pass
+
+    def test_multipole_snr(self):
+        """Test the pesummary.gw.conversions.multipole_snr function
+        """
+        rho = multipole_snr(
+            self.mass_1, self.mass_2, self.spin_1z, self.spin_2z, self.psi_l,
+            self.theta_jn, self.ra, self.dec, self.time, self.distance,
+            self.phase, multi_process=2, df=1./8, multipole=[21, 33, 44]
+        )
+        assert rho.shape[0] == 3
+        np.testing.assert_almost_equal(
+            rho[0], [
+                0.6596921, 2.12974546, 1.93105129, 1.35944417, 0.9120402,
+                3.80282866, 7.61761295, 1.16740751, 10.21191012, 9.35936201,
+                0.27350052, 4.43640379, 1.51461019, 4.70872955, 2.7549612,
+                2.2352616, 3.41052443, 1.10154954, 15.81511232, 0.23764298
+            ]
+        )
+        np.testing.assert_almost_equal(
+            rho[1], [
+                2.2024227, 5.21268461, 7.38129296, 3.82192114, 1.64048716,
+                4.24737159, 22.50700374, 14.58858975, 21.1321856, 26.96560935,
+                2.34024445, 11.63883373, 6.46660159, 16.01541501, 6.23402429,
+                14.97004104, 12.07573489, 0.71078634, 14.36867389, 3.05641683
+            ]
+        )
+        np.testing.assert_almost_equal(
+            rho[2], [
+                0.17943241, 2.22706934, 0.92289317, 1.75781028, 4.60991554,
+                3.27450411, 9.1738965, 13.1496354, 9.69145147, 15.48684113,
+                1.59531519, 5.40656286, 8.20452335, 4.48912263, 4.92358844,
+                11.3532783, 4.3573242, 1.01853648, 7.36585491, 9.26232754
+            ]
+        )
+        with pytest.raises(ValueError):
+            rho = multipole_snr(
+                self.mass_1, self.mass_2, self.spin_1z, self.spin_2z, self.psi_l,
+                self.theta_jn, self.ra, self.dec, self.time, self.distance,
+                self.phase, multi_process=2, df=1./8, multipole=[21, 33, 44, 55]
+            )
+
 
 class TestNRutils(object):
 
