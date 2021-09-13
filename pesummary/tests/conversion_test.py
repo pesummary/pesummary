@@ -770,7 +770,7 @@ class TestPrecessingSNR(object):
             self.tilt_1, self.tilt_2, self.phi_12, self.theta_jn,
             self.ra, self.dec, self.time, self.phi_jl, self.distance,
             self.phase, f_low=self.f_low, spin_1z=self.spin_1z,
-            spin_2z=self.spin_2z, multi_process=2, debug=False, df=1./8
+            spin_2z=self.spin_2z, multi_process=1, debug=False, df=1./8
         )
         print(rho_p)
         assert len(rho_p) == len(self.mass_1)
@@ -804,7 +804,7 @@ class TestMultipoleSNR(TestPrecessingSNR):
         rho = multipole_snr(
             self.mass_1, self.mass_2, self.spin_1z, self.spin_2z, self.psi_l,
             self.theta_jn, self.ra, self.dec, self.time, self.distance,
-            self.phase, multi_process=2, df=1./8, multipole=[21, 33, 44]
+            self.phase, multi_process=1, df=1./8, multipole=[21, 33, 44]
         )
         assert rho.shape[0] == 3
         np.testing.assert_almost_equal(
@@ -835,7 +835,7 @@ class TestMultipoleSNR(TestPrecessingSNR):
             rho = multipole_snr(
                 self.mass_1, self.mass_2, self.spin_1z, self.spin_2z, self.psi_l,
                 self.theta_jn, self.ra, self.dec, self.time, self.distance,
-                self.phase, multi_process=2, df=1./8, multipole=[21, 33, 44, 55]
+                self.phase, multi_process=1, df=1./8, multipole=[21, 33, 44, 55]
             )
 
 

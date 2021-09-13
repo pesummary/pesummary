@@ -50,7 +50,7 @@ def _imrct_deviation_parameters_integrand_vectorized(
     v2,
     P_final_mass_final_spin_i_interp_object,
     P_final_mass_final_spin_r_interp_object,
-    multi_process=4,
+    multi_process=1,
     wrapper_function_for_multiprocess=None,
 ):
     """Compute the integrand of P(delta_final_mass/final_mass_bar,
@@ -71,7 +71,7 @@ def _imrct_deviation_parameters_integrand_vectorized(
     P_final_mass_final_spin_r_interp_object:
         interpolated P_r(final_mass, final_spin)
     multi_process: int
-        Number of parallel processes. Default: 4
+        Number of parallel processes. Default: 1
     wrapper_function_for_multiprocess: method
         Wrapper function for the multiprocessing. Default: None
 
@@ -193,7 +193,7 @@ def _imrct_deviation_parameters_integrand_series(
     v2,
     P_final_mass_final_spin_i_interp_object,
     P_final_mass_final_spin_r_interp_object,
-    multi_process=4,
+    multi_process=1,
     **kwargs
 ):
     """
@@ -286,7 +286,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     N_bins=101,
     final_mass_deviation_lim=1,
     final_spin_deviation_lim=1,
-    multi_process=4,
+    multi_process=1,
     use_kde=False,
     kde=gaussian_kde,
     kde_kwargs=dict(),
@@ -319,7 +319,7 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
         final_mass_deviation_lim] and [-final_spin_deviation_lim,
         final_spin_deviation_lim]. Default is 101.
     multi_process: int
-        Number of parallel processes. Default is 4.
+        Number of parallel processes. Default is 1.
     use_kde: bool
         If `True`, uses kde instead of interpolation. Default is False.
     kde: method
