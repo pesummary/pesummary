@@ -1,3 +1,9 @@
+include:
+  - project: computing/gitlab-ci-templates
+    file:
+      - conda.yml
+      - python.yml
+
 stages:
   - build
   - basic
@@ -56,35 +62,23 @@ before_script:
 
 
 tarball:
+  extends:
+    # https://computing.docs.ligo.org/gitlab-ci-templates/python/#.python:build
+    - .python:build
   stage: build
-  image: python:3.6
-  script:
-    - python setup.py sdist --dist-dir .
-    - export PESUMMARY_TESTING_DIR=`python -c "import pkg_resources; print(pkg_resources.resource_filename('pesummary', 'tests'))"`
-  artifacts:
-    paths:
-      - "pesummary-*.tar.*"
-
-
-wheel:
-  stage: build
-  image: python:3.6
-  script:
-    - python setup.py bdist_wheel
-
+  needs: []
 
 conda:
+  extends:
+    # https://computing.docs.ligo.org/gitlab-ci-templates/conda/#.conda:base
+    - .conda:base
   stage: build
-  image: igwn/base:conda
-  before_script: []
+  needs: []
   script:
-    - . /opt/conda/etc/profile.d/conda.sh
     - conda create --name py38 python=3.8
     - conda activate py38
     - conda install --file conda_requirements.txt -c conda-forge
-    - python setup.py install
-    - conda deactivate
-
+    - python -m pip install .
 
 docker:
   stage: build
@@ -128,16 +122,11 @@ imports:
 
 
 style:
+  extends:
+    # https://computing.docs.ligo.org/gitlab-ci-templates/python/#.python:flake8
+    - .python:flake8
   stage: basic
-  image: python:3.6
-  needs:
-    - tarball
-  before_script:
-    - ""
-  script:
-    - pip install flake8
-    - flake8 .
-
+  needs: []
 
 documentation:
   stage: basic
