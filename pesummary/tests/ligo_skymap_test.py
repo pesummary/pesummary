@@ -55,6 +55,7 @@ def samples(tmpdir):
     return filename
 
 
+@pytest.mark.ligoskymaptest
 def test_ligo_skymap(samples, tmpdir):
     run_entry_point('ligo-skymap-from-samples', '--seed', '150914',
                     samples, '-o', str(tmpdir),

@@ -51,10 +51,9 @@ class TestPlot(object):
         fil = [i.strip().split() for i in fil]
         return [float(i[1]) for i in fil]
 
-    @pytest.mark.parametrize("param, samples", [("mass_1",
-        Array([10, 20, 30, 40])),])
-    def test_autocorrelation_plot(self, param, samples):
-        fig = plot._autocorrelation_plot(param, samples)
+    def test_autocorrelation_plot(self):
+        rcParams["text.usetex"] = False
+        fig = plot._autocorrelation_plot("mass_1", Array([10, 20, 30, 40]))
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     @pytest.mark.parametrize("param, samples", [("mass_1",
