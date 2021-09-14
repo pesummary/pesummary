@@ -47,6 +47,7 @@ class TestSummaryPublication(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_2d_contour(self):
         """Test the 2d contour plot generation
         """
@@ -60,6 +61,7 @@ class TestSummaryPublication(Base):
             os.path.join(".outdir", "2d_contour_plot_mass_1_and_mass_2.png")
         )
 
+    @pytest.mark.executabletest
     def test_violin(self):
         """Test the violin plot generation
         """
@@ -73,6 +75,7 @@ class TestSummaryPublication(Base):
             os.path.join(".outdir", "violin_plot_mass_1.png")
         )
 
+    @pytest.mark.executabletest
     def test_spin_disk(self):
         """Test the spin disk generation
         """
@@ -137,6 +140,7 @@ class TestSummaryPipe(Base):
             if os.path.isdir(dd):
                 shutil.rmtree(dd)
 
+    @pytest.mark.executabletest
     def test_no_config(self):
         """Test that the code fails if there is no config file in the
         directory
@@ -146,6 +150,7 @@ class TestSummaryPipe(Base):
             with pytest.raises(FileNotFoundError):
                 self.launch(command_line)
 
+    @pytest.mark.executabletest
     def test_no_samples(self):
         """Test that the code fails if there are no posterior samples in the
         directory
@@ -166,6 +171,7 @@ class TestSummaryPipe(Base):
             with pytest.raises(FileNotFoundError):
                 self.launch(command_line)
 
+    @pytest.mark.executabletest
     def test_basic(self):
         """Test that the code runs for a trivial example
         """
@@ -191,6 +197,7 @@ class TestSummaryPipe(Base):
             assert "--approximant" in output
             assert "--labels" in output
 
+    @pytest.mark.executabletest
     def test_override(self):
         """Test that when you provide an option from the command line it
         overrides the one inferred from the rundir
@@ -208,6 +215,7 @@ class TestSummaryPipe(Base):
         assert label != label2
         assert label2 == "hello"
 
+    @pytest.mark.executabletest
     def test_add_to_summarypages_command(self):
         """Test that when you provide an option from the command line that
         is not already in the summarypages command line, it adds it to the one
@@ -276,6 +284,7 @@ class TestSummaryPages(Base):
             )
         )
 
+    @pytest.mark.executabletest
     def test_descriptions(self):
         """Check that summarypages stores the correct descriptions when the
         `--descriptions` flag is provided
@@ -304,6 +313,7 @@ class TestSummaryPages(Base):
         assert opened.description["core0"] == "Testing description"
         assert opened.description["core1"] == "Test"
 
+    @pytest.mark.executabletest
     def test_reweight(self):
         """Check that summarypages reweights the posterior samples if the
         `--reweight_samples` flag is provided
@@ -334,6 +344,7 @@ class TestSummaryPages(Base):
         assert _kwargs["sampler"]["nsamples"] == reweighted["gw0"].number_of_samples
         assert _kwargs["meta_data"]["reweighting"] == "uniform_in_comoving_volume"
 
+    @pytest.mark.executabletest
     def test_checkpoint(self):
         """Check that when restarting from checkpoint, the outputs are
         consistent
@@ -357,6 +368,7 @@ class TestSummaryPages(Base):
         made_time = os.path.getmtime(glob.glob(".outdir/plots/*.png")[0])
         assert made_time < t2
 
+    @pytest.mark.executabletest
     def test_expert(self):
         """Check that summarypages produces the expected expert diagnostic
         plots
@@ -374,6 +386,7 @@ class TestSummaryPages(Base):
         self.launch(command_line)
         self.check_output(number=1, expert=True)
 
+    @pytest.mark.executabletest
     def test_prior_input(self):
         """Check that `summarypages` works when a prior file is passed from
         the command line
@@ -424,6 +437,7 @@ class TestSummaryPages(Base):
                     # A bilby prior file will have 10 prior samples
                     assert len(f.priors["samples"]["test"][params[0]]) == 10
 
+    @pytest.mark.executabletest
     def test_calibration_and_psd(self):
         """Test that the calibration and psd files are passed appropiately
         """
@@ -447,6 +461,7 @@ class TestSummaryPages(Base):
             f.priors["calibration"]["test"]["L1"], calibration
         )
 
+    @pytest.mark.executabletest
     def test_strain_data(self):
         """Test that the gravitational wave data is passed appropiately
         """
@@ -477,6 +492,7 @@ class TestSummaryPages(Base):
             assert gwdata[IFO].dt == strain[IFO].dt
             assert gwdata[IFO].unit == strain[IFO].unit
 
+    @pytest.mark.executabletest
     def test_gracedb(self):
         """Test that when the gracedb ID is passed from the command line it is
         correctly stored in the meta data
@@ -492,6 +508,7 @@ class TestSummaryPages(Base):
         assert "gracedb" in f.extra_kwargs[0]["meta_data"]
         assert "G17864" == f.extra_kwargs[0]["meta_data"]["gracedb"]["id"]
 
+    @pytest.mark.executabletest
     def test_single(self):
         """Test on a single input
         """
@@ -502,6 +519,7 @@ class TestSummaryPages(Base):
         self.launch(command_line)
         self.check_output(number=1)
 
+    @pytest.mark.executabletest
     def test_summarycombine_output(self):
         """Test on a summarycombine output
         """
@@ -533,7 +551,7 @@ class TestSummaryPages(Base):
         )
         self.launch(command_line)
         
-
+    @pytest.mark.executabletest
     def test_mcmc(self):
         """Test the `--mcmc_samples` command line argument
         """
@@ -545,6 +563,7 @@ class TestSummaryPages(Base):
         self.launch(command_line)
         self.check_output(number=1, mcmc=True)
 
+    @pytest.mark.executabletest
     def test_kde_plot(self):
         """Test that the kde plots work on a single input and on MCMC inputs
         """
@@ -562,6 +581,7 @@ class TestSummaryPages(Base):
         self.launch(command_line)
         self.check_output(number=1, mcmc=True)
 
+    @pytest.mark.executabletest
     def test_mcmc_more_than_label(self):
         """Test that the code fails with the `--mcmc_samples` command line
         argument when multiple labels are passed.
@@ -575,6 +595,7 @@ class TestSummaryPages(Base):
         with pytest.raises(InputError): 
             self.launch(command_line)
 
+    @pytest.mark.executabletest
     def test_file_format_wrong_number(self):
         """Test that the code fails with the `--file_format` command line
         argument when the number of file formats does not match the number of
@@ -588,6 +609,7 @@ class TestSummaryPages(Base):
         with pytest.raises(InputError):
             self.launch(command_line)
 
+    @pytest.mark.executabletest
     def test_add_existing_plot(self):
         """Test that an Additional page is made if existing plots are provided
         to the summarypages executable
@@ -647,6 +669,7 @@ class TestSummaryClassification(Base):
             ]
         )
 
+    @pytest.mark.executabletest
     def test_result_file(self):
         """Test the `summaryclassification` executable for a random result file
         """
@@ -657,6 +680,7 @@ class TestSummaryClassification(Base):
         self.launch(command_line)
         self.check_output()
 
+    @pytest.mark.executabletest
     def test_pesummary_file(self):
         """Test the `summaryclassification` executable for a pesummary metafile
         """
@@ -703,6 +727,7 @@ class TestSummaryTGR(Base):
         for file_string in file_strings:
             assert image_base_string.format(file_string) in image_files
 
+    @pytest.mark.executabletest
     def test_result_file(self):
         """Test the `summarytgr` executable for a random result file
         """
@@ -718,6 +743,7 @@ class TestSummaryTGR(Base):
         self.launch(command_line)
         self.check_output()
 
+    @pytest.mark.executabletest
     def test_pesummary_file(self):
         """Test the `summarytgr` executable for a pesummary metafile
         """
@@ -730,6 +756,7 @@ class TestSummaryTGR(Base):
         self.launch(command_line)
         self.check_output(diagnostic=False)
 
+    @pytest.mark.executabletest
     def test_pdfs_and_gr_quantile(self):
         """Test that the GR quantile and pdf matches the LAL implementation
         The LAL files were produced by the executable imrtgr_imr_consistency_test
@@ -775,6 +802,7 @@ class TestSummaryClean(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_clean(self):
         """Test the `summaryclean` executable
         """
@@ -812,6 +840,7 @@ class TestSummaryClean(Base):
 class _SummaryCombine_Metafiles(Base):
     """Test the `summarycombine_metafile` executable
     """
+    @pytest.mark.executabletest
     def test_combine(self, gw=False):
         """Test the executable for 2 metafiles
         """
@@ -863,6 +892,7 @@ class TestCoreSummaryCombine_Metafiles(_SummaryCombine_Metafiles):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_combine(self):
         """Test the executable for 2 metafiles
         """
@@ -888,6 +918,7 @@ class TestGWSummaryCombine_Metafiles(_SummaryCombine_Metafiles):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_combine(self):
         """Test the executable for 2 metafiles
         """
@@ -915,6 +946,7 @@ class TestSummaryCombine(Base):
             if os.path.isdir(dd):
                 shutil.rmtree(dd)
 
+    @pytest.mark.executabletest
     def test_disable_prior_sampling(self):
         """Test that the code skips prior sampling when the appropiate flag
         is provided to the `summarypages` executable
@@ -939,6 +971,7 @@ class TestSummaryCombine(Base):
         f = read(".outdir/samples/posterior_samples.h5")
         assert not len(f.priors["samples"]["core0"])
 
+    @pytest.mark.executabletest
     def test_external_hdf5_links(self):
         """Test that seperate hdf5 files are made when the
         `--external_hdf5_links` command line is passed
@@ -974,6 +1007,7 @@ class TestSummaryCombine(Base):
             h.priors["calibration"]["gw0"]["L1"]
         )
 
+    @pytest.mark.executabletest
     def test_compression(self):
         """Test that the metafile is reduced in size when the datasets are
         compressed with maximum compression level
@@ -1008,6 +1042,7 @@ class TestSummaryCombine(Base):
         posterior_samples2 = g.samples[0]
         np.testing.assert_almost_equal(posterior_samples, posterior_samples2)
 
+    @pytest.mark.executabletest
     def test_seed(self):
         """Test that the samples stored in the metafile are identical for two
         runs if the random seed is the same
@@ -1056,6 +1091,7 @@ class TestSummaryCombine(Base):
             original.samples[0], new.samples[0]
         )
 
+    @pytest.mark.executabletest
     def test_preferred(self):
         """Test that the preferred analysis is correctly stored in the metafile
         """
@@ -1104,6 +1140,7 @@ class TestSummaryReview(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_review(self):
         """Test the `summaryreview` script for a `lalinference` result file
         """
@@ -1131,6 +1168,7 @@ class TestSummarySplit(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_split_single_analysis(self):
         """Test that a file containing a single analysis is successfully split
         into N_samples result files
@@ -1166,6 +1204,7 @@ class TestSummarySplit(Base):
             assert all(sample in combined[param] for sample in original[param])
             assert all(sample in original[param] for sample in combined[param])
 
+    @pytest.mark.executabletest
     def test_split_single_analysis_specific_N_files(self):
         """Test that a file containing a single analysis is successfully split
         into 10 result files
@@ -1184,6 +1223,7 @@ class TestSummarySplit(Base):
             for param in g.keys():
                 assert all(sample in original[param] for sample in g[param])
 
+    @pytest.mark.executabletest
     def test_split_multi_analysis(self):
         """Test that a file containing multiple analyses is successfully split
         into N_samples result files
@@ -1232,6 +1272,7 @@ class TestSummaryExtract(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_extract(self):
         """Test that a set if posterior samples are correctly extracted
         """
@@ -1274,6 +1315,7 @@ class TestSummaryCombine_Posteriors(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_combine(self):
         """Test that the two posteriors are combined
         """
@@ -1294,6 +1336,7 @@ class TestSummaryCombine_Posteriors(Base):
             assert all(ss in one[param] for ss in combined[param][:half])
             assert all(ss in two[param] for ss in combined[param][half:])
 
+    @pytest.mark.executabletest
     def test_combine_metafile_failures(self):
         """Test that errors are raised when incorrect labels are passed when "
         trying to combine posteriors from a single metafile and when trying
@@ -1328,6 +1371,7 @@ class TestSummaryCombine_Posteriors(Base):
             )
             self.launch(command_line)
 
+    @pytest.mark.executabletest
     def test_combine_metafile(self):
         """Test that the two posteriors are combined when a single metafile
         is provided
@@ -1401,6 +1445,7 @@ class TestSummaryModify(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_preferred(self):
         """Test that the preferred run is correctly specified in the meta file
         """
@@ -1423,6 +1468,7 @@ class TestSummaryModify(Base):
         f = read(".outdir/modified_posterior_samples.h5")
         assert f.preferred == "two"
 
+    @pytest.mark.executabletest
     def test_descriptions(self):
         """Test that the descriptions are correctly replaced in the meta file
         """
@@ -1455,6 +1501,7 @@ class TestSummaryModify(Base):
         assert modified_data["replace"]["description"][0] == b'NewDescription'
         modified_data.close()
 
+    @pytest.mark.executabletest
     def test_modify_kwargs_replace(self):
         """Test that kwargs are correctly replaced in the meta file
         """
@@ -1473,6 +1520,7 @@ class TestSummaryModify(Base):
         modified_data.close()
         original_data.close()
 
+    @pytest.mark.executabletest
     def test_modify_kwargs_append(self):
         """Test that kwargs are correctly added to the result file
         """
@@ -1491,6 +1539,7 @@ class TestSummaryModify(Base):
         assert modified_data["replace"]["meta_data"]["other"]["test"][0] == b'10'
         modified_data.close()
 
+    @pytest.mark.executabletest
     def test_modify_posterior(self):
         """Test that a posterior distribution is correctly modified
         """
@@ -1519,6 +1568,7 @@ class TestSummaryModify(Base):
         )
         modified_data.close()
 
+    @pytest.mark.executabletest
     def test_remove_posterior(self):
         """Test that a posterior is correctly removed
         """
@@ -1539,6 +1589,7 @@ class TestSummaryModify(Base):
         original_data.close()
         modified_data.close()
 
+    @pytest.mark.executabletest
     def test_remove_multiple_posteriors(self):
         """Test that multiple posteriors are correctly removed
         """
@@ -1561,6 +1612,7 @@ class TestSummaryModify(Base):
         original_data.close()
         modified_data.close()
 
+    @pytest.mark.executabletest
     def test_store_skymap(self):
         """Test that multiple skymaps are correctly stored
         """
@@ -1620,6 +1672,7 @@ class TestSummaryModify(Base):
             )
             self.launch(command_line)
 
+    @pytest.mark.executabletest
     def test_modify(self):
         """Test the `summarymodify` script
         """
@@ -1687,6 +1740,7 @@ class TestSummaryRecreate(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_recreate(self):
         """Test the `summaryrecreate` script
         """
@@ -1751,6 +1805,7 @@ class TestSummaryCompare(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.executabletest
     def test_example_in_docs(self):
         """Test that the code runs for the example in the docs
         """
@@ -1794,6 +1849,7 @@ class TestSummaryJSCompare(Base):
             if os.path.isdir(dd):
                 shutil.rmtree(dd)
 
+    @pytest.mark.executabletest
     def test_runs_on_core_file(self):
         """Test that the code successfully generates a plot for 2 core result files
         """
@@ -1807,6 +1863,7 @@ class TestSummaryJSCompare(Base):
         )
         self.launch(command_line)
 
+    @pytest.mark.executabletest
     def test_runs_on_gw_file(self):
         """Test that the code successfully generates a plot for 2 gw result files
         """

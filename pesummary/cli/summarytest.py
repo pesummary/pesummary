@@ -37,6 +37,10 @@ def command_line():
         help="Generare a coverage report for the testing suite"
     )
     parser.add_argument(
+        "-m", "--mark", dest="mark", default="", type=str,
+        help="only run tests matching given mark expression"
+    )
+    parser.add_argument(
         "-i", "--ignore", nargs="+", dest="ignore", default=[],
         help="Testing scripts you wish to ignore"
     )
@@ -102,7 +106,6 @@ def imports(*args, **kwargs):
     return launch(command_line)
 
 
-@tmp_directory
 def tests(*args, output="./", **kwargs):
     """Run the pesummary testing suite
     """
@@ -112,10 +115,12 @@ def tests(*args, output="./", **kwargs):
     if kwargs.get("coverage", False):
         command_line += (
             "--cov=pesummary --cov-report html:{}/htmlcov --cov-report "
-            "term:skip-covered ".format(output)
+            "term:skip-covered --cov-append ".format(output)
         )
     for ignore in kwargs.get("ignore", []):
         command_line += "--ignore {} ".format(ignore)
+    if len(kwargs.get("mark", "")):
+        command_line += "-m '{}' ".format(kwargs.get("mark"))
     if kwargs.get("expression", None) is not None:
         command_line += "-k {} ".format(kwargs.get("expression"))
     launch(command_line)
@@ -287,7 +292,7 @@ def main(args=None):
     type_mapping = {_type: eval(_type) for _type in ALLOWED}
     try:
         type_mapping[opts.type](
-            coverage=opts.coverage, expression=opts.expression,
+            coverage=opts.coverage, mark=opts.mark, expression=opts.expression,
             ignore=opts.ignore, pytest_config=opts.pytest_config,
             output=opts.output, repository=os.path.abspath(opts.repository)
         )

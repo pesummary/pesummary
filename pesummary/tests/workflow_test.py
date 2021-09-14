@@ -3,6 +3,7 @@
 import os
 import shutil
 import glob
+import pytest
 import numpy as np
 
 from .base import make_argparse, get_list_of_plots, get_list_of_files
@@ -17,6 +18,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class Base(object):
     """Base class to test the full workflow
     """
+    @pytest.mark.workflowtest
     def test_single_run(self, extension, bilby=False):
         """Test the full workflow for a single result file case
 
@@ -61,6 +63,7 @@ class Base(object):
 class GWBase(Base):
     """Base class to test the full workflow including gw specific options
     """
+    @pytest.mark.workflowtest
     def test_single_run(self, extension, bilby=False, lalinference=False):
         """Test the full workflow for a single result file case
 
@@ -121,6 +124,7 @@ class TestCoreDat(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.workflowtest
     def test_single_run(self):
         """Test the full workflow with a core dat result file
         """
@@ -143,6 +147,7 @@ class TestCoreJson(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.workflowtest
     def test_single_run(self):
         """Test the full workflow with a core json result file
         """
@@ -165,6 +170,7 @@ class TestCoreHDF5(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.workflowtest
     def test_single_run(self):
         """Test the full workflow with a core hdf5 result file
         """
@@ -189,12 +195,14 @@ class TestCoreBilbyJson(Base):
         if os.path.isdir(".outdir_pesummary"):
             shutil.rmtree(".outdir_pesummary")
 
+    @pytest.mark.workflowtest
     def test_single_run(self):
         """Test the full workflow with a core bilby result file
         """
         extension = "json"
         super(TestCoreBilbyJson, self).test_single_run(extension, bilby=True)
 
+    @pytest.mark.workflowtest
     def test_double_run(self):
         """Test the full workflow for 2 lalinference result files
         """
@@ -217,6 +225,7 @@ class TestCoreBilbyJson(Base):
         assert all(i in files for i in get_list_of_files(gw=False, number=2))
         assert all(i in get_list_of_files(gw=False, number=2) for i in files)
 
+    @pytest.mark.workflowtest
     def test_existing_run(self):
         """Test the fill workflow for when you add to an existing webpage
         """
@@ -248,6 +257,7 @@ class TestCoreBilbyJson(Base):
         assert all(i in files for i in get_list_of_files(gw=False, number=2))
         assert all(i in get_list_of_files(gw=False, number=2) for i in files)
 
+    @pytest.mark.workflowtest
     def test_pesummary_input(self):
         """Test the full workflow for a pesummary input file
         """
@@ -299,6 +309,7 @@ class TestCoreBilbyHDF5(Base):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.workflowtest
     def test_single_run(self):
         """Test the full workflow with a core bilby result file
         """
@@ -321,6 +332,7 @@ class TestGWDat(GWBase):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.workflowtest
     def test_single_run(self):
         """Test the full workflow with a gw dat result file
         """
@@ -343,6 +355,7 @@ class TestGWJson(GWBase):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.workflowtest
     def test_single_run(self):
         """Test the full workflow with a gw json result file
         """
@@ -365,6 +378,7 @@ class TestGWBilbyJson(GWBase):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.workflowtest
     def test_single_run(self):
         """Test the full workflow with a gw bilby json result file
         """
@@ -387,6 +401,7 @@ class TestGWBilbyHDF5(GWBase):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
+    @pytest.mark.workflowtest
     def test_single_run(self):
         """Test the full workflow with a gw bilby HDF5 result file
         """
@@ -411,12 +426,14 @@ class TestGWLALInference(GWBase):
         if os.path.isdir(".outdir_pesummary"):
             shutil.rmtree(".outdir_pesummary")
 
+    @pytest.mark.workflowtest
     def test_single_run(self):
         """Test the full workflow with a lalinference result file
         """
         extension = "hdf5"
         super(TestGWLALInference, self).test_single_run(extension, lalinference=True)
 
+    @pytest.mark.workflowtest
     def test_double_run(self):
         """Test the full workflow for 2 lalinference result files
         """
@@ -442,6 +459,7 @@ class TestGWLALInference(GWBase):
         assert all(i in files for i in get_list_of_files(gw=True, number=2))
         assert all(i in get_list_of_files(gw=True, number=2) for i in files)
 
+    @pytest.mark.workflowtest
     def test_existing_run(self):
         """Test the fill workflow for when you add to an existing webpage
         """
@@ -472,6 +490,7 @@ class TestGWLALInference(GWBase):
         assert all(i in files for i in get_list_of_files(gw=True, number=2))
         assert all(i in get_list_of_files(gw=True, number=2) for i in files)
 
+    @pytest.mark.workflowtest
     def test_pesummary_input(self):
         """Test the full workflow for a pesummary input file
         """
