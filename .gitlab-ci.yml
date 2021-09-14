@@ -4,6 +4,7 @@ include:
       - conda.yml
       - python.yml
 
+
 stages:
   - build
   - basic
@@ -91,6 +92,7 @@ conda:
     - conda install --file conda_requirements.txt -c conda-forge
     - python -m pip install .
 
+
 docker:
   stage: build
   image: docker:19.03.10
@@ -135,6 +137,7 @@ style:
     - .python:flake8
   stage: basic
   needs: []
+
 
 documentation:
   stage: basic
@@ -466,6 +469,22 @@ coverage:
     - coverage report
     - coverage html --directory ./htmlcov/
     - coverage-badge -o coverage_badge.svg -f
+  except:
+    - master@lscsoft/pesummary
+
+
+coverage-master:
+  extends: coverage
+  after_script:
+    - mkdir -p public/
+    - mv htmlcov/ public/
+    - mv coverage_badge.svg public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    - master@lscsoft/pesummary
 
 
 pages:
