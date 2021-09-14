@@ -455,7 +455,7 @@ release:
       - $CI_COMMIT_MESSAGE =~ /Releasing version/
 
 
-coverage:
+.coverage:
   extends: .python-3.6-testing
   stage: deploy
   needs:
@@ -469,12 +469,16 @@ coverage:
     - coverage report
     - coverage html --directory ./htmlcov/
     - coverage-badge -o coverage_badge.svg -f
+
+
+coverage:
+  extends: .coverage
   except:
     - master@lscsoft/pesummary
 
 
 coverage-master:
-  extends: coverage
+  extends: .coverage
   after_script:
     - mkdir -p public/
     - mv htmlcov/ public/
