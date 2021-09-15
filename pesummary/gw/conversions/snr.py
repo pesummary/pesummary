@@ -477,7 +477,7 @@ def _prec_ratio_plus_cross(theta_jn, phi_jl, f_plus, f_cross, b_bar):
 def multipole_snr(
     mass_1, mass_2, spin_1z, spin_2z, psi, iota, ra, dec, time, distance, phase,
     f_low=20., f_final=1024., psd={}, approx="IMRPhenomXHM", f_ref=None,
-    return_data_used=False, multi_process=6, df=1. / 256,
+    return_data_used=False, multi_process=1, df=1. / 256,
     multipole=[21, 33, 44], psd_default="aLIGOZeroDetHighPower"
 ):
     """Calculate the multipole snr as defined in Mills et al.
@@ -524,7 +524,7 @@ def multipole_snr(
         if True, return a dictionary containing information about what data was
         used. Default False
     multi_process: int, optional
-        The number of cpus to use when computing the precessing_snr. Default 6
+        The number of cpus to use when computing the precessing_snr. Default 1
     df: float, optional
         Frequency spacing between frequency samples. Default 1./256
     multipole: list, optional
@@ -598,7 +598,7 @@ def precessing_snr(
     mass_1, mass_2, beta, psi_J, a_1, a_2, tilt_1, tilt_2, phi_12, theta_jn,
     ra, dec, time, phi_jl, distance, phase, f_low=20., psd={}, spin_1z=None,
     spin_2z=None, chi_eff=None, approx="IMRPhenomPv2", f_final=1024.,
-    f_ref=None, return_data_used=False, multi_process=6, duration=None,
+    f_ref=None, return_data_used=False, multi_process=1, duration=None,
     df=1. / 256, psd_default="aLIGOZeroDetHighPower", debug=True
 ):
     """Calculate the precessing snr as defined in Fairhurst et al.
@@ -660,7 +660,7 @@ def precessing_snr(
         if True, return a dictionary containing information about what data was
         used. Default False
     multi_process: int, optional
-        The number of cpus to use when computing the precessing_snr. Default 6
+        The number of cpus to use when computing the precessing_snr. Default 1
     duration: float, optional
         maximum IMR duration to use to estimate delta_f when PSD is not
         provided.
