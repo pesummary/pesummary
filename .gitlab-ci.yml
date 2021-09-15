@@ -12,6 +12,7 @@ stages:
   - test:executables
   - end-to-end
   - compatibility
+  - coverage
   - deploy
 
 
@@ -434,6 +435,22 @@ GWTC2:
     - *finalise_testing
 
 
+coverage:
+  extends: .python-3.6-testing
+  stage: coverage
+  needs:
+    - tarball
+    - python-3.6-base
+    - python-3.6-exe
+  script:
+    - *prepare_testing
+    - *finalise_testing
+    - coverage combine .coverage_base .coverage_exe
+    - coverage report
+    - coverage html --directory ./htmlcov/
+    - coverage-badge -o coverage_badge.svg -f
+
+
 build_examples:
   stage: deploy
   image: python:3.6
@@ -453,42 +470,6 @@ release:
       - master@lscsoft/pesummary
     variables:
       - $CI_COMMIT_MESSAGE =~ /Releasing version/
-
-
-.coverage:
-  extends: .python-3.6-testing
-  stage: deploy
-  needs:
-    - tarball
-    - python-3.6-base
-    - python-3.6-exe
-  script:
-    - *prepare_testing
-    - *finalise_testing
-    - coverage combine .coverage_base .coverage_exe
-    - coverage report
-    - coverage html --directory ./htmlcov/
-    - coverage-badge -o coverage_badge.svg -f
-
-
-coverage:
-  extends: .coverage
-  except:
-    - master@lscsoft/pesummary
-
-
-coverage-master:
-  extends: .coverage
-  after_script:
-    - mkdir -p public/
-    - mv htmlcov/ public/
-    - mv coverage_badge.svg public/
-  artifacts:
-    paths:
-      - public
-    expire_in: 30 days
-  only:
-    - master@lscsoft/pesummary
 
 
 pages:
@@ -521,9 +502,12 @@ pages:
     - lalinference
     - GWTC1
     - GWTC2
+    - coverage
   script:
     - mkdir public/
     - mv docs/_build/html/* public/
+    - mv htmlcov/ public/
+    - mv coverage_badge.svg public/
   artifacts:
     paths:
       - public
