@@ -192,16 +192,16 @@ authors:
 .python-3.6-testing:
   extends: .base-testing
   image: python:3.6
-  artifacts:
-    paths:
-      - .coverage*
-      - htmlcov/
-      - coverage_badge.svg
 
 
 .python-3.7-testing:
   extends: .base-testing
   image: python:3.7
+  artifacts:
+    paths:
+      - .coverage*
+      - htmlcov/
+      - coverage_badge.svg
 
 
 .python-3.8-testing:
@@ -219,11 +219,8 @@ python-3.6-base:
   stage: test:base
   script:
     - *prepare_testing
-    - pip install pycbc
-    - summarytest -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --pytest_config ${BASE}/setup.cfg --output ${BASE}
+    - summarytest -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --pytest_config ${BASE}/setup.cfg --output ${BASE}
     - *finalise_testing
-    - mv _testing/.coverage* .
-    - mv .coverage .coverage_base
 
 
 python-3.6-exe:
@@ -231,11 +228,8 @@ python-3.6-exe:
   stage: test:executables
   script:
     - *prepare_testing
-    - pip install pycbc
-    - summarytest -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --pytest_config ${BASE}/setup.cfg --output ${BASE}
+    - summarytest -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --pytest_config ${BASE}/setup.cfg --output ${BASE}
     - *finalise_testing
-    - mv _testing/.coverage* .
-    - mv .coverage .coverage_exe
 
 
 python-3.7-base:
@@ -243,8 +237,10 @@ python-3.7-base:
   stage: test:base
   script:
     - *prepare_testing
-    - summarytest -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --output ${BASE} --pytest_config ${BASE}/setup.cfg
+    - summarytest -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
     - *finalise_testing
+    - mv _testing/.coverage* .
+    - mv .coverage .coverage_base
 
 
 python-3.7-exe:
@@ -252,8 +248,10 @@ python-3.7-exe:
   stage: test:executables
   script:
     - *prepare_testing
-    - summarytest -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --output ${BASE} --pytest_config ${BASE}/setup.cfg
+    - summarytest -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
     - *finalise_testing
+    - mv _testing/.coverage* .
+    - mv .coverage .coverage_exe
 
 
 python-3.8-base:
@@ -333,22 +331,14 @@ python-3.9-gw:
 
 
 ligo_skymap:
+  extends: .python-3.7-testing
   stage: compatibility
-  image: python:3.7
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
-  before_script:
-    - pip install -r requirements.txt
-    - pip install -r optional_requirements.txt
-    - 'apt-get update -y && bash && apt-get -y install pandoc'
-    - export USER=albert.einstein
   script:
     - *prepare_testing
-    - summarytest --type skymap
+    - summarytest --type skymap --coverage
     - *finalise_testing
+    - mv _testing/.coverage* .
+    - mv .coverage .coverage_sky
   only:
     - schedule
     - pushes
@@ -436,16 +426,17 @@ GWTC2:
 
 
 coverage:
-  extends: .python-3.6-testing
+  extends: .python-3.7-testing
   stage: coverage
   needs:
     - tarball
-    - python-3.6-base
-    - python-3.6-exe
+    - python-3.7-base
+    - python-3.7-exe
+    - ligo_skymap
   script:
     - *prepare_testing
     - *finalise_testing
-    - coverage combine .coverage_base .coverage_exe
+    - coverage combine .coverage_base .coverage_exe .coverage_sky
     - coverage report
     - coverage html --directory ./htmlcov/
     - coverage-badge -o coverage_badge.svg -f
@@ -474,7 +465,7 @@ release:
 
 pages:
   stage: deploy
-  image: python:3.6
+  image: python:3.7
   dependencies:
     - tarball
     - executables
