@@ -143,11 +143,15 @@ def workflow(*args, **kwargs):
     return launch(command_line)
 
 
-@tmp_directory
-def skymap(*args, **kwargs):
+def skymap(*args, output="./", **kwargs):
     """Run the pesummary.tests.ligo_skymap_test
     """
-    command_line = "pytest --pyargs pesummary.tests.ligo_skymap_test"
+    command_line = "pytest --pyargs pesummary.tests.ligo_skymap_test "
+    if kwargs.get("coverage", False):
+        command_line += (
+            "--cov=pesummary --cov-report html:{}/htmlcov --cov-report "
+            "term:skip-covered --cov-append ".format(output)
+        )
     return launch(command_line)
 
 
