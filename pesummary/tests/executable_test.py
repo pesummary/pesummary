@@ -30,6 +30,59 @@ class Base(object):
         return module.main(args=[i for i in cla if i != " " and i != ""])
 
 
+class TestSummaryGracedb(Base):
+    """Test the `summarygracedb` executable with trivial examples
+    """
+    def setup(self):
+        """Setup the SummaryPublication class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    @pytest.mark.executabletest
+    def test_fake_event(self):
+        """Test that `summarygracedb` fails when a fake event is provided
+        """
+        from ligo.gracedb import exceptions
+        command_line = "summarygracedb --id S111111m"
+        with pytest.raises(exceptions.HTTPError):
+            self.launch(command_line)
+
+    @pytest.mark.executabletest
+    def test_output(self):
+        """Test the output from summarygracedb
+        """
+        import json
+        command_line = (
+            "summarygracedb --id S190412m --output .outdir/output.json"
+        )
+        self.launch(command_line)
+        with open(".outdir/output.json", "r") as f:
+            data = json.load(f)
+        assert data["superevent_id"] == "S190412m"
+        assert "em_type" in data.keys()
+        command_line = (
+            "summarygracedb --id S190412m --output .outdir/output2.json "
+            "--info superevent_id far created"
+        )
+        self.launch(command_line)
+        with open(".outdir/output2.json", "r") as f:
+            data2 = json.load(f)
+        assert len(data2) == 3
+        assert all(
+            info in data2.keys() for info in ["superevent_id", "far", "created"]
+        )
+        assert data2["superevent_id"] == data["superevent_id"]
+        assert data2["far"] == data["far"]
+        assert data2["created"] == data["created"]
+
+
 class TestSummaryPublication(Base):
     """Test the `summarypublication` executable with trivial examples
     """
