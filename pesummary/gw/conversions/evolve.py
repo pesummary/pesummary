@@ -47,6 +47,12 @@ def evolve_spins(*args, evolve_limit="ISCO", **kwargs):
         return evolve_angles_forwards(*args, **kwargs)
 
 
+@array_input(
+    ignore_kwargs=[
+        "final_velocity", "tolerance", "dt", "multi_process",
+        "evolution_approximant"
+    ], force_return_array=True
+)
 def evolve_angles_forwards(
     mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, f_low, f_ref,
     approximant, final_velocity="ISCO", tolerance=1e-3,

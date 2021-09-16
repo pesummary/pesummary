@@ -987,6 +987,113 @@ class TestConvert(object):
             np.testing.assert_almost_equal(value, checkpoint[param])
 
 
+def test_evolve_angles_forwards():
+    """Check that the pesummary.gw.conversions.evolve.evolve_angles_forwards
+    function works as expected
+    """
+    from pesummary.gw.conversions.evolve import (
+        evolve_spins, _wrapper_for_evolve_angles_forwards
+    )
+    from lalsimulation import (
+        SimInspiralSpinTaylorPNEvolveOrbit, SIM_INSPIRAL_SPINS_FLOW
+    )
+    from lal import MTSUN_SI, MSUN_SI
+    import lalsimulation
+    input_data = [
+        (
+            146.41677334700145, 123.72830811599943, 0.4788630899579355,
+            0.4486656607260327, 2.121165143160338, 0.5194005460918241,
+            3.0144238369366736, 11., 11., "IMRPhenomPv3HM"
+        ),
+        (
+            145.60646217583144, 97.70678957171464, 0.418373390477266,
+            0.22414039975174402, 2.2857994587400494, 2.730311388309907,
+            3.47318438014925, 11., 11., "IMRPhenomPv3HM"
+        ),
+        (
+            144.27815417432444, 99.32482850107179, 0.3413842190485782,
+            0.12003981467617035, 2.4429395586527884, 0.9993057630904596,
+            1.422769967575501, 11., 11., "IMRPhenomPv3HM"
+        ),
+    ]
+    for num, sample in enumerate(input_data):
+        tilt_1_evol, tilt_2_evol, phi_12_evol = evolve_spins(
+            *sample, multi_process=1, evolve_limit="ISCO", dt=0.1,
+            evolution_approximant="SpinTaylorT5"
+        )
+        _tilt_1_evol, _tilt_2_evol, _phi_12_evol = _wrapper_for_evolve_angles_forwards(
+            list(sample)[:7] + [11., 6 ** -0.5, 1e-3, 0.1, "SpinTaylorT5"]
+        )
+        np.testing.assert_almost_equal(tilt_1_evol, _tilt_1_evol)
+        np.testing.assert_almost_equal(tilt_2_evol, _tilt_2_evol)
+        np.testing.assert_almost_equal(phi_12_evol, _phi_12_evol)
+        total_mass = (sample[0] + sample[1]) * MTSUN_SI
+        spinfreq_enum = SimInspiralGetSpinFreqFromApproximant(
+            getattr(lalsimulation, sample[-1])
+        )
+        f_start = float(np.where(
+            np.array(spinfreq_enum == SIM_INSPIRAL_SPINS_FLOW), sample[-3],
+            sample[-2]
+        ))
+        f_final = (6 ** -0.5) ** 3 / (total_mass * np.pi)
+        _approx = lalsimulation.SpinTaylorT5
+        data = SimInspiralSpinTaylorPNEvolveOrbit(
+            deltaT=0.1 * total_mass, m1=sample[0] * MSUN_SI,
+            m2=sample[1] * MSUN_SI, fStart=f_start, fEnd=f_final,
+            s1x=sample[2] * np.sin(sample[4]), s1y=0.,
+            s1z=sample[2] * np.cos(sample[4]),
+            s2x=sample[3] * np.sin(sample[5]) * np.cos(sample[6]),
+            s2y=sample[3] * np.sin(sample[5]) * np.sin(sample[6]),
+            s2z=sample[3] * np.cos(sample[5]), lnhatx=0., lnhaty=0., lnhatz=1.,
+            e1x=1., e1y=0., e1z=0., lambda1=0., lambda2=0., quadparam1=1.,
+            quadparam2=1., spinO=6, tideO=0, phaseO=7, lscorr=0,
+            approx=_approx
+        )
+        a_1_evolve = np.array(
+            [
+                data[2].data.data[-1], data[3].data.data[-1],
+                data[4].data.data[-1]
+            ]
+        )
+        a_2_evolve = np.array(
+            [
+                data[5].data.data[-1], data[6].data.data[-1],
+                data[7].data.data[-1]
+            ]
+        )
+        Ln_evolve = np.array(
+            [
+                data[8].data.data[-1], data[9].data.data[-1],
+                data[10].data.data[-1]
+            ]
+        )
+        # code taken from https://git.ligo.org/lscsoft/lalsuite/-/blob/master/
+        # lalinference/bin/lalinference_evolve_spins_and_append_samples.py#L26-53
+        # to test
+        # pesummary.gw.conversions.tilt_angles_and_phi_12_from_spin_vectors_and_L
+        chi1_v_norm = np.linalg.norm(a_1_evolve)
+        chi2_v_norm = np.linalg.norm(a_2_evolve)
+        Ln_evolve /= np.linalg.norm(Ln_evolve)
+        chi1dL_v = np.dot(a_1_evolve, Ln_evolve)
+        chi2dL_v = np.dot(a_2_evolve, Ln_evolve)
+        chi1inplane = a_1_evolve - chi1dL_v * Ln_evolve
+        chi2inplane = a_2_evolve - chi2dL_v * Ln_evolve
+        cos_tilt1 = chi1dL_v / chi1_v_norm
+        cos_tilt2 = chi2dL_v / chi2_v_norm
+        cos_phi12 = np.dot(chi1inplane, chi2inplane) / (
+            np.linalg.norm(chi1inplane) * np.linalg.norm(chi2inplane)
+        )
+        phi12_evol_i = np.arccos(cos_phi12)
+        if np.sign(np.dot(Ln_evolve, np.cross(a_1_evolve, a_2_evolve))) < 0:
+            phi12_evol_i = 2. * np.pi - phi12_evol_i
+        tilt_1_evol_true = np.arccos(cos_tilt1)
+        tilt_2_evol_true = np.arccos(cos_tilt2)
+        phi_12_evol_true = phi12_evol_i
+        np.testing.assert_almost_equal(tilt_1_evol, tilt_1_evol_true)
+        np.testing.assert_almost_equal(tilt_2_evol, tilt_2_evol_true)
+        np.testing.assert_almost_equal(phi_12_evol, phi_12_evol_true)
+
+
 def test_evolve_angles_backwards():
     """Check that the pesummary.gw.conversions.evolve.evolve_angles_backwards
     function works as expected
