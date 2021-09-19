@@ -9,7 +9,7 @@ __doc__ = """This executable is used to display the version of PESummary that
 is currently being used"""
 
 
-def main():
+def main(args=None):
     """Top level interface for `summaryversion`
     """
     print(__version__)

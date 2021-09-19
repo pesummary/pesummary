@@ -1657,6 +1657,105 @@ class TestGWLALInferenceFile(GWBaseRead):
         super(TestGWLALInferenceFile, self).test_downsample()
 
 
+class TestPublicPycbc(object):
+    """Test that data files produced by Nitz et al.
+    (https://github.com/gwastro/2-ogc) can be read in correctly.
+    """
+    def setup(self):
+        """Setup the TestCoreBilbyFile class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def _pycbc_check(self, filename):
+        """Test a public pycbc posterior samples file
+
+        Parameters
+        ----------
+        filename: str
+            url of pycbc posterior samples file you wish to download, read and
+            test
+        """
+        from pesummary.core.fetch import download_and_read_file
+        from pesummary.gw.file.standard_names import standard_names
+        import h5py
+        self.file = download_and_read_file(
+            filename, read_file=False, outdir=".outdir"
+        )
+        self.result = GWRead(self.file, path_to_samples="samples")
+        samples = self.result.samples_dict
+        fp = h5py.File(self.file, 'r')
+        fp_samples = fp["samples"]
+        for param in fp_samples.keys():
+            np.testing.assert_almost_equal(
+                fp_samples[param], samples[standard_names.get(param, param)]
+            )
+        fp.close()
+
+    def test_2_OGC(self):
+        """Test the samples released as part of the 2-OGC catalog
+        """
+        self._pycbc_check(
+            "https://github.com/gwastro/2-ogc/raw/master/posterior_samples/"
+            "H1L1V1-EXTRACT_POSTERIOR_150914_09H_50M_45UTC-0-1.hdf"
+        )
+
+    def test_3_OGC(self):
+        """Test the samples released as part of the 3-OGC catalog
+        """
+        self._pycbc_check(
+            "https://github.com/gwastro/3-ogc/raw/master/posterior/"
+            "GW150914_095045-PYCBC-POSTERIOR-XPHM.hdf"
+        )
+        
+
+class TestPublicPrincetonO1O2(object):
+    """Test that data files produced by Venumadhav et al.
+    (https://github.com/jroulet/O2_samples) can be read in correctly
+    """
+    def setup(self):
+        """Setup the TestCoreBilbyFile class
+        """
+        from pesummary.core.fetch import download_and_read_file
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        self.file = download_and_read_file(
+            "https://github.com/jroulet/O2_samples/raw/master/GW150914.npy",
+            read_file=False, outdir=".outdir"
+        )
+        self.result = GWRead(self.file, file_format="princeton")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def test_samples_dict(self):
+        """
+        """
+        data = np.load(self.file)
+        samples = self.result.samples_dict
+        map = {
+            "mchirp": "chirp_mass", "eta": "symmetric_mass_ratio",
+            "s1z": "spin_1z", "s2z": "spin_2z", "RA": "ra", "DEC": "dec",
+            "psi": "psi", "iota": "iota", "vphi": "phase", "tc": "geocent_time",
+            "DL": "luminosity_distance"
+        }
+        columns = [
+            'mchirp', 'eta', 's1z', 's2z', 'RA', 'DEC', 'psi', 'iota', 'vphi',
+            'tc', 'DL'
+        ]
+        for num, param in enumerate(columns):
+            np.testing.assert_almost_equal(data.T[num], samples[map[param]])
+
+
 class TestMultiAnalysis(object):
     """Class to test that a file which contains multiple analyses can be read
     in appropiately
