@@ -38,7 +38,7 @@ def command_line():
                         help="GPS time to centre the omegascan around")
     parser.add_argument("--vmin", dest="vmin", default=0,
                         help="minimum for the omegascan colormap")
-    parser.add_argument("--vmax", dest="vmax", default=0,
+    parser.add_argument("--vmax", dest="vmax", default=25,
                         help="maximum for the omegascan colormap")
     parser.add_argument("--window", dest="window", default=4,
                         help="window around gps time to generate omegascan for")

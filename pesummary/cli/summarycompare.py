@@ -311,6 +311,8 @@ def main(args=None):
     _parser = parser(existing_parser=command_line())
     opts, unknown = _parser.parse_known_args(args=args)
     string = compare(opts.samples, opts.compare)
+    if opts.generate_comparison_page and opts.webdir is None:
+        raise ValueError("Please provide a webdir to save comparison plots")
     if opts.generate_comparison_page:
         open_files = [read(ff).samples_dict for ff in opts.samples]
         samples = {}

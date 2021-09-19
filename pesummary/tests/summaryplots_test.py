@@ -41,7 +41,8 @@ class TestPlotGeneration(object):
         parser = command_line()
         insert_gwspecific_option_group(parser)
         make_result_file(
-            gw=True, extension="hdf5", bilby=True, outdir="./.outdir_bilby/"
+            gw=True, extension="hdf5", bilby=True, outdir="./.outdir_bilby/",
+            n_samples=10
         )
         os.rename("./.outdir_bilby/test.h5", "./.outdir_bilby/bilby_example.h5")
         default_arguments = [
@@ -70,7 +71,7 @@ class TestPlotGeneration(object):
         insert_gwspecific_option_group(parser)
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
-            outdir="./.outdir_lalinference/"
+            outdir="./.outdir_lalinference/", n_samples=10
         )
         os.rename(
             "./.outdir_lalinference/test.hdf5",
@@ -97,14 +98,15 @@ class TestPlotGeneration(object):
         insert_gwspecific_option_group(parser)
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
-            outdir="./.outdir_comparison/"
+            outdir="./.outdir_comparison/", n_samples=10
         )
         os.rename(
             "./.outdir_comparison/test.hdf5",
             "./.outdir_comparison/lalinference_example.h5"
         )
         make_result_file(
-            gw=True, extension="hdf5", bilby=True, outdir="./.outdir_comparison/"
+            gw=True, extension="hdf5", bilby=True, outdir="./.outdir_comparison/",
+            n_samples=10
         )
         os.rename(
             "./.outdir_comparison/test.h5",
@@ -133,7 +135,7 @@ class TestPlotGeneration(object):
         insert_gwspecific_option_group(parser)
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
-            outdir="./.outdir_add_to_existing2/"
+            outdir="./.outdir_add_to_existing2/", n_samples=10
         )
         os.rename(
             "./.outdir_add_to_existing2/test.hdf5",
@@ -141,7 +143,7 @@ class TestPlotGeneration(object):
         )
         make_result_file(
             gw=True, extension="hdf5", bilby=True,
-            outdir="./.outdir_add_to_existing2/"
+            outdir="./.outdir_add_to_existing2/", n_samples=10
         )
         os.rename(
             "./.outdir_add_to_existing2/test.h5",
@@ -181,7 +183,7 @@ class TestPlotGeneration(object):
         insert_gwspecific_option_group(parser)
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
-            outdir="./.outdir_comparison_no_comparison/"
+            outdir="./.outdir_comparison_no_comparison/", n_samples=10
         )
         os.rename(
             "./.outdir_comparison_no_comparison/test.hdf5",
@@ -189,7 +191,7 @@ class TestPlotGeneration(object):
         )
         make_result_file(
             gw=True, extension="hdf5", bilby=True,
-            outdir="./.outdir_comparison_no_comparison/"
+            outdir="./.outdir_comparison_no_comparison/", n_samples=10
         )
         os.rename(
             "./.outdir_comparison_no_comparison/test.h5",
@@ -221,7 +223,7 @@ class TestPlotGeneration(object):
         insert_gwspecific_option_group(parser)
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
-            outdir="./.outdir_add_to_existing_no_comparison/"
+            outdir="./.outdir_add_to_existing_no_comparison/", n_samples=10
         )
         os.rename(
             "./.outdir_add_to_existing_no_comparison/test.hdf5",
@@ -229,7 +231,7 @@ class TestPlotGeneration(object):
         )
         make_result_file(
             gw=True, extension="hdf5", bilby=True,
-            outdir="./.outdir_add_to_existing_no_comparison/"
+            outdir="./.outdir_add_to_existing_no_comparison/", n_samples=10
         )
         os.rename(
             "./.outdir_add_to_existing_no_comparison/test.h5",

@@ -34,12 +34,12 @@ class StrainDataDict(Dict):
     def read(cls, data, channels={}):
         strain_data = {}
         if not len(channels):
-            _data = {}
+            _data, _channels = {}, {}
             for key in data.keys():
                 if ":" in key:
                     try:
                         IFO, _ = key.split(":")
-                        channels[IFO] = key
+                        _channels[IFO] = key
                         _data[IFO] = data[key]
                         logger.debug(
                             "Found ':' in '{}'. Assuming '{}' is the IFO and "
@@ -47,11 +47,16 @@ class StrainDataDict(Dict):
                         )
                     except ValueError:
                         _data[key] = data[key]
-            data = _data
-        if not all(IFO in channels.keys() for IFO in data.keys()):
+                        _channels[key] = None
+        else:
+            _data = data
+            _channels = channels
+        if not len(_data):
+            raise ValueError("Please provide strain data to read")
+        if not all(IFO in _channels.keys() for IFO in _data.keys()):
             raise ValueError("Please provide a channel for each IFO")
-        for IFO in data.keys():
-            strain_data[IFO] = StrainData.read(data[IFO], channels[IFO], IFO=IFO)
+        for IFO in _data.keys():
+            strain_data[IFO] = StrainData.read(_data[IFO], _channels[IFO], IFO=IFO)
         return cls(strain_data)
 
     @property

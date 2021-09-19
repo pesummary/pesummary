@@ -30,6 +30,24 @@ class Base(object):
         return module.main(args=[i for i in cla if i != " " and i != ""])
 
 
+class TestSummaryVersion(Base):
+    """Test the `summaryversion` executable
+    """
+    @pytest.mark.executabletest
+    def test_summaryversion(self):
+        """Test the `summaryversion` output matches pesummary.__version__
+        """
+        from pesummary import __version__
+        import io
+        from contextlib import redirect_stdout
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            self.launch("summaryversion")
+        out = f.getvalue()
+        assert out.split("\n")[1] == __version__
+
+
 class TestSummaryGracedb(Base):
     """Test the `summarygracedb` executable with trivial examples
     """
@@ -81,6 +99,63 @@ class TestSummaryGracedb(Base):
         assert data2["superevent_id"] == data["superevent_id"]
         assert data2["far"] == data["far"]
         assert data2["created"] == data["created"]
+
+
+class TestSummaryDetchar(Base):
+    """Test the `summarydetchar` executable with trivial examples
+    """
+    def setup(self):
+        """Setup the SummaryDetchar class
+        """
+        from gwpy.timeseries import TimeSeries
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+
+        H1_series = TimeSeries(
+            np.random.uniform(-1, 1, 1000), t0=101, dt=0.1, name="H1:test"
+        )
+        H1_series.write(".outdir/H1.gwf", format="gwf")
+        L1_series = TimeSeries(
+            np.random.uniform(-1, 1, 1000), t0=101, dt=0.1, name="L1:test"
+        )
+        L1_series.write(".outdir/L1.hdf", format="hdf5")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    @pytest.mark.executabletest
+    def test_spectrogram(self):
+        """Check that a spectrogram can be generated from the `summarydetchar`
+        executable
+        """
+        from gwpy.timeseries import TimeSeries
+        from matplotlib import rcParams
+
+        rcParams["text.usetex"] = False
+        command_line = (
+            "summarydetchar --gwdata H1:test:.outdir/H1.gwf L1:test:.outdir/L1.hdf "
+            "--webdir .outdir --plot spectrogram"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(".outdir/spectrogram_H1.png")
+        assert os.path.isfile(".outdir/spectrogram_L1.png")
+
+    @pytest.mark.executabletest
+    def test_omegascan(self):
+        """Check that an omegascan can be generated from the `summarydetchar`
+        executable
+        """
+        from gwpy.timeseries import TimeSeries
+        command_line = (
+            "summarydetchar --gwdata H1:test:.outdir/H1.gwf L1:test:.outdir/L1.hdf "
+            "--webdir .outdir --plot omegascan --gps 150 --window 0.1"
+        )
+        self.launch(command_line)
+        assert os.path.isfile(".outdir/omegascan_H1.png")
+        assert os.path.isfile(".outdir/omegascan_L1.png")
 
 
 class TestSummaryPublication(Base):
@@ -1879,7 +1954,8 @@ class TestSummaryCompare(Base):
         )
         command_line = (
             "summarycompare --samples .outdir/example1.dat "
-            ".outdir/example2.json --properties_to_compare posterior_samples -v"
+            ".outdir/example2.json --properties_to_compare posterior_samples "
+            "-v --generate_comparison_page --webdir .outdir"
         )
         self.launch(command_line)
 

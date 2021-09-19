@@ -1,5 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+from pesummary.gw.fetch import fetch_open_samples
 from pesummary.gw.notebook import make_public_notebook
 import os
 import shutil
@@ -22,15 +23,13 @@ class TestPublicNoteBook(object):
         if os.path.isdir(".outdir"):
             shutil.rmtree(".outdir")
 
-    def test_GW190412_public_notebook(self):
-        import requests
-        data = requests.get(
-            "https://dcc.ligo.org/public/0163/P190412/012/GW190412_posterior_samples_v3.h5"
+    def test_public_notebook(self):
+        file_name = fetch_open_samples(
+            "GW190424_180648", read_file=False, outdir=".", unpack=True,
+            path="GW190424_180648.h5"
         )
-        with open("GW190412_posterior_samples.h5", "wb") as f:
-            f.write(data.content)
         make_public_notebook(
-            "GW190412_posterior_samples.h5", "Title", default_analysis="combined",
+            "./GW190424_180648.h5", "Title", default_analysis="PublicationSamples",
             default_parameter="mass_ratio", outdir=".outdir",
             filename="posterior_samples.ipynb"
         )
