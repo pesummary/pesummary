@@ -110,6 +110,8 @@ gw_source_frame_corner_parameters = [
 precessing_angles = [
     "cos_tilt_1", "cos_tilt_2", "tilt_1", "tilt_2", "phi_12", "phi_jl"
 ]
+# List of precessing spins
+precessing_spins = ["spin_1x", "spin_1y", "spin_2x", "spin_2y"]
 # Parameters to use for GW extrinsic corner plot
 gw_extrinsic_corner_parameters = ["luminosity_distance", "psi", "ra", "dec"]
 
