@@ -455,7 +455,11 @@ class _Conversion(object):
         self.psd = psd
         self.psd_default = psd_default
         self.non_precessing = False
-        if not any(param in self.parameters for param in conf.precessing_angles):
+        cond1 = any(
+            param in self.parameters for param in
+            conf.precessing_angles + conf.precessing_spins
+        )
+        if not cond1:
             self.non_precessing = True
         if "chi_p" in self.parameters:
             _chi_p = self.specific_parameter_samples(["chi_p"])
@@ -465,6 +469,13 @@ class _Conversion(object):
                     "non-precessing system"
                 )
                 self.non_precessing = True
+        elif all(param in self.parameters for param in conf.precessing_spins):
+            samples = self.specific_parameter_samples(conf.precessing_spins)
+            if not any(np.array(samples).flatten()):
+                logger.info(
+                    "in-plane spins are zero for all samples. Treating this as "
+                    "a non-precessing system"
+                )
         cond1 = self.non_precessing and evolve_spins_forwards
         cond2 = self.non_precessing and evolve_spins_backwards
         if cond1 or cond2:
