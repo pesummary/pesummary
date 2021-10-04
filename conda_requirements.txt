@@ -4,10 +4,10 @@ corner
 deepdish
 gwpy >=2.0.2
 h5py
+ligo.em-bright >=0.1.2
 ligo.skymap
 matplotlib-base
 numpy >=1.15.4
-p_astro
 pandas
 pepredicates >=0.0.2
 plotly

@@ -1,10 +1,13 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-try:
-    from ligo.computeDiskMass import computeDiskMass
-    PASTRO = True
+LIGO_EM_BRIGHT = True
+try:  # ligo.em-bright
+    from ligo.em_bright.computeDiskMass import computeDiskMass
 except ImportError:
-    PASTRO = False
+    try:  # p_astro
+        from ligo.computeDiskMass import computeDiskMass
+    except ImportError:
+        LIGO_EM_BRIGHT = False
 
 import numpy as np
 from pesummary.utils.utils import logger
@@ -45,9 +48,9 @@ class PAstro(object):
     def check_for_install():
         """Check that p_astro is installed
         """
-        if not PASTRO:
+        if not LIGO_EM_BRIGHT:
             raise ImportError(
-                "Failed to import 'p_astro' packages and therefore unable to "
+                "Failed to import 'ligo.em_bright' packages and therefore unable to "
                 "calculate `HasNS` and `HasRemnant` probabilities"
             )
 
