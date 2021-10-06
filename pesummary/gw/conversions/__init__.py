@@ -548,7 +548,7 @@ class _Conversion(object):
             for param in self.regenerate:
                 self.remove_posterior(param)
         self.add_zero_spin = add_zero_spin
-        self.generate_all_posterior_samples(evolve_spins_forwards=evolve_spins_forwards)
+        self.generate_all_posterior_samples()
 
     def _check_for_tidal_parameters(self):
         """Check to see if any tidal parameters are stored in the table
@@ -1570,10 +1570,10 @@ class _Conversion(object):
                     for i in np.arange(len(ind) - 1, -1, -1):
                         self.samples.remove(list(np.array(self.samples)[ind[i][0]]))
 
-    def generate_all_posterior_samples(self, evolve_spins_forwards=False):
+    def generate_all_posterior_samples(self):
         logger.debug("Starting to generate all derived posteriors")
         evolve_condition = (
-            True if evolve_spins_forwards and self.compute_remnant else False
+            True if self.evolve_spins_forwards and self.compute_remnant else False
         )
         if "cos_theta_jn" in self.parameters and "theta_jn" not in self.parameters:
             self._cos_angle("theta_jn", reverse=True)
@@ -1809,7 +1809,7 @@ class _Conversion(object):
                 evolve_suffix = "_evolved"
                 if all(i in self.parameters for i in evolve_spins_params):
                     try:
-                        self._evolve_spins(final_velocity=evolve_spins_forwards)
+                        self._evolve_spins(final_velocity=self.evolve_spins_forwards)
                     except EvolveSpinError:
                         # Raised when approximant is unknown to lalsimulation or
                         # lalsimulation.SimInspiralGetSpinFreqFromApproximant is
