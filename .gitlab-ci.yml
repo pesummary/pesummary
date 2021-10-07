@@ -112,7 +112,7 @@ docker:
 
 executables:
   stage: basic
-  image: python:3.6
+  image: python:3.7
   needs:
     - tarball
   script:
@@ -123,7 +123,7 @@ executables:
 
 imports:
   stage: basic
-  image: python:3.6
+  image: python:3.7
   needs:
     - tarball
   script:
@@ -142,7 +142,7 @@ style:
 
 documentation:
   stage: basic
-  image: python:3.6-buster
+  image: python:3.7-buster
   needs:
     - tarball
   script:
@@ -159,7 +159,7 @@ documentation:
 
 examples:
   stage: basic
-  image: python:3.6
+  image: python:3.7
   needs:
     - tarball
   script:
@@ -171,7 +171,7 @@ examples:
 
 authors:
   stage: basic
-  image: python:3.6
+  image: python:3.7
   needs:
     - tarball
   script:
@@ -187,11 +187,6 @@ authors:
     - executables
     - imports
     - style
-
-
-.python-3.6-testing:
-  extends: .base-testing
-  image: python:3.6
 
 
 .python-3.7-testing:
@@ -212,24 +207,6 @@ authors:
 .python-3.9-testing:
   extends: .base-testing
   image: python:3.9
-
-
-python-3.6-base:
-  extends: .python-3.6-testing
-  stage: test:base
-  script:
-    - *prepare_testing
-    - summarytest -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --pytest_config ${BASE}/setup.cfg --output ${BASE}
-    - *finalise_testing
-
-
-python-3.6-exe:
-  extends: .python-3.6-testing
-  stage: test:executables
-  script:
-    - *prepare_testing
-    - summarytest -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --pytest_config ${BASE}/setup.cfg --output ${BASE}
-    - *finalise_testing
 
 
 python-3.7-base:
@@ -290,11 +267,6 @@ python-3.9-exe:
     - *finalise_testing
 
 
-python-3.6-core:
-  <<: *core_workflow
-  image: python:3.6
-
-
 python-3.7-core:
   <<: *core_workflow
   image: python:3.7
@@ -308,11 +280,6 @@ python-3.8-core:
 python-3.9-core:
   <<: *core_workflow
   image: python:3.9
-
-
-python-3.6-gw:
-  <<: *gw_workflow
-  image: python:3.6
 
 
 python-3.7-gw:
@@ -346,7 +313,7 @@ ligo_skymap:
 
 lalinference:
   stage: compatibility
-  image: python:3.6-buster
+  image: python:3.7-buster
   needs:
     - tarball
     - executables
@@ -365,7 +332,7 @@ lalinference:
 
 bilby:
   stage: compatibility
-  image: python:3.6
+  image: python:3.7
   needs:
     - tarball
     - executables
@@ -382,7 +349,7 @@ bilby:
 
 pycbc:
   stage: compatibility
-  image: python:3.6
+  image: python:3.7
   needs:
     - tarball
     - executables
@@ -399,7 +366,7 @@ pycbc:
 
 GWTC1:
   stage: compatibility
-  image: python:3.6
+  image: python:3.7
   needs:
     - tarball
     - executables
@@ -413,7 +380,7 @@ GWTC1:
 
 GWTC2:
   stage: compatibility
-  image: python:3.6
+  image: python:3.7
   needs:
     - tarball
     - executables
@@ -444,7 +411,7 @@ coverage:
 
 build_examples:
   stage: deploy
-  image: python:3.6
+  image: python:3.7
   script:
     - curl --request POST --form "token=$CI_EXAMPLES_TRIGGER_TOKEN" --form ref=master https://git.ligo.org/api/v4/projects/3386/trigger/pipeline
   only:
@@ -453,7 +420,7 @@ build_examples:
 
 release:
   stage: deploy
-  image: python:3.6
+  image: python:3.7
   script:
     - curl --request POST --form "variables[REPO]=pesummary" --form ref=master --form "token=$CI_RELEASE_TRIGGER_TOKEN" https://git.ligo.org/api/v4/projects/4737/trigger/pipeline
   only:
@@ -473,19 +440,15 @@ pages:
     - style
     - documentation
     - examples
-    - python-3.6-base
-    - python-3.6-exe
     - python-3.7-base
     - python-3.7-exe
     - python-3.8-base
     - python-3.8-exe
     - python-3.9-base
     - python-3.9-exe
-    - python-3.6-core
     - python-3.7-core
     - python-3.8-core
     - python-3.9-core
-    - python-3.6-gw
     - python-3.7-gw
     - python-3.8-gw
     - python-3.9-gw
