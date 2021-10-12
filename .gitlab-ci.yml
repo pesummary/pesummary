@@ -97,13 +97,15 @@ conda:
 docker:
   stage: build
   image: docker:19.03.10
+  variables:
+    PYTHON_VERSION: "3.8"
   before_script:
     - apk update
     - apk add py3-pip
     - apk add python3
   script:
-    - python3 containers/write_dockerfile.py
-    - docker build -f containers/Dockerfile-pesummary-python36 -t pesummary-dev/latest . --build-arg installation=./
+    - python3 containers/write_dockerfile.py --python ${PYTHON_VERSION}
+    - docker build -f containers/Dockerfile-pesummary-python${PYTHON_VERSION/./} -t pesummary-dev/latest . --build-arg installation=./
     - docker run pesummary-dev/latest summarytest --type imports
   artifacts:
     paths:
