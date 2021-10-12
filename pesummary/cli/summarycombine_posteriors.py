@@ -2,10 +2,12 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
+import os
 import numpy as np
 import argparse
 
 from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
+from pesummary.utils.utils import logger
 from pesummary.core.command_line import CheckFilesExistAction
 from pesummary.core.parser import parser
 from pesummary.core.inputs import _Input
@@ -151,7 +153,6 @@ def main(args=None):
         from .summarymodify import _Input as _ModifyInput
         from pesummary.gw.file.meta_file import _GWMetaFile
         from pathlib import Path
-        import os
 
         class PESummaryInput(_ModifyInput):
             def __init__(self, samples):
@@ -168,9 +169,22 @@ def main(args=None):
             }
         }
         input_file = Path(args.result_files[0])
-        _metafile = os.path.join(
-            opts.outdir, input_file.stem + "_combined" + input_file.suffix
-        )
+        if opts.filename is None:
+            logger.warning(
+                "No filename specified. Saving samples to '{}' in '{}' by "
+                "default.".format(
+                    input_file.stem + "_combined" + input_file.suffix,
+                    opts.outdir
+                )
+            )
+            opts.filename = input_file.stem + "_combined" + input_file.suffix
+        _metafile = os.path.join(opts.outdir, opts.filename)
+        logger.info("Saving samples to file '{}'".format(_metafile))
+        if os.path.isfile(_metafile):
+            raise FileExistsError(
+                "Trying to write samples to '{}' but the file exists. Please "
+                "specify a different out directory".format(_metafile)
+            )
         if input_file.suffix in [".h5", ".hdf5"]:
             _GWMetaFile.save_to_hdf5(
                 data, list(data.keys()), None, _metafile, no_convert=True
@@ -179,12 +193,16 @@ def main(args=None):
             _GWMetaFile.save_to_json(data, _metafile)
         return
     elif opts.add_to_existing:
-        from pesummary.utils.utils import logger
         logger.warning(
             "Can only use the `--add_to_existing` option when a PESummary "
             "metafile is provided via the `--samples` option. Writing "
             "combined samples to a `dat` file"
         )
+    logger.info(
+        "Saving samples to file '{}'".format(
+            os.path.join(opts.outdir, opts.filename)
+        )
+    )
     combined.write(
         file_format=opts.file_format, filename=opts.filename, outdir=opts.outdir
     )

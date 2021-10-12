@@ -1529,13 +1529,13 @@ class TestSummaryCombine_Posteriors(Base):
 
         # test that you add the samples to the original file
         command_line = (
-            "summarycombine_posteriors --outdir .outdir --filename test.dat "
+            "summarycombine_posteriors --outdir .outdir --filename test.h5 "
             "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
             "--labels one two --weights 0.5 0.5 --seed 12345 --add_to_existing"
         )
         self.launch(command_line)
-        assert os.path.isfile(".outdir/posterior_samples_combined.h5")
-        combined = read(".outdir/posterior_samples_combined.h5")
+        assert os.path.isfile(".outdir/test.h5")
+        combined = read(".outdir/test.h5")
         combined_samples = combined.samples_dict
         assert "one_two_combined" in combined.labels
         assert "one_two_combined" in combined_samples.keys()
@@ -1546,7 +1546,7 @@ class TestSummaryCombine_Posteriors(Base):
         # check that summarypages works fine on output
         command_line = (
             "summarypages --webdir .outdir/combined --disable_expert "
-            " --no_conversion --samples .outdir/posterior_samples_combined.h5 "
+            " --no_conversion --samples .outdir/test.h5 "
             "--disable_corner --disable_interactive --gw"
         )
         self.launch(command_line)
