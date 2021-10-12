@@ -1,12 +1,14 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-import os
-import glob
+import argparse
 from datetime import date
+from pathlib import Path
 
 import pkg_resources
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+
+HERE = Path(__file__).parent
 
 
 def read_requirements(file):
@@ -46,37 +48,41 @@ def format_requirements(path):
     return " \\\n".join(map(repr, requirements))
 
 
-python_major_version, python_minor_version = (3, 6)
-pesummary_version = "0.9.1"
-major, minor, build = pesummary_version.split(".")
+parser = argparse.ArgumentParser(
+    description=__doc__,
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
+parser.add_argument(
+    "--python",
+    default="3.8",
+    help="X.Y version of Python to use",
+)
+parser.add_argument(
+    "--pesummary",
+    default="0.9.1",
+    help="X.Y.Z version of pesummary to use",
+)
+args = parser.parse_args()
 
-option_1 = glob.glob("*")
-option_2 = glob.glob(os.path.join("containers", "*"))
+python_major_version, python_minor_version = args.python.split(".", 1)
+major, minor, build = args.pesummary.split(".")
 
-if "Dockerfile-template" in option_1:
-    path = ".."
-elif os.path.join("containers", "Dockerfile-template") in option_2:
-    path = "."
-else:
-    raise FileNotFoundError("Unable to find a template docker file")
+template = (HERE / "Dockerfile-template").read_text()
 
-with open(os.path.join(path, "containers", "Dockerfile-template"), "r") as f:
-    template = f.read()
-
-requirements = format_requirements(os.path.join(path, "requirements.txt"))
-optional = format_requirements(os.path.join(path, "optional_requirements.txt"))
+requirements = format_requirements(HERE.parent / "requirements.txt")
+optional = format_requirements(HERE.parent / "optional_requirements.txt")
 
 Docker_filename = "Dockerfile-pesummary-python{}{}".format(
     python_major_version, python_minor_version
 )
-with open(os.path.join(path, "containers", Docker_filename), "w") as f:
-    content = "# This file was made automatically based on a template\n\n"
-    content += template.format(
-        date=date.today().strftime("%Y%m%d"),
-        python_major_version=python_major_version,
-        python_minor_version=python_minor_version,
-        requirements=requirements, optional_requirements=optional,
-        pesummary_major_version=major, pesummary_minor_version=minor,
-        pesummary_build_version=build
-    )
-    f.write(content)
+
+content = "# This file was made automatically based on a template\n\n"
+content += template.format(
+    date=date.today().strftime("%Y%m%d"),
+    python_major_version=python_major_version,
+    python_minor_version=python_minor_version,
+    requirements=requirements, optional_requirements=optional,
+    pesummary_major_version=major, pesummary_minor_version=minor,
+    pesummary_build_version=build
+)
+(HERE / Docker_filename).write_text(content)
