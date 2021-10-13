@@ -546,6 +546,14 @@ class _Input(object):
 
     @labels.setter
     def labels(self, labels):
+        if self.result_files is not None:
+            if any(self.is_pesummary_metafile(s) for s in self.result_files):
+                logger.warning(
+                    "labels argument is ignored when a pesummary metafile is "
+                    "input. Stored analyses will use their stored labels. If "
+                    "you wish to change the labels, please use `summarymodify`"
+                )
+                labels = self.default_labels()
         if not hasattr(self, "._labels"):
             if labels is None:
                 labels = self.default_labels()
@@ -726,7 +734,8 @@ class _Input(object):
         for num, i in enumerate(samples):
             idx = num
             if not self.mcmc_samples:
-                logger.info("Assigning {} to {}".format(self.labels[num], i))
+                if not self.is_pesummary_metafile(samples[num]):
+                    logger.info("Assigning {} to {}".format(self.labels[num], i))
             else:
                 num = 0
             if not os.path.isfile(i):
