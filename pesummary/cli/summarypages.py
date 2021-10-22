@@ -190,13 +190,14 @@ class _PublicGWWebpageGeneration(GWPostProcessing):
         self.webpage_object.generate_webpages()
 
 
-def main(args=None):
+def main(args=None, _parser=None, _core_input_cls=None, _gw_input_cls=None):
     """Top level interface for `summarypages`
     """
     from pesummary.gw.parser import parser
     from pesummary.utils import functions, history_dictionary
 
-    _parser = parser()
+    if _parser is None:
+        _parser = parser()
     opts, unknown = _parser.parse_known_args(args=args)
     if opts.restart_from_checkpoint:
         from pesummary.core.inputs import load_current_state
@@ -214,10 +215,20 @@ def main(args=None):
         else:
             _gw = False
         func = functions(opts, gw=_gw)
-        args = func["input"](opts, checkpoint=state)
+        if _gw and _gw_input_cls is not None:
+            args = _gw_input_cls(opts, checkpoint=state)
+        elif _core_input_cls is not None:
+            args = _core_input_cls(opts, checkpoint=state)
+        else:
+            args = func["input"](opts, checkpoint=state)
     else:
         func = functions(opts)
-        args = func["input"](opts)
+        if opts.gw and _gw_input_cls is not None:
+            args = _gw_input_cls(opts)
+        elif _core_input_cls is not None:
+            args = _core_input_cls(opts)
+        else:
+            args = func["input"](opts)
     from .summaryplots import PlotGeneration
 
     plotting_object = PlotGeneration(args, gw=args.gw)

@@ -47,78 +47,82 @@ def gw_parameters():
     return parameters
 
 
-def get_list_of_files(gw=False, number=1, existing_plot=False):
+def get_list_of_files(
+    gw=False, number=1, existing_plot=False, parameters=[], sections=[],
+    outdir=".outdir", extra_gw_pages=True
+):
     """Return a list of files that should be generated from a typical workflow
     """
-    if not gw:
+    if not gw and not len(parameters):
         import string
-
         parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
+    elif not len(parameters):
+        parameters = gw_parameters()
+    if not gw:
         label = "core"
     else:
-        parameters = gw_parameters()
         label = "gw"
     html = [
-        "./.outdir/html/error.html",
-        "./.outdir/html/Version.html",
-        "./.outdir/html/Logging.html",
-        "./.outdir/html/About.html",
-        "./.outdir/html/Downloads.html"]
-    if gw:
+        "./%s/html/error.html" % (outdir),
+        "./%s/html/Version.html" % (outdir),
+        "./%s/html/Logging.html" % (outdir),
+        "./%s/html/About.html" % (outdir),
+        "./%s/html/Downloads.html" % (outdir)]
+    if gw and not len(sections):
         sections = [
             "spins", "spin_angles", "timings", "source", "remnant", "others",
             "masses", "location", "inclination", "energy"
         ]
-    else:
+    elif not len(sections):
         sections = ["A-D", "E-F", "I-L", "M-P", "Q-T"]
     for num in range(number):
-        html.append("./.outdir/html/%s%s_%s%s.html" % (label, num, label, num))
-        if gw:
-            html.append("./.outdir/html/%s%s_%s%s_Classification.html" % (label, num, label, num))
-        html.append("./.outdir/html/%s%s_%s%s_Corner.html" % (label, num, label, num))
-        html.append("./.outdir/html/%s%s_%s%s_Config.html" % (label, num, label, num))
-        html.append("./.outdir/html/%s%s_%s%s_Custom.html" % (label, num, label, num))
-        html.append("./.outdir/html/%s%s_%s%s_All.html" % (label, num, label, num))
-        html.append("./.outdir/html/%s%s_%s%s_Interactive_Corner.html" % (
-            label, num, label, num
+        html.append("./%s/html/%s%s_%s%s.html" % (outdir, label, num, label, num))
+        if gw and extra_gw_pages:
+            html.append("./%s/html/%s%s_%s%s_Classification.html" % (outdir, label, num, label, num))
+        html.append("./%s/html/%s%s_%s%s_Corner.html" % (outdir, label, num, label, num))
+        html.append("./%s/html/%s%s_%s%s_Config.html" % (outdir, label, num, label, num))
+        html.append("./%s/html/%s%s_%s%s_Custom.html" % (outdir, label, num, label, num))
+        html.append("./%s/html/%s%s_%s%s_All.html" % (outdir, label, num, label, num))
+        html.append("./%s/html/%s%s_%s%s_Interactive_Corner.html" % (
+            outdir, label, num, label, num
         ))
         for section in sections:
-            html.append("./.outdir/html/%s%s_%s%s_%s_all.html" % (label, num, label, num, section))
+            html.append("./%s/html/%s%s_%s%s_%s_all.html" % (outdir, label, num, label, num, section))
         for j in parameters:
-            html.append("./.outdir/html/%s%s_%s%s_%s.html" % (label, num, label, num, j))
+            html.append("./%s/html/%s%s_%s%s_%s.html" % (outdir, label, num, label, num, j))
         if existing_plot:
-            html.append("./.outdir/html/%s%s_%s%s_Additional.html" % (label, num, label, num))
+            html.append("./%s/html/%s%s_%s%s_Additional.html" % (outdir, label, num, label, num))
 
     if number > 1:
-        html.append("./.outdir/html/Comparison.html")
-        html.append("./.outdir/html/Comparison_Custom.html")
-        html.append("./.outdir/html/Comparison_All.html")
-        html.append("./.outdir/html/Comparison_Interactive_Ridgeline.html")
+        html.append("./%s/html/Comparison.html" % (outdir))
+        html.append("./%s/html/Comparison_Custom.html" % (outdir))
+        html.append("./%s/html/Comparison_All.html" % (outdir))
+        html.append("./%s/html/Comparison_Interactive_Ridgeline.html" % (outdir))
         for j in parameters:
             if j != "classification":
-                html.append("./.outdir/html/Comparison_%s.html" % (j))
+                html.append("./%s/html/Comparison_%s.html" % (outdir, j))
         for section in sections:
-            html.append("./.outdir/html/Comparison_%s_all.html" % (section))
+            html.append("./%s/html/Comparison_%s_all.html" % (outdir, section))
     return sorted(html)
 
 
 def get_list_of_plots(
     gw=False, number=1, mcmc=False, label=None, outdir=".outdir",
     comparison=True, psd=False, calibration=False, existing_plot=False,
-    expert=False
+    expert=False, parameters=[], extra_gw_plots=True
 ):
     """Return a list of plots that should be generated from a typical workflow
     """
-    if not gw:
+    if not gw and not len(parameters):
         import string
 
         parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
-        if label is None:
-            label = "core"
-    else:
+    elif not len(parameters):
         parameters = gw_parameters()
-        if label is None:
-            label = "gw"
+    if not gw and label is None:
+        label = "core"
+    elif label is None:
+        label = "gw"
 
     plots = []
     for num in range(number):
@@ -145,7 +149,7 @@ def get_list_of_plots(
             for j in parameters:
                 plots.append("./%s/plots/combined_%s_%s.png" % (outdir, i, j))
 
-    if gw:
+    if gw and extra_gw_plots:
         for num in range(number):
             plots.append("./%s/plots/%s%s_skymap.png" % (outdir, label, num))
             plots.append("./%s/plots/%s%s_default_pepredicates.png" % (outdir, label, num))

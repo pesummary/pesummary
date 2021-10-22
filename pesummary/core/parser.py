@@ -43,6 +43,18 @@ class parser(object):
         """
         return list(set(a).intersection(set(b)))
 
+    def add_argument(self, *args, **kwargs):
+        """Add an argument to the argument parser
+
+        Parameters
+        ----------
+        *args: tuple
+            all args passed to argparse.ArgumentParser.add_argument
+        **kwargs: dict
+            all kwargs passed to argparse.ArgumentParser.add_argument
+        """
+        return self._parser.add_argument(*args, **kwargs)
+
     def parse_known_args(
         self, args=None, logger_level={"known": "info", "unknown": "warn"}
     ):
