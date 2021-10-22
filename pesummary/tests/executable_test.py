@@ -761,6 +761,146 @@ class TestSummaryPages(Base):
         self.check_output(number=2, existing_plot=True)
 
 
+class TestSummaryPagesLW(Base):
+    """Test the `summarypageslw` executable
+    """
+    def setup(self):
+        """Setup the SummaryPagesLW class
+        """
+        if not os.path.isdir(".outdir"):
+            os.mkdir(".outdir")
+        make_result_file(bilby=True, gw=True)
+        os.rename(".outdir/test.json", ".outdir/bilby.json")
+
+    def teardown(self):
+        """Remove the files and directories created from this class
+        """
+        if os.path.isdir(".outdir"):
+            shutil.rmtree(".outdir")
+
+    def check_output(
+        self, gw=False, number=1, outdir=".outdir", parameters=[], sections=[],
+        extra_gw_plots=True
+    ):
+        """Check the output from the summarypages executable
+        """
+        assert os.path.isfile("./{}/home.html".format(outdir))
+        plots = get_list_of_plots(
+            gw=gw, number=number, mcmc=False, existing_plot=False,
+            expert=False, parameters=parameters, outdir=outdir,
+            extra_gw_plots=extra_gw_plots
+        )
+        assert all(
+            i in plots for i in glob.glob("./{}/plots/*.png".format(outdir))
+        )
+        assert all(
+            i in glob.glob("./{}/plots/*.png".format(outdir)) for i in plots
+        )
+        files = get_list_of_files(
+            gw=gw, number=number, existing_plot=False, parameters=parameters,
+            sections=sections, outdir=outdir, extra_gw_pages=extra_gw_plots
+        )
+        assert all(
+            i in files for i in glob.glob("./{}/html/*.html".format(outdir))
+        )
+        assert all(
+            i in glob.glob("./{}/html/*.html".format(outdir)) for i in files
+        )
+
+    @pytest.mark.executabletest
+    def test_single(self):
+        """Test that the `summarypageslw` executable works as expected
+        when a single result file is provided
+        """
+        command_line = (
+            "summarypageslw --webdir .outdir --samples .outdir/bilby.json "
+            "--labels core0 --parameters mass_1 mass_2 --disable_expert"
+        )
+        self.launch(command_line)
+        self.check_output(parameters=["mass_1", "mass_2"], sections=["M-P"])
+        command_line = (
+            "summarypageslw --webdir .outdir/gw --samples .outdir/bilby.json "
+            "--labels gw0 --parameters mass_1 mass_2 --disable_expert --gw"
+        )
+        self.launch(command_line)
+        self.check_output(
+            gw=True, parameters=["mass_1", "mass_2"], sections=["masses"],
+            outdir=".outdir/gw", extra_gw_plots=False
+        )
+        command_line = command_line.replace(".outdir/gw", ".outdir/gw2")
+        command_line = command_line.replace("mass_1", "made_up_label")
+        self.launch(command_line)
+        self.check_output(
+            gw=True, parameters=["mass_2"], sections=["masses"],
+            outdir=".outdir/gw2", extra_gw_plots=False
+        )
+        with pytest.raises(Exception):
+            command_line = command_line.replace("mass_2", "made_up_label2")
+            self.launch(command_line)
+
+    @pytest.mark.executabletest
+    def test_double(self):
+        """Test that the `summarypageslw` executable works as expected
+        when multiple result files are provided
+        """
+        command_line = (
+            "summarypageslw --webdir .outdir --samples .outdir/bilby.json "
+            ".outdir/bilby.json --labels core0 core1 --parameters mass_1 mass_2 "
+            "--disable_expert"
+        )
+        self.launch(command_line)
+        self.check_output(
+            number=2, parameters=["mass_1", "mass_2"], sections=["M-P"]
+        )
+
+    @pytest.mark.executabletest
+    def test_pesummary(self):
+        """Test that the `summarypageslw` executable works as expected
+        for a pesummary metafile
+        """
+        command_line = (
+            "summarycombine --webdir ./.outdir --samples .outdir/bilby.json "
+            ".outdir/bilby.json --no_conversions --gw --labels core0 core1 "
+            "--nsamples 100"
+        )
+        self.launch(command_line)
+        command_line = (
+            "summarypageslw --webdir .outdir/lw --samples "
+            ".outdir/samples/posterior_samples.h5 --parameters mass_1 mass_2 "
+            "--disable_expert"
+        )
+        self.launch(command_line)
+        self.check_output(
+            number=2, parameters=["mass_1", "mass_2"], sections=["M-P"],
+            outdir=".outdir/lw"
+        )
+        command_line = command_line.replace(".outdir/lw", ".outdir/lw2")
+        command_line = command_line.replace("mass_1", "made_up_label")
+        self.launch(command_line)
+        self.check_output(
+            number=2, parameters=["mass_2"], sections=["M-P"],
+            outdir=".outdir/lw2"
+        )
+        make_result_file(bilby=True, gw=False)
+        os.rename(".outdir/test.json", ".outdir/bilby2.json")
+        command_line = (
+            "summarycombine --webdir ./.outdir --samples .outdir/bilby.json "
+            ".outdir/bilby2.json --no_conversions --gw --labels core0 core1 "
+            "--nsamples 100"
+        )
+        self.launch(command_line)
+        command_line = (
+            "summarypageslw --webdir .outdir/lw3 --samples "
+            ".outdir/samples/posterior_samples.h5 --parameters mass_1 mass_2 "
+            "--disable_expert"
+        )
+        self.launch(command_line)
+        self.check_output(
+            number=1, parameters=["mass_1", "mass_2"], sections=["M-P"],
+            outdir=".outdir/lw3"
+        )
+
+
 class TestSummaryClassification(Base):
     """Test the `summaryclassification` executable
     """
