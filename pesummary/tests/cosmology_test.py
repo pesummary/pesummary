@@ -36,7 +36,13 @@ class TestCosmology(object):
             _cosmo = get_cosmology(cosmology=cosmo)
             astropy_cosmology = getattr(cosmology, cosmo)
             for key, value in vars(_cosmo).items():
-                assert vars(astropy_cosmology)[key] == value
+                try:
+                    assert vars(astropy_cosmology)[key] == value
+                except ValueError:
+                    assert all(
+                        vars(astropy_cosmology)[key][_] == value[_] for _
+                        in range(len(vars(astropy_cosmology)[key]))
+                    )
 
     def test_Riess2019_H0(self):
         """Test that the Riess2019 H0 cosmology is correct

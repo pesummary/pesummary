@@ -36,9 +36,14 @@ def _z_from_dL_exact(luminosity_distance, cosmology):
     cosmology: astropy.cosmology.LambdaCDM
         the cosmology to use for conversions
     """
-    return z_at_value(
+    _z = z_at_value(
         cosmology.luminosity_distance, luminosity_distance * u.Mpc
     )
+    try:
+        return _z.value
+    except AttributeError:
+        # astropy < 5.0
+        return _z
 
 
 @array_input(ignore_kwargs=["cosmology", "multi_process"])
@@ -82,6 +87,13 @@ def z_from_dL_approx(
     d_max = np.max(luminosity_distance)
     zmin = z_at_value(cosmo.luminosity_distance, d_min * u.Mpc)
     zmax = z_at_value(cosmo.luminosity_distance, d_max * u.Mpc)
+    try:
+        zmin = zmin.value
+        zmax = zmax.value
+    except AttributeError:
+        # astropy < 5.0
+        zmin = zmin
+        zmax = zmax
     zgrid = np.logspace(np.log10(zmin), np.log10(zmax), N)
     Dgrid = [cosmo.luminosity_distance(i).value for i in zgrid]
     zvals = np.interp(luminosity_distance, Dgrid, zgrid)

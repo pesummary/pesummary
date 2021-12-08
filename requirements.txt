@@ -12,7 +12,7 @@ astropy>=3.2.3
 lalsuite>=7.0.0
 python-ligo-lw
 ligo-gracedb
-gwpy>=2.0.2
+gwpy>=2.1.2
 plotly
 pillow
 tqdm>=4.44.0
