@@ -30,7 +30,7 @@ def fetch(url, download_kwargs={}, **kwargs):
 
 
 def _DCC_url(
-    event, type="posterior", sampling_rate=16384, format="gwf",
+    event, type="posterior", catalog=None, sampling_rate=16384, format="gwf",
     duration=32, IFO="L1"
 ):
     """Return the url for posterior samples stored on the DCC for a given event
@@ -41,6 +41,8 @@ def _DCC_url(
         name of the event you wish to return posterior samples for
     type: str, optional
         type of data you wish to query. Default "posterior"
+    catalog: str, optional
+        Name of catalog that hosts the event. Default None
     sampling_rate: int, optional
         sampling rate of strain data you wish to download. Only used when
         type="strain". Default 16384
@@ -59,7 +61,7 @@ def _DCC_url(
             "Unknown data type: '{}'. Must be either 'posterior' or "
             "'strain'.".format(type)
         )
-    data, = fetch_event_json(event)["events"].values()
+    data, = fetch_event_json(event, catalog=catalog)["events"].values()
     url = None
     if type == "posterior":
         for key, item in data["parameters"].items():
@@ -100,8 +102,8 @@ def fetch_open_data(event, **kwargs):
 
 
 def _fetch_open_data(
-    event, type="posterior", sampling_rate=16384, format="gwf", duration=32,
-    IFO="L1", **kwargs
+    event, type="posterior", catalog=None, sampling_rate=16384, format="gwf",
+    duration=32, IFO="L1", **kwargs
 ):
     """Download and read publcally available gravitational wave data
 
@@ -111,6 +113,8 @@ def _fetch_open_data(
         name of the gravitational wave event you wish to download data for
     type: str, optional
         type of data you wish to download. Default "posterior"
+    catalog: str, optional
+        Name of catalog that hosts the event. Default None
     sampling_rate: int, optional
         sampling rate of strain data you wish to download. Only used when
         type="strain". Default 16384
@@ -126,13 +130,13 @@ def _fetch_open_data(
     """
     try:
         url = _DCC_url(
-            event, type=type, sampling_rate=sampling_rate, format=format,
-            duration=duration, IFO=IFO
+            event, type=type, catalog=catalog, sampling_rate=sampling_rate,
+            format=format, duration=duration, IFO=IFO
         )
     except RuntimeError:
         raise ValueError(
             "Unknown URL for {}. If the URL is known, please run "
-            "download_and_read_file(URL)"
+            "download_and_read_file(URL)".format(event)
         )
     if type == "strain":
         kwargs.update({"IFO": IFO})

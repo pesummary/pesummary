@@ -185,14 +185,15 @@ def pycbc(*args, **kwargs):
     return launch(command_line)
 
 
-def _public_pesummary_result_file(event):
+def _public_pesummary_result_file(event, catalog=None):
     """Test that pesummary can load in a previously released pesummary result
     file
     """
     from pesummary.gw.fetch import fetch_open_samples
 
     download = fetch_open_samples(
-        event, read_file=False, delete_on_exit=False, outdir="./", unpack=True
+        event, catalog=catalog, read_file=False, delete_on_exit=False,
+        outdir="./", unpack=True
     )
     command_line = "{} {} -f {}.h5".format(
         sys.executable,
@@ -231,7 +232,7 @@ def GWTC2(*args, size=5, include_exceptional=True, **kwargs):
             if event not in specified:
                 specified.append(event)
     for event in specified:
-        _ = _public_pesummary_result_file(event)
+        _ = _public_pesummary_result_file(event, catalog='GWTC-2')
     return
 
 

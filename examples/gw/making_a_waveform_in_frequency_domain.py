@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import requests
 
 # First we download and read the publically available posterior samples
-f = fetch_open_samples("GW190814", unpack=True, path="GW190814.h5")
+f = fetch_open_samples(
+    "GW190814", catalog="GWTC-2", unpack=True, path="GW190814.h5"
+)
 samples = f.samples_dict
 Phenom = samples["C01:IMRPhenomPv3HM"]
 

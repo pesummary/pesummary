@@ -1,4 +1,4 @@
-astropy >=3.2.3,<=4.2.1
+astropy >=3.2.3
 bilby >=1.1.1
 corner
 deepdish
@@ -14,6 +14,7 @@ plotly
 pygments
 pytables
 python-lal
+python-ligo-lw <= 1.7.1
 python-lalsimulation
 python-lalinference
 scipy
