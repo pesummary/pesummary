@@ -7,7 +7,9 @@ import numpy as np
 np.random.seed(21)
 
 # First lets download and read the publicly available data
-f = fetch_open_samples("GW190412", unpack=True, path="GW190412.h5")
+f = fetch_open_samples(
+    "GW190412", catalog="GWTC-2", unpack=True, path="GW190412.h5"
+)
 posterior = f.samples_dict
 prior = f.priors["samples"]["C01:SEOBNRv4PHM"]
 unconditioned = prior["chi_p"]

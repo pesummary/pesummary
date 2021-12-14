@@ -10,7 +10,8 @@ print(data)
 # event which contains multiple files. We may download and unpack the tarball
 # with
 path_to_directory = fetch_open_samples(
-    "GW190412", unpack=True, read_file=False, delete_on_exit=False, outdir="./"
+    "GW190412", catalog="GWTC-2", unpack=True, read_file=False,
+    delete_on_exit=False, outdir="./"
 )
 import glob
 print(glob.glob(os.path.join(path_to_directory, "*")))
@@ -18,7 +19,7 @@ print(glob.glob(os.path.join(path_to_directory, "*")))
 # If we wanted to open a specific file within the tarball, we may specify the
 # file with the path kwarg
 data = fetch_open_samples(
-    "GW190412", unpack=True, read_file=True, delete_on_exit=False, outdir="./",
-    path="GW190412.h5"
+    "GW190412", catalog="GWTC-2", unpack=True, read_file=True,
+    delete_on_exit=False, outdir="./", path="GW190412.h5"
 )
 print(data)

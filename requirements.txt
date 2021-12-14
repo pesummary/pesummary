@@ -10,7 +10,7 @@ pandas
 pygments
 astropy>=3.2.3
 lalsuite>=7.0.0
-python-ligo-lw
+python-ligo-lw<=1.7.1
 ligo-gracedb
 gwpy>=2.1.2
 plotly

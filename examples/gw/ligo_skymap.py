@@ -19,7 +19,9 @@ def generate_skymap(samples, **kwargs):
     return samples.plot(type="skymap", **kwargs)
 
 
-f = fetch_open_samples("GW190814", unpack=True, path="GW190814.h5")
+f = fetch_open_samples(
+    "GW190814", catalog="GWTC-2", unpack=True, path="GW190814.h5"
+)
 label = f.labels[0]
 
 # If the pesummary file has the skymap data already

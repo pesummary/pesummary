@@ -26,7 +26,7 @@ class TestPublicNoteBook(object):
     def test_public_notebook(self):
         file_name = fetch_open_samples(
             "GW190424_180648", read_file=False, outdir=".", unpack=True,
-            path="GW190424_180648.h5"
+            path="GW190424_180648.h5", catalog="GWTC-2"
         )
         make_public_notebook(
             "./GW190424_180648.h5", "Title", default_analysis="PublicationSamples",
