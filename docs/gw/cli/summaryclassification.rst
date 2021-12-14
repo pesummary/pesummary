@@ -5,10 +5,10 @@ summaryclassification
 The `summaryclassification` executable allows the user to generate
 source based classification probabilities given the samples in a GW specific
 result file by interacting with the `pesummary.gw.pepredicates` and
-`pesummary.gw.p_astro` modules and `PEPredicates`_ and `p-astro`_ packages.
+`pesummary.gw.p_astro` modules and `PEPredicates`_ and `ligo.em-bright`_ packages.
 
 .. _PEPredicates: https://will-farr.docs.ligo.org/pepredicates/
-.. _p-astro: https://lscsoft.docs.ligo.org/p-astro/
+.. _ligo.em-bright: https://pypi.org/project/ligo.em-bright/
 
 To see help for this executable please run:
 

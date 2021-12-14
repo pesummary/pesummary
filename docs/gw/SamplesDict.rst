@@ -29,7 +29,7 @@ Source classifications
 
 `pesummary` provides wrappers for the
 `PEPredicates <https://git.ligo.org/will-farr/pepredicates>`_ and
-`p-astro <https://git.ligo.org/lscsoft/p-astro>`_ packages to calculate
+`ligo.em-bright <https://pypi.org/project/ligo.em-bright/`_ packages to calculate
 classification probabilities from the samples. We may calculate the
 classification probabilities with,
 

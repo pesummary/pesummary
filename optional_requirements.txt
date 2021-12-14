@@ -11,9 +11,9 @@ sphinx_rtd_theme
 sphinx-panels
 sphinxcontrib-programoutput
 testfixtures
+ligo.em-bright
 ligo.skymap
 pepredicates>=0.0.3
-p_astro>=0.4
 nbformat
 nbsphinx
 jupyter_client
@@ -21,3 +21,4 @@ ipykernel
 requests
 gwosc
 GitPython
+ligo.em-bright>=0.1.2
