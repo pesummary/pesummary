@@ -41,6 +41,28 @@ class _Input(_GWInput):
             )
 
     @property
+    def config(self):
+        return self._config
+
+    @config.setter
+    def config(self, config):
+        self._config = config
+        if config is not None and isinstance(config, dict):
+            for key, item in config.items():
+                if not os.path.isfile(item):
+                    raise FileNotFoundError(
+                        "Unable to find the config file '{}'".format(item)
+                    )
+                self._config[key] = _GWMetaFile._grab_config_data_from_data_file(
+                    item
+                )
+        elif config is not None:
+            raise InputError(
+                "Please provide the label and config file with '--config "
+                "label:path'"
+            )
+
+    @property
     def kwargs(self):
         return self._kwargs
 
@@ -192,6 +214,7 @@ class Input(_Input):
         self.samples = self.opts.samples
         self.labels = self.opts.labels
         self.kwargs = self.opts.kwargs
+        self.config = self.opts.config
         self.replace_posterior = self.opts.replace_posterior
         self.remove_posterior = self.opts.remove_posterior
         self.store_skymap = self.opts.store_skymap
@@ -228,6 +251,13 @@ def command_line():
             "descriptions you wish to modify. Syntax `--descriptions label:desc` "
             "where label is the analysis you wish to change and desc is the "
             "new description"
+        ), default=None
+    )
+    parser.add_argument(
+        "--config", nargs="+", action=DelimiterSplitAction, help=(
+            "config data you wish to modify. Syntax `--config label:path` "
+            "where label is the analysis you wish to change and path is the "
+            "path to a new configuration file."
         ), default=None
     )
     parser.add_argument(
@@ -399,6 +429,27 @@ def _modify_kwargs(data, kwargs=None):
     return data
 
 
+def _modify_config(data, kwargs=None):
+    """Replace the config data that is stored in the data
+
+    Parameters
+    ----------
+    data: dict
+        dictionary containing the data
+    kwargs: dict
+        dictionary of kwargs showing the label as key and config data as the
+        item
+    """
+    message = (
+        "Unable to find label '{}' in the metafile. Unable to modify config"
+    )
+    for label, config in kwargs.items():
+        check = _check_label(data, label, message.format(label))
+        if check:
+            data[label]["config_file"] = config
+    return data
+
+
 def _modify_posterior(data, kwargs=None):
     """Replace a posterior distribution that is stored in the data
 
@@ -523,6 +574,7 @@ def modify(data, function, **kwargs):
         "add_posterior": _modify_posterior,
         "rm_posterior": _remove_posterior,
         "skymap": _store_skymap,
+        "config": _modify_config
     }
     return func_map[function](data, **kwargs)
 
@@ -555,6 +607,8 @@ def _main(opts):
         modified_data = modify(
             args.data, "descriptions", descriptions=args.descriptions
         )
+    if args.config is not None:
+        modified_data = modify(args.data, "config", kwargs=args.config)
     if args.kwargs is not None:
         modified_data = modify(args.data, "kwargs", kwargs=args.kwargs)
     if args.replace_posterior is not None:
