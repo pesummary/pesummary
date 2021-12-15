@@ -1770,6 +1770,47 @@ class TestSummaryModify(Base):
         modified_data.close()
 
     @pytest.mark.executabletest
+    def test_modify_config(self):
+        """Test that the config file is correctly replaced in the meta file
+        """
+        import configparser
+        import h5py
+        config = configparser.ConfigParser()
+        config.optionxform = str
+        config.read(data_dir + "/config_lalinference.ini")
+        config_dictionary = dict(config._sections)
+        config_dictionary["paths"]["webdir"] = (
+            "./{}/webdir".format(os.environ["USER"])
+        )
+        make_result_file(
+            pesummary=True, pesummary_label="replace", extension="hdf5",
+            config=config_dictionary
+        )
+        f = h5py.File(".outdir/test.h5", "r")
+        assert f["replace"]["config_file"]["paths"]["webdir"][0] == (
+            bytes("./{}/webdir".format(os.environ["USER"]), "utf-8")
+        )
+        f.close()
+        config.read(data_dir + "/config_lalinference.ini")
+        config_dictionary = dict(config._sections)
+        config_dictionary["paths"]["webdir"] = "./replace/webdir"
+        with open('.outdir/replace_config.ini', 'w') as configfile:
+            config.write(configfile)
+        command_line = (
+            "summarymodify --webdir .outdir --samples .outdir/test.h5 "
+            "--config replace:.outdir/replace_config.ini"
+        )
+        self.launch(command_line)
+        f = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        assert f["replace"]["config_file"]["paths"]["webdir"][0] != (
+            bytes("./{}/webdir".format(os.environ["USER"]), "utf-8")
+        )
+        assert f["replace"]["config_file"]["paths"]["webdir"][0] == (
+            bytes("./replace/webdir", "utf-8")
+        )
+        f.close()
+
+    @pytest.mark.executabletest
     def test_modify_kwargs_replace(self):
         """Test that kwargs are correctly replaced in the meta file
         """
