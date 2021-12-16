@@ -1878,6 +1878,47 @@ class TestSummaryModify(Base):
         modified_data.close()
 
     @pytest.mark.executabletest
+    def test_remove_label(self):
+        """Test that an analysis is correctly removed
+        """
+        from pesummary.io import read
+        make_result_file(gw=True, extension="json")
+        os.rename(".outdir/test.json", ".outdir/example.json")
+        make_result_file(gw=True, extension="hdf5")
+        os.rename(".outdir/test.h5", ".outdir/example2.h5")
+        make_result_file(gw=True, extension="dat")
+        os.rename(".outdir/test.dat", ".outdir/example3.dat")
+        command_line = (
+            "summarycombine --samples .outdir/example.json .outdir/example2.h5 "
+            ".outdir/example3.dat --labels one two three --webdir .outdir "
+            "--no_conversion"
+        )
+        self.launch(command_line)
+        original = read(".outdir/samples/posterior_samples.h5")
+        assert all(label in original.labels for label in ["one", "two", "three"])
+        command_line = (
+            "summarymodify --samples .outdir/samples/posterior_samples.h5 "
+            "--remove_label one --webdir .outdir"
+        )
+        self.launch(command_line)
+        f = read(".outdir/modified_posterior_samples.h5")
+        assert "one" not in f.labels
+        assert all(label in f.labels for label in ["two", "three"])
+        _original_samples = original.samples_dict
+        _samples = f.samples_dict
+        for label in ["two", "three"]:
+            np.testing.assert_almost_equal(
+                _original_samples[label].samples, _samples[label].samples
+            )
+        command_line = (
+            "summarymodify --samples .outdir/samples/posterior_samples.h5 "
+            "--remove_label example --webdir .outdir"
+        )
+        f = read(".outdir/modified_posterior_samples.h5")
+        assert "one" not in f.labels
+        assert all(label in f.labels for label in ["two", "three"])
+
+    @pytest.mark.executabletest
     def test_remove_posterior(self):
         """Test that a posterior is correctly removed
         """
