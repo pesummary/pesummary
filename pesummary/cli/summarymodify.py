@@ -216,6 +216,7 @@ class Input(_Input):
         self.kwargs = self.opts.kwargs
         self.config = self.opts.config
         self.replace_posterior = self.opts.replace_posterior
+        self.remove_label = self.opts.remove_label
         self.remove_posterior = self.opts.remove_posterior
         self.store_skymap = self.opts.store_skymap
         self.hdf5 = not self.opts.save_to_json
@@ -305,8 +306,13 @@ def command_line():
     parser.add_argument(
         "--remove_posterior", nargs='+', action=DelimiterSplitAction,
         help=("Remove a posterior distribution for a given label. Syntax: "
-              "--remove_posterior label:a where a is the posterior you wish to remove"),
+              "--remove_posterior label:a where a is the posterior you wish to "
+              "remove"),
         default=None
+    )
+    parser.add_argument(
+        "--remove_label", nargs='+', default=None,
+        help="Remove an entire analysis from the input file"
     )
     parser.add_argument(
         "--store_skymap", nargs='+', action=DelimiterSplitAction,
@@ -489,6 +495,26 @@ def _modify_posterior(data, kwargs=None):
     return data
 
 
+def _remove_label(data, kwargs=None):
+    """Remove an analysis that is stored in the data
+
+    Parameters
+    ----------
+    data: dict
+        dictionary containing the data
+    kwargs: list
+        list of analysis you wish to remove
+    """
+    message = (
+        "Unable to find label '{}' in the metafile. Unable to remove"
+    )
+    for label in kwargs:
+        check = _check_label(data, label, message.format(label))
+        if check:
+            _ = data.pop(label)
+    return data
+
+
 def _remove_posterior(data, kwargs=None):
     """Remove a posterior distribution that is stored in the data
 
@@ -572,6 +598,7 @@ def modify(data, function, **kwargs):
         "descriptions": _modify_descriptions,
         "kwargs": _modify_kwargs,
         "add_posterior": _modify_posterior,
+        "rm_label": _remove_label,
         "rm_posterior": _remove_posterior,
         "skymap": _store_skymap,
         "config": _modify_config
@@ -613,6 +640,8 @@ def _main(opts):
         modified_data = modify(args.data, "kwargs", kwargs=args.kwargs)
     if args.replace_posterior is not None:
         modified_data = modify(args.data, "add_posterior", kwargs=args.replace_posterior)
+    if args.remove_label is not None:
+        modified_data = modify(args.data, "rm_label", kwargs=args.remove_label)
     if args.remove_posterior is not None:
         modified_data = modify(args.data, "rm_posterior", kwargs=args.remove_posterior)
     if args.store_skymap is not None:
