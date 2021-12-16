@@ -1560,6 +1560,17 @@ class TestSummaryExtract(Base):
         original = read(".outdir/example.json").samples_dict
         assert all(param in extracted.keys() for param in original.keys())
         np.testing.assert_almost_equal(extracted.samples, original.samples)
+        command_line = (
+            "summaryextract --outdir .outdir --filename one.h5 --label one "
+            "--file_format pesummary "
+            "--samples .outdir/samples/posterior_samples.h5 "
+        )
+        self.launch(command_line)
+        assert os.path.isfile(".outdir/one.h5")
+        extracted = read(".outdir/one.h5").samples_dict
+        assert "dataset" in extracted.keys()
+        assert all(param in extracted["dataset"].keys() for param in original.keys())
+        np.testing.assert_almost_equal(extracted["dataset"].samples, original.samples)
 
 
 class TestSummaryCombine_Posteriors(Base):
