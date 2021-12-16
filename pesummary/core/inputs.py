@@ -832,8 +832,22 @@ class _Input(object):
                             "samples/{}".format(label), []
                         )
             if "labels" in data.keys():
+                _duplicated = [
+                    _ for _ in data["labels"] if num != 0 and _ in labels
+                ]
                 if num == 0:
                     labels = data["labels"]
+                elif len(_duplicated):
+                    raise InputError(
+                        "The labels stored in the supplied files are not "
+                        "unique. The label{}: '{}' appear{} in two or more "
+                        "files. Please provide unique labels for each "
+                        "analysis.".format(
+                            "s" if len(_duplicated) > 1 else "",
+                            ", ".join(_duplicated),
+                            "" if len(_duplicated) > 1 else "s"
+                        )
+                    )
                 else:
                     labels += data["labels"]
                 labels_dict[num] = data["labels"]
