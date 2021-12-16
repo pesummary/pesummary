@@ -1174,7 +1174,10 @@ class _MultiDimensionalSamplesDict(Dict):
                 }
         try:
             intersection = set.intersection(
-                *[set(_params) for _params in _data.parameters.values()]
+                *[
+                    set(_params) for _key, _params in _data.parameters.items() if
+                    _key in labels
+                ]
             )
         except AttributeError:
             intersection = _data.parameters
