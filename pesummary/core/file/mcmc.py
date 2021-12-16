@@ -20,7 +20,12 @@ def _number_of_negative_steps(samples, logger_level="debug"):
         logger level to use when printing information to stdout. Default debug
     """
     _samples = copy.deepcopy(samples)
-    parameters = list(_samples.parameters)
+    try:
+        parameters = set.intersection(
+            *[set(_params) for _params in _samples.parameters.values()]
+        )
+    except AttributeError:
+        parameters = list(_samples.parameters)
     step_param = [
         alternative for alternative in STEP_NUMBER_PARAMS if alternative
         in parameters
@@ -62,6 +67,13 @@ def burnin_by_step_number(samples, logger_level="debug"):
     """
     _samples = copy.deepcopy(samples)
     n_samples = _number_of_negative_steps(_samples, logger_level=logger_level)
+    getattr(logger, logger_level)(
+        "Removing the first {} as burnin".format(
+            ", ".join(
+                ["{} samples from {}".format(val, key) for key, val in n_samples.items()]
+            )
+        )
+    )
     return _samples.discard_samples(n_samples)
 
 
@@ -83,8 +95,14 @@ def burnin_by_first_n(samples, N, step_number=False, logger_level="debug"):
     n_samples = {key: N for key in _samples.keys()}
     if step_number:
         n_samples = {
-            key: item + N for key, item in _number_of_negative_steps(
-                _samples, logger_level=logger_level
-            ).items()
+            key: item + N if item is not None else N for key, item in
+            _number_of_negative_steps(_samples, logger_level=logger_level).items()
         }
+    getattr(logger, logger_level)(
+        "Removing the first {} as burnin".format(
+            ", ".join(
+                ["{} samples from {}".format(val, key) for key, val in n_samples.items()]
+            )
+        )
+    )
     return _samples.discard_samples(n_samples)

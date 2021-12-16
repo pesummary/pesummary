@@ -82,7 +82,14 @@ class GWFinishingTouches(FinishingTouches):
             name of the file that contains the skymap statistics for label
         """
         logger.info("Adding ligo.skymap statistics to the metafile")
-        skymap_data = np.genfromtxt(filename, names=True, skip_header=True)
+        try:
+            skymap_data = np.genfromtxt(filename, names=True, skip_header=True)
+        except IndexError:
+            logger.warning(
+                "Failed to open '{}'. Unable to store skymap statistics in "
+                "metafile".format(filename)
+            )
+            return
         keys = skymap_data.dtype.names
 
         _dict = {

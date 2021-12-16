@@ -125,7 +125,10 @@ class _PlotGeneration(object):
                     self.samples[i].keys(remove_debug=False)
                 )
             except TypeError:
-                pass
+                try:
+                    self.check_latex_labels(self.samples[i].keys())
+                except TypeError:
+                    pass
 
         self.plot_type_dictionary = {
             "oned_histogram": self.oned_histogram_plot,
