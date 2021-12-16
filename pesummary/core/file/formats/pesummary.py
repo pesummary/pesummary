@@ -101,7 +101,9 @@ def write_pesummary(
             pass
 
     if file_kwargs is None:
-        file_kwargs = {label: {} for label in labels}
+        file_kwargs = {
+            label: {"sampler": {}, "meta_data": {}} for label in labels
+        }
     elif not all(label in file_kwargs.keys() for label in labels):
         file_kwargs = {label: file_kwargs for label in labels}
 
@@ -367,7 +369,12 @@ class PESummary(MultiAnalysisRead):
                 config = data["config_file"]
             config_dict[label] = config
             if "meta_data" in data.keys():
-                meta_data_list.append(data["meta_data"])
+                _meta_data = data["meta_data"]
+                if "sampler" not in _meta_data.keys():
+                    _meta_data["sampler"] = {"nsamples": len(samples)}
+                if "meta_data" not in _meta_data.keys():
+                    _meta_data["meta_data"] = {}
+                meta_data_list.append(_meta_data)
             else:
                 meta_data_list.append({"sampler": {}, "meta_data": {}})
             if "weights" in parameters or b"weights" in parameters:
