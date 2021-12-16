@@ -1,3 +1,29 @@
+## 0.13.3 [16/12/2021]
+
+### Changed
+
+- Testing runtime - Reduce the time taken to run the testing suite
+- Python3.6 - Drop support for `python==3.6`
+- Bug fix - Prevent foward spin evolution from being applied to non-precessing
+  NSBH systems
+- Bug fix - Allow `pesummary.core.file.mcmc.burnin_by_step_number` to remove
+  N samples as burnin
+- astropy==5.0 - Update code to be compatible with `astropy==5.0`
+- ligo.em-bright - Migrate from the `p_astro` package to the `ligo.em_bright`
+  package
+- `summarycombine_posteriors` - Only find common parameters among mixed labels
+  when using `summarycombine_posteriors`
+
+### Added
+
+- Added conversion to calculate the SNR in subdominant multipole moments
+  following Mills et al. https://arxiv.org/abs/2007.04313.
+- Allow the user to specify a catalog when fetching
+  public data with the `pesummary.gw.fetch.fetch_open_samples` function
+- Allow the user to modify the config data with `summarymodify`
+- Allow the user to remove an entire analysis with `summarymodify`
+
+
 ## 0.13.2 [10/09/2021]
 
 ### Changed
