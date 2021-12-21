@@ -6,6 +6,7 @@ import socket
 from glob import glob
 import pkg_resources
 from pathlib import Path
+from getpass import getuser
 
 import math
 import numpy as np
@@ -464,7 +465,7 @@ class _Input(object):
     @user.setter
     def user(self, user):
         try:
-            self._user = os.environ["USER"]
+            self._user = getuser()
             logger.info(
                 conf.overwrite.format("user", conf.user, self._user)
             )
