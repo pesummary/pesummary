@@ -14,6 +14,7 @@ from pesummary import conf
 from pesummary.io import read
 import numpy as np
 import argparse
+from getpass import getuser
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 __doc__ = """This executable is used to compare multiple files"""
@@ -230,7 +231,7 @@ class ComparisonWebpage(_WebpageGeneration):
         self.comparison_string = comparison_string
         super(ComparisonWebpage, self).__init__(
             *args, webdir=webdir, labels=list(samples.keys()), samples=samples,
-            user=os.environ["USER"], same_parameters=params, **kwargs
+            user=getuser(), same_parameters=params, **kwargs
         )
         self.copy_css_and_js_scripts()
 

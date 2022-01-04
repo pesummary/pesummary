@@ -5,6 +5,7 @@ import os
 import numpy as np
 import json
 import copy
+from getpass import getuser
 
 import pesummary
 from pesummary import __version__
@@ -229,8 +230,8 @@ class _MetaFile(object):
             from pesummary.utils.utils import history_dictionary
 
             try:
-                _user = os.environ["USER"]
-            except KeyError:
+                _user = getuser()
+            except (ImportError, KeyError):
                 _user = ''
             self.history = history_dictionary(creator=_user)
         if self.descriptions is None:

@@ -14,6 +14,7 @@ import shutil
 import os
 from glob import glob
 import pkg_resources
+from getpass import getuser
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -419,7 +420,7 @@ class WebpageGeneration(_WebpageGeneration):
         }
         super(WebpageGeneration, self).__init__(
             *args, webdir=webdir, labels=list(samples.keys()), samples=samples,
-            user=os.environ["USER"], **kwargs
+            user=getuser(), **kwargs
         )
         self.abswebdir = os.path.abspath(self.webdir)
         parameters = [list(self.samples[key].keys()) for key in self.samples.keys()]

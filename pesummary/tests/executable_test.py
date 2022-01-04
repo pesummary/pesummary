@@ -4,6 +4,7 @@ import os
 import shutil
 import glob
 import subprocess
+from getpass import getuser
 import numpy as np
 
 from .base import (
@@ -1786,12 +1787,13 @@ class TestSummaryModify(Base):
         """
         import configparser
         import h5py
+        user = getuser()
         config = configparser.ConfigParser()
         config.optionxform = str
         config.read(data_dir + "/config_lalinference.ini")
         config_dictionary = dict(config._sections)
         config_dictionary["paths"]["webdir"] = (
-            "./{}/webdir".format(os.environ["USER"])
+            "./{}/webdir".format(user)
         )
         make_result_file(
             pesummary=True, pesummary_label="replace", extension="hdf5",
@@ -1799,7 +1801,7 @@ class TestSummaryModify(Base):
         )
         f = h5py.File(".outdir/test.h5", "r")
         assert f["replace"]["config_file"]["paths"]["webdir"][0] == (
-            bytes("./{}/webdir".format(os.environ["USER"]), "utf-8")
+            bytes("./{}/webdir".format(user), "utf-8")
         )
         f.close()
         config.read(data_dir + "/config_lalinference.ini")
@@ -1814,7 +1816,7 @@ class TestSummaryModify(Base):
         self.launch(command_line)
         f = h5py.File(".outdir/modified_posterior_samples.h5", "r")
         assert f["replace"]["config_file"]["paths"]["webdir"][0] != (
-            bytes("./{}/webdir".format(os.environ["USER"]), "utf-8")
+            bytes("./{}/webdir".format(user), "utf-8")
         )
         assert f["replace"]["config_file"]["paths"]["webdir"][0] == (
             bytes("./replace/webdir", "utf-8")
@@ -2086,7 +2088,7 @@ class TestSummaryRecreate(Base):
         config.read(data_dir + "/config_lalinference.ini")
         config_dictionary = dict(config._sections)
         config_dictionary["paths"]["webdir"] = (
-            "./{}/webdir".format(os.environ["USER"])
+            "./{}/webdir".format(getuser())
         )
         make_result_file(
             pesummary=True, pesummary_label="recreate", extension="hdf5",

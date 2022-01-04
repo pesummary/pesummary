@@ -2,6 +2,7 @@
 
 import os
 import glob
+from getpass import getuser
 from pesummary.core.webpage.main import _WebpageGeneration
 
 __author__ = [
@@ -53,7 +54,7 @@ class TGRWebpageGeneration(_WebpageGeneration):
             *args,
             webdir=webdir,
             labels=_labels,
-            user=os.environ["USER"],
+            user=getuser(),
             samples=open_files,
             **kwargs
         )
