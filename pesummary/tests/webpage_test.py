@@ -138,8 +138,15 @@ class TestPage(object):
             soup = BeautifulSoup(fp, features="html.parser")
         assert soup.div["class"] == ["highlight"]
         all_entries = soup.find_all("span")
-        assert all_entries[1].text == "[engine]"
-        assert all_entries[2].text == "example"
+        _text = [ii.text for ii in all_entries]
+        for i in contents.split("\n"):
+            try:
+                assert i in _text
+            except AssertionError:
+                # the string 'example=' in the config file splits to 'example'
+                # and '=' in the html code block
+                assert i[:-1] in _text
+                assert i[-1] in _text
 
     def test_table_of_images(self):
         contents = [["image1.png"], ["image2.png"]]
