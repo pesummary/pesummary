@@ -59,6 +59,8 @@ def _dphi(theta_jn, phi_jl, beta):
     inc = np.arccos(cosi)
     sign = np.sign(np.cos(theta_jn) - (np.cos(beta) * np.cos(inc)))
     cos_d = np.cos(phi_jl) * np.sin(theta_jn) / np.sin(inc)
+    inds = np.logical_or(cos_d < -1, cos_d > 1)
+    cos_d[inds] = np.sign(cos_d[inds]) * 1.
     dphi = -1. * sign * np.arccos(cos_d)
     return dphi
 
