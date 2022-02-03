@@ -65,6 +65,8 @@ class SamplesDict(Dict):
         Convert the SamplesDict object to a numpy structured array
     pop:
         Remove an entry from the SamplesDict object
+    standardize_parameter_names:
+        Modify keys in SamplesDict to use standard PESummary names
     downsample:
         Downsample the samples stored in the SamplesDict object. See the
         pesummary.utils.utils.resample_posterior_distribution method
@@ -253,6 +255,26 @@ class SamplesDict(Dict):
             }
         )
         return modified
+
+    def standardize_parameter_names(self, mapping=None):
+        """Modify keys in SamplesDict to use standard PESummary names
+
+        Parameters
+        ----------
+        mapping: dict, optional
+            dictionary mapping existing keys to standard PESummary names.
+            Default pesummary.gw.file.standard_names.standard_names
+
+        Returns
+        -------
+        standard_dict: SamplesDict
+            SamplesDict object with standard PESummary parameter names
+        """
+        from pesummary.utils.utils import map_parameter_names
+        if mapping is None:
+            from pesummary.gw.file.standard_names import standard_names
+            mapping = standard_names
+        return SamplesDict(map_parameter_names(self, mapping))
 
     def debug_keys(self, *args, **kwargs):
         _keys = self.keys()
