@@ -171,6 +171,28 @@ def guess_url(web_dir, host, user):
     return url
 
 
+def map_parameter_names(dictionary, mapping):
+    """Modify keys in dictionary to use different names according to a map
+
+    Parameters
+    ----------
+    mapping: dict
+        dictionary mapping existing keys to new names.
+
+    Returns
+    -------
+    standard_dict: dict
+        dict object with new parameter names
+    """
+    standard_dict = {}
+    for key, item in dictionary.items():
+        if key not in mapping.keys():
+            standard_dict[key] = item
+            continue
+        standard_dict[mapping[key]] = item
+    return standard_dict
+
+
 def command_line_arguments():
     """Return the command line arguments
     """

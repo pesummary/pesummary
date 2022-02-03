@@ -339,6 +339,32 @@ class TestSamplesDict(object):
         fig = dataset.plot(self.parameters[0], type="marginalized_posterior")
         assert isinstance(fig, matplotlib.figure.Figure)
 
+    def test_standardize_parameter_names(self):
+        """Test the standardize_parameter_names method
+        """
+        dictionary = {"mass1": [1,2,3,4], "mass2": [4,3,2,1], "zz": [1,1,1,1]}
+        dictionary_copy = dictionary.copy()
+        mydict = SamplesDict(dictionary_copy)
+        standard_dict = mydict.standardize_parameter_names()
+        # check standard parameter names are in the new dictionary
+        assert sorted(list(standard_dict.keys())) == ["mass_1", "mass_2", "zz"]
+        # check that the dictionary items remains the same
+        _mapping = {"mass1": "mass_1", "mass2": "mass_2", "zz": "zz"}
+        for key, item in dictionary.items():
+            np.testing.assert_almost_equal(item, standard_dict[_mapping[key]])
+        # check old dictionary remains unchanged
+        assert sorted(list(mydict.keys())) == ["mass1", "mass2", "zz"]
+        for key, item in mydict.items():
+            np.testing.assert_almost_equal(item, dictionary[key])
+        # try custom mapping
+        mapping = {"mass1": "custom_m1", "mass2": "custom_m2", "zz": "custom_zz"}
+        new_dict = mydict.standardize_parameter_names(mapping=mapping)
+        assert sorted(list(new_dict.keys())) == [
+            "custom_m1", "custom_m2", "custom_zz"
+        ]
+        for old, new in mapping.items():
+            np.testing.assert_almost_equal(dictionary[old], new_dict[new])
+
     def test_waveforms(self):
         """Test the waveform generation
         """
@@ -919,6 +945,27 @@ def test_string_match():
     assert utils.string_match(param, "^{}".format(param[:3]))
     # Test does not start with
     assert not utils.string_match(param, "^(?!{}).+".format(param[:3]))
+
+
+def test_map_parameter_names():
+    """function to test the map_parameter_names function
+    """
+    dictionary = {
+        "a": np.random.uniform(1, 100, size=1000),
+        "b": np.random.uniform(1, 100, size=1000),
+        "c": np.random.uniform(1, 100, size=1000)
+    }
+    mapping = {"a": "z", "b": "y", "c": "x"}
+    dictionary_copy = dictionary.copy()
+    new_dictionary = utils.map_parameter_names(dictionary_copy, mapping)
+    # check that the new keys are in the new dictionary
+    assert sorted(list(new_dictionary.keys())) == ["x", "y", "z"]
+    # check that the new dictionary has the same items as before
+    for old, new in mapping.items():
+        np.testing.assert_almost_equal(dictionary[old], new_dictionary[new])
+    # check that the old dictionary remains unchanged
+    for key, item in dictionary.items():
+        np.testing.assert_almost_equal(item, dictionary_copy[key])
 
 
 def test_list_match():
