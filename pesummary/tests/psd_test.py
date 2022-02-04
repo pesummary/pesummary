@@ -4,6 +4,9 @@ from pesummary.gw.file.psd import PSDDict, PSD
 import numpy as np
 import os
 import shutil
+import tempfile
+
+tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -62,20 +65,20 @@ class TestPSD(object):
         """Setup the testing class
         """
         self.obj = PSD([[10, 20], [10, 20]])
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
 
     def teardown(self):
         """Remove all files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_save_to_file(self):
         """Test the save to file method
         """
-        self.obj.save_to_file(".outdir/test.dat")
-        data = np.genfromtxt(".outdir/test.dat")
+        self.obj.save_to_file("{}/test.dat".format(tmpdir))
+        data = np.genfromtxt("{}/test.dat".format(tmpdir))
         np.testing.assert_almost_equal(data.T[0], [10, 10])
         np.testing.assert_almost_equal(data.T[1], [20, 20])
 

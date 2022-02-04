@@ -10,7 +10,9 @@ from pesummary.gw.file.read import read as GWRead
 from pesummary.core.file.read import read as Read
 from pesummary.io import read, write
 import glob
+import tempfile
 
+tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
@@ -100,10 +102,10 @@ class BaseRead(object):
     def test_to_dat(self):
         """Test the to_dat method
         """
-        self.result.to_dat(outdir=".outdir", label="label")
-        assert os.path.isfile(os.path.join(".outdir", "pesummary_label.dat"))
+        self.result.to_dat(outdir=tmpdir, label="label")
+        assert os.path.isfile(os.path.join(tmpdir, "pesummary_label.dat"))
         data = np.genfromtxt(
-            os.path.join(".outdir", "pesummary_label.dat"), names=True)
+            os.path.join(tmpdir, "pesummary_label.dat"), names=True)
         assert all(i in self.parameters for i in list(data.dtype.names))
         assert all(i in list(data.dtype.names) for i in self.parameters)
         for param in self.parameters:
@@ -205,11 +207,11 @@ class GWBaseRead(BaseRead):
         """
         from pesummary.gw.file.standard_names import lalinference_map
 
-        self.result.to_lalinference(dat=True, outdir=".outdir",
+        self.result.to_lalinference(dat=True, outdir=tmpdir,
                                     filename="lalinference_label.dat")
-        assert os.path.isfile(os.path.join(".outdir", "lalinference_label.dat"))
+        assert os.path.isfile(os.path.join(tmpdir, "lalinference_label.dat"))
         data = np.genfromtxt(
-            os.path.join(".outdir", "lalinference_label.dat"), names=True)
+            os.path.join(tmpdir, "lalinference_label.dat"), names=True)
         for param in data.dtype.names:
             if param not in self.result.parameters:
                 pesummary_param = lalinference_map[param]
@@ -233,17 +235,19 @@ class TestCoreJsonFile(BaseRead):
     def setup(self):
         """Setup the TestCoreJsonFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        self.parameters, self.samples = make_result_file(extension="json", gw=False)
-        self.path = os.path.join(".outdir", "test.json")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            outdir=tmpdir, extension="json", gw=False
+        )
+        self.path = os.path.join(tmpdir, "test.json")
         self.result = Read(self.path)
 
     def teardown(self):
         """Remove all files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -308,17 +312,19 @@ class TestCoreHDF5File(BaseRead):
     def setup(self):
         """Setup the TestCoreHDF5File class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        self.parameters, self.samples = make_result_file(extension="hdf5", gw=False)
-        self.path = os.path.join(".outdir", "test.h5")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            outdir=tmpdir, extension="hdf5", gw=False
+        )
+        self.path = os.path.join(tmpdir, "test.h5")
         self.result = Read(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -383,17 +389,19 @@ class TestCoreCSVFile(BaseRead):
     def setup(self):
         """Setup the TestCoreCSVFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        self.parameters, self.samples = make_result_file(extension="csv", gw=False)
-        self.path = os.path.join(".outdir", "test.csv")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            extension="csv", outdir=tmpdir, gw=False
+        )
+        self.path = os.path.join(tmpdir, "test.csv")
         self.result = Read(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -458,17 +466,19 @@ class TestCoreNumpyFile(BaseRead):
     def setup(self):
         """Setup the TestCoreNumpyFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        self.parameters, self.samples = make_result_file(extension="npy", gw=False)
-        self.path = os.path.join(".outdir", "test.npy")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            outdir=tmpdir, extension="npy", gw=False
+        )
+        self.path = os.path.join(tmpdir, "test.npy")
         self.result = Read(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -533,17 +543,19 @@ class TestCoreDatFile(BaseRead):
     def setup(self):
         """Setup the TestCoreDatFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        self.parameters, self.samples = make_result_file(extension="dat", gw=False)
-        self.path = os.path.join(".outdir", "test.dat")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            outdir=tmpdir, extension="dat", gw=False
+        )
+        self.path = os.path.join(tmpdir, "test.dat")
         self.result = Read(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -677,18 +689,19 @@ class TestCoreJsonBilbyFile(BilbyFile):
     def setup(self):
         """Setup the TestCoreBilbyFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.parameters, self.samples = make_result_file(
-            extension="json", gw=False, bilby=True)
-        self.path = os.path.join(".outdir", "test.json")
+            outdir=tmpdir, extension="json", gw=False, bilby=True
+        )
+        self.path = os.path.join(tmpdir, "test.json")
         self.result = Read(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -755,18 +768,19 @@ class TestCoreHDF5BilbyFile(BilbyFile):
     def setup(self):
         """Setup the TestCoreBilbyFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.parameters, self.samples = make_result_file(
-            extension="hdf5", gw=False, bilby=True)
-        self.path = os.path.join(".outdir", "test.h5")
+            outdir=tmpdir, extension="hdf5", gw=False, bilby=True
+        )
+        self.path = os.path.join(tmpdir, "test.h5")
         self.result = Read(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -878,18 +892,18 @@ class PESummaryFile(BaseRead):
 
         bilby_object = self.result.to_bilby(save=False)["label"]
         bilby_object.save_to_file(
-            filename=os.path.join(".outdir", "bilby.json"))
-        assert is_bilby_json_file(os.path.join(".outdir", "bilby.json"))
+            filename=os.path.join(tmpdir, "bilby.json"))
+        assert is_bilby_json_file(os.path.join(tmpdir, "bilby.json"))
 
     def test_to_dat(self):
         """Test the to_dat method
         """
         self.result.to_dat(
-            outdir=".outdir", filenames={"label": "pesummary_label.dat"}
+            outdir=tmpdir, filenames={"label": "pesummary_label.dat"}
         )
-        assert os.path.isfile(os.path.join(".outdir", "pesummary_label.dat"))
+        assert os.path.isfile(os.path.join(tmpdir, "pesummary_label.dat"))
         data = np.genfromtxt(
-            os.path.join(".outdir", "pesummary_label.dat"), names=True)
+            os.path.join(tmpdir, "pesummary_label.dat"), names=True)
         assert all(i in self.parameters for i in list(data.dtype.names))
         assert all(i in list(data.dtype.names) for i in self.parameters)
 
@@ -923,17 +937,18 @@ class TestCoreJsonPESummaryFile(PESummaryFile):
     def setup(self):
         """Setup the TestCorePESummaryFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.parameters, self.samples = make_result_file(
-            extension="json", gw=False, pesummary=True)
-        self.result = Read(os.path.join(".outdir", "test.json"))
+            outdir=tmpdir, extension="json", gw=False, pesummary=True
+        )
+        self.result = Read(os.path.join(tmpdir, "test.json"))
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -1000,17 +1015,18 @@ class TestCoreHDF5PESummaryFile(PESummaryFile):
     def setup(self):
         """Setup the TestCorePESummaryFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.parameters, self.samples = make_result_file(
-            extension="hdf5", gw=False, pesummary=True)
-        self.result = Read(os.path.join(".outdir", "test.h5"))
+            outdir=tmpdir, extension="hdf5", gw=False, pesummary=True
+        )
+        self.result = Read(os.path.join(tmpdir, "test.h5"))
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -1076,17 +1092,19 @@ class TestGWCSVFile(GWBaseRead):
     def setup(self):
         """Setup the TestGWCSVFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        self.parameters, self.samples = make_result_file(extension="csv", gw=True)
-        self.path = os.path.join(".outdir", "test.csv")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            outdir=tmpdir, extension="csv", gw=True
+        )
+        self.path = os.path.join(tmpdir, "test.csv")
         self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -1153,17 +1171,19 @@ class TestGWNumpyFile(GWBaseRead):
     def setup(self):
         """Setup the TestGWNumpyFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        self.parameters, self.samples = make_result_file(extension="npy", gw=True)
-        self.path = os.path.join(".outdir", "test.npy")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            outdir=tmpdir, extension="npy", gw=True
+        )
+        self.path = os.path.join(tmpdir, "test.npy")
         self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -1230,17 +1250,19 @@ class TestGWDatFile(GWBaseRead):
     def setup(self):
         """Setup the TestGWDatFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        self.parameters, self.samples = make_result_file(extension="dat", gw=True)
-        self.path = os.path.join(".outdir", "test.dat")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            outdir=tmpdir, extension="dat", gw=True
+        )
+        self.path = os.path.join(tmpdir, "test.dat")
         self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -1312,17 +1334,19 @@ class TestGWHDF5File(GWBaseRead):
     def setup(self):
         """Setup the TestCoreHDF5File class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        self.parameters, self.samples = make_result_file(extension="hdf5", gw=True)
-        self.path = os.path.join(".outdir", "test.h5")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            outdir=tmpdir, extension="hdf5", gw=True
+        )
+        self.path = os.path.join(tmpdir, "test.h5")
         self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -1394,17 +1418,19 @@ class TestGWJsonFile(GWBaseRead):
     def setup(self):
         """Setup the TestGWDatFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        self.parameters, self.samples = make_result_file(extension="json", gw=True)
-        self.path = os.path.join(".outdir", "test.json")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            outdir=tmpdir, extension="json", gw=True
+        )
+        self.path = os.path.join(tmpdir, "test.json")
         self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -1476,18 +1502,19 @@ class TestGWJsonBilbyFile(GWBaseRead):
     def setup(self):
         """Setup the TestCoreBilbyFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.parameters, self.samples = make_result_file(
-            extension="json", gw=True, bilby=True)
-        self.path = os.path.join(".outdir", "test.json")
+            outdir=tmpdir, extension="json", gw=True, bilby=True
+        )
+        self.path = os.path.join(tmpdir, "test.json")
         self.result = GWRead(self.path, disable_prior=True)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -1581,18 +1608,19 @@ class TestGWLALInferenceFile(GWBaseRead):
     def setup(self):
         """Setup the TestCoreBilbyFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.parameters, self.samples = make_result_file(
-            extension="hdf5", gw=True, lalinference=True)
-        self.path = os.path.join(".outdir", "test.hdf5")
+            outdir=tmpdir, extension="hdf5", gw=True, lalinference=True
+        )
+        self.path = os.path.join(tmpdir, "test.hdf5")
         self.result = GWRead(self.path)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
         """Test the class used to load in this file
@@ -1664,14 +1692,14 @@ class TestPublicPycbc(object):
     def setup(self):
         """Setup the TestCoreBilbyFile class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def _pycbc_check(self, filename):
         """Test a public pycbc posterior samples file
@@ -1686,7 +1714,7 @@ class TestPublicPycbc(object):
         from pesummary.gw.file.standard_names import standard_names
         import h5py
         self.file = download_and_read_file(
-            filename, read_file=False, outdir=".outdir"
+            filename, read_file=False, outdir=tmpdir
         )
         self.result = GWRead(self.file, path_to_samples="samples")
         samples = self.result.samples_dict
@@ -1766,8 +1794,8 @@ class TestMultiAnalysis(object):
         from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
         from pesummary.io import write
 
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.data = MultiAnalysisSamplesDict(
             {"label1": {
                 "mass_1": np.random.uniform(20, 100, 10),
@@ -1779,10 +1807,10 @@ class TestMultiAnalysis(object):
         )
         write(
             self.data, file_format="sql", filename="multi_analysis.db",
-            outdir=".outdir", overwrite=True, delete_existing=True
+            outdir=tmpdir, overwrite=True, delete_existing=True
         )
         self.result = read(
-            os.path.join(".outdir", "multi_analysis.db"),
+            os.path.join(tmpdir, "multi_analysis.db"),
             add_zero_likelihood=False, remove_row_column="ROW"
         )
         self.samples_dict = self.result.samples_dict
@@ -1790,8 +1818,8 @@ class TestMultiAnalysis(object):
     def teardown(self):
         """Remove all files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_multi_analysis_db(self):
         """Test that an sql database with more than one set of samples can
@@ -1823,8 +1851,8 @@ class TestSingleAnalysisChangeFormat(object):
     def setup(self):
         """Setup the TestChangeFormat class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.parameters = ["log_likelihood", "mass_1", "mass_2"]
         self.samples = np.array(
             [
@@ -1833,16 +1861,16 @@ class TestSingleAnalysisChangeFormat(object):
             ]
         ).T
         write(
-            self.parameters, self.samples, outdir=".outdir", filename="test.dat",
+            self.parameters, self.samples, outdir=tmpdir, filename="test.dat",
             overwrite=True
         )
-        self.result = read(os.path.join(".outdir", "test.dat"))
+        self.result = read(os.path.join(tmpdir, "test.dat"))
 
     def teardown(self):
         """Remove all files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def save_and_check(
         self, file_format, bilby=False, pesummary=False, lalinference=False
@@ -1856,9 +1884,9 @@ class TestSingleAnalysisChangeFormat(object):
         else:
             filename = "test.{}".format(file_format)
         self.result.write(
-            file_format=file_format, outdir=".outdir", filename=filename
+            file_format=file_format, outdir=tmpdir, filename=filename
         )
-        result = read(os.path.join(".outdir", filename), disable_prior=True)
+        result = read(os.path.join(tmpdir, filename), disable_prior=True)
         if pesummary:
             assert result.parameters[0] == self.parameters
             np.testing.assert_almost_equal(result.samples[0], self.samples)
@@ -1905,8 +1933,8 @@ class TestMultipleAnalysisChangeFormat(object):
     def setup(self):
         """Setup the TestMultiplAnalysisChangeFormat class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.parameters = [
             ["log_likelihood", "mass_1", "mass_2"],
             ["chirp_mass", "log_likelihood", "total_mass"]
@@ -1927,16 +1955,16 @@ class TestMultipleAnalysisChangeFormat(object):
             ).T]
         )
         write(
-            self.parameters, self.samples, outdir=".outdir", filename="test.db",
+            self.parameters, self.samples, outdir=tmpdir, filename="test.db",
             overwrite=True, file_format="sql"
         )
-        self.result = read(os.path.join(".outdir", "test.db"))
+        self.result = read(os.path.join(tmpdir, "test.db"))
 
     def teardown(self):
         """Remove all files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def save_and_check(
         self, file_format, bilby=False, pesummary=False, lalinference=False,
@@ -1951,10 +1979,10 @@ class TestMultipleAnalysisChangeFormat(object):
         else:
             filename = "test.{}".format(file_format)
         self.result.write(
-            file_format=file_format, outdir=".outdir", filename=filename
+            file_format=file_format, outdir=tmpdir, filename=filename
         )
         if multiple_files:
-            files = sorted(glob.glob(".outdir/{}_*.{}".format(*filename.split("."))))
+            files = sorted(glob.glob(tmpdir + "/{}_*.{}".format(*filename.split("."))))
             assert len(files) == 2
             for num, _file in enumerate(files):
                 result = read(_file, disable_prior=True)
@@ -1966,7 +1994,7 @@ class TestMultipleAnalysisChangeFormat(object):
                     np.array(result.samples)[:, idxs], self.samples[num]
                 )
         else:
-            result = read(os.path.join(".outdir", filename), disable_prior=True)
+            result = read(os.path.join(tmpdir, filename), disable_prior=True)
             original = result.parameters
             sorted_params = sorted(result.parameters)
             idxs = [original.index(i) for i in sorted_params]
@@ -2014,14 +2042,14 @@ def test_add_log_likelihood():
     """
     from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
 
-    if not os.path.isdir(".outdir"):
-        os.mkdir(".outdir")
+    if not os.path.isdir(tmpdir):
+        os.mkdir(tmpdir)
     parameters = ["a", "b"]
     samples = np.array([
         np.random.uniform(10, 5, 1000), np.random.uniform(10, 5, 1000)
     ]).T
-    write(parameters, samples, filename="test.dat", outdir=".outdir")
-    f = read(".outdir/test.dat")
+    write(parameters, samples, filename="test.dat", outdir=tmpdir)
+    f = read("{}/test.dat".format(tmpdir))
     _samples_dict = f.samples_dict
     assert sorted(f.parameters) == ["a", "b", "log_likelihood"]
     np.testing.assert_almost_equal(
@@ -2042,9 +2070,9 @@ def test_add_log_likelihood():
         }
     })
     write(
-        data, file_format="pesummary", filename="multi.h5", outdir=".outdir",
+        data, file_format="pesummary", filename="multi.h5", outdir=tmpdir,
     )
-    f = read(".outdir/multi.h5")
+    f = read("{}/multi.h5".format(tmpdir))
     _samples_dict = f.samples_dict
     np.testing.assert_almost_equal(
         _samples_dict["one"]["log_likelihood"], np.zeros(1000)
@@ -2052,5 +2080,5 @@ def test_add_log_likelihood():
     np.testing.assert_almost_equal(
         _samples_dict["two"]["log_likelihood"], np.zeros(1000)
     )
-    if os.path.isdir(".outdir"):
-        shutil.rmtree(".outdir")
+    if os.path.isdir(tmpdir):
+        shutil.rmtree(tmpdir)

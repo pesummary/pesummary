@@ -120,7 +120,7 @@ def make_dir(path):
     if os.path.isdir(os.path.expanduser(path)):
         pass
     else:
-        os.makedirs(os.path.expanduser(path))
+        os.makedirs(os.path.expanduser(path), exist_ok=True)
 
 
 def guess_url(web_dir, host, user):

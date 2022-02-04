@@ -13,6 +13,9 @@ from .base import data_dir
 from bs4 import BeautifulSoup
 
 import pytest
+import tempfile
+
+tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -20,7 +23,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class TestWebpage(object):
 
     def setup(self):
-        directory = './.outdir'
+        directory = tmpdir
         try:
             os.mkdir(directory)
         except:
@@ -28,22 +31,22 @@ class TestWebpage(object):
             os.mkdir(directory)
 
     def teardown(self):
-        directory = './.outdir'
+        directory = tmpdir
         try:
             shutil.rmtree(directory)
         except:
             pass
 
     def test_make_html(self):
-        webdir = "./.outdir"
-        assert os.path.isfile("./.outdir/home.html") == False
+        webdir = tmpdir
+        assert os.path.isfile("{}/home.html".format(tmpdir)) == False
         webpage.make_html(webdir, pages=["home"])
-        assert os.path.isfile("./.outdir/home.html") == True
+        assert os.path.isfile("{}/home.html".format(tmpdir)) == True
 
     def test_open_html(self):
-        webdir = "./.outdir" 
+        webdir = tmpdir 
         baseurl = "https://example"
-        open("./.outdir/home.html", "a").close()
+        open("{}/home.html".format(tmpdir), "a").close()
         f = webpage.open_html(webdir, baseurl, "home")
         assert isinstance(f, webpage.page) == True
 
@@ -51,21 +54,21 @@ class TestWebpage(object):
 class TestPage(object):
 
     def setup(self):
-        webdir = "./.outdir" 
+        webdir = tmpdir 
         try:
             os.mkdir(webdir)
         except:
             shutil.rmtree(webdir)
             os.mkdir(webdir)
-        os.mkdir("./.outdir/css")
-        f = open("./.outdir/css/command_line.css", "w")
+        os.mkdir("{}/css".format(tmpdir))
+        f = open("{}/css/command_line.css".format(tmpdir), "w")
         f.close()
         baseurl = "https://example"
         webpage.make_html(webdir, pages=["home"])
         self.html = webpage.open_html(webdir, baseurl, "home")
 
     def teardown(self):
-        directory = './.outdir'
+        directory = tmpdir
         try:
             shutil.rmtree(directory)
         except:
@@ -80,20 +83,20 @@ class TestPage(object):
         content = "testing\n" 
         self.html.add_content(content, indent=2)
         self.html.close()
-        f = self.open_and_read("./.outdir/home.html")
+        f = self.open_and_read("{}/home.html".format(tmpdir))
         assert any(elem == "  testing\n" for elem in f) == True
 
     def test_header(self):
         self.html.make_header(approximant="approx")
         self.html.close()
-        with open("./.outdir/home.html") as fp:
+        with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         assert str(soup.h7.string) == 'None'
 
     def test_footer(self):
         self.html.make_footer()
         self.html.close()
-        with open("./.outdir/home.html") as fp:
+        with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         assert "This page was produced by" in str(soup.p)
         assert soup.div["class"] == ['jumbotron']
@@ -102,7 +105,7 @@ class TestPage(object):
     def test_navbar(self, links):
         self.html.make_navbar(links)
         self.html.close()
-        with open("./.outdir/home.html") as fp:
+        with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         all_links = soup.find_all("a", class_="nav-link")
         assert len(all_links) == 4
@@ -114,7 +117,7 @@ class TestPage(object):
     def test_table(self, headings, contents):
         self.html.make_table(headings=headings, contents=contents)
         self.html.close()
-        with open("./.outdir/home.html") as fp:
+        with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         columns = soup.find_all("th")
         assert len(columns) == 2
@@ -130,11 +133,11 @@ class TestPage(object):
         with open(data_dir + "/example.ini", 'r') as f:
             contents = f.read()
         styles = self.html.make_code_block(language='ini', contents=contents)
-        with open('./.outdir/example_config.css', 'w') as f:
+        with open('{}/example_config.css'.format(tmpdir), 'w') as f:
             f.write(styles)
             f.close()
         self.html.close()
-        with open("./.outdir/home.html") as fp:
+        with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         assert soup.div["class"] == ["highlight"]
         all_entries = soup.find_all("span")
@@ -152,7 +155,7 @@ class TestPage(object):
         contents = [["image1.png"], ["image2.png"]]
         self.html.make_table_of_images(contents=contents)
         self.html.close()
-        with open("./.outdir/home.html") as fp:
+        with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         all_images = soup.find_all("img")
         assert len(all_images) == 2
@@ -163,7 +166,7 @@ class TestPage(object):
         path = "./path/to/image.png"
         self.html.insert_image(path)
         self.html.close()
-        with open("./.outdir/home.html") as fp:
+        with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         all_images = soup.find_all("img")
         assert len(all_images) == 1
@@ -174,7 +177,7 @@ class TestPage(object):
         content = ["./path/to/image.png"]
         self.html.make_accordian(headings=headings, content=content)
         self.html.close()
-        with open("./.outdir/home.html") as fp:
+        with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         assert soup.img["src"] == "./path/to/image.png"
         assert soup.button["class"] == ["btn", "btn-link", "collapsed"]
@@ -184,7 +187,7 @@ class TestPage(object):
     def test_search_bar(self):
         self.html.make_search_bar()
         self.html.close()
-        with open("./.outdir/home.html") as fp:
+        with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         assert soup.find_all("button", class_="")[0].text == "Submit"
 
@@ -192,7 +195,7 @@ class TestPage(object):
         images = ["./path/to/image.png"]
         self.html.make_modal_carousel(images=images)
         self.html.close()
-        with open("./.outdir/home.html") as fp:
+        with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
         images = soup.find_all("img")
         assert len(images) == 1
@@ -218,7 +221,7 @@ class TestWebpage(object):
             } for label in self.labels
         })
         self.webpage = _WebpageGeneration(
-            webdir=".outdir", labels=self.labels, samples=self.samples,
+            webdir=tmpdir, labels=self.labels, samples=self.samples,
             pepredicates_probs={label: None for label in self.labels},
             same_parameters=["chirp_mass", "mass_ratio"]
         )
@@ -255,7 +258,7 @@ class TestWebpage(object):
         correct information
         """
         for label in self.labels:
-            with open("./.outdir/html/{}_{}.html".format(label, label)) as fp:
+            with open("{}/html/{}_{}.html".format(tmpdir, label, label)) as fp:
                 soup = BeautifulSoup(fp, features="html.parser")
                 table = soup.find(lambda tag: tag.name=='table')
                 rows = table.findAll(lambda tag: tag.name=='tr')
@@ -282,7 +285,7 @@ class TestWebpage(object):
     def test_displayed_comparison_parameter_summary_table(self):
         """
         """
-        with open("./.outdir/html/Comparison_chirp_mass.html") as fp:
+        with open("{}/html/Comparison_chirp_mass.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
             table = soup.find(lambda tag: tag.name=='table')
             rows = table.findAll(lambda tag: tag.name=='tr')

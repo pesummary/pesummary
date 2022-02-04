@@ -33,6 +33,7 @@ before_script:
   - pip install -r optional_requirements.txt
   - 'apt-get update -y && bash && apt-get -y install pandoc'
   - export USER=albert.einstein
+  - export NCPU=`python -c "import multiprocessing; print(min(6, multiprocessing.cpu_count()))"`
 
 
 .prepare_testing: &prepare_testing
@@ -57,7 +58,7 @@ before_script:
     - style
   script:
     - *prepare_testing
-    - summarytest --type workflow -k "Core or core" --pytest_config ${BASE}/setup.cfg
+    - summarytest --multi_process ${NCPU} --type workflow -k "Core or core" --pytest_config ${BASE}/setup.cfg
     - *finalise_testing
 
 
@@ -70,7 +71,7 @@ before_script:
     - style
   script:
     - *prepare_testing
-    - summarytest --type workflow -k "GW or gw" --pytest_config ${BASE}/setup.cfg
+    - summarytest --multi_process ${NCPU} --type workflow -k "GW or gw" --pytest_config ${BASE}/setup.cfg
     - *finalise_testing
 
 
@@ -216,18 +217,17 @@ python-3.7-base:
   stage: test:base
   script:
     - *prepare_testing
-    - summarytest -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
+    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
     - *finalise_testing
     - mv _testing/.coverage* .
     - mv .coverage .coverage_base
-
 
 python-3.7-exe:
   extends: .python-3.7-testing
   stage: test:executables
   script:
     - *prepare_testing
-    - summarytest -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
+    - summarytest --multi_process 1 -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
     - *finalise_testing
     - mv _testing/.coverage* .
     - mv .coverage .coverage_exe
@@ -238,7 +238,7 @@ python-3.8-base:
   stage: test:base
   script:
     - *prepare_testing
-    - summarytest -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
+    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
     - *finalise_testing
 
 
@@ -247,7 +247,7 @@ python-3.8-exe:
   stage: test:executables
   script:
     - *prepare_testing
-    - summarytest -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
+    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
     - *finalise_testing
 
 
@@ -256,7 +256,7 @@ python-3.9-base:
   stage: test:base
   script:
     - *prepare_testing
-    - summarytest -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
+    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
     - *finalise_testing
 
 
@@ -265,7 +265,7 @@ python-3.9-exe:
   stage: test:executables
   script:
     - *prepare_testing
-    - summarytest -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
+    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
     - *finalise_testing
 
 

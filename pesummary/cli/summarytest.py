@@ -10,6 +10,7 @@ import numpy as np
 import argparse
 import glob
 from pathlib import Path
+import multiprocessing
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 ALLOWED = [
@@ -64,6 +65,12 @@ def command_line():
         default=os.path.join(".", "pesummary"),
         help="Location of the pesummary repository"
     )
+    parser.add_argument(
+        "--multi_process", dest="multi_process", default=1, help=(
+            "Number of CPUs to use for the 'tests' and 'workflow' tests. "
+            "Default 1"
+        )
+    )
     return parser
 
 
@@ -106,10 +113,27 @@ def imports(*args, **kwargs):
     return launch(command_line)
 
 
-def tests(*args, output="./", **kwargs):
+def tests(*args, output="./", multi_process=1, **kwargs):
     """Run the pesummary testing suite
     """
-    command_line = "pytest --pyargs pesummary.tests "
+    import requests
+    # download files for tests
+    logger.info("Downloading files for tests")
+    data = requests.get(
+        "https://dcc.ligo.org/public/0168/P2000183/008/GW190814_posterior_samples.h5"
+    )
+    with open("{}/GW190814_posterior_samples.h5".format(output), "wb") as f:
+        f.write(data.content)
+    data = requests.get(
+        "https://dcc.ligo.org/public/0163/P190412/012/GW190412_posterior_samples_v3.h5"
+    )
+    with open("{}/GW190412_posterior_samples.h5".format(output), "wb") as f:
+        f.write(data.content)
+    # launch pytest job
+    command_line = (
+        "{} -m pytest -n {} --max-worker-restart=2 --dist=loadfile --reruns 2 "
+        "--pyargs pesummary.tests ".format(sys.executable, multi_process)
+    )
     if kwargs.get("pytest_config", None) is not None:
         command_line += "-c {} ".format(kwargs.get("pytest_config"))
     if kwargs.get("coverage", False):
@@ -132,10 +156,13 @@ def tests(*args, output="./", **kwargs):
 
 
 @tmp_directory
-def workflow(*args, **kwargs):
+def workflow(*args, multi_process=1, **kwargs):
     """Run the pesummary.tests.workflow_test test
     """
-    command_line = "pytest --pyargs pesummary.tests.workflow_test "
+    command_line = (
+        "{} -m pytest -n {} --max-worker-restart=2 --reruns 2 --pyargs "
+        "pesummary.tests.workflow_test ".format(sys.executable, multi_process)
+    )
     if kwargs.get("pytest_config", None) is not None:
         command_line += "-c {} ".format(kwargs.get("pytest_config"))
     if kwargs.get("expression", None) is not None:
@@ -146,7 +173,9 @@ def workflow(*args, **kwargs):
 def skymap(*args, output="./", **kwargs):
     """Run the pesummary.tests.ligo_skymap_test
     """
-    command_line = "pytest --pyargs pesummary.tests.ligo_skymap_test "
+    command_line = "{} -m pytest --pyargs pesummary.tests.ligo_skymap_test ".format(
+        sys.executable
+    )
     if kwargs.get("coverage", False):
         command_line += (
             "--cov=pesummary --cov-report html:{}/htmlcov --cov-report "
@@ -271,14 +300,32 @@ def examples(*args, repository=os.path.join(".", "pesummary"), **kwargs):
     gw_examples = os.path.join(examples_dir, "gw")
     core_examples = os.path.join(examples_dir, "core")
     shell_scripts = glob.glob(os.path.join(gw_examples, "*.sh"))
+    process = {}
     for script in shell_scripts:
         command_line = f"bash {script}"
-        launch(command_line)
+        p = launch(command_line, check_call=False)
+        process[command_line] = p
     python_scripts = glob.glob(os.path.join(gw_examples, "*.py"))
     python_scripts += [os.path.join(core_examples, "bounded_kdeplot.py")]
     for script in python_scripts:
         command_line = f"python {script}"
-        launch(command_line)
+        p = launch(command_line, check_call=False)
+        process[command_line] = p
+    failed = []
+    while len(process):
+        _remove = []
+        for key, item in process.items():
+            if item.poll() is not None and item.returncode != 0:
+                failed.append(key)
+            elif item.poll() is not None:
+                logger.info("The following test passed: {}".format(key))
+                _remove.append(key)
+        for key in _remove:
+            process.pop(key)
+    if len(failed):
+        raise ValueError(
+            "The following tests failed: {}".format(", ".join(failed))
+        )
     return
 
 
@@ -299,7 +346,8 @@ def main(args=None):
         type_mapping[opts.type](
             coverage=opts.coverage, mark=opts.mark, expression=opts.expression,
             ignore=opts.ignore, pytest_config=opts.pytest_config,
-            output=opts.output, repository=os.path.abspath(opts.repository)
+            output=opts.output, repository=os.path.abspath(opts.repository),
+            multi_process=opts.multi_process
         )
     except subprocess.CalledProcessError as e:
         raise ValueError(

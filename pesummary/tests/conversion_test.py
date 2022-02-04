@@ -13,6 +13,9 @@ from pesummary.gw.conversions import *
 from pesummary.gw.conversions.nrutils import *
 from pycbc import conversions
 import pytest
+import tempfile
+
+tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -932,7 +935,7 @@ class TestConvert(object):
     def setup(self):
         """Setup the TestConvert class
         """
-        self.dirs = [".outdir"]
+        self.dirs = [tmpdir]
         for dd in self.dirs:
             if not os.path.isdir(dd):
                 os.mkdir(dd)
@@ -970,19 +973,19 @@ class TestConvert(object):
         t1 = time.time()
         # check that when interrupted and restarted, the results are the same
         process = multiprocessing.Process(
-            target=self._convert, args=[".outdir/checkpoint.pickle"]
+            target=self._convert, args=["{}/checkpoint.pickle".format(tmpdir)]
         )
         process.start()
         time.sleep(5)
         process.terminate()
         # check that not all samples have been made
-        _checkpoint = read(".outdir/checkpoint.pickle", checkpoint=True)
-        assert os.path.isfile(".outdir/checkpoint.pickle")
+        _checkpoint = read("{}/checkpoint.pickle".format(tmpdir), checkpoint=True)
+        assert os.path.isfile("{}/checkpoint.pickle".format(tmpdir))
         assert not all(
             param in _checkpoint.parameters for param in no_checkpoint.keys()
         )
         # restart from checkpoint
-        checkpoint = self._convert(resume_file=".outdir/checkpoint.pickle")
+        checkpoint = self._convert(resume_file="{}/checkpoint.pickle".format(tmpdir))
         for param, value in no_checkpoint.items():
             np.testing.assert_almost_equal(value, checkpoint[param])
 

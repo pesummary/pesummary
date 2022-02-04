@@ -14,6 +14,9 @@ import numpy as np
 import matplotlib
 from matplotlib import rcParams
 import pytest
+import tempfile
+
+tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 rcParams["text.usetex"] = False
@@ -21,9 +24,9 @@ rcParams["text.usetex"] = False
 class TestPlot(object):
 
     def setup(self):
-        if os.path.isdir("./.outdir"):
-            shutil.rmtree("./.outdir")
-        os.makedirs("./.outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
+        os.makedirs(tmpdir)
 
     def _grab_frequencies_from_psd_data_file(self, file):
         """Return the frequencies stored in the psd data files
@@ -282,12 +285,16 @@ class TestPlot(object):
         assert isinstance(fig, matplotlib.figure.Figure) == True
 
     def test_psd_plot(self):
-        with open("./.outdir/psd.dat", "w") as f:
+        with open("{}/psd.dat".format(tmpdir), "w") as f:
             f.writelines(["0.5 100"])
             f.writelines(["1.0 150"])
             f.writelines(["5.0 200"])
-        frequencies = [self._grab_frequencies_from_psd_data_file("./.outdir/psd.dat")]
-        strains = [self._grab_frequencies_from_psd_data_file("./.outdir/psd.dat")]
+        frequencies = [
+            self._grab_frequencies_from_psd_data_file("{}/psd.dat".format(tmpdir))
+        ]
+        strains = [
+            self._grab_frequencies_from_psd_data_file("{}/psd.dat".format(tmpdir))
+        ]
         fig = gwplot._psd_plot(frequencies, strains, labels=["H1"])
         assert isinstance(fig, matplotlib.figure.Figure) == True
 

@@ -59,7 +59,7 @@ class TestPlotGeneration(object):
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_bilby/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", outdir=".outdir_bilby", psd=True,
+            gw=True, label="H1", outdir="./.outdir_bilby", psd=True,
             calibration=False
         )
         for i, j in zip(expected_plots, plots):
@@ -89,7 +89,7 @@ class TestPlotGeneration(object):
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_lalinference/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", outdir=".outdir_lalinference"
+            gw=True, label="H1", outdir="./.outdir_lalinference"
         )
         assert all(i == j for i,j in zip(sorted(expected_plots), sorted(plots)))
 
@@ -124,7 +124,7 @@ class TestPlotGeneration(object):
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_comparison/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", number=2, outdir=".outdir_comparison"
+            gw=True, label="H1", number=2, outdir="./.outdir_comparison"
         )
         for i,j in zip(sorted(plots), sorted(expected_plots)):
             print(i, j)
@@ -174,7 +174,7 @@ class TestPlotGeneration(object):
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_add_to_existing2/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", number=2, outdir=".outdir_add_to_existing2"
+            gw=True, label="H1", number=2, outdir="./.outdir_add_to_existing2"
         )
         assert all(i == j for i, j in zip(sorted(plots), sorted(expected_plots)))
 
@@ -264,7 +264,7 @@ class TestPlotGeneration(object):
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_add_to_existing_no_comparison/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", number=2, outdir=".outdir_add_to_existing_no_comparison",
+            gw=True, label="H1", number=2, outdir="./.outdir_add_to_existing_no_comparison",
             comparison=False
         )
         assert all(i == j for i, j in zip(sorted(plots), sorted(expected_plots)))
