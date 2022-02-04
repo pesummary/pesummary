@@ -17,5 +17,6 @@ set -e
 curl https://raw.githubusercontent.com/lscsoft/bilby/master/examples/gw_examples/injection_examples/fast_tutorial.py -o fast_tutorial.py
 sed -i '/result.plot_corner()/d' ./fast_tutorial.py
 sed -i 's/result = bilby.run_sampler(/result = bilby.run_sampler(dlogz=1000, /' ./fast_tutorial.py
+echo "result.save_to_file(extension='hdf5', overwrite=True)" >> ./fast_tutorial.py
 python fast_tutorial.py
-summarypages --webdir ./outdir/webpage --samples ./outdir/fast_tutorial_result.json --gw
+summarypages --webdir ./outdir/webpage --samples ./outdir/fast_tutorial_result.json ./outdir/fast_tutorial_result.hdf5 --gw --disable_expert --disable_interactive --no_ligo_skymap
