@@ -508,9 +508,11 @@ def _1d_histogram_plot(
             )
             _xlims = ax.get_xlim()
             if prior is not None:
-                ax.hist(
+                _prior_hist_kwargs = _default_hist_kwargs.copy()
+                _prior_hist_kwargs["histtype"] = "bar"
+                _ = ax.hist(
                     prior, color=conf.prior_color, alpha=0.2, edgecolor="w",
-                    linestyle=linestyle, **_default_hist_kwargs, **plot_kwargs
+                    linestyle=linestyle, **_prior_hist_kwargs, **plot_kwargs
                 )
         if kde:
             _kde_kwargs = kde_kwargs.copy()
