@@ -1,5 +1,7 @@
 bilby>=1.1.1
 pytest
+pytest-xdist
+pytest-rerunfailures
 pytest-cov
 coloredlogs
 coverage

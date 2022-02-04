@@ -63,11 +63,11 @@ def get_list_of_files(
     else:
         label = "gw"
     html = [
-        "./%s/html/error.html" % (outdir),
-        "./%s/html/Version.html" % (outdir),
-        "./%s/html/Logging.html" % (outdir),
-        "./%s/html/About.html" % (outdir),
-        "./%s/html/Downloads.html" % (outdir)]
+        "%s/html/error.html" % (outdir),
+        "%s/html/Version.html" % (outdir),
+        "%s/html/Logging.html" % (outdir),
+        "%s/html/About.html" % (outdir),
+        "%s/html/Downloads.html" % (outdir)]
     if gw and not len(sections):
         sections = [
             "spins", "spin_angles", "timings", "source", "remnant", "others",
@@ -76,33 +76,33 @@ def get_list_of_files(
     elif not len(sections):
         sections = ["A-D", "E-F", "I-L", "M-P", "Q-T"]
     for num in range(number):
-        html.append("./%s/html/%s%s_%s%s.html" % (outdir, label, num, label, num))
+        html.append("%s/html/%s%s_%s%s.html" % (outdir, label, num, label, num))
         if gw and extra_gw_pages:
-            html.append("./%s/html/%s%s_%s%s_Classification.html" % (outdir, label, num, label, num))
-        html.append("./%s/html/%s%s_%s%s_Corner.html" % (outdir, label, num, label, num))
-        html.append("./%s/html/%s%s_%s%s_Config.html" % (outdir, label, num, label, num))
-        html.append("./%s/html/%s%s_%s%s_Custom.html" % (outdir, label, num, label, num))
-        html.append("./%s/html/%s%s_%s%s_All.html" % (outdir, label, num, label, num))
-        html.append("./%s/html/%s%s_%s%s_Interactive_Corner.html" % (
+            html.append("%s/html/%s%s_%s%s_Classification.html" % (outdir, label, num, label, num))
+        html.append("%s/html/%s%s_%s%s_Corner.html" % (outdir, label, num, label, num))
+        html.append("%s/html/%s%s_%s%s_Config.html" % (outdir, label, num, label, num))
+        html.append("%s/html/%s%s_%s%s_Custom.html" % (outdir, label, num, label, num))
+        html.append("%s/html/%s%s_%s%s_All.html" % (outdir, label, num, label, num))
+        html.append("%s/html/%s%s_%s%s_Interactive_Corner.html" % (
             outdir, label, num, label, num
         ))
         for section in sections:
-            html.append("./%s/html/%s%s_%s%s_%s_all.html" % (outdir, label, num, label, num, section))
+            html.append("%s/html/%s%s_%s%s_%s_all.html" % (outdir, label, num, label, num, section))
         for j in parameters:
-            html.append("./%s/html/%s%s_%s%s_%s.html" % (outdir, label, num, label, num, j))
+            html.append("%s/html/%s%s_%s%s_%s.html" % (outdir, label, num, label, num, j))
         if existing_plot:
-            html.append("./%s/html/%s%s_%s%s_Additional.html" % (outdir, label, num, label, num))
+            html.append("%s/html/%s%s_%s%s_Additional.html" % (outdir, label, num, label, num))
 
     if number > 1:
-        html.append("./%s/html/Comparison.html" % (outdir))
-        html.append("./%s/html/Comparison_Custom.html" % (outdir))
-        html.append("./%s/html/Comparison_All.html" % (outdir))
-        html.append("./%s/html/Comparison_Interactive_Ridgeline.html" % (outdir))
+        html.append("%s/html/Comparison.html" % (outdir))
+        html.append("%s/html/Comparison_Custom.html" % (outdir))
+        html.append("%s/html/Comparison_All.html" % (outdir))
+        html.append("%s/html/Comparison_Interactive_Ridgeline.html" % (outdir))
         for j in parameters:
             if j != "classification":
-                html.append("./%s/html/Comparison_%s.html" % (outdir, j))
+                html.append("%s/html/Comparison_%s.html" % (outdir, j))
         for section in sections:
-            html.append("./%s/html/Comparison_%s_all.html" % (outdir, section))
+            html.append("%s/html/Comparison_%s_all.html" % (outdir, section))
     return sorted(html)
 
 
@@ -128,42 +128,42 @@ def get_list_of_plots(
     for num in range(number):
         for i in ["sample_evolution", "autocorrelation", "1d_posterior", "cdf"]:
             for j in parameters:
-                plots.append("./%s/plots/%s%s_%s_%s.png" % (outdir, label, num, i, j))
+                plots.append("%s/plots/%s%s_%s_%s.png" % (outdir, label, num, i, j))
         if mcmc:
             for j in parameters:
-                plots.append("./%s/plots/%s%s_1d_posterior_%s_combined.png" % (outdir, label, num, j))
+                plots.append("%s/plots/%s%s_1d_posterior_%s_combined.png" % (outdir, label, num, j))
         if psd:
-            plots.append("./%s/plots/%s%s_psd_plot.png" % (outdir, label, num))
+            plots.append("%s/plots/%s%s_psd_plot.png" % (outdir, label, num))
         if calibration:
-            plots.append("./%s/plots/%s%s_calibration_plot.png" % (outdir, label, num))
+            plots.append("%s/plots/%s%s_calibration_plot.png" % (outdir, label, num))
         if existing_plot:
-            plots.append("./%s/plots/test.png" % (outdir))
+            plots.append("%s/plots/test.png" % (outdir))
         if expert:
             for j in parameters:
                 if j != "log_likelihood":
-                    plots.append("./%s/plots/%s%s_2d_contour_%s_log_likelihood.png" % (outdir, label, num, j))
-                plots.append("./%s/plots/%s%s_1d_posterior_%s_bootstrap.png" % (outdir, label, num, j))
-                plots.append("./%s/plots/%s%s_sample_evolution_%s_log_likelihood_colored.png" % (outdir, label, num, j))
+                    plots.append("%s/plots/%s%s_2d_contour_%s_log_likelihood.png" % (outdir, label, num, j))
+                plots.append("%s/plots/%s%s_1d_posterior_%s_bootstrap.png" % (outdir, label, num, j))
+                plots.append("%s/plots/%s%s_sample_evolution_%s_log_likelihood_colored.png" % (outdir, label, num, j))
     if number > 1 and comparison:
         for i in ["1d_posterior", "boxplot", "cdf"]:
             for j in parameters:
-                plots.append("./%s/plots/combined_%s_%s.png" % (outdir, i, j))
+                plots.append("%s/plots/combined_%s_%s.png" % (outdir, i, j))
 
     if gw and extra_gw_plots:
         for num in range(number):
-            plots.append("./%s/plots/%s%s_skymap.png" % (outdir, label, num))
-            plots.append("./%s/plots/%s%s_default_pepredicates.png" % (outdir, label, num))
-            plots.append("./%s/plots/%s%s_default_pepredicates_bar.png" % (outdir, label, num))
-            plots.append("./%s/plots/%s%s_population_pepredicates.png" % (outdir, label, num))
-            plots.append("./%s/plots/%s%s_population_pepredicates_bar.png" % (outdir, label, num))
+            plots.append("%s/plots/%s%s_skymap.png" % (outdir, label, num))
+            plots.append("%s/plots/%s%s_default_pepredicates.png" % (outdir, label, num))
+            plots.append("%s/plots/%s%s_default_pepredicates_bar.png" % (outdir, label, num))
+            plots.append("%s/plots/%s%s_population_pepredicates.png" % (outdir, label, num))
+            plots.append("%s/plots/%s%s_population_pepredicates_bar.png" % (outdir, label, num))
         if number > 1 and comparison:
-            plots.append("./%s/plots/combined_skymap.png" % (outdir))
+            plots.append("%s/plots/combined_skymap.png" % (outdir))
         
     return sorted(plots)
 
 
 def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
-                  number=1, existing=False, disable_expert=True):
+                  number=1, existing=False, disable_expert=True, outdir="./.outdir"):
     """
     """
     parser = command_line()
@@ -174,15 +174,17 @@ def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
         default_args.append("--nsamples_for_skymap")
         default_args.append("10")
     params, data = make_result_file(
-        extension=extension, gw=gw, bilby=bilby, lalinference=lalinference)
+        extension=extension, gw=gw, bilby=bilby, lalinference=lalinference,
+        outdir=outdir
+    )
     if not existing:
         default_args.append("--webdir")
     else:
         default_args.append("--existing_webdir")
-    default_args.append(".outdir")
+    default_args.append(outdir)
     default_args.append("--samples")
     for i in range(number):
-        default_args.append("./.outdir/test.%s" % (extension))
+        default_args.append("%s/test.%s" % (outdir, extension))
     default_args.append("--labels")
     if not existing:
         for i in range(number):
@@ -318,6 +320,8 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
     if random_seed is not None:
         np.random.seed(random_seed)
     print(extension, gw, bilby, lalinference, pesummary)
+    if outdir[-1] != "/":
+        outdir += "/"
     data = np.array([np.random.random(18) for i in range(n_samples)])
     if gw:
         parameters = ["mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2",

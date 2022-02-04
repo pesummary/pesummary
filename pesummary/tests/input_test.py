@@ -19,7 +19,9 @@ import numpy as np
 import h5py
 
 import pytest
+import tempfile
 
+tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
@@ -28,18 +30,23 @@ class TestCommandLine(object):
     def setup(self):
         self.parser = command_line()
         insert_gwspecific_option_group(self.parser)
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(gw=True, lalinference=True, outdir=".outdir/")
-        os.rename(".outdir/test.hdf5", ".outdir/lalinference_example.h5")
-        make_result_file(gw=True, bilby=True, outdir=".outdir/", extension="hdf5")
-        os.rename(".outdir/test.h5", ".outdir/bilby_example.h5")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(gw=True, lalinference=True, outdir=tmpdir)
+        os.rename(
+            "{}/test.hdf5".format(tmpdir),
+            "{}/lalinference_example.h5".format(tmpdir)
+        )
+        make_result_file(gw=True, bilby=True, outdir=tmpdir, extension="hdf5")
+        os.rename(
+            "{}/test.h5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
+        )
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir") 
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir) 
 
     def test_webdir(self):
         assert self.parser.get_default("webdir") == None
@@ -95,8 +102,10 @@ class TestCommandLine(object):
 
     def test_samples(self):
         assert self.parser.get_default("samples") == None
-        opts = self.parser.parse_args(["--samples", ".outdir/lalinference_example.h5"])
-        assert opts.samples == [".outdir/lalinference_example.h5"]
+        opts = self.parser.parse_args(
+            ["--samples", "{}/lalinference_example.h5".format(tmpdir)]
+        )
+        assert opts.samples == ["{}/lalinference_example.h5".format(tmpdir)]
 
     def test_sensitivity(self):
         assert self.parser.get_default("sensitivity") == False
@@ -120,15 +129,20 @@ class TestCommandLine(object):
 class TestInputExceptions(object):
 
     def setup(self):
-        if os.path.isdir("./.outdir"):
-            shutil.rmtree("./.outdir")
-        os.mkdir('./.outdir')
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
+        os.mkdir(tmpdir)
         self.parser = command_line()
         insert_gwspecific_option_group(self.parser)
-        make_result_file(gw=True, lalinference=True, outdir=".outdir/")
-        os.rename(".outdir/test.hdf5", ".outdir/lalinference_example.h5")
-        make_result_file(gw=True, bilby=True, outdir=".outdir/", extension="hdf5")
-        os.rename(".outdir/test.h5", ".outdir/bilby_example.h5")
+        make_result_file(gw=True, lalinference=True, outdir=tmpdir)
+        os.rename(
+            "{}/test.hdf5".format(tmpdir),
+            "{}/lalinference_example.h5".format(tmpdir)
+        )
+        make_result_file(gw=True, bilby=True, outdir=tmpdir, extension="hdf5")
+        os.rename(
+            "{}/test.h5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
+        )
 
     def test_no_webdir(self):
         with pytest.raises(Exception) as info:
@@ -137,13 +151,13 @@ class TestInputExceptions(object):
         assert "Please provide a web directory" in str(info.value)
 
     def test_make_webdir_if_it_does_not_exist(self):
-        assert os.path.isdir("./.outdir/path") == False
-        opts = self.parser.parse_args(['--webdir', './.outdir/path',
+        assert os.path.isdir("{}/path".format(tmpdir)) == False
+        opts = self.parser.parse_args(['--webdir', '{}/path'.format(tmpdir),
                                        '--approximant', 'IMRPhenomPv2',
-                                       '--samples', "./.outdir/bilby_example.h5",
+                                       '--samples', "{}/bilby_example.h5".format(tmpdir),
                                        '--disable_prior_sampling', "--no_conversion"])
         x = GWInput(opts)
-        assert os.path.isdir("./.outdir/path") == True
+        assert os.path.isdir("{}/path".format(tmpdir)) == True
 
     def test_invalid_existing_directory(self):
         if os.path.isdir("./.existing"):
@@ -173,22 +187,22 @@ class TestInputExceptions(object):
         assert "Please provide a web directory to store the webpages" in str(info.value)
 
     def test_no_samples(self):
-        opts = self.parser.parse_args(["--webdir", "./.outdir"])
+        opts = self.parser.parse_args(["--webdir", tmpdir])
         with pytest.raises(Exception) as info:
             x = GWInput(opts)
         assert "Please provide a results file" in str(info.value)
 
     def test_non_existance_samples(self):
         with pytest.raises(Exception) as info:
-            opts = self.parser.parse_args(["--webdir", "./.outdir",
-                                           "--samples", "./.outdir/no_existance"])
+            opts = self.parser.parse_args(["--webdir", tmpdir,
+                                           "--samples", "{}/no_existance".format(tmpdir)])
             x = GWInput(opts)
-        assert "./.outdir/no_existance" in str(info.value)
+        assert "{}/no_existance".format(tmpdir) in str(info.value)
 
     def test_napproximant_not_equal_to_nsamples(self):
-        opts = self.parser.parse_args(["--webdir", "./.outdir",
-                                       "--samples", "./.outdir/bilby_example.h5",
-                                       "./.outdir/bilby_example.h5",
+        opts = self.parser.parse_args(["--webdir", tmpdir,
+                                       "--samples", "{}/bilby_example.h5".format(tmpdir),
+                                       "{}/bilby_example.h5".format(tmpdir),
                                        "--disable_prior_sampling", "--no_conversion",
                                        "--approximant", "IMRPhenomPv2"])
         with pytest.raises(Exception) as info:
@@ -199,18 +213,23 @@ class TestInputExceptions(object):
 class TestInput(object):
 
     def setup(self):
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.parser = command_line()
         insert_gwspecific_option_group(self.parser)
-        make_result_file(gw=True, lalinference=True, outdir=".outdir/")
-        os.rename(".outdir/test.hdf5", ".outdir/lalinference_example.h5")
-        make_result_file(gw=True, bilby=True, outdir=".outdir/", extension="hdf5")
-        os.rename(".outdir/test.h5", ".outdir/bilby_example.h5")
+        make_result_file(gw=True, lalinference=True, outdir=tmpdir)
+        os.rename(
+            "{}/test.hdf5".format(tmpdir),
+            "{}/lalinference_example.h5".format(tmpdir)
+        )
+        make_result_file(gw=True, bilby=True, outdir=tmpdir, extension="hdf5")
+        os.rename(
+            "{}/test.h5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
+        )
         self.default_arguments = [
             "--approximant", "IMRPhenomPv2",
-            "--webdir", "./.outdir",
-            "--samples", "./.outdir/bilby_example.h5",
+            "--webdir", tmpdir,
+            "--samples", "{}/bilby_example.h5".format(tmpdir),
             "--email", "albert.einstein@ligo.org",
             "--gracedb", "Grace", "--no_conversion",
             "--labels", "example", "--disable_prior_sampling"]
@@ -220,8 +239,8 @@ class TestInput(object):
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @staticmethod
     def make_existing_file(path):
@@ -269,10 +288,10 @@ class TestInput(object):
         self.inputs = GWInput(self.opts)
 
     def test_webdir(self):
-        assert self.inputs.webdir == os.path.abspath("./.outdir")
+        assert self.inputs.webdir == os.path.abspath(tmpdir)
 
     def test_samples(self):
-        assert self.inputs.result_files == ["./.outdir/bilby_example.h5"]
+        assert self.inputs.result_files == ["{}/bilby_example.h5".format(tmpdir)]
 
     def test_approximant(self):
         assert self.inputs.approximant == {"example": "IMRPhenomPv2"}
@@ -281,7 +300,7 @@ class TestInput(object):
         assert self.inputs.existing == None
 
     def test_baseurl(self):
-        assert self.inputs.baseurl == "https://" + os.path.abspath("./.outdir")
+        assert self.inputs.baseurl == "https://" + os.path.abspath(tmpdir)
 
     def test_inj_file(self):
         assert self.inputs.injection_file == [None]
@@ -309,8 +328,8 @@ class TestInput(object):
         insert_gwspecific_option_group(parser)
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
-            "--webdir", "./.outdir",
-            "--samples", "./.outdir/bilby_example.h5",
+            "--webdir", tmpdir,
+            "--samples", "{}/bilby_example.h5".format(tmpdir),
             "--email", "albert.einstein@ligo.org",
             "--gracedb", "Mock", "--disable_prior_sampling",
             "--labels", "example", "--no_conversion"]
@@ -328,15 +347,15 @@ class TestInput(object):
 
     def test_existing_labels(self):
         assert self.inputs.existing_labels == None
-        path = self.make_existing_file("./.outdir/samples")
-        with open("./.outdir/home.html", "w") as f:
+        path = self.make_existing_file("{}/samples".format(tmpdir))
+        with open("{}/home.html".format(tmpdir), "w") as f:
             f.writelines("test")
         parser = command_line()
         insert_gwspecific_option_group(parser)
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
-            "--existing_webdir", "./.outdir",
-            "--samples", "./.outdir/bilby_example.h5", "--no_conversion",
+            "--existing_webdir", tmpdir,
+            "--samples", "{}/bilby_example.h5".format(tmpdir), "--no_conversion",
             "--gracedb", "Grace", "--disable_prior_sampling"]
         opts = parser.parse_args(default_arguments)
         inputs = GWInput(opts)
@@ -344,15 +363,15 @@ class TestInput(object):
 
     def test_existing_samples(self):
         assert self.inputs.existing_samples == None
-        path = self.make_existing_file("./.outdir/samples")
-        with open("./.outdir/home.html", "w") as f:
+        path = self.make_existing_file("{}/samples".format(tmpdir))
+        with open("{}/home.html".format(tmpdir), "w") as f:
             f.writelines("test")
         parser = command_line()
         insert_gwspecific_option_group(parser)
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
-            "--existing_webdir", "./.outdir",
-            "--samples", "./.outdir/bilby_example.h5",
+            "--existing_webdir", tmpdir,
+            "--samples", "{}/bilby_example.h5".format(tmpdir),
             "--email", "albert.einstein@ligo.org",
             "--gracedb", "Grace"]
         opts = parser.parse_args(default_arguments)
@@ -365,12 +384,16 @@ class TestInput(object):
             i == j for i,j in zip(inputs.existing_samples["example"]["luminosity_distance"], [400, 800, 200]))
 
     def test_psd(self):
-        with open("./.outdir/psd.dat", "w") as f:
+        with open("{}/psd.dat".format(tmpdir), "w") as f:
             f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
         assert self.inputs.psd == {"example": {}}
-        self.add_argument(["--psd", "./.outdir/psd.dat", "--f_low", "1.0", "--f_final", "3.0"])
+        self.add_argument(
+            ["--psd", "{}/psd.dat".format(tmpdir), "--f_low", "1.0", "--f_final", "3.0"]
+        )
         assert list(self.inputs.psd["example"].keys()) == ["psd.dat"]
-        self.add_argument(["--psd", "H1:./.outdir/psd.dat", "--f_low", "1.0", "--f_final", "3.0"])
+        self.add_argument(
+            ["--psd", "H1:{}/psd.dat".format(tmpdir), "--f_low", "1.0", "--f_final", "3.0"]
+        )
         assert list(self.inputs.psd["example"].keys()) == ["H1"]
         np.testing.assert_almost_equal(
             self.inputs.psd["example"]["H1"],
@@ -384,9 +407,9 @@ class TestInput(object):
         # when neither a psd or config is passed, add preliminary watermark
         assert self.inputs.preliminary_pages == {"example": True}
         # when a psd is added but not a config, add preliminary watermark
-        with open("./.outdir/psd.dat", "w") as f:
+        with open("{}/psd.dat".format(tmpdir), "w") as f:
             f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
-        self.add_argument(["--psd", "./.outdir/psd.dat"])
+        self.add_argument(["--psd", "{}/psd.dat".format(tmpdir)])
         assert self.inputs.preliminary_pages == {"example": True}
         # when a config is added but no psd, add preliminary watermark
         self.add_argument(
@@ -395,7 +418,7 @@ class TestInput(object):
         assert self.inputs.preliminary_pages == {"example": True}
         # when both config and psd is added, do not add preliminary watermark
         self.add_argument(
-            ["--psd", "./.outdir/psd.dat"], reset=True
+            ["--psd", "{}/psd.dat".format(tmpdir)], reset=True
         )
         self.add_argument(["--config", data_dir + "/config_lalinference.ini"])
         assert self.inputs.preliminary_pages == {"example": False}
@@ -405,36 +428,42 @@ class TestInput(object):
         """
         # when no plot is passed, add_existing_plot = None
         assert self.inputs.existing_plot is None
-        with open("./.outdir/test.png", "w") as f:
+        with open("{}/test.png".format(tmpdir), "w") as f:
             f.writelines("")
-        with open("./.outdir/test2.png", "w") as f:
+        with open("{}/test2.png".format(tmpdir), "w") as f:
             f.writelines("")
         # when the standard dict format is provided, assign to correct label
-        real_path = os.path.abspath(".outdir")
-        self.add_argument(["--add_existing_plot", "example:.outdir/test.png"])
+        real_path = os.path.abspath(tmpdir)
+        self.add_argument(["--add_existing_plot", "example:{}/test.png".format(tmpdir)])
         # check file now points to webdir/plots
         assert self.inputs.existing_plot == {"example": real_path + "/plots/test.png"}
         # check that it copied to plots dir
-        assert any("test.png" in i for i in glob.glob(".outdir/plots/*.png"))
-        os.remove(".outdir/plots/test.png")
+        assert any("test.png" in i for i in glob.glob("{}/plots/*.png".format(tmpdir)))
+        os.remove("{}/plots/test.png".format(tmpdir))
         # when a file is passed without label, assign plot to each label
-        self.add_argument(["--add_existing_plot", ".outdir/test.png"])
+        self.add_argument(["--add_existing_plot", "{}/test.png".format(tmpdir)])
         assert self.inputs.existing_plot == {"example": real_path + "/plots/test.png"}
 
-        os.remove(".outdir/plots/test.png")
+        os.remove("{}/plots/test.png".format(tmpdir))
         # when multiple files are passed for one label, check that it is correctly
         # assigned
         self.add_argument(
-            ["--add_existing_plot", "example:.outdir/test.png", "example:.outdir/test2.png"]
+            [
+                "--add_existing_plot", "example:{}/test.png".format(tmpdir),
+                "example:{}/test2.png".format(tmpdir)
+            ]
         )
         assert self.inputs.existing_plot == {
             "example": [real_path + "/plots/test.png", real_path + "/plots/test2.png"]
         }
-        os.remove(".outdir/plots/test.png")
-        os.remove(".outdir/plots/test2.png")
+        os.remove("{}/plots/test.png".format(tmpdir))
+        os.remove("{}/plots/test2.png".format(tmpdir))
         # when files are passed without labels, assign to each label
         self.add_argument(
-            ["--add_existing_plot", ".outdir/test.png", ".outdir/test2.png"]
+            [
+                "--add_existing_plot", "{}/test.png".format(tmpdir),
+                "{}/test2.png".format(tmpdir)
+            ]
         )
         assert self.inputs.existing_plot == {
             "example": [real_path + "/plots/test.png", real_path + "/plots/test2.png"]
@@ -442,7 +471,10 @@ class TestInput(object):
 
         # when a plot does not exist, do not add it
         self.add_argument(
-            ["--add_existing_plot", ".outdir/test.png", ".outdir/test3.png"]
+            [
+                "--add_existing_plot", "{}/test.png".format(tmpdir),
+                "{}/test3.png".format(tmpdir)
+            ]
         )
         assert self.inputs.existing_plot == {
             "example": real_path + "/plots/test.png"
@@ -455,12 +487,13 @@ class TestInput(object):
         """Test that preliminary watermarks are added when multiple analyses
         are not reproducible
         """
-        with open("./.outdir/psd.dat", "w") as f:
+        with open("{}/psd.dat".format(tmpdir), "w") as f:
             f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
         self.default_arguments = [
             "--approximant", "IMRPhenomPv2", "IMRPhenomPv2",
-            "--webdir", "./.outdir",
-            "--samples", "./.outdir/bilby_example.h5", "./.outdir/bilby_example.h5",
+            "--webdir", tmpdir,
+            "--samples", "{}/bilby_example.h5".format(tmpdir),
+            "{}/bilby_example.h5".format(tmpdir),
             "--email", "albert.einstein@ligo.org",
             "--gracedb", "Grace", "--no_conversion",
             "--labels", "example", "example2"]
@@ -472,7 +505,7 @@ class TestInput(object):
         assert self.inputs.preliminary_pages["example2"] == True
         # When a psd and config is provided to both analyses, add preliminary
         # watermark to both files
-        self.add_argument(["--psd", "H1:./.outdir/psd.dat"])
+        self.add_argument(["--psd", "H1:{}/psd.dat".format(tmpdir)])
         self.add_argument(
             ["--config", data_dir + "/config_lalinference.ini",
              data_dir + "/config_lalinference.ini"]
@@ -481,29 +514,29 @@ class TestInput(object):
         assert self.inputs.preliminary_pages["example2"] == False
 
     def test_calibration(self):
-        with open("./.outdir/calibration.dat", "w") as f:
+        with open("{}/calibration.dat".format(tmpdir), "w") as f:
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0\n"])
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0"])
         assert self.inputs.calibration == {"example": {None: None}}
-        self.add_argument(["--calibration", "./.outdir/calibration.dat"])
+        self.add_argument(["--calibration", "{}/calibration.dat".format(tmpdir)])
         assert self.inputs.calibration["example"] == {None: None}
         assert list(self.inputs.priors["calibration"]["example"].keys()) == ['calibration.dat']
 
     def test_custom_psd(self):
-        with open("./.outdir/psd.dat", "w") as f:
+        with open("{}/psd.dat".format(tmpdir), "w") as f:
             f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
         parser = command_line()
         insert_gwspecific_option_group(parser)
         default_arguments = [
             "--approximant", "IMRPhenomPv2", "IMRPhenomPv2",
-            "--webdir", "./.outdir",
-            "--samples", "./.outdir/bilby_example.h5",
-            "./.outdir/bilby_example.h5",
+            "--webdir", tmpdir,
+            "--samples", "{}/bilby_example.h5".format(tmpdir),
+            "{}/bilby_example.h5".format(tmpdir),
             "--email", "albert.einstein@ligo.org",
             "--gracedb", "Grace",
             "--labels", "test", "test2",
-            "--test_psd", "L1:./.outdir/psd.dat",
-            "--test2_psd", "V1:./.outdir/psd.dat",
+            "--test_psd", "L1:{}/psd.dat".format(tmpdir),
+            "--test2_psd", "V1:{}/psd.dat".format(tmpdir),
             "--f_low", "1.0", "1.0", "--f_final",
             "3.0", "3.0", "--gw", "--no_conversion"
         ]
@@ -544,8 +577,8 @@ class TestInput(object):
         insert_gwspecific_option_group(parser)
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
-            "--webdir", "./.outdir",
-            "--samples", "./.outdir/bilby_example.h5",
+            "--webdir", tmpdir,
+            "--samples", "{}/bilby_example.h5".format(tmpdir),
             "--labels", "example"]
         opts = parser.parse_args(default_arguments)
         original = GWInput(opts)
@@ -554,8 +587,8 @@ class TestInput(object):
         insert_gwspecific_option_group(parser)
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
-            "--webdir", "./.outdir",
-            "--samples", "./.outdir/bilby_example.h5",
+            "--webdir", tmpdir,
+            "--samples", "{}/bilby_example.h5".format(tmpdir),
             "--ignore_parameters", "cos*",
             "--labels", "example"]
         opts = parser.parse_args(default_arguments)
@@ -574,39 +607,47 @@ class TestInput(object):
             )
 
     def test_make_directories(self):
-        assert os.path.isdir("./.outdir/samples/samples") == False
-        self.replace_existing_argument("--webdir", "./.outdir/samples")
+        assert os.path.isdir("{}/samples/samples".format(tmpdir)) == False
+        self.replace_existing_argument("--webdir", "{}/samples".format(tmpdir))
         self.inputs.make_directories()
-        assert os.path.isdir("./.outdir/samples/samples") == True
+        assert os.path.isdir("{}/samples/samples".format(tmpdir)) == True
 
     def test_copy_files(self):
-        if os.path.isdir("./.outdir/samples"):
-            shutil.rmtree("./.outdir/samples")
+        if os.path.isdir("{}/samples".format(tmpdir)):
+            shutil.rmtree("{}/samples".format(tmpdir))
         assert os.path.isfile(
-            "./.outdir/samples/js/combine_corner.js") == False
-        self.replace_existing_argument("--webdir", "./.outdir/samples")
+            "{}/samples/js/combine_corner.js".format(tmpdir)
+        ) == False
+        self.replace_existing_argument("--webdir", "{}/samples".format(tmpdir))
         self.add_argument(["--config", data_dir + "/config_lalinference.ini"])
         self.inputs.copy_files()
         assert os.path.isfile(
-            "./.outdir/samples/js/combine_corner.js") == True
+            "{}/samples/js/combine_corner.js".format(tmpdir)
+        ) == True
         assert os.path.isfile(
-            "./.outdir/samples/config/example_config.ini") == True
+            "{}/samples/config/example_config.ini".format(tmpdir)
+        ) == True
 
 
 class TestPostProcessing(object):
 
     def setup(self):
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         self.parser = command_line()
         insert_gwspecific_option_group(self.parser)
-        make_result_file(gw=True, lalinference=True, outdir=".outdir/")
-        os.rename(".outdir/test.hdf5", ".outdir/lalinference_example.h5")
-        data = make_result_file(gw=True, bilby=True, outdir=".outdir/", extension="hdf5")
+        make_result_file(gw=True, lalinference=True, outdir=tmpdir)
+        os.rename(
+            "{}/test.hdf5".format(tmpdir),
+            "{}/lalinference_example.h5".format(tmpdir)
+        )
+        data = make_result_file(gw=True, bilby=True, outdir=tmpdir, extension="hdf5")
         self.parameters, self.samples = data
-        os.rename(".outdir/test.h5", ".outdir/bilby_example.h5")
+        os.rename(
+            "{}/test.h5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
+        )
         self.opts = self.parser.parse_args(["--approximant", "IMRPhenomPv2",
-            "--webdir", "./.outdir", "--samples", "./.outdir/bilby_example.h5",
+            "--webdir", tmpdir, "--samples", "{}/bilby_example.h5".format(tmpdir),
             "--email", "albert.einstein@ligo.org", "--gracedb", "Grace",
             "--labels", "example", "--no_conversion"])
         self.inputs = GWInput(self.opts)
@@ -615,8 +656,8 @@ class TestPostProcessing(object):
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_injection_data(self):
         assert sorted(list(self.postprocessing.injection_data["example"].keys())) == sorted(
@@ -635,8 +676,9 @@ class TestPostProcessing(object):
         parser = command_line()
         insert_gwspecific_option_group(parser)
         opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
-            "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
-            "./.outdir/bilby_example.h5", "./.outdir/lalinference_example.h5"])
+            "IMRPhenomPv2", "--webdir", tmpdir, "--samples",
+            "{}/bilby_example.h5".format(tmpdir),
+            "{}/lalinference_example.h5".format(tmpdir)])
         inputs = GWInput(opts)
         postprocessing = GWPostProcessing(inputs)
         assert sorted(postprocessing.same_parameters) == sorted(gw_parameters())
@@ -644,14 +686,16 @@ class TestPostProcessing(object):
     def test_psd_labels(self):
         assert list(self.postprocessing.psd.keys()) == ["example"]
         assert self.postprocessing.psd["example"] == {}
-        with open("./.outdir/psd.dat", "w") as f:
+        with open("{}/psd.dat".format(tmpdir), "w") as f:
             f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
         parser = command_line()
         insert_gwspecific_option_group(parser)
         opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
-            "IMRPhenomPv2", "--webdir", "./.outdir", "--samples",
-            "./.outdir/bilby_example.h5", "./.outdir/lalinference_example.h5",
-            "--psd", "L1:./.outdir/psd.dat", "L1:./.outdir/psd.dat",
+            "IMRPhenomPv2", "--webdir", tmpdir, "--samples",
+            "{}/bilby_example.h5".format(tmpdir),
+            "{}/lalinference_example.h5".format(tmpdir),
+            "--psd", "L1:{}/psd.dat".format(tmpdir),
+            "L1:{}/psd.dat".format(tmpdir),
             "--labels", "example", "example2", "--f_low", "1.0", "1.0", "--f_final",
             "3.0", "3.0", "--gw", "--no_conversion"])
         inputs = GWInput(opts)
