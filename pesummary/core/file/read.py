@@ -25,7 +25,13 @@ def is_bilby_hdf5_file(path):
             return True
         elif "bilby" in str(f["version"][0]):
             return True
-        else:
+        return False
+    except TypeError:
+        try:
+            if "bilby" in f["meta_data"]["loaded_modules"].keys():
+                return True
+            return False
+        except Exception:
             return False
     except Exception:
         return False
