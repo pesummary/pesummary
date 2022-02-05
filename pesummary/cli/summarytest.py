@@ -14,8 +14,8 @@ import multiprocessing
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 ALLOWED = [
-    "executables", "imports", "tests", "workflow", "skymap", "bilby", "pycbc",
-    "lalinference", "GWTC1", "GWTC2", "examples"
+    "executables", "imports", "tests", "workflow", "skymap", "bilby",
+    "bilby_pipe", "pycbc", "lalinference", "GWTC1", "GWTC2", "examples"
 ]
 
 PESUMMARY_DIR = Path(pesummary.__file__).parent.parent
@@ -200,6 +200,16 @@ def bilby(*args, **kwargs):
     """
     command_line = "bash {}".format(
         os.path.join(PESUMMARY_DIR, "pesummary", "tests", "bilby.sh")
+    )
+    return launch(command_line)
+
+
+@tmp_directory
+def bilby_pipe(*args, **kwargs):
+    """Test a bilby_pipe run
+    """
+    command_line = "bash {}".format(
+        os.path.join(PESUMMARY_DIR, "pesummary", "tests", "bilby_pipe.sh")
     )
     return launch(command_line)
 

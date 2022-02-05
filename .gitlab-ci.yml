@@ -313,7 +313,7 @@ ligo_skymap:
     - pushes
 
 
-lalinference:
+lalinference_pipe:
   stage: compatibility
   image: python:3.7-buster
   needs:
@@ -349,7 +349,24 @@ bilby:
     - pushes
 
 
-pycbc:
+bilby_pipe:
+  stage: compatibility
+  image: python:3.7
+  needs:
+    - tarball
+    - executables
+    - imports
+    - style
+  script:
+    - *prepare_testing
+    - summarytest --type bilby_pipe
+    - *finalise_testing
+  only:
+    - schedule
+    - pushes
+
+
+pycbc_inference:
   stage: compatibility
   image: python:3.7
   needs:
@@ -455,7 +472,8 @@ pages:
     - python-3.8-gw
     - python-3.9-gw
     - bilby
-    - lalinference
+    - bilby_pipe
+    - lalinference_pipe
     - GWTC1
     - GWTC2
     - coverage
