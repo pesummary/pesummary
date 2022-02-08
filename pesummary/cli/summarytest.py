@@ -15,7 +15,7 @@ import multiprocessing
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 ALLOWED = [
     "executables", "imports", "tests", "workflow", "skymap", "bilby",
-    "bilby_pipe", "pycbc", "lalinference", "GWTC1", "GWTC2", "examples"
+    "bilby_pipe", "pycbc", "lalinference", "GWTC1", "GWTC2", "GWTC3", "examples"
 ]
 
 PESUMMARY_DIR = Path(pesummary.__file__).parent.parent
@@ -224,7 +224,7 @@ def pycbc(*args, **kwargs):
     return launch(command_line)
 
 
-def _public_pesummary_result_file(event, catalog=None):
+def _public_pesummary_result_file(event, catalog=None, unpack=True, **kwargs):
     """Test that pesummary can load in a previously released pesummary result
     file
     """
@@ -232,18 +232,72 @@ def _public_pesummary_result_file(event, catalog=None):
 
     download = fetch_open_samples(
         event, catalog=catalog, read_file=False, delete_on_exit=False,
-        outdir="./", unpack=True
+        outdir="./", unpack=unpack
     )
     command_line = "{} {} -f {}.h5".format(
         sys.executable,
         os.path.join(PESUMMARY_DIR, "pesummary", "tests", "existing_file.py"),
-        os.path.join(download, download)
+        os.path.join(download, download) if unpack else str(download).split(".h5")[0]
     )
     return launch(command_line)
 
 
+def _grab_event_names_from_gwosc(webpage):
+    """Grab a list of event names from a GWOSC 'Event Portal' web page
+
+    Parameters
+    ----------
+    webpage: str
+        web page url that you wish to grab data from
+    """
+    from bs4 import BeautifulSoup
+    import requests
+    page = requests.get(webpage)
+    soup = BeautifulSoup(page.content, 'html.parser')
+    entries = soup.find_all("td")
+    events = [
+        e.text.strip().replace(" ", "") for e in entries if "GW" in e.text
+        and "GWTC" not in e.text
+    ]
+    return events
+
+
 @tmp_directory
-def GWTC2(*args, size=5, include_exceptional=True, **kwargs):
+def GWTCN(
+    *args, catalog=None, size=5, include_exceptional=[], **kwargs
+):
+    """Test that pesummary can load a random selection of samples from the
+    GWTC-2 or GWTC-3 data releases
+
+    Parameters
+    ----------
+    catalog: str
+        name of the gravitational wave catalog you wish to consider
+    size: int, optional
+        number of events to randomly draw. Default 5
+    include_exceptional: list, optional
+        List of exceptional event candidates to include in the random selection
+        of events. This means that the total number of events could be as
+        large as size + N where N is the length of include_exceptional. Default
+        []
+    """
+    if catalog is None:
+        raise ValueError("Please provide a valid catalog")
+    events = _grab_event_names_from_gwosc(
+        "https://www.gw-openscience.org/eventapi/html/{}/".format(catalog)
+    )
+    specified = np.random.choice(events, replace=False, size=size).tolist()
+    if len(include_exceptional):
+        for event in include_exceptional:
+            if event not in specified:
+                specified.append(event)
+    for event in specified:
+        _ = _public_pesummary_result_file(event, catalog=catalog, **kwargs)
+    return
+
+
+@tmp_directory
+def GWTC2(*args, **kwargs):
     """Test that pesummary can load a random selection of samples from the
     GWTC-2 data release
 
@@ -251,28 +305,35 @@ def GWTC2(*args, size=5, include_exceptional=True, **kwargs):
     ----------
     size: int, optional
         number of events to randomly draw. Default 5
-    include_exceptional: Bool, optional
-        if True, add the exceptional event candidates to the random selection
+    include_exceptional: list, optional
+        List of exceptional event candidates to include in the random selection
         of events. This means that the total number of events could be as
-        large as size + 4.
+        large as size + N where N is the length of include_exceptional. Default
+        []
     """
-    from bs4 import BeautifulSoup
-    import requests
-    page = requests.get("https://www.gw-openscience.org/eventapi/html/GWTC-2/")
-    soup = BeautifulSoup(page.content, 'html.parser')
-    entries = soup.find_all("td")
-    events = [
-        e.text.strip().replace(" ", "") for e in entries if "GW" in e.text
-        and "GWTC" not in e.text
-    ]
-    specified = np.random.choice(events, replace=False, size=size).tolist()
-    if include_exceptional:
-        for event in ["GW190412", "GW190425", "GW190521", "GW190814"]:
-            if event not in specified:
-                specified.append(event)
-    for event in specified:
-        _ = _public_pesummary_result_file(event, catalog='GWTC-2')
-    return
+    return GWTCN(
+        *args, catalog="GWTC-2", unpack=True,
+        include_exceptional=["GW190412", "GW190425", "GW190521", "GW190814"],
+        **kwargs
+    )
+
+
+@tmp_directory
+def GWTC3(*args, **kwargs):
+    """Test that pesummary can load a random selection of samples from the
+    GWTC-3 data release
+
+    Parameters
+    ----------
+    size: int, optional
+        number of events to randomly draw. Default 5
+    include_exceptional: list, optional
+        List of exceptional event candidates to include in the random selection
+        of events. This means that the total number of events could be as
+        large as size + N where N is the length of include_exceptional. Default
+        []
+    """
+    return GWTCN(*args, catalog="GWTC-3-confident", unpack=False, **kwargs)
 
 
 @tmp_directory
