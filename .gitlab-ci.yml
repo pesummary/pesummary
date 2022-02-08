@@ -383,7 +383,7 @@ pycbc_inference:
     - pushes
 
 
-GWTC1:
+.GWTCN: &GWTCN
   stage: compatibility
   image: python:3.7
   needs:
@@ -393,22 +393,26 @@ GWTC1:
     - style
   script:
     - *prepare_testing
-    - summarytest --type GWTC1
+    - summarytest --type ${CATALOG}
     - *finalise_testing
+
+
+GWTC1:
+  <<: *GWTCN
+  variables:
+    CATALOG: GWTC1
 
 
 GWTC2:
-  stage: compatibility
-  image: python:3.7
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
-  script:
-    - *prepare_testing
-    - summarytest --type GWTC2
-    - *finalise_testing
+  <<: *GWTCN
+  variables:
+    CATALOG: GWTC2
+
+
+GWTC3:
+  <<: *GWTCN
+  variables:
+    CATALOG: GWTC3
 
 
 coverage:
@@ -476,6 +480,7 @@ pages:
     - lalinference_pipe
     - GWTC1
     - GWTC2
+    - GWTC3
     - coverage
   script:
     - mkdir public/
