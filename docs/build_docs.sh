@@ -19,7 +19,7 @@ set -e
 stable=$(git describe --abbrev=0 || git rev-parse --abbrev-ref HEAD)
 
 # get pesummary version from IGWN Conda Distribution
-igwn_yaml="https://computing.docs.ligo.org/conda/environments/linux/igwn-py37.yaml"
+igwn_yaml="https://computing.docs.ligo.org/conda/environments/linux/igwn-py38.yaml"
 igwn_version=$(python -c "
 import requests, yaml;
 py38 = yaml.safe_load(requests.get('${igwn_yaml}').content)['dependencies'];

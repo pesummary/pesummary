@@ -145,7 +145,7 @@ style:
 
 documentation:
   stage: basic
-  image: python:3.7-buster
+  image: python:3.8-buster
   needs:
     - tarball
   script:
@@ -231,6 +231,7 @@ python-3.7-exe:
     - *finalise_testing
     - mv _testing/.coverage* .
     - mv .coverage .coverage_exe
+  allow_failure: true
 
 
 python-3.8-base:
