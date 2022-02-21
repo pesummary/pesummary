@@ -1,3 +1,4 @@
 pycbc>=2.0.3
 cython>=0.28.5
 astropy>=3.2.3,!=4.3.0
+markupsafe==2.0.1
