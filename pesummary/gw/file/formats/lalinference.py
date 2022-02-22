@@ -54,7 +54,7 @@ def open_lalinference(path):
     f = h5py.File(path, 'r')
     path_to_samples = GWRead.guess_path_to_samples(path)
     lalinference_names = list(f[path_to_samples].dtype.names)
-    samples = [list(i) for i in f[path_to_samples]]
+    samples = np.array(f[path_to_samples]).view((float, len(lalinference_names))).tolist()
 
     if "logdistance" in lalinference_names:
         lalinference_names.append("luminosity_distance")
