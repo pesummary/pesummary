@@ -1622,6 +1622,19 @@ class TestGWLALInferenceFile(GWBaseRead):
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
 
+    def test_hdf5_dataset_to_list(self):
+        """Test method to convert hdf5 dataset to list
+        """
+        import h5py
+        f = h5py.File(self.path)
+        path_to_samples = "lalinference/lalinference_nest/posterior_samples"
+        old = [list(i) for i in f[path_to_samples]]
+        new = np.array(f[path_to_samples]).view(
+            (float, len(f[path_to_samples].dtype.names))
+        ).tolist()
+        for n in range(len(old)):
+            np.testing.assert_almost_equal(old[n], new[n])
+
     def test_class_name(self):
         """Test the class used to load in this file
         """
