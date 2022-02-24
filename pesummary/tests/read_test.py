@@ -2036,6 +2036,73 @@ class TestMultipleAnalysisChangeFormat(object):
         self.save_and_check("lalinference", lalinference=True)
 
 
+def test_remove_nan_likelihoods():
+    """Test that samples with 'nan' log_likelihoods are removed from the
+    posterior table
+    """
+    from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
+    import math
+
+    if not os.path.isdir(tmpdir):
+        os.mkdir(tmpdir)
+    parameters = ["a", "b", "log_likelihood"]
+    likelihoods = np.random.uniform(0, 1, 1000)
+    inds = np.random.choice(len(likelihoods), size=100, replace=False)
+    likelihoods[inds] = float('nan')
+    samples = np.array([
+        np.random.uniform(10, 5, 1000), np.random.uniform(10, 5, 1000),
+        likelihoods
+    ]).T
+    write(parameters, samples, filename="test.dat", outdir=tmpdir)
+    f = read("{}/test.dat".format(tmpdir), remove_nan_likelihood_samples=False)
+    read_samples = f.samples_dict
+    for param in parameters:
+        assert len(read_samples[param]) == 1000
+    for num, param in enumerate(parameters):
+        np.testing.assert_almost_equal(read_samples[param], samples.T[num])
+    f = read("{}/test.dat".format(tmpdir), remove_nan_likelihood_samples=True)
+    read_samples = f.samples_dict
+    for param in parameters:
+        assert len(read_samples[param]) == 900
+    inds = np.array([math.isnan(_) for _ in likelihoods], dtype=bool)
+    for num, param in enumerate(parameters):
+        np.testing.assert_almost_equal(
+            read_samples[param], samples.T[num][~inds]
+        )
+    likelihoods = np.random.uniform(0, 1, 2000).reshape(2, 1000)
+    inds = np.random.choice(1000, size=100, replace=False)
+    likelihoods[0][inds] = float('nan')
+    inds = np.random.choice(1000, size=500, replace=False)
+    likelihoods[1][inds] = float('nan')
+    samples = {
+        "one": {
+            "a": np.random.uniform(1, 5, 1000), "b": np.random.uniform(1, 2, 1000),
+            "log_likelihood": likelihoods[0]
+        }, "two": {
+            "c": np.random.uniform(1, 5, 1000), "d": np.random.uniform(1, 2, 1000),
+            "log_likelihood": likelihoods[1]
+        }
+    }
+    data = MultiAnalysisSamplesDict(samples)
+    write(
+        data, file_format="pesummary", filename="multi.h5", outdir=tmpdir,
+    )
+    f = read("{}/multi.h5".format(tmpdir), remove_nan_likelihood_samples=True)
+    _samples_dict = f.samples_dict
+    for num, label in enumerate(["one", "two"]):
+        inds = np.array([math.isnan(_) for _ in likelihoods[num]], dtype=bool)
+        if num == 0:
+            assert len(_samples_dict["one"]["a"]) == 900
+        else:
+            assert len(_samples_dict["two"]["c"]) == 500
+        for param in samples[label].keys():
+            np.testing.assert_almost_equal(
+                _samples_dict[label][param], samples[label][param][~inds]
+            )
+    if os.path.isdir(tmpdir):
+        shutil.rmtree(tmpdir)
+
+
 def test_add_log_likelihood():
     """Test that zero log likelihood samples are added when the posterior table
     does not include likelihood samples

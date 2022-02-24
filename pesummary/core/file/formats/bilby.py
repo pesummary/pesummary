@@ -339,6 +339,8 @@ class Bilby(SingleAnalysisRead):
     disable_prior: Bool, optional
         if True, do not collect prior samples from the `bilby` result file.
         Default False
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------

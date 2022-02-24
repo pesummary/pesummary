@@ -90,6 +90,8 @@ class LALInference(GWSingleAnalysisRead):
     ----------
     path_to_results_file: str
         path to the results file you wish to load in with `LALInference`
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------

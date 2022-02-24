@@ -378,6 +378,14 @@ def _samples_command_line_arguments(parser):
         )
     )
     sample_group.add_argument(
+        "--keep_nan_likelihood_samples", dest="keep_nan_likelihood_samples",
+        action="store_true", default=False, help=(
+            "Do not remove posterior samples where the likelihood='nan'. "
+            "Without this option, posterior samples where the likelihood='nan' "
+            "are removed by default."
+        )
+    )
+    sample_group.add_argument(
         "--burnin", dest="burnin", default=None, help=(
             "Number of samples to remove as burnin"
         )

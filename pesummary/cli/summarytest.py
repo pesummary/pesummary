@@ -201,6 +201,10 @@ def bilby(*args, **kwargs):
     command_line = "bash {}".format(
         os.path.join(PESUMMARY_DIR, "pesummary", "tests", "bilby.sh")
     )
+    _ = launch(command_line)
+    command_line = "bash {}".format(
+        os.path.join(PESUMMARY_DIR, "pesummary", "tests", "bilby_mcmc.sh")
+    )
     return launch(command_line)
 
 

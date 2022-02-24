@@ -80,6 +80,8 @@ class Bilby(GWSingleAnalysisRead):
         distributions. Default False
     pe_algorithm: str
         name of the algorithm used to generate the posterior samples
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------
