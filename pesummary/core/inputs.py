@@ -66,7 +66,8 @@ class _Input(object):
     def grab_data_from_metafile(
         existing_file, webdir, compare=None, read_function=Read,
         _replace_with_pesummary_kwargs={}, nsamples=None,
-        disable_injection=False, reweight_samples=False, **kwargs
+        disable_injection=False, keep_nan_likelihood_samples=False,
+        reweight_samples=False, **kwargs
     ):
         """Grab data from an existing PESummary metafile
 
@@ -90,7 +91,10 @@ class _Input(object):
             All kwargs are passed to the `generate_all_posterior_samples`
             method
         """
-        f = read_function(existing_file)
+        f = read_function(
+            existing_file,
+            remove_nan_likelihood_samples=not keep_nan_likelihood_samples
+        )
         for ind, label in enumerate(f.labels):
             kwargs[label] = kwargs.copy()
             for key, item in _replace_with_pesummary_kwargs.items():
@@ -224,7 +228,8 @@ class _Input(object):
     def grab_data_from_file(
         file, label, webdir, config=None, injection=None, read_function=Read,
         file_format=None, nsamples=None, disable_prior_sampling=False,
-        nsamples_for_prior=None, path_to_samples=None, reweight_samples=False,
+        nsamples_for_prior=None, path_to_samples=None,
+        keep_nan_likelihood_samples=False, reweight_samples=False,
         **kwargs
     ):
         """Grab data from a result file containing posterior samples
@@ -250,7 +255,8 @@ class _Input(object):
         """
         f = read_function(
             file, file_format=file_format, disable_prior=disable_prior_sampling,
-            nsamples_for_prior=nsamples_for_prior, path_to_samples=path_to_samples
+            nsamples_for_prior=nsamples_for_prior, path_to_samples=path_to_samples,
+            remove_nan_likelihood_samples=not keep_nan_likelihood_samples
         )
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
@@ -1319,7 +1325,9 @@ class _Input(object):
             data = self.grab_data_from_metafile(
                 file, self.webdir, compare=self.compare_results,
                 nsamples=self.nsamples, reweight_samples=self.reweight_samples,
-                disable_injection=self.disable_injection, **grab_data_kwargs
+                disable_injection=self.disable_injection,
+                keep_nan_likelihood_samples=self.keep_nan_likelihood_samples,
+                **grab_data_kwargs
             )
         else:
             data = self.grab_data_from_file(
@@ -1328,7 +1336,9 @@ class _Input(object):
                 disable_prior_sampling=self.disable_prior_sampling,
                 nsamples_for_prior=self.nsamples_for_prior,
                 path_to_samples=self.path_to_samples[label],
-                reweight_samples=self.reweight_samples, **grab_data_kwargs
+                reweight_samples=self.reweight_samples,
+                keep_nan_likelihood_samples=self.keep_nan_likelihood_samples,
+                **grab_data_kwargs
             )
         self._open_result_files.update({file: data["open_file"]})
         return data
@@ -2039,6 +2049,7 @@ class Input(_Input):
         self.path_to_samples = self.opts.path_to_samples
         self.file_format = self.opts.file_format
         self.nsamples = self.opts.nsamples
+        self.keep_nan_likelihood_samples = self.opts.keep_nan_likelihood_samples
         self.reweight_samples = self.opts.reweight_samples
         self.samples = self.opts.samples
         self.ignore_parameters = self.opts.ignore_parameters

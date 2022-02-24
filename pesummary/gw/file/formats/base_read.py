@@ -127,6 +127,8 @@ class GWRead(Read):
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------
@@ -399,6 +401,8 @@ class GWSingleAnalysisRead(GWRead, SingleAnalysisRead):
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------
@@ -522,6 +526,8 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
     """
     def __init__(self, *args, **kwargs):
         super(GWMultiAnalysisRead, self).__init__(*args, **kwargs)

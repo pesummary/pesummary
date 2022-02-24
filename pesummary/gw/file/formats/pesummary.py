@@ -53,6 +53,8 @@ class PESummary(GWMultiAnalysisRead, CorePESummary):
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------

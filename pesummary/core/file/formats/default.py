@@ -16,6 +16,8 @@ class SingleAnalysisDefault(SingleAnalysisRead):
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------
@@ -56,6 +58,8 @@ class MultiAnalysisDefault(MultiAnalysisRead):
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------
@@ -94,6 +98,8 @@ class Default(object):
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------

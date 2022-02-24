@@ -51,6 +51,8 @@ class Read(object):
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------
@@ -78,9 +80,12 @@ class Read(object):
     generate_latex_macros:
         generate a set of latex macros for the stored posterior samples
     """
-    def __init__(self, path_to_results_file, **kwargs):
+    def __init__(
+        self, path_to_results_file, remove_nan_likelihood_samples=True, **kwargs
+    ):
         self.path_to_results_file = path_to_results_file
         self.mcmc_samples = False
+        self.remove_nan_likelihood_samples = remove_nan_likelihood_samples
         self.extension = self.extension_from_path(self.path_to_results_file)
         self.converted_parameters = []
 
@@ -113,6 +118,41 @@ class Read(object):
             all kwargs are passed to the function
         """
         return function(path_to_file, **kwargs)
+
+    @staticmethod
+    def check_for_nan_likelihoods(parameters, samples, remove=False):
+        """Check to see if there are any samples with log_likelihood='nan' in
+        the posterior table and remove if requested
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters stored in the result file
+        samples: np.ndarray
+            array of samples for each parameter
+        remove: Bool, optional
+            if True, remove samples with log_likelihood='nan' from samples
+        """
+        import math
+        if "log_likelihood" not in parameters:
+            return parameters, samples
+        ind = parameters.index("log_likelihood")
+        likelihoods = np.array(samples).T[ind]
+        inds = np.array(
+            [math.isnan(_) for _ in likelihoods], dtype=bool
+        )
+        if not sum(inds):
+            return parameters, samples
+        msg = (
+            "Posterior table contains {} samples with 'nan' log likelihood. "
+        )
+        if remove:
+            msg += "Removing samples from posterior table."
+            samples = np.array(samples)[~inds].tolist()
+        else:
+            msg += "This may cause problems when analysing posterior samples."
+        logger.warning(msg.format(sum(inds)))
+        return parameters, samples
 
     @staticmethod
     def check_for_weights(parameters, samples):
@@ -228,6 +268,10 @@ class Read(object):
         self.parameters = _cls(self.data["parameters"])
         self.converted_parameters = []
         self.samples = self.data["samples"]
+        self.parameters, self.samples = self.check_for_nan_likelihoods(
+            self.parameters, self.samples,
+            remove=self.remove_nan_likelihood_samples
+        )
         if "mcmc_samples" in self.data.keys():
             self.mcmc_samples = self.data["mcmc_samples"]
         if "injection" in self.data.keys():
@@ -257,9 +301,7 @@ class Read(object):
         if self.description is None:
             self.description = self._default_description
         if self.weights is None:
-            self.weights = self.check_for_weights(
-                self.data["parameters"], self.data["samples"]
-            )
+            self.weights = self.check_for_weights(self.parameters, self.samples)
 
     @staticmethod
     def extension_from_path(path):
@@ -539,6 +581,8 @@ class SingleAnalysisRead(Read):
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------
@@ -732,6 +776,8 @@ class MultiAnalysisRead(Read):
     ----------
     path_to_results_file: str
         path to the results file you wish to load
+    remove_nan_likelihood_samples: Bool, optional
+        if True, remove samples which have log_likelihood='nan'. Default True
 
     Attributes
     ----------
@@ -761,6 +807,17 @@ class MultiAnalysisRead(Read):
     """
     def __init__(self, *args, **kwargs):
         super(MultiAnalysisRead, self).__init__(*args, **kwargs)
+
+    @staticmethod
+    def check_for_nan_likelihoods(parameters, samples, remove=False):
+        import copy
+        _parameters = copy.deepcopy(parameters)
+        _samples = copy.deepcopy(samples)
+        for num, (params, samps) in enumerate(zip(_parameters, _samples)):
+            _parameters[num], _samples[num] = Read.check_for_nan_likelihoods(
+                params, samps, remove=remove
+            )
+        return _parameters, _samples
 
     @property
     def samples_dict(self):
