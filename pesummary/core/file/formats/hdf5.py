@@ -67,7 +67,10 @@ def _read_hdf5_with_deepdish(path, remove_params=None, path_to_samples=None):
     return parameters, data
 
 
-def _read_hdf5_with_h5py(path, remove_params=None, path_to_samples=None):
+def _read_hdf5_with_h5py(
+    path, remove_params=None, path_to_samples=None,
+    return_posterior_dataset=False
+):
     """Grab the parameters and samples in a .hdf5 file with h5py
 
     Parameters
@@ -123,8 +126,9 @@ def _read_hdf5_with_h5py(path, remove_params=None, path_to_samples=None):
         samples = np.array(f[path_to_samples]["samples"])
     elif isinstance(f[path_to_samples], h5py._hl.dataset.Dataset):
         parameters = f[path_to_samples].dtype.names
-        samples = [[float(i[parameters.index(j)]) for j in parameters] for
-                   i in f[path_to_samples]]
+        samples = np.array(f[path_to_samples]).view((float, len(parameters))).tolist()
+    if return_posterior_dataset:
+        return parameters, samples, f[path_to_samples]
     f.close()
     return parameters, samples
 
