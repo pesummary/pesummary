@@ -51,11 +51,10 @@ def open_lalinference(path):
     path: str
         path to the result file you wish to read in
     """
-    f = h5py.File(path, 'r')
-    path_to_samples = GWRead.guess_path_to_samples(path)
-    lalinference_names = list(f[path_to_samples].dtype.names)
-    samples = np.array(f[path_to_samples]).view((float, len(lalinference_names))).tolist()
-
+    from pesummary.core.file.formats.hdf5 import _read_hdf5_with_h5py
+    lalinference_names, samples, _dataset = _read_hdf5_with_h5py(
+        path, return_posterior_dataset=True
+    )
     if "logdistance" in lalinference_names:
         lalinference_names.append("luminosity_distance")
         for num, i in enumerate(samples):
@@ -70,7 +69,7 @@ def open_lalinference(path):
     extra_kwargs["sampler"]["nsamples"] = len(samples)
     extra_kwargs["sampler"]["pe_algorithm"] = "lalinference"
     try:
-        version = f[path_to_samples].attrs["VERSION"].decode("utf-8")
+        version = _dataset.attrs["VERSION"].decode("utf-8")
     except Exception as e:
         version = None
     return {
