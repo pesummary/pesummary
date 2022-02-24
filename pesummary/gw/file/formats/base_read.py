@@ -13,14 +13,6 @@ from pesummary.gw.conversions import convert
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
-try:
-    from glue.ligolw import ligolw
-    from glue.ligolw import lsctables
-    from glue.ligolw import utils as ligolw_utils
-    GLUE = True
-except ImportError:
-    GLUE = False
-
 
 def _translate_parameters(parameters, samples):
     """Translate parameters to a standard names
@@ -73,51 +65,6 @@ def _add_log_likelihood(parameters, samples):
             [np.array(samples).T, np.zeros(len(samples))]
         ).T
     return parameters, samples
-
-
-def convert_injection_parameters(
-    data, extra_kwargs={"sampler": {}, "meta_data": {}}, disable_convert=False,
-    sampled_parameters=None
-):
-    """Apply the conversion module to the injection data
-
-    Parameters
-    ----------
-    data: dict
-        dictionary of injection data keyed by the parameter
-    extra_kwargs: dict, optional
-        optional kwargs to pass to the conversion module
-    disable_convert: Bool, optional
-        if True, do not convert injection parameters
-    sampled_parameters: list, optional
-        optional list of sampled parameters. If there is no injection value for
-        a given sampled parameter, add a 'nan'
-    """
-    import math
-
-    if disable_convert:
-        return data
-    if all(math.isnan(data[i]) for i in data.keys()):
-        return data
-    parameters = list(data.keys())
-    samples = [[data[i] for i in parameters]]
-    if "waveform_approximant" in parameters:
-        ind = parameters.index("waveform_approximant")
-        parameters.remove(parameters[ind])
-        samples[0].remove(samples[0][ind])
-    nan_inds = []
-    for num, i in enumerate(parameters):
-        if math.isnan(samples[0][num]):
-            nan_inds.append(num)
-    for i in nan_inds[::-1]:
-        parameters.remove(parameters[i])
-        samples[0].remove(samples[0][i])
-    inj_samples = convert(parameters, samples, extra_kwargs=extra_kwargs)
-    if sampled_parameters is not None:
-        for i in sampled_parameters:
-            if i not in list(inj_samples.keys()):
-                inj_samples[i] = float("nan")
-    return inj_samples
 
 
 class GWRead(Read):
@@ -231,6 +178,44 @@ class GWRead(Read):
             )
         return SamplesDict(parameters, samples)
 
+    def convert_injection_parameters(
+        self, data, extra_kwargs={"sampler": {}, "meta_data": {}},
+        disable_convert=False, sampled_parameters=None, **kwargs
+    ):
+        """Apply the conversion module to the injection data
+
+        Parameters
+        ----------
+        data: dict
+            dictionary of injection data keyed by the parameter
+        extra_kwargs: dict, optional
+            optional kwargs to pass to the conversion module
+        disable_convert: Bool, optional
+            if True, do not convert injection parameters
+        """
+        import math
+        from pesummary.gw.file.injection import GWInjection
+        kwargs.update({"extra_kwargs": extra_kwargs})
+        _data = data.copy()
+        for key, item in data.items():
+            if math.isnan(np.atleast_1d(item)[0]):
+                _ = _data.pop(key)
+        if len(_data):
+            converted = GWInjection(
+                _data, conversion=not disable_convert, conversion_kwargs=kwargs
+            )
+            _param = list(converted.keys())[0]
+            _example = converted[_param]
+            if not len(_example.shape):
+                for key, item in converted.items():
+                    converted[key] = [item]
+        else:
+            converted = _data
+        for i in sampled_parameters:
+            if i not in list(converted.keys()):
+                converted[i] = float('nan')
+        return converted
+
     def write(self, package="core", **kwargs):
         """Save the data to file
 
@@ -243,28 +228,18 @@ class GWRead(Read):
         """
         return super(GWRead, self).write(package="gw", **kwargs)
 
-    def _grab_injection_parameters_from_file(self, injection_file, **kwargs):
+    def _grab_injection_parameters_from_file(self, path, **kwargs):
+        """Extract data from an injection file
+
+        Parameters
+        ----------
+        path: str
+            path to injection file
+        """
         from pesummary.gw.file.injection import GWInjection
-
-        inj_samples = GWInjection.read(injection_file, **kwargs).samples_dict
-        for i in self.parameters:
-            if i not in list(inj_samples.keys()):
-                inj_samples[i] = float("nan")
-        return inj_samples
-
-    def _unzip_injection_file(self, injection_file):
-        """Unzip the injection file and extract injection parameters from
-        the file.
-        """
-        from pesummary.utils.utils import unzip
-
-        out_file = unzip(injection_file)
-        return self._grab_injection_parameters_from_file(out_file)
-
-    def _grab_injection_data_from_hdf5_file(self):
-        """Grab the data from an hdf5 injection file
-        """
-        pass
+        return super(GWRead, self)._grab_injection_parameters_from_file(
+            path, cls=GWInjection, **kwargs
+        )
 
     def interpolate_calibration_spline_posterior(self, **kwargs):
         from pesummary.gw.file.calibration import Calibration
@@ -488,24 +463,9 @@ class GWSingleAnalysisRead(GWRead, SingleAnalysisRead):
             if kwargs.get("return_kwargs", False):
                 self.extra_kwargs = data[2]
 
-    def convert_injection_parameters(
-        self, data, extra_kwargs={"sampler": {}, "meta_data": {}},
-        disable_convert=False
-    ):
-        """Apply the conversion module to the injection data
-
-        Parameters
-        ----------
-        data: dict
-            dictionary of injection data keyed by the parameter
-        extra_kwargs: dict, optional
-            optional kwargs to pass to the conversion module
-        disable_convert: Bool, optional
-            if True, do not convert injection parameters
-        """
-        return convert_injection_parameters(
-            data, extra_kwargs=extra_kwargs, disable_convert=disable_convert,
-            sampled_parameters=self.parameters
+    def convert_injection_parameters(self, *args, **kwargs):
+        return super(GWSingleAnalysisRead, self).convert_injection_parameters(
+            *args, sampled_parameters=self.parameters, **kwargs
         )
 
     def to_lalinference(self, **kwargs):
@@ -713,7 +673,9 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
             else:
                 _data = data[num]
                 _identifier = num
-            data[_identifier] = convert_injection_parameters(
+            data[_identifier] = super(
+                GWMultiAnalysisRead, self
+            ).convert_injection_parameters(
                 _data, extra_kwargs=extra_kwargs[num],
                 disable_convert=disable_convert,
                 sampled_parameters=self.parameters[num]

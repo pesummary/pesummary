@@ -379,36 +379,39 @@ class Read(object):
         pass
 
     def add_injection_parameters_from_file(self, injection_file, **kwargs):
-        """
-        """
-        self.injection_parameters = self._add_injection_parameters_from_file(
-            injection_file, self._grab_injection_parameters_from_file,
-            **kwargs
-        )
-
-    def _grab_injection_parameters_from_file(self, path, **kwargs):
-        """
-        """
-        from pesummary.core.file.injection import Injection
-
-        data = Injection.read(path, **kwargs).samples_dict
-        for i in self.parameters:
-            if i not in data.keys():
-                data[i] = float("nan")
-        return data
-
-    def _add_injection_parameters_from_file(self, injection_file, function, **kwargs):
-        """Add the injection parameters from file
+        """Populate the 'injection_parameters' property with data from a file
 
         Parameters
         ----------
         injection_file: str
             path to injection file
-        function: func
-            funcion you wish to use to extract the information from the
-            injection file
         """
-        return function(injection_file, **kwargs)
+        self.injection_parameters = self._grab_injection_parameters_from_file(
+            injection_file, **kwargs
+        )
+
+    def _grab_injection_parameters_from_file(
+        self, path, cls=None, add_nans=True, **kwargs
+    ):
+        """Extract data from an injection file
+
+        Parameters
+        ----------
+        path: str
+            path to injection file
+        cls: class, optional
+            class to read in injection file. The class must have a read class
+            method and a samples_dict property. Default None which means that
+            the pesummary.core.file.injection.Injection class is used
+        """
+        if cls is None:
+            from pesummary.core.file.injection import Injection
+            cls = Injection
+        data = cls.read(path, **kwargs).samples_dict
+        for i in self.parameters:
+            if i not in data.keys():
+                data[i] = float("nan")
+        return data
 
     def write(
         self, package="core", file_format="dat", extra_kwargs=None,

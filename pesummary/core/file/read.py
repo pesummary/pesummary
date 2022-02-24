@@ -302,6 +302,9 @@ def read(
     path = os.path.expanduser(path)
     extension = Read.extension_from_path(path)
 
+    if extension in ["gz"]:
+        from pesummary.utils.utils import unzip
+        path = unzip(path)
     if extension in ["hdf5", "h5", "hdf"]:
         options = _file_format(file_format, HDF5_LOAD)
         return _read(path, options, default=DEFAULT, **kwargs)
