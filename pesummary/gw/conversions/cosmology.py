@@ -85,17 +85,10 @@ def z_from_dL_approx(
     cosmo = get_cosmology(cosmology)
     d_min = np.min(luminosity_distance)
     d_max = np.max(luminosity_distance)
-    zmin = z_at_value(cosmo.luminosity_distance, d_min * u.Mpc)
-    zmax = z_at_value(cosmo.luminosity_distance, d_max * u.Mpc)
-    try:
-        zmin = zmin.value
-        zmax = zmax.value
-    except AttributeError:
-        # astropy < 5.0
-        zmin = zmin
-        zmax = zmax
+    zmin = _z_from_dL_exact(d_min, cosmo)
+    zmax = _z_from_dL_exact(d_max, cosmo)
     zgrid = np.logspace(np.log10(zmin), np.log10(zmax), N)
-    Dgrid = [cosmo.luminosity_distance(i).value for i in zgrid]
+    Dgrid = cosmo.luminosity_distance(zgrid).value
     zvals = np.interp(luminosity_distance, Dgrid, zgrid)
     return zvals
 
