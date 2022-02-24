@@ -551,7 +551,7 @@ def _draw_conditioned_prior_samples(
     return indicies
 
 
-def unzip(zip_file, outdir=".", overwrite=False):
+def unzip(zip_file, outdir=None, overwrite=False):
     """Extract the data from a zipped file and save in outdir.
 
     Parameters
@@ -559,7 +559,8 @@ def unzip(zip_file, outdir=".", overwrite=False):
     zip_file: str
         path to the file you wish to unzip
     outdir: str, optional
-        path to the directory where you wish to save the unzipped file.
+        path to the directory where you wish to save the unzipped file. Default
+        None which means that the unzipped file is stored in CACHE_DIR
     overwrite: Bool, optional
         If True, overwrite a file that has the same name
     """
@@ -569,6 +570,8 @@ def unzip(zip_file, outdir=".", overwrite=False):
 
     f = Path(zip_file)
     file_name = f.stem
+    if outdir is None:
+        outdir = CACHE_DIR
     out_file = os.path.join(outdir, file_name)
     if os.path.isfile(out_file) and not overwrite:
         raise FileExistsError(

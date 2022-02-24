@@ -16,20 +16,35 @@ class Injection(SamplesDict):
     samples: nd list
         list of samples for each parameter
     """
-    def __init__(self, *args, conversion_kwargs={}, **kwargs):
+    def __init__(self, *args, mapping={}, conversion_kwargs={}, **kwargs):
         super(Injection, self).__init__(*args, **kwargs)
+        self.update(self.standardize_parameter_names(mapping=mapping))
 
     @classmethod
-    def read(cls, path, **kwargs):
+    def read(cls, path, mapping={}, num=0, read_kwargs={}, **kwargs):
         """Read an injection file and initalize the Injection class
 
         Parameters
         ----------
         path: str
             Path to the injection file you wish to read
+        num: int, optional
+            The row you wish to load. Default is 0
         """
-        data = Default.load_file(path)
-        return cls(data.samples_dict, **kwargs)
+        from pesummary.io import read
+        original = read(path, **read_kwargs).samples_dict
+        if num is not None:
+            import numpy as np
+            for key, item in original.items():
+                item = np.atleast_1d(item)
+                if num <= len(item):
+                    original[key] = [item[num]]
+                else:
+                    raise ValueError(
+                        "Unable to extract row {} because the file only has {} "
+                        "rows".format(num, len(item))
+                    )
+        return cls(original, mapping=mapping, **kwargs)
 
     @property
     def samples_dict(self):
