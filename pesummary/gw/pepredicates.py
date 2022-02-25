@@ -23,17 +23,19 @@ def get_classifications(samples):
         dictionary of samples
     """
     from pesummary.utils.utils import RedirectLogger
+    from pesummary.utils.samples_dict import SamplesDict
 
     default_error = (
         "Failed to generate source classification probabilities because {}"
     )
     try:
         with RedirectLogger("PEPredicates", level="DEBUG") as redirector:
-            parameters = list(samples.keys())
-            samples = [
-                [samples[parameter][j] for parameter in parameters] for j in
-                range(len(samples[parameters[0]]))
-            ]
+            if isinstance(samples, SamplesDict):
+                parameters = samples.parameters
+                samples = samples.samples.T.tolist()
+            else:
+                parameters = list(samples.keys())
+                samples = np.array(list(samples.values())).T.tolist()
             data = PEPredicates.classifications(samples, parameters)
         classifications = {
             "default": data[0], "population": data[1]
@@ -73,7 +75,7 @@ class PEPredicates(object):
                 "calculate astro/terrestrial probabilities")
 
     @staticmethod
-    def convert_to_PEPredicated_data_frame(samples, parameters):
+    def convert_to_PEPredicate_data_frame(samples, parameters):
         """Convert the inputs to a pandas data frame compatible with
         PEPredicated
 
@@ -98,8 +100,10 @@ class PEPredicates(object):
             raise Exception(
                 "Failed to generate classification probabilities because not "
                 "all required parameters have been provided.")
+
+        _samples = np.array(samples).T
         for num, i in enumerate(list(mapping.keys())):
-            psamps[mapping[i]] = [j[parameters.index(i)] for j in samples]
+            psamps[mapping[i]] = _samples[parameters.index(i)]
         return psamps
 
     @staticmethod
@@ -115,40 +119,93 @@ class PEPredicates(object):
         return pep.rewt_approx_massdist_redshift(samples)
 
     @staticmethod
-    def default_classification(samples, parameters):
+    def check_for_dataframe(samples=None, parameters=None, dataframe=None):
+        """Return dataframe if dataframe is not None else make a PEPredicate
+        dataframe from samples and parameters.
+
+        Parameters
+        ----------
+        samples: list
+            list of samples for a specific result file
+        parameters: list
+            list of parameters corresponding to samples
+        dataframe: pandas.DataFrame
+            pandas DataFrame containing samples for specific result file.
+            dataframe must have entries m1_source, m2_source, dist, redshift,
+            a1, a2
+        """
+        if dataframe is None:
+            if (samples is None) and (parameters is None):
+                raise ValueError(
+                    "Please provide list of samples and parameters or "
+                    "PEPredicate DataFrame"
+                )
+            dataframe = PEPredicates.convert_to_PEPredicate_data_frame(
+                samples, parameters
+            )
+        return dataframe
+
+    @staticmethod
+    def default_classification(
+        samples=None, parameters=None, predicate_dataframe=None
+    ):
         """Return the source classification probabilities using the default
         prior used
 
         Parameters
         ----------
         samples: list
-            list of samples for a specific result file
+            list of samples for a specific result file. Used only if
+            predicate_dataframe is None
+        parameters: list
+            list of parameters corresponding to samples. Used only if
+            predicate_dataframe is None
+        predicate_dataframe: pandas.DataFrame
+            pandas DataFrame containing samples for specific result file.
+            predicate_dataframe must have entries m1_source, m2_source, dist,
+            redshift, a1, a2.
         """
         PEPredicates.check_for_install()
-        core_samples = PEPredicates.convert_to_PEPredicated_data_frame(
-            samples, parameters)
+        predicate_dataframe = PEPredicates.check_for_dataframe(
+            samples=samples, parameters=parameters, dataframe=predicate_dataframe
+        )
         ptable = pep.predicate_table(
-            PEPredicates.default_predicates(), core_samples)
+            PEPredicates.default_predicates(), predicate_dataframe
+        )
         for key, value in ptable.items():
             ptable[key] = np.round(value, 5)
         return ptable
 
     @staticmethod
-    def population_classification(samples, parameters):
+    def population_classification(
+        samples=None, parameters=None, predicate_dataframe=None
+    ):
         """Return the source classification probabilities using a population
         prior
 
         Parameters
         ----------
         samples: list
-            list of samples for a specific result file
+            list of samples for a specific result file. Used only if
+            predicate_dataframe is None
+        parameters: list
+            list of parameters corresponding to samples. Used only if
+            predicate_dataframe is None
+        predicate_dataframe: pandas.DataFrame
+            pandas DataFrame containing samples for specific result file.
+            predicate_dataframe must have entries m1_source, m2_source, dist,
+            redshift, a1, a2.
         """
         PEPredicates.check_for_install()
-        core_samples = PEPredicates.convert_to_PEPredicated_data_frame(
-            samples, parameters)
-        psamps_resamples = PEPredicates.resample_to_population(core_samples)
+        predicate_dataframe = PEPredicates.check_for_dataframe(
+            samples=samples, parameters=parameters, dataframe=predicate_dataframe
+        )
+        psamps_resamples = PEPredicates.resample_to_population(
+            predicate_dataframe
+        )
         ptable = pep.predicate_table(
-            PEPredicates.default_predicates(), psamps_resamples)
+            PEPredicates.default_predicates(), psamps_resamples
+        )
         for key, value in ptable.items():
             ptable[key] = np.round(value, 5)
         return ptable
@@ -158,8 +215,9 @@ class PEPredicates(object):
         """Return the source classification probabilities using both the default
         prior used in the analysis and the population prior
         """
-        pop = PEPredicates.population_classification(samples, parameters)
-        default = PEPredicates.default_classification(samples, parameters)
+        df = PEPredicates.convert_to_PEPredicate_data_frame(samples, parameters)
+        pop = PEPredicates.population_classification(predicate_dataframe=df)
+        default = PEPredicates.default_classification(predicate_dataframe=df)
         return default, pop
 
     @staticmethod
@@ -173,7 +231,7 @@ class PEPredicates(object):
         """
         logger.debug("Generating the PEPredicates plot")
         PEPredicates.check_for_install()
-        core_samples = PEPredicates.convert_to_PEPredicated_data_frame(
+        core_samples = PEPredicates.convert_to_PEPredicate_data_frame(
             samples, parameters)
         if population_prior:
             psamps_resamples = PEPredicates.resample_to_population(core_samples)

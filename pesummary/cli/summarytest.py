@@ -131,7 +131,7 @@ def tests(*args, output="./", multi_process=1, **kwargs):
         f.write(data.content)
     # launch pytest job
     command_line = (
-        "{} -m pytest -n {} --max-worker-restart=2 --dist=loadfile --reruns 2 "
+        "{} -m pytest --full-trace -n {} --max-worker-restart=2 --dist=loadfile --reruns 2 "
         "--pyargs pesummary.tests ".format(sys.executable, multi_process)
     )
     if kwargs.get("pytest_config", None) is not None:
