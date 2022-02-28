@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 
 from pesummary.io import read
 from pesummary.core.parser import parser as pesummary_parser
-from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
 from pesummary.core.plots.figure import figure
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.gw.plots.latex_labels import GWlatex_labels
@@ -74,7 +74,7 @@ def js_bootstrap(key, resultA, resultB, nsamples, ntests):
         bootA = np.random.choice(samplesA, size=nsamples, replace=False)
         bootB = np.random.choice(samplesB, size=nsamples, replace=False)
         js_array[j] = np.nan_to_num(
-            jensen_shannon_divergence([bootA, bootB], kde=Bounded_1d_kde, xlow=xlow, xhigh=xhigh)
+            jensen_shannon_divergence([bootA, bootB], kde=ReflectionBoundedKDE, xlow=xlow, xhigh=xhigh)
         )
     return js_array
 

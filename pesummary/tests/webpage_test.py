@@ -232,7 +232,7 @@ class TestWebpage(object):
         """
         from scipy.spatial.distance import jensenshannon
         from pesummary.utils.utils import jensen_shannon_divergence
-        from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+        from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
 
         comparison_stats = self.webpage.comparison_stats
         for param in ['chirp_mass', 'mass_ratio']:
@@ -248,8 +248,8 @@ class TestWebpage(object):
             ]
             x = np.linspace(np.min(samples), np.max(samples), 100)
             _js = jensenshannon(
-                Bounded_1d_kde(samples[0], xlow=xlow, xhigh=xhigh)(x),
-                Bounded_1d_kde(samples[1], xlow=xlow, xhigh=xhigh)(x)
+                ReflectionBoundedKDE(samples[0], xlow=xlow, xhigh=xhigh)(x),
+                ReflectionBoundedKDE(samples[1], xlow=xlow, xhigh=xhigh)(x)
             )**2
             np.testing.assert_almost_equal(js, _js, 5)
 

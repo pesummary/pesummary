@@ -898,10 +898,10 @@ def test_jensen_shannon_divergence():
     _pesummary = utils.jensen_shannon_divergence(samples, decimal=9)
     np.testing.assert_almost_equal(_scipy, _pesummary)
 
-    from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+    from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
 
     _pesummary = utils.jensen_shannon_divergence(
-        samples, decimal=9, kde=Bounded_1d_kde, xlow=4.5, xhigh=5.5
+        samples, decimal=9, kde=ReflectionBoundedKDE, xlow=4.5, xhigh=5.5
     )
 
 
