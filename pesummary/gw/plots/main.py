@@ -8,7 +8,7 @@ from pesummary.core.plots.main import _PlotGeneration as _BasePlotGeneration
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.core.plots import interactive
 from pesummary.core.plots.figure import figure
-from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.utils import (
     logger, resample_posterior_distribution, get_matplotlib_backend,
@@ -891,7 +891,7 @@ class _PlotGeneration(_BasePlotGeneration):
     @staticmethod
     def _violin_plot(
         savedir, plot_parameter, samples, labels, latex_label, inj_values=None,
-        preliminary=False, checkpoint=False, kde=Bounded_1d_kde,
+        preliminary=False, checkpoint=False, kde=ReflectionBoundedKDE,
         default_bounds=True
     ):
         """Generate a violin plot for a given set of samples

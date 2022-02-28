@@ -1,6 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde, bounded_1d_kde
+from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE, bounded_1d_kde
 from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 from scipy.stats import gaussian_kde
 import numpy as np
@@ -10,14 +10,14 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 class TestBounded_kde(object):
-    """Test the Bounded_1d_kde function
+    """Test the ReflectionBoundedKDE function
     """
     def test_bounded_1d_kde(self):
         samples = np.array(np.random.uniform(10, 5, 1000))
         x_low = 9.5
         x_high = 10.5
         scipy = gaussian_kde(samples)
-        bounded = Bounded_1d_kde(samples, xlow=x_low, xhigh=x_high)
+        bounded = ReflectionBoundedKDE(samples, xlow=x_low, xhigh=x_high)
         assert scipy(9.45) != 0.
         assert bounded(9.45) == 0.
         assert scipy(10.55) != 0.

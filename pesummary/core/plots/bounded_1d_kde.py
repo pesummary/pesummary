@@ -70,7 +70,7 @@ class BoundedKDE(kde):
     def __init__(self, pts, xlow=None, xhigh=None, *args, **kwargs):
         pts = np.atleast_1d(pts)
         if pts.ndim != 1:
-            raise TypeError("Bounded_1d_kde can only be one-dimensional")
+            raise TypeError("BoundedKDE can only be one-dimensional")
         super(BoundedKDE, self).__init__(pts.T, *args, **kwargs)
         self._xlow = xlow
         self._xhigh = xhigh

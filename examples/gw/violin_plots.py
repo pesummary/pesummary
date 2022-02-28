@@ -1,7 +1,7 @@
 from pesummary.gw.plots.publication import violin_plots
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 import matplotlib.pyplot as plt
-from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
 import numpy as np
 
 # Lets randomly make some samples for the tidal deformability on the secondary
@@ -18,10 +18,10 @@ fig = violin_plots(parameter, samples, labels, GWlatex_labels)
 plt.savefig("gaussian.png")
 plt.close()
 
-# Now lets make a violin plot which uses Bounded_1d_kde's, meaning that the
+# Now lets make a violin plot which uses ReflectionBoundedKDE's, meaning that the
 # KDE is bounded between 0 and 3000
 fig = violin_plots(
-    parameter, samples, labels, GWlatex_labels, kde=Bounded_1d_kde,
+    parameter, samples, labels, GWlatex_labels, kde=ReflectionBoundedKDE,
     kde_kwargs={"xlow": 0.0, "xhigh": 3000.0}, cut=0
 )
 plt.savefig("bounded_kde.png")
@@ -38,7 +38,7 @@ fig = plt.figure()
 ax = fig.gca()
 ax = violinplot(
     x="day", y="total_bill", hue="smoker", data=tips, palette="muted",
-    split=True, kde=Bounded_1d_kde, kde_kwargs={"xlow": 10.0, "xhigh": 50.0},
+    split=True, kde=ReflectionBoundedKDE, kde_kwargs={"xlow": 10.0, "xhigh": 50.0},
     ax=ax
 )
 plt.savefig("split.png")

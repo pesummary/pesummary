@@ -193,12 +193,12 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             2d list containing the samples you wish to calculate the Jensen
             Shannon divergence between
         """
-        from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+        from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
         from pesummary.gw.plots.plot import _return_bounds
 
         xlow, xhigh = _return_bounds(param, samples, comparison=True)
         return super(_WebpageGeneration, self)._jensen_shannon_divergence(
-            param, samples, kde=Bounded_1d_kde, xlow=xlow, xhigh=xhigh
+            param, samples, kde=ReflectionBoundedKDE, xlow=xlow, xhigh=xhigh
         )
 
     def make_navbar_for_homepage(self):

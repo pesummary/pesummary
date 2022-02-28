@@ -529,10 +529,10 @@ def _draw_conditioned_prior_samples(
     N: int, optional
         Number of samples to generate
     """
-    from pesummary.core.plots.bounded_1d_kde import Bounded_1d_kde
+    from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
 
-    prior_KDE = Bounded_1d_kde(prior_samples)
-    posterior_KDE = Bounded_1d_kde(posterior_samples)
+    prior_KDE = ReflectionBoundedKDE(prior_samples)
+    posterior_KDE = ReflectionBoundedKDE(posterior_samples)
 
     x = np.linspace(xlow, xhigh, xN)
     idx_nz = np.nonzero(posterior_KDE(x))
