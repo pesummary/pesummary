@@ -119,15 +119,18 @@ class TestWritePESummary(object):
     def setup(self):
         """Setup the TestWritePESummary class
         """
-        import os
-
-        if not os.path.isdir(tmpdir):
-            os.mkdir(tmpdir)
-        os.system(
-           "curl https://dcc.ligo.org/public/0163/P190412/009/posterior_samples.h5 "
-           "-o {}/GW190412_posterior_samples.h5".format(tmpdir)
+        from pesummary.core.fetch import download_dir
+        downloaded_file = os.path.join(
+            download_dir, "GW190814_posterior_samples.h5"
         )
-        type(self).result = read("{}/GW190412_posterior_samples.h5".format(tmpdir))
+        if not os.path.isfile(downloaded_file):
+            os.system(
+               "curl https://dcc.ligo.org/public/0168/P2000183/008/GW190814_posterior_samples.h5 "
+               "-o {}/GW190814_posterior_samples.h5".format(tmpdir)
+            )
+            downloaded_file = "{}/GW190814_posterior_samples.h5".format(tmpdir)
+
+        type(self).result = read(downloaded_file)
         type(self).posterior = type(self).result.samples_dict
 
     def teardown(self):
@@ -140,11 +143,11 @@ class TestWritePESummary(object):
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
         filename = {
-            "IMRPhenomHM": "test.{}".format(extension),
-            "IMRPhenomPv3HM": "test2.{}".format(extension)
+            "C01:IMRPhenomHM": "test.{}".format(extension),
+            "C01:IMRPhenomPv3HM": "test2.{}".format(extension)
         }
         self.result.write(
-            labels=["IMRPhenomHM", "IMRPhenomPv3HM"], file_format=file_format,
+            labels=["C01:IMRPhenomHM", "C01:IMRPhenomPv3HM"], file_format=file_format,
             filenames=filename, outdir=tmpdir, **kwargs
         )
         if not pesummary:
@@ -153,23 +156,23 @@ class TestWritePESummary(object):
             one = read("{}/test.{}".format(tmpdir, extension))
             two = read("{}/test2.{}".format(tmpdir, extension))
             np.testing.assert_almost_equal(
-                one.samples_dict["mass_1"], self.posterior["IMRPhenomHM"]["mass_1"]
+                one.samples_dict["mass_1"], self.posterior["C01:IMRPhenomHM"]["mass_1"]
             )
             np.testing.assert_almost_equal(
-                two.samples_dict["mass_1"], self.posterior["IMRPhenomPv3HM"]["mass_1"]
+                two.samples_dict["mass_1"], self.posterior["C01:IMRPhenomPv3HM"]["mass_1"]
             )
             os.system("rm {}/test.{}".format(tmpdir, extension))
             os.system("rm {}/test2.{}".format(tmpdir, extension))
         else:
             assert os.path.isfile("{}/test.h5".format(tmpdir))
             one = read("{}/test.h5".format(tmpdir))
-            assert sorted(one.labels) == sorted(["IMRPhenomHM"])
+            assert sorted(one.labels) == sorted(["C01:IMRPhenomHM"])
             np.testing.assert_almost_equal(
-                one.samples_dict["IMRPhenomHM"]["mass_1"],
-                self.posterior["IMRPhenomHM"]["mass_1"]
+                one.samples_dict["C01:IMRPhenomHM"]["mass_1"],
+                self.posterior["C01:IMRPhenomHM"]["mass_1"]
             )
             np.testing.assert_almost_equal(
-                one.psd["IMRPhenomHM"]["H1"], self.result.psd["IMRPhenomHM"]["H1"]
+                one.psd["C01:IMRPhenomHM"]["H1"], self.result.psd["C01:IMRPhenomHM"]["H1"]
             )
 
     def test_write_dat(self):

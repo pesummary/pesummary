@@ -125,7 +125,7 @@ def _read_hdf5_with_h5py(
             parameters = copy.deepcopy(original_parameters)
         samples = np.array(f[path_to_samples]["samples"])
     elif isinstance(f[path_to_samples], h5py._hl.dataset.Dataset):
-        parameters = f[path_to_samples].dtype.names
+        parameters = list(f[path_to_samples].dtype.names)
         samples = np.array(f[path_to_samples]).view((float, len(parameters))).tolist()
     if return_posterior_dataset:
         return parameters, samples, f[path_to_samples]

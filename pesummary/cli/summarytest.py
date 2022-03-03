@@ -4,6 +4,7 @@ import subprocess
 import os
 import sys
 import pesummary
+from pesummary.core.fetch import download_dir
 from pesummary.utils.utils import logger
 from pesummary.utils.decorators import tmp_directory
 import numpy as np
@@ -117,22 +118,31 @@ def tests(*args, output="./", multi_process=1, **kwargs):
     """Run the pesummary testing suite
     """
     import requests
+    from pesummary.gw.fetch import fetch_open_samples
     # download files for tests
     logger.info("Downloading files for tests")
+    if not os.path.isdir(download_dir):
+        os.makedirs(download_dir)
     data = requests.get(
         "https://dcc.ligo.org/public/0168/P2000183/008/GW190814_posterior_samples.h5"
     )
-    with open("{}/GW190814_posterior_samples.h5".format(output), "wb") as f:
+    with open("{}/GW190814_posterior_samples.h5".format(download_dir), "wb") as f:
         f.write(data.content)
     data = requests.get(
         "https://dcc.ligo.org/public/0163/P190412/012/GW190412_posterior_samples_v3.h5"
     )
-    with open("{}/GW190412_posterior_samples.h5".format(output), "wb") as f:
+    with open("{}/GW190412_posterior_samples.h5".format(download_dir), "wb") as f:
         f.write(data.content)
+    _ = fetch_open_samples(
+        "GW190424_180648", read_file=False, outdir=download_dir,
+        unpack=True, path="GW190424_180648.h5", catalog="GWTC-2"
+    )
     # launch pytest job
     command_line = (
-        "{} -m pytest --full-trace -n {} --max-worker-restart=2 --dist=loadfile --reruns 2 "
-        "--pyargs pesummary.tests ".format(sys.executable, multi_process)
+        "{} -m pytest --full-trace -n {} --verbose --max-worker-restart=2 "
+        "--dist=loadfile --reruns 2 --pyargs pesummary.tests ".format(
+            sys.executable, multi_process
+        )
     )
     if kwargs.get("pytest_config", None) is not None:
         command_line += "-c {} ".format(kwargs.get("pytest_config"))

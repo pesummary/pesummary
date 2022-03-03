@@ -797,6 +797,10 @@ class MultiAnalysisRead(Read):
 
     Methods
     -------
+    samples_dict_for_label: dict
+        dictionary of samples for a specific analysis
+    reduced_samples_dict: dict
+        dictionary of samples for one or more analyses
     downsample:
         downsample the posterior samples stored in the result file
     to_dat:
@@ -822,6 +826,52 @@ class MultiAnalysisRead(Read):
             )
         return _parameters, _samples
 
+    def samples_dict_for_label(self, label):
+        """Return the posterior samples for a specific label
+
+        Parameters
+        ----------
+        labels: str
+            label you wish to get posterior samples for
+
+        Returns
+        -------
+        outdict: SamplesDict
+            Returns a SamplesDict containing the requested posterior samples
+        """
+        if label not in self.labels:
+            raise ValueError("Unrecognised label: '{}'".format(label))
+        idx = self.labels.index(label)
+        return SamplesDict(self.parameters[idx], np.array(self.samples[idx]).T)
+
+    def reduced_samples_dict(self, labels):
+        """Return the posterior samples for one or more labels
+
+        Parameters
+        ----------
+        labels: str, list
+            label(s) you wish to get posterior samples for
+
+        Returns
+        -------
+        outdict: MultiAnalysisSamplesDict
+            Returns a MultiAnalysisSamplesDict containing the requested
+            posterior samples
+        """
+        if not isinstance(labels, list):
+            labels = [labels]
+        not_allowed = [_label for _label in labels if _label not in self.labels]
+        if len(not_allowed):
+            raise ValueError(
+                "Unrecognised label(s) '{}'. The list of available labels are "
+                "{}.".format(", ".join(not_allowed), ", ".join(self.labels))
+            )
+        return MultiAnalysisSamplesDict(
+            {
+                label: self.samples_dict_for_label(label) for label in labels
+            }
+        )
+
     @property
     def samples_dict(self):
         if self.mcmc_samples:
@@ -829,19 +879,7 @@ class MultiAnalysisRead(Read):
                 self.parameters[0], [np.array(i).T for i in self.samples[0]]
             )
         else:
-            if all("log_likelihood" in i for i in self.parameters):
-                likelihood_inds = [self.parameters[idx].index("log_likelihood")
-                                   for idx in range(len(self.labels))]
-                likelihoods = [[i[likelihood_inds[idx]] for i in self.samples[idx]]
-                               for idx, label in enumerate(self.labels)]
-            else:
-                likelihoods = [None] * len(self.labels)
-            outdict = MultiAnalysisSamplesDict({
-                label:
-                    SamplesDict(
-                        self.parameters[idx], np.array(self.samples[idx]).T
-                    ) for idx, label in enumerate(self.labels)
-            })
+            outdict = self.reduced_samples_dict(self.labels)
         return outdict
 
     @property

@@ -1,5 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+import os
 import numpy as np
 from pathlib import Path
 from pesummary.core.command_line import command_line
@@ -287,7 +288,6 @@ def make_injection_file(
 ):
     """
     """
-    import os
     from pesummary.io import write
 
     filename = os.path.join(outdir, "injection.{}".format(extension))

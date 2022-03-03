@@ -11,6 +11,7 @@ from tempfile import NamedTemporaryFile
 import tarfile
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+download_dir = os.path.expanduser(os.path.join("~", ".cache", "data"))
 
 try:
     import ciecplib

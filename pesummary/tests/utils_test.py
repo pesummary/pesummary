@@ -14,6 +14,7 @@ from pesummary.utils.tqdm import tqdm
 from pesummary.utils.dict import Dict
 from pesummary.utils.list import List
 from pesummary.utils.pdf import DiscretePDF, DiscretePDF2D, DiscretePDF2Dplus1D
+from pesummary.utils.array import _2DArray
 from pesummary.utils.samples_dict import (
     Array, SamplesDict, MCMCSamplesDict, MultiAnalysisSamplesDict
 )
@@ -327,6 +328,12 @@ class TestSamplesDict(object):
         assert len(dataset.downsample(10)["a"]) == 10
         dataset = SamplesDict(self.parameters, self.samples)
         assert len(dataset.discard_samples(10)["a"]) == len(self.samples[0]) - 10
+        np.testing.assert_almost_equal(
+            dataset.discard_samples(10)["a"], self.samples[0][10:]
+        )
+        np.testing.assert_almost_equal(
+            dataset.discard_samples(10)["b"], self.samples[1][10:]
+        )
         p = dataset.to_pandas()
         assert isinstance(p, pd.core.frame.DataFrame)
         remove = dataset.pop("a")
@@ -373,16 +380,24 @@ class TestSamplesDict(object):
     def test_waveforms(self):
         """Test the waveform generation
         """
-        from pesummary.gw.fetch import fetch_open_samples
+        from pesummary.core.fetch import download_dir
         try:
             from pycbc.waveform import get_fd_waveform, get_td_waveform
         except (ValueError, ImportError):
             return
 
-        f = fetch_open_samples(
-            "GW190814", read_file=True, outdir=".", unpack=True,
-            path="GW190814.h5", catalog="GWTC-2"
+        downloaded_file = os.path.join(
+            download_dir, "GW190814_posterior_samples.h5"
         )
+        if not os.path.isfile(downloaded_file):
+            from pesummary.gw.fetch import fetch_open_samples
+            f = fetch_open_samples(
+                "GW190814", read_file=True, outdir=download_dir, unpack=True,
+                path="GW190814.h5", catalog="GWTC-2"
+            )
+        else:
+            from pesummary.io import read
+            f = read(downloaded_file)
         samples = f.samples_dict["C01:IMRPhenomPv3HM"]
         ind = 0
         data = samples.fd_waveform("IMRPhenomPv3HM", 1./256, 20., 1024., ind=ind)
@@ -805,6 +820,50 @@ class TestList(object):
         assert array.added == ["g"]
         array.pop(0)
         assert sorted(array.removed) == sorted(["e", "f", "a"])
+
+
+def test_2DArray():
+    """Test the pesummary.utils.array._2DArray class
+    """
+    samples = [
+        np.random.normal(np.random.randint(100), 0.2, size=1000) for _ in
+        range(10)
+    ]
+    arrays = _2DArray(samples)
+    for num, array in enumerate(arrays):
+        np.testing.assert_almost_equal(array, samples[num])
+    for num, array in enumerate(arrays):
+        assert array.standard_deviation == np.std(samples[num])
+        assert array.minimum == np.min(samples[num])
+        assert array.maximum == np.max(samples[num])
+        _key_data = array.key_data
+        assert _key_data["5th percentile"] == np.percentile(samples[num], 5)
+        assert _key_data["95th percentile"] == np.percentile(samples[num], 95)
+        assert _key_data["median"] == np.median(samples[num])
+        assert _key_data["mean"] == np.mean(samples[num])
+
+    samples = [
+        np.random.normal(np.random.randint(100), 0.2, size=1000) for _ in
+        range(10)
+    ]
+    likelihood = np.random.uniform(0, 1, 1000)
+    prior = np.random.uniform(0, 1, 1000)
+    arrays = _2DArray(samples, likelihood=likelihood, prior=prior)
+    for num, array in enumerate(arrays):
+        np.testing.assert_almost_equal(array, samples[num])
+    for num, array in enumerate(arrays):
+        assert array.standard_deviation == np.std(samples[num])
+        assert array.minimum == np.min(samples[num])
+        assert array.maximum == np.max(samples[num])
+        assert array.maxL == array[np.argmax(likelihood)]
+        assert array.maxP == array[np.argmax(likelihood + prior)]
+        _key_data = array.key_data
+        assert _key_data["5th percentile"] == np.percentile(samples[num], 5)
+        assert _key_data["95th percentile"] == np.percentile(samples[num], 95)
+        assert _key_data["median"] == np.median(samples[num])
+        assert _key_data["mean"] == np.mean(samples[num])
+        assert _key_data["maxL"] == array.maxL
+        assert _key_data["maxP"] == array.maxP
 
 
 class TestArray(object):

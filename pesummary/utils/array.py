@@ -5,6 +5,52 @@ import numpy as np
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
+def _2DArray(input_array, likelihood=None, prior=None, weights=None):
+    """Helper function for initialising multiple Array objects.
+
+    Parameters
+    ----------
+    input_array: np.ndarray, list
+        input list/array
+    likelihood: list, optional
+        log likelihood samples to use when calculating maximum likelihood
+    prior: list, optional
+        log prior samples to use when calculating maximum posterior
+    weights: list, optional
+        weights to use for the samples
+
+    Returns
+    -------
+    array: list
+        list of Array objects of size len(input_array)
+    """
+    obj = np.atleast_2d(input_array)
+    if obj.ndim > 2:
+        raise ValueError("Input must be one- or two-dimensional")
+    if not obj.shape[-1]:
+        standard_deviation, minimum, maximum = [None], [None], [None]
+    else:
+        standard_deviation = np.std(obj, axis=1)
+        minimum = np.min(obj, axis=1)
+        maximum = np.max(obj, axis=1)
+    try:
+        maxL = Array._maxL(obj.T, likelihood=likelihood)
+    except Exception:
+        maxL = None
+    try:
+        maxP = Array._maxP(obj.T, log_likelihood=likelihood, log_prior=prior)
+    except Exception:
+        maxP = None
+    return [
+        Array(
+            _array, minimum=minimum[num], maximum=maximum[num],
+            standard_deviation=standard_deviation[num],
+            maxL=maxL[num] if maxL is not None else None,
+            maxP=maxP[num] if maxP is not None else None, weights=weights
+        ) for num, _array in enumerate(obj)
+    ]
+
+
 class Array(np.ndarray):
     """Class to add extra functions and methods to np.ndarray
 
@@ -23,24 +69,34 @@ class Array(np.ndarray):
         dictionary containing the key data associated with the array
     """
     __slots__ = [
-        "standard_deviation", "minimum", "maximum", "maxL", "maxP", "weights",
-        "key_data"
+        "standard_deviation", "minimum", "maximum", "maxL", "maxP", "weights"
     ]
 
-    def __new__(cls, input_array, likelihood=None, prior=None, weights=None):
+    def __new__(
+        cls, input_array, standard_deviation=None, minimum=None, maximum=None,
+        maxL=None, maxP=None, likelihood=None, prior=None,
+        weights=None
+    ):
         obj = np.asarray(input_array).view(cls)
-        try:
-            obj.standard_deviation = np.std(obj)
-            obj.minimum = np.min(obj)
-            obj.maximum = np.max(obj)
-            obj.maxL = cls._maxL(obj, likelihood)
-            obj.maxP = cls._maxP(obj, log_likelihood=likelihood, log_prior=prior)
-            obj.weights = weights
-            obj.key_data = cls._key_data(obj)
-        except Exception:
-            obj.standard_deviation = None
-            obj.minimum, obj.maximum, obj.maxL = None, None, None
-            obj.maxP, obj.key_data = None, {}
+        obj.weights = weights
+        mapping = {
+            "standard_deviation": [standard_deviation, np.std, {}],
+            "minimum": [minimum, np.min, {}],
+            "maximum": [maximum, np.max, {}],
+            "maxL": [maxL, cls._maxL, {"likelihood": likelihood}],
+            "maxP": [
+                maxP, cls._maxP,
+                {"log_likelihood": likelihood, "log_prior": prior}
+            ],
+        }
+        for attr, item in mapping.items():
+            if item[0] is None:
+                try:
+                    setattr(obj, attr, item[1](obj, **item[2]))
+                except Exception:
+                    setattr(obj, attr, None)
+            else:
+                setattr(obj, attr, item[0])
         return obj
 
     def __reduce__(self):
@@ -51,14 +107,13 @@ class Array(np.ndarray):
         return (pickled_state[0], pickled_state[1], new_state)
 
     def __setstate__(self, state):
-        self.standard_deviation = state[-7]
-        self.minimum = state[-6]
-        self.maximum = state[-5]
-        self.maxL = state[-4]
-        self.maxP = state[-3]
-        self.weights = state[-2]
-        self.key_data = state[-1]
-        super(Array, self).__setstate__(state[0:-7])
+        self.standard_deviation = state[-6]
+        self.minimum = state[-5]
+        self.maximum = state[-4]
+        self.maxL = state[-3]
+        self.maxP = state[-2]
+        self.weights = state[-1]
+        super(Array, self).__setstate__(state[0:-6])
 
     def average(self, type="mean"):
         """Return the average of the array
@@ -146,6 +201,10 @@ class Array(np.ndarray):
 
     def to_dtype(self, _dtype):
         return _dtype(self)
+
+    @property
+    def key_data(self):
+        return self._key_data(self)
 
     @staticmethod
     def _key_data(
@@ -260,4 +319,3 @@ class Array(np.ndarray):
         self.maxL = getattr(obj, 'maxL', None)
         self.maxP = getattr(obj, 'maxP', None)
         self.weights = getattr(obj, 'weights', None)
-        self.key_data = getattr(obj, 'key_data', None)

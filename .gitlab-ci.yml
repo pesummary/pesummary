@@ -32,7 +32,7 @@ before_script:
   - pip install -r optional_requirements.txt
   - 'apt-get update -y && bash && apt-get -y install pandoc'
   - export USER=albert.einstein
-  - export NCPU=`python -c "import multiprocessing; print(min(6, multiprocessing.cpu_count()))"`
+  - export NCPU=`python -c "import multiprocessing; print(min(4, multiprocessing.cpu_count()))"`
 
 
 .prepare_testing: &prepare_testing

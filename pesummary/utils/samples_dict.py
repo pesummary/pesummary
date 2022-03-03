@@ -4,7 +4,7 @@ import copy
 import numpy as np
 from pesummary.utils.utils import resample_posterior_distribution, logger
 from pesummary.utils.decorators import docstring_subfunction
-from pesummary.utils.array import Array
+from pesummary.utils.array import Array, _2DArray
 from pesummary.utils.dict import Dict
 from pesummary.utils.parameters import Parameters
 from pesummary.core.plots.latex_labels import latex_labels
@@ -394,11 +394,12 @@ class SamplesDict(Dict):
             weights = self.samples[ind][discard_samples:]
         else:
             weights = None
-        for key, val in zip(self.parameters, self.samples):
-            self[key] = Array(
-                val[discard_samples:], likelihood=likelihoods, prior=priors,
-                weights=weights
-            )
+        _2d_array = _2DArray(
+            np.array(self.samples)[:, discard_samples:], likelihood=likelihoods,
+            prior=priors, weights=weights
+        )
+        for key, val in zip(self.parameters, _2d_array):
+            self[key] = val
 
     @docstring_subfunction([
         'pesummary.core.plots.plot._1d_histogram_plot',

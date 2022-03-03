@@ -27,12 +27,16 @@ class TestPublicNoteBook(object):
             shutil.rmtree(tmpdir)
 
     def test_public_notebook(self):
-        file_name = fetch_open_samples(
-            "GW190424_180648", read_file=False, outdir=".", unpack=True,
-            path="GW190424_180648.h5", catalog="GWTC-2"
-        )
+        from pesummary.core.fetch import download_dir
+        file_name = os.path.join(download_dir, "GW190424_180648.h5")
+        if not os.path.isfile(file_name):
+            from pesummary.gw.fetch import fetch_open_samples
+            file_name = fetch_open_samples(
+                "GW190424_180648", read_file=False, outdir=download_dir,
+                unpack=True, path="GW190424_180648.h5", catalog="GWTC-2"
+            )
         make_public_notebook(
-            "./GW190424_180648.h5", "Title", default_analysis="PublicationSamples",
+            file_name, "Title", default_analysis="PublicationSamples",
             default_parameter="mass_ratio", outdir=tmpdir,
             filename="posterior_samples.ipynb"
         )

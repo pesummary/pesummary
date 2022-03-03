@@ -185,6 +185,10 @@ class PESummary(MultiAnalysisRead):
 
     Methods
     -------
+    samples_dict_for_label: dict
+        dictionary of samples for a specific analysis
+    reduced_samples_dict: dict
+        dictionary of samples for one or more analyses
     to_dat:
         save the posterior samples to a .dat file
     to_bilby:
