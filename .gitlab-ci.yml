@@ -8,8 +8,7 @@ include:
 stages:
   - build
   - basic
-  - test:base
-  - test:executables
+  - test
   - end-to-end
   - compatibility
   - coverage
@@ -115,7 +114,7 @@ docker:
 
 executables:
   stage: basic
-  image: python:3.7
+  image: python:3.8
   needs:
     - tarball
   script:
@@ -126,7 +125,7 @@ executables:
 
 imports:
   stage: basic
-  image: python:3.7
+  image: python:3.8
   needs:
     - tarball
   script:
@@ -162,7 +161,7 @@ documentation:
 
 examples:
   stage: basic
-  image: python:3.7
+  image: python:3.8
   needs:
     - tarball
   script:
@@ -174,7 +173,7 @@ examples:
 
 authors:
   stage: basic
-  image: python:3.7
+  image: python:3.8
   needs:
     - tarball
   script:
@@ -192,9 +191,9 @@ authors:
     - style
 
 
-.python-3.7-testing:
+.python-3.8-testing:
   extends: .base-testing
-  image: python:3.7
+  image: python:3.8
   artifacts:
     paths:
       - .coverage*
@@ -202,19 +201,14 @@ authors:
       - coverage_badge.svg
 
 
-.python-3.8-testing:
-  extends: .base-testing
-  image: python:3.8
-
-
 .python-3.9-testing:
   extends: .base-testing
   image: python:3.9
 
 
-python-3.7-base:
-  extends: .python-3.7-testing
-  stage: test:base
+python-3.8-base:
+  extends: .python-3.8-testing
+  stage: test
   script:
     - *prepare_testing
     - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
@@ -222,39 +216,20 @@ python-3.7-base:
     - mv _testing/.coverage* .
     - mv .coverage .coverage_base
 
-python-3.7-exe:
-  extends: .python-3.7-testing
-  stage: test:executables
+python-3.8-exe:
+  extends: .python-3.8-testing
+  stage: test
   script:
     - *prepare_testing
-    - summarytest --multi_process 1 -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
+    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
     - *finalise_testing
     - mv _testing/.coverage* .
     - mv .coverage .coverage_exe
-  allow_failure: true
-
-
-python-3.8-base:
-  extends: .python-3.8-testing
-  stage: test:base
-  script:
-    - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
-    - *finalise_testing
-
-
-python-3.8-exe:
-  extends: .python-3.8-testing
-  stage: test:executables
-  script:
-    - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
-    - *finalise_testing
 
 
 python-3.9-base:
   extends: .python-3.9-testing
-  stage: test:base
+  stage: test
   script:
     - *prepare_testing
     - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
@@ -263,16 +238,11 @@ python-3.9-base:
 
 python-3.9-exe:
   extends: .python-3.9-testing
-  stage: test:executables
+  stage: test
   script:
     - *prepare_testing
     - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
     - *finalise_testing
-
-
-python-3.7-core:
-  <<: *core_workflow
-  image: python:3.7
 
 
 python-3.8-core:
@@ -283,11 +253,6 @@ python-3.8-core:
 python-3.9-core:
   <<: *core_workflow
   image: python:3.9
-
-
-python-3.7-gw:
-  <<: *gw_workflow
-  image: python:3.7
 
 
 python-3.8-gw:
@@ -301,7 +266,7 @@ python-3.9-gw:
 
 
 ligo_skymap:
-  extends: .python-3.7-testing
+  extends: .python-3.8-testing
   stage: compatibility
   script:
     - *prepare_testing
@@ -316,15 +281,14 @@ ligo_skymap:
 
 lalinference_pipe:
   stage: compatibility
-  image: python:3.7-buster
+  image: python:3.8-buster
   needs:
     - tarball
     - executables
     - imports
     - style
-  before_script:
-    - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
   script:
+    - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
     - *prepare_testing
     - summarytest --type lalinference
     - *finalise_testing
@@ -335,7 +299,7 @@ lalinference_pipe:
 
 bilby:
   stage: compatibility
-  image: python:3.7
+  image: python:3.8
   needs:
     - tarball
     - executables
@@ -352,7 +316,7 @@ bilby:
 
 bilby_pipe:
   stage: compatibility
-  image: python:3.7
+  image: python:3.8
   needs:
     - tarball
     - executables
@@ -369,7 +333,7 @@ bilby_pipe:
 
 pycbc_inference:
   stage: compatibility
-  image: python:3.7
+  image: python:3.8
   needs:
     - tarball
     - executables
@@ -386,7 +350,7 @@ pycbc_inference:
 
 .GWTCN: &GWTCN
   stage: compatibility
-  image: python:3.7
+  image: python:3.8
   needs:
     - tarball
     - executables
@@ -417,12 +381,12 @@ GWTC3:
 
 
 coverage:
-  extends: .python-3.7-testing
+  extends: .python-3.8-testing
   stage: coverage
   needs:
     - tarball
-    - python-3.7-base
-    - python-3.7-exe
+    - python-3.8-base
+    - python-3.8-exe
     - ligo_skymap
   script:
     - *prepare_testing
@@ -435,28 +399,16 @@ coverage:
 
 build_examples:
   stage: deploy
-  image: python:3.7
+  image: python:3.8
   script:
     - curl --request POST --form "token=$CI_EXAMPLES_TRIGGER_TOKEN" --form ref=master https://git.ligo.org/api/v4/projects/3386/trigger/pipeline
   only:
     - master@lscsoft/pesummary
 
 
-release:
-  stage: deploy
-  image: python:3.7
-  script:
-    - curl --request POST --form "variables[REPO]=pesummary" --form ref=master --form "token=$CI_RELEASE_TRIGGER_TOKEN" https://git.ligo.org/api/v4/projects/4737/trigger/pipeline
-  only:
-    refs:
-      - master@lscsoft/pesummary
-    variables:
-      - $CI_COMMIT_MESSAGE =~ /Releasing version/
-
-
 pages:
   stage: deploy
-  image: python:3.7
+  image: python:3.8
   dependencies:
     - tarball
     - executables
@@ -464,16 +416,12 @@ pages:
     - style
     - documentation
     - examples
-    - python-3.7-base
-    - python-3.7-exe
     - python-3.8-base
     - python-3.8-exe
     - python-3.9-base
     - python-3.9-exe
-    - python-3.7-core
     - python-3.8-core
     - python-3.9-core
-    - python-3.7-gw
     - python-3.8-gw
     - python-3.9-gw
     - bilby
