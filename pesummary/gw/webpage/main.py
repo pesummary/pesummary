@@ -182,22 +182,21 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             parameters, starting_letter=False
         )
 
-    def _jensen_shannon_divergence(self, param, samples):
-        """Return the Jensen Shannon divergence between two sets of samples
+    def _kde_from_same_samples(self, param, samples):
+        """Generate KDEs for a set of samples
 
         Parameters
         ----------
         param: str
             The parameter that the samples belong to
         samples: list
-            2d list containing the samples you wish to calculate the Jensen
-            Shannon divergence between
+            list of samples for each result file
         """
         from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
         from pesummary.gw.plots.plot import _return_bounds
 
         xlow, xhigh = _return_bounds(param, samples, comparison=True)
-        return super(_WebpageGeneration, self)._jensen_shannon_divergence(
+        return super(_WebpageGeneration, self)._kde_from_same_samples(
             param, samples, kde=ReflectionBoundedKDE, xlow=xlow, xhigh=xhigh
         )
 

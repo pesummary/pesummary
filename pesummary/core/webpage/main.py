@@ -15,7 +15,7 @@ import math
 import pesummary
 from pesummary import conf, __version_string__
 from pesummary.utils.utils import (
-    logger, LOG_FILE, jensen_shannon_divergence, safe_round, make_dir
+    logger, LOG_FILE, jensen_shannon_divergence_from_pdfs, safe_round, make_dir
 )
 from pesummary.core.webpage import webpage
 
@@ -309,26 +309,30 @@ class _WebpageGeneration(object):
                 rows
             ] for j in columns
         ]
-        js = [
-            [
-                self._jensen_shannon_divergence(param, [samples[i], samples[j]])
-                for i in rows
-            ] for j in columns
-        ]
-        return [ks, js]
+        # JS divergence is symmetric and therefore we just need to loop over
+        # one triangle
+        js = np.zeros((len(samples), len(samples)))
+        pdfs = self._kde_from_same_samples(param, samples)
+        for num, i in enumerate(range(1, len(js))):
+            for idx, j in enumerate(range(0, i)):
+                js[i][idx] += jensen_shannon_divergence_from_pdfs(
+                    [pdfs[i], pdfs[j]]
+                )
+        js = js + js.T
+        return [ks, js.tolist()]
 
-    def _jensen_shannon_divergence(self, param, samples, **kwargs):
-        """Return the Jensen Shannon divergence between two sets of samples
+    def _kde_from_same_samples(self, param, samples, **kwargs):
+        """Generate KDEs for a set of samples
 
         Parameters
         ----------
         param: str
             The parameter that the samples belong to
         samples: list
-            2d list containing the samples you wish to calculate the Jensen
-            Shannon divergence between
+            list of samples for each result file
         """
-        return jensen_shannon_divergence([samples[0], samples[1]], **kwargs)
+        from pesummary.utils.utils import samples_to_kde
+        return samples_to_kde(samples, **kwargs)
 
     @staticmethod
     def get_executable(executable):
