@@ -777,7 +777,17 @@ def kolmogorov_smirnov_test(samples, decimal=5):
     return np.round(stats.ks_2samp(*samples)[1], decimal)
 
 
-def jensen_shannon_divergence(
+def jensen_shannon_divergence(*args, **kwargs):
+    import warnings
+    warnings.warn(
+        "The jensen_shannon_divergence function has changed its name to "
+        "jensen_shannon_divergence_from_samples. jensen_shannon_divergence "
+        "may not be supported in future releases. Please update"
+    )
+    return jensen_shannon_divergence_from_samples(*args, **kwargs)
+
+
+def jensen_shannon_divergence_from_samples(
     samples, kde=stats.gaussian_kde, decimal=5, base=np.e, **kwargs
 ):
     """Calculate the JS divergence between two sets of samples
@@ -796,16 +806,26 @@ def jensen_shannon_divergence(
     kwargs: dict
         all kwargs are passed to the kde function
     """
-    try:
-        kernel = [kde(i, **kwargs) for i in samples]
-    except np.linalg.LinAlgError:
+    pdfs = samples_to_kde(samples, kde=kde, **kwargs)
+    return jensen_shannon_divergence_from_pdfs(pdfs, decimal=decimal, base=base)
+
+
+def jensen_shannon_divergence_from_pdfs(pdfs, decimal=5, base=np.e):
+    """Calculate the JS divergence between two distributions
+
+    Parameters
+    ----------
+    pdfs: list
+        list of length 2 containing the distributions you wish to compare
+    decimal: int, float
+        number of decimal places to round the JS divergence to
+    base: float, optional
+        optional base to use for the scipy.stats.entropy function. Default
+        np.e
+    """
+    if any(np.isnan(_).any() for _ in pdfs):
         return float("nan")
-    x = np.linspace(
-        np.min([np.min(i) for i in samples]),
-        np.max([np.max(i) for i in samples]),
-        100
-    )
-    a, b = [k(x) for k in kernel]
+    a, b = pdfs
     a = np.asarray(a)
     b = np.asarray(b)
     a /= a.sum()
@@ -814,6 +834,40 @@ def jensen_shannon_divergence(
     kl_forward = stats.entropy(a, qk=m, base=base)
     kl_backward = stats.entropy(b, qk=m, base=base)
     return np.round(kl_forward / 2. + kl_backward / 2., decimal)
+
+
+def samples_to_kde(samples, kde=stats.gaussian_kde, **kwargs):
+    """Generate KDE for a set of samples
+
+    Parameters
+    ----------
+    samples: list
+        list containing the samples to create a KDE for. samples can also
+        be a 2d list containing samples from multiple analyses.
+    kde: func
+        function to use when calculating the kde of the samples
+    """
+    _SINGLE_ANALYSIS = False
+    if not isinstance(samples[0], (np.ndarray, list, tuple)):
+        _SINGLE_ANALYSIS = True
+        _samples = [samples]
+    else:
+        _samples = samples
+    kernel = []
+    for i in _samples:
+        try:
+            kernel.append(kde(i, **kwargs))
+        except np.linalg.LinAlgError:
+            kernel.append(None)
+    x = np.linspace(
+        np.min([np.min(i) for i in _samples]),
+        np.max([np.max(i) for i in _samples]),
+        100
+    )
+    pdfs = [k(x) if k is not None else float('nan') for k in kernel]
+    if _SINGLE_ANALYSIS:
+        return pdfs[0]
+    return pdfs
 
 
 def make_cache_style_file(style_file):
