@@ -556,6 +556,18 @@ class _Conversion(object):
         from pesummary.gw.file.standard_names import tidal_params
 
         if any(param in self.parameters for param in tidal_params):
+            if not all(_ in self.parameters for _ in ["lambda_1", "lambda_2"]):
+                return True
+            _tidal_posterior = self.specific_parameter_samples(
+                ["lambda_1", "lambda_2"]
+            )
+            if not all(np.any(_) for _ in _tidal_posterior):
+                logger.warning(
+                    "Tidal deformability parameters found in the posterior "
+                    "table but they are all exactly 0. Assuming this is a BBH "
+                    "system."
+                )
+                return False
             return True
         return False
 
@@ -564,10 +576,27 @@ class _Conversion(object):
         system
         """
         if "lambda_2" in self.parameters and "lambda_1" not in self.parameters:
+            _lambda_2 = self.specific_parameter_samples(["lambda_2"])
+            if not np.any(_lambda_2):
+                logger.warning(
+                    "Posterior samples for lambda_2 found in the posterior "
+                    "table but they are all exactly 0. Assuming this is a BBH "
+                    "system."
+                ) 
+                return False
             return True
         elif "lambda_2" in self.parameters and "lambda_1" in self.parameters:
-            _lambda_1 = self.specific_parameter_samples(["lambda_1"])
-            if not np.any(_lambda_1):
+            _lambda_1, _lambda_2 = self.specific_parameter_samples(
+                ["lambda_1", "lambda_2"]
+            )
+            if not np.any(_lambda_1) and not np.any(_lambda_2):
+                return False
+            elif not np.any(_lambda_1):
+                logger.warning(
+                    "Posterior samples for lambda_1 and lambda_2 found in the "
+                    "posterior table but lambda_1 is always exactly 0. "
+                    "Assuming this is an NSBH system."
+                )
                 return True
         return False
 
