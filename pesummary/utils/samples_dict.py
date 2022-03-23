@@ -135,7 +135,20 @@ class SamplesDict(Dict):
         try:
             if key not in self.parameters:
                 self.parameters.append(key)
-                self.samples = np.vstack([self.samples, value])
+                try:
+                    cond = (
+                        np.array(self.samples).ndim == 1 and isinstance(
+                            self.samples[0], (float, int, np.number)
+                        )
+                    )
+                except Exception:
+                    cond = False
+                if cond and isinstance(self.samples, np.ndarray):
+                    self.samples = np.append(self.samples, value)
+                elif cond and isinstance(self.samples, list):
+                    self.samples.append(value)
+                else:
+                    self.samples = np.vstack([self.samples, value])
                 self._update_latex_labels()
         except (AttributeError, TypeError):
             pass
