@@ -540,7 +540,7 @@ class PESummary(MultiAnalysisRead):
             elif isinstance(filenames, dict):
                 filename = filenames[label]
             else:
-                filename = filenames
+                filename = filenames[num]
 
             if _config or kwargs.get("file_format", "dat") == "ini":
                 kwargs["file_format"] = "ini"
