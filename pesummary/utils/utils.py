@@ -1084,5 +1084,21 @@ def history_dictionary(program=None, creator=conf.user, command_line=None):
     return _dict
 
 
+def mute_logger():
+    """Mute the PESummary logger
+    """
+    _logger = logging.getLogger('PESummary')
+    _logger.setLevel(logging.CRITICAL + 10)
+    return
+
+
+def unmute_logger():
+    """Unmute the PESummary logger
+    """
+    _logger = logging.getLogger('PESummary')
+    _logger.setLevel(logging.INFO)
+    return
+
+
 _, LOG_FILE = setup_logger()
 logger = logging.getLogger('PESummary')
