@@ -263,6 +263,9 @@ python-3.8-gw:
 python-3.9-gw:
   <<: *gw_workflow
   image: python:3.9
+  retry:
+    max: 2
+    when: stuck_or_timeout_failure
 
 
 ligo_skymap:
