@@ -82,7 +82,8 @@ def test_fetch_open_samples():
     """
     data = fetch_open_samples("GW150914")
     _data = requests.get(
-        "https://dcc.ligo.org/public/0157/P1800370/005/GW150914_GWTC-1.hdf5"
+        "https://zenodo.org/api/files/ecf41927-9275-47da-8b37-e299693fe5cb/" +
+        "IGWN-GWTC2p1-v2-GW150914_095045_PEDataRelease_mixed_cosmo.h5"
     )
     with open("GW150914_posterior_samples.h5", "wb") as f:
         f.write(_data.content)
