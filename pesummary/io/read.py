@@ -19,7 +19,7 @@ OTHER = {
 }
 
 
-def _fetch(ff, function):
+def _fetch(ff, function, **kwargs):
     """Copy a file from a remote location to a temporary folder ready for
     reading
 
@@ -30,7 +30,7 @@ def _fetch(ff, function):
     function: func
         function you wish to use for fetching the file from a remote location
     """
-    filename = function(ff, read_file=False)
+    filename = function(ff, read_file=False, **kwargs)
     path = str(filename)
     return path
 
@@ -44,7 +44,7 @@ def _fetch_from_url(url):
         url of a result file you wish to load
     """
     from pesummary.core.fetch import download_and_read_file
-    return _fetch(url, download_and_read_file)
+    return _fetch(url, download_and_read_file, download_kwargs={"timeout": 60})
 
 
 def _fetch_from_remote_server(ff):

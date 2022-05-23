@@ -27,16 +27,14 @@ cache:
 
 
 before_script:
-  - pip install -r requirements.txt
-  - pip install -r testing_requirements.txt
-  - pip install -r optional_requirements.txt
+  - python -m pip install .[test,extras]
+  - cat pesummary/.version
   - 'apt-get update -y && bash && apt-get -y install pandoc'
   - export USER=albert.einstein
   - export NCPU=`python -c "import multiprocessing; print(min(4, multiprocessing.cpu_count()))"`
 
 
 .prepare_testing: &prepare_testing
-  - pip install pesummary-*.tar.*
   - export BASE=`pwd`
   - export PESUMMARY_REPO_DIR=${BASE}
   - export PESUMMARY_TESTING_DIR=`python -c "import pkg_resources; print(pkg_resources.resource_filename('pesummary', 'tests'))"`
@@ -88,9 +86,13 @@ conda:
   stage: build
   needs: []
   script:
-    - conda create --name py38 python=3.8
+    - conda create --name py38 python=3.8 pip2conda
     - conda activate py38
-    - conda install --file conda_requirements.txt -c conda-forge
+    - pip2conda --all --output environment.txt
+    - echo "-----------------"
+    - cat environment.txt
+    - echo "-----------------"
+    - conda install --file environment.txt -c conda-forge
     - python -m pip install .
 
 
@@ -148,7 +150,7 @@ documentation:
   needs:
     - tarball
   script:
-    - pip install pesummary-*.tar.*
+    - python -m pip install .[docs]
     - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
     - ipython kernel install --user --name=python3
     - cd docs

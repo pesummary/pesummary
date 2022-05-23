@@ -135,7 +135,8 @@ def tests(*args, output="./", multi_process=1, **kwargs):
         f.write(data.content)
     _ = fetch_open_samples(
         "GW190424_180648", read_file=False, outdir=download_dir,
-        unpack=True, path="GW190424_180648.h5", catalog="GWTC-2"
+        unpack=True, path="GW190424_180648.h5", catalog="GWTC-2",
+        download_kwargs={"timeout": 60}
     )
     # launch pytest job
     command_line = (
@@ -246,7 +247,7 @@ def _public_pesummary_result_file(event, catalog=None, unpack=True, **kwargs):
 
     download = fetch_open_samples(
         event, catalog=catalog, read_file=False, delete_on_exit=False,
-        outdir="./", unpack=unpack
+        outdir="./", unpack=unpack, download_kwargs={"timeout": 120}
     )
     command_line = "{} {} -f {}.h5".format(
         sys.executable,
