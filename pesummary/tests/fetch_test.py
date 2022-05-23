@@ -88,9 +88,10 @@ def test_fetch_open_samples():
     with open("GW150914_posterior_samples.h5", "wb") as f:
         f.write(_data.content)
     data2 = read("GW150914_posterior_samples.h5")
-    np.testing.assert_almost_equal(
-        np.array(data.samples), np.array(data2.samples)
-    )
+    for num in range(len(data.labels)):
+        np.testing.assert_almost_equal(
+            np.array(data.samples[num]), np.array(data2.samples[num])
+        )
 
 
 def test_fetch_open_strain():
