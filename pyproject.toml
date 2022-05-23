@@ -1,3 +1,34 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "setuptools_scm[toml]>=3.4.3",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.coverage.paths]
+source = [
+    "pesummary/",
+    "/usr/lib/python*/*-packages/pesummary/",
+    "/usr/local/lib/python*/*-packages/pesummary/",
+]
+
+[tool.coverage.report]
+precision = 1
+
+[tool.coverage.run]
+source = "./pesummary"
+omit = [
+    "*/_version.py",
+    "pesummary/tests/*"
+]
+
+[tool.pytest.ini_options]
+addopts = "-p no:warnings"
+
+[tool.setuptools_scm]
+write_to = "pesummary/_version.py"
+
 [tool.black]
 line-length = 90
 exclude = '''

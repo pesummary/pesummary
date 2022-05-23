@@ -182,9 +182,16 @@ def get_version_information(short=False):
     short: Bool
         If True, only return the version. If False, return git hash
     """
-    from ._version import get_versions
+    try:
+        from ._version import version
+    except ModuleNotFoundError:
+        try:
+            # in build
+            import setuptools_scm
+            version = setuptools_scm.get_version()
+        except ImportError:
+            version = ""
 
-    version = get_versions()['version']
     if short:
         return version.split("+")[0]
     return version

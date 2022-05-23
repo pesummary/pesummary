@@ -15,7 +15,7 @@ running,
 
 ```bash
 $ cd pesummary
-$ python setup.py install
+$ pip install .
 ```
 
 which will install `PESummary`. For further instructions on how to install
@@ -127,9 +127,9 @@ commands,
 
 ```bash
 $ cd pesummary
-$ pip install optional_requirements.txt
+$ pip install .[tests]
 $ cd pesummary
-$ covarage run -m pytest tests/
+$ coverage run -m pytest tests/
 $ coverage html
 ```
 
@@ -146,7 +146,7 @@ style. To check code style, run the following commands,
 
 ```bash
 $ cd pesummary
-$ pip install optional_requirements.txt
+$ pip install .[lint]
 $ flake8 .
 ```
 

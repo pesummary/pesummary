@@ -25,11 +25,9 @@ RUN conda install -c conda-forge ligo.skymap -y
 
 # Install requirements
 RUN pip install --upgrade pip \
-&& pip install --upgrade setuptools \
-&& pip install {requirements} \
-&& pip install {optional_requirements}
+&& pip install --upgrade setuptools
 
 
 RUN mkdir src
 COPY $installation src
-RUN cd src && python setup.py install
+RUN cd src && pip install .[docs,lint,test,extras]
