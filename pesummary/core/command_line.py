@@ -1,7 +1,9 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+import re
 import copy
 import os
+import ast
 
 import argparse
 import configparser
@@ -103,16 +105,34 @@ class ConfigAction(argparse.Action):
         config.optionxform = str
         try:
             config.read(values)
-            for key, value in config.items("pesummary"):
-                if value == "True" or value == "true":
-                    items[key] = True
-                else:
-                    if ":" in value:
-                        items[key] = self.dict_from_str(value)
-                    elif "," in value:
-                        items[key] = self.list_from_str(value)
+            sections = config.sections()
+            for section in sections:
+                for key, value in config.items(section):
+                    if value.lower() == "true":
+                        items[key] = True
+                    elif value.lower() == "false":
+                        items[key] = False
+                    elif value.lower() == "none":
+                        items[key] = None
                     else:
-                        items[key] = value
+                        try:
+                            _type = getattr(
+                                parser, "_option_string_actions"
+                            )["--{}".format(key)].type
+                        except Exception:
+                            _type = None
+                        if ":" in value or "{" in value:
+                            try:
+                                items[key] = self.dict_from_str(value, dtype=_type)
+                            except Exception:
+                                items[key] = value
+                        elif "," in value or "[" in value:
+                            items[key] = self.list_from_str(value, _type)
+                        else:
+                            if _type is not None:
+                                items[key] = _type(value)
+                            else:
+                                items[key] = value
         except Exception:
             pass
         for i in vars(namespace).keys():
@@ -120,7 +140,7 @@ class ConfigAction(argparse.Action):
                 setattr(namespace, i, items[i])
 
     @staticmethod
-    def dict_from_str(string, delimiter=":"):
+    def dict_from_str(string, delimiter=":", dtype=None):
         """Reformat the string into a dictionary
 
         Parameters
@@ -128,33 +148,39 @@ class ConfigAction(argparse.Action):
         string: str
             string that you would like reformatted into a dictionary
         """
-        mydict = {}
-        if "{" in string:
-            string = string.replace("{", "")
-        if "}" in string:
-            string = string.replace("}", "")
-
-        if " " in string and "," not in string:
-            string = string.split(" ")
-        elif "," in string and ", " not in string:
-            string = string.split(",")
-        elif ", " in string:
-            string = string.split(", ")
-
-        for i in string:
-            value = i.split(delimiter)
-            if " " in value[0]:
-                value[0] = value[0].replace(" ", "")
-            if " " in value[1]:
-                value[1] = value[1].replace(" ", "")
-            if value[0] in mydict.keys():
-                mydict[value[0]].append(value[1])
+        string = string.replace("'", "")
+        string = string.replace('"', '')
+        string = string.replace("=", ":")
+        string = string.replace(delimiter, ":")
+        if "dict(" in string:
+            string = string.replace("dict(", "{")
+            string = string.replace(")", "}")
+        string = string.replace(" ", "")
+        string = re.sub(r'([A-Za-z/\.0-9][^\[\],:"}]*)', r'"\g<1>"', string)
+        string = string.replace('""', '"')
+        try:
+            mydict = ast.literal_eval(string)
+        except ValueError as e:
+            pass
+        for key in mydict:
+            if isinstance(mydict[key], str) and mydict[key].lower() == "true":
+                mydict[key] = True
+            elif isinstance(mydict[key], str) and mydict[key].lower() == "false":
+                mydict[key] = False
             else:
-                mydict[value[0]] = [value[1]]
+                try:
+                    mydict[key] = int(mydict[key])
+                except ValueError:
+                    try:
+                        mydict[key] = float(mydict[key])
+                    except ValueError:
+                        mydict[key] = mydict[key]
+            if dtype is not None:
+                mydict[key] = dtype(mydict[key])
         return mydict
 
     @staticmethod
-    def list_from_str(string):
+    def list_from_str(string, dtype=None):
         """Reformat the string into a list
 
         Parameters
@@ -163,16 +189,19 @@ class ConfigAction(argparse.Action):
             string that you would like reformatted into a list
         """
         list = []
+        string = string.replace("'", "")
         if "[" in string:
-            string.replace("[", "")
+            string = string.replace("[", "")
         if "]" in string:
-            string.replace("]", "")
+            string = string.replace("]", "")
         if ", " in string:
             list = string.split(", ")
-        elif " " in string:
-            list = string.split(" ")
         elif "," in string:
             list = string.split(",")
+        else:
+            list = [string]
+        if dtype is not None:
+            list = [dtype(_) for _ in list]
         return list
 
 
