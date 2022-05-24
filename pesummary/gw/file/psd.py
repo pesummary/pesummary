@@ -29,6 +29,9 @@ class PSDDict(Dict):
     -------
     plot:
         Generate a plot based on the psd samples stored
+    to_pycbc:
+        Convert dictionary of PSD objects to a dictionary of
+        pycbc.frequencyseries objects objects
 
     Examples
     --------
@@ -62,6 +65,51 @@ class PSDDict(Dict):
     def detectors(self):
         return list(self.keys())
 
+    @classmethod
+    def read(cls, files=None, detectors=None, common_string=None):
+        """Initiate PSDDict with a set of PSD files
+
+        Parameters
+        ----------
+        files: list/dict, optional
+            Either a list of files or a dictionary of files to read.
+            If a list of files are provided, a list of corresponding
+            detectors must also be provided
+        common_string: str, optional
+            Common string for PSD files. The string must be formattable and
+            take one argument which is the detector. For example
+            common_string='./{}_psd.dat'. Used if files is not provided
+        detectors: list, optional
+            List of detectors to use when loading files. Used if files
+            if not provided or if files is a list or if common_string is
+            provided
+        """
+        if files is not None:
+            if isinstance(files, list) and detectors is not None:
+                if len(detectors) != len(files):
+                    raise ValueError(
+                        "Please provide a detector for each file"
+                    )
+                files = {det: ff for det, ff in zip(detectors, files)}
+            elif isinstance(files, dict):
+                pass
+            else:
+                raise ValueError(
+                    "Please provide either a dictionary of files, or a list "
+                    "files and a list of detectors for which they correspond."
+                )
+        elif common_string is not None and detectors is not None:
+            files = {det: common_string.format(det) for det in detectors}
+        else:
+            raise ValueError(
+                "Please provide either a list of files to read or "
+                "a common string and a list of detectors to load."
+            )
+        psd = {}
+        for key, item in files.items():
+            psd[key] = PSD.read(item, IFO=key)
+        return PSDDict(psd)
+
     def plot(self, **kwargs):
         """Generate a plot to display the PSD data stored in PSDDict
 
@@ -77,6 +125,21 @@ class PSDDict(Dict):
         frequencies = [self[IFO].frequencies for IFO in _detectors]
         strains = [self[IFO].strains for IFO in _detectors]
         return _psd_plot(frequencies, strains, labels=_detectors, **kwargs)
+
+    def to_pycbc(self, *args, **kwargs):
+        """Transform dictionary to pycbc.frequencyseries objects
+
+        Parameters
+        ----------
+        *args: tuple
+            all args passed to PSD.to_pycbc()
+        **kwargs: dict, optional
+            all kwargs passed to PSD.to_pycbc()
+        """
+        psd = {}
+        for key, item in self.items():
+            psd[key] = item.to_pycbc(*args, **kwargs)
+        return PSDDict(psd)
 
 
 class PSD(np.ndarray):
