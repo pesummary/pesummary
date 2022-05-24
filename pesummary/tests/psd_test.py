@@ -25,6 +25,14 @@ class TestPSDDict(object):
                    [1.25000e-01, 2.50000e-01],
                    [2.50000e-01, 2.50000e-01]]
         }
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+
+    def teardown(self):
+        """Remove all files and directories created from this class
+        """
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
         
     def test_initiate(self):
         """Test that the PSDDict class can be initalized correctly
@@ -56,6 +64,29 @@ class TestPSDDict(object):
 
         psd_dict = PSDDict(self.psd_data)
         assert isinstance(psd_dict.plot(), matplotlib.figure.Figure)
+
+    def test_read(self):
+        """Test that the PSDDict class can be initialized correctly with the
+        read classmethod
+        """
+        f = PSDDict(self.psd_data)
+        for ifo, psd in f.items():
+            psd.save_to_file("{}/{}_test.dat".format(tmpdir, ifo))
+        g = PSDDict.read(
+            files=[
+                "{}/H1_test.dat".format(tmpdir), "{}/V1_test.dat".format(tmpdir)
+            ], detectors=["H1", "V1"]
+        )
+        for ifo, psd in g.items():
+            np.testing.assert_almost_equal(psd.frequencies, f[ifo].frequencies)
+            np.testing.assert_almost_equal(psd.strains, f[ifo].strains)
+        g = PSDDict.read(
+            common_string="%s/{}_test.dat" % (tmpdir), detectors=["H1", "V1"]
+        )
+        for ifo, psd in g.items():
+            np.testing.assert_almost_equal(psd.frequencies, f[ifo].frequencies)
+            np.testing.assert_almost_equal(psd.strains, f[ifo].strains)
+
 
 
 class TestPSD(object):
