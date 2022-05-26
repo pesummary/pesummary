@@ -4,7 +4,12 @@ from pesummary import conf
 from astropy import cosmology as cosmo
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
-_available_cosmologies = list(cosmo.parameters.available) + ["Planck15_lal"]
+try:
+    _astropy_realizations = list(cosmo.realizations.available)
+except AttributeError:
+    # astropy < 5.1
+    _astropy_realizations = list(cosmo.parameters.available)
+_available_cosmologies = _astropy_realizations + ["Planck15_lal"]
 _available_cosmologies += [
     _cosmology + "_with_Riess2019_H0" for _cosmology in _available_cosmologies
 ]
