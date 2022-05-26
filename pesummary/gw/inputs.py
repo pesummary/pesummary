@@ -630,8 +630,7 @@ class _GWInput(_Input):
             return
         try:
             from pycbc import psd
-
-            self._psd_default = getattr(psd, psd_default)
+            psd_default = getattr(psd, psd_default)
         except ImportError:
             logger.warning(
                 "Unable to import 'pycbc'. Unable to generate a default PSD"
