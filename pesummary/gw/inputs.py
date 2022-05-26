@@ -630,8 +630,7 @@ class _GWInput(_Input):
             return
         try:
             from pycbc import psd
-
-            self._psd_default = getattr(psd, psd_default)
+            psd_default = getattr(psd, psd_default)
         except ImportError:
             logger.warning(
                 "Unable to import 'pycbc'. Unable to generate a default PSD"
@@ -642,7 +641,17 @@ class _GWInput(_Input):
                 "'pycbc' does not have the '{}' psd available. Using '{}' as "
                 "the default PSD".format(psd_default, conf.psd)
             )
-            psd_default = getattr(psd, conf.psd)
+            # When astropy==5.1 is installed, pycbc fails to import the
+            # pycbc.psd module and raises an AttributeError. Consequently
+            # psd is an unbound variable
+            try:
+                psd_default = getattr(psd, conf.psd)
+            except UnboundLocalError:
+                logger.warning(
+                    "Setting 'psd_default' to None because unable to import "
+                    "pycbc.psd module"
+                )
+                psd_default = None
         except ValueError as e:
             logger.warning("Setting 'psd_default' to None because {}".format(e))
             psd_default = None
