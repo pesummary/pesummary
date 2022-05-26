@@ -31,8 +31,9 @@ class TestCosmology(object):
         """Test that the astropy cosmology is correct
         """
         from astropy import cosmology
+        from astropy.cosmology import parameters
 
-        for cosmo in cosmology.parameters.available:
+        for cosmo in parameters.available:
             _cosmo = get_cosmology(cosmology=cosmo)
             astropy_cosmology = getattr(cosmology, cosmo)
             for key, value in vars(_cosmo).items():
@@ -57,3 +58,19 @@ class TestCosmology(object):
             assert _cosmo.H0.value == riess_H0
             for key in ["Om0", "Ode0"]:
                 assert getattr(_base_cosmo, key) == getattr(_cosmo, key)
+
+    def test_upper_lower_case(self):
+        """Test that `get_cosmology` works with random upper and lower cases
+        """
+        from astropy import cosmology
+        for cosmo in ["Planck18", "PLANCK18", "planck18", "PlAnCk18"]:
+            _cosmo = get_cosmology(cosmology=cosmo)
+            astropy_cosmology = cosmology.Planck18
+            for key, value in vars(_cosmo).items():
+                try:
+                    assert vars(astropy_cosmology)[key] == value
+                except ValueError:
+                    assert all(
+                        vars(astropy_cosmology)[key][_] == value[_] for _
+                        in range(len(vars(astropy_cosmology)[key]))
+                    )
