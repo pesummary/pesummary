@@ -6,7 +6,6 @@ for ifo in H-H1 L-L1 V-V1; do
     curl -O --silent https://dcc.ligo.org/public/0146/P1700349/001/${file}
 done
 
-pip install astropy==5.0.4
 curl -O https://raw.githubusercontent.com/gwastro/pycbc/master/examples/inference/single/single.ini
 sed -i '/no-save-data/d' ./single.ini
 sed -i 's/dlogz = 0.01/dlogz = 1000/' ./single.ini
