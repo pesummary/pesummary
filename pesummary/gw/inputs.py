@@ -642,7 +642,7 @@ class _GWInput(_Input):
                 "the default PSD".format(psd_default, conf.psd)
             )
             # When astropy==5.1 is installed, pycbc fails to import the
-            # pycbc.psd module and raises an AttributeError. Consequently
+            # pycbc.psd module and raises an AttributeError. Consequently
             # psd is an unbound variable
             try:
                 psd_default = getattr(psd, conf.psd)
