@@ -641,7 +641,7 @@ class _GWInput(_Input):
                 "'pycbc' does not have the '{}' psd available. Using '{}' as "
                 "the default PSD".format(psd_default, conf.psd)
             )
-            # When astropy==5.1 is installed, pycbc fails to import the
+            # When astropy==5.1 is installed, pycbc <= 2.0.2 fails to import the
             # pycbc.psd module and raises an AttributeError. Consequently
             # psd is an unbound variable
             try:
