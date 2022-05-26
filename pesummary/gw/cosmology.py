@@ -5,11 +5,11 @@ from astropy import cosmology as cosmo
 from astropy.cosmology import parameters
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
-_available_cosmologies = list(parameters.available) + ["Planck15_lal"]
-_available_cosmologies += [
-    _cosmology + "_with_Riess2019_H0" for _cosmology in _available_cosmologies
+_astropy_cosmologies = [i.lower() for i in parameters.available]
+available_cosmologies = _astropy_cosmologies + ["planck15_lal"]
+available_cosmologies += [
+    _cosmology + "_with_riess2019_h0" for _cosmology in available_cosmologies
 ]
-available_cosmologies = [i.lower() for i in _available_cosmologies]
 
 
 def get_cosmology(cosmology=conf.cosmology):
@@ -20,20 +20,18 @@ def get_cosmology(cosmology=conf.cosmology):
     cosmology: str
         name of a known cosmology
     """
-    if cosmology.lower() not in [i.lower() for i in available_cosmologies]:
+    if cosmology.lower() not in available_cosmologies:
         raise ValueError(
             "Unrecognised cosmology {}. Available cosmologies are {}".format(
                 cosmology, ", ".join(available_cosmologies)
             )
         )
-    if cosmology.lower() in [astropy.lower() for astropy in cosmo.__dict__.keys()]:
-        if cosmology in cosmo.__dict__.keys():
-            return cosmo.__dict__[cosmology]
-        name = [
-            astropy for astropy in cosmo.__dict__.keys() if
-            astropy.lower() == cosmology
+    elif cosmology.lower() in _astropy_cosmologies:
+        ind = [
+            num for num, name in enumerate(_astropy_cosmologies) if
+            name == cosmology.lower()
         ][0]
-        return cosmo.__dict__[name]
+        return getattr(cosmo, list(parameters.available)[ind])
     elif cosmology.lower() == "planck15_lal":
         return Planck15_lal_cosmology()
     elif "_with_riess2019_h0" in cosmology.lower():
