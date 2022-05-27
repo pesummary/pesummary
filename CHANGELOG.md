@@ -1,3 +1,12 @@
+## 0.13.4 [27/05/2021]
+
+### Changed
+
+- astropy==5.1 - Update the pesummary.gw.cosmology module to be compatible
+  with astropy==5.1
+
+### Added
+
 ## 0.13.3 [16/12/2021]
 
 ### Changed
