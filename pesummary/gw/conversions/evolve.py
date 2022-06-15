@@ -262,7 +262,7 @@ def _wrapper_for_evolve_angles_backwards(args):
 def evolve_angles_backwards(
     mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, f_ref,
     method="precession_averaged", multi_process=1, return_fits_used=False,
-    version="v1", approx="SpinTaylorT4", **kwargs
+    version="v2", approx="SpinTaylorT5", **kwargs
 ):
     """Evolve BBH tilt angles backwards to infinite separation
 
@@ -300,12 +300,14 @@ def evolve_angles_backwards(
     version: str, optional
         version of the
         tilts_at_infinity.hybrid_spin_evolution.calc_tilts_at_infty_hybrid_evolve
-        function to use within the lalsimulation library. Default 'v1'
+        function to use within the lalsimulation library. Default 'v2'. If
+        an old version of lalsimulation is installed where 'v2' is not
+        available, fall back to 'v1'.
     approx: str, optional
         the approximant to use when evolving the spins. For allowed
         approximants see
         tilts_at_infinity.hybrid_spin_evolution.calc_tilts_at_infty_hybrid_evolve
-        Default 'SpinTaylorT4'
+        Default 'SpinTaylorT5'
     **kwargs: dict, optional
         all kwargs passed to the
         tilts_at_infinity.hybrid_spin_evolution.calc_tilts_at_infty_hybrid_evolve
@@ -317,6 +319,20 @@ def evolve_angles_backwards(
         raise ValueError(
             "Invalid method. Please choose either {}".format(", ".join(_mds))
         )
+    # check to see if the provided version is available in lalsimulation. If not
+    # fall back to 'v1'
+    try:
+        _ = hybrid_spin_evolution.calc_tilts_at_infty_hybrid_evolve(
+            2., 1., 1., 1., 1., 1., 1., 1., version=version
+        )
+    except ValueError as e:
+        if "Only version" not in str(e):
+            raise
+        logger.warning(
+            "Unknown version '{}'. Falling back to 'v1'".format(version)
+        )
+        version = "v1"
+
     kwargs.update(
         {
             "prec_only": method.lower() == "precession_averaged",
