@@ -5,7 +5,7 @@ import os
 import math
 import numpy as np
 import pesummary
-from pesummary.core.inputs import _Input, Input, PostProcessing
+from pesummary.core.inputs import _Input, Input
 from pesummary.gw.file.read import read as GWRead
 from pesummary.gw.file.psd import PSD
 from pesummary.gw.file.calibration import Calibration
@@ -1038,6 +1038,7 @@ class GWInput(_GWInput, Input):
         self.pepredicates_probs = []
         self.pastro_probs = []
         self.copy_files()
+        self.maxL_samples = []
         self.write_current_state()
 
     def copy_files(self):
@@ -1083,137 +1084,6 @@ class GWInput(_GWInput, Input):
         for dirs in ["psds", "calibration"]:
             self.default_directories.append(dirs)
         super(GWInput, self).make_directories()
-
-
-class GWPostProcessing(PostProcessing):
-    """Super class to post process the input data
-
-    Parameters
-    ----------
-    inputs: argparse.Namespace
-        Namespace object containing the command line options
-    colors: list, optional
-        colors that you wish to use to distinguish different result files
-
-    Attributes
-    ----------
-    result_files: list
-        list of result files passed
-    compare_results: list
-        list of labels stored in the metafile that you wish to compare
-    add_to_existing: Bool
-        True if we are adding to an existing web directory
-    existing_samples: dict
-        dictionary of samples stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_injection_data: dict
-        dictionary of injection data stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_file_version: dict
-        dictionary of file versions stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_config: list
-        list of configuration files stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_labels: list
-        list of labels stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    user: str
-        the user who submitted the job
-    webdir: str
-        the directory to store the webpages, plots and metafile produced
-    baseurl: str
-        the base url of the webpages
-    labels: list
-        list of labels used to distinguish the result files
-    config: list
-        list of configuration files for each result file
-    injection_file: list
-        list of injection files for each result file
-    publication: Bool
-        if true, publication quality plots are generated. Default False
-    kde_plot: Bool
-        if true, kde plots are generated instead of histograms. Default False
-    samples: dict
-        dictionary of posterior samples stored in the result files
-    priors: dict
-        dictionary of prior samples stored in the result files
-    custom_plotting: list
-        list containing the directory and name of python file which contains
-        custom plotting functions. Default None
-    email: str
-        the email address of the user
-    dump: Bool
-        if True, all plots will be dumped onto a single html page. Default False
-    hdf5: Bool
-        if True, the metafile is stored in hdf5 format. Default False
-    approximant: dict
-        dictionary of approximants used in the analysis
-    gracedb: str
-        the gracedb ID for the event
-    detectors: list
-        the detector network used for each result file
-    calibration: dict
-        dictionary containing the posterior calibration envelopes for each IFO
-        for each result file
-    psd: dict
-        dictionary containing the psd used for each IFO for each result file
-    nsamples_for_skymap: int
-        the number of samples to use for the skymap
-    sensitivity: Bool
-        if True, the sky sensitivity for HL and HLV detector networks are also
-        plotted. Default False
-    no_ligo_skymap: Bool
-        if True, a skymap will not be generated with the ligo.skymap package.
-        Default False
-    multi_threading_for_skymap: Bool
-        if True, multi-threading will be used to speed up skymap generation
-    gwdata: dict
-        dictionary containing the strain timeseries used for each result file
-    maxL_samples: dict
-        dictionary containing the maximum likelihood values for each parameter
-        for each result file
-    same_parameters: list
-        list of parameters that are common in all result files
-    pepredicates_probs: dict
-        dictionary containing the source classification probabilities for each
-        result file
-    disable_comparison: bool
-        Whether to make comparison webpage
-    public: Bool
-        if True, public facing summarypages are produced
-    """
-
-    def __init__(self, inputs, colors="default"):
-        super(GWPostProcessing, self).__init__(inputs, colors=colors)
-        if self.existing is not None:
-            self.existing_approximant = self.inputs.existing_approximant
-            self.existing_psd = self.inputs.existing_psd
-            self.existing_calibration = self.inputs.existing_calibration
-            self.existing_skymap = self.inputs.existing_skymap
-        else:
-            self.existing_approximant = None
-            self.existing_psd = None
-            self.existing_calibration = None
-            self.existing_skymap = None
-        self.publication_kwargs = self.inputs.publication_kwargs
-        self.approximant = self.inputs.approximant
-        self.gracedb = self.inputs.gracedb
-        self.detectors = self.inputs.detectors
-        self.skymap = self.inputs.skymap
-        self.calibration = self.inputs.calibration
-        self.psd = self.inputs.psd
-        self.nsamples_for_skymap = self.inputs.nsamples_for_skymap
-        self.sensitivity = self.inputs.sensitivity
-        self.no_ligo_skymap = self.inputs.no_ligo_skymap
-        self.multi_threading_for_skymap = self.inputs.multi_threading_for_skymap
-        self.gwdata = self.inputs.gwdata
-        self.maxL_samples = []
-        self.same_parameters = []
-        self.pepredicates_probs = self.inputs.pepredicates_probs
-        self.pastro_probs = self.inputs.pastro_probs
-        self.public = self.inputs.public
-        self.preliminary_pages = self.inputs.preliminary_pages
 
     @property
     def maxL_samples(self):

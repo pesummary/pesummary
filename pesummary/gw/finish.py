@@ -7,7 +7,6 @@ import numpy as np
 
 from pesummary.core.parser import convert_dict_to_namespace
 from pesummary.core.finish import FinishingTouches
-from pesummary.gw.inputs import PostProcessing
 from pesummary.utils.utils import logger
 from pesummary.cli.summarymodify import _main, command_line
 
@@ -34,8 +33,8 @@ class GWFinishingTouches(FinishingTouches):
         FAILURE = False
         if self.ligo_skymap_PID is None:
             return
-        samples_dir = os.path.join(self.webdir, "samples")
-        for label in self.labels:
+        samples_dir = os.path.join(self.inputs.webdir, "samples")
+        for label in self.inputs.labels:
             _path = os.path.join(samples_dir, "{}_skymap.fits".format(label))
             while not os.path.isfile(_path):
                 try:
@@ -93,8 +92,8 @@ class GWFinishingTouches(FinishingTouches):
         keys = skymap_data.dtype.names
 
         _dict = {
-            "webdir": self.webdir,
-            "samples": [os.path.join(self.webdir, "samples", "posterior_samples.h5")],
+            "webdir": self.inputs.webdir,
+            "samples": [os.path.join(self.inputs.webdir, "samples", "posterior_samples.h5")],
             "kwargs": {label: ["{}:{}".format(key, float(skymap_data[key])) for key in keys]},
             "overwrite": True
         }
@@ -114,8 +113,8 @@ class GWFinishingTouches(FinishingTouches):
         logger.info("Adding ligo.skymap data to the metafile")
 
         _dict = {
-            "webdir": self.webdir,
-            "samples": [os.path.join(self.webdir, "samples", "posterior_samples.h5")],
+            "webdir": self.inputs.webdir,
+            "samples": [os.path.join(self.inputs.webdir, "samples", "posterior_samples.h5")],
             "overwrite": True, "store_skymap": {label: filename}
         }
         opts = convert_dict_to_namespace(_dict, add_defaults=command_line())

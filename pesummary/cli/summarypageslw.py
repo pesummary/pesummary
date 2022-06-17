@@ -38,6 +38,7 @@ class LWInput(Input):
     def __init__(self, *args, **kwargs):
         super(LWInput, self).__init__(*args, **kwargs)
         self.parameters_to_include = self.opts.parameters
+        self._same_parameters = self.intersect_samples_dict(self.samples)
 
     @property
     def parameters_to_include(self):
@@ -86,6 +87,11 @@ class LWInput(Input):
         for label in removed_labels:
             self.samples.pop(label)
             self.labels.remove(label)
+
+    def intersect_samples_dict(self, samples):
+        if hasattr(self, "_parameters_to_include"):
+            return super(LWInput, self).intersect_samples_dict(samples)
+        return self.opts.parameters
 
 
 class GWLWInput(GWInput, LWInput):

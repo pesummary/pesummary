@@ -6,7 +6,6 @@ from pesummary.core.file.meta_file import (
     _MetaFile, recursively_save_dictionary_to_hdf5_file,
     DEFAULT_HDF5_KEYS as CORE_HDF5_KEYS
 )
-from pesummary.gw.inputs import GWPostProcessing
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 DEFAULT_HDF5_KEYS = CORE_HDF5_KEYS
@@ -233,26 +232,25 @@ class _TGRMetaFile(_GWMetaFile):
         self.data = dictionary
 
 
-class GWMetaFile(GWPostProcessing):
+class GWMetaFile(object):
     """This class handles the creation of a metafile storing all information
     from the analysis
     """
     def __init__(self, inputs, history=None):
-        super(GWMetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
-        if self.add_to_existing:
-            existing = self.existing
-            existing_metafile = self.existing_metafile
-            existing_samples = self.existing_samples
-            existing_labels = self.existing_labels
-            existing_psd = self.existing_psd
-            existing_calibration = self.existing_calibration
-            existing_config = self.existing_config
-            existing_approximant = self.existing_approximant
-            existing_injection = self.existing_injection_data
-            existing_version = self.existing_file_version
-            existing_metadata = self.existing_file_kwargs
-            existing_priors = self.existing_priors
+        if inputs.add_to_existing:
+            existing = inputs.existing
+            existing_metafile = inputs.existing_metafile
+            existing_samples = inputs.existing_samples
+            existing_labels = inputs.existing_labels
+            existing_psd = inputs.existing_psd
+            existing_calibration = inputs.existing_calibration
+            existing_config = inputs.existing_config
+            existing_approximant = inputs.existing_approximant
+            existing_injection = inputs.existing_injection_data
+            existing_version = inputs.existing_file_version
+            existing_metadata = inputs.existing_file_kwargs
+            existing_priors = inputs.existing_priors
         else:
             existing_metafile = None
             existing_samples = None
@@ -268,27 +266,27 @@ class GWMetaFile(GWPostProcessing):
             existing_priors = {}
 
         meta_file = _GWMetaFile(
-            self.samples, self.labels, self.config, self.injection_data,
-            self.file_version, self.file_kwargs, calibration=self.calibration,
-            psd=self.psd, hdf5=self.hdf5, webdir=self.webdir,
-            result_files=self.result_files, existing_version=existing_version,
+            inputs.samples, inputs.labels, inputs.config, inputs.injection_data,
+            inputs.file_version, inputs.file_kwargs, calibration=inputs.calibration,
+            psd=inputs.psd, hdf5=inputs.hdf5, webdir=inputs.webdir,
+            result_files=inputs.result_files, existing_version=existing_version,
             existing_label=existing_labels, existing_samples=existing_samples,
             existing_psd=existing_psd, existing_calibration=existing_calibration,
             existing_approximant=existing_approximant,
             existing_injection=existing_injection,
             existing_metadata=existing_metadata,
-            existing_config=existing_config, priors=self.priors,
+            existing_config=existing_config, priors=inputs.priors,
             existing_priors=existing_priors, existing=existing,
-            existing_metafile=existing_metafile, approximant=self.approximant,
-            package_information=self.package_information,
-            mcmc_samples=self.mcmc_samples, skymap=self.skymap,
-            existing_skymap=self.existing_skymap, filename=self.filename,
-            external_hdf5_links=self.external_hdf5_links,
-            hdf5_compression=self.hdf5_compression, history=history,
-            gwdata=self.gwdata, descriptions=self.descriptions
+            existing_metafile=existing_metafile, approximant=inputs.approximant,
+            package_information=inputs.package_information,
+            mcmc_samples=inputs.mcmc_samples, skymap=inputs.skymap,
+            existing_skymap=inputs.existing_skymap, filename=inputs.filename,
+            external_hdf5_links=inputs.external_hdf5_links,
+            hdf5_compression=inputs.hdf5_compression, history=history,
+            gwdata=inputs.gwdata, descriptions=inputs.descriptions
         )
         meta_file.make_dictionary()
-        if not self.hdf5:
+        if not inputs.hdf5:
             meta_file.save_to_json(meta_file.data, meta_file.meta_file)
         else:
             meta_file.save_to_hdf5(

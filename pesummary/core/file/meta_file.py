@@ -9,7 +9,6 @@ from getpass import getuser
 
 import pesummary
 from pesummary import __version__
-from pesummary.core.inputs import PostProcessing
 from pesummary.utils.dict import Dict
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.utils import make_dir, logger
@@ -658,34 +657,32 @@ class _MetaFile(object):
         self = _add_existing_data(self)
 
 
-class MetaFile(PostProcessing):
+class MetaFile(object):
     """This class handles the creation of a metafile storing all information
     from the analysis
     """
     def __init__(self, inputs, history=None):
         from pesummary.utils.utils import logger
-
-        super(MetaFile, self).__init__(inputs)
         logger.info("Starting to generate the meta file")
         meta_file = _MetaFile(
-            self.samples, self.labels, self.config,
-            self.injection_data, self.file_version, self.file_kwargs,
-            hdf5=self.hdf5, webdir=self.webdir, result_files=self.result_files,
-            existing_version=self.existing_file_version, existing_label=self.existing_labels,
-            priors=self.priors, existing_samples=self.existing_samples,
-            existing_injection=self.existing_injection_data,
-            existing_metadata=self.existing_file_kwargs,
-            existing_config=self.existing_config, existing=self.existing,
-            existing_priors=self.existing_priors,
-            existing_metafile=self.existing_metafile,
-            package_information=self.package_information,
-            mcmc_samples=self.mcmc_samples, filename=self.filename,
-            external_hdf5_links=self.external_hdf5_links,
-            hdf5_compression=self.hdf5_compression, history=history,
-            descriptions=self.descriptions
+            inputs.samples, inputs.labels, inputs.config,
+            inputs.injection_data, inputs.file_version, inputs.file_kwargs,
+            hdf5=inputs.hdf5, webdir=inputs.webdir, result_files=inputs.result_files,
+            existing_version=inputs.existing_file_version, existing_label=inputs.existing_labels,
+            priors=inputs.priors, existing_samples=inputs.existing_samples,
+            existing_injection=inputs.existing_injection_data,
+            existing_metadata=inputs.existing_file_kwargs,
+            existing_config=inputs.existing_config, existing=inputs.existing,
+            existing_priors=inputs.existing_priors,
+            existing_metafile=inputs.existing_metafile,
+            package_information=inputs.package_information,
+            mcmc_samples=inputs.mcmc_samples, filename=inputs.filename,
+            external_hdf5_links=inputs.external_hdf5_links,
+            hdf5_compression=inputs.hdf5_compression, history=history,
+            descriptions=inputs.descriptions
         )
         meta_file.make_dictionary()
-        if not self.hdf5:
+        if not inputs.hdf5:
             meta_file.save_to_json(meta_file.data, meta_file.meta_file)
         else:
             meta_file.save_to_hdf5(

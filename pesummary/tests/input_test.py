@@ -7,7 +7,7 @@ import copy
 
 import argparse
 
-from pesummary.gw.inputs import GWInput, GWPostProcessing
+from pesummary.gw.inputs import GWInput
 from pesummary.core.command_line import command_line
 from pesummary.gw.command_line import (
     insert_gwspecific_option_group, add_dynamic_PSD_to_namespace,
@@ -222,7 +222,8 @@ class TestInput(object):
             "{}/test.hdf5".format(tmpdir),
             "{}/lalinference_example.h5".format(tmpdir)
         )
-        make_result_file(gw=True, bilby=True, outdir=tmpdir, extension="hdf5")
+        data = make_result_file(gw=True, bilby=True, outdir=tmpdir, extension="hdf5")
+        self.parameters, self.samples = data
         os.rename(
             "{}/test.h5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
         )
@@ -628,39 +629,8 @@ class TestInput(object):
             "{}/samples/config/example_config.ini".format(tmpdir)
         ) == True
 
-
-class TestPostProcessing(object):
-
-    def setup(self):
-        if not os.path.isdir(tmpdir):
-            os.mkdir(tmpdir)
-        self.parser = command_line()
-        insert_gwspecific_option_group(self.parser)
-        make_result_file(gw=True, lalinference=True, outdir=tmpdir)
-        os.rename(
-            "{}/test.hdf5".format(tmpdir),
-            "{}/lalinference_example.h5".format(tmpdir)
-        )
-        data = make_result_file(gw=True, bilby=True, outdir=tmpdir, extension="hdf5")
-        self.parameters, self.samples = data
-        os.rename(
-            "{}/test.h5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
-        )
-        self.opts = self.parser.parse_args(["--approximant", "IMRPhenomPv2",
-            "--webdir", tmpdir, "--samples", "{}/bilby_example.h5".format(tmpdir),
-            "--email", "albert.einstein@ligo.org", "--gracedb", "Grace",
-            "--labels", "example", "--no_conversion"])
-        self.inputs = GWInput(self.opts)
-        self.postprocessing = GWPostProcessing(self.inputs)
-
-    def teardown(self):
-        """Remove the files and directories created from this class
-        """
-        if os.path.isdir(tmpdir):
-            shutil.rmtree(tmpdir)
-
     def test_injection_data(self):
-        assert sorted(list(self.postprocessing.injection_data["example"].keys())) == sorted(
+        assert sorted(list(self.inputs.injection_data["example"].keys())) == sorted(
             gw_parameters())
 
     def test_maxL_samples(self):
@@ -669,8 +639,8 @@ class TestPostProcessing(object):
         max_ind = np.argmax(likelihood)
         for param in self.parameters:
             ind = self.parameters.index(param)
-            assert self.postprocessing.maxL_samples["example"][param] == self.samples.T[ind][max_ind]
-        assert self.postprocessing.maxL_samples["example"]["approximant"] == "IMRPhenomPv2"
+            assert self.inputs.maxL_samples["example"][param] == self.samples.T[ind][max_ind]
+        assert self.inputs.maxL_samples["example"]["approximant"] == "IMRPhenomPv2"
 
     def test_same_parameters(self):
         parser = command_line()
@@ -680,12 +650,11 @@ class TestPostProcessing(object):
             "{}/bilby_example.h5".format(tmpdir),
             "{}/lalinference_example.h5".format(tmpdir)])
         inputs = GWInput(opts)
-        postprocessing = GWPostProcessing(inputs)
-        assert sorted(postprocessing.same_parameters) == sorted(gw_parameters())
+        assert sorted(inputs.same_parameters) == sorted(gw_parameters())
 
     def test_psd_labels(self):
-        assert list(self.postprocessing.psd.keys()) == ["example"]
-        assert self.postprocessing.psd["example"] == {}
+        assert list(self.inputs.psd.keys()) == ["example"]
+        assert self.inputs.psd["example"] == {}
         with open("{}/psd.dat".format(tmpdir), "w") as f:
             f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
         parser = command_line()
@@ -699,6 +668,5 @@ class TestPostProcessing(object):
             "--labels", "example", "example2", "--f_low", "1.0", "1.0", "--f_final",
             "3.0", "3.0", "--gw", "--no_conversion"])
         inputs = GWInput(opts)
-        postprocessing = GWPostProcessing(inputs)
-        assert sorted(list(postprocessing.psd["example"].keys())) == ["L1"]
-        assert sorted(list(postprocessing.psd["example2"].keys())) == ["L1"]
+        assert sorted(list(inputs.psd["example"].keys())) == ["L1"]
+        assert sorted(list(inputs.psd["example2"].keys())) == ["L1"]

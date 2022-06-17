@@ -3,8 +3,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.utils.utils import logger, gw_results_file
-from pesummary.core.inputs import PostProcessing
-from pesummary.gw.inputs import GWPostProcessing
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -39,7 +37,7 @@ class WebpageGeneration(object):
         logger.info("Finished generating webpages")
 
 
-class _CoreWebpageGeneration(PostProcessing):
+class _CoreWebpageGeneration(object):
     """Class to generate all webpages for all result files with the Core module
 
     Parameters
@@ -51,31 +49,29 @@ class _CoreWebpageGeneration(PostProcessing):
     """
     def __init__(self, inputs, colors="default"):
         from pesummary.core.webpage.main import _WebpageGeneration
-
-        super(_CoreWebpageGeneration, self).__init__(inputs, colors)
-        key_data = self.grab_key_data_from_result_files()
+        key_data = inputs.grab_key_data_from_result_files()
         self.webpage_object = _WebpageGeneration(
-            webdir=self.webdir, samples=self.samples, labels=self.labels,
-            publication=self.publication, user=self.user, config=self.config,
-            same_parameters=self.same_parameters, base_url=self.baseurl,
-            file_versions=self.file_version, hdf5=self.hdf5, colors=self.colors,
-            custom_plotting=self.custom_plotting,
-            existing_labels=self.existing_labels,
-            existing_config=self.existing_config,
-            existing_file_version=self.existing_file_version,
-            existing_injection_data=self.existing_injection_data,
-            existing_samples=self.existing_samples,
-            existing_metafile=self.existing,
-            existing_file_kwargs=self.existing_file_kwargs,
-            existing_weights=self.existing_weights,
-            add_to_existing=self.add_to_existing, notes=self.notes,
-            disable_comparison=self.disable_comparison,
-            disable_interactive=self.disable_interactive,
-            package_information=self.package_information,
-            mcmc_samples=self.mcmc_samples,
-            external_hdf5_links=self.external_hdf5_links, key_data=key_data,
-            existing_plot=self.existing_plot, disable_expert=self.disable_expert,
-            analytic_priors=self.analytic_prior_dict
+            webdir=inputs.webdir, samples=inputs.samples, labels=inputs.labels,
+            publication=inputs.publication, user=inputs.user, config=inputs.config,
+            same_parameters=inputs.same_parameters, base_url=inputs.baseurl,
+            file_versions=inputs.file_version, hdf5=inputs.hdf5, colors=inputs.colors,
+            custom_plotting=inputs.custom_plotting,
+            existing_labels=inputs.existing_labels,
+            existing_config=inputs.existing_config,
+            existing_file_version=inputs.existing_file_version,
+            existing_injection_data=inputs.existing_injection_data,
+            existing_samples=inputs.existing_samples,
+            existing_metafile=inputs.existing,
+            existing_file_kwargs=inputs.existing_file_kwargs,
+            existing_weights=inputs.existing_weights,
+            add_to_existing=inputs.add_to_existing, notes=inputs.notes,
+            disable_comparison=inputs.disable_comparison,
+            disable_interactive=inputs.disable_interactive,
+            package_information=inputs.package_information,
+            mcmc_samples=inputs.mcmc_samples,
+            external_hdf5_links=inputs.external_hdf5_links, key_data=key_data,
+            existing_plot=inputs.existing_plot, disable_expert=inputs.disable_expert,
+            analytic_priors=inputs.analytic_prior_dict
         )
 
     def generate_webpages(self):
@@ -84,7 +80,7 @@ class _CoreWebpageGeneration(PostProcessing):
         self.webpage_object.generate_webpages()
 
 
-class _GWWebpageGeneration(GWPostProcessing):
+class _GWWebpageGeneration(object):
     """Class to generate all webpages for all result files with the GW module
 
     Parameters
@@ -96,39 +92,37 @@ class _GWWebpageGeneration(GWPostProcessing):
     """
     def __init__(self, inputs, colors="default"):
         from pesummary.gw.webpage.main import _WebpageGeneration
-
-        super(_GWWebpageGeneration, self).__init__(inputs, colors)
-        key_data = self.grab_key_data_from_result_files()
+        key_data = inputs.grab_key_data_from_result_files()
         self.webpage_object = _WebpageGeneration(
-            webdir=self.webdir, samples=self.samples, labels=self.labels,
-            publication=self.publication, user=self.user, config=self.config,
-            same_parameters=self.same_parameters, base_url=self.baseurl,
-            file_versions=self.file_version, hdf5=self.hdf5, colors=self.colors,
-            custom_plotting=self.custom_plotting, gracedb=self.gracedb,
-            pepredicates_probs=self.pepredicates_probs,
-            approximant=self.approximant, key_data=key_data,
-            file_kwargs=self.file_kwargs, existing_labels=self.existing_labels,
-            existing_config=self.existing_config,
-            existing_file_version=self.existing_file_version,
-            existing_injection_data=self.existing_injection_data,
-            existing_samples=self.existing_samples,
-            existing_metafile=self.existing,
-            add_to_existing=self.add_to_existing,
-            existing_file_kwargs=self.existing_file_kwargs,
-            existing_weights=self.existing_weights,
-            result_files=self.result_files, notes=self.notes,
-            disable_comparison=self.disable_comparison,
-            disable_interactive=self.disable_interactive,
-            pastro_probs=self.pastro_probs, gwdata=self.gwdata,
-            publication_kwargs=self.publication_kwargs,
-            no_ligo_skymap=self.no_ligo_skymap,
-            psd=self.psd, priors=self.priors,
-            package_information=self.package_information,
-            mcmc_samples=self.mcmc_samples, existing_plot=self.existing_plot,
-            external_hdf5_links=self.external_hdf5_links,
-            preliminary_pages=self.preliminary_pages,
-            disable_expert=self.disable_expert,
-            analytic_priors=self.analytic_prior_dict
+            webdir=inputs.webdir, samples=inputs.samples, labels=inputs.labels,
+            publication=inputs.publication, user=inputs.user, config=inputs.config,
+            same_parameters=inputs.same_parameters, base_url=inputs.baseurl,
+            file_versions=inputs.file_version, hdf5=inputs.hdf5, colors=inputs.colors,
+            custom_plotting=inputs.custom_plotting, gracedb=inputs.gracedb,
+            pepredicates_probs=inputs.pepredicates_probs,
+            approximant=inputs.approximant, key_data=key_data,
+            file_kwargs=inputs.file_kwargs, existing_labels=inputs.existing_labels,
+            existing_config=inputs.existing_config,
+            existing_file_version=inputs.existing_file_version,
+            existing_injection_data=inputs.existing_injection_data,
+            existing_samples=inputs.existing_samples,
+            existing_metafile=inputs.existing,
+            add_to_existing=inputs.add_to_existing,
+            existing_file_kwargs=inputs.existing_file_kwargs,
+            existing_weights=inputs.existing_weights,
+            result_files=inputs.result_files, notes=inputs.notes,
+            disable_comparison=inputs.disable_comparison,
+            disable_interactive=inputs.disable_interactive,
+            pastro_probs=inputs.pastro_probs, gwdata=inputs.gwdata,
+            publication_kwargs=inputs.publication_kwargs,
+            no_ligo_skymap=inputs.no_ligo_skymap,
+            psd=inputs.psd, priors=inputs.priors,
+            package_information=inputs.package_information,
+            mcmc_samples=inputs.mcmc_samples, existing_plot=inputs.existing_plot,
+            external_hdf5_links=inputs.external_hdf5_links,
+            preliminary_pages=inputs.preliminary_pages,
+            disable_expert=inputs.disable_expert,
+            analytic_priors=inputs.analytic_prior_dict
         )
 
     def generate_webpages(self):
@@ -137,7 +131,7 @@ class _GWWebpageGeneration(GWPostProcessing):
         self.webpage_object.generate_webpages()
 
 
-class _PublicGWWebpageGeneration(GWPostProcessing):
+class _PublicGWWebpageGeneration(object):
     """Class to generate all webpages for all result files with the GW module
 
     Parameters
@@ -149,39 +143,37 @@ class _PublicGWWebpageGeneration(GWPostProcessing):
     """
     def __init__(self, inputs, colors="default"):
         from pesummary.gw.webpage.public import _PublicWebpageGeneration
-
-        super(_PublicGWWebpageGeneration, self).__init__(inputs, colors)
-        key_data = self.grab_key_data_from_result_files()
+        key_data = inputs.grab_key_data_from_result_files()
         self.webpage_object = _PublicWebpageGeneration(
-            webdir=self.webdir, samples=self.samples, labels=self.labels,
-            publication=self.publication, user=self.user, config=self.config,
-            same_parameters=self.same_parameters, base_url=self.baseurl,
-            file_versions=self.file_version, hdf5=self.hdf5, colors=self.colors,
-            custom_plotting=self.custom_plotting, gracedb=self.gracedb,
-            pepredicates_probs=self.pepredicates_probs,
-            approximant=self.approximant, key_data=key_data,
-            file_kwargs=self.file_kwargs, existing_labels=self.existing_labels,
-            existing_config=self.existing_config,
-            existing_file_version=self.existing_file_version,
-            existing_injection_data=self.existing_injection_data,
-            existing_samples=self.existing_samples,
-            existing_metafile=self.existing,
-            add_to_existing=self.add_to_existing,
-            existing_file_kwargs=self.existing_file_kwargs,
-            existing_weights=self.existing_weights,
-            result_files=self.result_files, notes=self.notes,
-            disable_comparison=self.disable_comparison,
-            disable_interactive=self.disable_interactive,
-            pastro_probs=self.pastro_probs, gwdata=self.gwdata,
-            publication_kwargs=self.publication_kwargs,
-            no_ligo_skymap=self.no_ligo_skymap,
-            psd=self.psd, priors=self.priors,
-            package_information=self.package_information,
-            mcmc_samples=self.mcmc_samples, existing_plot=self.existing_plot,
-            external_hdf5_links=self.external_hdf5_links,
-            preliminary_pages=self.preliminary_pages,
-            disable_expert=self.disable_expert,
-            analytic_priors=self.analytic_prior_dict
+            webdir=inputs.webdir, samples=inputs.samples, labels=inputs.labels,
+            publication=inputs.publication, user=inputs.user, config=inputs.config,
+            same_parameters=inputs.same_parameters, base_url=inputs.baseurl,
+            file_versions=inputs.file_version, hdf5=inputs.hdf5, colors=inputs.colors,
+            custom_plotting=inputs.custom_plotting, gracedb=inputs.gracedb,
+            pepredicates_probs=inputs.pepredicates_probs,
+            approximant=inputs.approximant, key_data=key_data,
+            file_kwargs=inputs.file_kwargs, existing_labels=inputs.existing_labels,
+            existing_config=inputs.existing_config,
+            existing_file_version=inputs.existing_file_version,
+            existing_injection_data=inputs.existing_injection_data,
+            existing_samples=inputs.existing_samples,
+            existing_metafile=inputs.existing,
+            add_to_existing=inputs.add_to_existing,
+            existing_file_kwargs=inputs.existing_file_kwargs,
+            existing_weights=inputs.existing_weights,
+            result_files=inputs.result_files, notes=inputs.notes,
+            disable_comparison=inputs.disable_comparison,
+            disable_interactive=inputs.disable_interactive,
+            pastro_probs=inputs.pastro_probs, gwdata=inputs.gwdata,
+            publication_kwargs=inputs.publication_kwargs,
+            no_ligo_skymap=inputs.no_ligo_skymap,
+            psd=inputs.psd, priors=inputs.priors,
+            package_information=inputs.package_information,
+            mcmc_samples=inputs.mcmc_samples, existing_plot=inputs.existing_plot,
+            external_hdf5_links=inputs.external_hdf5_links,
+            preliminary_pages=inputs.preliminary_pages,
+            disable_expert=inputs.disable_expert,
+            analytic_priors=inputs.analytic_prior_dict
         )
 
     def generate_webpages(self):
