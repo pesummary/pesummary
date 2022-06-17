@@ -390,6 +390,8 @@ class _Input(object):
         from glob import glob
 
         self._existing_metafile = existing_metafile
+        if self._existing_metafile is None:
+            return
         if not os.path.isdir(os.path.join(self.existing, "samples")):
             raise InputError("Please provide a valid existing directory")
         _dir = os.path.join(self.existing, "samples")
@@ -1994,7 +1996,7 @@ class Input(_Input):
         self.add_to_existing = False
         if self.existing is not None:
             self.add_to_existing = True
-            self.existing_metafile = None
+            self.existing_metafile = True
             self.existing_data = self.grab_data_from_metafile(
                 self.existing_metafile, self.existing,
                 compare=self.compare_results
@@ -2008,6 +2010,7 @@ class Input(_Input):
             self.existing_labels = self.existing_data["labels"]
             self.existing_weights = self.existing_data["weights"]
         else:
+            self.existing_metafile = None
             self.existing_labels = None
             self.existing_weights = None
             self.existing_samples = None
@@ -2057,6 +2060,7 @@ class Input(_Input):
         self.burnin = self.opts.burnin
         self.custom_plotting = self.opts.custom_plotting
         self.add_to_corner = self.opts.add_to_corner
+        self.corner_params = self.add_to_corner
         self.email = self.opts.email
         self.dump = self.opts.dump
         self.hdf5 = not self.opts.save_to_json
@@ -2080,6 +2084,10 @@ class Input(_Input):
         self.package_information = self.get_package_information()
         if not ignore_copy:
             self.copy_files()
+        self.file_kwargs["webpage_url"] = self.baseurl + "/home.html"
+        self.same_parameters = []
+        if self.mcmc_samples:
+            self._samples = {label: self.samples.T for label in self.labels}
         self.write_current_state()
 
     def write_current_state(self):
@@ -2093,145 +2101,6 @@ class Input(_Input):
         logger.debug(
             "Written checkpoint file: {}".format(self._resume_file_path)
         )
-
-
-class PostProcessing(object):
-    """Super class to post process the input data
-
-    Parameters
-    ----------
-    inputs: argparse.Namespace
-        Namespace object containing the command line options
-    colors: list, optional
-        colors that you wish to use to distinguish different result files
-
-    Attributes
-    ----------
-    result_files: list
-        list of result files passed
-    compare_results: list
-        list of labels stored in the metafile that you wish to compare
-    add_to_existing: Bool
-        True if we are adding to an existing web directory
-    existing_samples: dict
-        dictionary of samples stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_injection_data: dict
-        dictionary of injection data stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_file_version: dict
-        dictionary of file versions stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_config: list
-        list of configuration files stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_labels: list
-        list of labels stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    user: str
-        the user who submitted the job
-    webdir: str
-        the directory to store the webpages, plots and metafile produced
-    baseurl: str
-        the base url of the webpages
-    labels: list
-        list of labels used to distinguish the result files
-    config: list
-        list of configuration files for each result file
-    injection_file: list
-        list of injection files for each result file
-    publication: Bool
-        if true, publication quality plots are generated. Default False
-    kde_plot: Bool
-        if true, kde plots are generated instead of histograms. Default False
-    samples: dict
-        dictionary of posterior samples stored in the result files
-    priors: dict
-        dictionary of prior samples stored in the result files
-    custom_plotting: list
-        list containing the directory and name of python file which contains
-        custom plotting functions. Default None
-    email: str
-        the email address of the user
-    dump: Bool
-        if True, all plots will be dumped onto a single html page. Default False
-    hdf5: Bool
-        if True, the metafile is stored in hdf5 format. Default False
-    same_parameters: dict
-        list of parameters that are common in all result files
-    disable_comparison: bool
-        whether or not to make comparison plots/pages when mutiple results
-        files are present
-    """
-    def __init__(self, inputs, colors="default"):
-        self.inputs = inputs
-        self.filename = self.inputs.filename
-        self.result_files = self.inputs.result_files
-        self.existing = self.inputs.existing
-        self.compare_results = self.inputs.compare_results
-        self.add_to_existing = False
-        if self.existing is not None:
-            self.add_to_existing = True
-            self.existing_metafile = self.inputs.existing_metafile
-            self.existing_samples = self.inputs.existing_samples
-            self.existing_injection_data = self.inputs.existing_injection_data
-            self.existing_file_version = self.inputs.existing_file_version
-            self.existing_file_kwargs = self.inputs.existing_file_kwargs
-            self.existing_priors = self.inputs.existing_priors
-            self.existing_config = self.inputs.existing_config
-            self.existing_labels = self.inputs.existing_labels
-            self.existing_weights = self.inputs.existing_weights
-        else:
-            self.existing_metafile = None
-            self.existing_labels = None
-            self.existing_weights = None
-            self.existing_samples = None
-            self.existing_file_version = None
-            self.existing_file_kwargs = None
-            self.existing_priors = None
-            self.existing_config = None
-            self.existing_injection_data = None
-        self.user = self.inputs.user
-        self.host = self.inputs.host
-        self.webdir = self.inputs.webdir
-        self.baseurl = self.inputs.baseurl
-        self.mcmc_samples = self.inputs.mcmc_samples
-        self.labels = self.inputs.labels
-        self.weights = self.inputs.weights
-        self.config = self.inputs.config
-        self.injection_file = self.inputs.injection_file
-        self.injection_data = self.inputs.injection_data
-        self.publication = self.inputs.publication
-        self.kde_plot = self.inputs.kde_plot
-        self.samples = self.inputs.samples
-        self.priors = self.inputs.priors
-        self.custom_plotting = self.inputs.custom_plotting
-        self.corner_params = self.inputs.add_to_corner
-        self.email = self.inputs.email
-        self.dump = self.inputs.dump
-        self.hdf5 = self.inputs.hdf5
-        self.external_hdf5_links = self.inputs.external_hdf5_links
-        self.hdf5_compression = self.inputs.hdf5_compression
-        self.file_version = self.inputs.file_version
-        self.file_kwargs = self.inputs.file_kwargs
-        self.file_kwargs["webpage_url"] = self.baseurl + "/home.html"
-        self.palette = self.inputs.palette
-        self.colors = self.inputs.colors
-        self.linestyles = self.inputs.linestyles
-        self.include_prior = self.inputs.include_prior
-        self.notes = self.inputs.notes
-        self.descriptions = self.inputs.descriptions
-        self.disable_comparison = self.inputs.disable_comparison
-        self.disable_interactive = self.inputs.disable_interactive
-        self.disable_expert = self.inputs.disable_expert
-        self.disable_corner = self.inputs.disable_corner
-        self.multi_process = self.inputs.multi_threading_for_plots
-        self.package_information = self.inputs.package_information
-        self.existing_plot = self.inputs.existing_plot
-        self.restart_from_checkpoint = self.inputs.restart_from_checkpoint
-        self.same_parameters = []
-        if self.mcmc_samples:
-            self.samples = {label: self.samples.T for label in self.labels}
 
     @property
     def analytic_prior_dict(self):
@@ -2251,11 +2120,14 @@ class PostProcessing(object):
 
     @same_parameters.setter
     def same_parameters(self, same_parameters):
+        self._same_parameters = self.intersect_samples_dict(self.samples)
+
+    def intersect_samples_dict(self, samples):
         parameters = [
-            list(self.samples[key].keys()) for key in self.samples.keys()
+            list(samples[key].keys()) for key in samples.keys()
         ]
         params = list(set.intersection(*[set(l) for l in parameters]))
-        self._same_parameters = params
+        return params
 
     def grab_key_data_from_result_files(self):
         """Grab the mean, median, maxL and standard deviation for all

@@ -4,12 +4,11 @@ import subprocess
 import os
 
 from pesummary.utils.utils import logger
-from pesummary.core.inputs import PostProcessing
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
-class FinishingTouches(PostProcessing):
+class FinishingTouches(object):
     """Class to handle the finishing touches
 
     Parameters
@@ -18,16 +17,16 @@ class FinishingTouches(PostProcessing):
         The parser containing the command line arguments
     """
     def __init__(self, inputs, **kwargs):
-        super(FinishingTouches, self).__init__(inputs)
+        self.inputs = inputs
         self.send_email()
         logger.info("Complete. Webpages can be viewed at the following url "
-                    "%s" % (self.baseurl + "/home.html"))
+                    "%s" % (self.inputs.baseurl + "/home.html"))
 
     def send_email(self, message=None):
         """Send notification email.
         """
-        if self.email:
-            logger.info("Sending email to %s" % (self.email))
+        if self.inputs.email:
+            logger.info("Sending email to %s" % (self.inputs.email))
             try:
                 self._email_notify(message)
             except Exception as e:
@@ -40,7 +39,7 @@ class FinishingTouches(PostProcessing):
         if not message:
             message = ("Hi %s,\n\nYour output page is ready on %s. You can "
                        "view the result at %s \n"
-                       % (self.user, self.host, self.baseurl + "/home.html"))
+                       % (self.inputs.user, self.inputs.host, self.inputs.baseurl + "/home.html"))
         return message
 
     def _email_notify(self, message):

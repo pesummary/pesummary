@@ -3,8 +3,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.utils.utils import logger, make_dir
-from pesummary.core.inputs import PostProcessing
-from pesummary.gw.inputs import GWPostProcessing
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.gw.plots.main import _PlotGeneration
@@ -47,7 +45,7 @@ class PlotGeneration(object):
         logger.info("Finished generating plots")
 
 
-class _CorePlotGeneration(PostProcessing):
+class _CorePlotGeneration(object):
     """Class to generate all plots associated with the Core module
 
     Parameters
@@ -59,27 +57,25 @@ class _CorePlotGeneration(PostProcessing):
     """
     def __init__(self, inputs, colors="default"):
         from pesummary.core.plots.main import _PlotGeneration
-
-        super(_CorePlotGeneration, self).__init__(inputs, colors)
-        expert_plots = not self.disable_expert
+        expert_plots = not inputs.disable_expert
         self.plotting_object = _PlotGeneration(
-            webdir=self.webdir, labels=self.labels,
-            samples=self.samples, kde_plot=self.kde_plot,
-            existing_labels=self.existing_labels,
-            existing_injection_data=self.existing_injection_data,
-            existing_samples=self.existing_samples,
-            same_parameters=self.same_parameters,
-            injection_data=self.injection_data,
-            colors=self.colors, custom_plotting=self.custom_plotting,
-            add_to_existing=self.add_to_existing, priors=self.priors,
-            include_prior=self.include_prior, weights=self.weights,
-            disable_comparison=self.disable_comparison,
-            linestyles=self.linestyles,
-            disable_interactive=self.disable_interactive,
-            disable_corner=self.disable_corner,
-            multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
-            corner_params=self.corner_params, expert_plots=expert_plots,
-            checkpoint=self.restart_from_checkpoint
+            webdir=inputs.webdir, labels=inputs.labels,
+            samples=inputs.samples, kde_plot=inputs.kde_plot,
+            existing_labels=inputs.existing_labels,
+            existing_injection_data=inputs.existing_injection_data,
+            existing_samples=inputs.existing_samples,
+            same_parameters=inputs.same_parameters,
+            injection_data=inputs.injection_data,
+            colors=inputs.colors, custom_plotting=inputs.custom_plotting,
+            add_to_existing=inputs.add_to_existing, priors=inputs.priors,
+            include_prior=inputs.include_prior, weights=inputs.weights,
+            disable_comparison=inputs.disable_comparison,
+            linestyles=inputs.linestyles,
+            disable_interactive=inputs.disable_interactive,
+            disable_corner=inputs.disable_corner,
+            multi_process=inputs.multi_process, mcmc_samples=inputs.mcmc_samples,
+            corner_params=inputs.corner_params, expert_plots=expert_plots,
+            checkpoint=inputs.restart_from_checkpoint
         )
 
     def generate_plots(self):
@@ -88,7 +84,7 @@ class _CorePlotGeneration(PostProcessing):
         self.plotting_object.generate_plots()
 
 
-class _GWPlotGeneration(GWPostProcessing):
+class _GWPlotGeneration(object):
     """Class to generate all plots associated with the GW module
 
     Parameters
@@ -100,44 +96,42 @@ class _GWPlotGeneration(GWPostProcessing):
     """
     def __init__(self, inputs, colors="default"):
         from pesummary.gw.plots.main import _PlotGeneration
-
-        super(_GWPlotGeneration, self).__init__(inputs, colors)
-        expert_plots = not self.disable_expert
+        expert_plots = not inputs.disable_expert
         self.plotting_object = _PlotGeneration(
-            webdir=self.webdir, labels=self.labels,
-            samples=self.samples, kde_plot=self.kde_plot,
-            existing_labels=self.existing_labels,
-            existing_injection_data=self.existing_injection_data,
-            existing_samples=self.existing_samples,
-            existing_file_kwargs=self.existing_file_kwargs,
-            existing_approximant=self.existing_approximant,
-            existing_metafile=self.existing_metafile,
-            same_parameters=self.same_parameters,
-            injection_data=self.injection_data,
-            result_files=self.result_files,
-            file_kwargs=self.file_kwargs,
-            colors=self.colors, custom_plotting=self.custom_plotting,
-            add_to_existing=self.add_to_existing, priors=self.priors,
-            no_ligo_skymap=self.no_ligo_skymap,
-            nsamples_for_skymap=self.nsamples_for_skymap,
-            detectors=self.detectors, maxL_samples=self.maxL_samples,
-            gwdata=self.gwdata, calibration=self.calibration,
-            psd=self.psd, approximant=self.approximant,
-            multi_threading_for_skymap=self.multi_threading_for_skymap,
-            pepredicates_probs=self.pepredicates_probs,
-            include_prior=self.include_prior, publication=self.publication,
-            existing_psd=self.existing_psd,
-            existing_calibration=self.existing_calibration, weights=self.weights,
-            linestyles=self.linestyles,
-            disable_comparison=self.disable_comparison,
-            disable_interactive=self.disable_interactive,
-            disable_corner=self.disable_corner,
-            publication_kwargs=self.publication_kwargs,
-            multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
-            skymap=self.skymap, existing_skymap=self.existing_skymap,
-            corner_params=self.corner_params,
-            preliminary_pages=self.preliminary_pages, expert_plots=expert_plots,
-            checkpoint=self.restart_from_checkpoint
+            webdir=inputs.webdir, labels=inputs.labels,
+            samples=inputs.samples, kde_plot=inputs.kde_plot,
+            existing_labels=inputs.existing_labels,
+            existing_injection_data=inputs.existing_injection_data,
+            existing_samples=inputs.existing_samples,
+            existing_file_kwargs=inputs.existing_file_kwargs,
+            existing_approximant=inputs.existing_approximant,
+            existing_metafile=inputs.existing_metafile,
+            same_parameters=inputs.same_parameters,
+            injection_data=inputs.injection_data,
+            result_files=inputs.result_files,
+            file_kwargs=inputs.file_kwargs,
+            colors=inputs.colors, custom_plotting=inputs.custom_plotting,
+            add_to_existing=inputs.add_to_existing, priors=inputs.priors,
+            no_ligo_skymap=inputs.no_ligo_skymap,
+            nsamples_for_skymap=inputs.nsamples_for_skymap,
+            detectors=inputs.detectors, maxL_samples=inputs.maxL_samples,
+            gwdata=inputs.gwdata, calibration=inputs.calibration,
+            psd=inputs.psd, approximant=inputs.approximant,
+            multi_threading_for_skymap=inputs.multi_threading_for_skymap,
+            pepredicates_probs=inputs.pepredicates_probs,
+            include_prior=inputs.include_prior, publication=inputs.publication,
+            existing_psd=inputs.existing_psd,
+            existing_calibration=inputs.existing_calibration, weights=inputs.weights,
+            linestyles=inputs.linestyles,
+            disable_comparison=inputs.disable_comparison,
+            disable_interactive=inputs.disable_interactive,
+            disable_corner=inputs.disable_corner,
+            publication_kwargs=inputs.publication_kwargs,
+            multi_process=inputs.multi_process, mcmc_samples=inputs.mcmc_samples,
+            skymap=inputs.skymap, existing_skymap=inputs.existing_skymap,
+            corner_params=inputs.corner_params,
+            preliminary_pages=inputs.preliminary_pages, expert_plots=expert_plots,
+            checkpoint=inputs.restart_from_checkpoint
         )
         self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 
@@ -147,7 +141,7 @@ class _GWPlotGeneration(GWPostProcessing):
         self.plotting_object.generate_plots()
 
 
-class _PublicGWPlotGeneration(GWPostProcessing):
+class _PublicGWPlotGeneration(object):
     """Class to generate all plots associated with the GW module
 
     Parameters
@@ -159,44 +153,42 @@ class _PublicGWPlotGeneration(GWPostProcessing):
     """
     def __init__(self, inputs, colors="default"):
         from pesummary.gw.plots.public import _PlotGeneration
-
-        super(_PublicGWPlotGeneration, self).__init__(inputs, colors)
-        expert_plots = not self.disable_expert
+        expert_plots = not inputs.disable_expert
         self.plotting_object = _PlotGeneration(
-            webdir=self.webdir, labels=self.labels,
-            samples=self.samples, kde_plot=self.kde_plot,
-            existing_labels=self.existing_labels,
-            existing_injection_data=self.existing_injection_data,
-            existing_samples=self.existing_samples,
-            existing_file_kwargs=self.existing_file_kwargs,
-            existing_approximant=self.existing_approximant,
-            existing_metafile=self.existing_metafile,
-            same_parameters=self.same_parameters,
-            injection_data=self.injection_data,
-            result_files=self.result_files,
-            file_kwargs=self.file_kwargs,
-            colors=self.colors, custom_plotting=self.custom_plotting,
-            add_to_existing=self.add_to_existing, priors=self.priors,
-            no_ligo_skymap=self.no_ligo_skymap,
-            nsamples_for_skymap=self.nsamples_for_skymap,
-            detectors=self.detectors, maxL_samples=self.maxL_samples,
-            gwdata=self.gwdata, calibration=self.calibration,
-            psd=self.psd, approximant=self.approximant,
-            multi_threading_for_skymap=self.multi_threading_for_skymap,
-            pepredicates_probs=self.pepredicates_probs,
-            include_prior=self.include_prior, publication=self.publication,
-            existing_psd=self.existing_psd,
-            existing_calibration=self.existing_calibration, weights=self.weights,
-            linestyles=self.linestyles,
-            disable_comparison=self.disable_comparison,
-            disable_interactive=self.disable_interactive,
-            disable_corner=self.disable_corner,
-            publication_kwargs=self.publication_kwargs,
-            multi_process=self.multi_process, mcmc_samples=self.mcmc_samples,
-            skymap=self.skymap, existing_skymap=self.existing_skymap,
-            corner_params=self.corner_params,
-            preliminary_pages=self.preliminary_pages, expert_plots=expert_plots,
-            checkpoint=self.restart_from_checkpoint
+            webdir=inputs.webdir, labels=inputs.labels,
+            samples=inputs.samples, kde_plot=inputs.kde_plot,
+            existing_labels=inputs.existing_labels,
+            existing_injection_data=inputs.existing_injection_data,
+            existing_samples=inputs.existing_samples,
+            existing_file_kwargs=inputs.existing_file_kwargs,
+            existing_approximant=inputs.existing_approximant,
+            existing_metafile=inputs.existing_metafile,
+            same_parameters=inputs.same_parameters,
+            injection_data=inputs.injection_data,
+            result_files=inputs.result_files,
+            file_kwargs=inputs.file_kwargs,
+            colors=inputs.colors, custom_plotting=inputs.custom_plotting,
+            add_to_existing=inputs.add_to_existing, priors=inputs.priors,
+            no_ligo_skymap=inputs.no_ligo_skymap,
+            nsamples_for_skymap=inputs.nsamples_for_skymap,
+            detectors=inputs.detectors, maxL_samples=inputs.maxL_samples,
+            gwdata=inputs.gwdata, calibration=inputs.calibration,
+            psd=inputs.psd, approximant=inputs.approximant,
+            multi_threading_for_skymap=inputs.multi_threading_for_skymap,
+            pepredicates_probs=inputs.pepredicates_probs,
+            include_prior=inputs.include_prior, publication=inputs.publication,
+            existing_psd=inputs.existing_psd,
+            existing_calibration=inputs.existing_calibration, weights=inputs.weights,
+            linestyles=inputs.linestyles,
+            disable_comparison=inputs.disable_comparison,
+            disable_interactive=inputs.disable_interactive,
+            disable_corner=inputs.disable_corner,
+            publication_kwargs=inputs.publication_kwargs,
+            multi_process=inputs.multi_process, mcmc_samples=inputs.mcmc_samples,
+            skymap=inputs.skymap, existing_skymap=inputs.existing_skymap,
+            corner_params=inputs.corner_params,
+            preliminary_pages=inputs.preliminary_pages, expert_plots=expert_plots,
+            checkpoint=inputs.restart_from_checkpoint
         )
         self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 
