@@ -254,7 +254,7 @@ class _MetaFile(object):
         self.outdir = outdir
         self.package_information = package_information
         if not len(package_information):
-            from pesummary.core.inputs import _Input
+            from pesummary.core.cli.inputs import _Input
             self.package_information = _Input.get_package_information()
         self.mcmc_samples = mcmc_samples
 

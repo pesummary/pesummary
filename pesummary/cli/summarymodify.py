@@ -13,8 +13,8 @@ from pathlib import Path
 from pesummary.utils.utils import logger, check_file_exists_and_rename
 from pesummary.utils.dict import paths_to_key
 from pesummary.utils.exceptions import InputError
-from pesummary.core.command_line import DelimiterSplitAction
-from pesummary.gw.inputs import _GWInput
+from pesummary.core.cli.actions import DelimiterSplitAction
+from pesummary.gw.cli.inputs import _GWInput
 from pesummary.gw.file.meta_file import _GWMetaFile
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

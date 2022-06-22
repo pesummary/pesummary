@@ -211,12 +211,12 @@ class TestUtils(object):
 
         opts = namespace({"gw": True, "psd": True})
         funcs = utils.functions(opts)
-        assert funcs["input"] == pesummary.gw.inputs.GWInput
+        assert funcs["input"] == pesummary.gw.cli.inputs.GWInput
         assert funcs["MetaFile"] == pesummary.gw.file.meta_file.GWMetaFile
 
         opts = namespace({"webdir": tmpdir})
         funcs = utils.functions(opts)
-        assert funcs["input"] == pesummary.core.inputs.Input
+        assert funcs["input"] == pesummary.core.cli.inputs.Input
         assert funcs["MetaFile"] == pesummary.core.file.meta_file.MetaFile
 
     def test_get_version_information(self):

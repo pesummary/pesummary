@@ -5,8 +5,8 @@
 import argparse
 from pesummary.utils.exceptions import InputError
 from pesummary.utils.utils import logger
-from pesummary.core.inputs import Input
-from pesummary.gw.inputs import GWInput
+from pesummary.core.cli.inputs import Input
+from pesummary.gw.cli.inputs import GWInput
 from pesummary.core.webpage.main import _WebpageGeneration
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -22,7 +22,7 @@ def command_line(parser=None):
     ----------
     """
     if parser is None:
-        from pesummary.gw.parser import parser as _parser
+        from pesummary.gw.cli.parser import parser as _parser
         parser = _parser()
 
     parser.add_argument("--parameters", dest="parameters", nargs='+',

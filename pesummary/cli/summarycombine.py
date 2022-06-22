@@ -2,7 +2,7 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary.gw.parser import parser
+from pesummary.gw.cli.parser import parser
 from pesummary.utils import functions, history_dictionary
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

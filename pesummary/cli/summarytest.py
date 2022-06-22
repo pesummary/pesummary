@@ -418,7 +418,7 @@ def examples(*args, repository=os.path.join(".", "pesummary"), **kwargs):
 def main(args=None):
     """Top level interface for `summarytest`
     """
-    from pesummary.gw.parser import parser
+    from pesummary.gw.cli.parser import parser
 
     _parser = parser(existing_parser=command_line())
     opts, unknown = _parser.parse_known_args(args=args)

@@ -1,6 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary.core.command_line import command_line
+from .command_line import command_line
 from pesummary.utils.utils import logger, command_line_arguments
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

@@ -7,11 +7,11 @@ import copy
 
 import argparse
 
-from pesummary.gw.inputs import GWInput
-from pesummary.core.command_line import command_line
-from pesummary.gw.command_line import (
-    insert_gwspecific_option_group, add_dynamic_PSD_to_namespace,
-    add_dynamic_calibration_to_namespace
+from pesummary.gw.cli.inputs import GWInput
+from pesummary.core.cli.command_line import command_line
+from pesummary.gw.cli.command_line import insert_gwspecific_option_group
+from pesummary.gw.cli.parser import (
+    add_dynamic_PSD_to_namespace, add_dynamic_calibration_to_namespace
 )
 from .base import make_result_file, gw_parameters, data_dir, testing_dir
 

@@ -7,8 +7,8 @@ import argparse
 import numpy as np
 import multiprocessing
 
-from pesummary.core.command_line import CheckFilesExistAction
-from pesummary.core.parser import parser
+from pesummary.core.cli.actions import CheckFilesExistAction
+from pesummary.core.cli.parser import parser
 from pesummary.utils.utils import iterator, logger, make_dir
 from pesummary.io import read, write, available_formats
 

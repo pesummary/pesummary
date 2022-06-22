@@ -680,7 +680,7 @@ class Bilby(Base):
         try:
             return self.grab_psd_calibration_data_from_config(config, "psd_dict")
         except KeyError:
-            from pesummary.gw.inputs import _GWInput
+            from pesummary.gw.cli.inputs import _GWInput
             logger.info(
                 "Unable to find any PSD information in '{}'. Looking in "
                 "run directory".format(self.config)
@@ -697,7 +697,7 @@ class Bilby(Base):
                 config, "spline_calibration_envelope_dict"
             )
         except KeyError:
-            from pesummary.gw.inputs import _GWInput
+            from pesummary.gw.cli.inputs import _GWInput
             logger.info(
                 "Unable to find any calibration information in '{}'. Looking "
                 "in run directory".format(self.config)
@@ -716,7 +716,7 @@ class Bilby(Base):
         pattern: str
             string to identify the data stored in the configuration file
         """
-        from pesummary.core.command_line import ConfigAction
+        from pesummary.core.cli.actions import ConfigAction
 
         data_dict = self.try_underscore_and_hyphen(config["config"], pattern)
         if data_dict is None or data_dict == "None":
@@ -754,7 +754,7 @@ class Bilby(Base):
         pattern: str
             pattern to find a specific set of files
         """
-        from pesummary.gw.inputs import _GWInput
+        from pesummary.gw.cli.inputs import _GWInput
 
         files = self.glob(os.path.join(self.rundir, pattern), "*")
         if not len(files):

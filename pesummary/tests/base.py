@@ -3,10 +3,10 @@
 import os
 import numpy as np
 from pathlib import Path
-from pesummary.core.command_line import command_line
-from pesummary.gw.command_line import insert_gwspecific_option_group
-from pesummary.gw.inputs import GWInput
-from pesummary.core.inputs import Input
+from pesummary.core.cli.command_line import command_line
+from pesummary.gw.cli.command_line import insert_gwspecific_option_group
+from pesummary.gw.cli.inputs import GWInput
+from pesummary.core.cli.inputs import Input
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 

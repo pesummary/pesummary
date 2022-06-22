@@ -202,8 +202,8 @@ def command_line_arguments():
 def command_line_dict():
     """Return a dictionary of command line arguments
     """
-    from pesummary.core.command_line import command_line
-    from pesummary.gw.command_line import insert_gwspecific_option_group
+    from pesummary.core.cli.command_line import command_line
+    from pesummary.gw.cli.command_line import insert_gwspecific_option_group
 
     parser = command_line()
     insert_gwspecific_option_group(parser)
@@ -214,7 +214,7 @@ def command_line_dict():
 def gw_results_file(opts):
     """Determine if a GW results file is passed
     """
-    from pesummary.gw.command_line import _all_gw_options
+    from pesummary.gw.cli.command_line import _all_gw_options
 
     attrs, defaults = _all_gw_options()
     condition = any(
@@ -230,8 +230,8 @@ def functions(opts, gw=False):
     """Return a dictionary of functions that are either specific to GW results
     files or core.
     """
-    from pesummary.core.inputs import Input
-    from pesummary.gw.inputs import GWInput
+    from pesummary.core.cli.inputs import Input
+    from pesummary.gw.cli.inputs import GWInput
     from pesummary.core.file.meta_file import MetaFile
     from pesummary.gw.file.meta_file import GWMetaFile
     from pesummary.core.finish import FinishingTouches

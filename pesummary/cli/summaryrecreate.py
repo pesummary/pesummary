@@ -2,7 +2,7 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary.core.command_line import DelimiterSplitAction
+from pesummary.core.cli.actions import DelimiterSplitAction
 from pesummary.gw.file.read import read
 from pesummary.utils.utils import logger, make_dir
 from pesummary.utils.dict import edit_dictionary, paths_to_key

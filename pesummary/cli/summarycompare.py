@@ -5,7 +5,7 @@
 import os
 import copy
 import pesummary
-from pesummary.core.parser import parser
+from pesummary.core.cli.parser import parser
 from pesummary.core.plots.main import _PlotGeneration
 from pesummary.core.webpage.main import _WebpageGeneration
 from pesummary.utils.utils import logger

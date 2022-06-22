@@ -8,9 +8,9 @@ import argparse
 
 from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
 from pesummary.utils.utils import logger
-from pesummary.core.command_line import CheckFilesExistAction
-from pesummary.core.parser import parser
-from pesummary.core.inputs import _Input
+from pesummary.core.cli.actions import CheckFilesExistAction
+from pesummary.core.cli.parser import parser
+from pesummary.core.cli.inputs import _Input
 from pesummary.io import read, write
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

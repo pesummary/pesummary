@@ -1,4 +1,4 @@
-from pesummary.core.command_line import ConfigAction
+from pesummary.core.cli.actions import ConfigAction
 
 def test_dict_from_str():
     f = ConfigAction.dict_from_str("{'H1':10, 'L1':20}")

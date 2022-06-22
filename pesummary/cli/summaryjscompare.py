@@ -18,7 +18,7 @@ import matplotlib.style
 import matplotlib.pyplot as plt
 
 from pesummary.io import read
-from pesummary.core.parser import parser as pesummary_parser
+from pesummary.core.cli.parser import parser as pesummary_parser
 from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
 from pesummary.core.plots.figure import figure
 from pesummary.gw.plots.bounds import default_bounds

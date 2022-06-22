@@ -279,7 +279,7 @@ class TestCoreBilbyJson(Base):
         plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
         files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
 
-        from pesummary.core.command_line import command_line
+        from pesummary.core.cli.command_line import command_line
 
         parser = command_line()
         default_args = ["--webdir", "{}_pesummary".format(self.tmpdir),
@@ -518,8 +518,8 @@ class TestGWLALInference(GWBase):
         plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
         files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
 
-        from pesummary.core.command_line import command_line
-        from pesummary.gw.command_line import insert_gwspecific_option_group
+        from pesummary.core.cli.command_line import command_line
+        from pesummary.gw.cli.command_line import insert_gwspecific_option_group
 
         parser = command_line()
         insert_gwspecific_option_group(parser)
