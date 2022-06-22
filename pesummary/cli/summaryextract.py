@@ -4,8 +4,8 @@
 
 import argparse
 
-from pesummary.core.command_line import CheckFilesExistAction
-from pesummary.core.parser import parser
+from pesummary.core.cli.actions import CheckFilesExistAction
+from pesummary.core.cli.parser import parser
 from pesummary.utils.utils import logger
 from pesummary.io import read, available_formats
 

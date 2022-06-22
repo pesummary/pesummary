@@ -5,7 +5,7 @@ import os
 import math
 import numpy as np
 import pesummary
-from pesummary.core.inputs import _Input, Input
+from pesummary.core.cli.inputs import _Input, Input
 from pesummary.gw.file.read import read as GWRead
 from pesummary.gw.file.psd import PSD
 from pesummary.gw.file.calibration import Calibration

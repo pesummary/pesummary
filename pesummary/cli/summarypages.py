@@ -185,14 +185,14 @@ class _PublicGWWebpageGeneration(object):
 def main(args=None, _parser=None, _core_input_cls=None, _gw_input_cls=None):
     """Top level interface for `summarypages`
     """
-    from pesummary.gw.parser import parser
+    from pesummary.gw.cli.parser import parser
     from pesummary.utils import functions, history_dictionary
 
     if _parser is None:
         _parser = parser()
     opts, unknown = _parser.parse_known_args(args=args)
     if opts.restart_from_checkpoint:
-        from pesummary.core.inputs import load_current_state
+        from pesummary.core.cli.inputs import load_current_state
         from pesummary import conf
         import os
         if opts.webdir is None:

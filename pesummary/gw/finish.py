@@ -5,7 +5,7 @@ import os
 import time
 import numpy as np
 
-from pesummary.core.parser import convert_dict_to_namespace
+from pesummary.core.cli.parser import convert_dict_to_namespace
 from pesummary.core.finish import FinishingTouches
 from pesummary.utils.utils import logger
 from pesummary.cli.summarymodify import _main, command_line

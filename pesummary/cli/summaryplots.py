@@ -6,7 +6,7 @@ from pesummary.utils.utils import logger, make_dir
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.gw.plots.main import _PlotGeneration
-from pesummary.core.command_line import DictionaryAction
+from pesummary.core.cli.actions import DictionaryAction
 from pesummary.gw.file.read import read
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

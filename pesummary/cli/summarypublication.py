@@ -9,7 +9,7 @@ from pesummary.gw.plots import publication as pub
 from pesummary.core.plots import population as pop
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import make_dir, logger, _check_latex_install
-from pesummary.core.command_line import DictionaryAction
+from pesummary.core.cli.actions import DictionaryAction
 import argparse
 import seaborn
 import numpy as np

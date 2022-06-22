@@ -29,7 +29,7 @@ def command_line():
 def main(args=None):
     """
     """
-    from pesummary.gw.parser import parser
+    from pesummary.gw.cli.parser import parser
     from pesummary.gw.gracedb import get_gracedb_data
 
     _parser = parser(existing_parser=command_line())

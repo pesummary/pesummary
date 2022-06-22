@@ -7,7 +7,7 @@ import numpy as np
 import argparse
 from itertools import cycle
 from pesummary import conf
-from pesummary.gw.parser import TGRparser
+from pesummary.gw.cli.parser import TGRparser
 from pesummary.gw.webpage.tgr import TGRWebpageGeneration
 from pesummary.gw.file.meta_file import TGRMetaFile
 from pesummary.gw.plots.tgr import make_and_save_imrct_plots
@@ -203,7 +203,7 @@ def imrct(opts):
 
     Returns
     -------
-    args: pesummary.gw.inputs.IMRCTInput
+    args: pesummary.gw.cli.inputs.IMRCTInput
         IMRCTInput object containing the command line arguments
     data: list
         a list of length 3 containing a dictionary of key data associated with
@@ -212,7 +212,7 @@ def imrct(opts):
         analyses and a list containing the IMRCT deviation PDFs for each
         analysis
     """
-    from pesummary.gw.inputs import IMRCTInput
+    from pesummary.gw.cli.inputs import IMRCTInput
 
     args = IMRCTInput(opts)
     test_key_data = {}
