@@ -6,7 +6,7 @@ from glob import glob
 
 from pesummary.core.cli.command_line import command_line
 from pesummary.gw.cli.command_line import insert_gwspecific_option_group
-from pesummary.gw.cli.inputs import GWInput
+from pesummary.gw.cli.inputs import PlottingInput, WebpagePlusPlottingPlusMetaFileInput
 from pesummary.cli.summaryplots import _GWPlotGeneration as GWPlotGeneration
 from pesummary.gw.file.meta_file import GWMetaFile
 from pesummary.cli.summarypages import _GWWebpageGeneration as GWWebpageGeneration
@@ -54,7 +54,7 @@ class TestPlotGeneration(object):
             "--calibration", "./.outdir_bilby/calibration.dat",
             "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_bilby/plots/*.png"))
@@ -84,7 +84,7 @@ class TestPlotGeneration(object):
             "--config", data_dir + "/config_lalinference.ini",
             "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_lalinference/plots/*.png"))
@@ -119,7 +119,7 @@ class TestPlotGeneration(object):
             "./.outdir_comparison/lalinference_example.h5",
             "--labels", "H10", "H11", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_comparison/plots/*.png"))
@@ -155,7 +155,7 @@ class TestPlotGeneration(object):
             "--samples", "./.outdir_add_to_existing2/bilby_example.h5",
             "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
         webpage = GWWebpageGeneration(inputs)
@@ -169,7 +169,7 @@ class TestPlotGeneration(object):
             "--samples", "./.outdir_add_to_existing2/lalinference_example.h5",
             "--labels", "H11", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs) 
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_add_to_existing2/plots/*.png"))
@@ -206,7 +206,7 @@ class TestPlotGeneration(object):
             "--disable_comparison", "--disable_expert"
         ]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_comparison/plots/*.png"))
@@ -243,7 +243,7 @@ class TestPlotGeneration(object):
             "--samples", "./.outdir_add_to_existing_no_comparison/bilby_example.h5",
             "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
         webpage = GWWebpageGeneration(inputs)
@@ -259,7 +259,7 @@ class TestPlotGeneration(object):
             "--disable_comparison", "--disable_expert"
         ]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
         plots = sorted(glob("./.outdir_add_to_existing_no_comparison/plots/*.png"))

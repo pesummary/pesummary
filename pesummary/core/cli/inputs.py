@@ -13,6 +13,7 @@ import numpy as np
 import pesummary
 from pesummary.core.file.read import read as Read
 from pesummary.utils.exceptions import InputError
+from pesummary.utils.decorators import deprecation
 from pesummary.utils.samples_dict import SamplesDict, MCMCSamplesDict
 from pesummary.utils.utils import (
     guess_url, logger, make_dir, make_cache_style_file, list_match
@@ -1761,40 +1762,6 @@ class _Input(object):
                     for ignore in removed_parameters:
                         self.samples[label].pop(ignore)
 
-    @property
-    def default_files_to_copy(self):
-        files_to_copy = []
-        path = pkg_resources.resource_filename("pesummary", "core")
-        scripts = glob(os.path.join(path, "js", "*.js"))
-        for i in scripts:
-            files_to_copy.append(
-                [i, os.path.join(self.webdir, "js", os.path.basename(i))]
-            )
-        scripts = glob(os.path.join(path, "css", "*.css"))
-        for i in scripts:
-            files_to_copy.append(
-                [i, os.path.join(self.webdir, "css", os.path.basename(i))]
-            )
-
-        if not all(i is None for i in self.config):
-            for num, i in enumerate(self.config):
-                if i is not None and self.webdir not in i:
-                    filename = "_".join(
-                        [self.labels[num], "config.ini"]
-                    )
-                    files_to_copy.append(
-                        [i, os.path.join(self.webdir, "config", filename)]
-                    )
-        for num, _file in enumerate(self.result_files):
-            if not self.mcmc_samples:
-                filename = "{}_{}".format(self.labels[num], Path(_file).name)
-            else:
-                filename = "chain_{}_{}".format(num, Path(_file).name)
-            files_to_copy.append(
-                [_file, os.path.join(self.webdir, "samples", filename)]
-            )
-        return files_to_copy
-
     @staticmethod
     def _make_directories(webdir, dirs):
         """Make the directories to store the information
@@ -1806,8 +1773,6 @@ class _Input(object):
     def make_directories(self):
         """Make the directories to store the information
         """
-        if self.publication:
-            self.default_directories.append("plots/publication")
         self._make_directories(self.webdir, self.default_directories)
 
     @staticmethod
@@ -1897,79 +1862,10 @@ class _Input(object):
         }
 
 
-class Input(_Input):
-    """Class to handle the core command line arguments
-
-    Parameters
-    ----------
-    opts: argparse.Namespace
-        Namespace object containing the command line options
-
-    Attributes
-    ----------
-    result_files: list
-        list of result files passed
-    compare_results: list
-        list of labels stored in the metafile that you wish to compare
-    add_to_existing: Bool
-        True if we are adding to an existing web directory
-    existing_samples: dict
-        dictionary of samples stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_injection_data: dict
-        dictionary of injection data stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_file_version: dict
-        dictionary of file versions stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_config: list
-        list of configuration files stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_labels: list
-        list of labels stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    user: str
-        the user who submitted the job
-    webdir: str
-        the directory to store the webpages, plots and metafile produced
-    baseurl: str
-        the base url of the webpages
-    labels: list
-        list of labels used to distinguish the result files
-    config: list
-        list of configuration files for each result file
-    injection_file: list
-        list of injection files for each result file
-    publication: Bool
-        if true, publication quality plots are generated. Default False
-    kde_plot: Bool
-        if true, kde plots are generated instead of histograms. Default False
-    samples: dict
-        dictionary of posterior samples stored in the result files
-    priors: dict
-        dictionary of prior samples stored in the result files
-    custom_plotting: list
-        list containing the directory and name of python file which contains
-        custom plotting functions. Default None
-    email: str
-        the email address of the user
-    dump: Bool
-        if True, all plots will be dumped onto a single html page. Default False
-    hdf5: Bool
-        if True, the metafile is stored in hdf5 format. Default False
-    notes: str
-        notes that you wish to add to the webpages
-    disable_comparison: Bool
-        if True, comparison plots and pages are not produced
-    disable_interactive: Bool
-        if True, interactive plots are not produced
-    disable_expert: Bool
-        if True, expert diagnostic plots are not produced
+class BaseInput(_Input):
+    """Class to handle and store base command line arguments
     """
-    def __init__(
-        self, opts, ignore_copy=False, extra_options=None, checkpoint=None,
-        gw=False
-    ):
+    def __init__(self, opts, ignore_copy=False, checkpoint=None, gw=False):
         self.opts = opts
         self.gw = gw
         self.restart_from_checkpoint = self.opts.restart_from_checkpoint
@@ -1983,20 +1879,65 @@ class Input(_Input):
             self._restarted_from_checkpoint = True
             return
         self.seed = self.opts.seed
-        self.style_file = self.opts.style_file
         self.result_files = self.opts.samples
+        self.user = self.opts.user
+        self.existing = self.opts.existing
+        self.add_to_existing = False
+        if self.existing is not None:
+            self.add_to_existing = True
+            self.existing_metafile = True
+        self.webdir = self.opts.webdir
+        self._restarted_from_checkpoint = False
+        self.resume_file_dir = conf.checkpoint_dir(self.webdir)
+        self.resume_file = conf.resume_file
+        self._resume_file_path = os.path.join(
+            self.resume_file_dir, self.resume_file
+        )
+        self.make_directories()
+        self.email = self.opts.email
+        self.pe_algorithm = self.opts.pe_algorithm
+        self.multi_process = self.opts.multi_process
+        self.package_information = self.get_package_information()
+        if not ignore_copy:
+            self.copy_files()
+        self.write_current_state()
+
+    @property
+    def default_directories(self):
+        return ["checkpoint"]
+
+    @property
+    def default_files_to_copy(self):
+        return []
+
+    def write_current_state(self):
+        """Write the current state of the input class to file
+        """
+        from pesummary.io import write
+        write(
+            self, outdir=self.resume_file_dir, file_format="pickle",
+            filename=self.resume_file, overwrite=True
+        )
+        logger.debug(
+            "Written checkpoint file: {}".format(self._resume_file_path)
+        )
+
+
+class SamplesInput(BaseInput):
+    """Class to handle and store sample specific command line arguments
+    """
+    def __init__(self, *args, extra_options=None, **kwargs):
+        """
+        """
+        super(SamplesInput, self).__init__(*args, **kwargs)
         if self.result_files is not None:
             self._open_result_files = {path: None for path in self.result_files}
         self.meta_file = False
         if self.result_files is not None and len(self.result_files) == 1:
             self.meta_file = self.is_pesummary_metafile(self.result_files[0])
-        self.existing = self.opts.existing
         self.compare_results = self.opts.compare_results
         self.disable_injection = self.opts.disable_injection
-        self.add_to_existing = False
         if self.existing is not None:
-            self.add_to_existing = True
-            self.existing_metafile = True
             self.existing_data = self.grab_data_from_metafile(
                 self.existing_metafile, self.existing,
                 compare=self.compare_results
@@ -2019,33 +1960,15 @@ class Input(_Input):
             self.existing_priors = None
             self.existing_config = None
             self.existing_injection_data = None
-        self.user = self.opts.user
-        self.webdir = self.opts.webdir
-        self._restarted_from_checkpoint = False
-        self.resume_file_dir = conf.checkpoint_dir(self.webdir)
-        self.resume_file = conf.resume_file
-        self._resume_file_path = os.path.join(
-            self.resume_file_dir, self.resume_file
-        )
-        self.baseurl = self.opts.baseurl
-        self.filename = self.opts.filename
         self.mcmc_samples = self.opts.mcmc_samples
         self.labels = self.opts.labels
         self.weights = {i: None for i in self.labels}
         self.config = self.opts.config
         self.injection_file = self.opts.inj_file
-        self.publication = self.opts.publication
-        self.publication_kwargs = self.opts.publication_kwargs
-        self.default_directories = [
-            "samples", "plots", "js", "html", "css", "plots/corner", "config",
-            "checkpoint"
-        ]
-        self.make_directories()
         self.regenerate = self.opts.regenerate
         if extra_options is not None:
             for opt in extra_options:
                 setattr(self, opt, getattr(self.opts, opt))
-        self.kde_plot = self.opts.kde_plot
         self.nsamples_for_prior = self.opts.nsamples_for_prior
         self.priors = self.opts.prior_file
         self.disable_prior_sampling = self.opts.disable_prior_sampling
@@ -2058,49 +1981,10 @@ class Input(_Input):
         self.ignore_parameters = self.opts.ignore_parameters
         self.burnin_method = self.opts.burnin_method
         self.burnin = self.opts.burnin
-        self.custom_plotting = self.opts.custom_plotting
-        self.add_to_corner = self.opts.add_to_corner
-        self.corner_params = self.add_to_corner
-        self.email = self.opts.email
-        self.dump = self.opts.dump
-        self.hdf5 = not self.opts.save_to_json
-        self.external_hdf5_links = self.opts.external_hdf5_links
-        self.hdf5_compression = self.opts.hdf5_compression
-        self.palette = self.opts.palette
-        self.include_prior = self.opts.include_prior
-        self.colors = self.opts.colors
-        self.linestyles = self.opts.linestyles
-        self.disable_corner = self.opts.disable_corner
-        self.notes = self.opts.notes
-        self.descriptions = self.opts.descriptions
-        self.preferred = self.opts.preferred
-        self.pe_algorithm = self.opts.pe_algorithm
-        self.disable_comparison = self.opts.disable_comparison
-        self.disable_interactive = self.opts.disable_interactive
-        self.disable_expert = self.opts.disable_expert
-        self.multi_process = self.opts.multi_process
-        self.multi_threading_for_plots = self.multi_process
-        self.existing_plot = self.opts.existing_plot
-        self.package_information = self.get_package_information()
-        if not ignore_copy:
-            self.copy_files()
-        self.file_kwargs["webpage_url"] = self.baseurl + "/home.html"
         self.same_parameters = []
         if self.mcmc_samples:
             self._samples = {label: self.samples.T for label in self.labels}
         self.write_current_state()
-
-    def write_current_state(self):
-        """Write the current state of the input class to file
-        """
-        from pesummary.io import write
-        write(
-            self, outdir=self.resume_file_dir, file_format="pickle",
-            filename=self.resume_file, overwrite=True
-        )
-        logger.debug(
-            "Written checkpoint file: {}".format(self._resume_file_path)
-        )
 
     @property
     def analytic_prior_dict(self):
@@ -2145,6 +2029,162 @@ class Input(_Input):
                     ) else _inj
                 )
         return key_data
+
+
+class PlottingInput(SamplesInput):
+    """Class to handle and store plotting specific command line arguments
+    """
+    def __init__(self, *args, **kwargs):
+        super(PlottingInput, self).__init__(*args, **kwargs)
+        self.style_file = self.opts.style_file
+        self.publication = self.opts.publication
+        self.publication_kwargs = self.opts.publication_kwargs
+        self.kde_plot = self.opts.kde_plot
+        self.custom_plotting = self.opts.custom_plotting
+        self.add_to_corner = self.opts.add_to_corner
+        self.corner_params = self.add_to_corner
+        self.palette = self.opts.palette
+        self.include_prior = self.opts.include_prior
+        self.colors = self.opts.colors
+        self.linestyles = self.opts.linestyles
+        self.disable_corner = self.opts.disable_corner
+        self.disable_comparison = self.opts.disable_comparison
+        self.disable_interactive = self.opts.disable_interactive
+        self.disable_expert = self.opts.disable_expert
+        self.multi_threading_for_plots = self.multi_process
+        self.write_current_state()
+
+    @property
+    def default_directories(self):
+        dirs = super(PlottingInput, self).default_directories
+        dirs += ["plots", "plots/corner", "plots/publication"]
+        return dirs
+
+
+class WebpageInput(SamplesInput):
+    """Class to handle and store webpage specific command line arguments
+    """
+    def __init__(self, *args, **kwargs):
+        super(WebpageInput, self).__init__(*args, **kwargs)
+        self.baseurl = self.opts.baseurl
+        self.existing_plot = self.opts.existing_plot
+        self.pe_algorithm = self.opts.pe_algorithm
+        self.notes = self.opts.notes
+        self.dump = self.opts.dump
+        self.hdf5 = not self.opts.save_to_json
+        self.external_hdf5_links = self.opts.external_hdf5_links
+        self.file_kwargs["webpage_url"] = self.baseurl + "/home.html"
+        self.write_current_state()
+
+    @property
+    def default_directories(self):
+        dirs = super(WebpageInput, self).default_directories
+        dirs += ["js", "html", "css"]
+        return dirs
+
+    @property
+    def default_files_to_copy(self):
+        files_to_copy = super(WebpageInput, self).default_files_to_copy
+        path = pkg_resources.resource_filename("pesummary", "core")
+        scripts = glob(os.path.join(path, "js", "*.js"))
+        for i in scripts:
+            files_to_copy.append(
+                [i, os.path.join(self.webdir, "js", os.path.basename(i))]
+            )
+        scripts = glob(os.path.join(path, "css", "*.css"))
+        for i in scripts:
+            files_to_copy.append(
+                [i, os.path.join(self.webdir, "css", os.path.basename(i))]
+            )
+        return files_to_copy
+
+
+class WebpagePlusPlottingInput(PlottingInput, WebpageInput):
+    """Class to handle and store webpage and plotting specific command line
+    arguments
+    """
+    def __init__(self, *args, **kwargs):
+        super(WebpagePlusPlottingInput, self).__init__(*args, **kwargs)
+        self.copy_files()
+
+    @property
+    def default_directories(self):
+        return super(WebpagePlusPlottingInput, self).default_directories
+
+    @property
+    def default_files_to_copy(self):
+        return super(WebpagePlusPlottingInput, self).default_files_to_copy
+
+
+class MetaFileInput(SamplesInput):
+    """Class to handle and store metafile specific command line arguments
+    """
+    def __init__(self, *args, **kwargs):
+        kwargs.update({"ignore_copy": True})
+        super(MetaFileInput, self).__init__(*args, **kwargs)
+        self.copy_files()
+        self.filename = self.opts.filename
+        self.hdf5 = not self.opts.save_to_json
+        self.hdf5_compression = self.opts.hdf5_compression
+        self.external_hdf5_links = self.opts.external_hdf5_links
+        self.descriptions = self.opts.descriptions
+        self.preferred = self.opts.preferred
+        self.write_current_state()
+
+    @property
+    def default_directories(self):
+        dirs = super(MetaFileInput, self).default_directories
+        dirs += ["samples", "config"]
+        return dirs
+
+    @property
+    def default_files_to_copy(self):
+        files_to_copy = super(MetaFileInput, self).default_files_to_copy
+        if not all(i is None for i in self.config):
+            for num, i in enumerate(self.config):
+                if i is not None and self.webdir not in i:
+                    filename = "_".join(
+                        [self.labels[num], "config.ini"]
+                    )
+                    files_to_copy.append(
+                        [i, os.path.join(self.webdir, "config", filename)]
+                    )
+        for num, _file in enumerate(self.result_files):
+            if not self.mcmc_samples:
+                filename = "{}_{}".format(self.labels[num], Path(_file).name)
+            else:
+                filename = "chain_{}_{}".format(num, Path(_file).name)
+            files_to_copy.append(
+                [_file, os.path.join(self.webdir, "samples", filename)]
+            )
+        return files_to_copy
+
+
+class WebpagePlusPlottingPlusMetaFileInput(MetaFileInput, WebpagePlusPlottingInput):
+    """Class to handle and store webpage, plotting and metafile specific command
+    line arguments
+    """
+    def __init__(self, *args, **kwargs):
+        super(WebpagePlusPlottingPlusMetaFileInput, self).__init__(
+            *args, **kwargs
+        )
+
+    @property
+    def default_directories(self):
+        return super(WebpagePlusPlottingPlusMetaFileInput, self).default_directories
+
+    @property
+    def default_files_to_copy(self):
+        return super(WebpagePlusPlottingPlusMetaFileInput, self).default_files_to_copy
+
+
+@deprecation(
+    "The Input class is deprecated. Please use either the BaseInput, "
+    "SamplesInput, PlottingInput, WebpageInput, WebpagePlusPlottingInput, "
+    "MetaFileInput or the WebpagePlusPlottingPlusMetaFileInput class"
+)
+class Input(WebpagePlusPlottingPlusMetaFileInput):
+    pass
 
 
 def load_current_state(resume_file):

@@ -7,7 +7,7 @@ import copy
 
 import argparse
 
-from pesummary.gw.cli.inputs import GWInput
+from pesummary.gw.cli.inputs import WebpagePlusPlottingPlusMetaFileInput
 from pesummary.core.cli.command_line import command_line
 from pesummary.gw.cli.command_line import insert_gwspecific_option_group
 from pesummary.gw.cli.parser import (
@@ -147,7 +147,7 @@ class TestInputExceptions(object):
     def test_no_webdir(self):
         with pytest.raises(Exception) as info:
             opts = self.parser.parse_args([])
-            x = GWInput(opts)
+            x = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert "Please provide a web directory" in str(info.value)
 
     def test_make_webdir_if_it_does_not_exist(self):
@@ -156,7 +156,7 @@ class TestInputExceptions(object):
                                        '--approximant', 'IMRPhenomPv2',
                                        '--samples', "{}/bilby_example.h5".format(tmpdir),
                                        '--disable_prior_sampling', "--no_conversion"])
-        x = GWInput(opts)
+        x = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert os.path.isdir("{}/path".format(tmpdir)) == True
 
     def test_invalid_existing_directory(self):
@@ -164,7 +164,7 @@ class TestInputExceptions(object):
             shutil.rmtree("./.existing")
         with pytest.raises(Exception) as info:
             opts = self.parser.parse_args(['--existing_webdir', './.existing'])
-            x = GWInput(opts)
+            x = WebpagePlusPlottingPlusMetaFileInput(opts)
         dir_name = os.path.abspath('./.existing')
         assert "Please provide a valid existing directory" in str(info.value)
 
@@ -177,26 +177,26 @@ class TestInputExceptions(object):
         os.mkdir("./.existing2/samples")
         opts = self.parser.parse_args(['--existing_webdir', './.existing2/samples'])
         with pytest.raises(Exception) as info:
-            x = GWInput(opts)
+            x = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert "Please provide a valid existing directory" in str(info.value)
 
     def test_add_to_existing_and_no_existing_flag(self):
         opts = self.parser.parse_args(["--add_to_existing"])
         with pytest.raises(Exception) as info:
-            x = GWInput(opts)
+            x = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert "Please provide a web directory to store the webpages" in str(info.value)
 
     def test_no_samples(self):
         opts = self.parser.parse_args(["--webdir", tmpdir])
         with pytest.raises(Exception) as info:
-            x = GWInput(opts)
+            x = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert "Please provide a results file" in str(info.value)
 
     def test_non_existance_samples(self):
         with pytest.raises(Exception) as info:
             opts = self.parser.parse_args(["--webdir", tmpdir,
                                            "--samples", "{}/no_existance".format(tmpdir)])
-            x = GWInput(opts)
+            x = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert "{}/no_existance".format(tmpdir) in str(info.value)
 
     def test_napproximant_not_equal_to_nsamples(self):
@@ -206,7 +206,7 @@ class TestInputExceptions(object):
                                        "--disable_prior_sampling", "--no_conversion",
                                        "--approximant", "IMRPhenomPv2"])
         with pytest.raises(Exception) as info:
-            x = GWInput(opts)
+            x = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert "Please pass an approximant for each" in str(info.value)
 
 
@@ -272,7 +272,7 @@ class TestInput(object):
         self.opts, unknown = self.parser.parse_known_args(self.default_arguments)
         add_dynamic_PSD_to_namespace(self.opts)
         add_dynamic_calibration_to_namespace(self.opts)
-        self.inputs = GWInput(self.opts)
+        self.inputs = WebpagePlusPlottingPlusMetaFileInput(self.opts)
 
     def replace_existing_argument(self, argument, new_value):
         if argument in self.default_arguments:
@@ -286,7 +286,7 @@ class TestInput(object):
         self.opts, unknown = self.parser.parse_known_args(self.default_arguments)
         add_dynamic_PSD_to_namespace(self.opts)
         add_dynamic_calibration_to_namespace(self.opts)
-        self.inputs = GWInput(self.opts)
+        self.inputs = WebpagePlusPlottingPlusMetaFileInput(self.opts)
 
     def test_webdir(self):
         assert self.inputs.webdir == os.path.abspath(tmpdir)
@@ -335,7 +335,7 @@ class TestInput(object):
             "--gracedb", "Mock", "--disable_prior_sampling",
             "--labels", "example", "--no_conversion"]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert inputs.gracedb is None
 
     def test_detectors(self):
@@ -359,7 +359,7 @@ class TestInput(object):
             "--samples", "{}/bilby_example.h5".format(tmpdir), "--no_conversion",
             "--gracedb", "Grace", "--disable_prior_sampling"]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert inputs.existing_labels == ["example"]
 
     def test_existing_samples(self):
@@ -376,7 +376,7 @@ class TestInput(object):
             "--email", "albert.einstein@ligo.org",
             "--gracedb", "Grace"]
         opts = parser.parse_args(default_arguments)
-        inputs = GWInput(opts)
+        inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert all(
             i == j for i, j in zip(inputs.existing_samples["example"]["mass_1"], [10, 40, 50]))
         assert all(
@@ -546,7 +546,7 @@ class TestInput(object):
         add_dynamic_calibration_to_namespace(
             opts, command_line=default_arguments
         )
-        inputs = GWInput(opts)
+        inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert sorted(list(inputs.psd.keys())) == sorted(["test", "test2"])
         assert list(inputs.psd["test"].keys()) == ["L1"]
         assert list(inputs.psd["test2"].keys()) == ["V1"]
@@ -557,21 +557,35 @@ class TestInput(object):
 
     def test_IFO_from_file_name(self):
         file_name = "IFO0.dat"
-        assert GWInput.get_ifo_from_file_name(file_name) == "H1"
+        assert WebpagePlusPlottingPlusMetaFileInput.get_ifo_from_file_name(
+            file_name
+        ) == "H1"
         file_name = "IFO1.dat"
-        assert GWInput.get_ifo_from_file_name(file_name) == "L1"
+        assert WebpagePlusPlottingPlusMetaFileInput.get_ifo_from_file_name(
+            file_name
+        ) == "L1"
         file_name = "IFO2.dat"
-        assert GWInput.get_ifo_from_file_name(file_name) == "V1"
+        assert WebpagePlusPlottingPlusMetaFileInput.get_ifo_from_file_name(
+            file_name
+        ) == "V1"
 
         file_name = "IFO_H1.dat"
-        assert GWInput.get_ifo_from_file_name(file_name) == "H1"
+        assert WebpagePlusPlottingPlusMetaFileInput.get_ifo_from_file_name(
+            file_name
+        ) == "H1"
         file_name = "IFO_L1.dat"
-        assert GWInput.get_ifo_from_file_name(file_name) == "L1"
+        assert WebpagePlusPlottingPlusMetaFileInput.get_ifo_from_file_name(
+            file_name
+        ) == "L1"
         file_name = "IFO_V1.dat"
-        assert GWInput.get_ifo_from_file_name(file_name) == "V1"
+        assert WebpagePlusPlottingPlusMetaFileInput.get_ifo_from_file_name(
+            file_name
+        ) == "V1"
         
         file_name = "example.dat"
-        assert GWInput.get_ifo_from_file_name(file_name) == "example.dat"
+        assert WebpagePlusPlottingPlusMetaFileInput.get_ifo_from_file_name(
+            file_name
+        ) == "example.dat"
 
     def test_ignore_parameters(self):
         parser = command_line()
@@ -582,7 +596,7 @@ class TestInput(object):
             "--samples", "{}/bilby_example.h5".format(tmpdir),
             "--labels", "example"]
         opts = parser.parse_args(default_arguments)
-        original = GWInput(opts)
+        original = WebpagePlusPlottingPlusMetaFileInput(opts)
 
         parser = command_line()
         insert_gwspecific_option_group(parser)
@@ -593,7 +607,7 @@ class TestInput(object):
             "--ignore_parameters", "cos*",
             "--labels", "example"]
         opts = parser.parse_args(default_arguments)
-        ignored = GWInput(opts)
+        ignored = WebpagePlusPlottingPlusMetaFileInput(opts)
         ignored_params = [
             param for param in list(original.samples["example"].keys()) if
             "cos" in param
@@ -649,7 +663,7 @@ class TestInput(object):
             "IMRPhenomPv2", "--webdir", tmpdir, "--samples",
             "{}/bilby_example.h5".format(tmpdir),
             "{}/lalinference_example.h5".format(tmpdir)])
-        inputs = GWInput(opts)
+        inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert sorted(inputs.same_parameters) == sorted(gw_parameters())
 
     def test_psd_labels(self):
@@ -667,6 +681,6 @@ class TestInput(object):
             "L1:{}/psd.dat".format(tmpdir),
             "--labels", "example", "example2", "--f_low", "1.0", "1.0", "--f_final",
             "3.0", "3.0", "--gw", "--no_conversion"])
-        inputs = GWInput(opts)
+        inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert sorted(list(inputs.psd["example"].keys())) == ["L1"]
         assert sorted(list(inputs.psd["example2"].keys())) == ["L1"]

@@ -9,7 +9,7 @@ import numpy as np
 
 from pesummary.gw.file import meta_file
 from pesummary.gw.file.meta_file import _GWMetaFile
-from pesummary.gw.cli.inputs import GWInput
+from pesummary.gw.cli.inputs import MetaFileInput
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.array import Array
 from .base import data_dir
@@ -252,9 +252,9 @@ class TestMetaFile(object):
             "sampler": {"flow": 10}, "meta_data": {"samplerate": 10}
         }}
         self.input_config = [data_dir + "/config_lalinference.ini"]
-        psd_data = GWInput.extract_psd_data_from_file(data_dir + "/psd_file.txt")
+        psd_data = MetaFileInput.extract_psd_data_from_file(data_dir + "/psd_file.txt")
         self.psds = {"EXP1": {"H1": psd_data}}
-        calibration_data = GWInput.extract_calibration_data_from_file(
+        calibration_data = MetaFileInput.extract_calibration_data_from_file(
             data_dir + "/calibration_envelope.txt")
         self.calibration = {"EXP1": {"H1": calibration_data}}
 
