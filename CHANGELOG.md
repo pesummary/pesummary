@@ -1,8 +1,17 @@
-## 0.13.5 [27/05/2021]
+## 0.13.6 [02/08/2022]
+
+### Changed
+
+- bilby new hdf5 format - Modify `pesummary.core.file.read.is_bilby_hdf5_file`
+  to handle `bilby`'s new `hdf5` format
+
+### Added
+
+## 0.13.5 [27/05/2022]
 
 Re-upload of v0.13.4 due to faulty wheel
 
-## 0.13.4 [27/05/2021] - Yanked
+## 0.13.4 [27/05/2022] - Yanked
 
 ### Changed
 
