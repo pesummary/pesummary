@@ -4,6 +4,7 @@
 
 from pesummary.gw.cli.parser import parser
 from pesummary.utils import functions, history_dictionary
+from pesummary.utils.utils import gw_results_file
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 __doc__ = """This executable is used to combine multiple result files into a
@@ -15,13 +16,22 @@ def main(args=None):
     """
     _parser = parser()
     opts, unknown = _parser.parse_known_args(args=args)
-    func = functions(opts)
-    args = func["input"](opts)
+    if opts.gw or gw_results_file(opts):
+        from pesummary.gw.cli.inputs import MetaFileInput
+        from pesummary.gw.file.meta_file import GWMetaFile
+        input_cls = MetaFileInput
+        meta_file_cls = GWMetaFile
+    else:
+        from pesummary.core.cli.inputs import MetaFileInput
+        from pesummary.core.file.meta_file import MetaFile
+        input_cls = MetaFileInput
+        meta_file_cls = MetaFile
+    args = input_cls(opts)
     _history = history_dictionary(
         program=_parser.prog, creator=args.user,
         command_line=_parser.command_line
     )
-    func["MetaFile"](args, history=_history)
+    meta_file_cls(args, history=_history)
 
 
 if __name__ == "__main__":

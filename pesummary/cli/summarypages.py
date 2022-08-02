@@ -3,6 +3,8 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.utils.utils import logger, gw_results_file
+import pesummary.core.cli.inputs
+import pesummary.gw.cli.inputs
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -182,17 +184,23 @@ class _PublicGWWebpageGeneration(object):
         self.webpage_object.generate_webpages()
 
 
-def main(args=None, _parser=None, _core_input_cls=None, _gw_input_cls=None):
+def main(
+    args=None,
+    _parser=None,
+    _core_input_cls=pesummary.core.cli.inputs.WebpagePlusPlottingPlusMetaFileInput,
+    _gw_input_cls=pesummary.gw.cli.inputs.WebpagePlusPlottingPlusMetaFileInput
+):
     """Top level interface for `summarypages`
     """
-    from pesummary.gw.cli.parser import parser
-    from pesummary.utils import functions, history_dictionary
+    from pesummary.utils import history_dictionary
+    from .summaryplots import PlotGeneration
 
     if _parser is None:
+        from pesummary.gw.cli.parser import parser
         _parser = parser()
     opts, unknown = _parser.parse_known_args(args=args)
+    _gw = False
     if opts.restart_from_checkpoint:
-        from pesummary.core.cli.inputs import load_current_state
         from pesummary import conf
         import os
         if opts.webdir is None:
@@ -201,40 +209,45 @@ def main(args=None, _parser=None, _core_input_cls=None, _gw_input_cls=None):
             )
         resume_file_dir = conf.checkpoint_dir(opts.webdir)
         resume_file = conf.resume_file
-        state = load_current_state(os.path.join(resume_file_dir, resume_file))
+        state = pesummary.core.cli.inputs.load_current_state(
+            os.path.join(resume_file_dir, resume_file)
+        )
         if state is not None:
             _gw = state.gw
-        else:
-            _gw = False
-        func = functions(opts, gw=_gw)
-        if _gw and _gw_input_cls is not None:
-            args = _gw_input_cls(opts, checkpoint=state)
-        elif _core_input_cls is not None:
-            args = _core_input_cls(opts, checkpoint=state)
-        else:
-            args = func["input"](opts, checkpoint=state)
+        input_args = (opts,)
+        input_kwargs = {"checkpoint": state}
     else:
-        func = functions(opts)
-        if opts.gw and _gw_input_cls is not None:
-            args = _gw_input_cls(opts)
-        elif _core_input_cls is not None:
-            args = _core_input_cls(opts)
-        else:
-            args = func["input"](opts)
-    from .summaryplots import PlotGeneration
+        if opts.gw or gw_results_file(opts):
+            _gw = True
+        input_args = (opts,)
+        input_kwargs = {}
 
+    if _gw:
+        from pesummary.gw.file.meta_file import GWMetaFile
+        from pesummary.gw.finish import GWFinishingTouches
+        input_cls = _gw_input_cls
+        meta_file_cls = GWMetaFile
+        finish_cls = GWFinishingTouches
+    else:
+        from pesummary.core.file.meta_file import MetaFile
+        from pesummary.core.finish import FinishingTouches
+        input_cls = _core_input_cls
+        meta_file_cls = MetaFile
+        finish_cls = FinishingTouches
+
+    args = input_cls(*input_args, **input_kwargs)
     plotting_object = PlotGeneration(args, gw=args.gw)
     WebpageGeneration(args, gw=args.gw)
     _history = history_dictionary(
         program=_parser.prog, creator=args.user,
         command_line=_parser.command_line
     )
-    func["MetaFile"](args, history=_history)
+    meta_file_cls(args, history=_history)
     if gw_results_file(opts):
         kwargs = dict(ligo_skymap_PID=plotting_object.ligo_skymap_PID)
     else:
         kwargs = {}
-    func["FinishingTouches"](args, **kwargs)
+    finish_cls(args, **kwargs)
 
 
 if __name__ == "__main__":

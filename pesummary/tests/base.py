@@ -5,8 +5,10 @@ import numpy as np
 from pathlib import Path
 from pesummary.core.cli.command_line import command_line
 from pesummary.gw.cli.command_line import insert_gwspecific_option_group
-from pesummary.gw.cli.inputs import GWInput
-from pesummary.core.cli.inputs import Input
+from pesummary.gw.cli.inputs import WebpagePlusPlottingPlusMetaFileInput
+from pesummary.core.cli.inputs import (
+    WebpagePlusPlottingPlusMetaFileInput as Input
+)
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -205,7 +207,7 @@ def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
         default_args.append("--disable_expert")
     opts = parser.parse_args(default_args)
     if gw:
-        func = GWInput
+        func = WebpagePlusPlottingPlusMetaFileInput
     else:
         func = Input
     return opts, func(opts)

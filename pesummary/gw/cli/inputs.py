@@ -4,11 +4,11 @@ import ast
 import os
 import math
 import numpy as np
-import pesummary
-from pesummary.core.cli.inputs import _Input, Input
+import pesummary.core.cli.inputs
 from pesummary.gw.file.read import read as GWRead
 from pesummary.gw.file.psd import PSD
 from pesummary.gw.file.calibration import Calibration
+from pesummary.utils.decorators import deprecation
 from pesummary.utils.exceptions import InputError
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.utils import logger
@@ -17,7 +17,7 @@ from pesummary import conf
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
-class _GWInput(_Input):
+class _GWInput(pesummary.core.cli.inputs._Input):
     """Super class to handle gw specific command line inputs
     """
     @staticmethod
@@ -41,7 +41,7 @@ class _GWInput(_Input):
         }
         if "psd_default" in kwargs.keys():
             _replace_kwargs["psd_default"] = kwargs["psd_default"]
-        data = _Input.grab_data_from_metafile(
+        data = pesummary.core.cli.inputs._Input.grab_data_from_metafile(
             existing_file, webdir, compare=compare, read_function=GWRead,
             nsamples=nsamples, _replace_with_pesummary_kwargs=_replace_kwargs,
             **kwargs
@@ -189,7 +189,7 @@ class _GWInput(_Input):
             the file format you wish to use when loading. Default None.
             If None, the read function loops through all possible options
         """
-        data = _Input.grab_data_from_file(
+        data = pesummary.core.cli.inputs._Input.grab_data_from_file(
             file, label, webdir, config=config, injection=injection,
             read_function=GWRead, file_format=file_format, nsamples=nsamples,
             disable_prior_sampling=disable_prior_sampling, **kwargs
@@ -875,8 +875,6 @@ class _GWInput(_Input):
         return data
 
     def grab_priors_from_inputs(self, priors):
-        """
-        """
         def read_func(data, **kwargs):
             from pesummary.gw.file.read import read as GWRead
             data = GWRead(data, **kwargs)
@@ -888,109 +886,32 @@ class _GWInput(_Input):
         )
 
 
-class GWInput(_GWInput, Input):
-    """Class to handle gw specific command line inputs
-
-    Parameters
-    ----------
-    opts: argparse.Namespace
-        Namespace object containing the command line options
-
-    Attributes
-    ----------
-    result_files: list
-        list of result files passed
-    compare_results: list
-        list of labels stored in the metafile that you wish to compare
-    add_to_existing: Bool
-        True if we are adding to an existing web directory
-    existing_samples: dict
-        dictionary of samples stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_injection_data: dict
-        dictionary of injection data stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_file_version: dict
-        dictionary of file versions stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_config: list
-        list of configuration files stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    existing_labels: list
-        list of labels stored in an existing metafile. None if
-        `self.add_to_existing` is False
-    user: str
-        the user who submitted the job
-    webdir: str
-        the directory to store the webpages, plots and metafile produced
-    baseurl: str
-        the base url of the webpages
-    labels: list
-        list of labels used to distinguish the result files
-    config: list
-        list of configuration files for each result file
-    injection_file: list
-        list of injection files for each result file
-    publication: Bool
-        if true, publication quality plots are generated. Default False
-    kde_plot: Bool
-        if true, kde plots are generated instead of histograms. Default False
-    samples: dict
-        dictionary of posterior samples stored in the result files
-    priors: dict
-        dictionary of prior samples stored in the result files
-    custom_plotting: list
-        list containing the directory and name of python file which contains
-        custom plotting functions. Default None
-    email: str
-        the email address of the user
-    dump: Bool
-        if True, all plots will be dumped onto a single html page. Default False
-    hdf5: Bool
-        if True, the metafile is stored in hdf5 format. Default False
-    approximant: dict
-        dictionary of approximants used in the analysis
-    gracedb: str
-        the gracedb ID for the event
-    detectors: list
-        the detector network used for each result file
-    calibration: dict
-        dictionary containing the posterior calibration envelopes for each IFO
-        for each result file
-    psd: dict
-        dictionary containing the psd used for each IFO for each result file
-    nsamples_for_skymap: int
-        the number of samples to use for the skymap
-    sensitivity: Bool
-        if True, the sky sensitivity for HL and HLV detector networks are also
-        plotted. Default False
-    no_ligo_skymap: Bool
-        if True, a skymap will not be generated with the ligo.skymap package.
-        Default False
-    multi_threading_for_skymap: Bool
-        if True, multi-threading will be used to speed up skymap generation
-    gwdata: dict
-        dictionary containing the strain timeseries used for each result file
-    notes: str
-        notes that you wish to add to the webpages
-    disable_comparison: Bool
-        if True, comparison plots and pages are not produced
-    disable_interactive: Bool
-        if True, interactive plots are not produced
-    public: Bool
-        if True, public facing summarypages are produced
+class SamplesInput(_GWInput, pesummary.core.cli.inputs.SamplesInput):
+    """Class to handle and store sample specific command line arguments
     """
-
-    def __init__(self, opts, checkpoint=None):
-        super(GWInput, self).__init__(
-            opts, ignore_copy=True, extra_options=[
-                "evolve_spins_forwards", "evolve_spins_backwards", "NRSur_fits",
-                "calculate_multipole_snr", "calculate_precessing_snr", "f_low",
-                "f_ref", "f_final", "psd", "waveform_fits", "redshift_method",
-                "cosmology", "no_conversion", "delta_f", "psd_default",
-                "disable_remnant", "force_BBH_remnant_computation",
+    def __init__(self, *args, **kwargs):
+        kwargs.update({"ignore_copy": True})
+        super(SamplesInput, self).__init__(
+            *args, gw=True, extra_options=[
+                "evolve_spins_forwards",
+                "evolve_spins_backwards",
+                "NRSur_fits",
+                "calculate_multipole_snr",
+                "calculate_precessing_snr",
+                "f_low",
+                "f_ref",
+                "f_final",
+                "psd",
+                "waveform_fits",
+                "redshift_method",
+                "cosmology",
+                "no_conversion",
+                "delta_f",
+                "psd_default",
+                "disable_remnant",
+                "force_BBH_remnant_computation",
                 "force_BH_spin_evolution"
-            ], checkpoint=checkpoint, gw=True
+            ], **kwargs
         )
         if self._restarted_from_checkpoint:
             return
@@ -1009,12 +930,34 @@ class GWInput(_GWInput, Input):
             self.existing_calibration = None
             self.existing_skymap = None
         self.approximant = self.opts.approximant
-        self.gracedb_server = self.opts.gracedb_server
-        self.gracedb_data = self.opts.gracedb_data
-        self.gracedb = self.opts.gracedb
         self.detectors = None
         self.skymap = None
         self.calibration = self.opts.calibration
+        self.gwdata = self.opts.gwdata
+        self.maxL_samples = []
+
+    @property
+    def maxL_samples(self):
+        return self._maxL_samples
+
+    @maxL_samples.setter
+    def maxL_samples(self, maxL_samples):
+        key_data = self.grab_key_data_from_result_files()
+        maxL_samples = {
+            i: {
+                j: key_data[i][j]["maxL"] for j in key_data[i].keys()
+            } for i in key_data.keys()
+        }
+        for i in self.labels:
+            maxL_samples[i]["approximant"] = self.approximant[i]
+        self._maxL_samples = maxL_samples
+
+
+class PlottingInput(SamplesInput, pesummary.core.cli.inputs.PlottingInput):
+    """Class to handle and store plottig specific command line arguments
+    """
+    def __init__(self, *args, **kwargs):
+        super(PlottingInput, self).__init__(*args, **kwargs)
         self.nsamples_for_skymap = self.opts.nsamples_for_skymap
         self.sensitivity = self.opts.sensitivity
         self.no_ligo_skymap = self.opts.no_ligo_skymap
@@ -1032,18 +975,54 @@ class GWInput(_GWInput, Input):
                     "es " if self.multi_threading_for_plots > 1 else " "
                 )
             )
-        self.gwdata = self.opts.gwdata
-        self.public = self.opts.public
         self.preliminary_pages = None
         self.pepredicates_probs = []
         self.pastro_probs = []
-        self.copy_files()
-        self.maxL_samples = []
-        self.write_current_state()
+
+
+class WebpageInput(SamplesInput, pesummary.core.cli.inputs.WebpageInput):
+    """Class to handle and store webpage specific command line arguments
+    """
+    def __init__(self, *args, **kwargs):
+        super(WebpageInput, self).__init__(*args, **kwargs)
+        self.gracedb_server = self.opts.gracedb_server
+        self.gracedb_data = self.opts.gracedb_data
+        self.gracedb = self.opts.gracedb
+        self.public = self.opts.public
+        if not hasattr(self, "preliminary_pages"):
+            self.preliminary_pages = None
+        if not hasattr(self, "pepredicates_probs"):
+            self.pepredicates_probs = []
+        if not hasattr(self, "pastro_probs"):
+            self.pastro_probs = []
+
+
+class WebpagePlusPlottingInput(PlottingInput, WebpageInput):
+    """Class to handle and store webpage and plotting specific command line
+    arguments
+    """
+    def __init__(self, *args, **kwargs):
+        super(WebpagePlusPlottingInput, self).__init__(*args, **kwargs)
+
+    @property
+    def default_directories(self):
+        return super(WebpagePlusPlottingInput, self).default_directories
+
+    @property
+    def default_files_to_copy(self):
+        return super(WebpagePlusPlottingInput, self).default_files_to_copy
+
+
+class MetaFileInput(SamplesInput, pesummary.core.cli.inputs.MetaFileInput):
+    """Class to handle and store metafile specific command line arguments
+    """
+    @property
+    def default_directories(self):
+        dirs = super(MetaFileInput, self).default_directories
+        dirs += ["psds", "calibration"]
+        return dirs
 
     def copy_files(self):
-        """Copy the relevant file to the web directory
-        """
         _error = "Failed to save the {} to file"
         for label in self.labels:
             if self.psd[label] != {}:
@@ -1076,33 +1055,37 @@ class GWInput(_GWInput, Input):
                                 label, ifo
                             ))
                         )
-        self._copy_files(self.default_files_to_copy)
+        return super(MetaFileInput, self).copy_files()
 
-    def make_directories(self):
-        """Make the directories to store the information
-        """
-        for dirs in ["psds", "calibration"]:
-            self.default_directories.append(dirs)
-        super(GWInput, self).make_directories()
+
+class WebpagePlusPlottingPlusMetaFileInput(MetaFileInput, WebpagePlusPlottingInput):
+    """Class to handle and store webpage, plotting and metafile specific command
+    line arguments
+    """
+    def __init__(self, *args, **kwargs):
+        super(WebpagePlusPlottingPlusMetaFileInput, self).__init__(
+            *args, **kwargs
+        )
 
     @property
-    def maxL_samples(self):
-        return self._maxL_samples
+    def default_directories(self):
+        return super(WebpagePlusPlottingPlusMetaFileInput, self).default_directories
 
-    @maxL_samples.setter
-    def maxL_samples(self, maxL_samples):
-        key_data = self.grab_key_data_from_result_files()
-        maxL_samples = {
-            i: {
-                j: key_data[i][j]["maxL"] for j in key_data[i].keys()
-            } for i in key_data.keys()
-        }
-        for i in self.labels:
-            maxL_samples[i]["approximant"] = self.approximant[i]
-        self._maxL_samples = maxL_samples
+    @property
+    def default_files_to_copy(self):
+        return super(WebpagePlusPlottingPlusMetaFileInput, self).default_files_to_copy
 
 
-class IMRCTInput(_Input):
+@deprecation(
+    "The GWInput class is deprecated. Please use either the BaseInput, "
+    "SamplesInput, PlottingInput, WebpageInput, WebpagePlusPlottingInput, "
+    "MetaFileInput or the WebpagePlusPlottingPlusMetaFileInput class"
+)
+class GWInput(WebpagePlusPlottingPlusMetaFileInput):
+    pass
+
+
+class IMRCTInput(pesummary.core.cli.inputs._Input):
     """Class to handle the TGR specific command line arguments
     """
     @property

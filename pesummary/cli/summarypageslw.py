@@ -4,9 +4,9 @@
 
 import argparse
 from pesummary.utils.exceptions import InputError
+from pesummary.core.cli import inputs as core_inputs
+from pesummary.gw.cli import inputs as gw_inputs
 from pesummary.utils.utils import logger
-from pesummary.core.cli.inputs import Input
-from pesummary.gw.cli.inputs import GWInput
 from pesummary.core.webpage.main import _WebpageGeneration
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -32,7 +32,7 @@ def command_line(parser=None):
     return parser
 
 
-class LWInput(Input):
+class LWInput(core_inputs.WebpagePlusPlottingPlusMetaFileInput):
     """
     """
     def __init__(self, *args, **kwargs):
@@ -94,7 +94,7 @@ class LWInput(Input):
         return self.opts.parameters
 
 
-class GWLWInput(GWInput, LWInput):
+class GWLWInput(gw_inputs.WebpagePlusPlottingPlusMetaFileInput, LWInput):
     pass
 
 

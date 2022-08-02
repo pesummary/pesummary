@@ -230,8 +230,12 @@ def functions(opts, gw=False):
     """Return a dictionary of functions that are either specific to GW results
     files or core.
     """
-    from pesummary.core.cli.inputs import Input
-    from pesummary.gw.cli.inputs import GWInput
+    from pesummary.core.cli.inputs import (
+        WebpagePlusPlottingPlusMetaFileInput as Input
+    )
+    from pesummary.gw.cli.inputs import (
+        WebpagePlusPlottingPlusMetaFileInput as GWInput
+    )
     from pesummary.core.file.meta_file import MetaFile
     from pesummary.gw.file.meta_file import GWMetaFile
     from pesummary.core.finish import FinishingTouches
