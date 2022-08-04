@@ -208,6 +208,11 @@ authors:
   image: python:3.9
 
 
+.python-3.10-testing:
+  extends: .base-testing
+  image: python:3.10
+
+
 python-3.8-base:
   extends: .python-3.8-testing
   stage: test
@@ -247,6 +252,24 @@ python-3.9-exe:
     - *finalise_testing
 
 
+python-3.10-base:
+  extends: .python-3.10-testing
+  stage: test
+  script:
+    - *prepare_testing
+    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
+    - *finalise_testing
+
+
+python-3.10-exe:
+  extends: .python-3.10-testing
+  stage: test
+  script:
+    - *prepare_testing
+    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
+    - *finalise_testing
+
+
 python-3.8-core:
   <<: *core_workflow
   image: python:3.8
@@ -257,6 +280,11 @@ python-3.9-core:
   image: python:3.9
 
 
+python-3.10-core:
+  <<: *core_workflow
+  image: python:3.10
+
+
 python-3.8-gw:
   <<: *gw_workflow
   image: python:3.8
@@ -265,6 +293,14 @@ python-3.8-gw:
 python-3.9-gw:
   <<: *gw_workflow
   image: python:3.9
+  retry:
+    max: 2
+    when: stuck_or_timeout_failure
+
+
+python-3.10-gw:
+  <<: *gw_workflow
+  image: python:3.10
   retry:
     max: 2
     when: stuck_or_timeout_failure
@@ -425,10 +461,14 @@ pages:
     - python-3.8-exe
     - python-3.9-base
     - python-3.9-exe
+    - python-3.10-base
+    - python-3.10-exe
     - python-3.8-core
     - python-3.9-core
+    - python-3.10-core
     - python-3.8-gw
     - python-3.9-gw
+    - python-3.10-gw
     - bilby
     - bilby_pipe
     - lalinference_pipe
