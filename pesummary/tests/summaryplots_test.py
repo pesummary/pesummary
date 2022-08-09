@@ -4,8 +4,7 @@ import os
 import shutil
 from glob import glob
 
-from pesummary.core.cli.command_line import command_line
-from pesummary.gw.cli.command_line import insert_gwspecific_option_group
+from pesummary.gw.cli.parser import ArgumentParser
 from pesummary.gw.cli.inputs import PlottingInput, WebpagePlusPlottingPlusMetaFileInput
 from pesummary.cli.summaryplots import _GWPlotGeneration as GWPlotGeneration
 from pesummary.gw.file.meta_file import GWMetaFile
@@ -38,8 +37,8 @@ class TestPlotGeneration(object):
         with open("./.outdir_bilby/calibration.dat", "w") as f:
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0\n"])
             f.writelines(["2000.0 2.0 3.0 4.0 5.0 6.0 7.0"])
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", bilby=True, outdir="./.outdir_bilby/",
             n_samples=10
@@ -67,8 +66,8 @@ class TestPlotGeneration(object):
         assert all(i == j for i,j in zip(sorted(expected_plots), sorted(plots)))
 
     def test_plot_generation_for_lalinference_structure(self):
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
             outdir="./.outdir_lalinference/", n_samples=10
@@ -94,8 +93,8 @@ class TestPlotGeneration(object):
         assert all(i == j for i,j in zip(sorted(expected_plots), sorted(plots)))
 
     def test_plot_generation_for_comparison(self):
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
             outdir="./.outdir_comparison/", n_samples=10
@@ -131,8 +130,8 @@ class TestPlotGeneration(object):
         assert all(i == j for i,j in zip(sorted(plots), sorted(expected_plots)))
 
     def test_plot_generation_for_add_to_existing(self):
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
             outdir="./.outdir_add_to_existing2/", n_samples=10
@@ -161,8 +160,8 @@ class TestPlotGeneration(object):
         webpage = GWWebpageGeneration(inputs)
         webpage.generate_webpages()
         meta_file = GWMetaFile(inputs)
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         default_arguments = [
             "--approximant", "IMRPhenomP",
             "--existing_webdir", "./.outdir_add_to_existing2",
@@ -179,8 +178,8 @@ class TestPlotGeneration(object):
         assert all(i == j for i, j in zip(sorted(plots), sorted(expected_plots)))
 
     def test_plot_generation_for_multiple_without_comparison(self):
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
             outdir="./.outdir_comparison_no_comparison/", n_samples=10
@@ -219,8 +218,8 @@ class TestPlotGeneration(object):
         assert all(i == j for i,j in zip(sorted(plots), sorted(expected_plots)))
 
     def test_plot_generation_for_add_to_existing_without_comparison(self):
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
             outdir="./.outdir_add_to_existing_no_comparison/", n_samples=10
@@ -249,8 +248,8 @@ class TestPlotGeneration(object):
         webpage = GWWebpageGeneration(inputs)
         webpage.generate_webpages()
         meta_file = GWMetaFile(inputs)
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         default_arguments = [
             "--approximant", "IMRPhenomP",
             "--existing_webdir", "./.outdir_add_to_existing_no_comparison",

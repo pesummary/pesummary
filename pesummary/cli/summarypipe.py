@@ -2,9 +2,9 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.utils.utils import logger, list_match
 from pesummary.utils.decorators import open_config
-import argparse
 import shutil
 import os
 import numpy as np
@@ -19,38 +19,47 @@ __doc__ = """This executable is used to generate a summarypages executable
 given a rundir"""
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-r", "--rundir", dest="rundir",
-                        help="run directory of the parameter estimation job",
-                        default=None, required=True)
-    parser.add_argument("-w", "--webdir", dest="webdir",
-                        help="make page and plots in DIR", metavar="DIR",
-                        default=None)
-    parser.add_argument("--labels", dest="labels",
-                        help="labels used to distinguish runs", nargs='+',
-                        default=None)
-    parser.add_argument("--config", dest="config", default=None,
-                        help=(
-                            "config file to extract information from. This can either "
-                            "be an absolute path to a config file, or a pattern to "
-                            "search for in run directory. If not provided, search run "
-                            "directory for a config file to use."
-                        ))
-    parser.add_argument("--samples", dest="samples", default=None,
-                        help="path to posterior samples file you wish to use")
-    parser.add_argument("--pattern", dest="pattern", default=None,
-                        help="pattern to use when searching for files")
-    parser.add_argument("--return_string", action="store_true", default=False,
-                        help="Return command line as a string for testing")
-    parser.add_argument("additional options", nargs="?", default=None, type=str,
-                        help=(
-                            "all additional command line options are added to the "
-                            "printed summarypages executable"
-                        ))
-    return parser
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--rundir": {
+                    "--short": "-r",
+                    "help": "run directory of the parameter estimation job",
+                    "required": True,
+                },
+                "--config": {
+                    "help": (
+                        "config file to extract information from. This can "
+                        "either be an absolute path to a config file, or a "
+                        "pattern to search for in run directory. If not "
+                        "provided, search run directory for a config file to "
+                        "use."
+                    ),
+                },
+                "--samples": {
+                    "help": "path to posterior samples file you wish to use"
+                },
+                "--pattern": {
+                    "help": "pattern to use when searching for files",
+                },
+                "--return_string": {
+                    "action": "store_true",
+                    "default": False,
+                    "help": "Return command line as a string for testing"
+                },
+                "additional options": {
+                    "nargs": "?",
+                    "type": str,
+                    "help": (
+                        "all additional command line options are added to the "
+                        "printed summarypages executable"
+                    )
+                },
+            }
+        )
+        return options
 
 
 def _check_rundir(rundir, std_dirs):
@@ -900,7 +909,13 @@ class LALInference(Base):
 def main(args=None):
     """Top level interface for `summarypipe`
     """
-    parser = command_line()
+    parser = ArgumentParser(description=__doc__)
+    parser.add_known_options_to_parser(
+        [
+            "--rundir", "--webdir", "--labels", "--config", "--samples",
+            "--pattern", "--return_string", "additional options"
+        ]
+    )
     opts, unknown = parser.parse_known_args(args=args)
     if args is None:
         all_options = sys.argv[1:]

@@ -2,11 +2,11 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
-import argparse
 from pesummary.utils.exceptions import InputError
 from pesummary.core.cli import inputs as core_inputs
 from pesummary.gw.cli import inputs as gw_inputs
 from pesummary.utils.utils import logger
+from pesummary.gw.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.core.webpage.main import _WebpageGeneration
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -15,21 +15,22 @@ allows you to customise which parameters you wish to view rather than plotting
 every single parameter in the result file"""
 
 
-def command_line(parser=None):
-    """Generate an Argument Parser object to control the command line options
-
-    Parameters
-    ----------
-    """
-    if parser is None:
-        from pesummary.gw.cli.parser import parser as _parser
-        parser = _parser()
-
-    parser.add_argument("--parameters", dest="parameters", nargs='+',
-                        help=("list of parameters you wish to include in the "
-                              "summarypages"),
-                        default=None)
-    return parser
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--parameters": {
+                    "nargs": "+",
+                    "help": (
+                        "list of parameters you wish to include in the "
+                        "summary pages"
+                    ),
+                    "key": "webpage"
+                }
+            }
+        )
+        return options
 
 
 class LWInput(core_inputs.WebpagePlusPlottingPlusMetaFileInput):
@@ -102,7 +103,8 @@ def main(args=None):
     """The main interface to `summarypageslw`
     """
     from .summarypages import main as _main
-    _parser = command_line()
+    _parser = ArgumentParser(description=__doc__)
+    _parser.add_all_groups_to_parser()
     _main(
         args=args, _parser=_parser, _core_input_cls=LWInput,
         _gw_input_cls=GWLWInput

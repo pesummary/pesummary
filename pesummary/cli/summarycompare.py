@@ -5,7 +5,7 @@
 import os
 import copy
 import pesummary
-from pesummary.core.cli.parser import parser
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.core.plots.main import _PlotGeneration
 from pesummary.core.webpage.main import _WebpageGeneration
 from pesummary.utils.utils import logger
@@ -13,7 +13,6 @@ from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
 from pesummary import conf
 from pesummary.io import read
 import numpy as np
-import argparse
 from getpass import getuser
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -24,34 +23,29 @@ COMPARISON_PROPERTIES = [
 SAME_STRING = "The result files match for entry: '{}'"
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    _parser = argparse.ArgumentParser(description=__doc__)
-    _parser.add_argument(
-        "-s", "--samples", dest="samples", default=None, nargs='+',
-        help="Posterior samples hdf5 file"
-    )
-    _parser.add_argument(
-        "--properties_to_compare", dest="compare", nargs='+',
-        default=["posterior_samples"], help=(
-            "list of properties you wish to compare between the files. Default "
-            "posterior_samples"
-        ), choices=COMPARISON_PROPERTIES
-    )
-    _parser.add_argument(
-        "-w", "--webdir", dest="webdir", default=None, metavar="DIR",
-        help="make page and plots in DIR."
-    )
-    _parser.add_argument(
-        "--generate_comparison_page", action="store_true", default=False,
-        help="Generate a comparison page to compare contents"
-    )
-    _parser.add_argument(
-        "-v", "--verbose", action="store_true",
-        help="print useful information for debugging purposes"
-    )
-    return _parser
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--properties_to_compare": {
+                    "dest": "compare",
+                    "nargs": "+",
+                    "default": ["posterior_samples"],
+                    "choices": COMPARISON_PROPERTIES,
+                    "help": (
+                        "list of properties you wish to compare between the "
+                        "files. Default posterior_samples"
+                    )
+                },
+                "--generate_comparison_page": {
+                    "action": "store_true",
+                    "default": False,
+                    "help": "Generate a comparison page to compare contents"
+                }
+            }
+        )
+        return options
 
 
 def _comparison_string(path, values=None, _type=None):
@@ -309,7 +303,13 @@ class ComparisonWebpage(_WebpageGeneration):
 def main(args=None):
     """Top level interface for `summarycompare`
     """
-    _parser = parser(existing_parser=command_line())
+    _parser = ArgumentParser(description=__doc__)
+    _parser.add_known_options_to_parser(
+        [
+            "--samples", "--webdir", "--verbose", "--properties_to_compare",
+            "--generate_comparison_page"
+        ]
+    )
     opts, unknown = _parser.parse_known_args(args=args)
     string = compare(opts.samples, opts.compare)
     if opts.generate_comparison_page and opts.webdir is None:

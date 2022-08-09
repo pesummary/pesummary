@@ -6,12 +6,10 @@ import glob
 import copy
 
 import argparse
-
 from pesummary.gw.cli.inputs import WebpagePlusPlottingPlusMetaFileInput
-from pesummary.core.cli.command_line import command_line
-from pesummary.gw.cli.command_line import insert_gwspecific_option_group
 from pesummary.gw.cli.parser import (
-    add_dynamic_PSD_to_namespace, add_dynamic_calibration_to_namespace
+    add_dynamic_PSD_to_namespace, add_dynamic_calibration_to_namespace,
+    ArgumentParser
 )
 from .base import make_result_file, gw_parameters, data_dir, testing_dir
 
@@ -28,8 +26,8 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class TestCommandLine(object):
 
     def setup(self):
-        self.parser = command_line()
-        insert_gwspecific_option_group(self.parser)
+        self.parser = ArgumentParser()
+        self.parser.add_all_known_options_to_parser()
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
         make_result_file(gw=True, lalinference=True, outdir=tmpdir)
@@ -132,8 +130,8 @@ class TestInputExceptions(object):
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
         os.mkdir(tmpdir)
-        self.parser = command_line()
-        insert_gwspecific_option_group(self.parser)
+        self.parser = ArgumentParser()
+        self.parser.add_all_known_options_to_parser()
         make_result_file(gw=True, lalinference=True, outdir=tmpdir)
         os.rename(
             "{}/test.hdf5".format(tmpdir),
@@ -215,8 +213,8 @@ class TestInput(object):
     def setup(self):
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
-        self.parser = command_line()
-        insert_gwspecific_option_group(self.parser)
+        self.parser = ArgumentParser()
+        self.parser.add_all_known_options_to_parser()
         make_result_file(gw=True, lalinference=True, outdir=tmpdir)
         os.rename(
             "{}/test.hdf5".format(tmpdir),
@@ -325,8 +323,8 @@ class TestInput(object):
 
     def test_gracedb(self):
         assert self.inputs.gracedb == "Grace"
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--webdir", tmpdir,
@@ -351,8 +349,8 @@ class TestInput(object):
         path = self.make_existing_file("{}/samples".format(tmpdir))
         with open("{}/home.html".format(tmpdir), "w") as f:
             f.writelines("test")
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--existing_webdir", tmpdir,
@@ -367,8 +365,8 @@ class TestInput(object):
         path = self.make_existing_file("{}/samples".format(tmpdir))
         with open("{}/home.html".format(tmpdir), "w") as f:
             f.writelines("test")
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--existing_webdir", tmpdir,
@@ -526,8 +524,8 @@ class TestInput(object):
     def test_custom_psd(self):
         with open("{}/psd.dat".format(tmpdir), "w") as f:
             f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         default_arguments = [
             "--approximant", "IMRPhenomPv2", "IMRPhenomPv2",
             "--webdir", tmpdir,
@@ -588,8 +586,8 @@ class TestInput(object):
         ) == "example.dat"
 
     def test_ignore_parameters(self):
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--webdir", tmpdir,
@@ -598,8 +596,8 @@ class TestInput(object):
         opts = parser.parse_args(default_arguments)
         original = WebpagePlusPlottingPlusMetaFileInput(opts)
 
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--webdir", tmpdir,
@@ -657,8 +655,8 @@ class TestInput(object):
         assert self.inputs.maxL_samples["example"]["approximant"] == "IMRPhenomPv2"
 
     def test_same_parameters(self):
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
             "IMRPhenomPv2", "--webdir", tmpdir, "--samples",
             "{}/bilby_example.h5".format(tmpdir),
@@ -671,8 +669,8 @@ class TestInput(object):
         assert self.inputs.psd["example"] == {}
         with open("{}/psd.dat".format(tmpdir), "w") as f:
             f.writelines(["1.00 3.44\n", "2.00 5.66\n", "3.00 4.56\n", "4.00 9.83\n"])
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
             "IMRPhenomPv2", "--webdir", tmpdir, "--samples",
             "{}/bilby_example.h5".format(tmpdir),

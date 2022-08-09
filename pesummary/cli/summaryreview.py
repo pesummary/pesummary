@@ -2,6 +2,7 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.gw.file.standard_names import standard_names, lalinference_map
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.io import read
@@ -24,29 +25,24 @@ REVIEW_TESTS = [
 ]
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-w", "--webdir", dest="webdir", help="make page and plots in DIR",
-        metavar="DIR", default="./"
-    )
-    parser.add_argument(
-        "-s", "--samples", dest="samples", help="Posterior samples hdf5 file",
-        default=None
-    )
-    parser.add_argument(
-        "-t", "--test", dest="test", help="Review test that you wish to perform",
-        choices=REVIEW_TESTS, default="all"
-    )
-    parser.add_argument(
-        "--multi_process", dest="multi_process", default=18,
-        help="The number of cores to use when generating plots"
-    )
-    return parser
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--samples": {
+                    "short": "-s",
+                    "help": "Posterior samples hdf5 file",
+                },
+                "--test": {
+                    "short": "-t",
+                    "help": "Review test that you wish to perform",
+                    "choices": REVIEW_TESTS,
+                    "default": "all"
+                }
+            }
+        )
+        return options
 
 
 def get_executable_path(executable):
@@ -808,7 +804,10 @@ class WebpageGeneration(_WebpageGeneration):
 def main(args=None):
     """Top level interface for `summaryreview`
     """
-    parser = command_line()
+    parser = ArgumentParser(description=__doc__)
+    parser.add_known_options_to_parser(
+        ["--webdir", "--samples", "--test", "--multi_process"]
+    )
     opts = parser.parse_args(args=args)
     if opts.test == "core_plots" or opts.test == "all":
         logger.info("Starting to generate plots using 'cbcBayesPostProc'")

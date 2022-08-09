@@ -196,8 +196,10 @@ def main(
     from .summaryplots import PlotGeneration
 
     if _parser is None:
-        from pesummary.gw.cli.parser import parser
-        _parser = parser()
+        from pesummary.gw.cli.parser import ArgumentParser
+        _parser = ArgumentParser()
+        _parser.add_all_groups_to_parser()
+
     opts, unknown = _parser.parse_known_args(args=args)
     _gw = False
     if opts.restart_from_checkpoint:

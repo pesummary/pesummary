@@ -2,7 +2,7 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary.gw.cli.parser import parser
+from pesummary.gw.cli.parser import ArgumentParser
 from pesummary.utils import functions, history_dictionary
 from pesummary.utils.utils import gw_results_file
 
@@ -14,7 +14,8 @@ single PESummary metafile"""
 def main(args=None):
     """Top level interface for `summarycombine`
     """
-    _parser = parser()
+    _parser = ArgumentParser()
+    _parser.add_all_groups_to_parser()
     opts, unknown = _parser.parse_known_args(args=args)
     if opts.gw or gw_results_file(opts):
         from pesummary.gw.cli.inputs import MetaFileInput

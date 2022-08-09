@@ -2,6 +2,7 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.core.cli.actions import DelimiterSplitAction
 from pesummary.gw.file.read import read
 from pesummary.utils.utils import logger, make_dir
@@ -11,7 +12,6 @@ from pesummary.io import write
 
 import subprocess
 import os
-import argparse
 import copy
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -32,41 +32,51 @@ def launch_subprocess(command_line):
     process.wait()
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-s", "--samples", dest="samples", required=True,
-        help=("Path to the PESummary file which stores the analysis you wish "
-              "to recreate.")
-    )
-    parser.add_argument(
-        "--labels", dest="labels", nargs='+', default=None,
-        help="The label/labels of the analysis you wish to recreate"
-    )
-    parser.add_argument(
-        "-r", "--rundir", dest="rundir", default="./",
-        help="The run directory of the analysis"
-    )
-    parser.add_argument(
-        "-c", "--code", dest="code", default="lalinference",
-        help="The sampling software you wish to run"
-    )
-    parser.add_argument(
-        "--delimiter", dest="delimiter", default=":",
-        help="Delimiter used to seperate the existing and new quantity"
-    )
-    parser.add_argument(
-        "--config_override", action=DelimiterSplitAction, nargs='+',
-        dest="config_override", help=(
-            "Changes you wish to make to the configuration file. Must be in the "
-            "form `key:item` where key is the entry in the config file you wish "
-            "to modify, ':' is the default delimiter, and item is the string you "
-            "wish to replace with."
-        ), default={}
-    )
-    return parser
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--samples": {
+                    "short": "-s",
+                    "required": True,
+                    "help": (
+                        "Path to the PESummary file which stores the analysis "
+                        "you wish to recreate."
+                    )
+                },
+                "--rundir": {
+                    "default": "./",
+                    "help": "The run directory of the analysis",
+                    "short": "-r",
+                },
+                "--code": {
+                    "default": "lalinference",
+                    "short": "-c",
+                    "help": "The sampling software you wish to run"
+                },
+                "--delimiter": {
+                    "default": ":",
+                    "help": (
+                        "Delimiter used to seperate the existing and new "
+                        "quantity"
+                    )
+                },
+                "--config_override": {
+                    "action": DelimiterSplitAction,
+                    "nargs": "+",
+                    "default": {},
+                    "help": (
+                        "Changes you wish to make to the configuration file. "
+                        "Must be in the form `key:item` where key is the entry "
+                        "in the config file you wish to modify, ':' is the "
+                        "default delimiter, and item is the string you wish to "
+                        "replace with."
+                    )
+                },
+            }
+        )
+        return options
 
 
 class LALInference(object):
@@ -303,7 +313,13 @@ class Input(_Input):
 def main(args=None):
     """The main function for the `summaryrecreate` executable
     """
-    parser = command_line()
+    parser = ArgumentParser(description=__doc__)
+    parser.add_known_options_to_parser(
+        [
+            "--samples", "--labels", "--rundir", "--code", "--delimiter",
+            "--config_override"
+        ]
+    )
     opts = parser.parse_args(args=args)
     inputs = Input(opts)
     for label in inputs.labels:
