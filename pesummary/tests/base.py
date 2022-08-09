@@ -3,8 +3,6 @@
 import os
 import numpy as np
 from pathlib import Path
-from pesummary.core.cli.command_line import command_line
-from pesummary.gw.cli.command_line import insert_gwspecific_option_group
 from pesummary.gw.cli.inputs import WebpagePlusPlottingPlusMetaFileInput
 from pesummary.core.cli.inputs import (
     WebpagePlusPlottingPlusMetaFileInput as Input
@@ -169,13 +167,16 @@ def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
                   number=1, existing=False, disable_expert=True, outdir="./.outdir"):
     """
     """
-    parser = command_line()
     default_args = []
     if gw:
-        insert_gwspecific_option_group(parser)
+        from pesummary.gw.cli.parser import ArgumentParser
         default_args.append("--gw")
         default_args.append("--nsamples_for_skymap")
         default_args.append("10")
+    else:
+        from pesummary.core.cli.parser import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_all_known_options_to_parser()
     params, data = make_result_file(
         extension=extension, gw=gw, bilby=bilby, lalinference=lalinference,
         outdir=outdir

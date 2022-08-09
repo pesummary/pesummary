@@ -3,12 +3,11 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 import os
-import argparse
 import numpy as np
 import multiprocessing
 
 from pesummary.core.cli.actions import CheckFilesExistAction
-from pesummary.core.cli.parser import parser
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.utils.utils import iterator, logger, make_dir
 from pesummary.io import read, write, available_formats
 
@@ -19,37 +18,43 @@ analysis, the posterior samples for each analysis is split into N separate
 files. This is useful for submitting thousands of summarypages to condor"""
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-s", "--samples", dest="samples", default=None, required=True,
-        action=CheckFilesExistAction, help=(
-            "Path to the posterior samples file you wish to split"
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--samples": {
+                    "short": "-s",
+                    "required": True,
+                    "action": CheckFilesExistAction,
+                    "help": (
+                        "Path to the posterior samples file you wish to split"
+                    ),
+                },
+                "--file_format": {
+                    "type": str,
+                    "default": "dat",
+                    "help": "Format of each output file",
+                    "choices": available_formats()[1],
+                },
+                "--outdir": {
+                    "type": str,
+                    "default": "./",
+                    "help": "Directory to save each file"
+                },
+                "--N_files": {
+                    "short": "-N",
+                    "type": int,
+                    "default": 0,
+                    "help": (
+                        "Number of files to split the posterior samples into. "
+                        "Default 0 meaning N_files=n_samples where n_samples "
+                        "is the number of posterior samples"
+                    )
+                }
+            }
         )
-    )
-    parser.add_argument(
-        "--file_format", dest="file_format", type=str, default="dat",
-        help="Format of each output file", choices=available_formats()[1]
-    )
-    parser.add_argument(
-        "--outdir", dest="outdir", type=str, default="./",
-        help="Directory to save each file"
-    )
-    parser.add_argument(
-        "-N", "--N_files", dest="N_files", type=int, default=0,
-        help=(
-            "Number of files to split the posterior samples into. Default 0 "
-            "meaning N_files=n_samples where n_samples is the number "
-            "of posterior samples"
-        )
-    )
-    parser.add_argument(
-        "--multi_process", dest="multi_process", type=int, default=1,
-        help="The number of cores to use when writing split posterior samples"
-    )
-    return parser
+        return options
 
 
 def _write_posterior_samples(
@@ -160,8 +165,14 @@ def _split_posterior_samples(
 def main(args=None):
     """Top level interface for `summarysplit`
     """
-    _parser = parser(existing_parser=command_line())
-    opts, unknown = _parser.parse_known_args(args=args)
+    parser = ArgumentParser(description=__doc__)
+    parser.add_known_options_to_parser(
+        [
+            "--samples", "--file_format", "--outdir", "--multi_process",
+            "--N_files"
+        ]
+    )
+    opts, unknown = parser.parse_known_args(args=args)
     logger.info("Loading file: '{}'".format(opts.samples))
     f = read(
         opts.samples, disable_prior=True, disable_injection_conversion=True

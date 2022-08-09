@@ -9,35 +9,34 @@ from pesummary.gw.pepredicates import PEPredicates
 from pesummary.gw.p_astro import PAstro
 from pesummary.utils.utils import make_dir, logger
 from pesummary.utils.exceptions import InputError
-import argparse
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 __doc__ = """This executable is used to generate a txt file containing the
 source classification probailities"""
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-w", "--webdir", dest="webdir",
-                        help="make page and plots in DIR", metavar="DIR",
-                        default=None)
-    parser.add_argument("-s", "--samples", dest="samples",
-                        help="Posterior samples hdf5 file", nargs='+',
-                        default=None)
-    parser.add_argument("--labels", dest="labels",
-                        help="labels used to distinguish runs", nargs='+',
-                        default=None)
-    parser.add_argument("--prior", dest="prior",
-                        choices=["population", "default", "both"],
-                        default="both",
-                        help=("Prior to use when calculating source "
-                              "classification probabilities"))
-    parser.add_argument("--plot", dest="plot",
-                        help="name of the plot you wish to make",
-                        default="bar", choices=["bar", "mass_1_mass_2"])
-    return parser
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--prior": {
+                    "choices": ["population", "default", "both"],
+                    "default": "both",
+                    "help": (
+                        "Prior to use when calculating source classification "
+                        "probabilities"
+                    )
+                },
+                "--plot": {
+                    "choices": ["bar", "mass_1_mass_2"],
+                    "default": "bar",
+                    "help": "Name of the plot you wish to make",
+                },
+            }
+        )
+        return options
 
 
 def generate_probabilities(result_files, prior="both"):
@@ -168,8 +167,11 @@ def make_plots(
 def main(args=None):
     """Top level interface for `summarypublication`
     """
-    parser = command_line()
-    opts = parser.parse_args(args=args)
+    parser = ArgumentParser(description=__doc__)
+    parser.add_known_options_to_parser(
+        ["--webdir", "--samples", "--labels", "--prior", "--plot"]
+    )
+    opts, _ = parser.parse_known_args(args=args)
     if opts.webdir:
         make_dir(opts.webdir)
     else:

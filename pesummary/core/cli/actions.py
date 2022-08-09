@@ -14,9 +14,6 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class CheckFilesExistAction(argparse.Action):
     """Class to extend the argparse.Action to identify if files exist
     """
-    def __init__(self, *args, **kwargs):
-        super(CheckFilesExistAction, self).__init__(*args, **kwargs)
-
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, values)
         self.check_input(values)
@@ -60,41 +57,55 @@ class CheckFilesExistAction(argparse.Action):
         return True
 
 
-class DeprecatedStoreTrueAction(object):
+class BaseDeprecatedAction(object):
     """Class to handle deprecated argparse options
     """
-    class _DeprecatedStoreTrueAction(argparse._StoreTrueAction):
-        def __init__(self, *args, **kwargs):
-            super(self.__class__, self).__init__(*args, **kwargs)
-
+    class _BaseDeprecatedAction(object):
         def __call__(self, *args, **kwargs):
             import warnings
             msg = (
-                "The option '{}' is out-of-date and may not be supported in future "
-                "releases.".format(self.option_strings[0])
+                "The option '{}' is out-of-date and may not be supported in "
+                "future releases.".format(self.option_strings[0])
             )
             if _new_option is not None:
                 msg += " Please use '{}'".format(_new_option)
             warnings.warn(msg)
-            return super(self.__class__, self).__call__(*args, **kwargs)
+            return super().__call__(*args, **kwargs)
 
     def __new__(cls, *args, new_option=None, **kwargs):
         global _new_option
         _new_option = new_option
+
+
+class DeprecatedStoreAction(BaseDeprecatedAction):
+    """Class to handle deprecated argparse._StoreAction options
+    """
+    class _DeprecatedStoreAction(
+        BaseDeprecatedAction._BaseDeprecatedAction, argparse._StoreAction
+    ):
+        pass
+
+    def __new__(cls, *args, **kwargs):
+        super().__new__(cls, *args, **kwargs)
+        return cls._DeprecatedStoreAction
+
+
+class DeprecatedStoreTrueAction(BaseDeprecatedAction):
+    """Class to handle deprecated argparse._StoreTrueAction options
+    """
+    class _DeprecatedStoreTrueAction(
+        BaseDeprecatedAction._BaseDeprecatedAction, argparse._StoreTrueAction
+    ):
+        pass
+
+    def __new__(cls, *args, **kwargs):
+        super().__new__(cls, *args, **kwargs)
         return cls._DeprecatedStoreTrueAction
 
 
 class ConfigAction(argparse.Action):
     """Class to extend the argparse.Action to handle dictionaries as input
     """
-    def __init__(self, option_strings, dest, nargs=None, const=None,
-                 default=None, type=None, choices=None, required=False,
-                 help=None, metavar=None):
-        super(ConfigAction, self).__init__(
-            option_strings=option_strings, dest=dest, nargs=nargs,
-            const=const, default=default, type=str, choices=choices,
-            required=required, help=help, metavar=metavar)
-
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, values)
 
@@ -206,14 +217,6 @@ class ConfigAction(argparse.Action):
 class DictionaryAction(argparse.Action):
     """Class to extend the argparse.Action to handle dictionaries as input
     """
-    def __init__(self, option_strings, dest, nargs=None, const=None,
-                 default=None, type=None, choices=None, required=False,
-                 help=None, metavar=None):
-        super(DictionaryAction, self).__init__(
-            option_strings=option_strings, dest=dest, nargs=nargs,
-            const=const, default=default, type=str, choices=choices,
-            required=required, help=help, metavar=metavar)
-
     def __call__(self, parser, namespace, values, option_string=None):
         bool = [True if ':' in value else False for value in values]
         if all(i is True for i in bool):
@@ -247,14 +250,6 @@ class DelimiterSplitAction(argparse.Action):
     """Class to extend the argparse.Action to handle inputs which need to be split with
     with a provided delimiter
     """
-    def __init__(self, option_strings, dest, nargs=None, const=None,
-                 default=None, type=None, choices=None, required=False,
-                 help=None, metavar=None):
-        super(DelimiterSplitAction, self).__init__(
-            option_strings=option_strings, dest=dest, nargs=nargs,
-            const=const, default=default, type=str, choices=choices,
-            required=required, help=help, metavar=metavar)
-
     def __call__(self, parser, namespace, values, option_string=None):
         import sys
 

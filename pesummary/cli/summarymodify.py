@@ -5,7 +5,6 @@
 import os
 import numpy as np
 import math
-import argparse
 import json
 import h5py
 from pathlib import Path
@@ -13,6 +12,7 @@ from pathlib import Path
 from pesummary.utils.utils import logger, check_file_exists_and_rename
 from pesummary.utils.dict import paths_to_key
 from pesummary.utils.exceptions import InputError
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.core.cli.actions import DelimiterSplitAction
 from pesummary.gw.cli.inputs import _GWInput
 from pesummary.gw.file.meta_file import _GWMetaFile
@@ -237,95 +237,100 @@ class Input(_Input):
             self._descriptions = None
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--labels", dest="labels", nargs='+', action=DelimiterSplitAction,
-        help=("labels you wish to modify. Syntax: `--labels existing:new` "
-              "where ':' is the default delimiter"),
-        default=None
-    )
-    parser.add_argument(
-        "--descriptions", nargs="+", action=DelimiterSplitAction, help=(
-            "descriptions you wish to modify. Syntax `--descriptions label:desc` "
-            "where label is the analysis you wish to change and desc is the "
-            "new description"
-        ), default=None
-    )
-    parser.add_argument(
-        "--config", nargs="+", action=DelimiterSplitAction, help=(
-            "config data you wish to modify. Syntax `--config label:path` "
-            "where label is the analysis you wish to change and path is the "
-            "path to a new configuration file."
-        ), default=None
-    )
-    parser.add_argument(
-        "-s", "--samples", dest="samples", default=None, nargs='+',
-        help="Path to PESummary meta file you wish to modify"
-    )
-    parser.add_argument(
-        "-w", "--webdir", dest="webdir", default="./", metavar="DIR",
-        help="Directory to write the output file"
-    )
-    parser.add_argument(
-        "--save_to_json", action="store_true", default=False,
-        help="save the modified data in json format"
-    )
-    parser.add_argument(
-        "--delimiter", dest="delimiter", default=":",
-        help="Delimiter used to seperate the existing and new quantity"
-    )
-    parser.add_argument(
-        "--kwargs", dest="kwargs", nargs='+', action=DelimiterSplitAction,
-        help=("kwargs you wish to modify. Syntax: `--kwargs label/kwarg:item` "
-              "where '/' is a delimiter of your choosing (it cannot be ':'), "
-              "kwarg is the kwarg name and item is the value of the kwarg"),
-        default=None
-    )
-    parser.add_argument(
-        "--preferred", dest="preferred", default=None,
-        help="label to set as the preferred run"
-    )
-    parser.add_argument(
-        "--overwrite", action="store_true", default=False,
-        help=("Overwrite the supplied PESummary meta file with the modified "
-              "version")
-    )
-    parser.add_argument(
-        "--replace_posterior", nargs='+', action=DelimiterSplitAction,
-        help=("Replace the posterior for a given label. Syntax: "
-              "--replace_posterior label;a:/path/to/posterior.dat where "
-              "';' is a delimiter of your choosing (it cannot be '/' or ':'), "
-              "a is the posterior you wish to replace and item is a path "
-              "to a one column ascii file containing the posterior samples "
-              "(/path/to/posterior.dat)"),
-        default=None
-    )
-    parser.add_argument(
-        "--remove_posterior", nargs='+', action=DelimiterSplitAction,
-        help=("Remove a posterior distribution for a given label. Syntax: "
-              "--remove_posterior label:a where a is the posterior you wish to "
-              "remove"),
-        default=None
-    )
-    parser.add_argument(
-        "--remove_label", nargs='+', default=None,
-        help="Remove an entire analysis from the input file"
-    )
-    parser.add_argument(
-        "--store_skymap", nargs='+', action=DelimiterSplitAction,
-        help=("Store the contents of a fits file in the metafile. Syntax: "
-              "--store_skymap label:path/to/skymap.fits"),
-        default=None
-    )
-    parser.add_argument(
-        "--force_replace", action="store_true", default=False,
-        help=("Override the ValueError raised if the data is already stored in the "
-              "result file")
-    )
-    return parser
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--labels": {
+                    "nargs": "+",
+                    "action": DelimiterSplitAction,
+                    "help": (
+                        "labels you wish to modify. Syntax: `--labels "
+                        "existing:new` where ':' is the default delimiter"
+                    )
+                },
+                "--config": {
+                    "nargs": "+",
+                    "action": DelimiterSplitAction,
+                    "help": (
+                        "config data you wish to modify. Syntax `--config "
+                        "label:path` where label is the analysis you wish to "
+                        "change and path is the path to a new configuration "
+                        "file."
+                    )
+                },
+                "--delimiter": {
+                    "default": ":",
+                    "help": (
+                        "Delimiter used to seperate the existing and new "
+                        "quantity"
+                    )
+                },
+                "--kwargs": {
+                    "nargs": "+",
+                    "action": DelimiterSplitAction,
+                    "help": (
+                        "kwargs you wish to modify. Syntax: `--kwargs "
+                        "label/kwarg:item` where '/' is a delimiter of your "
+                        "choosing (it cannot be ':'), kwarg is the kwarg name "
+                        "and item is the value of the kwarg"
+                    )
+                },
+                "--overwrite": {
+                    "action": "store_true",
+                    "default": False,
+                    "help": (
+                        "Overwrite the supplied PESummary meta file with the "
+                        "modified version"
+                    )
+                },
+                "--replace_posterior": {
+                    "nargs": "+",
+                    "action": DelimiterSplitAction,
+                    "help": (
+                        "Replace the posterior for a given label. Syntax: "
+                        "--replace_posterior label;a:/path/to/posterior.dat "
+                        "where ';' is a delimiter of your choosing (it cannot "
+                        "be '/' or ':'), a is the posterior you wish to "
+                        "replace and item is a path to a one column ascii file "
+                        "containing the posterior samples "
+                        "(/path/to/posterior.dat)"
+                    )
+                },
+                "--remove_posterior": {
+                    "nargs": "+",
+                    "action": DelimiterSplitAction,
+                    "help": (
+                        "Remove a posterior distribution for a given label. "
+                        "Syntax: --remove_posterior label:a where a is the "
+                        "posterior you wish to remove"
+                    )
+                },
+                "--remove_label": {
+                    "nargs": "+",
+                    "help": "Remove an entire analysis from the input file"
+                },
+                "--store_skymap": {
+                    "nargs": "+",
+                    "action": DelimiterSplitAction,
+                    "help": (
+                        "Store the contents of a fits file in the metafile. "
+                        "Syntax: --store_skymap label:path/to/skymap.fits"
+                    )
+                },
+                "--force_replace": {
+                    "action": "store_true",
+                    "default": False,
+                    "help": (
+                        "Override the ValueError raised if the data is already "
+                        "stored in the result file"
+                    )
+                }
+            }
+        )
+        options["--descriptions"]["action"] = DelimiterSplitAction
+        return options
 
 
 def _check_label(data, label, message, logger_level="warn"):
@@ -658,6 +663,20 @@ def _main(opts):
         )
     else:
         _GWMetaFile.save_to_json(modified_data, meta_file)
+
+
+def command_line():
+    parser = ArgumentParser(description=__doc__)
+    parser.add_known_options_to_parser(
+        [
+            "--descriptions", "--labels", "--config", "--delimiter",
+            "--samples", "--webdir", "--save_to_json", "--preferred",
+            "--kwargs", "--overwrite", "--replace_posterior",
+            "--remove_posterior", "--remove_label", "--store_skymap",
+            "--force_replace"
+        ]
+    )
+    return parser
 
 
 def main(args=None):

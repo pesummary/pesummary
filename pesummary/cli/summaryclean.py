@@ -4,30 +4,27 @@
 
 import pesummary
 from pesummary.gw.file.read import read as GWRead
-import argparse
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 __doc__ = """This executable returns a cleaned data file"""
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-w", "--webdir", dest="webdir",
-                        help="make page and plots in DIR", metavar="DIR",
-                        default=None)
-    parser.add_argument("-s", "--samples", dest="samples",
-                        help="Posterior samples hdf5 file", nargs='+',
-                        default=None)
-    parser.add_argument("--labels", dest="labels",
-                        help="labels used to distinguish runs", nargs='+',
-                        default=None)
-    parser.add_argument("--file_format", dest="file_format",
-                        help="Save the cleaned data in this format",
-                        choices=["dat", "lalinference", "bilby", "lalinference_dat"],
-                        default="dat")
-    return parser
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--file_format": {
+                    "default": "dat",
+                    "help": "Save the cleaned data in this format",
+                    "choices": [
+                        "dat", "lalinference", "bilby", "lalinference_dat"
+                    ],
+                }
+            }
+        )
+        return options
 
 
 def clean_data_file(path):
@@ -68,7 +65,10 @@ def save(pesummary_object, file_format, webdir=None, label=None):
 def main(args=None):
     """Top level interface for `summaryclean`
     """
-    parser = command_line()
+    parser = ArgumentParser(description=__doc__)
+    parser.add_known_options_to_parser(
+        ["--webdir", "--samples", "--labels", "--file_format"]
+    )
     opts = parser.parse_args(args=args)
     if opts.labels:
         if len(opts.labels) != len(opts.samples):

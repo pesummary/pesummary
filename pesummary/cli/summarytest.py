@@ -4,11 +4,11 @@ import subprocess
 import os
 import sys
 import pesummary
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.core.fetch import download_dir
 from pesummary.utils.utils import logger
 from pesummary.utils.decorators import tmp_directory
 import numpy as np
-import argparse
 import glob
 from pathlib import Path
 import multiprocessing
@@ -22,57 +22,64 @@ ALLOWED = [
 PESUMMARY_DIR = Path(pesummary.__file__).parent.parent
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-t", "--type", dest="type", required=True, type=str,
-        help=(
-            "The test you wish to run. Available tests are: {}".format(
-                ", ".join(ALLOWED)
-            )
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--type": {
+                    "short": "-t",
+                    "required": True,
+                    "type": str,
+                    "help": (
+                        "The test you wish to run. Available tests are: "
+                        "{}".format(", ".join(ALLOWED))
+                    )
+                },
+                "--coverage": {
+                    "short": "-c",
+                    "default": False,
+                    "action": "store_true",
+                    "help": "Generare a coverage report for the testing suite"
+                },
+                "--mark": {
+                    "short": "-m",
+                    "default": "",
+                    "type": str,
+                    "help": "only run tests matching given mark expression"
+                },
+                "--ignore": {
+                    "short": "-i",
+                    "nargs": "+",
+                    "default": [],
+                    "help": "Testing scripts you wish to ignore"
+                },
+                "--expression": {
+                    "short": "-k",
+                    "type": str,
+                    "help": (
+                        "Run tests which contain names that match the given "
+                        "string expression"
+                    ),
+                },
+                "--pytest_config": {
+                    "help": "Path to configuration file to use with pytest"
+                },
+                "--output": {
+                    "default": ".",
+                    "help": (
+                        "Directory to store the output from the testing scripts"
+                    ),
+                    "short": "-o",
+                },
+                "--repository": {
+                    "short": "-r",
+                    "help": "Location of the pesummary repository",
+                    "default": os.path.join(".", "pesummary")
+                },
+            }
         )
-    )
-    parser.add_argument(
-        "-c", "--coverage", default=False, dest="coverage", action="store_true",
-        help="Generare a coverage report for the testing suite"
-    )
-    parser.add_argument(
-        "-m", "--mark", dest="mark", default="", type=str,
-        help="only run tests matching given mark expression"
-    )
-    parser.add_argument(
-        "-i", "--ignore", nargs="+", dest="ignore", default=[],
-        help="Testing scripts you wish to ignore"
-    )
-    parser.add_argument(
-        "-k", "--expression", dest="expression", default=None, type=str,
-        help=(
-            "Run tests which contain names that match the given string "
-            "expression"
-        )
-    )
-    parser.add_argument(
-        "--pytest_config", dest="pytest_config", default=None,
-        help="Path to configuration file to use with pytest"
-    )
-    parser.add_argument(
-        "-o", "--output", dest="output", default=".",
-        help="Directory to store the output from the testing scripts"
-    )
-    parser.add_argument(
-        "-r", "--repository", dest="repository",
-        default=os.path.join(".", "pesummary"),
-        help="Location of the pesummary repository"
-    )
-    parser.add_argument(
-        "--multi_process", dest="multi_process", default=1, help=(
-            "Number of CPUs to use for the 'tests' and 'workflow' tests. "
-            "Default 1"
-        )
-    )
-    return parser
+        return options
 
 
 def launch(
@@ -418,10 +425,14 @@ def examples(*args, repository=os.path.join(".", "pesummary"), **kwargs):
 def main(args=None):
     """Top level interface for `summarytest`
     """
-    from pesummary.gw.cli.parser import parser
-
-    _parser = parser(existing_parser=command_line())
-    opts, unknown = _parser.parse_known_args(args=args)
+    parser = ArgumentParser()
+    parser.add_known_options_to_parser(
+        [
+            "--type", "--coverage", "--mark", "--ignore", "--expression",
+            "--pytest_config", "--output", "--repository", "--multi_process"
+        ]
+    )
+    opts, unknown = parser.parse_known_args(args=args)
     if opts.type not in ALLOWED:
         raise NotImplementedError(
             "Invalid test type {}. Please choose one from the following: "

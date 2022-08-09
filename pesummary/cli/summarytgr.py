@@ -4,10 +4,9 @@
 
 import os
 import numpy as np
-import argparse
 from itertools import cycle
 from pesummary import conf
-from pesummary.gw.cli.parser import TGRparser
+from pesummary.gw.cli.parser import TGRArgumentParser
 from pesummary.gw.webpage.tgr import TGRWebpageGeneration
 from pesummary.gw.file.meta_file import TGRMetaFile
 from pesummary.gw.plots.tgr import make_and_save_imrct_plots
@@ -21,148 +20,6 @@ __author__ = [
 ]
 __doc__ = """This executable is used to post-process and generate webpages to
 display results from analyses which test the General Theory of Relativity"""
-TESTS = ["imrct"]
-
-
-def command_line():
-    """Generate an Argument Parser object to control the command line options"""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-w",
-        "--webdir",
-        dest="webdir",
-        help="make page and plots in DIR",
-        metavar="DIR",
-        required=True,
-    )
-    parser.add_argument(
-        "-t",
-        "--test",
-        dest="test",
-        help="What test do you want to run? Currently only supports {}".format(
-            ", ".join(TESTS)
-        ),
-        required=True,
-        choices=TESTS,
-    )
-    parser.add_argument(
-        "--{test}_kwargs",
-        dest="example_test_kwargs",
-        help=(
-            "Kwargs you wish to use when postprocessing the results. Kwargs "
-            "should be provided as a dictionary 'kwarg:value'. For example "
-            "`--imrct_kwargs N_bins:201 multi_process:4` would pass the kwargs "
-            "N_bins=201, multi_process=4 to the IMRCT function. The test name "
-            "'{test}' should match the test provided with the --test flag"
-        ),
-        default=None,
-    )
-    parser.add_argument(
-        "-s",
-        "--samples",
-        dest="samples",
-        help=(
-            "Path to posterior samples file(s). See documentation for allowed "
-            "formats. If path is on a remote server, add username and "
-            "servername in the form {username}@{servername}:{path}"
-        ),
-        nargs="+",
-        default=None,
-    )
-    parser.add_argument(
-        "--labels",
-        dest="labels",
-        help=(
-            "Labels used to distinguish runs. The label format is dependent "
-            "on the TGR test you wish to use. For the IMRCT test, labels "
-            "need to be inspiral and postinspiral if analysing a single event "
-            "or {label1}:inspiral,{label1}:postinspiral,{label2}:inspiral,"
-            "{label2}:postinspiral,... if analysing two or more events (where "
-            "label1/label2 is a unique string to distinguish files from a "
-            "single event). If a metafile is provided, labels need to be "
-            "{inspiral_label}:inspiral {postinspiral_label}:postinspiral "
-            "where inspiral_label and postinspiral_label are the "
-            "pesummary labels for the inspiral and postinspiral analyses "
-            "respectively."
-        ),
-        nargs="+",
-        default=None,
-    )
-    parser.add_argument(
-        "-a",
-        "--approximant",
-        dest="approximant",
-        help="Approximant used for the runs",
-        nargs="+",
-        default=None,
-    )
-    parser.add_argument(
-        "--evolve_spins",
-        dest="evolve_spins",
-        help="Evolve spins while calculating remnant quantities",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--f_low", dest="f_low", help=(
-            "Low frequency cutoff used to generate the samples. Only used when "
-            "evolving spins"
-        ), nargs='+', default=None
-    )
-    parser.add_argument(
-        "--cutoff_frequency",
-        dest="cutoff_frequency",
-        help="Cutoff Frequency for IMRCT. Overrides any cutoff frequency "
-        "present in the supplied files. "
-        "The supplied cutoff frequency will only be used as metadata and "
-        "does not affect the cutoff frequency used in the analysis. "
-        "If only one number is supplied, the inspiral maximum frequency "
-        "and the postinspiral maximum frequency are set to the same number. "
-        "If a list of length 2 is supplied, this assumes that the "
-        "one corresponding to the inspiral label is the maximum frequency "
-        "for the inspiral and that corresponding to the postinspiral label is "
-        "the minimum frequency for the postinspiral",
-        type=float,
-        nargs="+",
-        default=None,
-    )
-    parser.add_argument(
-        "--links_to_pe_pages",
-        dest="links_to_pe_pages",
-        help="URLs for PE results pages separated by spaces.",
-        nargs="+",
-        default=[],
-    )
-    parser.add_argument(
-        "--disable_pe_page_generation",
-        action="store_true",
-        help=(
-            "Disable PE page generation for the input samples. This option is "
-            "only relevant if no URLs for PE results pages are provided using "
-            "--links_to_pe_pages."
-        ),
-    )
-
-    parser.add_argument(
-        "--pe_page_options",
-        dest="pe_page_options",
-        help=(
-            "Additional options to pass to 'summarypages' when generating PE "
-            "webpages. All options should be wrapped in quotation marks like, "
-            "--pe_page_options='--no_ligo_skymap --nsamples 1000 --psd...'. "
-            "See 'summarypages --help' for details. These options are added to "
-            "base executable: 'summarypages --webdir {} --samples {} --labels "
-            "{} --gw'"
-        ),
-        type=str,
-        default="",
-    )
-    parser.add_argument(
-        "--make_diagnostic_plots",
-        dest="make_diagnostic_plots",
-        help="Make extra diagnostic plots",
-        action="store_true",
-    )
-    return parser
 
 
 def generate_pe_pages(webdir, result_files, labels, additional_options=""):
@@ -233,7 +90,7 @@ def imrct(opts):
         })
         imrct_deviations, data, _evolved, samples = generate_imrct_deviation_parameters(
             _samples,
-            evolve_spins_forward=opts.evolve_spins,
+            evolve_spins_forward=opts.evolve_spins_forwards,
             inspiral_string=_inspiral,
             postinspiral_string=_postinspiral,
             return_samples_used=True,
@@ -353,8 +210,9 @@ def imrct(opts):
 
 def main(args=None):
     """Top level interface for `summarytgr`"""
-    _parser = TGRparser(existing_parser=command_line())
-    opts, unknown = _parser.parse_known_args(args=args)
+    parser = TGRArgumentParser(description=__doc__)
+    parser.add_all_known_options_to_parser()
+    opts, unknown = parser.parse_known_args(args=args)
     test_key_data = {}
     if opts.test == "imrct":
         args, _data = imrct(opts)

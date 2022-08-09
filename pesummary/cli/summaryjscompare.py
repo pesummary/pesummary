@@ -6,9 +6,7 @@ This plots the difference in CDF between two sets of samples and adds the JS tes
 statistic with uncertainty estimated by bootstrapping.
 """
 
-import argparse
 from collections import namedtuple
-
 import numpy as np
 import os
 import pandas as pd
@@ -18,7 +16,7 @@ import matplotlib.style
 import matplotlib.pyplot as plt
 
 from pesummary.io import read
-from pesummary.core.cli.parser import parser as pesummary_parser
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
 from pesummary.core.plots.figure import figure
 from pesummary.gw.plots.bounds import default_bounds
@@ -32,6 +30,48 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 matplotlib.style.use(get_matplotlib_style_file())
 _check_latex_install()
+
+
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--ntests": {
+                    "type": int,
+                    "default": 100,
+                    "help": "Number of iterations for bootstrapping",
+                },
+                "--main_keys": {
+                    "nargs": "+",
+                    "default": [
+                        "theta_jn", "chirp_mass", "mass_ratio", "tilt_1",
+                        "tilt_2", "luminosity_distance", "ra", "dec", "a_1",
+                        "a_2"
+                    ],
+                    "help": "List of parameter names"
+                },
+                "--event": {
+                    "type": str,
+                    "required": True,
+                    "help": "Label, e.g. the event name"
+                },
+                "--samples": {
+                    "short": "-s",
+                    "type": str,
+                    "nargs": 2,
+                    "help": "Paths to a pair of results files to compare."
+                },
+                "--labels": {
+                    "short": "-l",
+                    "type": str,
+                    "nargs": 2,
+                    "help": "Pair of labels for each result file",
+                },
+            }
+        )
+        options["--nsamples"]["default"] = 10000
+        return options
 
 
 def load_data(data_file):
@@ -191,42 +231,13 @@ def pp_plot(event, resultA, resultB, labelA, labelB, main_keys, nsamples, js_dat
 
 
 def parse_cmd_line(args=None):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--event", type=str, required=True, help="Label, e.g. the event name")
-    parser.add_argument(
-        "-r", "--samples", type=str, nargs=2, help=("Paths to a pair of results files to compare."),
+    _parser = ArgumentParser(description=__doc__)
+    _parser.add_known_options_to_parser(
+        [
+            "--seed", "--nsamples", "--webdir", "--ntests", "--main_keys",
+            "--labels", "--samples", "--event"
+        ]
     )
-    parser.add_argument("-l", "--labels", type=str, nargs=2, help="Pair of labels for each result file")
-    parser.add_argument(
-        "--main_keys",
-        nargs="+",
-        default=[
-            "theta_jn",
-            "chirp_mass",
-            "mass_ratio",
-            "tilt_1",
-            "tilt_2",
-            "luminosity_distance",
-            "ra",
-            "dec",
-            "a_1",
-            "a_2",
-        ],
-        required=False,
-        help="List of parameter names",
-    )
-    parser.add_argument(
-        "--ntests", type=int, default=100, required=False, help="Number of iteration for bootstrapping",
-    )
-    parser.add_argument(
-        "--nsamples", type=int, default=10000, required=False, help="Number of samples to use",
-    )
-    parser.add_argument("--random-seed", type=int, default=150914)
-    parser.add_argument(
-        "--webdir", type=str, default=".", required=False, help="Path to webdirectory where plots will be saved"
-    )
-
-    _parser = pesummary_parser(existing_parser=parser)
     args, unknown = _parser.parse_known_args(args=args)
     return args
 
@@ -235,7 +246,7 @@ def main(args=None):
     args = parse_cmd_line(args=args)
 
     # Set random seed
-    np.random.seed(seed=args.random_seed)
+    np.random.seed(seed=args.seed)
 
     # Read in the keys to apply
     main_keys = args.main_keys

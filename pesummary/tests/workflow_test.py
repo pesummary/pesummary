@@ -279,9 +279,10 @@ class TestCoreBilbyJson(Base):
         plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
         files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
 
-        from pesummary.core.cli.command_line import command_line
+        from pesummary.core.cli.parser import ArgumentParser
 
-        parser = command_line()
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         default_args = ["--webdir", "{}_pesummary".format(self.tmpdir),
                         "--samples", "{}/samples/posterior_samples.h5".format(self.tmpdir),
                         "--disable_expert"]
@@ -518,11 +519,10 @@ class TestGWLALInference(GWBase):
         plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
         files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
 
-        from pesummary.core.cli.command_line import command_line
-        from pesummary.gw.cli.command_line import insert_gwspecific_option_group
+        from pesummary.gw.cli.parser import ArgumentParser
 
-        parser = command_line()
-        insert_gwspecific_option_group(parser)
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
         default_args = ["--webdir", "{}_pesummary".format(self.tmpdir),
                         "--samples", "{}/samples/posterior_samples.h5".format(self.tmpdir),
                         "--gw", "--disable_expert"]

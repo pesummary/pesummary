@@ -3,6 +3,7 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.utils.utils import logger, make_dir
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.gw.plots.main import _PlotGeneration
@@ -198,41 +199,35 @@ class _PublicGWPlotGeneration(object):
         self.plotting_object.generate_plots()
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-w", "--webdir", dest="webdir",
-                        help="make page and plots in DIR", metavar="DIR",
-                        default="./")
-    parser.add_argument("-s", "--samples", dest="samples", nargs='+',
-                        help="Path to PESummary metafile", default=None)
-    parser.add_argument("--labels", dest="labels",
-                        help="labels used to distinguish runs", nargs='+',
-                        default=None)
-    parser.add_argument("--plot", dest="plot",
-                        help=("name of the publication plot you wish to "
-                              "produce"), default="2d_contour",
-                        choices=["1d_histogram", "sample_evolution",
-                                 "autocorrelation", "skymap"])
-    parser.add_argument("--parameters", dest="parameters", nargs="+",
-                        help=("parameters of the 2d contour plot you wish to "
-                              "make"), default=None)
-    parser.add_argument("--plot_kwargs", help="Optional plotting kwargs",
-                        action=DictionaryAction, nargs="+", default={})
-    parser.add_argument("--inj", help="Injected value", default=None)
-    parser.add_argument("--kde_plot", action="store_true",
-                        help="plot a kde rather than a histogram",
-                        default=False)
-    parser.add_argument("--burnin", dest="burnin",
-                        help="Number of samples to remove as burnin",
-                        default=None)
-    parser.add_argument("--disable_comparison", action="store_true", default=False,
-                        help="Whether to make comparison plots when multiple "
-                             "results are passed.")
-    return parser
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--plot": {
+                    "help": "name of the publication plot you wish to produce",
+                    "choices": [
+                        "1d_histogram", "sample_evolution", "autocorrelation",
+                        "skymap"
+                    ],
+                    "default": "2d_contour"
+                },
+                "--parameters": {
+                    "nargs": "+",
+                    "help": "parameters of the 2d contour plot you wish to make",
+                },
+                "--plot_kwargs": {
+                    "help": "Optional plotting kwargs",
+                    "default": {},
+                    "nargs": "+",
+                    "action": DictionaryAction
+                },
+                "--inj": {
+                    "help": "Injected value",
+                },
+            }
+        )
+        return options
 
 
 def check_inputs(opts):
@@ -321,7 +316,14 @@ def main(args=None):
     """The main interface for `summaryplots`
     """
     latex_labels.update(GWlatex_labels)
-    parser = command_line()
+    parser = ArgumentParser(description=__doc__)
+    parser.add_known_options_to_parser(
+        [
+            "--webdir", "--samples", "--labels", "--plot", "--parameters",
+            "--kde_plot", "--burnin", "--disable_comparison", "--plot_kwargs",
+            "--inj"
+        ]
+    )
     opts = parser.parse_args(args=args)
     opts = check_inputs(opts)
     make_dir(opts.webdir)

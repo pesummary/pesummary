@@ -202,11 +202,9 @@ def command_line_arguments():
 def command_line_dict():
     """Return a dictionary of command line arguments
     """
-    from pesummary.core.cli.command_line import command_line
-    from pesummary.gw.cli.command_line import insert_gwspecific_option_group
-
-    parser = command_line()
-    insert_gwspecific_option_group(parser)
+    from pesummary.gw.cli.parser import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_all_known_options_to_parser()
     opts = parser.parse_args()
     return vars(opts)
 
@@ -214,9 +212,9 @@ def command_line_dict():
 def gw_results_file(opts):
     """Determine if a GW results file is passed
     """
-    from pesummary.gw.cli.command_line import _all_gw_options
+    from pesummary.gw.cli.parser import ArgumentParser
 
-    attrs, defaults = _all_gw_options()
+    attrs, defaults = ArgumentParser().gw_options
     condition = any(
         hasattr(opts, attr) and getattr(opts, attr) and getattr(opts, attr)
         != default for attr, default in zip(attrs, defaults)

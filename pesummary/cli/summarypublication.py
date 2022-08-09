@@ -9,8 +9,8 @@ from pesummary.gw.plots import publication as pub
 from pesummary.core.plots import population as pop
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import make_dir, logger, _check_latex_install
+from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.core.cli.actions import DictionaryAction
-import argparse
 import seaborn
 import numpy as np
 
@@ -20,45 +20,38 @@ result files"""
 _check_latex_install()
 
 
-def command_line():
-    """Generate an Argument Parser object to control the command line options
-    """
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-w", "--webdir", dest="webdir",
-                        help="make page and plots in DIR", metavar="DIR",
-                        default=None)
-    parser.add_argument("-s", "--samples", dest="samples",
-                        help="Posterior samples hdf5 file", nargs='+',
-                        default=None)
-    parser.add_argument("--labels", dest="labels",
-                        help="labels used to distinguish runs", nargs='+',
-                        default=None)
-    parser.add_argument("--plot", dest="plot",
-                        help=("name of the publication plot you wish to "
-                              "produce"), default="2d_contour",
-                        choices=[
-                            "2d_contour", "violin", "spin_disk",
-                            "population_scatter", "population_scatter_error"
-                        ])
-    parser.add_argument("--parameters", dest="parameters", nargs="+",
-                        help=("parameters of the 2d contour plot you wish to "
-                              "make"), default=None)
-    parser.add_argument("--publication_kwargs",
-                        help="Optional kwargs for publication plots",
-                        action=DictionaryAction, nargs="+", default={})
-    parser.add_argument("--palette", dest="palette",
-                        help="Color palette to use to distinguish result files",
-                        default="colorblind")
-    parser.add_argument("--colors", dest="colors",
-                        help="Colors you wish to use to distinguish result files",
-                        nargs='+', default=None)
-    parser.add_argument("--linestyles", dest="linestyles",
-                        help=("Linestyles you wish to use to distinguish result "
-                              "files"),
-                        nargs='+', default=None)
-    parser.add_argument("--levels", dest="levels", default=[0.9], nargs='+',
-                        help="Contour levels you wish to plot", type=float)
-    return parser
+class ArgumentParser(_ArgumentParser):
+    def _pesummary_options(self):
+        options = super(ArgumentParser, self)._pesummary_options()
+        options.update(
+            {
+                "--plot": {
+                    "help": "name of the publication plot you wish to produce",
+                    "default": "2d_contour",
+                    "choices": [
+                        "2d_contour", "violin", "spin_disk",
+                        "population_scatter", "population_scatter_error"
+                    ],
+                },
+                "--parameters": {
+                    "nargs": "+",
+                    "help": "parameters of the 2d contour plot you wish to make",
+                },
+                "--publication_kwargs": {
+                    "help": "Optional kwargs for publication plots",
+                    "nargs": "+",
+                    "default": {},
+                    "action": DictionaryAction
+                },
+                "--levels": {
+                    "default": [0.9],
+                    "nargs": "+",
+                    "help": "Contour levels you wish to plot",
+                    "type": float
+                }
+            }
+        )
+        return options
 
 
 def draw_specific_samples(param, parameters, samples):
@@ -346,7 +339,14 @@ def main(args=None):
     """Top level interface for `summarypublication`
     """
     latex_labels.update(GWlatex_labels)
-    parser = command_line()
+    parser = ArgumentParser(description=__doc__)
+    parser.add_known_options_to_parser(
+        [
+            "--webdir", "--samples", "--labels", "--plot", "--parameters",
+            "--publication_kwargs", "--colors", "--palette", "--linestyles",
+            "--levels"
+        ]
+    )
     opts = parser.parse_args(args=args)
     make_dir(opts.webdir)
     func_map = {"2d_contour": make_2d_contour_plot,
