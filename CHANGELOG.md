@@ -1,3 +1,14 @@
+## 0.13.7 [10/08/2022]
+
+### Changed
+
+- Python >= 3.8 - Update `pesummary` to be compatible with Python >= 3.8, <= 3.10
+- Testing suite - Update the testing suite to run on multiple CPUs
+- setup.py - Deprecate setup.py install
+- scipy >= 1.8.0 - Update `pesummary` to be compatible with `scipy >= 1.8.0`
+
+### Added
+
 ## 0.13.6 [02/08/2022]
 
 ### Changed
