@@ -4,6 +4,9 @@ from pesummary.gw.fetch import fetch_open_samples
 from pesummary.gw.notebook import make_public_notebook
 import os
 import shutil
+import tempfile
+
+tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -14,14 +17,14 @@ class TestPublicNoteBook(object):
     def setup(self):
         """Setup the TestCoreDat class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_public_notebook(self):
         file_name = fetch_open_samples(
@@ -30,7 +33,7 @@ class TestPublicNoteBook(object):
         )
         make_public_notebook(
             "./GW190424_180648.h5", "Title", default_analysis="PublicationSamples",
-            default_parameter="mass_ratio", outdir=".outdir",
+            default_parameter="mass_ratio", outdir=tmpdir,
             filename="posterior_samples.ipynb"
         )
-        assert os.path.isfile(os.path.join(".outdir", "posterior_samples.ipynb"))
+        assert os.path.isfile(os.path.join(tmpdir, "posterior_samples.ipynb"))

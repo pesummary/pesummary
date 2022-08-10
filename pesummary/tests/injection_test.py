@@ -5,6 +5,9 @@ import shutil
 import numpy as np
 from .base import make_injection_file, testing_dir
 from pesummary.gw.file.injection import GWInjection
+import tempfile
+
+tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -15,14 +18,14 @@ class TestInjection(object):
     def setup(self):
         """Setup the TestInjection class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def check(self, extension):
         """
@@ -42,7 +45,7 @@ class TestInjection(object):
         else:
             ff, data = make_injection_file(
                 extension=extension, return_filename=True,
-                return_injection_dict=True
+                return_injection_dict=True, outdir=tmpdir
             )
         inj = GWInjection.read(ff, conversion=False)
         assert all(param in data.keys() for param in inj.samples_dict.keys())

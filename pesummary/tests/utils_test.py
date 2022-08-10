@@ -23,7 +23,9 @@ from pesummary._version_helper import get_version_information
 
 import pytest
 from testfixtures import LogCapture
+import tempfile
 
+tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 DEFAULT_DIRECTORY = os.getenv("CI_PROJECT_DIR", os.getcwd())
@@ -91,14 +93,14 @@ class TestUtils(object):
     def setup(self):
         """Setup the TestUtils class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
 
     def teardown(self):
         """Remove the files created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
  
     def test_check_condition(self):
         """Test the check_condition method
@@ -111,13 +113,14 @@ class TestUtils(object):
     def test_rename_group_in_hf5_file(self):
         """Test the rename_group_in_hf5_file method
         """
-        f = h5py.File("./.outdir/rename_group.h5", "w")
+        f = h5py.File("{}/rename_group.h5".format(tmpdir), "w")
         group = f.create_group("group")
         group.create_dataset("example", data=np.array([10]))
         f.close()
-        utils.rename_group_or_dataset_in_hf5_file("./.outdir/rename_group.h5",
+        utils.rename_group_or_dataset_in_hf5_file(
+            "{}/rename_group.h5".format(tmpdir),
             group=["group", "replaced"])
-        f = h5py.File("./.outdir/rename_group.h5")
+        f = h5py.File("{}/rename_group.h5".format(tmpdir))
         assert list(f.keys()) == ["replaced"]
         assert list(f["replaced"].keys()) == ["example"]
         assert len(f["replaced/example"]) == 1
@@ -125,13 +128,14 @@ class TestUtils(object):
         f.close()
 
     def test_rename_dataset_in_hf5_file(self):
-        f = h5py.File("./.outdir/rename_dataset.h5", "w")
+        f = h5py.File("{}/rename_dataset.h5".format(tmpdir), "w")
         group = f.create_group("group")
         group.create_dataset("example", data=np.array([10]))
         f.close()
-        utils.rename_group_or_dataset_in_hf5_file("./.outdir/rename_dataset.h5",
+        utils.rename_group_or_dataset_in_hf5_file(
+            "{}/rename_dataset.h5".format(tmpdir),
             dataset=["group/example", "group/replaced"])
-        f = h5py.File("./.outdir/rename_dataset.h5")
+        f = h5py.File("{}/rename_dataset.h5".format(tmpdir))
         assert list(f.keys()) == ["group"]
         assert list(f["group"].keys()) == ["replaced"]
         assert len(f["group/replaced"]) == 1
@@ -140,12 +144,13 @@ class TestUtils(object):
 
     def test_rename_unknown_hf5_file(self):
         with pytest.raises(Exception) as info:
-            utils.rename_group_or_dataset_in_hf5_file("./.outdir/unknown.h5",
+            utils.rename_group_or_dataset_in_hf5_file(
+                "{}/unknown.h5".format(tmpdir),
                 group=["None", "replaced"])
         assert "does not exist" in str(info.value) 
 
     def test_directory_creation(self):
-        directory = './.outdir/test_dir'
+        directory = '{}/test_dir'.format(tmpdir)
         assert os.path.isdir(directory) == False
         utils.make_dir(directory)
         assert os.path.isdir(directory) == True
@@ -171,13 +176,13 @@ class TestUtils(object):
     def test_make_dir(self):
         """Test the make_dir method
         """
-        assert not os.path.isdir(os.path.join(".outdir", "test"))
-        utils.make_dir(os.path.join(".outdir", "test"))
-        assert os.path.isdir(os.path.join(".outdir", "test"))
-        with open(os.path.join(".outdir", "test", "test.dat"), "w") as f:
+        assert not os.path.isdir(os.path.join(tmpdir, "test"))
+        utils.make_dir(os.path.join(tmpdir, "test"))
+        assert os.path.isdir(os.path.join(tmpdir, "test"))
+        with open(os.path.join(tmpdir, "test", "test.dat"), "w") as f:
             f.writelines(["test"])
-        utils.make_dir(os.path.join(".outdir", "test"))
-        assert os.path.isfile(os.path.join(".outdir", "test", "test.dat"))
+        utils.make_dir(os.path.join(tmpdir, "test"))
+        assert os.path.isfile(os.path.join(tmpdir, "test", "test.dat"))
 
     def test_resample_posterior_distribution(self):
         """Test the resample_posterior_distribution method
@@ -195,7 +200,7 @@ class TestUtils(object):
 
         opts = namespace({"gw": True, "psd": True})
         assert utils.gw_results_file(opts)
-        opts = namespace({"webdir": ".outdir"})
+        opts = namespace({"webdir": tmpdir})
         assert not utils.gw_results_file(opts)
 
     def test_functions(self):
@@ -208,7 +213,7 @@ class TestUtils(object):
         assert funcs["input"] == pesummary.gw.inputs.GWInput
         assert funcs["MetaFile"] == pesummary.gw.file.meta_file.GWMetaFile
 
-        opts = namespace({"webdir": ".outdir"})
+        opts = namespace({"webdir": tmpdir})
         funcs = utils.functions(opts)
         assert funcs["input"] == pesummary.core.inputs.Input
         assert funcs["MetaFile"] == pesummary.core.file.meta_file.MetaFile
@@ -270,18 +275,18 @@ class TestSamplesDict(object):
         self.samples = [
             np.random.uniform(10, 0.5, 100), np.random.uniform(200, 10, 100)
         ]
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         write(
-            self.parameters, np.array(self.samples).T, outdir=".outdir",
+            self.parameters, np.array(self.samples).T, outdir=tmpdir,
             filename="test.dat", file_format="dat"
         )
 
     def teardown(self):
         """Remove the files created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_initalize(self):
         """Test that the two ways to initialize the SamplesDict class are
@@ -301,7 +306,7 @@ class TestSamplesDict(object):
         assert sorted(list(base.keys())) == sorted(list(other.keys()))
         np.testing.assert_almost_equal(base.samples, self.samples)
         class_method = SamplesDict.from_file(
-            ".outdir/test.dat", add_zero_likelihood=False
+            "{}/test.dat".format(tmpdir), add_zero_likelihood=False
         )
         np.testing.assert_almost_equal(class_method.samples, self.samples)
 
@@ -342,19 +347,16 @@ class TestSamplesDict(object):
     def test_waveforms(self):
         """Test the waveform generation
         """
+        from pesummary.gw.fetch import fetch_open_samples
         try:
             from pycbc.waveform import get_fd_waveform, get_td_waveform
         except (ValueError, ImportError):
             return
-        import requests
-        from pesummary.io import read
 
-        data = requests.get(
-            "https://dcc.ligo.org/public/0168/P2000183/008/GW190814_posterior_samples.h5"
+        f = fetch_open_samples(
+            "GW190814", read_file=True, outdir=".", unpack=True,
+            path="GW190814.h5", catalog="GWTC-2"
         )
-        with open(".outdir/GW190814_posterior_samples.h5", "wb") as f:
-            f.write(data.content)
-        f = read(".outdir/GW190814_posterior_samples.h5")
         samples = f.samples_dict["C01:IMRPhenomPv3HM"]
         ind = 0
         data = samples.fd_waveform("IMRPhenomPv3HM", 1./256, 20., 1024., ind=ind)
@@ -415,19 +417,19 @@ class TestMultiAnalysisSamplesDict(object):
             [np.random.uniform(5, 0.5, 100), np.random.uniform(80, 10, 100)],
         ]
         self.labels = ["one", "two"]
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         for num, _samples in enumerate(self.samples):
             write(
-                self.parameters, np.array(_samples).T, outdir=".outdir",
+                self.parameters, np.array(_samples).T, outdir=tmpdir,
                 filename="test_{}.dat".format(num + 1), file_format="dat"
             )
 
     def teardown(self):
         """Remove the files created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_initalize(self):
         """Test the different ways to initalize the class
@@ -458,8 +460,10 @@ class TestMultiAnalysisSamplesDict(object):
             } for num, label in enumerate(self.labels)
         })
         class_method = MultiAnalysisSamplesDict.from_files(
-            {'one': ".outdir/test_1.dat", 'two': ".outdir/test_2.dat"},
-            add_zero_likelihood=False
+            {
+                'one': "{}/test_1.dat".format(tmpdir),
+                'two': "{}/test_2.dat".format(tmpdir)
+            }, add_zero_likelihood=False
         )
         for other in [_other, class_method]:
             assert sorted(other.keys()) == sorted(dataframe.keys())
@@ -821,14 +825,14 @@ class TestTQDM(object):
     """
     def setup(self):
         self._range = range(100)
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_basic_iterator(self):
         """Test that the core functionality of the tqdm class remains
@@ -841,11 +845,11 @@ class TestTQDM(object):
         """
         from pesummary.utils.utils import logger, LOG_FILE
 
-        with open("./.outdir/test.dat", "w") as f:
+        with open("{}/test.dat".format(tmpdir), "w") as f:
             for j in tqdm(self._range, logger=logger, file=f):
                 _ = j*j
 
-        with open("./.outdir/test.dat", "r") as f:
+        with open("{}/test.dat".format(tmpdir), "r") as f:
             lines = f.readlines()
             assert "PESummary" in lines[-1]
             assert "INFO" in lines[-1]

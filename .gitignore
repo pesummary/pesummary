@@ -23,6 +23,7 @@ __pycache__
 
 ## ignore version file
 .version
+pesummary/_version.py
 
 ## ignore directories created from coverage
 .outdir/

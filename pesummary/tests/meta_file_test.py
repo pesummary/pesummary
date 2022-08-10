@@ -13,14 +13,18 @@ from pesummary.gw.inputs import GWInput
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.array import Array
 from .base import data_dir
+import tempfile
+
+tmpdir_main = tempfile.TemporaryDirectory(prefix=".", dir=".").name
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
 def test_recursively_save_dictionary_to_hdf5_file():
-    if os.path.isdir("./.outdir_recursive"):
-        shutil.rmtree("./.outdir_recursive")
-    os.makedirs("./.outdir_recursive")
+    tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+    if os.path.isdir(tmpdir):
+        shutil.rmtree(tmpdir)
+    os.makedirs(tmpdir)
 
     data = {
                "H1_L1_IMRPhenomPv2": {
@@ -43,11 +47,11 @@ def test_recursively_save_dictionary_to_hdf5_file():
                },
           }
 
-    with h5py.File("./.outdir_recursive/test.h5", "w") as f:
+    with h5py.File("{}/test.h5".format(tmpdir), "w") as f:
         meta_file.recursively_save_dictionary_to_hdf5_file(
             f, data, extra_keys=list(data.keys()))
 
-    f = h5py.File("./.outdir_recursive/test.h5", "r")
+    f = h5py.File("{}/test.h5".format(tmpdir), "r")
     assert sorted(list(f.keys())) == sorted(list(data.keys()))
     assert sorted(
         list(f["H1_L1_IMRPhenomPv2/posterior_samples"].keys())) == sorted(
@@ -110,9 +114,10 @@ def test_recursively_save_dictionary_to_hdf5_file():
 def test_softlinks():
     """
     """
-    if os.path.isdir("./.outdir_softlinks"):
-        shutil.rmtree("./.outdir_softlinks")
-    os.makedirs("./.outdir_softlinks")
+    tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+    if os.path.isdir(tmpdir):
+        shutil.rmtree(tmpdir)
+    os.makedirs(tmpdir)
 
     data = {
         "label1": {
@@ -191,19 +196,19 @@ def test_softlinks():
             repeat[keys[0]][1] == repeat[keys[0]][0]
 
     print(simlinked_dict)
-    with h5py.File("./.outdir_softlinks/test.h5", "w") as f:
+    with h5py.File("{}/test.h5".format(tmpdir), "w") as f:
         meta_file.recursively_save_dictionary_to_hdf5_file(
             f, simlinked_dict, extra_keys=meta_file.DEFAULT_HDF5_KEYS + ["label1", "label2"])
 
-    with h5py.File("./.outdir_softlinks/no_softlink.h5", "w") as f:
+    with h5py.File("{}/no_softlink.h5".format(tmpdir), "w") as f:
         meta_file.recursively_save_dictionary_to_hdf5_file(
             f, data, extra_keys=meta_file.DEFAULT_HDF5_KEYS + ["label1", "label2"])
 
-    softlink_size = os.stat("./.outdir_softlinks/test.h5").st_size
-    no_softlink_size = os.stat('./.outdir_softlinks/no_softlink.h5').st_size
+    softlink_size = os.stat("{}/test.h5".format(tmpdir)).st_size
+    no_softlink_size = os.stat('{}/no_softlink.h5'.format(tmpdir)).st_size
     assert softlink_size < no_softlink_size
 
-    with h5py.File("./.outdir_softlinks/test.h5", "r") as f:
+    with h5py.File("{}/test.h5".format(tmpdir), "r") as f:
         assert \
             f["label2"]["config_file"]["condor"]["executable"][0] == \
             f["label1"]["config_file"]["condor"]["executable"][0]
@@ -227,8 +232,8 @@ class TestMetaFile(object):
     def setup(self):
         """Setup the Test class
         """
-        if not os.path.isdir(".outdir/samples"):
-            os.makedirs(".outdir/samples")
+        if not os.path.isdir("{}/samples".format(tmpdir_main)):
+            os.makedirs("{}/samples".format(tmpdir_main))
 
         self.samples = np.array([np.random.random(10) for i in range(15)])
         self.input_parameters = [
@@ -256,29 +261,31 @@ class TestMetaFile(object):
         object = _GWMetaFile(
             self.input_data, self.input_labels, self.input_config,
             self.input_injection, self.input_file_version, self.input_file_kwargs,
-            webdir=".outdir", psd=self.psds, calibration=self.calibration)
+            webdir=tmpdir_main, psd=self.psds, calibration=self.calibration)
         object.make_dictionary()
         object.save_to_json(object.data, object.meta_file)
         object = _GWMetaFile(
             self.input_data, self.input_labels, self.input_config,
             self.input_injection, self.input_file_version, self.input_file_kwargs,
-            webdir=".outdir", psd=self.psds, calibration=self.calibration,
+            webdir=tmpdir_main, psd=self.psds, calibration=self.calibration,
             hdf5=True)
         object.make_dictionary()
         object.save_to_hdf5(
             object.data, object.labels, object.samples, object.meta_file
         )
 
-        with open(".outdir/samples/posterior_samples.json", "r") as f:
+        with open("{}/samples/posterior_samples.json".format(tmpdir_main), "r") as f:
             self.json_file = json.load(f)
-        self.hdf5_file = h5py.File(".outdir/samples/posterior_samples.h5", "r")
+        self.hdf5_file = h5py.File(
+            "{}/samples/posterior_samples.h5".format(tmpdir_main), "r"
+        )
 
     def teardown(self):
         """Remove all files and directories created from this class
         """
         self.hdf5_file.close()
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir_main):
+            shutil.rmtree(tmpdir_main)
 
     def test_parameters(self):
         """Test the parameters stored in the metafile
