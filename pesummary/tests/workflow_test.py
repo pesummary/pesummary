@@ -11,6 +11,7 @@ from .base import read_result_file
 from pesummary.utils.utils import functions
 from pesummary.cli.summarypages import WebpageGeneration
 from pesummary.cli.summaryplots import PlotGeneration
+import tempfile
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -27,7 +28,7 @@ class Base(object):
         result_file: str
             path to result file you wish to run with
         """
-        opts, inputs = make_argparse(
+        opts, inputs = make_argparse(outdir=self.tmpdir, 
             gw=False, extension=extension, bilby=bilby)
         func = functions(opts)
         PlotGeneration(inputs)
@@ -35,14 +36,14 @@ class Base(object):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        plots = sorted(glob.glob("./.outdir/plots/*.png"))
-        files = sorted(glob.glob("./.outdir/html/*.html"))
-        assert all(i == j for i, j in zip(plots, get_list_of_plots(gw=False)))
-        assert all(i in plots for i in get_list_of_plots(gw=False))
-        assert all(i in get_list_of_plots(gw=False) for i in plots)
-        assert all(i == j for i, j in zip(files, get_list_of_files(gw=False)))
-        assert all(i in files for i in get_list_of_files(gw=False))
-        assert all(i in get_list_of_files(gw=False) for i in files)
+        plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
+        files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
+        assert all(i == j for i, j in zip(plots, get_list_of_plots(outdir=self.tmpdir, gw=False)))
+        assert all(i in plots for i in get_list_of_plots(outdir=self.tmpdir, gw=False))
+        assert all(i in get_list_of_plots(outdir=self.tmpdir, gw=False) for i in plots)
+        assert all(i == j for i, j in zip(files, get_list_of_files(outdir=self.tmpdir, gw=False)))
+        assert all(i in files for i in get_list_of_files(outdir=self.tmpdir, gw=False))
+        assert all(i in get_list_of_files(outdir=self.tmpdir, gw=False) for i in files)
         self.check_samples(extension, bilby=bilby)
 
     def check_samples(self, extension, bilby=False):
@@ -51,8 +52,8 @@ class Base(object):
         """
         from pesummary.core.file.read import read
 
-        initial_samples = read_result_file(extension=extension, bilby=bilby)
-        data = read("./.outdir/samples/posterior_samples.h5")
+        initial_samples = read_result_file(extension=extension, bilby=bilby, outdir=self.tmpdir)
+        data = read("{}/samples/posterior_samples.h5".format(self.tmpdir))
         samples = data.samples_dict
         label = data.labels[0]
         for param in initial_samples.keys():
@@ -72,7 +73,7 @@ class GWBase(Base):
         result_file: str
             path to result file you wish to run with
         """
-        opts, inputs = make_argparse(
+        opts, inputs = make_argparse(outdir=self.tmpdir, 
             gw=True, extension=extension, bilby=bilby, lalinference=lalinference)
         print(opts)
         func = functions(opts)
@@ -81,16 +82,16 @@ class GWBase(Base):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        plots = sorted(glob.glob("./.outdir/plots/*.png"))
-        files = sorted(glob.glob("./.outdir/html/*.html"))
-        assert all(i == j for i, j in zip(plots, get_list_of_plots(gw=True)))
-        assert all(i in plots for i in get_list_of_plots(gw=True))
-        assert all(i in get_list_of_plots(gw=True) for i in plots)
-        for i, j in zip(files, get_list_of_files(gw=True)):
+        plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
+        files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
+        assert all(i == j for i, j in zip(plots, get_list_of_plots(outdir=self.tmpdir, gw=True)))
+        assert all(i in plots for i in get_list_of_plots(outdir=self.tmpdir, gw=True))
+        assert all(i in get_list_of_plots(outdir=self.tmpdir, gw=True) for i in plots)
+        for i, j in zip(files, get_list_of_files(outdir=self.tmpdir, gw=True)):
             print(i, j)
-        assert all(i == j for i, j in zip(files, get_list_of_files(gw=True)))
-        assert all(i in files for i in get_list_of_files(gw=True))
-        assert all(i in get_list_of_files(gw=True) for i in files)
+        assert all(i == j for i, j in zip(files, get_list_of_files(outdir=self.tmpdir, gw=True)))
+        assert all(i in files for i in get_list_of_files(outdir=self.tmpdir, gw=True))
+        assert all(i in get_list_of_files(outdir=self.tmpdir, gw=True) for i in files)
         self.check_samples(extension, bilby=bilby, lalinference=lalinference)
 
     def check_samples(self, extension, bilby=False, lalinference=False):
@@ -100,8 +101,10 @@ class GWBase(Base):
         from pesummary.core.file.read import read
 
         initial_samples = read_result_file(
-            extension=extension, bilby=bilby, lalinference=lalinference)
-        data = read("./.outdir/samples/posterior_samples.h5")
+            extension=extension, bilby=bilby, lalinference=lalinference,
+            outdir=self.tmpdir
+        )
+        data = read("{}/samples/posterior_samples.h5".format(self.tmpdir))
         samples = data.samples_dict
         label = data.labels[0]
         for param in initial_samples.keys():
@@ -115,14 +118,15 @@ class TestCoreDat(Base):
     def setup(self):
         """Setup the TestCoreDat class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+        if not os.path.isdir(self.tmpdir):
+            os.mkdir(self.tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
 
     @pytest.mark.workflowtest
     def test_single_run(self):
@@ -138,14 +142,15 @@ class TestCoreJson(Base):
     def setup(self):
         """Setup the TestCoreJson class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+        if not os.path.isdir(self.tmpdir):
+            os.mkdir(self.tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
 
     @pytest.mark.workflowtest
     def test_single_run(self):
@@ -161,14 +166,15 @@ class TestCoreHDF5(Base):
     def setup(self):
         """Setup the TestCoreHDF5 class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+        if not os.path.isdir(self.tmpdir):
+            os.mkdir(self.tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
 
     @pytest.mark.workflowtest
     def test_single_run(self):
@@ -184,16 +190,17 @@ class TestCoreBilbyJson(Base):
     def setup(self):
         """Setup the TestCoreBilby class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+        if not os.path.isdir(self.tmpdir):
+            os.mkdir(self.tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
-        if os.path.isdir(".outdir_pesummary"):
-            shutil.rmtree(".outdir_pesummary")
+        if os.path.isdir(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
+        if os.path.isdir("{}_pesummary".format(self.tmpdir)):
+            shutil.rmtree("{}_pesummary".format(self.tmpdir))
 
     @pytest.mark.workflowtest
     def test_single_run(self):
@@ -206,7 +213,7 @@ class TestCoreBilbyJson(Base):
     def test_double_run(self):
         """Test the full workflow for 2 lalinference result files
         """
-        opts, inputs = make_argparse(
+        opts, inputs = make_argparse(outdir=self.tmpdir, 
             gw=False, extension="json", bilby=True, number=2)
         func = functions(opts)
         PlotGeneration(inputs)
@@ -214,22 +221,22 @@ class TestCoreBilbyJson(Base):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        plots = sorted(glob.glob("./.outdir/plots/*.png"))
-        files = sorted(glob.glob("./.outdir/html/*.html"))
-        assert all(i == j for i, j in zip(plots, get_list_of_plots(
+        plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
+        files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
+        assert all(i == j for i, j in zip(plots, get_list_of_plots(outdir=self.tmpdir, 
                        gw=False, number=2)))
-        assert all(i in plots for i in get_list_of_plots(gw=False, number=2))
-        assert all(i in get_list_of_plots(gw=False, number=2) for i in plots)
-        assert all(i == j for i, j in zip(files, get_list_of_files(
+        assert all(i in plots for i in get_list_of_plots(outdir=self.tmpdir, gw=False, number=2))
+        assert all(i in get_list_of_plots(outdir=self.tmpdir, gw=False, number=2) for i in plots)
+        assert all(i == j for i, j in zip(files, get_list_of_files(outdir=self.tmpdir, 
                        gw=False, number=2)))
-        assert all(i in files for i in get_list_of_files(gw=False, number=2))
-        assert all(i in get_list_of_files(gw=False, number=2) for i in files)
+        assert all(i in files for i in get_list_of_files(outdir=self.tmpdir, gw=False, number=2))
+        assert all(i in get_list_of_files(outdir=self.tmpdir, gw=False, number=2) for i in files)
 
     @pytest.mark.workflowtest
     def test_existing_run(self):
         """Test the fill workflow for when you add to an existing webpage
         """
-        opts, inputs = make_argparse(
+        opts, inputs = make_argparse(outdir=self.tmpdir, 
             gw=False, extension="json", bilby=True)
         func = functions(opts)
         PlotGeneration(inputs)
@@ -237,7 +244,7 @@ class TestCoreBilbyJson(Base):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        opts, inputs = make_argparse(
+        opts, inputs = make_argparse(outdir=self.tmpdir, 
             gw=False, extension="json", bilby=True, existing=True)
         func = functions(opts)
         PlotGeneration(inputs)
@@ -245,23 +252,23 @@ class TestCoreBilbyJson(Base):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        plots = sorted(glob.glob("./.outdir/plots/*.png"))
-        files = sorted(glob.glob("./.outdir/html/*.html"))
+        plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
+        files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
 
-        assert all(i == j for i, j in zip(plots, get_list_of_plots(
+        assert all(i == j for i, j in zip(plots, get_list_of_plots(outdir=self.tmpdir, 
                        gw=False, number=2)))
-        assert all(i in plots for i in get_list_of_plots(gw=False, number=2))
-        assert all(i in get_list_of_plots(gw=False, number=2) for i in plots)
-        assert all(i == j for i, j in zip(files, get_list_of_files(
+        assert all(i in plots for i in get_list_of_plots(outdir=self.tmpdir, gw=False, number=2))
+        assert all(i in get_list_of_plots(outdir=self.tmpdir, gw=False, number=2) for i in plots)
+        assert all(i == j for i, j in zip(files, get_list_of_files(outdir=self.tmpdir, 
                        gw=False, number=2)))
-        assert all(i in files for i in get_list_of_files(gw=False, number=2))
-        assert all(i in get_list_of_files(gw=False, number=2) for i in files)
+        assert all(i in files for i in get_list_of_files(outdir=self.tmpdir, gw=False, number=2))
+        assert all(i in get_list_of_files(outdir=self.tmpdir, gw=False, number=2) for i in files)
 
     @pytest.mark.workflowtest
     def test_pesummary_input(self):
         """Test the full workflow for a pesummary input file
         """
-        opts, inputs = make_argparse(
+        opts, inputs = make_argparse(outdir=self.tmpdir, 
             gw=False, extension="json", bilby=True, number=2)
         func = functions(opts)
         PlotGeneration(inputs)
@@ -269,14 +276,14 @@ class TestCoreBilbyJson(Base):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        plots = sorted(glob.glob("./.outdir/plots/*.png"))
-        files = sorted(glob.glob("./.outdir/html/*.html"))
+        plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
+        files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
 
         from pesummary.core.command_line import command_line
 
         parser = command_line()
-        default_args = ["--webdir", ".outdir_pesummary",
-                        "--samples", ".outdir/samples/posterior_samples.h5",
+        default_args = ["--webdir", "{}_pesummary".format(self.tmpdir),
+                        "--samples", "{}/samples/posterior_samples.h5".format(self.tmpdir),
                         "--disable_expert"]
         opts = parser.parse_args(default_args)
         func = functions(opts)
@@ -286,8 +293,8 @@ class TestCoreBilbyJson(Base):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        plots_pesummary = sorted(glob.glob("./.outdir_pesummary/plots/*.png"))
-        files_pesummary = sorted(glob.glob("./.outdir_pesummary/html/*.html"))
+        plots_pesummary = sorted(glob.glob("{}_pesummary/plots/*.png".format(self.tmpdir)))
+        files_pesummary = sorted(glob.glob("{}_pesummary/html/*.html".format(self.tmpdir)))
 
         assert all(i.split("/")[-1] == j.split("/")[-1] for i, j in zip(
                    plots, plots_pesummary))
@@ -300,14 +307,15 @@ class TestCoreBilbyHDF5(Base):
     def setup(self):
         """Setup the TestCoreBilby class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+        if not os.path.isdir(self.tmpdir):
+            os.mkdir(self.tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
 
     @pytest.mark.workflowtest
     def test_single_run(self):
@@ -323,14 +331,15 @@ class TestGWDat(GWBase):
     def setup(self):
         """Setup the TestCoreDat class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+        if not os.path.isdir(self.tmpdir):
+            os.mkdir(self.tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
 
     @pytest.mark.workflowtest
     def test_single_run(self):
@@ -346,14 +355,15 @@ class TestGWJson(GWBase):
     def setup(self):
         """Setup the TestGWJson class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+        if not os.path.isdir(self.tmpdir):
+            os.mkdir(self.tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
 
     @pytest.mark.workflowtest
     def test_single_run(self):
@@ -369,14 +379,15 @@ class TestGWBilbyJson(GWBase):
     def setup(self):
         """Setup the TestGWJson class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+        if not os.path.isdir(self.tmpdir):
+            os.mkdir(self.tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
 
     @pytest.mark.workflowtest
     def test_single_run(self):
@@ -392,14 +403,15 @@ class TestGWBilbyHDF5(GWBase):
     def setup(self):
         """Setup the TestGWJson class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+        if not os.path.isdir(self.tmpdir):
+            os.mkdir(self.tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
 
     @pytest.mark.workflowtest
     def test_single_run(self):
@@ -415,16 +427,17 @@ class TestGWLALInference(GWBase):
     def setup(self):
         """Setup the TestGWJson class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
+        if not os.path.isdir(self.tmpdir):
+            os.mkdir(self.tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
-        if os.path.isdir(".outdir_pesummary"):
-            shutil.rmtree(".outdir_pesummary")
+        if os.path.isdir(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
+        if os.path.isdir("{}_pesummary".format(self.tmpdir)):
+            shutil.rmtree("{}_pesummary".format(self.tmpdir))
 
     @pytest.mark.workflowtest
     def test_single_run(self):
@@ -437,7 +450,7 @@ class TestGWLALInference(GWBase):
     def test_double_run(self):
         """Test the full workflow for 2 lalinference result files
         """
-        opts, inputs = make_argparse(
+        opts, inputs = make_argparse(outdir=self.tmpdir, 
             gw=True, extension="hdf5", lalinference=True, number=2)
         func = functions(opts)
         PlotGeneration(inputs, gw=True)
@@ -445,25 +458,25 @@ class TestGWLALInference(GWBase):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        plots = sorted(glob.glob("./.outdir/plots/*.png"))
-        files = sorted(glob.glob("./.outdir/html/*.html"))
-        assert all(i == j for i, j in zip(plots, get_list_of_plots(
+        plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
+        files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
+        assert all(i == j for i, j in zip(plots, get_list_of_plots(outdir=self.tmpdir, 
                        gw=True, number=2)))
-        assert all(i in plots for i in get_list_of_plots(gw=True, number=2))
-        assert all(i in get_list_of_plots(gw=True, number=2) for i in plots)
-        for i, j in zip(files, get_list_of_files(
+        assert all(i in plots for i in get_list_of_plots(outdir=self.tmpdir, gw=True, number=2))
+        assert all(i in get_list_of_plots(outdir=self.tmpdir, gw=True, number=2) for i in plots)
+        for i, j in zip(files, get_list_of_files(outdir=self.tmpdir, 
                        gw=True, number=2)):
             print(i, j)
-        assert all(i == j for i, j in zip(files, get_list_of_files(
+        assert all(i == j for i, j in zip(files, get_list_of_files(outdir=self.tmpdir, 
                        gw=True, number=2)))
-        assert all(i in files for i in get_list_of_files(gw=True, number=2))
-        assert all(i in get_list_of_files(gw=True, number=2) for i in files)
+        assert all(i in files for i in get_list_of_files(outdir=self.tmpdir, gw=True, number=2))
+        assert all(i in get_list_of_files(outdir=self.tmpdir, gw=True, number=2) for i in files)
 
     @pytest.mark.workflowtest
     def test_existing_run(self):
         """Test the fill workflow for when you add to an existing webpage
         """
-        opts, inputs = make_argparse(
+        opts, inputs = make_argparse(outdir=self.tmpdir, 
             gw=True, extension="hdf5", lalinference=True)
         func = functions(opts)
         PlotGeneration(inputs, gw=True)
@@ -471,7 +484,7 @@ class TestGWLALInference(GWBase):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        opts, inputs = make_argparse(
+        opts, inputs = make_argparse(outdir=self.tmpdir, 
             gw=True, extension="hdf5", lalinference=True, existing=True)
         func = functions(opts)
         PlotGeneration(inputs, gw=True)
@@ -479,22 +492,22 @@ class TestGWLALInference(GWBase):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        plots = sorted(glob.glob("./.outdir/plots/*.png"))
-        files = sorted(glob.glob("./.outdir/html/*.html"))
-        assert all(i == j for i, j in zip(plots, get_list_of_plots(
+        plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
+        files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
+        assert all(i == j for i, j in zip(plots, get_list_of_plots(outdir=self.tmpdir, 
                        gw=True, number=2)))
-        assert all(i in plots for i in get_list_of_plots(gw=True, number=2))
-        assert all(i in get_list_of_plots(gw=True, number=2) for i in plots)
-        assert all(i == j for i, j in zip(files, get_list_of_files(
+        assert all(i in plots for i in get_list_of_plots(outdir=self.tmpdir, gw=True, number=2))
+        assert all(i in get_list_of_plots(outdir=self.tmpdir, gw=True, number=2) for i in plots)
+        assert all(i == j for i, j in zip(files, get_list_of_files(outdir=self.tmpdir, 
                        gw=True, number=2)))
-        assert all(i in files for i in get_list_of_files(gw=True, number=2))
-        assert all(i in get_list_of_files(gw=True, number=2) for i in files)
+        assert all(i in files for i in get_list_of_files(outdir=self.tmpdir, gw=True, number=2))
+        assert all(i in get_list_of_files(outdir=self.tmpdir, gw=True, number=2) for i in files)
 
     @pytest.mark.workflowtest
     def test_pesummary_input(self):
         """Test the full workflow for a pesummary input file
         """
-        opts, inputs = make_argparse(
+        opts, inputs = make_argparse(outdir=self.tmpdir, 
             gw=True, extension="hdf5", lalinference=True, number=2)
         func = functions(opts)
         PlotGeneration(inputs, gw=True)
@@ -502,19 +515,19 @@ class TestGWLALInference(GWBase):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        plots = sorted(glob.glob("./.outdir/plots/*.png"))
-        files = sorted(glob.glob("./.outdir/html/*.html"))
+        plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
+        files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
 
         from pesummary.core.command_line import command_line
         from pesummary.gw.command_line import insert_gwspecific_option_group
 
         parser = command_line()
         insert_gwspecific_option_group(parser)
-        default_args = ["--webdir", ".outdir_pesummary",
-                        "--samples", ".outdir/samples/posterior_samples.h5",
+        default_args = ["--webdir", "{}_pesummary".format(self.tmpdir),
+                        "--samples", "{}/samples/posterior_samples.h5".format(self.tmpdir),
                         "--gw", "--disable_expert"]
         from pesummary.gw.file.read import read
-        f = read(".outdir/samples/posterior_samples.h5")
+        f = read("{}/samples/posterior_samples.h5".format(self.tmpdir))
         opts = parser.parse_args(default_args)
         inputs = func["input"](opts)
         PlotGeneration(inputs, gw=True)
@@ -522,8 +535,8 @@ class TestGWLALInference(GWBase):
         func["MetaFile"](inputs)
         func["FinishingTouches"](inputs)
 
-        plots_pesummary = sorted(glob.glob("./.outdir_pesummary/plots/*.png"))
-        files_pesummary = sorted(glob.glob("./.outdir_pesummary/html/*.html"))
+        plots_pesummary = sorted(glob.glob("{}_pesummary/plots/*.png".format(self.tmpdir)))
+        files_pesummary = sorted(glob.glob("{}_pesummary/html/*.html".format(self.tmpdir)))
 
         assert all(i.split("/")[-1] == j.split("/")[-1] for i, j in zip(
                    plots, plots_pesummary))

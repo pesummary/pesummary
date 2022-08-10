@@ -45,7 +45,7 @@ def test_fetch_tarball_and_keep():
     """
     directory_name = fetch_open_samples(
         "GW190424_180648", read_file=False, outdir=".", unpack=True,
-        catalog="GWTC-2"
+        catalog="GWTC-2", download_kwargs={"timeout": 60}
     )
     assert os.path.isdir("./GW190424_180648")
     assert os.path.isdir(directory_name)
@@ -57,7 +57,8 @@ def test_fetch_tarball_and_keep_single_file():
     """
     file_name = fetch_open_samples(
         "GW190424_180648", read_file=False, outdir=".", unpack=True,
-        path="GW190424_180648.h5", catalog="GWTC-2"
+        path="GW190424_180648.h5", catalog="GWTC-2",
+        download_kwargs={"timeout": 60}
     )
     assert os.path.isfile("./GW190424_180648.h5")
     assert os.path.isfile(file_name)
@@ -71,7 +72,8 @@ def test_fetch_and_open_tarball():
 
     f = fetch_open_samples(
         "GW190424_180648", read_file=True, outdir=".", unpack=True,
-        path="GW190424_180648.h5", catalog="GWTC-2"
+        path="GW190424_180648.h5", catalog="GWTC-2",
+        download_kwargs={"timeout": 60}
     )
     assert isinstance(f, pesummary.gw.file.formats.pesummary.PESummary)
 
@@ -80,7 +82,7 @@ def test_fetch_open_samples():
     """Test that the `pesummary.gw.fetch.fetch_open_samples` function works as
     expected
     """
-    data = fetch_open_samples("GW150914")
+    data = fetch_open_samples("GW150914", download_kwargs={"timeout": 60})
     _data = requests.get(
         "https://zenodo.org/api/files/ecf41927-9275-47da-8b37-e299693fe5cb/" +
         "IGWN-GWTC2p1-v2-GW150914_095045_PEDataRelease_mixed_cosmo.h5"

@@ -12,6 +12,10 @@ from .base import (
 import pytest
 from pesummary.utils.exceptions import InputError
 import importlib
+import tempfile
+from pathlib import Path
+
+tmpdir = Path(tempfile.TemporaryDirectory(prefix=".", dir=".").name).name
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -225,40 +229,43 @@ class TestSummaryPipe(Base):
         """Setup the SummaryPipe class
         """
         self.dirs = [
-            ".outdir", ".outdir/lalinference", ".outdir/bilby",
-            ".outdir/lalinference/posterior_samples",
-            ".outdir/lalinference/ROQdata", ".outdir/lalinference/engine",
-            ".outdir/lalinference/caches", ".outdir/lalinference/log",
-            ".outdir/bilby/data", ".outdir/bilby/result",
-            ".outdir/bilby/submit", ".outdir/bilby/log_data_analysis"
+            tmpdir, "{}/lalinference".format(tmpdir), "{}/bilby".format(tmpdir),
+            "{}/lalinference/posterior_samples".format(tmpdir),
+            "{}/lalinference/ROQdata".format(tmpdir),
+            "{}/lalinference/engine".format(tmpdir),
+            "{}/lalinference/caches".format(tmpdir),
+            "{}/lalinference/log".format(tmpdir),
+            "{}/bilby/data".format(tmpdir), "{}/bilby/result".format(tmpdir),
+            "{}/bilby/submit".format(tmpdir),
+            "{}/bilby/log_data_analysis".format(tmpdir)
         ]
         for dd in self.dirs:
             if not os.path.isdir(dd):
                 os.mkdir(dd)
         make_result_file(
             gw=False, lalinference=True,
-            outdir=".outdir/lalinference/posterior_samples/"
+            outdir="{}/lalinference/posterior_samples/".format(tmpdir)
         )
         os.rename(
-            ".outdir/lalinference/posterior_samples/test.hdf5",
-            ".outdir/lalinference/posterior_samples/posterior_HL_result.hdf5"
+            "{}/lalinference/posterior_samples/test.hdf5".format(tmpdir),
+            "{}/lalinference/posterior_samples/posterior_HL_result.hdf5".format(tmpdir)
         )
         make_result_file(
-            gw=False, bilby=True, outdir=".outdir/bilby/result/"
+            gw=False, bilby=True, outdir="{}/bilby/result/".format(tmpdir)
         )
         os.rename(
-            ".outdir/bilby/result/test.json",
-            ".outdir/bilby/result/label_result.json"
+            "{}/bilby/result/test.json".format(tmpdir),
+            "{}/bilby/result/label_result.json".format(tmpdir)
         )
 
     def add_config_file(self):
         shutil.copyfile(
             os.path.join(data_dir, "config_lalinference.ini"),
-            ".outdir/lalinference/config.ini"
+            "{}/lalinference/config.ini".format(tmpdir)
         )
         shutil.copyfile(
             os.path.join(data_dir, "config_bilby.ini"),
-            ".outdir/bilby/config.ini"
+            "{}/bilby/config.ini".format(tmpdir)
         )
 
     def teardown(self):
@@ -274,7 +281,7 @@ class TestSummaryPipe(Base):
         directory
         """
         for _type in ["lalinference", "bilby"]:
-            command_line = "summarypipe --rundir .outdir/{}".format(_type)
+            command_line = "summarypipe --rundir {}/{}".format(tmpdir, _type)
             with pytest.raises(FileNotFoundError):
                 self.launch(command_line)
 
@@ -287,15 +294,15 @@ class TestSummaryPipe(Base):
         for _type in ["lalinference", "bilby"]:
             if _type == "lalinference":
                 os.remove(
-                    ".outdir/{}/posterior_samples/posterior_HL_result.hdf5".format(
-                        _type
+                    "{}/{}/posterior_samples/posterior_HL_result.hdf5".format(
+                        tmpdir, _type
                     )
                 )
             else:
                 os.remove(
-                    ".outdir/{}/result/label_result.json".format(_type)
+                    "{}/{}/result/label_result.json".format(tmpdir, _type)
                 )
-            command_line = "summarypipe --rundir .outdir/{}".format(_type)
+            command_line = "summarypipe --rundir {}/{}".format(tmpdir, _type)
             with pytest.raises(FileNotFoundError):
                 self.launch(command_line)
 
@@ -306,20 +313,22 @@ class TestSummaryPipe(Base):
         self.add_config_file()
         for _type in ["lalinference", "bilby"]:
             command_line = (
-                "summarypipe --rundir .outdir/{} --return_string".format(_type)
+                "summarypipe --rundir {}/{} --return_string".format(tmpdir, _type)
             )
             output = self.launch(command_line)
             assert "--config" in output
-            assert ".outdir/{}/config.ini".format(_type) in output
+            print(output)
+            print("{}/{}/config.ini".format(tmpdir, _type))
+            assert "{}/{}/config.ini".format(tmpdir, _type) in output
             assert "--samples" in output
             if _type == "lalinference":
                 _f = (
-                    ".outdir/{}/posterior_samples/posterior_HL_result.hdf5".format(
-                        _type
+                    "{}/{}/posterior_samples/posterior_HL_result.hdf5".format(
+                        tmpdir, _type
                     )
                 )
             else:
-                _f = ".outdir/{}/result/label_result.json".format(_type)
+                _f = "{}/{}/result/label_result.json".format(tmpdir, _type)
             assert _f in output
             assert "--webdir" in output
             assert "--approximant" in output
@@ -332,7 +341,7 @@ class TestSummaryPipe(Base):
         """
         self.add_config_file()
         command_line = (
-            "summarypipe --rundir .outdir/lalinference --return_string"
+            "summarypipe --rundir {}/lalinference --return_string".format(tmpdir)
         )
         output = self.launch(command_line)
         command_line += " --labels hello"
@@ -351,7 +360,7 @@ class TestSummaryPipe(Base):
         """
         self.add_config_file()
         command_line = (
-            "summarypipe --rundir .outdir/lalinference --return_string"
+            "summarypipe --rundir {}/lalinference --return_string".format(tmpdir)
         )
         output = self.launch(command_line)
         command_line += " --multi_process 10 --kde_plot --cosmology Planck15_lal"
@@ -371,14 +380,14 @@ class TestSummaryPages(Base):
     def setup(self):
         """Setup the SummaryClassification class
         """
-        self.dirs = [".outdir", ".outdir1", ".outdir2"]
+        self.dirs = [tmpdir, "{}1".format(tmpdir), "{}2".format(tmpdir)]
         for dd in self.dirs:
             if not os.path.isdir(dd):
                 os.mkdir(dd)
-        make_result_file(gw=False, extension="json")
-        os.rename(".outdir/test.json", ".outdir/example.json")
-        make_result_file(gw=False, extension="hdf5")
-        os.rename(".outdir/test.h5", ".outdir/example2.h5")
+        make_result_file(outdir=tmpdir, gw=False, extension="json")
+        os.rename("{}/test.json".format(tmpdir), "{}/example.json".format(tmpdir))
+        make_result_file(outdir=tmpdir, gw=False, extension="hdf5")
+        os.rename("{}/test.h5".format(tmpdir), "{}/example2.h5".format(tmpdir))
 
     def teardown(self):
         """Remove the files and directories created from this class
@@ -393,22 +402,26 @@ class TestSummaryPages(Base):
     ):
         """Check the output from the summarypages executable
         """
-        assert os.path.isfile(".outdir/home.html")
+        assert os.path.isfile("{}/home.html".format(tmpdir))
         plots = get_list_of_plots(
             gw=gw, number=number, mcmc=mcmc, existing_plot=existing_plot,
-            expert=expert
+            expert=expert, outdir=tmpdir
         )
+        for i, j in zip(
+                sorted(plots), sorted(glob.glob("{}/plots/*.png".format(tmpdir)))
+            ):
+                print(i, j)
         assert all(
             i == j for i, j in zip(
-                sorted(plots), sorted(glob.glob("./.outdir/plots/*.png"))
+                sorted(plots), sorted(glob.glob("{}/plots/*.png".format(tmpdir)))
             )
         )
         files = get_list_of_files(
-            gw=gw, number=number, existing_plot=existing_plot
+            gw=gw, number=number, existing_plot=existing_plot, outdir=tmpdir
         )
         assert all(
             i == j for i, j in zip(
-                sorted(files), sorted(glob.glob("./.outdir/html/*.html"))
+                sorted(files), sorted(glob.glob("{}/html/*.html".format(tmpdir)))
             )
         )
 
@@ -420,24 +433,26 @@ class TestSummaryPages(Base):
         import json
         from pesummary.io import read
         command_line = (
-            "summarypages --webdir .outdir --samples .outdir/example.json "
-            ".outdir/example.json --labels core0 core1 --nsamples 100 "
-            "--disable_expert --disable_corner --descriptions core0:Description"
+            "summarypages --webdir {0} --samples {0}/example.json "
+            "{0}/example.json --labels core0 core1 --nsamples 100 "
+            "--disable_expert --disable_corner "
+            "--descriptions core0:Description".format(tmpdir)
         )
         self.launch(command_line)
-        opened = read(".outdir/samples/posterior_samples.h5")
+        opened = read("{}/samples/posterior_samples.h5".format(tmpdir))
         assert opened.description["core0"] == "Description"
         assert opened.description["core1"] == "No description found"
 
-        with open(".outdir/descriptions.json", "w") as f:
+        with open("{}/descriptions.json".format(tmpdir), "w") as f:
             json.dump({"core0": "Testing description", "core1": "Test"}, f)
         command_line = (
-            "summarypages --webdir .outdir --samples .outdir/example.json "
-            ".outdir/example.json --labels core0 core1 --nsamples 100 "
-            "--disable_expert --disable_corner --descriptions .outdir/descriptions.json"
+            "summarypages --webdir {0} --samples {0}/example.json "
+            "{0}/example.json --labels core0 core1 --nsamples 100 "
+            "--disable_expert --disable_corner "
+            "--descriptions {0}/descriptions.json".format(tmpdir)
         )
         self.launch(command_line)
-        opened = read(".outdir/samples/posterior_samples.h5")
+        opened = read("{}/samples/posterior_samples.h5".format(tmpdir))
         assert opened.description["core0"] == "Testing description"
         assert opened.description["core1"] == "Test"
 
@@ -447,16 +462,16 @@ class TestSummaryPages(Base):
         `--reweight_samples` flag is provided
         """
         from pesummary.io import read
-        make_result_file(gw=True, extension="json")
+        make_result_file(gw=True, extension="json", outdir=tmpdir)
         command_line = (
-            "summarypages --webdir .outdir --samples .outdir/test.json --gw "
+            "summarypages --webdir {0} --samples {0}/test.json --gw "
             "--labels gw0 --nsamples 100 --disable_expert --disable_corner "
-            "--reweight_samples uniform_in_comoving_volume "
+            "--reweight_samples uniform_in_comoving_volume ".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1, expert=False, gw=True)
-        original = read(".outdir/test.json").samples_dict
-        _reweighted = read(".outdir/samples/posterior_samples.h5")
+        original = read("{0}/test.json".format(tmpdir)).samples_dict
+        _reweighted = read("{0}/samples/posterior_samples.h5".format(tmpdir))
         reweighted = _reweighted.samples_dict
         assert original.number_of_samples >= reweighted["gw0"].number_of_samples
         inds = np.array([
@@ -479,13 +494,14 @@ class TestSummaryPages(Base):
         """
         import time
         command_line = (
-            "summarypages --webdir .outdir --samples  .outdir/example.json "
-            "--labels core0 --nsamples 100 --disable_expert --restart_from_checkpoint"
+            "summarypages --webdir {0} --samples {0}/example.json "
+            "--labels core0 --nsamples 100 --disable_expert "
+            "--restart_from_checkpoint".format(tmpdir)
         )
         t0 = time.time()
         self.launch(command_line)
         t1 = time.time()
-        assert os.path.isfile(".outdir/checkpoint/pesummary_resume.pickle")
+        assert os.path.isfile("{}/checkpoint/pesummary_resume.pickle".format(tmpdir))
         self.check_output(number=1, expert=False)
         t2 = time.time()
         self.launch(command_line)
@@ -493,7 +509,7 @@ class TestSummaryPages(Base):
         assert t3 - t2 < t1 - t0
         self.check_output(number=1, expert=False)
         # get timestamp of plot
-        made_time = os.path.getmtime(glob.glob(".outdir/plots/*.png")[0])
+        made_time = os.path.getmtime(glob.glob("{}/plots/*.png".format(tmpdir))[0])
         assert made_time < t2
 
     @pytest.mark.executabletest
@@ -502,14 +518,14 @@ class TestSummaryPages(Base):
         plots
         """
         command_line = (
-            "summarypages --webdir .outdir --samples  .outdir/example.json "
-            "--labels core0 --nsamples 100 --disable_expert"
+            "summarypages --webdir {0} --samples  {0}/example.json "
+            "--labels core0 --nsamples 100 --disable_expert".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1, expert=False)
         command_line = (
-            "summarypages --webdir .outdir --samples  .outdir/example.json "
-            "--labels core0 --nsamples 100"
+            "summarypages --webdir {0} --samples  {0}/example.json "
+            "--labels core0 --nsamples 100".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1, expert=True)
@@ -532,17 +548,17 @@ class TestSummaryPages(Base):
             module = importlib.import_module(
                 "pesummary.{}.file.read".format(package)
             )
-            make_result_file(gw=gw, extension="json")
-            os.rename(".outdir/test.json", ".outdir/prior.json")
-            for _file in [".outdir/prior.json", bilby_prior_file]:
+            make_result_file(outdir=tmpdir, gw=gw, extension="json")
+            os.rename("{}/test.json".format(tmpdir), "{}/prior.json".format(tmpdir))
+            for _file in ["{}/prior.json".format(tmpdir), bilby_prior_file]:
                 command_line = (
-                    "summarypages --webdir .outdir --samples .outdir/example.json "
+                    "summarypages --webdir {} --samples {}/example.json "
                     "--labels test --prior_file {} --nsamples_for_prior "
-                    "10 --disable_expert".format(_file)
+                    "10 --disable_expert".format(tmpdir, tmpdir, _file)
                 )
                 command_line += " --gw" if gw else ""
                 self.launch(command_line)
-                f = module.read(".outdir/samples/posterior_samples.h5")
+                f = module.read("{}/samples/posterior_samples.h5".format(tmpdir))
                 if _file != bilby_prior_file:
                     stored = f.priors["samples"]["test"]
                     f = module.read(_file)
@@ -572,18 +588,18 @@ class TestSummaryPages(Base):
         from pesummary.gw.file.read import read
         from .base import make_psd, make_calibration
 
-        make_psd()
-        make_calibration()
+        make_psd(outdir=tmpdir)
+        make_calibration(outdir=tmpdir)
         command_line = (
-            "summarypages --webdir .outdir --samples .outdir/example.json "
-            "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
+            "summarypages --webdir {0} --samples {0}/example.json "
+            "--psd H1:{0}/psd.dat --calibration L1:{0}/calibration.dat "
             "--labels test --posterior_samples_filename example.h5 "
-            "--disable_expert"
+            "--disable_expert".format(tmpdir)
         )
         self.launch(command_line)
-        f = read(".outdir/samples/example.h5")
-        psd = np.genfromtxt(".outdir/psd.dat")
-        calibration = np.genfromtxt(".outdir/calibration.dat")
+        f = read("{}/samples/example.h5".format(tmpdir))
+        psd = np.genfromtxt("{}/psd.dat".format(tmpdir))
+        calibration = np.genfromtxt("{}/calibration.dat".format(tmpdir))
         np.testing.assert_almost_equal(f.psd["test"]["H1"], psd)
         np.testing.assert_almost_equal(
             f.priors["calibration"]["test"]["L1"], calibration
@@ -599,18 +615,19 @@ class TestSummaryPages(Base):
         H1_series = TimeSeries(
             np.random.uniform(-1, 1, 1000), t0=101, dt=0.1, name="H1:test"
         )
-        H1_series.write(".outdir/H1.gwf", format="gwf")
+        H1_series.write("{}/H1.gwf".format(tmpdir), format="gwf")
         L1_series = TimeSeries(
             np.random.uniform(-1, 1, 1000), t0=201, dt=0.2, name="L1:test"
         )
-        L1_series.write(".outdir/L1.hdf", format="hdf5")
+        L1_series.write("{}/L1.hdf".format(tmpdir), format="hdf5")
         command_line = (
-            "summarypages --webdir .outdir --samples .outdir/example.json "
-            "--gwdata H1:test:.outdir/H1.gwf L1:test:.outdir/L1.hdf "
-            "--labels test --disable_expert --disable_corner --disable_interactive"
+            "summarypages --webdir {0} --samples {0}/example.json "
+            "--gwdata H1:test:{0}/H1.gwf L1:test:{0}/L1.hdf "
+            "--labels test --disable_expert --disable_corner "
+            "--disable_interactive".format(tmpdir)
         )
         self.launch(command_line)
-        f = read(".outdir/samples/posterior_samples.h5")
+        f = read("{}/samples/posterior_samples.h5".format(tmpdir))
         gwdata = f.gwdata
         assert all(IFO in gwdata.detectors for IFO in ["H1", "L1"])
         strain = {"H1": H1_series, "L1": L1_series}
@@ -628,11 +645,13 @@ class TestSummaryPages(Base):
         from pesummary.gw.file.read import read
 
         command_line = (
-            "summarypages --webdir .outdir --samples .outdir/example.json "
-            "--gracedb G17864 --gw --labels test --disable_expert"
+            "summarypages --webdir {0} --samples {0}/example.json "
+            "--gracedb G17864 --gw --labels test --disable_expert".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
-        f = read(".outdir/samples/posterior_samples.h5")
+        f = read("{}/samples/posterior_samples.h5".format(tmpdir))
         assert "gracedb" in f.extra_kwargs[0]["meta_data"]
         assert "G17864" == f.extra_kwargs[0]["meta_data"]["gracedb"]["id"]
 
@@ -641,8 +660,8 @@ class TestSummaryPages(Base):
         """Test on a single input
         """
         command_line = (
-            "summarypages --webdir .outdir --samples "
-            ".outdir/example.json --label core0 --disable_expert"
+            "summarypages --webdir {0} --samples "
+            "{0}/example.json --label core0 --disable_expert".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1)
@@ -653,29 +672,29 @@ class TestSummaryPages(Base):
         """
         from .base import make_psd, make_calibration
 
-        make_psd()
-        make_calibration()
+        make_psd(outdir=tmpdir)
+        make_calibration(outdir=tmpdir)
         command_line = (
-            "summarycombine --webdir .outdir1 --samples "
-            ".outdir/example.json --label gw0 "
-            "--calibration L1:.outdir/calibration.dat --gw"
+            "summarycombine --webdir {0}1 --samples "
+            "{0}/example.json --label gw0 "
+            "--calibration L1:{0}/calibration.dat --gw".format(tmpdir)
         )
         self.launch(command_line)
         command_line = (
-            "summarycombine --webdir .outdir2 --samples "
-            ".outdir/example.json --label gw1 "
-            "--psd H1:.outdir/psd.dat --gw"
+            "summarycombine --webdir {0}2 --samples "
+            "{0}/example.json --label gw1 "
+            "--psd H1:{0}/psd.dat --gw".format(tmpdir)
         )
         self.launch(command_line)
         command_line = (
-            "summarycombine --webdir .outdir --gw --samples "
-            ".outdir1/samples/posterior_samples.h5 "
-            ".outdir2/samples/posterior_samples.h5 "
+            "summarycombine --webdir {0} --gw --samples "
+            "{0}1/samples/posterior_samples.h5 "
+            "{0}2/samples/posterior_samples.h5 ".format(tmpdir)
         )
         self.launch(command_line)
         command_line = (
-            "summarypages --webdir .outdir --gw --samples "
-            ".outdir/samples/posterior_samples.h5 --disable_expert"
+            "summarypages --webdir {0} --gw --samples "
+            "{0}/samples/posterior_samples.h5 --disable_expert".format(tmpdir)
         )
         self.launch(command_line)
         
@@ -684,9 +703,9 @@ class TestSummaryPages(Base):
         """Test the `--mcmc_samples` command line argument
         """
         command_line = (
-            "summarypages --webdir .outdir --samples "
-            ".outdir/example.json .outdir/example2.h5 "
-            "--label core0 --mcmc_samples"
+            "summarypages --webdir {0} --samples "
+            "{0}/example.json {0}/example2.h5 "
+            "--label core0 --mcmc_samples".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1, mcmc=True)
@@ -696,15 +715,16 @@ class TestSummaryPages(Base):
         """Test that the kde plots work on a single input and on MCMC inputs
         """
         command_line = (
-            "summarypages --webdir .outdir --samples "
-            ".outdir/example.json --label core0 --kde_plot --disable_expert"
+            "summarypages --webdir {0} --samples "
+            "{0}/example.json --label core0 --kde_plot "
+            "--disable_expert".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1)
         command_line = (
-            "summarypages --webdir .outdir --samples "
-            ".outdir/example.json .outdir/example2.h5 "
-            "--label core0 --mcmc_samples --kde_plot"
+            "summarypages --webdir {0} --samples "
+            "{0}/example.json {0}/example2.h5 "
+            "--label core0 --mcmc_samples --kde_plot".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1, mcmc=True)
@@ -715,10 +735,10 @@ class TestSummaryPages(Base):
         argument when multiple labels are passed.
         """
         command_line = (
-            "summarypages --webdir .outdir --samples "
-            ".outdir/example.json .outdir/example2.h5 "
-            ".outdir/example.json .outdir/example2.h5 "
-            "--label core0 core1 --mcmc_samples"
+            "summarypages --webdir {0} --samples "
+            "{0}/example.json {0}/example2.h5 "
+            "{0}/example.json {0}/example2.h5 "
+            "--label core0 core1 --mcmc_samples".format(tmpdir)
         )
         with pytest.raises(InputError): 
             self.launch(command_line)
@@ -730,9 +750,9 @@ class TestSummaryPages(Base):
         samples
         """
         command_line = (
-            "summarypages --webdir .outdir --samples "
-            ".outdir/example.json .outdir/example2.h5 "
-            "--file_format hdf5 json dat"
+            "summarypages --webdir {0} --samples "
+            "{0}/example.json {0}/example2.h5 "
+            "--file_format hdf5 json dat".format(tmpdir)
         )
         with pytest.raises(InputError):
             self.launch(command_line)
@@ -742,20 +762,20 @@ class TestSummaryPages(Base):
         """Test that an Additional page is made if existing plots are provided
         to the summarypages executable
         """
-        with open(".outdir/test.png", "w") as f:
+        with open("{}/test.png".format(tmpdir), "w") as f:
             f.writelines("")
         command_line = (
-            "summarypages --webdir .outdir --samples "
-            ".outdir/example.json --label core0 --add_existing_plot "
-            "core0:.outdir/test.png --disable_expert"
+            "summarypages --webdir {0} --samples "
+            "{0}/example.json --label core0 --add_existing_plot "
+            "core0:{0}/test.png --disable_expert".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1, existing_plot=True)
         command_line = (
-            "summarypages --webdir .outdir --samples "
-            ".outdir/example.json .outdir/example.json --label core0 core1 "
-            "--add_existing_plot core0:.outdir/test.png core1:.outdir/test.png "
-            "--disable_expert"
+            "summarypages --webdir {0} --samples "
+            "{0}/example.json {0}/example.json --label core0 core1 "
+            "--add_existing_plot core0:{0}/test.png core1:{0}/test.png "
+            "--disable_expert".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=2, existing_plot=True)
@@ -767,19 +787,19 @@ class TestSummaryPagesLW(Base):
     def setup(self):
         """Setup the SummaryPagesLW class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(bilby=True, gw=True)
-        os.rename(".outdir/test.json", ".outdir/bilby.json")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(bilby=True, gw=True, outdir=tmpdir)
+        os.rename("{}/test.json".format(tmpdir), "{}/bilby.json".format(tmpdir))
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def check_output(
-        self, gw=False, number=1, outdir=".outdir", parameters=[], sections=[],
+        self, gw=False, number=1, outdir=tmpdir, parameters=[], sections=[],
         extra_gw_plots=True
     ):
         """Check the output from the summarypages executable
@@ -791,20 +811,20 @@ class TestSummaryPagesLW(Base):
             extra_gw_plots=extra_gw_plots
         )
         assert all(
-            i in plots for i in glob.glob("./{}/plots/*.png".format(outdir))
+            i in plots for i in glob.glob("{}/plots/*.png".format(outdir))
         )
         assert all(
-            i in glob.glob("./{}/plots/*.png".format(outdir)) for i in plots
+            i in glob.glob("{}/plots/*.png".format(outdir)) for i in plots
         )
         files = get_list_of_files(
             gw=gw, number=number, existing_plot=False, parameters=parameters,
             sections=sections, outdir=outdir, extra_gw_pages=extra_gw_plots
         )
         assert all(
-            i in files for i in glob.glob("./{}/html/*.html".format(outdir))
+            i in files for i in glob.glob("{}/html/*.html".format(outdir))
         )
         assert all(
-            i in glob.glob("./{}/html/*.html".format(outdir)) for i in files
+            i in glob.glob("{}/html/*.html".format(outdir)) for i in files
         )
 
     @pytest.mark.executabletest
@@ -813,26 +833,30 @@ class TestSummaryPagesLW(Base):
         when a single result file is provided
         """
         command_line = (
-            "summarypageslw --webdir .outdir --samples .outdir/bilby.json "
-            "--labels core0 --parameters mass_1 mass_2 --disable_expert"
+            "summarypageslw --webdir {0} --samples {0}/bilby.json "
+            "--labels core0 --parameters mass_1 mass_2 "
+            "--disable_expert".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(parameters=["mass_1", "mass_2"], sections=["M-P"])
         command_line = (
-            "summarypageslw --webdir .outdir/gw --samples .outdir/bilby.json "
-            "--labels gw0 --parameters mass_1 mass_2 --disable_expert --gw"
+            "summarypageslw --webdir {0}/gw --samples {0}/bilby.json "
+            "--labels gw0 --parameters mass_1 mass_2 --disable_expert "
+            "--gw".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(
             gw=True, parameters=["mass_1", "mass_2"], sections=["masses"],
-            outdir=".outdir/gw", extra_gw_plots=False
+            outdir="{}/gw".format(tmpdir), extra_gw_plots=False
         )
-        command_line = command_line.replace(".outdir/gw", ".outdir/gw2")
+        command_line = command_line.replace(
+            "{}/gw".format(tmpdir), "{}/gw2".format(tmpdir)
+        )
         command_line = command_line.replace("mass_1", "made_up_label")
         self.launch(command_line)
         self.check_output(
             gw=True, parameters=["mass_2"], sections=["masses"],
-            outdir=".outdir/gw2", extra_gw_plots=False
+            outdir="{}/gw2".format(tmpdir), extra_gw_plots=False
         )
         with pytest.raises(Exception):
             command_line = command_line.replace("mass_2", "made_up_label2")
@@ -844,9 +868,9 @@ class TestSummaryPagesLW(Base):
         when multiple result files are provided
         """
         command_line = (
-            "summarypageslw --webdir .outdir --samples .outdir/bilby.json "
-            ".outdir/bilby.json --labels core0 core1 --parameters mass_1 mass_2 "
-            "--disable_expert"
+            "summarypageslw --webdir {0} --samples {0}/bilby.json "
+            "{0}/bilby.json --labels core0 core1 --parameters mass_1 mass_2 "
+            "--disable_expert".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(
@@ -859,45 +883,47 @@ class TestSummaryPagesLW(Base):
         for a pesummary metafile
         """
         command_line = (
-            "summarycombine --webdir ./.outdir --samples .outdir/bilby.json "
-            ".outdir/bilby.json --no_conversions --gw --labels core0 core1 "
-            "--nsamples 100"
+            "summarycombine --webdir {0} --samples {0}/bilby.json "
+            "{0}/bilby.json --no_conversion --gw --labels core0 core1 "
+            "--nsamples 100".format(tmpdir)
         )
         self.launch(command_line)
         command_line = (
-            "summarypageslw --webdir .outdir/lw --samples "
-            ".outdir/samples/posterior_samples.h5 --parameters mass_1 mass_2 "
-            "--disable_expert"
+            "summarypageslw --webdir {0}/lw --samples "
+            "{0}/samples/posterior_samples.h5 --parameters mass_1 mass_2 "
+            "--disable_expert".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(
             number=2, parameters=["mass_1", "mass_2"], sections=["M-P"],
-            outdir=".outdir/lw"
+            outdir="{}/lw".format(tmpdir)
         )
-        command_line = command_line.replace(".outdir/lw", ".outdir/lw2")
+        command_line = command_line.replace(
+            "{}/lw".format(tmpdir), "{}/lw2".format(tmpdir)
+        )
         command_line = command_line.replace("mass_1", "made_up_label")
         self.launch(command_line)
         self.check_output(
             number=2, parameters=["mass_2"], sections=["M-P"],
-            outdir=".outdir/lw2"
+            outdir="{}/lw2".format(tmpdir)
         )
-        make_result_file(bilby=True, gw=False)
-        os.rename(".outdir/test.json", ".outdir/bilby2.json")
+        make_result_file(bilby=True, gw=False, outdir=tmpdir)
+        os.rename("{}/test.json".format(tmpdir), "{}/bilby2.json".format(tmpdir))
         command_line = (
-            "summarycombine --webdir ./.outdir --samples .outdir/bilby.json "
-            ".outdir/bilby2.json --no_conversions --gw --labels core0 core1 "
-            "--nsamples 100"
+            "summarycombine --webdir {0} --samples {0}/bilby.json "
+            "{0}/bilby2.json --no_conversion --gw --labels core0 core1 "
+            "--nsamples 100".format(tmpdir)
         )
         self.launch(command_line)
         command_line = (
-            "summarypageslw --webdir .outdir/lw3 --samples "
-            ".outdir/samples/posterior_samples.h5 --parameters mass_1 mass_2 "
-            "--disable_expert"
+            "summarypageslw --webdir {0}/lw3 --samples "
+            "{0}/samples/posterior_samples.h5 --parameters mass_1 mass_2 "
+            "--disable_expert".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(
             number=1, parameters=["mass_1", "mass_2"], sections=["M-P"],
-            outdir=".outdir/lw3"
+            outdir="{}/lw3".format(tmpdir)
         )
 
 
@@ -907,18 +933,18 @@ class TestSummaryClassification(Base):
     def setup(self):
         """Setup the SummaryClassification class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(pesummary=True, gw=True, pesummary_label="test")
-        os.rename(".outdir/test.json", ".outdir/pesummary.json")
-        make_result_file(bilby=True, gw=True)
-        os.rename(".outdir/test.json", ".outdir/bilby.json")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(outdir=tmpdir, pesummary=True, gw=True, pesummary_label="test")
+        os.rename("{}/test.json".format(tmpdir), "{}/pesummary.json".format(tmpdir))
+        make_result_file(outdir=tmpdir, bilby=True, gw=True)
+        os.rename("{}/test.json".format(tmpdir), "{}/bilby.json".format(tmpdir))
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def check_output(self):
         """Check the output from the `summaryclassification` executable
@@ -926,10 +952,10 @@ class TestSummaryClassification(Base):
         import glob
         import json
 
-        files = glob.glob(".outdir/*")
-        assert ".outdir/test_default_prior_pe_classification.json" in files
-        assert ".outdir/test_default_pepredicates_bar.png" in files
-        with open(".outdir/test_default_prior_pe_classification.json", "r") as f:
+        files = glob.glob("{}/*".format(tmpdir))
+        assert "{}/test_default_prior_pe_classification.json".format(tmpdir) in files
+        assert "{}/test_default_pepredicates_bar.png".format(tmpdir) in files
+        with open("{}/test_default_prior_pe_classification.json".format(tmpdir), "r") as f:
             data = json.load(f)
         assert all(
             i in data.keys() for i in [
@@ -942,8 +968,8 @@ class TestSummaryClassification(Base):
         """Test the `summaryclassification` executable for a random result file
         """
         command_line = (
-            "summaryclassification --webdir .outdir --samples "
-            ".outdir/bilby.json --prior default --label test"
+            "summaryclassification --webdir {0} --samples "
+            "{0}/bilby.json --prior default --label test".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output()
@@ -953,8 +979,8 @@ class TestSummaryClassification(Base):
         """Test the `summaryclassification` executable for a pesummary metafile
         """
         command_line = (
-            "summaryclassification --webdir .outdir --samples "
-            ".outdir/pesummary.json --prior default"
+            "summaryclassification --webdir {0} --samples "
+            "{0}/pesummary.json --prior default".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output()
@@ -1061,14 +1087,14 @@ class TestSummaryClean(Base):
     def setup(self):
         """Setup the SummaryClassification class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_clean(self):
@@ -1082,14 +1108,14 @@ class TestSummaryClean(Base):
             [tuple(i) for i in data], dtype=[tuple([i, 'float64']) for i in
             parameters]
         )
-        f = h5py.File(".outdir/test.hdf5", "w")
+        f = h5py.File("{}/test.hdf5".format(tmpdir), "w")
         lalinference = f.create_group("lalinference")
         nest = lalinference.create_group("lalinference_nest")
         samples = nest.create_dataset("posterior_samples", data=h5py_data)
         f.close()
         command_line = (
-            "summaryclean --webdir .outdir --samples .outdir/test.hdf5 "
-            "--file_format dat --labels test"
+            "summaryclean --webdir {0} --samples {0}/test.hdf5 "
+            "--file_format dat --labels test".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output()
@@ -1099,7 +1125,7 @@ class TestSummaryClean(Base):
         """
         from pesummary.gw.file.read import read
 
-        f = read(".outdir/pesummary_test.dat")
+        f = read("{}/pesummary_test.dat".format(tmpdir))
         print(f.samples_dict["mass_ratio"])
         assert len(f.samples_dict["mass_ratio"]) == 2
         assert all(i == 0.5 for i in f.samples_dict["mass_ratio"])
@@ -1112,13 +1138,13 @@ class _SummaryCombine_Metafiles(Base):
     def test_combine(self, gw=False):
         """Test the executable for 2 metafiles
         """
-        make_result_file(pesummary=True, pesummary_label="label2")
-        os.rename(".outdir/test.json", ".outdir/test2.json")
-        make_result_file(pesummary=True)
+        make_result_file(outdir=tmpdir, pesummary=True, pesummary_label="label2")
+        os.rename("{}/test.json".format(tmpdir), "{}/test2.json".format(tmpdir))
+        make_result_file(outdir=tmpdir, pesummary=True)
         command_line = (
-            "summarycombine --webdir .outdir "
-            "--samples .outdir/test.json .outdir/test2.json "
-            "--save_to_json"
+            "summarycombine --webdir {0} "
+            "--samples {0}/test.json {0}/test2.json "
+            "--save_to_json".format(tmpdir)
         )
         if gw:
             command_line += " --gw"
@@ -1130,9 +1156,9 @@ class _SummaryCombine_Metafiles(Base):
         else:
             from pesummary.core.file.read import read
 
-        assert os.path.isfile(".outdir/samples/posterior_samples.json")
-        combined = read(".outdir/samples/posterior_samples.json")
-        for f in [".outdir/test.json", ".outdir/test2.json"]:
+        assert os.path.isfile("{}/samples/posterior_samples.json".format(tmpdir))
+        combined = read("{}/samples/posterior_samples.json".format(tmpdir))
+        for f in ["{}/test.json".format(tmpdir), "{}/test2.json".format(tmpdir)]:
             data = read(f)
             labels = data.labels
             assert all(i in combined.labels for i in labels)
@@ -1150,15 +1176,15 @@ class TestCoreSummaryCombine_Metafiles(_SummaryCombine_Metafiles):
     def setup(self):
         """Setup the SummaryCombine_Metafiles class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(pesummary=True)
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(outdir=tmpdir, pesummary=True)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_combine(self):
@@ -1176,15 +1202,15 @@ class TestGWSummaryCombine_Metafiles(_SummaryCombine_Metafiles):
     def setup(self):
         """Setup the SummaryCombine_Metafiles class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(pesummary=True)
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(outdir=tmpdir, pesummary=True)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_combine(self):
@@ -1202,7 +1228,7 @@ class TestSummaryCombine(Base):
     def setup(self):
         """Setup the SummaryCombine class
         """
-        self.dirs = [".outdir"]
+        self.dirs = [tmpdir]
         for dd in self.dirs:
             if not os.path.isdir(dd):
                 os.mkdir(dd)
@@ -1221,22 +1247,22 @@ class TestSummaryCombine(Base):
         """
         from pesummary.io import read
 
-        make_result_file(bilby=True, gw=False)
-        os.rename(".outdir/test.json", ".outdir/bilby.json")
+        make_result_file(outdir=tmpdir, bilby=True, gw=False)
+        os.rename("{}/test.json".format(tmpdir), "{}/bilby.json".format(tmpdir))
         command_line = (
-            "summarycombine --webdir .outdir --samples .outdir/bilby.json "
-            "--labels core0"
+            "summarycombine --webdir {0} --samples {0}/bilby.json "
+            "--labels core0".format(tmpdir)
         )
         self.launch(command_line)
-        f = read(".outdir/samples/posterior_samples.h5")
+        f = read("{}/samples/posterior_samples.h5".format(tmpdir))
         assert len(f.priors["samples"]["core0"])
 
         command_line = (
-            "summarycombine --webdir .outdir --samples .outdir/bilby.json "
-            "--disable_prior_sampling --labels core0"
+            "summarycombine --webdir {0} --samples {0}/bilby.json "
+            "--disable_prior_sampling --labels core0".format(tmpdir)
         )
         self.launch(command_line)
-        f = read(".outdir/samples/posterior_samples.h5")
+        f = read("{}/samples/posterior_samples.h5".format(tmpdir))
         assert not len(f.priors["samples"]["core0"])
 
     @pytest.mark.executabletest
@@ -1247,26 +1273,26 @@ class TestSummaryCombine(Base):
         from pesummary.gw.file.read import read
         from .base import make_psd, make_calibration
 
-        make_result_file(gw=True, extension="json")
-        os.rename(".outdir/test.json", ".outdir/example.json")
-        make_psd()
-        make_calibration()
+        make_result_file(outdir=tmpdir, gw=True, extension="json")
+        os.rename("{}/test.json".format(tmpdir), "{}/example.json".format(tmpdir))
+        make_psd(outdir=tmpdir)
+        make_calibration(outdir=tmpdir)
         command_line = (
-            "summarycombine --webdir .outdir --samples "
-            ".outdir/example.json --label gw0 --external_hdf5_links --gw "
-            "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
-            "--no_conversion"
+            "summarycombine --webdir {0} --samples "
+            "{0}/example.json --label gw0 --external_hdf5_links --gw "
+            "--psd H1:{0}/psd.dat --calibration L1:{0}/calibration.dat "
+            "--no_conversion".format(tmpdir)
         )
         self.launch(command_line)
         assert os.path.isfile(
-            os.path.join(".outdir", "samples", "posterior_samples.h5")
+            os.path.join(tmpdir, "samples", "posterior_samples.h5")
         )
         assert os.path.isfile(
-            os.path.join(".outdir", "samples", "_gw0.h5")
+            os.path.join(tmpdir, "samples", "_gw0.h5")
         )
-        f = read(".outdir/samples/posterior_samples.h5")
-        g = read(".outdir/example.json")
-        h = read(".outdir/samples/_gw0.h5")
+        f = read("{}/samples/posterior_samples.h5".format(tmpdir))
+        g = read("{}/example.json".format(tmpdir))
+        h = read("{}/samples/_gw0.h5".format(tmpdir))
         np.testing.assert_almost_equal(f.samples[0], g.samples)
         np.testing.assert_almost_equal(f.samples[0], h.samples[0])
         np.testing.assert_almost_equal(f.psd["gw0"]["H1"], h.psd["gw0"]["H1"])
@@ -1283,29 +1309,32 @@ class TestSummaryCombine(Base):
         from pesummary.gw.file.read import read
         from .base import make_psd, make_calibration
 
-        make_result_file(gw=True, extension="json")
-        os.rename(".outdir/test.json", ".outdir/example.json")
-        make_psd()
-        make_calibration()
+        make_result_file(outdir=tmpdir, gw=True, extension="json")
+        os.rename("{}/test.json".format(tmpdir), "{}/example.json".format(tmpdir))
+        make_psd(outdir=tmpdir)
+        make_calibration(outdir=tmpdir)
         command_line = (
-            "summarycombine --webdir .outdir --samples "
-            ".outdir/example.json --label gw0 --no_conversion --gw "
-            "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
+            "summarycombine --webdir {0} --samples "
+            "{0}/example.json --label gw0 --no_conversion --gw "
+            "--psd H1:{0}/psd.dat --calibration L1:{0}/calibration.dat ".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
-        original_size = os.stat("./.outdir/samples/posterior_samples.h5").st_size 
+        original_size = os.stat("{}/samples/posterior_samples.h5".format(tmpdir)).st_size 
         command_line = (
-            "summarycombine --webdir .outdir --samples "
-            ".outdir/example.json --label gw0 --no_conversion --gw "
-            "--psd H1:.outdir/psd.dat --calibration L1:.outdir/calibration.dat "
-            "--hdf5_compression 9 --posterior_samples_filename posterior_samples2.h5"
+            "summarycombine --webdir {0} --samples "
+            "{0}/example.json --label gw0 --no_conversion --gw "
+            "--psd H1:{0}/psd.dat --calibration L1:{0}/calibration.dat "
+            "--hdf5_compression 9 --posterior_samples_filename "
+            "posterior_samples2.h5".format(tmpdir)
         )
         self.launch(command_line)
-        compressed_size = os.stat("./.outdir/samples/posterior_samples2.h5").st_size
+        compressed_size = os.stat("{}/samples/posterior_samples2.h5".format(tmpdir)).st_size
         assert compressed_size < original_size
 
-        f = read("./.outdir/samples/posterior_samples.h5")
-        g = read("./.outdir/samples/posterior_samples2.h5")
+        f = read("{}/samples/posterior_samples.h5".format(tmpdir))
+        g = read("{}/samples/posterior_samples2.h5".format(tmpdir))
         posterior_samples = f.samples[0]
         posterior_samples2 = g.samples[0]
         np.testing.assert_almost_equal(posterior_samples, posterior_samples2)
@@ -1317,22 +1346,22 @@ class TestSummaryCombine(Base):
         """
         from pesummary.gw.file.read import read
 
-        make_result_file(gw=True, extension="json")
-        os.rename(".outdir/test.json", ".outdir/example.json")
+        make_result_file(outdir=tmpdir, gw=True, extension="json")
+        os.rename("{}/test.json".format(tmpdir), "{}/example.json".format(tmpdir))
         command_line = (
-            "summarycombine --webdir .outdir --samples "
-            ".outdir/example.json --label gw0 --no_conversion --gw "
-            "--nsamples 10 --seed 1000"
+            "summarycombine --webdir {0} --samples "
+            "{0}/example.json --label gw0 --no_conversion --gw "
+            "--nsamples 10 --seed 1000".format(tmpdir)
         )
         self.launch(command_line)
-        original = read(".outdir/samples/posterior_samples.h5")
+        original = read("{}/samples/posterior_samples.h5".format(tmpdir))
         command_line = (
-            "summarycombine --webdir .outdir --samples "
-            ".outdir/example.json --label gw0 --no_conversion --gw "
-            "--nsamples 10 --seed 2000"
+            "summarycombine --webdir {0} --samples "
+            "{0}/example.json --label gw0 --no_conversion --gw "
+            "--nsamples 10 --seed 2000".format(tmpdir)
         )
         self.launch(command_line)
-        new = read(".outdir/samples/posterior_samples.h5")
+        new = read("{}/samples/posterior_samples.h5".format(tmpdir))
         try:
             np.testing.assert_almost_equal(
                 original.samples[0], new.samples[0]
@@ -1342,19 +1371,19 @@ class TestSummaryCombine(Base):
             pass
 
         command_line = (
-            "summarycombine --webdir .outdir --samples "
-            ".outdir/example.json --label gw0 --no_conversion --gw "
-            "--nsamples 10 --seed 1000"
+            "summarycombine --webdir {0} --samples "
+            "{0}/example.json --label gw0 --no_conversion --gw "
+            "--nsamples 10 --seed 1000".format(tmpdir)
         )
         self.launch(command_line)
-        original = read(".outdir/samples/posterior_samples.h5")
+        original = read("{}/samples/posterior_samples.h5".format(tmpdir))
         command_line = (
-            "summarycombine --webdir .outdir --samples "
-            ".outdir/example.json --label gw0 --no_conversion --gw "
-            "--nsamples 10 --seed 1000"
+            "summarycombine --webdir {0} --samples "
+            "{0}/example.json --label gw0 --no_conversion --gw "
+            "--nsamples 10 --seed 1000".format(tmpdir)
         )
         self.launch(command_line)
-        new = read(".outdir/samples/posterior_samples.h5")
+        new = read("{}/samples/posterior_samples.h5".format(tmpdir))
         np.testing.assert_almost_equal(
             original.samples[0], new.samples[0]
         )
@@ -1364,31 +1393,31 @@ class TestSummaryCombine(Base):
         """Test that the preferred analysis is correctly stored in the metafile
         """
         from pesummary.io import read
-        make_result_file(gw=True, extension="json")
-        make_result_file(gw=True, extension="hdf5")
+        make_result_file(gw=True, extension="json", outdir=tmpdir)
+        make_result_file(gw=True, extension="hdf5", outdir=tmpdir)
         command_line = (
-            "summarycombine --webdir .outdir --samples "
-            ".outdir/test.json .outdir/test.h5 --label gw0 gw1 --no_conversion "
-            "--gw --nsamples 10"
+            "summarycombine --webdir {0} --samples "
+            "{0}/test.json {0}/test.h5 --label gw0 gw1 --no_conversion "
+            "--gw --nsamples 10".format(tmpdir)
         )
         self.launch(command_line)
-        f = read(".outdir/samples/posterior_samples.h5")
+        f = read("{}/samples/posterior_samples.h5".format(tmpdir))
         assert f.preferred is None
         command_line = (
-            "summarycombine --webdir .outdir --samples "
-            ".outdir/test.json .outdir/test.h5 --label gw0 gw1 --no_conversion "
-            "--gw --nsamples 10 --preferred gw1"
+            "summarycombine --webdir {0} --samples "
+            "{0}/test.json {0}/test.h5 --label gw0 gw1 --no_conversion "
+            "--gw --nsamples 10 --preferred gw1".format(tmpdir)
         )
         self.launch(command_line)
-        f = read(".outdir/samples/posterior_samples.h5")
+        f = read("{}/samples/posterior_samples.h5".format(tmpdir))
         assert f.preferred == "gw1"
         command_line = (
-            "summarycombine --webdir .outdir --samples "
-            ".outdir/test.json .outdir/test.h5 --label gw0 gw1 --no_conversion "
-            "--gw --nsamples 10 --preferred gw2"
+            "summarycombine --webdir {0} --samples "
+            "{0}/test.json {0}/test.h5 --label gw0 gw1 --no_conversion "
+            "--gw --nsamples 10 --preferred gw2".format(tmpdir)
         )
         self.launch(command_line)
-        f = read(".outdir/samples/posterior_samples.h5")
+        f = read("{}/samples/posterior_samples.h5".format(tmpdir))
         assert f.preferred is None
 
 
@@ -1398,23 +1427,23 @@ class TestSummaryReview(Base):
     def setup(self):
         """Setup the SummaryCombine_Metafiles class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(lalinference=True)
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(outdir=tmpdir, lalinference=True)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_review(self):
         """Test the `summaryreview` script for a `lalinference` result file
         """
         command_line = (
-            "summaryreview --webdir .outdir --samples .outdir/test.hdf5 "
-            "--test core_plots"
+            "summaryreview --webdir {0} --samples {0}/test.hdf5 "
+            "--test core_plots".format(tmpdir)
         )
         self.launch(command_line)
 
@@ -1712,39 +1741,42 @@ class TestSummaryModify(Base):
     def setup(self):
         """Setup the SummaryModify class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         make_result_file(
-            pesummary=True, pesummary_label="replace", extension="hdf5"
+            pesummary=True, pesummary_label="replace", extension="hdf5",
+            outdir=tmpdir
         )
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_preferred(self):
         """Test that the preferred run is correctly specified in the meta file
         """
         from pesummary.io import read
-        make_result_file(extension="json", bilby=True, gw=True)
-        make_result_file(extension="dat", gw=True)
+        make_result_file(extension="json", bilby=True, gw=True, outdir=tmpdir)
+        make_result_file(extension="dat", gw=True, outdir=tmpdir)
         command_line = (
-            "summarycombine --webdir ./.outdir --samples .outdir/test.json "
-            ".outdir/test.dat --no_conversions --gw --labels one two "
-            "--nsamples 100"
+            "summarycombine --webdir {0} --samples {0}/test.json "
+            "{0}/test.dat --no_conversion --gw --labels one two "
+            "--nsamples 100".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
-        f = read("./.outdir/samples/posterior_samples.h5")
+        f = read("{}/samples/posterior_samples.h5".format(tmpdir))
         assert f.preferred is None
         command_line = (
-            "summarymodify --samples ./.outdir/samples/posterior_samples.h5 "
-            "--webdir .outdir --preferred two"
+            "summarymodify --samples {0}/samples/posterior_samples.h5 "
+            "--webdir {0} --preferred two".format(tmpdir)
         )
         self.launch(command_line)
-        f = read(".outdir/modified_posterior_samples.h5")
+        f = read("{0}/modified_posterior_samples.h5".format(tmpdir))
         assert f.preferred == "two"
 
     @pytest.mark.executabletest
@@ -1755,28 +1787,32 @@ class TestSummaryModify(Base):
         import h5py
 
         command_line = (
-            'summarymodify --webdir .outdir --samples .outdir/test.h5 '
-            '--descriptions replace:TestingSummarymodify'
+            'summarymodify --webdir {0} --samples {0}/test.h5 '
+            '--descriptions replace:TestingSummarymodify'.format(tmpdir)
         )
         self.launch(command_line)
-        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
-        original_data = h5py.File(".outdir/test.h5", "r")
-        data = h5py.File(".outdir/test.h5", "r")
+        modified_data = h5py.File(
+            "{}/modified_posterior_samples.h5".format(tmpdir), "r"
+        )
+        original_data = h5py.File("{}/test.h5".format(tmpdir), "r")
+        data = h5py.File("{}/test.h5".format(tmpdir), "r")
         if "description" in original_data["replace"].keys():
             assert original_data["replace"]["description"][0] != b'TestingSummarymodify'
         assert modified_data["replace"]["description"][0] == b'TestingSummarymodify'
         modified_data.close()
         original_data.close()
 
-        with open(".outdir/descriptions.json", "w") as f:
+        with open("{}/descriptions.json".format(tmpdir), "w") as f:
             json.dump({"replace": "NewDescription"}, f)
 
         command_line = (
-            'summarymodify --webdir .outdir --samples .outdir/test.h5 '
-            '--descriptions .outdir/descriptions.json'
+            'summarymodify --webdir {0} --samples {0}/test.h5 '
+            '--descriptions {0}/descriptions.json'.format(tmpdir)
         )
         self.launch(command_line)
-        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        modified_data = h5py.File(
+            "{}/modified_posterior_samples.h5".format(tmpdir), "r"
+        )
         assert modified_data["replace"]["description"][0] == b'NewDescription'
         modified_data.close()
 
@@ -1795,9 +1831,9 @@ class TestSummaryModify(Base):
         )
         make_result_file(
             pesummary=True, pesummary_label="replace", extension="hdf5",
-            config=config_dictionary
+            config=config_dictionary, outdir=tmpdir
         )
-        f = h5py.File(".outdir/test.h5", "r")
+        f = h5py.File("{}/test.h5".format(tmpdir), "r")
         assert f["replace"]["config_file"]["paths"]["webdir"][0] == (
             bytes("./{}/webdir".format(os.environ["USER"]), "utf-8")
         )
@@ -1805,14 +1841,14 @@ class TestSummaryModify(Base):
         config.read(data_dir + "/config_lalinference.ini")
         config_dictionary = dict(config._sections)
         config_dictionary["paths"]["webdir"] = "./replace/webdir"
-        with open('.outdir/replace_config.ini', 'w') as configfile:
+        with open('{}/replace_config.ini'.format(tmpdir), 'w') as configfile:
             config.write(configfile)
         command_line = (
-            "summarymodify --webdir .outdir --samples .outdir/test.h5 "
-            "--config replace:.outdir/replace_config.ini"
+            "summarymodify --webdir {0} --samples {0}/test.h5 "
+            "--config replace:{0}/replace_config.ini".format(tmpdir)
         )
         self.launch(command_line)
-        f = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        f = h5py.File("{}/modified_posterior_samples.h5".format(tmpdir), "r")
         assert f["replace"]["config_file"]["paths"]["webdir"][0] != (
             bytes("./{}/webdir".format(os.environ["USER"]), "utf-8")
         )
@@ -1828,13 +1864,17 @@ class TestSummaryModify(Base):
         import h5py
 
         command_line = (
-            "summarymodify --webdir .outdir --samples .outdir/test.h5 "
-            "--delimiter / --kwargs replace/log_evidence:1000"
+            "summarymodify --webdir {0} --samples {0}/test.h5 "
+            "--delimiter / --kwargs replace/log_evidence:1000".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
-        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
-        original_data = h5py.File(".outdir/test.h5", "r")
-        data = h5py.File(".outdir/test.h5", "r")
+        modified_data = h5py.File(
+            "{}/modified_posterior_samples.h5".format(tmpdir), "r"
+        )
+        original_data = h5py.File("{}/test.h5".format(tmpdir), "r")
+        data = h5py.File("{}/test.h5".format(tmpdir), "r")
         assert original_data["replace"]["meta_data"]["sampler"]["log_evidence"][0] != b'1000'
         assert modified_data["replace"]["meta_data"]["sampler"]["log_evidence"][0] == b'1000'
         modified_data.close()
@@ -1846,16 +1886,16 @@ class TestSummaryModify(Base):
         """
         import h5py
 
-        original_data = h5py.File(".outdir/test.h5", "r")
+        original_data = h5py.File("{}/test.h5".format(tmpdir), "r")
         assert "other" not in original_data["replace"]["meta_data"].keys()
         original_data.close()
         command_line = (
-            "summarymodify --webdir .outdir --samples .outdir/test.h5 "
+            "summarymodify --webdir {0} --samples {0}/test.h5 "
             "--delimiter / --kwargs replace/test:10 "
-            "--overwrite"
+            "--overwrite".format(tmpdir)
         )
         self.launch(command_line)
-        modified_data = h5py.File(".outdir/test.h5", "r")
+        modified_data = h5py.File("{}/test.h5".format(tmpdir), "r")
         assert modified_data["replace"]["meta_data"]["other"]["test"][0] == b'10'
         modified_data.close()
 
@@ -1866,23 +1906,31 @@ class TestSummaryModify(Base):
         import h5py
 
         new_posterior = np.random.uniform(10, 0.5, 1000)
-        np.savetxt(".outdir/different_posterior.dat", new_posterior)
+        np.savetxt("{}/different_posterior.dat".format(tmpdir), new_posterior)
         command_line = (
-            "summarymodify --webdir .outdir --samples .outdir/test.h5 --delimiter ; "
-            "--replace_posterior replace;mass_1:.outdir/different_posterior.dat"
+            "summarymodify --webdir {0} --samples {0}/test.h5 --delimiter ; "
+            "--replace_posterior replace;mass_1:{0}/different_posterior.dat".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
-        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        modified_data = h5py.File(
+            "{}/modified_posterior_samples.h5".format(tmpdir), "r"
+        )
         np.testing.assert_almost_equal(
             modified_data["replace"]["posterior_samples"]["mass_1"], new_posterior
         )
         modified_data.close()
         command_line = (
-            "summarymodify --webdir .outdir --samples .outdir/test.h5 --delimiter ; "
-            "--replace_posterior replace;abc:.outdir/different_posterior.dat"
+            "summarymodify --webdir {0} --samples {0}/test.h5 --delimiter ; "
+            "--replace_posterior replace;abc:{0}/different_posterior.dat".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
-        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        modified_data = h5py.File(
+            "{}/modified_posterior_samples.h5".format(tmpdir), "r"
+        )
         np.testing.assert_almost_equal(
             modified_data["replace"]["posterior_samples"]["abc"], new_posterior
         )
@@ -1893,26 +1941,32 @@ class TestSummaryModify(Base):
         """Test that an analysis is correctly removed
         """
         from pesummary.io import read
-        make_result_file(gw=True, extension="json")
-        os.rename(".outdir/test.json", ".outdir/example.json")
-        make_result_file(gw=True, extension="hdf5")
-        os.rename(".outdir/test.h5", ".outdir/example2.h5")
-        make_result_file(gw=True, extension="dat")
-        os.rename(".outdir/test.dat", ".outdir/example3.dat")
+        make_result_file(gw=True, extension="json", outdir=tmpdir)
+        os.rename(
+            "{}/test.json".format(tmpdir), "{}/example.json".format(tmpdir)
+        )
+        make_result_file(gw=True, extension="hdf5", outdir=tmpdir)
+        os.rename(
+            "{}/test.h5".format(tmpdir), "{}/example2.h5".format(tmpdir)
+        )
+        make_result_file(gw=True, extension="dat", outdir=tmpdir)
+        os.rename(
+            "{}/test.dat".format(tmpdir), "{}/example3.dat".format(tmpdir)
+        )
         command_line = (
-            "summarycombine --samples .outdir/example.json .outdir/example2.h5 "
-            ".outdir/example3.dat --labels one two three --webdir .outdir "
-            "--no_conversion"
+            "summarycombine --samples {0}/example.json {0}/example2.h5 "
+            "{0}/example3.dat --labels one two three --webdir {0} "
+            "--no_conversion".format(tmpdir)
         )
         self.launch(command_line)
-        original = read(".outdir/samples/posterior_samples.h5")
+        original = read("{}/samples/posterior_samples.h5".format(tmpdir))
         assert all(label in original.labels for label in ["one", "two", "three"])
         command_line = (
-            "summarymodify --samples .outdir/samples/posterior_samples.h5 "
-            "--remove_label one --webdir .outdir"
+            "summarymodify --samples {0}/samples/posterior_samples.h5 "
+            "--remove_label one --webdir {0}".format(tmpdir)
         )
         self.launch(command_line)
-        f = read(".outdir/modified_posterior_samples.h5")
+        f = read("{}/modified_posterior_samples.h5".format(tmpdir))
         assert "one" not in f.labels
         assert all(label in f.labels for label in ["two", "three"])
         _original_samples = original.samples_dict
@@ -1922,10 +1976,10 @@ class TestSummaryModify(Base):
                 _original_samples[label].samples, _samples[label].samples
             )
         command_line = (
-            "summarymodify --samples .outdir/samples/posterior_samples.h5 "
-            "--remove_label example --webdir .outdir"
+            "summarymodify --samples {0}/samples/posterior_samples.h5 "
+            "--remove_label example --webdir {0}".format(tmpdir)
         )
-        f = read(".outdir/modified_posterior_samples.h5")
+        f = read("{}/modified_posterior_samples.h5".format(tmpdir))
         assert "one" not in f.labels
         assert all(label in f.labels for label in ["two", "three"])
 
@@ -1936,16 +1990,18 @@ class TestSummaryModify(Base):
         import h5py
 
         command_line = (
-            "summarymodify --webdir .outdir --samples .outdir/test.h5 --delimiter ; "
-            "--remove_posterior replace;mass_1"
+            "summarymodify --webdir {0} --samples {0}/test.h5 --delimiter ; "
+            "--remove_posterior replace;mass_1".format(tmpdir)
         )
         self.launch(command_line)
-        original_data = h5py.File(".outdir/test.h5", "r")
+        original_data = h5py.File("{}/test.h5".format(tmpdir), "r")
         params = list(original_data["replace"]["posterior_samples"]["parameter_names"])
         if isinstance(params[0], bytes):
             params = [param.decode("utf-8") for param in params]
         assert "mass_1" in params
-        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        modified_data = h5py.File(
+            "{}/modified_posterior_samples.h5".format(tmpdir), "r"
+        )
         assert "mass_1" not in modified_data["replace"]["posterior_samples"].dtype.names
         original_data.close()
         modified_data.close()
@@ -1957,17 +2013,21 @@ class TestSummaryModify(Base):
         import h5py
 
         command_line = (
-            "summarymodify --webdir .outdir --samples .outdir/test.h5 --delimiter ; "
-            "--remove_posterior replace;mass_1 replace;mass_2"
+            "summarymodify --webdir {0} --samples {0}/test.h5 --delimiter ; "
+            "--remove_posterior replace;mass_1 replace;mass_2".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
-        original_data = h5py.File(".outdir/test.h5", "r")
+        original_data = h5py.File("{}/test.h5".format(tmpdir), "r")
         params = list(original_data["replace"]["posterior_samples"]["parameter_names"])
         if isinstance(params[0], bytes):
             params = [param.decode("utf-8") for param in params]
         assert "mass_1" in params
         assert "mass_2" in params
-        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        modified_data = h5py.File(
+            "{}/modified_posterior_samples.h5".format(tmpdir), "r"
+        )
         assert "mass_1" not in modified_data["replace"]["posterior_samples"].dtype.names
         assert "mass_2" not in modified_data["replace"]["posterior_samples"].dtype.names
         original_data.close()
@@ -1987,18 +2047,20 @@ class TestSummaryModify(Base):
         prob /= sum(prob)
 
         write_sky_map(
-            '.outdir/test.fits', prob,
+            '{}/test.fits'.format(tmpdir), prob,
             objid='FOOBAR 12345',
             gps_time=10494.3,
             creator="test",
             origin='LIGO Scientific Collaboration',
         )
         command_line = (
-            "summarymodify --webdir .outdir --samples .outdir/test.h5 "
-            "--store_skymap replace:.outdir/test.fits"
+            "summarymodify --webdir {0} --samples {0}/test.h5 "
+            "--store_skymap replace:{0}/test.fits".format(tmpdir)
         )
         self.launch(command_line)
-        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
+        modified_data = h5py.File(
+            "{}/modified_posterior_samples.h5".format(tmpdir), "r"
+        )
         assert "skymap" in modified_data["replace"].keys()
         np.testing.assert_almost_equal(
             modified_data["replace"]["skymap"]["data"], prob
@@ -2012,24 +2074,29 @@ class TestSummaryModify(Base):
         assert _creator == "test"
 
         command_line = (
-            "summarymodify --webdir .outdir "
-            "--samples .outdir/modified_posterior_samples.h5 "
-            "--store_skymap replace:.outdir/test.fits --force_replace"
+            "summarymodify --webdir {0} "
+            "--samples {0}/modified_posterior_samples.h5 "
+            "--store_skymap replace:{0}/test.fits --force_replace".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
         command_line = (
-            "summarypages --webdir .outdir/webpage --gw --no_conversion "
-            "--samples .outdir/modified_posterior_samples.h5 --disable_expert"
+            "summarypages --webdir {0}/webpage --gw --no_conversion "
+            "--samples {0}/modified_posterior_samples.h5 "
+            "--disable_expert".format(tmpdir)
         )
         self.launch(command_line)
-        data = h5py.File(".outdir/webpage/samples/posterior_samples.h5", "r")
+        data = h5py.File(
+            "{}/webpage/samples/posterior_samples.h5".format(tmpdir), "r"
+        )
         np.testing.assert_almost_equal(data["replace"]["skymap"]["data"], prob)
         data.close()
         with pytest.raises(ValueError):
             command_line = (
-                "summarymodify --webdir .outdir "
-                "--samples .outdir/modified_posterior_samples.h5 "
-                "--store_skymap replace:.outdir/test.fits"
+                "summarymodify --webdir {0} "
+                "--samples {0}/modified_posterior_samples.h5 "
+                "--store_skymap replace:{0}/test.fits".format(tmpdir)
             )
             self.launch(command_line)
 
@@ -2040,12 +2107,14 @@ class TestSummaryModify(Base):
         import h5py
 
         command_line = (
-            "summarymodify --webdir .outdir --samples .outdir/test.h5 "
-            "--labels replace:new"
+            "summarymodify --webdir {0} --samples {0}/test.h5 "
+            "--labels replace:new".format(tmpdir)
         )
         self.launch(command_line)
-        modified_data = h5py.File(".outdir/modified_posterior_samples.h5", "r")
-        data = h5py.File(".outdir/test.h5", "r")
+        modified_data = h5py.File(
+            "{}/modified_posterior_samples.h5".format(tmpdir), "r"
+        )
+        data = h5py.File("{}/test.h5".format(tmpdir), "r")
         assert "replace" not in list(modified_data.keys())
         assert "new" in list(modified_data.keys())
         for key in data["replace"].keys():
@@ -2079,8 +2148,8 @@ class TestSummaryRecreate(Base):
         """
         import configparser
 
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
         config = configparser.ConfigParser()
         config.optionxform = str
         config.read(data_dir + "/config_lalinference.ini")
@@ -2090,7 +2159,7 @@ class TestSummaryRecreate(Base):
         )
         make_result_file(
             pesummary=True, pesummary_label="recreate", extension="hdf5",
-            config=config_dictionary
+            config=config_dictionary, outdir=tmpdir
         )
         with open("GW150914.txt", "w") as f:
             f.writelines(["115"])
@@ -2098,8 +2167,8 @@ class TestSummaryRecreate(Base):
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_recreate(self):
@@ -2108,15 +2177,17 @@ class TestSummaryRecreate(Base):
         import configparser
 
         command_line = (
-            "summaryrecreate --rundir .outdir --samples .outdir/test.h5 "
+            "summaryrecreate --rundir {0} --samples {0}/test.h5 ".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
-        assert os.path.isdir(os.path.join(".outdir", "recreate"))
-        assert os.path.isfile(os.path.join(".outdir", "recreate", "config.ini"))
-        assert os.path.isdir(os.path.join(".outdir", "recreate", "outdir"))
-        assert os.path.isdir(os.path.join(".outdir", "recreate", "outdir", "caches"))
+        assert os.path.isdir(os.path.join(tmpdir, "recreate"))
+        assert os.path.isfile(os.path.join(tmpdir, "recreate", "config.ini"))
+        assert os.path.isdir(os.path.join(tmpdir, "recreate", "outdir"))
+        assert os.path.isdir(os.path.join(tmpdir, "recreate", "outdir", "caches"))
         config = configparser.ConfigParser()
-        config.read(os.path.join(".outdir", "recreate", "config.ini"))
+        config.read(os.path.join(tmpdir, "recreate", "config.ini"))
         original_config = configparser.ConfigParser()
         original_config.read(data_dir + "/config_lalinference.ini")
         for a, b in zip(
@@ -2126,12 +2197,14 @@ class TestSummaryRecreate(Base):
             for key, item in config[a].items():
                 assert config[b][key] == item
         command_line = (
-            "summaryrecreate --rundir .outdir_modify --samples .outdir/test.h5 "
-            "--config_override approx:IMRPhenomPv3HM srate:4096"
+            "summaryrecreate --rundir {0}_modify --samples {0}/test.h5 "
+            "--config_override approx:IMRPhenomPv3HM srate:4096".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
         config = configparser.ConfigParser()
-        config.read(os.path.join(".outdir_modify", "recreate", "config.ini"))
+        config.read(os.path.join("{}_modify".format(tmpdir), "recreate", "config.ini"))
         original_config = configparser.ConfigParser()
         original_config.read(data_dir + "/config_lalinference.ini")
         for a, b in zip(
@@ -2157,14 +2230,14 @@ class TestSummaryCompare(Base):
     def setup(self):
         """Setup the SummaryCompare class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
 
     def teardown(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_example_in_docs(self):
@@ -2176,19 +2249,21 @@ class TestSummaryCompare(Base):
         parameters = ["a", "b", "c", "d"]
         data = np.random.random([100, 4])
         write(
-            parameters, data, file_format="dat", outdir=".outdir",
+            parameters, data, file_format="dat", outdir=tmpdir,
             filename="example1.dat"
         )
         parameters2 = ["a", "b", "c", "d", "e"]
         data2 = np.random.random([100, 5])
         write(
-            parameters2, data2, file_format="json", outdir=".outdir",
+            parameters2, data2, file_format="json", outdir=tmpdir,
             filename="example2.json"
         )
         command_line = (
-            "summarycompare --samples .outdir/example1.dat "
-            ".outdir/example2.json --properties_to_compare posterior_samples "
-            "-v --generate_comparison_page --webdir .outdir"
+            "summarycompare --samples {0}/example1.dat "
+            "{0}/example2.json --properties_to_compare posterior_samples "
+            "-v --generate_comparison_page --webdir .outdir".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
 
@@ -2199,7 +2274,7 @@ class TestSummaryJSCompare(Base):
     def setup(self):
         """Setup the SummaryJSCompare class
         """
-        self.dirs = [".outdir"]
+        self.dirs = [tmpdir]
         for dd in self.dirs:
             if not os.path.isdir(dd):
                 os.mkdir(dd)
@@ -2215,13 +2290,14 @@ class TestSummaryJSCompare(Base):
     def test_runs_on_core_file(self):
         """Test that the code successfully generates a plot for 2 core result files
         """
-        make_result_file(bilby=True, gw=False)
-        os.rename(".outdir/test.json", ".outdir/bilby.json")
-        make_result_file(bilby=True, gw=False)
-        os.rename(".outdir/test.json", ".outdir/bilby2.json")
+        make_result_file(outdir=tmpdir, bilby=True, gw=False)
+        os.rename("{}/test.json".format(tmpdir), "{}/bilby.json".format(tmpdir))
+        make_result_file(outdir=tmpdir, bilby=True, gw=False)
+        os.rename("{}/test.json".format(tmpdir), "{}/bilby2.json".format(tmpdir))
         command_line = (
-            "summaryjscompare --event test-bilby1-bilby2 --main_keys  a b c d --webdir .outdir --samples .outdir/bilby.json "
-            ".outdir/bilby2.json --labels bilby_1 bilby_2"
+            "summaryjscompare --event test-bilby1-bilby2 --main_keys  a b c d "
+            "--webdir {0} --samples {0}/bilby.json "
+            "{0}/bilby2.json --labels bilby1 bilby2".format(tmpdir)
         )
         self.launch(command_line)
 
@@ -2229,12 +2305,15 @@ class TestSummaryJSCompare(Base):
     def test_runs_on_gw_file(self):
         """Test that the code successfully generates a plot for 2 gw result files
         """
-        make_result_file(bilby=True, gw=True)
-        os.rename(".outdir/test.json", ".outdir/bilby.json")
-        make_result_file(lalinference=True)
-        os.rename(".outdir/test.hdf5", ".outdir/lalinference.hdf5")
+        make_result_file(outdir=tmpdir, bilby=True, gw=True)
+        os.rename("{}/test.json".format(tmpdir), "{}/bilby.json".format(tmpdir))
+        make_result_file(outdir=tmpdir, lalinference=True)
+        os.rename("{}/test.hdf5".format(tmpdir), "{}/lalinference.hdf5".format(tmpdir))
         command_line = (
-            "summaryjscompare --event test-bilby-lalinf --main_keys mass_1 mass_2 a_1 a_2 --webdir .outdir --samples .outdir/bilby.json "
-            ".outdir/lalinference.hdf5 --labels bilby lalinf"
+            "summaryjscompare --event test-bilby-lalinf --main_keys mass_1 "
+            "mass_2 a_1 a_2 --webdir {0} --samples {0}/bilby.json "
+            "{0}/lalinference.hdf5 --labels bilby lalinf".format(
+                tmpdir
+            )
         )
         self.launch(command_line)
