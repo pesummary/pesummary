@@ -14,9 +14,10 @@ import matplotlib.pyplot as plt
 import warnings
 
 from seaborn import utils
-from seaborn.utils import remove_na
+from seaborn.utils import iqr, remove_na
 from seaborn.algorithms import bootstrap
 from seaborn.palettes import color_palette, husl_palette, light_palette, dark_palette
+from seaborn.axisgrid import FacetGrid, _facet_docs
 from scipy.stats import gaussian_kde
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>", "Seaborn authors"]
