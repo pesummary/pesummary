@@ -798,7 +798,7 @@ def _make_corner_plot(
     """
     logger.debug("Generating the corner plot")
     # set the default kwargs
-    default_kwargs = conf.corner_kwargs
+    default_kwargs = conf.corner_kwargs.copy()
     if parameters is None:
         parameters = list(samples.keys())
     if corner_parameters is not None:
