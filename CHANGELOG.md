@@ -1,3 +1,12 @@
+## 0.13.8 [20/09/2022]
+
+### Changed
+
+- scipy >= 0.12.0 - update `pesummary` to be compatible with scipy >= 0.12.0
+- corner kwargs - avoid updating default corner kwargs by creating a copy
+
+### Added
+
 ## 0.13.7 [10/08/2022]
 
 ### Changed
