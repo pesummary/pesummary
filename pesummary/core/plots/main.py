@@ -181,7 +181,7 @@ class _PlotGeneration(object):
         if preliminary:
             fig.text(
                 0.5, 0.5, 'Preliminary', fontsize=90, color='gray', alpha=0.1,
-                ha='center', va='center', rotation='30'
+                ha='center', va='center', rotation=30
             )
         fig.tight_layout()
         fig.savefig(name, format=format)
