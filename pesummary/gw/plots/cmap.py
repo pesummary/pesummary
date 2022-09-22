@@ -19,7 +19,7 @@ import numpy as np
 import pesummary
 
 
-def cylon():
+def register_cylon():
     # Read in color map RGB data.
     path = pesummary.__file__[:-12]
     with open(path + "/gw/plots/cylon.csv") as f:
@@ -35,6 +35,11 @@ def cylon():
     cmap_r = colors.LinearSegmentedColormap.from_list("cylon_r", data[::-1])
     locals().update({"cylon_r": cmap_r})
     cm.register_cmap(cmap=cmap_r)
+
+
+def unregister_cylon():
+    cm.unregister_cmap("cylon")
+    cm.unregister_cmap("cylon_r")
 
 
 def colormap_with_fixed_hue(color, N=10):

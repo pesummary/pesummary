@@ -731,6 +731,9 @@ def _default_skymap_plot(ra, dec, weights=None, injection=None, **kwargs):
     kwargs: dict
         optional keyword arguments
     """
+    from .cmap import register_cylon, unregister_cylon
+    # register the cylon cmap
+    register_cylon()
     ra = [-i + np.pi for i in ra]
     logger.debug("Generating the sky map plot")
     fig, ax = figure(gca=True)
@@ -817,6 +820,8 @@ def _default_skymap_plot(ra, dec, weights=None, injection=None, **kwargs):
     ax.set_yticklabels([r"$-60^{\circ}$", r"$-30^{\circ}$", r"$0^{\circ}$",
                         r"$30^{\circ}$", r"$60^{\circ}$"], fontsize=10)
     ax.grid(b=True)
+    # unregister the cylon cmap
+    unregister_cylon()
     return fig
 
 
