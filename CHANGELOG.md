@@ -1,3 +1,12 @@
+## 0.13.9 [22/09/2022]
+
+### Changed
+
+- matplotlib >= 3.6.0 - update `pesummary` to be compatible with
+  matplotlib >= 3.6.0
+
+### Added
+
 ## 0.13.8 [20/09/2022]
 
 ### Changed
