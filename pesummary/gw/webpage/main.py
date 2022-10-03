@@ -3,12 +3,10 @@
 import os
 import numpy as np
 
-import pesummary
-from pesummary.core.webpage import webpage
 from pesummary.core.webpage.main import _WebpageGeneration as _CoreWebpageGeneration
 from pesummary.core.webpage.main import PlotCaption
 from pesummary.gw.file.standard_names import descriptive_names
-from pesummary.utils.utils import logger, safe_round
+from pesummary.utils.utils import logger
 from pesummary import conf
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -435,7 +433,6 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         pages: list
             list of pages that you wish to create
         """
-        from glob import glob
         from pesummary.utils.utils import (
             determine_gps_time_and_window, command_line_dict
         )

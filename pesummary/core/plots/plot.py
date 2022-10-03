@@ -1,14 +1,12 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.utils.utils import (
-    logger, number_of_columns_for_legend, _check_latex_install,
-    get_matplotlib_style_file, gelman_rubin,
+    logger, number_of_columns_for_legend, _check_latex_install, gelman_rubin,
 )
 from pesummary.core.plots.seaborn.kde import kdeplot
-from pesummary.core.plots.figure import figure, subplots, ExistingFigure
+from pesummary.core.plots.figure import figure, ExistingFigure
 from pesummary import conf
 
-import matplotlib.style
 import matplotlib.lines as mlines
 import corner
 import copy

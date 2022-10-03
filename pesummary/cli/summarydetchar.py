@@ -3,12 +3,10 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 import os
-import pesummary
 from pesummary.gw.file.read import read
 from pesummary.gw.plots import detchar
 from pesummary.utils.exceptions import InputError
-from pesummary.utils.utils import make_dir, logger
-from pesummary.core.cli.actions import DictionaryAction
+from pesummary.utils.utils import make_dir
 from pesummary.gw.cli.parser import ArgumentParser as _ArgumentParser
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

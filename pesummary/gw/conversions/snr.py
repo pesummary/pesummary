@@ -668,7 +668,6 @@ def precessing_snr(
         if True, return posteriors for b_bar and the overlap between the 0th
         and 1st harmonics. These are useful for debugging.
     """
-    from pesummary.gw.file.psd import PSD
     from pesummary.gw.waveform import antenna_response
     from pesummary.utils.utils import iterator
     import multiprocessing

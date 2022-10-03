@@ -11,7 +11,6 @@ from pesummary.gw.webpage.tgr import TGRWebpageGeneration
 from pesummary.gw.file.meta_file import TGRMetaFile
 from pesummary.gw.plots.tgr import make_and_save_imrct_plots
 from pesummary.gw.conversions.tgr import generate_imrct_deviation_parameters
-from pesummary.io import read
 from pesummary.utils.utils import logger
 
 __author__ = [

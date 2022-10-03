@@ -254,8 +254,6 @@ def make_violin_plot(opts):
 def make_spin_disk_plot(opts):
     """Make a spin disk plot
     """
-    import seaborn
-
     colors, linestyles = get_colors_and_linestyles(opts)
     parameters, samples = read_samples(opts.samples)
 

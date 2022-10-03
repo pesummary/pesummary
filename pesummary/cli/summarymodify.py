@@ -414,8 +414,6 @@ def _modify_kwargs(data, kwargs=None):
         dictionary of kwargs showing the label as key and kwarg:value as the
         item
     """
-    from pesummary.core.file.formats.base_read import Read
-
     def add_to_meta_data(data, label, string):
         kwarg, value = string.split(":")
         try:

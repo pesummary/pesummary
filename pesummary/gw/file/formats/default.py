@@ -1,6 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-import os
 import numpy as np
 from pesummary.gw.file.formats.base_read import (
     GWRead, GWSingleAnalysisRead, GWMultiAnalysisRead

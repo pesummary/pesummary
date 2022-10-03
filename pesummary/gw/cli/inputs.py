@@ -2,7 +2,6 @@
 
 import ast
 import os
-import math
 import numpy as np
 import pesummary.core.cli.inputs
 from pesummary.gw.file.read import read as GWRead
@@ -10,7 +9,6 @@ from pesummary.gw.file.psd import PSD
 from pesummary.gw.file.calibration import Calibration
 from pesummary.utils.decorators import deprecation
 from pesummary.utils.exceptions import InputError
-from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.utils import logger
 from pesummary import conf
 

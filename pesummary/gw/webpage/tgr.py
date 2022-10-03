@@ -1,6 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-import os
 import glob
 from getpass import getuser
 from pesummary.core.webpage.main import _WebpageGeneration

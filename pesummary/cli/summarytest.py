@@ -11,7 +11,6 @@ from pesummary.utils.decorators import tmp_directory
 import numpy as np
 import glob
 from pathlib import Path
-import multiprocessing
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 ALLOWED = [

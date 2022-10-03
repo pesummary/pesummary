@@ -1,10 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary.utils.utils import (
-    logger, number_of_columns_for_legend, get_matplotlib_backend
-)
-import matplotlib
-import matplotlib.lines as mlines
+from pesummary.utils.utils import logger, number_of_columns_for_legend
 import seaborn
 from pesummary.core.plots.figure import figure
 from pesummary.core.plots.seaborn import violin
@@ -276,7 +272,6 @@ def spin_distribution_plots(
         to which binary component
     """
     logger.debug("Generating spin distribution plots for %s" % (label))
-    from matplotlib.ticker import FixedLocator, Formatter
     from matplotlib.projections import PolarAxes
     from matplotlib.transforms import Affine2D
     from matplotlib.patches import Wedge
@@ -287,7 +282,6 @@ def spin_distribution_plots(
     from mpl_toolkits.axisartist.grid_finder import MaxNLocator
     import mpl_toolkits.axisartist.floating_axes as floating_axes
     import mpl_toolkits.axisartist.angle_helper as angle_helper
-    from matplotlib.colors import LinearSegmentedColormap
 
     if color is not None and cmap is None:
         cmap = colormap_with_fixed_hue(color)

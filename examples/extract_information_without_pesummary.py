@@ -2,7 +2,6 @@
 # using the core python libraries
 
 import json
-import h5py
 import numpy as np
 
 # If the metafile is of JSON format, we require the `json` package
@@ -10,6 +9,7 @@ with open("posterior_samples.json", "r") as f:
     data = json.load(f)
 
 # Otherwise, we need to use the `h5py` package
+# import h5py
 # data = h5py.File("posterior_sample.h5", "r")
 
 labels = list(data["posterior_samples"].keys())

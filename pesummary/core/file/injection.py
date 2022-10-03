@@ -1,6 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary.core.file.formats.default import Default
 from pesummary.utils.samples_dict import SamplesDict
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

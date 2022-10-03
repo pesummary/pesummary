@@ -2,7 +2,6 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
-import pesummary
 from pesummary.gw.file.read import read as GWRead
 from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 

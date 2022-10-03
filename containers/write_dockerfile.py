@@ -4,8 +4,6 @@ import argparse
 from datetime import date
 from pathlib import Path
 
-import pkg_resources
-
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 HERE = Path(__file__).parent

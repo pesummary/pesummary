@@ -3,8 +3,7 @@
 import numpy as np
 from pesummary.utils.utils import logger
 from pesummary.core.file.meta_file import (
-    _MetaFile, recursively_save_dictionary_to_hdf5_file,
-    DEFAULT_HDF5_KEYS as CORE_HDF5_KEYS
+    _MetaFile, DEFAULT_HDF5_KEYS as CORE_HDF5_KEYS
 )
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

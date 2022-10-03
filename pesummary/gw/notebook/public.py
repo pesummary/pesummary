@@ -1,6 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary import __version__
 from pesummary.io import read
 from pesummary.core.notebook import (
     NoteBook, imports, pesummary_read, posterior_samples,

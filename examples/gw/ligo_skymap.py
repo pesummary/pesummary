@@ -1,6 +1,5 @@
 from pesummary.gw.fetch import fetch_open_samples
 import matplotlib.pyplot as plt
-import requests
 import time
 
 TESTING = True

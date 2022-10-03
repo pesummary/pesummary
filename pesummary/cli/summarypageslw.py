@@ -7,7 +7,6 @@ from pesummary.core.cli import inputs as core_inputs
 from pesummary.gw.cli import inputs as gw_inputs
 from pesummary.utils.utils import logger
 from pesummary.gw.cli.parser import ArgumentParser as _ArgumentParser
-from pesummary.core.webpage.main import _WebpageGeneration
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 __doc__ = """This executable is a lightweight version of summarypages. It

@@ -1,6 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary import conf
 import pickle
 from pesummary.utils.utils import check_filename
 

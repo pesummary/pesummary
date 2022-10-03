@@ -2,20 +2,14 @@
 
 from seaborn.categorical import _ViolinPlotter
 import matplotlib as mpl
-from textwrap import dedent
 import colorsys
 import numpy as np
 import math
-from scipy import stats
 import pandas as pd
-from matplotlib.collections import PatchCollection
-import matplotlib.patches as Patches
 import matplotlib.pyplot as plt
-import warnings
 
 from seaborn import utils
 from seaborn.utils import remove_na
-from seaborn.algorithms import bootstrap
 from seaborn.palettes import color_palette, husl_palette, light_palette, dark_palette
 from scipy.stats import gaussian_kde
 

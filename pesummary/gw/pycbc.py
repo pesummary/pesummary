@@ -7,7 +7,9 @@ error_msg = (
 from pesummary.utils.utils import logger
 import numpy as np
 try:
-    import pycbc
+    import pycbc.psd
+    from pycbc.filter import sigma, overlap_cplx
+    from pycbc import pnutils
 except ImportError:
     logger.warning(error_msg.format("pycbc"))
 
@@ -29,7 +31,6 @@ def optimal_snr(
     low_frequency_cutoff: float, optional
         low frequency cut-off to start calculating the integral
     """
-    from pycbc.filter import sigma
     return sigma(
         template, psd, low_frequency_cutoff=low_frequency_cutoff,
         high_frequency_cutoff=high_frequency_cutoff
@@ -50,7 +51,6 @@ def compute_the_overlap(template, data, psd, **kwargs):
     **kwargs: dict, optional
         all additional kwargs passed to pycbc.filter.overlap_cplx
     """
-    from pycbc.filter import overlap_cplx
     return overlap_cplx(template, data, psd=psd, **kwargs)
 
 
@@ -93,15 +93,9 @@ def pycbc_default_psd(
     f_final: float, optional
         the highest frequency to finish computing the psd. Default 1024Hz
     """
-    from pycbc import pnutils
-
     if psd is None:
-        from pycbc.psd import aLIGOZeroDetHighPower
-
-        psd = aLIGOZeroDetHighPower
+        psd = pycbc.psd.aLIGOZeroDetHighPower
     elif isinstance(psd, str):
-        import pycbc.psd
-
         psd = getattr(pycbc.psd, psd)
 
     logger.warning("No PSD provided. Using '{}' for the psd".format(psd.__name__))

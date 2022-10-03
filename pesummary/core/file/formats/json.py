@@ -54,7 +54,6 @@ def read_json(path, path_to_samples=None, decoder=PESummaryJsonDecoder):
         path to the result file you wish to read in
     """
     import json
-    from pesummary.core.file.formats.base_read import Read
 
     with open(path, "r") as f:
         data = json.load(f, object_hook=decoder)
