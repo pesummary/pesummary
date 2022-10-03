@@ -1541,7 +1541,6 @@ class MultiAnalysisSamplesDict(_MultiDimensionalSamplesDict):
             all kwargs are passed to the pesummary.io.read function
         """
         from pesummary.io import read
-        from pesummary.core.cli.inputs import _Input
 
         samples = {}
         for label, filename in filenames.items():

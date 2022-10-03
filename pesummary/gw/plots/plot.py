@@ -2,19 +2,15 @@
 
 from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, _check_latex_install,
-    get_matplotlib_style_file
 )
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots.bounds import default_bounds
-from pesummary.core.plots.seaborn.kde import kdeplot
 from pesummary.core.plots.figure import figure, subplots, ExistingFigure
 from pesummary.core.plots.plot import _default_legend_kwargs
 from pesummary import conf
 
 import os
 import matplotlib.style
-import matplotlib.lines as mlines
-import corner
 import numpy as np
 import math
 from scipy.ndimage import gaussian_filter
@@ -539,11 +535,9 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
     kwargs: dict
         optional keyword arguments
     """
-    import healpy as hp
-    from ligo.skymap import plot, postprocess, io
     from ligo.skymap.bayestar import rasterize
+    from ligo.skymap import io
     from ligo.skymap.kde import Clustered2DSkyKDE, Clustered2Plus1DSkyKDE
-    from astropy.time import Time
 
     if dist is not None and distance_map:
         pts = np.column_stack((ra, dec, dist))
@@ -606,10 +600,7 @@ def _ligo_skymap_plot_from_array(
         List containing RA and DEC of the injection. Both must be in radians
     """
     import healpy as hp
-    from ligo.skymap import plot, io
-    from ligo.skymap.bayestar import rasterize
-    from ligo.skymap.kde import Clustered2DSkyKDE, Clustered2Plus1DSkyKDE
-    from astropy.time import Time
+    from ligo.skymap import plot
 
     if ax is None:
         fig = figure(gca=False)
@@ -673,8 +664,6 @@ def _ligo_skymap_comparion_plot_from_array(
     injection: list, optional
         List containing RA and DEC of the injection. Both must be in radians
     """
-    from ligo.skymap import plot
-
     ncols = number_of_columns_for_legend(labels)
     fig = figure(gca=False)
     ax = fig.add_subplot(111, projection='astro hours mollweide')

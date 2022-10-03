@@ -1,7 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 import plotly.graph_objects as go
-from plotly.colors import DEFAULT_PLOTLY_COLORS
 import plotly
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

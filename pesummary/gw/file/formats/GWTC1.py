@@ -4,16 +4,7 @@ import os
 
 import h5py
 import numpy as np
-try:
-    from glue.ligolw import ligolw
-    from glue.ligolw import lsctables
-    from glue.ligolw import utils as ligolw_utils
-    GLUE = True
-except ImportError:
-    GLUE = False
-
 from pesummary.gw.file.formats.base_read import GWSingleAnalysisRead
-from pesummary.gw import conversions as con
 from pesummary.utils.utils import logger
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

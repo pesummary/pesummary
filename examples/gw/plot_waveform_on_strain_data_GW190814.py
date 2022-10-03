@@ -1,6 +1,5 @@
 from pesummary.gw.file.strain import StrainData
 from pesummary.gw.fetch import fetch_open_samples
-import requests
 
 # First we download the GW190814 posterior samples and generate the maximum
 # likelihood waveform in the time domain

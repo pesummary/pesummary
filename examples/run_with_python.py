@@ -7,7 +7,6 @@ non-gravitational wave data.
 from pesummary.core import command_line, inputs, finish
 from pesummary.core.file import meta_file
 from pesummary.cli import summarypages, summaryplots
-import pesummary.cli
 import json
 import numpy as np
 

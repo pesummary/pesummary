@@ -6,7 +6,6 @@ from pesummary.core.file.formats.base_read import (
     Read, SingleAnalysisRead, MultiAnalysisRead
 )
 from pesummary.utils.utils import logger
-from pesummary.utils.parameters import Parameters
 from pesummary.utils.samples_dict import SamplesDict
 from pesummary.utils.decorators import open_config
 from pesummary.gw.conversions import convert
@@ -542,7 +541,6 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
         if "gwdata" in self.data.keys():
             try:
                 from pesummary.gw.file.strain import StrainDataDict, StrainData
-                from pesummary.utils.dict import Dict
                 mydict = {}
                 for IFO, value in self.data["gwdata"].items():
                     channel = [ch for ch in value.keys() if "_attrs" not in ch][0]

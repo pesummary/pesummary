@@ -3,7 +3,7 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.gw.cli.parser import ArgumentParser
-from pesummary.utils import functions, history_dictionary
+from pesummary.utils import history_dictionary
 from pesummary.utils.utils import gw_results_file
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

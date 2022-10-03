@@ -1,8 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 import subprocess
-import os
-
 from pesummary.utils.utils import logger
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

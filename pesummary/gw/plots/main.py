@@ -7,17 +7,12 @@ import os
 from pesummary.core.plots.main import _PlotGeneration as _BasePlotGeneration
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.core.plots import interactive
-from pesummary.core.plots.figure import figure
 from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
 from pesummary.gw.plots.latex_labels import GWlatex_labels
-from pesummary.utils.utils import (
-    logger, resample_posterior_distribution, get_matplotlib_backend,
-    get_matplotlib_style_file
-)
+from pesummary.utils.utils import logger, resample_posterior_distribution
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.plots import publication
 from pesummary.gw.plots import plot as gw
-from pesummary import conf
 
 import multiprocessing as mp
 import numpy as np
@@ -545,8 +540,6 @@ class _PlotGeneration(_BasePlotGeneration):
         label: str
             the label corresponding to the results file
         """
-        from pesummary.utils.utils import RedirectLogger
-
         logger.info("Launching subprocess to generate strain plot")
         process = mp.Process(
             target=self._strain_plot,

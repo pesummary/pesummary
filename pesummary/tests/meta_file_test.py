@@ -7,6 +7,7 @@ import shutil
 import h5py
 import numpy as np
 
+from pesummary.core.file import meta_file as core_meta_file
 from pesummary.gw.file import meta_file
 from pesummary.gw.file.meta_file import _GWMetaFile
 from pesummary.gw.cli.inputs import MetaFileInput
@@ -48,7 +49,7 @@ def test_recursively_save_dictionary_to_hdf5_file():
           }
 
     with h5py.File("{}/test.h5".format(tmpdir), "w") as f:
-        meta_file.recursively_save_dictionary_to_hdf5_file(
+        core_meta_file.recursively_save_dictionary_to_hdf5_file(
             f, data, extra_keys=list(data.keys()))
 
     f = h5py.File("{}/test.h5".format(tmpdir), "r")
@@ -197,11 +198,11 @@ def test_softlinks():
 
     print(simlinked_dict)
     with h5py.File("{}/test.h5".format(tmpdir), "w") as f:
-        meta_file.recursively_save_dictionary_to_hdf5_file(
+        core_meta_file.recursively_save_dictionary_to_hdf5_file(
             f, simlinked_dict, extra_keys=meta_file.DEFAULT_HDF5_KEYS + ["label1", "label2"])
 
     with h5py.File("{}/no_softlink.h5".format(tmpdir), "w") as f:
-        meta_file.recursively_save_dictionary_to_hdf5_file(
+        core_meta_file.recursively_save_dictionary_to_hdf5_file(
             f, data, extra_keys=meta_file.DEFAULT_HDF5_KEYS + ["label1", "label2"])
 
     softlink_size = os.stat("{}/test.h5".format(tmpdir)).st_size

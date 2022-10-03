@@ -2,7 +2,7 @@
 
 import numpy as np
 from pesummary import conf
-from pesummary.utils.utils import logger, check_filename
+from pesummary.utils.utils import check_filename
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 

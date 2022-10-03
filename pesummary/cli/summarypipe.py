@@ -689,7 +689,6 @@ class Bilby(Base):
         try:
             return self.grab_psd_calibration_data_from_config(config, "psd_dict")
         except KeyError:
-            from pesummary.gw.cli.inputs import _GWInput
             logger.info(
                 "Unable to find any PSD information in '{}'. Looking in "
                 "run directory".format(self.config)
@@ -706,7 +705,6 @@ class Bilby(Base):
                 config, "spline_calibration_envelope_dict"
             )
         except KeyError:
-            from pesummary.gw.cli.inputs import _GWInput
             logger.info(
                 "Unable to find any calibration information in '{}'. Looking "
                 "in run directory".format(self.config)

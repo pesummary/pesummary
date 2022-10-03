@@ -1,7 +1,6 @@
 # Below we show how to extract information stored in the PESummary metafile
 # using the core python libraries
 
-import json
 import h5py
 import numpy as np
 import requests
@@ -13,6 +12,7 @@ with open("GW190814_posterior_samples.h5", "wb") as f:
     f.write(data.content)
 
 # If the metafile is of JSON format, we require the `json` package
+# import json
 # with open("posterior_samples.json", "r") as f:
 #    data = json.load(f)
 

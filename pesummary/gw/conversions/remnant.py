@@ -228,8 +228,7 @@ def _final_from_initial_BBH(
         the number of cores to use when calculating the remnant fits
     """
     from lalsimulation import (
-        SimIMREOBFinalMassSpin, SimIMREOBFinalMassSpinPrec,
-        SimInspiralGetSpinSupportFromApproximant,
+        SimIMREOBFinalMassSpin, SimInspiralGetSpinSupportFromApproximant,
         SimIMRSpinPrecEOBWaveformAll, SimPhenomUtilsIMRPhenomDFinalMass,
         SimPhenomUtilsPhenomPv2FinalSpin
     )

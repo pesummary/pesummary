@@ -1,6 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-import numpy as np
 from ..utils.utils import logger
 from ..core.reweight import rejection_sampling, options
 from .cosmology import get_cosmology

@@ -2,7 +2,7 @@
 
 import sqlite3
 import numpy as np
-from pesummary.utils.samples_dict import MultiAnalysisSamplesDict, SamplesDict
+from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
 from pesummary.utils.utils import logger, check_filename
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

@@ -1,7 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 import os
-import re
 import socket
 from glob import glob
 import pkg_resources
@@ -10,7 +9,6 @@ from getpass import getuser
 
 import math
 import numpy as np
-import pesummary
 from pesummary.core.file.read import read as Read
 from pesummary.utils.exceptions import InputError
 from pesummary.utils.decorators import deprecation

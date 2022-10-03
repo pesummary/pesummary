@@ -1,7 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 import configparser
-import os
 from pesummary.utils.utils import check_filename, logger
 from pesummary.utils.decorators import open_config
 from pesummary.utils.dict import convert_value_to_string

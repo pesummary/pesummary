@@ -4,11 +4,9 @@ from pesummary.gw.file.formats.base_read import GWMultiAnalysisRead
 from pesummary.core.file.formats.pesummary import (
     PESummary as CorePESummary, PESummaryDeprecated as CorePESummaryDeprecated
 )
-from pesummary.utils.utils import logger
 from pesummary.utils.dict import load_recursively
 from pesummary.utils.decorators import deprecation
 import numpy as np
-import warnings
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 

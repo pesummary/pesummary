@@ -4,16 +4,8 @@ import os
 
 import h5py
 import numpy as np
-try:
-    from glue.ligolw import ligolw
-    from glue.ligolw import lsctables
-    from glue.ligolw import utils as ligolw_utils
-    GLUE = True
-except ImportError:
-    GLUE = False
 
 from pesummary.gw.file.formats.base_read import GWRead, GWSingleAnalysisRead
-from pesummary.gw import conversions as con
 from pesummary.utils.utils import logger
 from pesummary.utils.decorators import open_config
 from pesummary import conf
@@ -355,8 +347,6 @@ class LALInference(GWSingleAnalysisRead):
         config_file: str
             path to the configuration file
         """
-        from pesummary.gw.file.standard_names import standard_names
-
         config = config_file
         if not config.error:
             fixed_data = None

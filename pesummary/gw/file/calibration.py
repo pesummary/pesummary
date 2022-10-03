@@ -1,10 +1,9 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-import os
 import numpy as np
 from scipy.interpolate import interp1d
 from pesummary import conf
-from pesummary.utils.utils import logger, check_file_exists_and_rename
+from pesummary.utils.utils import check_file_exists_and_rename
 from pesummary.utils.dict import Dict
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

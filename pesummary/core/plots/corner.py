@@ -3,7 +3,6 @@
 import numpy as np
 from scipy.stats import gaussian_kde
 from matplotlib.colors import LinearSegmentedColormap, colorConverter
-import corner
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 

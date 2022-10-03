@@ -1,6 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-import os
 import numpy as np
 from pesummary.core.file.formats.bilby import Bilby as CoreBilby
 from pesummary.gw.file.formats.base_read import GWSingleAnalysisRead

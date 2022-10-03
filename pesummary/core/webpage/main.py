@@ -4,11 +4,9 @@ import os
 import sys
 import uuid
 from glob import glob
-from operator import itemgetter
 from pathlib import Path
 import shutil
 
-from scipy import stats
 import numpy as np
 import math
 
@@ -298,7 +296,6 @@ class _WebpageGeneration(object):
         samples: list
             list of samples for each result file
         """
-        from scipy.stats import gaussian_kde
         from pesummary.utils.utils import kolmogorov_smirnov_test
 
         rows = range(len(samples))
@@ -1486,9 +1483,7 @@ class _WebpageGeneration(object):
         pages: list
             list of pages that you wish to create
         """
-        from pesummary._version_helper import (
-            PackageInformation, install_path
-        )
+        from pesummary._version_helper import install_path
 
         html_file = webpage.open_html(
             web_dir=self.webdir, base_url=self.base_url, html_page="Version"

@@ -5,7 +5,7 @@
 import numpy as np
 import os
 import importlib
-from multiprocessing import Pool, Manager
+from multiprocessing import Pool
 
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import (
@@ -456,8 +456,6 @@ class _PlotGeneration(object):
         label: str
             the label for the results file that you wish to plot
         """
-        import math
-
         error_message = (
             "Failed to generate oned_histogram plot for %s because {}"
         )
@@ -847,7 +845,6 @@ class _PlotGeneration(object):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
-        import math
         module = importlib.import_module(
             "pesummary.{}.plots.plot".format(package)
         )

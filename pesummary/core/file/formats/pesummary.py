@@ -2,20 +2,14 @@
 
 from glob import glob
 import os
-import copy
-
-import math
 import h5py
 import json
 import numpy as np
-import configparser
-import warnings
 
 from pesummary.core.file.formats.base_read import MultiAnalysisRead
 from pesummary.utils.samples_dict import (
     MCMCSamplesDict, MultiAnalysisSamplesDict, SamplesDict, Array
 )
-from pesummary.utils.utils import logger
 from pesummary.utils.dict import load_recursively
 from pesummary.utils.decorators import deprecation
 
@@ -56,7 +50,6 @@ def write_pesummary(
     kwargs: dict
         all other kwargs are passed to the pesummary.core.file.meta_file._MetaFile class
     """
-    from pesummary.utils.utils import _default_filename
     from pesummary.core.file.meta_file import _MetaFile
 
     if cls is None:

@@ -1,5 +1,4 @@
 from pesummary.gw.fetch import fetch_open_strain
-import os
 
 # Gravitational wave strain data is typically either 32s or 4096s in duration
 # with a sampling rate of either 4KHz or 16KHz. We can download either by simply

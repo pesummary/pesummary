@@ -1,6 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary.core.file.formats.base_read import Read
 from pesummary.gw.file.formats.lalinference import LALInference
 from pesummary.gw.file.formats.bilby import Bilby
 from pesummary.gw.file.formats.default import Default
@@ -15,7 +14,6 @@ from pesummary.core.file.read import (
     _is_pesummary_json_file
 )
 from pesummary.core.file.read import read as CoreRead
-from pesummary.utils.utils import logger
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 

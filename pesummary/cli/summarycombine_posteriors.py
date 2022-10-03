@@ -9,7 +9,7 @@ from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
 from pesummary.utils.utils import logger
 from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.core.cli.inputs import _Input
-from pesummary.io import read, write
+from pesummary.io import read
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 __doc__ = """This executable is used to combine posterior samples. This is

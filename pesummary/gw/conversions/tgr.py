@@ -1,6 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
 from pesummary.utils.utils import logger
 import numpy as np
 from scipy.stats import gaussian_kde

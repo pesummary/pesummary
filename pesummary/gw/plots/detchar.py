@@ -1,12 +1,8 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.core.plots.figure import figure
-from pesummary.utils.utils import (
-    logger, get_matplotlib_style_file, _check_latex_install
-)
-from pesummary import conf
+from pesummary.utils.utils import logger, _check_latex_install
 from gwpy.plot.colors import GW_OBSERVATORY_COLORS
-import matplotlib.style
 import numpy as np
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]

@@ -1,7 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-import numpy as np
-from pesummary.core.file.formats.base_read import Read
 from pesummary.core.file.injection import Injection
 from pesummary.gw.file.standard_names import standard_names
 

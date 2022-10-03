@@ -2,8 +2,6 @@
 
 # Licensed under an MIT style license -- see LICENSE.md
 
-import os
-import copy
 import pesummary
 from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.core.plots.main import _PlotGeneration
