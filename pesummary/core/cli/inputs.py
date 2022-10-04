@@ -2048,7 +2048,7 @@ class PlottingInput(SamplesInput):
         self.disable_corner = self.opts.disable_corner
         self.disable_comparison = self.opts.disable_comparison
         self.disable_interactive = self.opts.disable_interactive
-        self.disable_expert = self.opts.disable_expert
+        self.disable_expert = not self.opts.enable_expert
         self.multi_threading_for_plots = self.multi_process
         self.write_current_state()
 

@@ -4,7 +4,10 @@ import sys
 import argparse
 from ... import conf
 from ...utils.utils import logger
-from .actions import ConfigAction, CheckFilesExistAction, DictionaryAction
+from .actions import (
+    ConfigAction, CheckFilesExistAction, DictionaryAction,
+    DeprecatedStoreFalseAction
+)
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -398,8 +401,17 @@ class ArgumentParser(argparse.ArgumentParser):
                 "help": "Whether to make a corner plot or not",
                 "key": "performance",
             },
-            "--disable_expert": {
+            "--enable_expert": {
                 "action": "store_true",
+                "default": False,
+                "help": "Whether to generate extra diagnostic plots or not",
+                "key": "performance",
+            },
+            "--disable_expert": {
+                "action": DeprecatedStoreFalseAction(
+                    new_option="--enable_expert"
+                ),
+                "dest": "enable_expert",
                 "default": False,
                 "help": "Whether to generate extra diagnostic plots or not",
                 "key": "performance",

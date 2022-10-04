@@ -436,8 +436,7 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir {0} --samples {0}/example.json "
             "{0}/example.json --labels core0 core1 --nsamples 100 "
-            "--disable_expert --disable_corner "
-            "--descriptions core0:Description".format(tmpdir)
+            "--disable_corner --descriptions core0:Description".format(tmpdir)
         )
         self.launch(command_line)
         opened = read("{}/samples/posterior_samples.h5".format(tmpdir))
@@ -449,8 +448,7 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir {0} --samples {0}/example.json "
             "{0}/example.json --labels core0 core1 --nsamples 100 "
-            "--disable_expert --disable_corner "
-            "--descriptions {0}/descriptions.json".format(tmpdir)
+            "--disable_corner --descriptions {0}/descriptions.json".format(tmpdir)
         )
         self.launch(command_line)
         opened = read("{}/samples/posterior_samples.h5".format(tmpdir))
@@ -466,7 +464,7 @@ class TestSummaryPages(Base):
         make_result_file(gw=True, extension="json", outdir=tmpdir)
         command_line = (
             "summarypages --webdir {0} --samples {0}/test.json --gw "
-            "--labels gw0 --nsamples 100 --disable_expert --disable_corner "
+            "--labels gw0 --nsamples 100 --disable_corner "
             "--reweight_samples uniform_in_comoving_volume ".format(tmpdir)
         )
         self.launch(command_line)
@@ -496,7 +494,7 @@ class TestSummaryPages(Base):
         import time
         command_line = (
             "summarypages --webdir {0} --samples {0}/example.json "
-            "--labels core0 --nsamples 100 --disable_expert "
+            "--labels core0 --nsamples 100  "
             "--restart_from_checkpoint".format(tmpdir)
         )
         t0 = time.time()
@@ -520,13 +518,13 @@ class TestSummaryPages(Base):
         """
         command_line = (
             "summarypages --webdir {0} --samples  {0}/example.json "
-            "--labels core0 --nsamples 100 --disable_expert".format(tmpdir)
+            "--labels core0 --nsamples 100".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1, expert=False)
         command_line = (
             "summarypages --webdir {0} --samples  {0}/example.json "
-            "--labels core0 --nsamples 100".format(tmpdir)
+            "--labels core0 --nsamples 100 --enable_expert".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1, expert=True)
@@ -555,7 +553,7 @@ class TestSummaryPages(Base):
                 command_line = (
                     "summarypages --webdir {} --samples {}/example.json "
                     "--labels test --prior_file {} --nsamples_for_prior "
-                    "10 --disable_expert".format(tmpdir, tmpdir, _file)
+                    "10 ".format(tmpdir, tmpdir, _file)
                 )
                 command_line += " --gw" if gw else ""
                 self.launch(command_line)
@@ -594,8 +592,7 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir {0} --samples {0}/example.json "
             "--psd H1:{0}/psd.dat --calibration L1:{0}/calibration.dat "
-            "--labels test --posterior_samples_filename example.h5 "
-            "--disable_expert".format(tmpdir)
+            "--labels test --posterior_samples_filename example.h5 ".format(tmpdir)
         )
         self.launch(command_line)
         f = read("{}/samples/example.h5".format(tmpdir))
@@ -624,8 +621,7 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir {0} --samples {0}/example.json "
             "--gwdata H1:test:{0}/H1.gwf L1:test:{0}/L1.hdf "
-            "--labels test --disable_expert --disable_corner "
-            "--disable_interactive".format(tmpdir)
+            "--labels test  --disable_corner --disable_interactive".format(tmpdir)
         )
         self.launch(command_line)
         f = read("{}/samples/posterior_samples.h5".format(tmpdir))
@@ -647,9 +643,7 @@ class TestSummaryPages(Base):
 
         command_line = (
             "summarypages --webdir {0} --samples {0}/example.json "
-            "--gracedb G17864 --gw --labels test --disable_expert".format(
-                tmpdir
-            )
+            "--gracedb G17864 --gw --labels test".format(tmpdir)
         )
         self.launch(command_line)
         f = read("{}/samples/posterior_samples.h5".format(tmpdir))
@@ -662,7 +656,7 @@ class TestSummaryPages(Base):
         """
         command_line = (
             "summarypages --webdir {0} --samples "
-            "{0}/example.json --label core0 --disable_expert".format(tmpdir)
+            "{0}/example.json --label core0 ".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1)
@@ -695,7 +689,7 @@ class TestSummaryPages(Base):
         self.launch(command_line)
         command_line = (
             "summarypages --webdir {0} --gw --samples "
-            "{0}/samples/posterior_samples.h5 --disable_expert".format(tmpdir)
+            "{0}/samples/posterior_samples.h5 ".format(tmpdir)
         )
         self.launch(command_line)
         
@@ -718,7 +712,7 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir {0} --samples "
             "{0}/example.json --label core0 --kde_plot "
-            "--disable_expert".format(tmpdir)
+            "".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1)
@@ -768,7 +762,7 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir {0} --samples "
             "{0}/example.json --label core0 --add_existing_plot "
-            "core0:{0}/test.png --disable_expert".format(tmpdir)
+            "core0:{0}/test.png ".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=1, existing_plot=True)
@@ -776,7 +770,7 @@ class TestSummaryPages(Base):
             "summarypages --webdir {0} --samples "
             "{0}/example.json {0}/example.json --label core0 core1 "
             "--add_existing_plot core0:{0}/test.png core1:{0}/test.png "
-            "--disable_expert".format(tmpdir)
+            "".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(number=2, existing_plot=True)
@@ -836,13 +830,13 @@ class TestSummaryPagesLW(Base):
         command_line = (
             "summarypageslw --webdir {0} --samples {0}/bilby.json "
             "--labels core0 --parameters mass_1 mass_2 "
-            "--disable_expert".format(tmpdir)
+            "".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(parameters=["mass_1", "mass_2"], sections=["M-P"])
         command_line = (
             "summarypageslw --webdir {0}/gw --samples {0}/bilby.json "
-            "--labels gw0 --parameters mass_1 mass_2 --disable_expert "
+            "--labels gw0 --parameters mass_1 mass_2  "
             "--gw".format(tmpdir)
         )
         self.launch(command_line)
@@ -871,7 +865,7 @@ class TestSummaryPagesLW(Base):
         command_line = (
             "summarypageslw --webdir {0} --samples {0}/bilby.json "
             "{0}/bilby.json --labels core0 core1 --parameters mass_1 mass_2 "
-            "--disable_expert".format(tmpdir)
+            "".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(
@@ -892,7 +886,7 @@ class TestSummaryPagesLW(Base):
         command_line = (
             "summarypageslw --webdir {0}/lw --samples "
             "{0}/samples/posterior_samples.h5 --parameters mass_1 mass_2 "
-            "--disable_expert".format(tmpdir)
+            "".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(
@@ -919,7 +913,7 @@ class TestSummaryPagesLW(Base):
         command_line = (
             "summarypageslw --webdir {0}/lw3 --samples "
             "{0}/samples/posterior_samples.h5 --parameters mass_1 mass_2 "
-            "--disable_expert".format(tmpdir)
+            "".format(tmpdir)
         )
         self.launch(command_line)
         self.check_output(
@@ -1726,7 +1720,7 @@ class TestSummaryCombine_Posteriors(Base):
             assert all(ss in two[param] for ss in combined_samples[param][half:])
         # check that summarypages works fine on output
         command_line = (
-            "summarypages --webdir .outdir/combined --disable_expert "
+            "summarypages --webdir .outdir/combined  "
             " --no_conversion --samples .outdir/test.h5 "
             "--disable_corner --disable_interactive --gw"
         )
@@ -2085,8 +2079,7 @@ class TestSummaryModify(Base):
         self.launch(command_line)
         command_line = (
             "summarypages --webdir {0}/webpage --gw --no_conversion "
-            "--samples {0}/modified_posterior_samples.h5 "
-            "--disable_expert".format(tmpdir)
+            "--samples {0}/modified_posterior_samples.h5 ".format(tmpdir)
         )
         self.launch(command_line)
         data = h5py.File(
