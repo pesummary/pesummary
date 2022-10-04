@@ -249,10 +249,11 @@ class _PlotGeneration(_BasePlotGeneration):
             the label for the results file that you wish to plot
         """
         try:
-            import ligo.skymap
-            SKYMAP = True
+            import ligo.skymap  # noqa: F401
         except ImportError:
             SKYMAP = False
+        else:
+            SKYMAP = True
 
         if self.mcmc_samples:
             samples = self.samples[label].combine
