@@ -12,4 +12,5 @@ sed -i 's/n-parallel = 4/n-parallel = 2/' ./GW150914.ini
 
 bilby_pipe ./GW150914.ini
 bash outdir_GW150914/submit/bash_GW150914.sh
-summarypages --webdir ./outdir_GW150914/webpage --samples ./outdir_GW150914/result/GW150914_data0_1126259462-4_analysis_H1L1_merge_result.json --gw --disable_expert --disable_interactive --no_ligo_skymap
+FILE=`ls ./outdir_GW150914/result/*_merge_result.*`
+summarypages --webdir ./outdir_GW150914/webpage --samples ${FILE} --gw --disable_expert --disable_interactive --no_ligo_skymap
