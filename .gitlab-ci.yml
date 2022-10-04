@@ -142,6 +142,11 @@ style:
     - .python:flake8
   stage: basic
   needs: []
+  variables:
+    # don't fail the pipeline because of linting issues,
+    # these are presented in the code-quality box in the
+    # merge_request UI
+    FLAKE8_OPTIONS: "--exit-zero"
 
 
 documentation:
