@@ -103,6 +103,19 @@ class DeprecatedStoreTrueAction(BaseDeprecatedAction):
         return cls._DeprecatedStoreTrueAction
 
 
+class DeprecatedStoreFalseAction(BaseDeprecatedAction):
+    """Class to handle deprecated argparse._StoreFalseAction options
+    """
+    class _DeprecatedStoreFalseAction(
+        BaseDeprecatedAction._BaseDeprecatedAction, argparse._StoreFalseAction
+    ):
+        pass
+
+    def __new__(cls, *args, **kwargs):
+        super().__new__(cls, *args, **kwargs)
+        return cls._DeprecatedStoreFalseAction
+
+
 class ConfigAction(argparse.Action):
     """Class to extend the argparse.Action to handle dictionaries as input
     """
