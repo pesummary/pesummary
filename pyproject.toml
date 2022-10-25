@@ -1,10 +1,152 @@
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=61.0",
     "setuptools_scm[toml]>=3.4.3",
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pesummary"
+authors = [
+	{ name = "Charlie Hoy", email = "charlie.hoy@ligo.org" },
+]
+description = "Python package to produce summary pages for Parameter estimation codes"
+readme = "README.md"
+license = { text = "MIT" }
+classifiers = [
+	"License :: OSI Approved :: MIT License",
+	"Natural Language :: English",
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+]
+requires-python = ">=3.8"
+dependencies = [
+	"astropy>=3.2.3",
+	"corner",
+	"deepdish",
+	"gwpy >=2.1.2",
+	"h5py",
+	"lalsuite >=7.0.0",
+	"ligo-gracedb",
+	"matplotlib",
+	"numpy >=1.15.4",
+	"pandas",
+	"pygments",
+	"plotly",
+	"pillow",
+	"seaborn >=0.11.0",
+	"statsmodels",
+	"scipy >=1.8.0",
+	"tables",
+	"tqdm >=4.44.0",
+]
+dynamic = ['version']
+
+[project.optional-dependencies]
+docs = [
+	"ipykernel",
+	"nbsphinx",
+	"requests",
+	"Sphinx >=1.2.2",
+	"sphinx-argparse",
+	"sphinx_rtd_theme",
+	"sphinx-panels",
+	"sphinxcontrib-programoutput",
+]
+lint = [
+	"flake8 >=3.7.0",
+	"flake8-bandit",
+]
+test = [
+	"astropy >=3.2.3,!=4.3.0",
+	"beautifulsoup4",
+	"bilby_pipe",
+	"coverage",
+	"coverage-badge",
+	"cython >=0.28.5",
+	"markupsafe ==2.0.1",
+	"pycbc >=2.0.3",
+	"pytest >=3.0.0",
+	"pytest-xdist",
+	"pytest-rerunfailures",
+	"pytest-cov",
+	"requests",
+	"testfixtures",
+]
+extras = [
+	"bilby>=1.1.1",
+	"coloredlogs",
+	"GitPython",
+	"gwosc",
+	"jupyter_client",
+	"ligo.em-bright >=0.1.2,<=1.0.3",
+	"ligo.skymap",
+	"nbformat",
+	"pepredicates >=0.0.3",
+]
+
+[project.scripts]
+summaryclassification = "pesummary.cli.summaryclassification:main"
+summaryclean = "pesummary.cli.summaryclean:main"
+summarycombine = "pesummary.cli.summarycombine:main"
+summarycombine_posteriors = "pesummary.cli.summarycombine_posteriors:main"
+summarycompare = "pesummary.cli.summarycompare:main"
+summarydetchar = "pesummary.cli.summarydetchar:main"
+summaryextract = "pesummary.cli.summaryextract:main"
+summarygracedb = "pesummary.cli.summarygracedb:main"
+summaryjscompare = "pesummary.cli.summaryjscompare:main"
+summarymodify = "pesummary.cli.summarymodify:main"
+summarypages = "pesummary.cli.summarypages:main"
+summarypageslw = "pesummary.cli.summarypageslw:main"
+summarypipe = "pesummary.cli.summarypipe:main"
+summaryplots = "pesummary.cli.summaryplots:main"
+summarypublication = "pesummary.cli.summarypublication:main"
+summaryrecreate = "pesummary.cli.summaryrecreate:main"
+summaryreview = "pesummary.cli.summaryreview:main"
+summarysplit = "pesummary.cli.summarysplit:main"
+summarytest = "pesummary.cli.summarytest:main"
+summarytgr = "pesummary.cli.summarytgr:main"
+summaryversion = "pesummary.cli.summaryversion:main"
+
+[project.urls]
+"Homepage" = "https://lscsoft.docs.ligo.org/pesummary"
+"Documentation" = "https://lscsoft.docs.ligo.org/pesummary/"
+"Issue Tracker" = "https://git.ligo.org/lscsoft/pesummary/-/issues/"
+"Source Code" = "https://git.ligo.org/lscsoft/pesummary.git"
+"Download" = "https://lscsoft.docs.ligo.org/pesummary/stable_docs/installation.html"
+
+[tool.setuptools]
+packages = [
+	"pesummary",
+	"pesummary.core",
+	"pesummary.core.webpage",
+	"pesummary.core.plots",
+	"pesummary.core.plots.seaborn",
+	"pesummary.core.file",
+	"pesummary.core.file.formats",
+	"pesummary.core.notebook",
+	"pesummary.core.cli",
+	"pesummary.gw",
+	"pesummary.gw.conversions",
+	"pesummary.gw.notebook",
+	"pesummary.gw.file",
+	"pesummary.gw.file.formats",
+	"pesummary.gw.plots",
+	"pesummary.gw.webpage",
+	"pesummary.gw.cli",
+	"pesummary.utils",
+	"pesummary.conf",
+	"pesummary.cli",
+	"pesummary.io",
+	"pesummary.tests",
+]
+license-files = [
+	"LICENSE.md",
+]
 
 [tool.coverage.paths]
 source = [
@@ -17,14 +159,13 @@ source = [
 precision = 1
 
 [tool.coverage.run]
-source = "./pesummary"
-omit = [
-    "*/_version.py",
-    "pesummary/tests/*"
+source = [
+	"./pesummary"
 ]
-
-[tool.pytest.ini_options]
-addopts = "-p no:warnings"
+omit = [
+	"*/_version.py",
+	"pesummary/tests/*"
+]
 
 [tool.setuptools_scm]
 write_to = "pesummary/_version.py"

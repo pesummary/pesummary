@@ -1,3 +1,0 @@
-[run]
-source = ./pesummary
-omit = pesummary/tests/* /usr/local/lib/python3.7/site-packages/pesummary/tests/* /usr/local/lib/python3.7/site-packages/pesummary/cli/summarytest.py 
