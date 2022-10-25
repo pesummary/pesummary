@@ -1,0 +1,11 @@
+[flake8]
+ignore =
+        # line break before binary operator, use W504
+        W503,
+exclude =
+        docs/*,
+        build/*,
+per-file-ignores =
+        # ignore unused import in __init__
+        __init__.py:F401,
+max-line-length = 120

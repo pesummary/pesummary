@@ -55,7 +55,7 @@ before_script:
     - style
   script:
     - *prepare_testing
-    - summarytest --multi_process ${NCPU} --type workflow -k "Core or core" --pytest_config ${BASE}/setup.cfg
+    - summarytest --multi_process ${NCPU} --type workflow -k "Core or core" --pytest_config ${BASE}/pyproject.toml
     - *finalise_testing
 
 
@@ -68,7 +68,7 @@ before_script:
     - style
   script:
     - *prepare_testing
-    - summarytest --multi_process ${NCPU} --type workflow -k "GW or gw" --pytest_config ${BASE}/setup.cfg
+    - summarytest --multi_process ${NCPU} --type workflow -k "GW or gw" --pytest_config ${BASE}/pyproject.toml
     - *finalise_testing
 
 
@@ -86,8 +86,8 @@ conda:
   stage: build
   needs: []
   script:
-    - conda create --name py38 python=3.8 pip2conda
-    - conda activate py38
+    - conda create --name py310 python=3.10 pip2conda
+    - conda activate py310
     - pip2conda --all --output environment.txt
     - echo "-----------------"
     - cat environment.txt
@@ -223,7 +223,7 @@ python-3.8-base:
   stage: test
   script:
     - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
+    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/pyproject.toml
     - *finalise_testing
     - mv _testing/.coverage* .
     - mv .coverage .coverage_base
@@ -233,7 +233,7 @@ python-3.8-exe:
   stage: test
   script:
     - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/setup.cfg
+    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/pyproject.toml
     - *finalise_testing
     - mv _testing/.coverage* .
     - mv .coverage .coverage_exe
@@ -244,7 +244,7 @@ python-3.9-base:
   stage: test
   script:
     - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
+    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/pyproject.toml --type tests
     - *finalise_testing
 
 
@@ -253,7 +253,7 @@ python-3.9-exe:
   stage: test
   script:
     - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
+    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/pyproject.toml --type tests
     - *finalise_testing
 
 
@@ -262,7 +262,7 @@ python-3.10-base:
   stage: test
   script:
     - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
+    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/pyproject.toml --type tests
     - *finalise_testing
 
 
@@ -271,7 +271,7 @@ python-3.10-exe:
   stage: test
   script:
     - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/setup.cfg --type tests
+    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/pyproject.toml --type tests
     - *finalise_testing
 
 
