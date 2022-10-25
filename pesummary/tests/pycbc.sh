@@ -6,7 +6,9 @@ for ifo in H-H1 L-L1 V-V1; do
     curl -O --silent https://dcc.ligo.org/public/0146/P1700349/001/${file}
 done
 
-curl -O https://raw.githubusercontent.com/gwastro/pycbc/master/examples/inference/single/single.ini
+
+version=`python -c "import pycbc; print(pycbc.__version__)"`
+curl -O https://raw.githubusercontent.com/gwastro/pycbc/v${version}/examples/inference/single/single.ini
 sed -i '/no-save-data/d' ./single.ini
 sed -i 's/dlogz = 0.01/dlogz = 1000/' ./single.ini
 pycbc_inference --config-file single.ini --output-file ./pycbc.hdf5
