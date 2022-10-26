@@ -6,7 +6,7 @@ import numpy as np
 import json
 import copy
 from getpass import getuser
-
+import pandas as pd
 import pesummary
 from pesummary import __version__
 from pesummary.utils.dict import Dict
@@ -47,6 +47,8 @@ def recursively_save_dictionary_to_hdf5_file(
         current_path = []
 
     for k, v in dictionary.items():
+        if isinstance(v, pd.DataFrame):
+            v = v.to_dict(orient="list")
         if isinstance(v, dict):
             if k not in f["/" + "/".join(current_path)].keys():
                 f["/".join(current_path)].create_group(k)
