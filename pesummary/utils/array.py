@@ -261,3 +261,18 @@ class Array(np.ndarray):
         self.maxP = getattr(obj, 'maxP', None)
         self.weights = getattr(obj, 'weights', None)
         self.key_data = getattr(obj, 'key_data', None)
+
+    def to_numpy(self):
+        """Convert Array object to a numpy.ndarray
+
+        Returns
+        -------
+        data: np.ndarray/tuple
+            return stored data as a np.ndarray. If weights are stored in the
+            Array object, return a tuple containing the stored data as a
+            np.ndarray and the weights as a np.ndarray
+        """
+        _array = np.asarray(self)
+        if self.weights is None:
+            return _array
+        return _array, np.asarray(self.weights)

@@ -67,8 +67,10 @@ class PAstro(object):
                 "because not all required parameters have been provided."
             )
         M_rem = computeDiskMass(
-            samples["mass_1_source"], samples["mass_2_source"], samples["a_1"],
-            samples["a_2"]
+            samples["mass_1_source"].to_numpy(),
+            samples["mass_2_source"].to_numpy(),
+            samples["a_1"].to_numpy(),
+            samples["a_2"].to_numpy()
         )
         prediction_ns = float(
             np.sum(samples["mass_2_source"] <= 3.0) / len(samples["mass_2_source"])
