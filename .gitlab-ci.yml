@@ -9,10 +9,21 @@ stages:
   - build
   - basic
   - test
-  - end-to-end
   - compatibility
   - coverage
   - deploy
+
+
+.parallel_python: &parallel_python
+  parallel:
+    matrix:
+      - PY_VERSION: ["3.8", "3.9", "3.10"]
+
+
+.parallel_gwtc: &parallel_gwtc
+  parallel:
+    matrix:
+      - CATALOG: ["1", "2", "3"]
 
 
 variables:
@@ -46,38 +57,13 @@ before_script:
   - cd ${BASE}
 
 
-.core_workflow: &core_workflow
-  stage: end-to-end
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
-  script:
-    - *prepare_testing
-    - summarytest --multi_process ${NCPU} --type workflow -k "Core or core" --pytest_config ${BASE}/pyproject.toml
-    - *finalise_testing
-
-
-.gw_workflow: &gw_workflow
-  stage: end-to-end
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
-  script:
-    - *prepare_testing
-    - summarytest --multi_process ${NCPU} --type workflow -k "GW or gw" --pytest_config ${BASE}/pyproject.toml
-    - *finalise_testing
-
-
 tarball:
   extends:
     # https://computing.docs.ligo.org/gitlab-ci-templates/python/#.python:build
     - .python:build
   stage: build
   needs: []
+
 
 conda:
   extends:
@@ -190,16 +176,12 @@ authors:
       - master@lscsoft/pesummary
 
 
-.base-testing:
+.python-3.8-testing:
   needs:
     - tarball
     - executables
     - imports
     - style
-
-
-.python-3.8-testing:
-  extends: .base-testing
   image: python:3.8
   artifacts:
     paths:
@@ -208,29 +190,30 @@ authors:
       - coverage_badge.svg
 
 
-.python-3.9-testing:
-  extends: .base-testing
-  image: python:3.9
-
-
-.python-3.10-testing:
-  extends: .base-testing
-  image: python:3.10
-
-
-python-3.8-base:
-  extends: .python-3.8-testing
+test:base:
+  <<: *parallel_python
   stage: test
+  image: python:$PY_VERSION
+  needs:
+    - tarball
+    - executables
+    - imports
+    - style
   script:
     - *prepare_testing
     - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/pyproject.toml
     - *finalise_testing
     - mv _testing/.coverage* .
     - mv .coverage .coverage_base
+  artifacts:
+    paths:
+      - .coverage*
+      - htmlcov/
+      - coverage_badge.svg
 
-python-3.8-exe:
-  extends: .python-3.8-testing
-  stage: test
+
+test:executables:
+  extends: test:base
   script:
     - *prepare_testing
     - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/pyproject.toml
@@ -239,76 +222,27 @@ python-3.8-exe:
     - mv .coverage .coverage_exe
 
 
-python-3.9-base:
-  extends: .python-3.9-testing
+end-to-end:core:
+  <<: *parallel_python
   stage: test
+  image: python:$PY_VERSION
+  needs:
+    - tarball
+    - executables
+    - imports
+    - style
   script:
     - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/pyproject.toml --type tests
+    - summarytest --multi_process ${NCPU} --type workflow -k "Core or core" --pytest_config ${BASE}/pyproject.toml
     - *finalise_testing
 
 
-python-3.9-exe:
-  extends: .python-3.9-testing
-  stage: test
+end-to-end:gw:
+  extends: end-to-end:core
   script:
     - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/pyproject.toml --type tests
+    - summarytest --multi_process ${NCPU} --type workflow -k "GW or gw" --pytest_config ${BASE}/pyproject.toml
     - *finalise_testing
-
-
-python-3.10-base:
-  extends: .python-3.10-testing
-  stage: test
-  script:
-    - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/pyproject.toml --type tests
-    - *finalise_testing
-
-
-python-3.10-exe:
-  extends: .python-3.10-testing
-  stage: test
-  script:
-    - *prepare_testing
-    - summarytest --multi_process ${NCPU} -m "executabletest and not ligoskymaptest and not workflowtest" --pytest_config ${BASE}/pyproject.toml --type tests
-    - *finalise_testing
-
-
-python-3.8-core:
-  <<: *core_workflow
-  image: python:3.8
-
-
-python-3.9-core:
-  <<: *core_workflow
-  image: python:3.9
-
-
-python-3.10-core:
-  <<: *core_workflow
-  image: python:3.10
-
-
-python-3.8-gw:
-  <<: *gw_workflow
-  image: python:3.8
-
-
-python-3.9-gw:
-  <<: *gw_workflow
-  image: python:3.9
-  retry:
-    max: 2
-    when: stuck_or_timeout_failure
-
-
-python-3.10-gw:
-  <<: *gw_workflow
-  image: python:3.10
-  retry:
-    max: 2
-    when: stuck_or_timeout_failure
 
 
 ligo_skymap:
@@ -394,7 +328,8 @@ pycbc_inference:
     - pushes
 
 
-.GWTCN: &GWTCN
+GWTC:
+  <<: *parallel_gwtc
   stage: compatibility
   image: python:3.8
   needs:
@@ -404,26 +339,8 @@ pycbc_inference:
     - style
   script:
     - *prepare_testing
-    - summarytest --type ${CATALOG}
+    - summarytest --type GWTC$CATALOG
     - *finalise_testing
-
-
-GWTC1:
-  <<: *GWTCN
-  variables:
-    CATALOG: GWTC1
-
-
-GWTC2:
-  <<: *GWTCN
-  variables:
-    CATALOG: GWTC2
-
-
-GWTC3:
-  <<: *GWTCN
-  variables:
-    CATALOG: GWTC3
 
 
 coverage:
@@ -431,8 +348,8 @@ coverage:
   stage: coverage
   needs:
     - tarball
-    - python-3.8-base
-    - python-3.8-exe
+    - test:base
+    - test:executables
     - ligo_skymap
   script:
     - *prepare_testing
@@ -462,24 +379,14 @@ pages:
     - style
     - documentation
     - examples
-    - python-3.8-base
-    - python-3.8-exe
-    - python-3.9-base
-    - python-3.9-exe
-    - python-3.10-base
-    - python-3.10-exe
-    - python-3.8-core
-    - python-3.9-core
-    - python-3.10-core
-    - python-3.8-gw
-    - python-3.9-gw
-    - python-3.10-gw
+    - test:base
+    - test:executables
+    - end-to-end:core
+    - end-to-end:gw
     - bilby
     - bilby_pipe
     - lalinference_pipe
-    - GWTC1
-    - GWTC2
-    - GWTC3
+    - GWTC
     - coverage
   script:
     - mkdir public/
