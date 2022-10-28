@@ -73,14 +73,18 @@ conda:
     - .conda:base
   stage: build
   needs: []
+  variables:
+    PYTHON_VERSION: "3.10"
+  before_script:
+    - !reference [".conda:base", before_script]
+    - conda install --name base pip2conda
+    - python -m pip2conda --all --output environment.yml --python ${PYTHON_VERSION} -vv
+    - echo "-----------------"
+    - cat environment.yml
+    - echo "-----------------"
+    - mamba env create --name py${PYTHON_VERSION} --file environment.yml
+    - conda activate py${PYTHON_VERSION}
   script:
-    - conda create --name py310 python=3.10 pip2conda
-    - conda activate py310
-    - pip2conda --all --output environment.txt
-    - echo "-----------------"
-    - cat environment.txt
-    - echo "-----------------"
-    - conda install --file environment.txt -c conda-forge
     - python -m pip install .
 
 
