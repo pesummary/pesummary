@@ -12,7 +12,7 @@ plot. Below the image example and the script used to produce it.
 
 .. image:: ./examples/event_scatter_plot_total_mass_and_redshift.png
 
-.. literalinclude:: ../../../../examples/gw/GWTC-1_population_scatterplot.sh
+.. literalinclude:: ../../../examples/gw/GWTC-1_population_scatterplot.sh
     :language: bash
     :lines: 1-29
     :linenos:

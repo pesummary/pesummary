@@ -98,4 +98,4 @@ Of course, you do not have to use PESummary to load in the data from a
 PESummary metafile. The core `JSON` and `h5py` python libraries can be
 used. The PESummary file has the following data structure:
 
-.. literalinclude:: ../../../examples/gw/pesummary_data_structure.txt
+.. literalinclude:: ../../examples/gw/pesummary_data_structure.txt

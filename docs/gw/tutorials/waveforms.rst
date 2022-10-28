@@ -10,7 +10,7 @@ GW190814 posterior samples.
 
 First let us plot a waveform in the time domain,
 
-.. literalinclude:: ../../../../examples/gw/making_a_waveform_in_time_domain.py
+.. literalinclude:: ../../../examples/gw/making_a_waveform_in_time_domain.py
    :language: python
    :linenos:
 
@@ -21,7 +21,7 @@ it is useful to know the uncertainty on this waveform. We can calculate and plot
 the 1 sigma and 2 sigma symmetric confidence intervals of this waveform by
 taking advantage of the :code:`level` kwarg,
 
-.. literalinclude:: ../../../../examples/gw/making_a_waveform_in_time_domain_with_uncertainty.py
+.. literalinclude:: ../../../examples/gw/making_a_waveform_in_time_domain_with_uncertainty.py
    :language: python
    :linenos:
 
@@ -33,7 +33,7 @@ to speed up waveform generation.
 
 We can also generate a waveform in the frequency domain with,
 
-.. literalinclude:: ../../../../examples/gw/making_a_waveform_in_frequency_domain.py
+.. literalinclude:: ../../../examples/gw/making_a_waveform_in_frequency_domain.py
    :language: python
    :linenos:
 

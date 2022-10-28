@@ -43,7 +43,7 @@ We may now save the samples with the following,
 
 The contents of which is simply:
 
-.. code-block:: python
+.. code-block:: console
 
     $ head -n 5 example.dat
     a	b

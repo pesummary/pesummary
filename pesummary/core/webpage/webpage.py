@@ -30,7 +30,7 @@ BOOTSTRAP = """<!DOCTYPE html>
        PESummary was developed by Hoy et al. and source code can be seen
        here: git.ligo.org/lscsoft/pesummary. If you wish to use PESummary
    for your own work, please cite PESummary. The following page gives details
-   https://lscsoft.docs.ligo.org/pesummary/stable_docs/citing_pesummary.html.
+   https://lscsoft.docs.ligo.org/pesummary/stable/citing_pesummary.html.
                                      Thanks!
   -->
 <html lang='en'>
@@ -223,7 +223,7 @@ class page(Base):
             "font-weight: 900; padding-right:10px'></i></a>"
         )
         link = (
-            "https://lscsoft.docs.ligo.org/pesummary/stable_docs/tutorials/"
+            "https://lscsoft.docs.ligo.org/pesummary/stable/tutorials/"
             "make_your_own_page_from_metafile.html"
         )
         self.add_content(
