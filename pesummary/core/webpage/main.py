@@ -1671,7 +1671,7 @@ class _WebpageGeneration(object):
                     "Information about reading this metafile can be seen "
                     " <a href={}>here</a>".format(
                         "https://lscsoft.docs.ligo.org/pesummary/"
-                        "stable_docs/data/reading_the_metafile.html"
+                        "stable/data/reading_the_metafile.html"
                     )
                 )
             ]

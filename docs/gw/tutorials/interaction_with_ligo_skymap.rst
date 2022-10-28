@@ -100,6 +100,6 @@ using the `pesummary` package. For details about how to read in a `pesummary`
 file with the `pesummary` package, see
 `Reading in a pesummary metafile <../read_pesummary.html>`_,
 
-.. literalinclude:: ../../../../examples/gw/ligo_skymap.py
+.. literalinclude:: ../../../examples/gw/ligo_skymap.py
     :language: python
     :linenos:

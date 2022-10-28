@@ -37,7 +37,7 @@ ease. This can be done with the following:
 
 
 Initializing the CalibrationDict class
-------------------------------
+--------------------------------------
 
 The `CaibrationDict` class is initialized with a dictionary of 7d array's
 containing the Frequency, Median Magnitude, Phase (Rad),

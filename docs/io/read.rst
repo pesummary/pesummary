@@ -8,9 +8,9 @@ Builtin functions
 `pesummay` offers a `read` function which allows for configuration files,
 injection files, prior files and nearly result files formats to be read in.
 For a full list of result files that can be read in with the
-`core <../core/index.html>`_ module see `here <../core/file_formats.html>`_.
+`core <../core/index.html>`_ module see `here <../core/file_formats.html>`__.
 For a full list of result files that can be read in with the
-`gw <../gw/index.html>`_ module see `here <../gw/file_formats.html>`_.
+`gw <../gw/index.html>`_ module see `here <../gw/file_formats.html>`__.
 Below we show a few examples. of how the `read` function works.
 
 First we import the universal read function,
@@ -92,5 +92,5 @@ may define a class which is capable of reading in this custom file format and
 pass it as a kwarg to the universal read function. Below we show a couple of
 examples,
 
-.. literalinclude:: ../../../examples/core/single_analysis_custom_read.py
-.. literalinclude:: ../../../examples/core/multiple_analysis_custom_read.py 
+.. literalinclude:: ../../examples/core/single_analysis_custom_read.py
+.. literalinclude:: ../../examples/core/multiple_analysis_custom_read.py 

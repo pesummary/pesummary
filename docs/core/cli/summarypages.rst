@@ -82,7 +82,7 @@ command line arguments. For instance, you can generate a summarypage by running,
 
 Where the configuration file has the following structure:
 
-.. literalinclude:: ../../../examples/pesummary.ini
+.. literalinclude:: ../../examples/pesummary.ini
    :language: ini
    :linenos:
 

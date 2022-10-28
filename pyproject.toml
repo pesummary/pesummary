@@ -117,7 +117,7 @@ summaryversion = "pesummary.cli.summaryversion:main"
 "Documentation" = "https://lscsoft.docs.ligo.org/pesummary/"
 "Issue Tracker" = "https://git.ligo.org/lscsoft/pesummary/-/issues/"
 "Source Code" = "https://git.ligo.org/lscsoft/pesummary.git"
-"Download" = "https://lscsoft.docs.ligo.org/pesummary/stable_docs/installation.html"
+"Download" = "https://lscsoft.docs.ligo.org/pesummary/stable/installation.html"
 
 [tool.setuptools]
 packages = [

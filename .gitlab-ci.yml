@@ -2,6 +2,7 @@ include:
   - project: computing/gitlab-ci-templates
     file:
       - conda.yml
+      - debian.yml
       - python.yml
 
 
@@ -12,6 +13,7 @@ stages:
   - end-to-end
   - compatibility
   - coverage
+  - docs
   - deploy
 
 
@@ -147,23 +149,6 @@ style:
     # these are presented in the code-quality box in the
     # merge_request UI
     FLAKE8_OPTIONS: "--exit-zero"
-
-
-documentation:
-  stage: basic
-  image: python:3.8-buster
-  needs:
-    - tarball
-  script:
-    - python -m pip install .[docs]
-    - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
-    - ipython kernel install --user --name=python3
-    - cd docs
-    - make clean
-    - bash build_docs.sh
-  artifacts:
-    paths:
-      - docs/_build/html/
 
 
 examples:
@@ -442,6 +427,127 @@ coverage:
     - coverage html --directory ./htmlcov/
     - coverage-badge -o coverage_badge.svg -f
 
+# -- docs
+
+.docs:
+  # https://computing.docs.ligo.org/gitlab-ci-templates/python/#.python:sphinx
+  extends: .python:sphinx
+  image: python:3.9
+  stage: docs
+  needs: []
+  variables:
+    # install this package and it's [docs] extra
+    REQUIREMENTS: ".[docs]"
+    # options to pass to sphinx
+    SPHINXOPTS: "-j 4"
+  before_script:
+    - !reference [".debian:base", "before_script"]
+    - apt-get -y install pandoc
+    - !reference [".python:sphinx", "before_script"]
+
+documentation:
+  extends: .docs
+  artifacts:
+    expose_as: Latest docs
+
+.old-docs:
+  extends:
+    - .debian:base
+    - .docs
+  variables:
+    # we need the full history to guarantee that we can check out the
+    # old reference/stable tags
+    GIT_DEPTH: 0
+  rules:
+    # only run on pushes to the a branch of the main repo
+    - if: '$CI_PROJECT_PATH == "lscsoft/pesummary" && $CI_PIPELINE_SOURCE == "push"'
+
+reference-docs:
+  extends: .old-docs
+  variables:
+    CONDA_YAML: "https://computing.docs.ligo.org/conda/environments/linux-64/igwn-py39.yaml"
+  before_script:
+    - !reference [".debian:base", "before_script"]
+    - apt-get -y install git-lfs pandoc
+    # create a virtualenv to support finding the reference version
+    - python -m venv --system-site-packages venv
+    - ./venv/bin/python -m pip install requests pyyaml
+    # parse the IGWN Conda Distribution igwn-py39 environment YAML file
+    # for the version of pesummary
+    - |
+      REFERENCE_VERSION=v$(./venv/bin/python -c "
+      import requests
+      import yaml
+      resp = requests.get('${CONDA_YAML}')
+      resp.raise_for_status()
+      refenv = yaml.safe_load(resp.content)
+      for pkg in refenv['dependencies']:
+          if pkg.startswith('pesummary='):
+              print(pkg.split('=', 2)[1])
+              break
+      ")
+    # clean up and then check out that version of the project
+    - rm -rf ./venv/
+    - git checkout "${REFERENCE_VERSION}"
+    # hack out the warning from old branches, see
+    # https://git.ligo.org/lscsoft/pesummary/-/blob/v0.13.9/docs/index.rst#L14-L20
+    - if [[ "${REFERENCE_VERSION}" == "v0.13.9" ]]; then
+          sed -i 's/.. warning::/.. ignore::/g' docs/index.rst;
+          export SETUPTOOLS_SCM_PRETEND_VERSION="${REFERENCE_VERSION/v/}";
+      fi
+    # configure Sphinx
+    - !reference [".python:sphinx", before_script]
+    # FIXME: misc fixes for old docs
+    # FIXME: can be removed once pesummary >=0.13.10 is approved by SCCB
+    - python -m pip install
+          "GitPython"
+          "ipykernel"
+          "nbsphinx"
+          "seaborn<0.12.0"
+          "Sphinx>=1.2.2"
+          "sphinx-argparse"
+          "sphinx-panels"
+          "sphinx_rtd_theme"
+          "sphinxcontrib-programoutput"
+  after_script:
+    - echo ${REFERENCE_VERSION} > html/.version
+    - mv html reference
+  artifacts:
+    expose_as: Reference docs
+    paths:
+      - reference/index.html
+      - reference
+
+stable-docs:
+  extends: .old-docs
+  before_script:
+    - !reference [".debian:base", "before_script"]
+    - apt-get -y install git-lfs pandoc
+    # find the most recent tag and check that out
+    - STABLE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+    - git checkout "${STABLE_TAG}"
+    # hack out the warning from the 0.13.9 stable branch, see
+    # https://git.ligo.org/lscsoft/pesummary/-/blob/v0.13.9/docs/index.rst#L14-L20
+    - if [[ "${STABLE_TAG}" == "v0.13.9" ]]; then
+          sed -i 's/.. warning::/.. ignore::/g' docs/index.rst;
+          export SETUPTOOLS_SCM_PRETEND_VERSION="${STABLE_TAG/v/}";
+      fi
+    # configure Sphinx
+    - !reference [".python:sphinx", before_script]
+    # FIXME: misc fixes for old docs
+    # FIXME: can be removed once pesummary-0.13.10 is released
+    - python -m pip install
+          "GitPython"
+  after_script:
+    - echo ${STABLE_TAG} > html/.version
+    - mv html stable
+  artifacts:
+    expose_as: Stable docs
+    paths:
+      - stable/index.html
+      - stable
+
+# -- deploy
 
 build_examples:
   stage: deploy
@@ -460,7 +566,6 @@ pages:
     - executables
     - imports
     - style
-    - documentation
     - examples
     - python-3.8-base
     - python-3.8-exe
@@ -481,14 +586,31 @@ pages:
     - GWTC2
     - GWTC3
     - coverage
+    - documentation
+    - reference-docs
+    - stable-docs
   script:
-    - mkdir public/
-    - mv docs/_build/html/* public/
+    - mkdir -v public
+    # latest docs
+    - mv html public/latest
+    # stable docs
+    - STABLE_VERSION=$(cat stable/.version)
+    - mv stable public/
+    - REFERENCE_VERSION=$(cat reference/.version)
+    - mv reference public/
+    # move coverage
     - mv htmlcov/ public/
     - mv coverage_badge.svg public/
+    # create front page
+    - sed
+          -e "s/REFERENCE_VERSION/"${REFERENCE_VERSION/v/}"/g"
+          -e "s/STABLE_VERSION/"${STABLE_VERSION/v/}"/g"
+          docs/front.html.in
+          > html/index.html
   artifacts:
     paths:
       - public
     expire_in: 30 days
-  only:
-    - master@lscsoft/pesummary
+  rules:
+    # only run on pushes to the default branch of the main repo
+    - if: '$CI_PROJECT_PATH == "lscsoft/pesummary" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'

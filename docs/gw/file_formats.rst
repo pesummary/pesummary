@@ -9,7 +9,7 @@ additional functionality for reading in gravitational specific file formats.
 GWTC1
 -----
 
-As part of the `GWTC-1 <>`_
+As part of the `GWTC-1 <https://www.gwosc.org/GWTC-1/>`_.
 LIGO-Virgo publication, the posterior samples for the first 11 gravitational
 wave candidates was released. For these files, we use the
 `pesummary.gw.file.formats.GWTC1.open_GWTC1` function to extract the posterior

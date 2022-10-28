@@ -37,7 +37,7 @@ PESummary has the ability to generate a 2d contour plot which contains bounded
 bounds for each parameter is hardcoded in the
 `pesummary.core.plots.bounded_2d_kde` module:
 
-.. literalinclude:: ../../pesummary/gw/plots/bounds.py
+.. literalinclude:: ../pesummary/gw/plots/bounds.py
    :language: python
    :lines: 19-65
    :linenos:

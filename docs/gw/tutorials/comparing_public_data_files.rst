@@ -12,7 +12,7 @@ and
 papers. Below, we show that :code:`pesummary` provides an easy method for
 comparing the posterior samples obtained by these different groups.
 
-.. literalinclude:: ../../../../examples/gw/compare_GW150914.py
+.. literalinclude:: ../../../examples/gw/compare_GW150914.py
    :language: python
    :linenos:
 

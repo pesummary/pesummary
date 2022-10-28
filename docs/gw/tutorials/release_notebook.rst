@@ -9,7 +9,7 @@ this jupyter notebook.
 As an example, we generate a jupyter notebook showing the contents of the
 `GW190814 public data release <https://dcc.ligo.org/public/0168/P2000183/008/GW190814_posterior_samples.h5>`_,
 
-.. literalinclude:: ../../../../examples/gw/make_public_release.py
+.. literalinclude:: ../../../examples/gw/make_public_release.py
    :language: python
    :linenos: 
 
