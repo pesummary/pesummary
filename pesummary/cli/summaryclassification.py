@@ -4,9 +4,9 @@
 
 import os
 import pesummary
+from pesummary.core.cli.inputs import _Input
 from pesummary.gw.file.read import read as GWRead
-from pesummary.gw.pepredicates import PEPredicates
-from pesummary.gw.p_astro import PAstro
+from pesummary.gw.classification import PEPredicates, PAstro
 from pesummary.utils.utils import make_dir, logger
 from pesummary.utils.exceptions import InputError
 from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
@@ -53,19 +53,16 @@ def generate_probabilities(result_files, prior="both"):
 
     for num, i in enumerate(result_files):
         mydict = {}
-        f = GWRead(i)
-        if not isinstance(f, pesummary.gw.file.formats.pesummary.PESummary):
-            f.generate_all_posterior_samples()
-            mydict["default"], mydict["population"] = \
-                PEPredicates.classifications(f.samples, f.parameters)
-            em_bright = PAstro.classifications(f.samples_dict)
+        if not _Input.is_pesummary_metafile(i):
+            mydict = PEPredicates.dual_classification_from_file(i)
+            em_bright = PAstro.dual_classification_from_file(i)
         else:
+            f = GWRead(i)
             label = f.labels[0]
-            mydict["default"], mydict["population"] = \
-                PEPredicates.classifications(f.samples[0], f.parameters[0])
-            em_bright = PAstro.classifications(f.samples_dict[label])
-        mydict["default"].update(em_bright[0])
-        mydict["population"].update(em_bright[1])
+            mydict = PEPredicates(f.samples_dict[label]).dual_classification()
+            em_bright = PAstro(f.samples_dict[label]).dual_classification()
+        mydict["default"].update(em_bright["default"])
+        mydict["population"].update(em_bright["population"])
         classifications.append(mydict)
     if prior == "both":
         return classifications

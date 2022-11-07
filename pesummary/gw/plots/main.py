@@ -1029,10 +1029,8 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
-        from pesummary.gw.pepredicates import PEPredicates
+        from pesummary.gw.classification import PEPredicates
 
-        parameters = list(samples.keys())
-        samples = np.array([samples[param] for param in parameters]).T
         if not population_prior:
             filename = os.path.join(
                 savedir, "{}_default_pepredicates.png".format(label)
@@ -1042,20 +1040,17 @@ class _PlotGeneration(_BasePlotGeneration):
                 savedir, "{}_population_pepredicates.png".format(label)
             )
 
+        _pepredicates = PEPredicates(samples)
         if os.path.isfile(filename) and checkpoint:
             pass
         else:
-            fig = PEPredicates.plot(
-                samples, parameters, population_prior=population_prior
+            fig = _pepredicates.plot(
+                type="pepredicates", population=population_prior,
+                probabilities=probabilities
             )
-            if not population_prior:
-                _PlotGeneration.save(
-                    fig, filename, preliminary=preliminary
-                )
-            else:
-                _PlotGeneration.save(
-                    fig, filename, preliminary=preliminary
-                )
+            _PlotGeneration.save(
+                fig, filename, preliminary=preliminary
+            )
 
         if not population_prior:
             filename = os.path.join(
@@ -1068,15 +1063,13 @@ class _PlotGeneration(_BasePlotGeneration):
         if os.path.isfile(filename) and checkpoint:
             pass
         else:
-            fig = gw._classification_plot(probabilities)
-            if not population_prior:
-                _PlotGeneration.save(
-                    fig, filename, preliminary=preliminary
-                )
-            else:
-                _PlotGeneration.save(
-                    fig, filename, preliminary=preliminary
-                )
+            fig = _pepredicates.plot(
+                type="bar", probabilities=probabilities,
+                population=population_prior
+            )
+            _PlotGeneration.save(
+                fig, filename, preliminary=preliminary
+            )
 
     def psd_plot(self, label):
         """Generate a psd plot for a given result file

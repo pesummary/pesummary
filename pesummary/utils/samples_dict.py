@@ -653,32 +653,26 @@ class SamplesDict(Dict):
             ylabel=self.latex_labels[parameters[1]], **kwargs
         )
 
-    def classification(self, prior=None):
+    def classification(self, dual=True, population=False):
         """Return the classification probabilities
 
         Parameters
         ----------
-        prior: str, optional
-            prior you wish to use when generating the classification
-            probabilities.
+        dual: Bool, optional
+            if True, return classification probabilities generated from the
+            raw samples ('default') an samples reweighted to a population
+            inferred prior ('population'). Default True.
+        population: Bool, optional
+            if True, reweight the samples to a population informed prior and
+            then calculate classification probabilities. Default False. Only
+            used when dual=False
         """
-        from pesummary.gw.pepredicates import get_classifications
-        from pesummary.gw.p_astro import get_probabilities
-
-        _prior = ["default", "population", None]
-        if prior not in _prior:
-            raise ValueError(
-                "Unrecognised prior. Prior must be either: {}".format(
-                    ", ".join(_prior)
-                )
-            )
-        classifications = get_classifications(self)
-        embright = get_probabilities(self)
-        classifications["default"].update(embright[0])
-        classifications["population"].update(embright[1])
-        if prior is not None:
-            return classifications[prior]
-        return classifications
+        from pesummary.gw.classification import Classify
+        if dual:
+            probs = Classify(self).dual_classification()
+        else:
+            probs = Classify(self).classification(population=population)
+        return probs
 
     def _waveform_args(self, f_ref=20., ind=0, longAscNodes=0., eccentricity=0.):
         """Arguments to be passed to waveform generation
