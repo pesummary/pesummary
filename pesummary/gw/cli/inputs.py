@@ -651,11 +651,20 @@ class _GWInput(pesummary.core.cli.inputs._Input):
 
     @pepredicates_probs.setter
     def pepredicates_probs(self, pepredicates_probs):
-        from pesummary.gw.pepredicates import get_classifications
+        from pesummary.gw.classification import PEPredicates
 
         classifications = {}
         for num, i in enumerate(list(self.samples.keys())):
-            classifications[i] = get_classifications(self.samples[i])
+            try:
+                classifications[i] = PEPredicates(
+                    self.samples[i]
+                ).dual_classification()
+            except Exception as e:
+                logger.warning(
+                    "Failed to generate source classification probabilities "
+                    "because {}".format(e)
+                )
+                classifications[i] = None
         if self.mcmc_samples:
             if any(_probs is None for _probs in classifications.values()):
                 classifications[self.labels[0]] = None
@@ -684,16 +693,17 @@ class _GWInput(pesummary.core.cli.inputs._Input):
 
     @pastro_probs.setter
     def pastro_probs(self, pastro_probs):
-        from pesummary.gw.p_astro import get_probabilities
+        from pesummary.gw.classification import PAstro
 
         probabilities = {}
         for num, i in enumerate(list(self.samples.keys())):
-            em_bright = get_probabilities(self.samples[i])
-            if em_bright is not None:
-                probabilities[i] = {
-                    "default": em_bright[0], "population": em_bright[1]
-                }
-            else:
+            try:
+                probabilities[i] = PAstro(self.samples[i]).dual_classification()
+            except Exception as e:
+                logger.warning(
+                    "Failed to generate em_bright probabilities because "
+                    "{}".format(e)
+                )
                 probabilities[i] = None
         if self.mcmc_samples:
             if any(_probs is None for _probs in probabilities.values()):
