@@ -178,7 +178,7 @@ def time_domain_strain_data(
         if window is not None:
             ax.set_xlim(*window)
         ax.set_xlabel(xlabel)
-        ax.grid(b=grid)
+        ax.grid(visible=grid)
         ax.legend()
     return figs
 
