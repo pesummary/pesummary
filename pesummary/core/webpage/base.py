@@ -21,7 +21,7 @@ class Base(object):
         content: str
             string that you want to check
         """
-        if content[-1] != "\n":
+        if len(content) and content[-1] != "\n":
             content += "\n"
         return content
 

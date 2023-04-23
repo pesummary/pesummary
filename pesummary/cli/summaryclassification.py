@@ -39,7 +39,7 @@ class ArgumentParser(_ArgumentParser):
         return options
 
 
-def generate_probabilities(result_files, prior="both"):
+def generate_probabilities(result_files, prior="both", seed=123456789):
     """Generate the classification probabilities
 
     Parameters
@@ -50,23 +50,38 @@ def generate_probabilities(result_files, prior="both"):
         prior you wish to reweight your samples too
     """
     classifications = []
+    if prior == "both":
+        _func = "dual_classification"
+        _kwargs = {}
+    else:
+        _func = "classification"
+        _kwargs = {"population": True if prior == "population" else False}
 
     for num, i in enumerate(result_files):
         mydict = {}
         if not _Input.is_pesummary_metafile(i):
-            mydict = PEPredicates.dual_classification_from_file(i)
-            em_bright = PAstro.dual_classification_from_file(i)
+            mydict = getattr(
+                PEPredicates, "{}_from_file".format(_func)
+            )(i, seed=seed, **_kwargs)
+            em_bright = getattr(
+                PAstro, "{}_from_file".format(_func)
+            )(i, seed=seed, **_kwargs)
         else:
             f = GWRead(i)
             label = f.labels[0]
-            mydict = PEPredicates(f.samples_dict[label]).dual_classification()
-            em_bright = PAstro(f.samples_dict[label]).dual_classification()
-        mydict["default"].update(em_bright["default"])
-        mydict["population"].update(em_bright["population"])
+            mydict = getattr(
+                 PEPredicates(f.samples_dict[label]), _func
+            )(seed=seed, **_kwargs)
+            em_bright = getattr(
+                PAstro(f.samples_dict[label]), _func
+            )(seed=seed, **_kwargs)
+        if prior == "both":
+            mydict["default"].update(em_bright["default"])
+            mydict["population"].update(em_bright["population"])
+        else:
+            mydict.update(em_bright)
         classifications.append(mydict)
-    if prior == "both":
-        return classifications
-    return [{prior: i[prior]} for i in classifications]
+    return classifications
 
 
 def save_classifications(savedir, classifications, labels):
@@ -166,7 +181,7 @@ def main(args=None):
     """
     parser = ArgumentParser(description=__doc__)
     parser.add_known_options_to_parser(
-        ["--webdir", "--samples", "--labels", "--prior", "--plot"]
+        ["--webdir", "--samples", "--labels", "--prior", "--plot", "--seed"]
     )
     opts, _ = parser.parse_known_args(args=args)
     if opts.webdir:
@@ -176,7 +191,9 @@ def main(args=None):
             "No webdir given so plots will not be generated and "
             "classifications will be shown in stdout rather than saved to file"
         )
-    classifications = generate_probabilities(opts.samples, prior=opts.prior)
+    classifications = generate_probabilities(
+        opts.samples, prior=opts.prior, seed=opts.seed
+    )
     if opts.labels is None:
         opts.labels = []
         for i in opts.samples:

@@ -1163,7 +1163,10 @@ class _Input(object):
                         try:
                             shutil.copyfile(_plot, _filename)
                         except shutil.SameFileError:
-                            pass
+                            _filename = os.path.join(
+                                self.webdir, "plots", key + "_" + Path(_plot).name
+                            )
+                            shutil.copyfile(_plot, _filename)
                         self._existing_plot[key] = _filename
             for key in keys_to_remove:
                 del self._existing_plot[key]

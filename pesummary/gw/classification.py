@@ -80,7 +80,7 @@ class _Base(object):
         return _cls.classification(**kwargs)
 
     @classmethod
-    def dual_classification_from_file(cls, filename):
+    def dual_classification_from_file(cls, filename, seed=123456789):
         """Initiate the classification class with samples stored in file and
         return a dictionary containing the classification probabilities
         generated from the raw samples ('default') and samples reweighted to
@@ -90,9 +90,11 @@ class _Base(object):
         ----------
         filename: str
             path to file you wish to initiate the classification class with
+        seed: int, optional
+            random seed to use when reweighing to a population inferred prior
         """
         _cls = cls.from_file(filename)
-        return _cls.dual_classification()
+        return _cls.dual_classification(seed=seed)
 
     @property
     def required_parameters(self):
@@ -160,19 +162,29 @@ class _Base(object):
         if samples is None:
             samples = self.samples
         _samples = copy.deepcopy(samples)
+        if not all(param in _samples.keys() for param in ["redshift", "dist"]):
+            raise ValueError(
+                "Samples for redshift and distance required for population "
+                "reweighting"
+            )
         return _module.rewt_approx_massdist_redshift(_samples)
 
-    def dual_classification(self):
+    def dual_classification(self, seed=123456789):
         """Return a dictionary containing the classification probabilities
         generated from the raw samples ('default') and samples reweighted to
         a population inferred prior ('population')
+
+        Parameters
+        ----------
+        seed: int, optional
+            random seed to use when reweighing to a population inferred prior
         """
         return {
             "default": self.classification(),
-            "population": self.classification(population=True)
+            "population": self.classification(population=True, seed=seed)
         }
 
-    def classification(self, population=False, return_samples=False):
+    def classification(self, population=False, return_samples=False, seed=123456789):
         """return a dictionary containing the classification probabilities.
         These probabilities can either be generated from the raw samples or
         samples reweighted to a population inferred prior
@@ -185,12 +197,15 @@ class _Base(object):
         return_samples: Bool, optional
             if True, return the samples used as well as the classification
             probabilities
+        seed: int, optional
+            random seed to use when reweighing to a population inferred prior
         """
         if not population:
             ptable = self._compute_classification_probabilities()
             if return_samples:
                 return self.samples, ptable
             return ptable
+        np.random.seed(seed)
         _samples = PEPredicates._convert_samples(self.samples)
         reweighted_samples = self._resample_to_population_prior(
             samples=_samples
@@ -298,12 +313,6 @@ class PEPredicates(_Base):
         super(PEPredicates, self).__init__(samples)
 
     @property
-    def required_parameters(self):
-        _parameters = super(PEPredicates, self).required_parameters
-        _parameters.extend(["luminosity_distance", "redshift"])
-        return _parameters
-
-    @property
     def _default_probabilities(self):
         return {
             'BNS': self.module.BNS_p, 'NSBH': self.module.NSBH_p,
@@ -343,6 +352,7 @@ class PEPredicates(_Base):
         if not all(param in samples.keys() for param in reverse.keys()):
             _samples = {
                 new: samples[original] for original, new in mapping.items()
+                if original in samples.keys()
             }
         else:
             _samples = samples.copy()
@@ -503,9 +513,7 @@ class Classify(_Base):
     @property
     def required_parameters(self):
         _parameters = super(Classify, self).required_parameters
-        _parameters.extend(
-            ["luminosity_distance", "redshift", "tilt_1", "tilt_2"]
-        )
+        _parameters.extend(["tilt_1", "tilt_2"])
         return _parameters
 
     def check_for_install(self, *args, **kwargs):

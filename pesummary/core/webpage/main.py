@@ -644,13 +644,22 @@ class _WebpageGeneration(object):
                 title="{} Summary page".format(i),
                 background_colour=self.colors[num]
             )
-            html_file.make_banner(approximant=i, key=i)
             images, cli, captions = self.default_images_for_result_page(i)
-            if len(images):
+            _images_available = [
+                item for sublist in images for item in sublist if os.path.isfile(
+                    item.replace(
+                        self.image_path["other"], "{}/plots/".format(self.webdir)
+                    )
+                )
+            ]
+            if len(_images_available) > 2:
+                html_file.make_banner(approximant=i, key=i)
                 html_file = self.make_modal_carousel(
                     html_file, images, cli=cli, unique_id=True,
                     captions=captions, autoscale=True
                 )
+            else:
+                html_file.make_banner(approximant=i, key="custom", custom="")
 
             if self.custom_plotting:
                 custom_plots = glob(
