@@ -49,6 +49,7 @@ dynamic = ['version']
 [project.optional-dependencies]
 docs = [
 	"ipykernel",
+        "jinja2==3.0.3", #https://github.com/sphinx-doc/sphinx/issues/10291
 	"nbsphinx",
 	"requests",
 	"Sphinx >=1.2.2",

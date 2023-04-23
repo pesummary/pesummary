@@ -429,7 +429,7 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
     ax.set_yscale("log")
     ax.set_xlabel(r"Frequency $[Hz]$")
     ax.set_ylabel(r"Strain")
-    ax.grid(b=True)
+    ax.grid(visible=True)
     ax.legend(loc="best")
     fig.tight_layout()
     return fig
@@ -497,7 +497,7 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
                 color=colors[num], label=labels[num], linewidth=2.0)
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.grid(b=True)
+    ax.grid(visible=True)
     ax.legend(loc="best")
     ax.set_xlabel(r"Frequency $[Hz]$")
     ax.set_ylabel(r"Strain")
@@ -605,7 +605,7 @@ def _ligo_skymap_plot_from_array(
     if ax is None:
         fig = figure(gca=False)
         ax = fig.add_subplot(111, projection='astro hours mollweide')
-        ax.grid(b=True)
+        ax.grid(visible=True)
 
     nside = hp.npix2nside(len(skymap))
     deg2perpix = hp.nside2pixarea(nside, degrees=True)
@@ -667,7 +667,7 @@ def _ligo_skymap_comparion_plot_from_array(
     ncols = number_of_columns_for_legend(labels)
     fig = figure(gca=False)
     ax = fig.add_subplot(111, projection='astro hours mollweide')
-    ax.grid(b=True)
+    ax.grid(visible=True)
     for num, skymap in enumerate(skymaps):
         if isinstance(show_probability_map, int) and show_probability_map == num:
             _, ax = _ligo_skymap_plot_from_array(
@@ -732,7 +732,7 @@ def _default_skymap_plot(ra, dec, weights=None, injection=None, **kwargs):
     )
     ax.cla()
     ax.set_title("Preliminary", fontdict={'fontsize': 11})
-    ax.grid(b=True)
+    ax.grid(visible=True)
     ax.set_xticklabels([
         r"$2^{h}$", r"$4^{h}$", r"$6^{h}$", r"$8^{h}$", r"$10^{h}$",
         r"$12^{h}$", r"$14^{h}$", r"$16^{h}$", r"$18^{h}$", r"$20^{h}$",
@@ -808,7 +808,7 @@ def _default_skymap_plot(ra, dec, weights=None, injection=None, **kwargs):
     ax.set_xticklabels(labels[::-1], fontsize=10)
     ax.set_yticklabels([r"$-60^{\circ}$", r"$-30^{\circ}$", r"$0^{\circ}$",
                         r"$30^{\circ}$", r"$60^{\circ}$"], fontsize=10)
-    ax.grid(b=True)
+    ax.grid(visible=True)
     # unregister the cylon cmap
     unregister_cylon()
     return fig
@@ -840,7 +840,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
         facecolor=(1.0, 0.939165516411, 0.880255669068)
     )
     ax.cla()
-    ax.grid(b=True)
+    ax.grid(visible=True)
     ax.set_xticklabels([
         r"$2^{h}$", r"$4^{h}$", r"$6^{h}$", r"$8^{h}$", r"$10^{h}$",
         r"$12^{h}$", r"$14^{h}$", r"$16^{h}$", r"$18^{h}$", r"$20^{h}$",
@@ -896,7 +896,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
     ax.set_xticklabels(labels[::-1], fontsize=10)
     ax.set_yticklabels([r"$-60^\degree$", r"$-30^\degree$", r"$0^\degree$",
                         r"$30^\degree$", r"$60^\degree$"], fontsize=10)
-    ax.grid(b=True)
+    ax.grid(visible=True)
     return fig
 
 
@@ -1008,7 +1008,7 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
     fig = figure(gca=False)
     ax = fig.add_subplot(111, projection="hammer")
     ax.cla()
-    ax.grid(b=True)
+    ax.grid(visible=True)
     ax.pcolormesh(X, Y, N)
     ax.set_xticklabels([
         r"$22^{h}$", r"$20^{h}$", r"$18^{h}$", r"$16^{h}$", r"$14^{h}$",
@@ -1079,7 +1079,7 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
         ax.set_xlim([t_start - 3, t_start + 0.5])
     ax.set_xlabel(r"Time $[s]$")
     ax.set_ylabel(r"Strain")
-    ax.grid(b=True)
+    ax.grid(visible=True)
     ax.legend(loc="best")
     fig.tight_layout()
     return fig
@@ -1151,7 +1151,7 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
     ax.set_xlabel(r"Time $[s]$")
     ax.set_ylabel(r"Strain")
     ax.set_xlim([t_start - 3, t_start + 0.5])
-    ax.grid(b=True)
+    ax.grid(visible=True)
     ax.legend(loc="best")
     fig.tight_layout()
     return fig

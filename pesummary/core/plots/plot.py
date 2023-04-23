@@ -66,7 +66,7 @@ def _autocorrelation_plot(
     ax.ticklabel_format(axis="x", style="plain")
     ax.set_xlabel("lag")
     ax.set_ylabel("ACF")
-    ax.grid(b=grid)
+    ax.grid(visible=grid)
     fig.tight_layout()
     return fig
 
@@ -141,7 +141,7 @@ def _sample_evolution_plot(
     ax.ticklabel_format(axis="x", style="plain")
     ax.set_xlabel("samples")
     ax.set_ylabel(latex_label)
-    ax.grid(b=grid)
+    ax.grid(visible=grid)
     fig.tight_layout()
     return fig
 
@@ -228,7 +228,7 @@ def _1d_cdf_plot(
         sorted_samples, np.linspace(0, 1, len(sorted_samples)), color=color,
         linestyle=linestyle, **kwargs
     )
-    ax.grid(b=grid)
+    ax.grid(visible=grid)
     ax.set_ylim([0, 1.05])
     fig.tight_layout()
     return fig
@@ -318,7 +318,7 @@ def _1d_cdf_comparison_plot(
         legobj.set_linestyle(linestyles[num])
     ax.set_xlabel(latex_label)
     ax.set_ylabel("Cumulative Density Function")
-    ax.grid(b=grid)
+    ax.grid(visible=grid)
     ax.set_ylim([0, 1.05])
     fig.tight_layout()
     return fig
@@ -406,7 +406,7 @@ def _1d_analytic_plot(
         ax.axvline(
             inj_value, color=injection_color, **_default_inj_kwargs
         )
-    ax.grid(b=grid)
+    ax.grid(visible=grid)
     ax.set_xlim(xlims)
     if autoscale:
         ax.set_xlim(_xlims)
@@ -553,7 +553,7 @@ def _1d_histogram_plot(
         lower = np.abs(np.round(median - percentile[0], 2))
         median = np.round(median, 2)
         ax.set_title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
-    ax.grid(b=grid)
+    ax.grid(visible=grid)
     ax.set_xlim(xlims)
     if autoscale:
         ax.set_xlim(_xlims)
@@ -738,7 +738,7 @@ def _1d_comparison_histogram_plot(
     ax.set_xlabel(latex_label)
     ax.set_ylabel("Probability Density")
     ax.autoscale(axis='x')
-    ax.grid(b=grid)
+    ax.grid(visible=grid)
     fig.tight_layout()
     return fig
 
@@ -774,7 +774,7 @@ def _comparison_box_plot(param, samples, colors, latex_label, labels, grid=True)
     ax.set_yticks([])
     ax.set_xlabel(latex_label)
     fig.tight_layout()
-    ax.grid(b=grid)
+    ax.grid(visible=grid)
     return fig
 
 
