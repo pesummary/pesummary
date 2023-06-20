@@ -211,7 +211,10 @@ def array_input(ignore_args=None, ignore_kwargs=None, force_return_array=False):
             output = func(*new_args, **new_kwargs)
             if isinstance(output, dict):
                 return output
-            value = np.array(output)
+            try:
+                value = np.array(output)
+            except ValueError:
+                value = np.array(output, dtype=object)
             if return_float and not force_return_array:
                 new_value = copy.deepcopy(value)
                 if len(new_value) > 1:
