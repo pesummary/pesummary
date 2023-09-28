@@ -489,7 +489,8 @@ def _triangle_plot(
     percentile_plot=None, fig_kwargs={}, labels=None, plot_datapoints=False,
     rangex=None, rangey=None, grid=False, latex_friendly=False, kde_2d=None,
     kde_2d_kwargs={}, legend_kwargs={"loc": "best", "frameon": False},
-    truth=None, _contour_function=twod_contour_plot, **kwargs
+    truth=None, hist_kwargs={"density": True, "bins": 50},
+    _contour_function=twod_contour_plot, **kwargs
 ):
     """Base function to generate a triangular plot
 
@@ -605,11 +606,6 @@ def _triangle_plot(
             ax1.plot(_x, _y, **plot_kwargs)
             if fill:
                 ax1.fill_between(_x, 0, _y, alpha=fill_alpha, **plot_kwargs)
-            if percentiles is not None:
-                if percentile_plot is not None and labels[num] in percentile_plot:
-                    _percentiles = np.percentile(x[num], percentiles)
-                    ax1.axvline(_percentiles[0], **plot_kwargs)
-                    ax1.axvline(_percentiles[1], **plot_kwargs)
             _y = np.linspace(ylow, yhigh, npoints)
             if "y_axis" in kde_kwargs.keys():
                 _kde = kde(y[num], **kde_kwargs["y_axis"])
@@ -622,21 +618,36 @@ def _triangle_plot(
             ax4.plot(_x, _y, label=labels[num], **plot_kwargs)
             if fill:
                 ax4.fill_betweenx(_y, 0, _x, alpha=fill_alpha, **plot_kwargs)
-            if percentiles is not None:
-                if percentile_plot is not None and labels[num] in percentile_plot:
-                    _percentiles = np.percentile(y[num], percentiles)
-                    ax4.axhline(_percentiles[0], **plot_kwargs)
-                    ax4.axhline(_percentiles[1], **plot_kwargs)
         else:
             if fill:
                 histtype = "stepfilled"
             else:
                 histtype = "step"
-            ax1.hist(x[num], histtype=histtype, **plot_kwargs)
+            ax1.hist(x[num], histtype=histtype, **hist_kwargs, **plot_kwargs)
             ax4.hist(
                 y[num], histtype=histtype, orientation="horizontal",
-                **plot_kwargs
+                **hist_kwargs, **plot_kwargs
             )
+        if percentiles is not None:
+            if percentile_plot is not None and labels[num] in percentile_plot:
+                _percentiles = np.percentile(x[num], percentiles)
+                ax1.axvline(
+                    _percentiles[0], linestyle="--",
+                    linewidth=plot_kwargs.get("linewidth", 1.75)
+                )
+                ax1.axvline(
+                    _percentiles[1], linestyle="--",
+                    linewidth=plot_kwargs.get("linewidth", 1.75)
+                )
+                _percentiles = np.percentile(y[num], percentiles)
+                ax4.axhline(
+                    _percentiles[0], linestyle="--",
+                    linewidth=plot_kwargs.get("linewidth", 1.75)
+                )
+                ax4.axhline(
+                    _percentiles[1], linestyle="--",
+                    linewidth=plot_kwargs.get("linewidth", 1.75)
+                )
         if isinstance(smooth, dict):
             _smooth = smooth[labels[num]]
         else:
