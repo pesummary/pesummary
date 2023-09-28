@@ -19,7 +19,7 @@ stages:
 .parallel_python: &parallel_python
   parallel:
     matrix:
-      - PY_VERSION: ["3.8", "3.9", "3.10"]
+      - PY_VERSION: ["3.9", "3.10"]
 
 
 .parallel_gwtc: &parallel_gwtc
@@ -92,7 +92,7 @@ docker:
   stage: build
   image: docker:19.03.10
   variables:
-    PYTHON_VERSION: "3.8"
+    PYTHON_VERSION: "3.9"
   before_script:
     - apk update
     - apk add py3-pip
@@ -108,7 +108,7 @@ docker:
 
 executables:
   stage: basic
-  image: python:3.8
+  image: python:3.9
   needs:
     - tarball
   script:
@@ -119,7 +119,7 @@ executables:
 
 imports:
   stage: basic
-  image: python:3.8
+  image: python:3.9
   needs:
     - tarball
   script:
@@ -143,7 +143,7 @@ style:
 
 examples:
   stage: basic
-  image: python:3.8
+  image: python:3.9
   needs:
     - tarball
   script:
@@ -155,7 +155,7 @@ examples:
 
 authors:
   stage: basic
-  image: python:3.8
+  image: python:3.9
   needs:
     - tarball
   script:
@@ -165,13 +165,13 @@ authors:
       - master@lscsoft/pesummary
 
 
-.python-3.8-testing:
+.python-3.9-testing:
   needs:
     - tarball
     - executables
     - imports
     - style
-  image: python:3.8
+  image: python:3.9
   artifacts:
     paths:
       - .coverage*
@@ -235,7 +235,7 @@ end-to-end:gw:
 
 
 ligo_skymap:
-  extends: .python-3.8-testing
+  extends: .python-3.9-testing
   stage: compatibility
   script:
     - *prepare_testing
@@ -250,7 +250,7 @@ ligo_skymap:
 
 lalinference_pipe:
   stage: compatibility
-  image: python:3.8-buster
+  image: python:3.9-buster
   needs:
     - tarball
     - executables
@@ -268,7 +268,7 @@ lalinference_pipe:
 
 bilby:
   stage: compatibility
-  image: python:3.8
+  image: python:3.9
   needs:
     - tarball
     - executables
@@ -285,7 +285,7 @@ bilby:
 
 bilby_pipe:
   stage: compatibility
-  image: python:3.8
+  image: python:3.9
   needs:
     - tarball
     - executables
@@ -302,7 +302,7 @@ bilby_pipe:
 
 pycbc_inference:
   stage: compatibility
-  image: python:3.8
+  image: python:3.9
   needs:
     - tarball
     - executables
@@ -320,7 +320,7 @@ pycbc_inference:
 GWTC:
   <<: *parallel_gwtc
   stage: compatibility
-  image: python:3.8
+  image: python:3.9
   needs:
     - tarball
     - executables
@@ -333,7 +333,7 @@ GWTC:
 
 
 coverage:
-  extends: .python-3.8-testing
+  extends: .python-3.9-testing
   stage: coverage
   needs:
     - tarball
@@ -472,7 +472,7 @@ stable-docs:
 
 build_examples:
   stage: deploy
-  image: python:3.8
+  image: python:3.9
   script:
     - curl --request POST --form "token=$CI_EXAMPLES_TRIGGER_TOKEN" --form ref=master https://git.ligo.org/api/v4/projects/3386/trigger/pipeline
   only:
@@ -481,7 +481,7 @@ build_examples:
 
 pages:
   stage: deploy
-  image: python:3.8
+  image: python:3.9
   dependencies:
     - tarball
     - executables
