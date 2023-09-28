@@ -441,7 +441,7 @@ class PAstro(_Base):
         generate a plot showing the classification probabilities
     """
     def __init__(self, samples):
-        self.package = ["ligo.em_bright.computeDiskMass", "ligo.computeDiskMass"]
+        self.package = "ligo.em_bright.em_bright"
         super(PAstro, self).__init__(samples)
 
     @property
@@ -487,16 +487,8 @@ class PAstro(_Base):
         samples, _ = super()._compute_classification_probabilities(
             samples=samples
         )
-        M_rem = self.module.computeDiskMass(
-            samples["mass_1_source"],
-            samples["mass_2_source"],
-            samples["a_1"] * np.cos(samples['tilt_1']),
-            samples["a_2"] * np.cos(samples['tilt_2'])
-        )
-        n_ns = np.sum(samples["mass_2_source"] <= 3.0)
-        p_ns = float(n_ns / len(samples["mass_2_source"]))
-        p_em = float(np.sum(M_rem > 0) / len(M_rem))
-        ptable = {"HasNS": p_ns, "HasRemnant": p_em}
+        probs = self.module.source_classification_pe_from_table(samples)
+        ptable = {"HasNS": probs[0], "HasRemnant": probs[1]}
         if rounding is not None:
             return self.round_probabilities(ptable, rounding=rounding)
         return ptable
