@@ -32,7 +32,7 @@ dependencies = [
 	"h5py",
 	"lalsuite >=7.0.0",
 	"ligo-gracedb",
-	"matplotlib",
+	"matplotlib<3.8.0",
 	"numpy >=1.15.4",
 	"pandas",
 	"pygments",
