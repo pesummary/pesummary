@@ -96,6 +96,7 @@ class _PlotGeneration(_BasePlotGeneration):
         self.plot_type_dictionary.update({
             "psd": self.psd_plot,
             "calibration": self.calibration_plot,
+            "twod_histogram": self.twod_histogram_plot,
             "skymap": self.skymap_plot,
             "waveform_fd": self.waveform_fd_plot,
             "waveform_td": self.waveform_td_plot,
@@ -129,6 +130,7 @@ class _PlotGeneration(_BasePlotGeneration):
         """Generate all plots for a given result file
         """
         super(_PlotGeneration, self)._generate_plots(label)
+        self.try_to_make_a_plot("twod_histogram", label=label)
         self.try_to_make_a_plot("skymap", label=label)
         self.try_to_make_a_plot("waveform_td", label=label)
         self.try_to_make_a_plot("waveform_fd", label=label)
@@ -239,6 +241,64 @@ class _PlotGeneration(_BasePlotGeneration):
                 fig = gw._make_extrinsic_corner_plot(samples, latex_labels)
                 fig.savefig(filename)
                 fig.close()
+
+    def twod_histogram_plot(self, label):
+        """
+        """
+        from pesummary import conf
+        error_message = (
+            "Failed to generate %s-%s triangle plot because {}"
+        )
+        paramset = [
+            params for params in conf.gw_2d_plots if
+            all(p in self.samples[label] for p in params)
+        ]
+        arguments = [
+            (
+                [
+                    self.savedir, label, params,
+                    [self.samples[label][p] for p in params],
+                    [latex_labels[p] for p in params],
+                    [self.injection_data[label][p] for p in params],
+                    self.preliminary_pages[label], self.checkpoint
+                ], self._triangle_plot, error_message % (params[0], params[1])
+            ) for params in paramset
+        ]
+        self.pool.starmap(self._try_to_make_a_plot, arguments)
+
+    @staticmethod
+    def _triangle_plot(
+        savedir, label, params, samples, latex_labels, injection, preliminary=False,
+        checkpoint=False
+    ):
+        from pesummary.core.plots.publication import triangle_plot
+        import math
+        for num, ii in enumerate(injection):
+            if math.isnan(ii):
+                injection[num] = None
+
+        if any(ii is None for ii in injection):
+            truth = None
+        else:
+            truth = injection
+        filename = os.path.join(
+            savedir, "{}_2d_posterior_{}_{}.png".format(
+                label, params[0], params[1]
+            )
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
+        fig, _, _, _ = triangle_plot(
+            *samples, kde=False, parameters=params, xlabel=latex_labels[0],
+            ylabel=latex_labels[1], plot_datapoints=True, plot_density=False,
+            levels=[1e-8], fill=False, grid=True, linewidths=[1.75],
+            percentiles=[5, 95], percentile_plot=[label], labels=[label],
+            truth=truth
+        )
+        _PlotGeneration.save(
+            fig, filename, preliminary=preliminary
+        )
+        
 
     def skymap_plot(self, label):
         """Generate a skymap plot for a given result file

@@ -150,7 +150,7 @@ def _lambda1_lambda2_from_eos_multiprocess(function, args, multi_process=1):
     """
     import multiprocessing
 
-    with multiprocessing.Pool(multi_process[0]) as pool:
+    with multiprocessing.Pool(multi_process) as pool:
         lambdas = np.array(
             list(
                 iterator(

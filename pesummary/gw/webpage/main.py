@@ -180,6 +180,31 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             parameters, starting_letter=False
         )
 
+    def categorize_2d_parameters(self, samples):
+        """Categorize the default 2d parameters and decide the common
+        headings
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters that you would like to sort
+        """
+        sort = {}
+        for params in conf.gw_2d_plots:
+            if not all(p in samples.keys() for p in params):
+                continue
+            if not all(len(np.unique(samples[p])) > 1 for p in params):
+                continue
+            headings = self.categorize_parameters(params)
+            for hh in headings[::-1]:
+                if len(hh[1]) and hh[0] not in ["others"]:
+                    heading = hh[0]
+                    break
+            if heading not in sort.keys():
+                sort[heading] = []
+            sort[heading] += params
+        return sort
+
     def _kde_from_same_samples(self, param, samples):
         """Generate KDEs for a set of samples
 
@@ -211,6 +236,11 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         """
         links = super(_WebpageGeneration, self).make_navbar_for_result_page()
         for num, label in enumerate(self.labels):
+            links[label].append(
+                ["2d Histograms", [
+                    {"masses": label}, {"spins": label}, {"location": label}
+                ]]
+            )
             if self.pepredicates_probs[label] is not None:
                 links[label].append({"Classification": label})
         return links
@@ -219,6 +249,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         """Generate all webpages for all result files passed
         """
         super(_WebpageGeneration, self).generate_webpages()
+        self.make_2d_histogram_pages()
         if self.publication:
             self.make_publication_pages()
         if self.gwdata is not None:
@@ -329,6 +360,67 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         html_file.make_footer(user=self.user, rundir=self.webdir)
         html_file.close()
         super(_WebpageGeneration, self)._make_home_pages(pages, make_home=False)
+
+    def make_2d_histogram_pages(self):
+        """Wrapper function for _make_2d_histogram pages
+        """
+        pages = [
+            "{}_{}_{}".format(i, i, j) for i in self.labels for j in
+            self.categorize_2d_parameters(self.samples[i]).keys()
+        ]
+        self.create_blank_html_pages(pages)
+        self._make_2d_histogram_pages(pages)
+
+    def _make_2d_histogram_pages(self, pages):
+        """Make the 2d histogram pages
+        """
+        for num, i in enumerate(self.labels):
+            for j, k in self.categorize_2d_parameters(self.samples[i]).items():
+                html_file = self.setup_page(
+                    "{}_{}".format(i, j), self.navbar["result_page"][i],
+                    i, title="{} Posterior PDFs describing the {}".format(i, j),
+                    approximant=i, background_colour=self.colors[num],
+                    histogram_download=False, toggle=self.expert_plots
+                )
+                html_file.make_banner(approximant=i, key=i)
+                path = self.image_path["other"]
+                contents = [
+                    path + "{}_2d_posterior_{}_{}.png".format(i, k[l], k[l+1])
+                    for l in range(0, len(k),  2)
+                ]
+                if len(contents) < 2:
+                    autoscale = False
+                else:
+                    autoscale = True
+                image_contents = [
+                    contents[l:2 + l] for l in range(0, len(contents), 2)
+                ]
+                html_file.make_table_of_images(
+                    contents=image_contents, code="changeimage",
+                    mcmc_samples=False, autoscale=autoscale
+                )
+                key_data = self.key_data
+                contents = []
+                headings = [" "] + self.key_data_headings.copy()
+                _injection = False
+                rows = []
+                for param in np.unique(k):
+                    _row = [param]
+                    _row += self.key_data_table[i][param]
+                    rows.append(_row)
+                _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
+                _class = "row justify-content-center"
+                html_file.make_container(style=_style)
+                html_file.make_div(4, _class=_class, _style=None)
+                html_file.make_table(
+                    headings=headings, contents=rows, heading_span=1,
+                    accordian=False, format="table-hover"
+                )
+                html_file.end_div(4)
+                html_file.end_container()
+                html_file.export("summary_information_{}.csv".format(i))
+                html_file.make_footer(user=self.user, rundir=self.webdir)
+                html_file.close()
 
     def make_publication_pages(self):
         """Wrapper function for _make_publication_pages()

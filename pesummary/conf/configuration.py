@@ -115,6 +115,14 @@ precessing_spins = ["spin_1x", "spin_1y", "spin_2x", "spin_2y"]
 # Parameters to use for GW extrinsic corner plot
 gw_extrinsic_corner_parameters = ["luminosity_distance", "psi", "ra", "dec"]
 
+# List of 2d plots to generate for GW analyses
+gw_2d_plots = [
+    ["mass_1", "mass_2"], ["mass_1_source", "mass_2_source"], ["a_1", "a_2"],
+    ["mass_ratio", "chi_eff"], ["chi_p", "chi_eff"], ["cos_theta_jn", "chi_p"],
+    ["cos_theta_jn", "luminosity_distance"], ["chirp_mass", "luminosity_distance"],
+    ["lambda_1", "lambda_2"], ["mass_ratio", "lambda_tilde"]
+]
+
 # Cosmology to use when calculating redshift
 cosmology = "Planck15"
 
