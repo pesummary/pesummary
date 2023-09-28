@@ -83,7 +83,7 @@ extras = [
 	"GitPython",
 	"gwosc",
 	"jupyter_client",
-	"ligo.em-bright >=0.1.2",
+	"ligo-em-bright >=1.1.5",
 	"ligo.skymap",
 	"nbformat",
 	"pepredicates >=0.0.3",
