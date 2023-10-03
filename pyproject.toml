@@ -37,7 +37,7 @@ dependencies = [
 	"pygments",
 	"plotly",
 	"pillow",
-	"seaborn >=0.11.0",
+	"seaborn>=0.11.0,<0.13.0",
 	"statsmodels",
 	"scipy >=1.8.0",
 	"tables",
