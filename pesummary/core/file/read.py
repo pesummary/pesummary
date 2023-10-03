@@ -1,14 +1,14 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.core.file.formats.base_read import Read
-from pesummary.core.file.formats.bilby import Bilby
+from pesummary.core.file.formats.bilby import Bilby, bilby_version
 from pesummary.core.file.formats.default import Default
 from pesummary.core.file.formats.pesummary import PESummary, PESummaryDeprecated
 from pesummary.utils.utils import logger
 import os
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
-
+    
 
 def is_bilby_hdf5_file(path):
     """Determine if the results file is a bilby hdf5 results file
@@ -19,23 +19,10 @@ def is_bilby_hdf5_file(path):
         path to the results file
     """
     import h5py
-    try:
-        f = h5py.File(path, "r")
-        if "bilby" in f["version"]:
-            return True
-        elif "bilby" in str(f["version"][0]):
-            return True
-        return False
-    except (KeyError, TypeError):
-        try:
-            if "bilby" in f["meta_data"]["loaded_modules"].keys():
-                return True
-            return False
-        except Exception:
-            return False
-    except Exception:
-        return False
-    return False
+    f = h5py.File(path, "r")
+    cond = _check_bilby_version(f)
+    f.close()
+    return cond
 
 
 def is_bilby_json_file(path):
@@ -49,13 +36,25 @@ def is_bilby_json_file(path):
     import json
     with open(path, "r") as f:
         data = json.load(f)
+    return _check_bilby_version(data)
+
+
+def _check_bilby_version(data):
+    """Identify if 'bilby' is in the version information extracted from the
+    file
+
+    Parameters
+    ----------
+    data: iterable
+        contents of the result file, opened with either h5py or json libraries
+    """
     try:
-        if "bilby" in data["version"]:
+        version = bilby_version(data=data)
+        if isinstance(version, bytes):
+            version = version.decode("utf-8")
+        if "bilby" in version:
             return True
-        elif "bilby" in data["version"][0]:
-            return True
-        else:
-            return False
+        return False
     except Exception:
         return False
 
