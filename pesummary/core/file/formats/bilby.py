@@ -10,6 +10,43 @@ from pesummary.utils.utils import logger
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
+def bilby_version(path=None, data=None):
+    """Extract the version of bilby used to create a result file
+
+    Parameters
+    ----------
+    path: str, optional
+        path to the bilby result file
+    data: iterable, optional
+        the contents of the bilby result file, opened with either h5py or
+        json libraries
+    """
+    if path is None and data is None:
+        raise ValueError(
+            "Pass either the path to the result file, or result file object "
+            "opened with either h5py or json"
+        )
+    elif data is None:
+        import json
+        import h5py
+        try:
+            data = h5py.File(path, "r")
+        except Exception:
+            with open(path, "r") as f:
+                data = json.load(f)
+    try:
+        return data["version"][()]
+    except Exception:
+        pass
+    try:
+        version = data["version"]
+        if isinstance(version, list):
+            return version[0]
+        return version
+    except Exception:
+        raise ValueError("Unable to extract version from bilby result file")
+
+
 def _load_bilby(path):
     """Wrapper for `bilby.core.result.read_in_result`
 
@@ -19,6 +56,17 @@ def _load_bilby(path):
         path to the bilby result file you wish to load
     """
     from bilby.core.result import read_in_result
+    from bilby.core.utils import get_version_information
+    result_version = bilby_version(path=path)
+    if isinstance(result_version, bytes):
+        result_version = result_version.decode("utf-8")
+    env_version = 'bilby={}'.format(get_version_information())
+    if result_version != env_version:
+        logger.warning(
+            "Result file was written with version {} while your environment "
+            "has version {}. This may cause problems when reading the result "
+            "file.".format(result_version, env_version)
+        )
     return read_in_result(filename=path)
 
 
