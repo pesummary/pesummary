@@ -35,7 +35,7 @@ DEFAULT_DIRECTORY = os.getenv("CI_PROJECT_DIR", os.getcwd())
 class TestGitInformation(object):
     """Class to test the GitInformation helper class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestGitInformation class
         """
         self.git = GitInformation(directory=DEFAULT_DIRECTORY)
@@ -71,7 +71,7 @@ class TestGitInformation(object):
 class TestPackageInformation(object):
     """Class to test the PackageInformation helper class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestPackageInformation class
         """
         self.package = PackageInformation()
@@ -91,13 +91,13 @@ class TestPackageInformation(object):
 class TestUtils(object):
     """Class to test pesummary.utils.utils
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestUtils class
         """
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files created from this class
         """
         if os.path.isdir(tmpdir):
@@ -271,7 +271,7 @@ class TestGelmanRubin(object):
 class TestSamplesDict(object):
     """Test the SamplesDict class
     """
-    def setup(self):
+    def setup_method(self):
         self.parameters = ["a", "b"]
         self.samples = [
             np.random.uniform(10, 0.5, 100), np.random.uniform(200, 10, 100)
@@ -283,7 +283,7 @@ class TestSamplesDict(object):
             filename="test.dat", file_format="dat"
         )
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files created from this class
         """
         if os.path.isdir(tmpdir):
@@ -451,7 +451,7 @@ class TestSamplesDict(object):
 class TestMultiAnalysisSamplesDict(object):
     """Test the MultiAnalysisSamplesDict class
     """
-    def setup(self):
+    def setup_method(self):
         self.parameters = ["a", "b"]
         self.samples = [
             [np.random.uniform(10, 0.5, 100), np.random.uniform(100, 10, 100)],
@@ -466,7 +466,7 @@ class TestMultiAnalysisSamplesDict(object):
                 filename="test_{}.dat".format(num + 1), file_format="dat"
             )
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files created from this class
         """
         if os.path.isdir(tmpdir):
@@ -624,7 +624,7 @@ class TestMultiAnalysisSamplesDict(object):
 class TestMCMCSamplesDict(object):
     """Test the MCMCSamplesDict class
     """
-    def setup(self):
+    def setup_method(self):
         self.parameters = ["a", "b"]
         self.chains = [
             [np.random.uniform(10, 0.5, 100), np.random.uniform(100, 10, 100)],
@@ -908,12 +908,12 @@ class TestArray(object):
 class TestTQDM(object):
     """Test the pesummary.utils.tqdm.tqdm class
     """
-    def setup(self):
+    def setup_method(self):
         self._range = range(100)
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1107,7 +1107,7 @@ class TestDict(object):
 class TestProbabilityDict(object):
     """Test the ProbabilityDict class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the ProbabilityDict class
         """
         self.mydict = {
@@ -1168,7 +1168,7 @@ class TestProbabilityDict(object):
 class TestProbabilityDict2D(object):
     """Class to test the ProbabilityDict2D class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestProbabilityDict2D class
         """
         probs = np.random.uniform(0, 1, 100).reshape(10, 10)
@@ -1198,7 +1198,7 @@ class TestProbabilityDict2D(object):
 class TestDiscretePDF2D(object):
     """Class to test the DiscretePDF2D class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestDiscretePDF2D class
         """
         self.x = [1,2]
@@ -1224,7 +1224,7 @@ class TestDiscretePDF2D(object):
 class TestDiscretePDF2Dplus1D(object):
     """Class to test the DiscretePDF2Dplus1D class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestDiscretePDF2Dplus1D class
         """
         self.x = [1,2]

@@ -14,7 +14,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class TestCalibrationDict(object):
     """Test that the CalibrationDict works as expected
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the testing class
         """
         self.calibration_data = {
@@ -53,14 +53,14 @@ class TestCalibrationDict(object):
 class TestCalibration(object):
     """Test the Calibration class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the testing class
         """
         self.obj = Calibration([[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6, 7]])
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove all files and directories created from this class
         """
         if os.path.isdir(tmpdir):

@@ -25,7 +25,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 class TestCommandLine(object):
 
-    def setup(self):
+    def setup_method(self):
         self.parser = ArgumentParser()
         self.parser.add_all_known_options_to_parser()
         if not os.path.isdir(tmpdir):
@@ -40,7 +40,7 @@ class TestCommandLine(object):
             "{}/test.h5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
         )
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -126,7 +126,7 @@ class TestCommandLine(object):
 
 class TestInputExceptions(object):
 
-    def setup(self):
+    def setup_method(self):
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
         os.mkdir(tmpdir)
@@ -210,7 +210,7 @@ class TestInputExceptions(object):
 
 class TestInput(object):
 
-    def setup(self):
+    def setup_method(self):
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
         self.parser = ArgumentParser()
@@ -235,7 +235,7 @@ class TestInput(object):
         self.original_arguments = copy.deepcopy(self.default_arguments)
         self.make_input_object()
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):

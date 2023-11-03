@@ -56,13 +56,13 @@ class TestSummaryVersion(Base):
 class TestSummaryGracedb(Base):
     """Test the `summarygracedb` executable with trivial examples
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryPublication class
         """
         if not os.path.isdir(".outdir"):
             os.mkdir(".outdir")
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(".outdir"):
@@ -109,7 +109,7 @@ class TestSummaryGracedb(Base):
 class TestSummaryDetchar(Base):
     """Test the `summarydetchar` executable with trivial examples
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryDetchar class
         """
         from gwpy.timeseries import TimeSeries
@@ -125,7 +125,7 @@ class TestSummaryDetchar(Base):
         )
         L1_series.write(".outdir/L1.hdf", format="hdf5")
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(".outdir"):
@@ -166,7 +166,7 @@ class TestSummaryDetchar(Base):
 class TestSummaryPublication(Base):
     """Test the `summarypublication` executable with trivial examples
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryPublication class
         """
         if not os.path.isdir(".outdir"):
@@ -174,7 +174,7 @@ class TestSummaryPublication(Base):
         make_result_file(bilby=True, gw=True)
         os.rename(".outdir/test.json", ".outdir/bilby.json")
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(".outdir"):
@@ -226,7 +226,7 @@ class TestSummaryPublication(Base):
 class TestSummaryPipe(Base):
     """Test the `summarypipe` executable with trivial examples
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryPipe class
         """
         self.dirs = [
@@ -269,7 +269,7 @@ class TestSummaryPipe(Base):
             "{}/bilby/config.ini".format(tmpdir)
         )
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         for dd in self.dirs:
@@ -378,7 +378,7 @@ class TestSummaryPipe(Base):
 class TestSummaryPages(Base):
     """Test the `summarypages` executable with trivial examples
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryClassification class
         """
         self.dirs = [tmpdir, "{}1".format(tmpdir), "{}2".format(tmpdir)]
@@ -390,7 +390,7 @@ class TestSummaryPages(Base):
         make_result_file(outdir=tmpdir, gw=False, extension="hdf5")
         os.rename("{}/test.h5".format(tmpdir), "{}/example2.h5".format(tmpdir))
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         for dd in self.dirs:
@@ -779,7 +779,7 @@ class TestSummaryPages(Base):
 class TestSummaryPagesLW(Base):
     """Test the `summarypageslw` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryPagesLW class
         """
         if not os.path.isdir(tmpdir):
@@ -787,7 +787,7 @@ class TestSummaryPagesLW(Base):
         make_result_file(bilby=True, gw=True, outdir=tmpdir)
         os.rename("{}/test.json".format(tmpdir), "{}/bilby.json".format(tmpdir))
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -925,7 +925,7 @@ class TestSummaryPagesLW(Base):
 class TestSummaryClassification(Base):
     """Test the `summaryclassification` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryClassification class
         """
         if not os.path.isdir(tmpdir):
@@ -935,7 +935,7 @@ class TestSummaryClassification(Base):
         make_result_file(outdir=tmpdir, bilby=True, gw=True)
         os.rename("{}/test.json".format(tmpdir), "{}/bilby.json".format(tmpdir))
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -984,7 +984,7 @@ class TestSummaryClassification(Base):
 class TestSummaryTGR(Base):
     """Test the `summarytgr` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryTGR class
         """
         if not os.path.isdir(".outdir"):
@@ -994,7 +994,7 @@ class TestSummaryTGR(Base):
         make_result_file(bilby=True, gw=True)
         os.rename(".outdir/test.json", ".outdir/bilby.json")
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(".outdir"):
@@ -1079,13 +1079,13 @@ class TestSummaryTGR(Base):
 class TestSummaryClean(Base):
     """Test the `summaryclean` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryClassification class
         """
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1168,14 +1168,14 @@ class _SummaryCombine_Metafiles(Base):
 class TestCoreSummaryCombine_Metafiles(_SummaryCombine_Metafiles):
     """Test the `summarycombine_metafile` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryCombine_Metafiles class
         """
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
         make_result_file(outdir=tmpdir, pesummary=True)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1194,14 +1194,14 @@ class TestCoreSummaryCombine_Metafiles(_SummaryCombine_Metafiles):
 class TestGWSummaryCombine_Metafiles(_SummaryCombine_Metafiles):
     """Test the `summarycombine_metafile` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryCombine_Metafiles class
         """
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
         make_result_file(outdir=tmpdir, pesummary=True)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1220,7 +1220,7 @@ class TestGWSummaryCombine_Metafiles(_SummaryCombine_Metafiles):
 class TestSummaryCombine(Base):
     """Test the `summarycombine` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryCombine class
         """
         self.dirs = [tmpdir]
@@ -1228,7 +1228,7 @@ class TestSummaryCombine(Base):
             if not os.path.isdir(dd):
                 os.mkdir(dd)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         for dd in self.dirs:
@@ -1419,14 +1419,14 @@ class TestSummaryCombine(Base):
 class TestSummaryReview(Base):
     """Test the `summaryreview` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryCombine_Metafiles class
         """
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
         make_result_file(outdir=tmpdir, lalinference=True)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1446,7 +1446,7 @@ class TestSummaryReview(Base):
 class TestSummarySplit(Base):
     """Test the `summarysplit` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummarySplit class
         """
         if not os.path.isdir(".outdir"):
@@ -1454,7 +1454,7 @@ class TestSummarySplit(Base):
         make_result_file(gw=False, extension="json")
         make_result_file(gw=False, extension="hdf5", n_samples=500)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(".outdir"):
@@ -1548,7 +1548,7 @@ class TestSummarySplit(Base):
 class TestSummaryExtract(Base):
     """Test the `summaryextract` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryExtract class
         """
         if not os.path.isdir(".outdir"):
@@ -1558,7 +1558,7 @@ class TestSummaryExtract(Base):
         make_result_file(gw=False, extension="hdf5")
         os.rename(".outdir/test.h5", ".outdir/example2.h5")
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(".outdir"):
@@ -1600,7 +1600,7 @@ class TestSummaryExtract(Base):
 class TestSummaryCombine_Posteriors(Base):
     """Test the `summarycombine_posteriors` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryCombine_Posteriors class
         """
         if not os.path.isdir(".outdir"):
@@ -1612,7 +1612,7 @@ class TestSummaryCombine_Posteriors(Base):
         make_result_file(gw=True, extension="dat")
         os.rename(".outdir/test.dat", ".outdir/example3.dat")
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(".outdir"):
@@ -1733,7 +1733,7 @@ class TestSummaryCombine_Posteriors(Base):
 class TestSummaryModify(Base):
     """Test the `summarymodify` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryModify class
         """
         if not os.path.isdir(tmpdir):
@@ -1743,7 +1743,7 @@ class TestSummaryModify(Base):
             outdir=tmpdir
         )
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -2138,7 +2138,7 @@ class TestSummaryModify(Base):
 class TestSummaryRecreate(Base):
     """Test the `summaryrecreate` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryRecreate class
         """
         import configparser
@@ -2159,7 +2159,7 @@ class TestSummaryRecreate(Base):
         with open("GW150914.txt", "w") as f:
             f.writelines(["115"])
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -2222,13 +2222,13 @@ class TestSummaryRecreate(Base):
 class TestSummaryCompare(Base):
     """Test the SummaryCompare executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryCompare class
         """
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -2266,7 +2266,7 @@ class TestSummaryCompare(Base):
 class TestSummaryJSCompare(Base):
     """Test the `summaryjscompare` executable
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the SummaryJSCompare class
         """
         self.dirs = [tmpdir]
@@ -2274,7 +2274,7 @@ class TestSummaryJSCompare(Base):
             if not os.path.isdir(dd):
                 os.mkdir(dd)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         for dd in self.dirs:

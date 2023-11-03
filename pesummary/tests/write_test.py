@@ -46,13 +46,13 @@ class Base(object):
 class TestWrite(Base):
     """Class to test the pesummary.io.write method
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the Write class
         """
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -116,7 +116,7 @@ class TestWritePESummary(object):
     `pesummary.gw.file.formats.pesummary.PESummary class
     """
     @pytest.fixture(scope='class', autouse=True)
-    def setup(self):
+    def setup_method(self):
         """Setup the TestWritePESummary class
         """
         from pesummary.core.fetch import download_dir
@@ -133,7 +133,7 @@ class TestWritePESummary(object):
         type(self).result = read(downloaded_file)
         type(self).posterior = type(self).result.samples_dict
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):

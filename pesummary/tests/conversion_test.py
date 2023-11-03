@@ -34,7 +34,7 @@ def conversion_check(
 
 class TestConversions(object):
     @classmethod
-    def setup_class(cls):
+    def setup_method_class(cls):
         class Arguments(object):
             mass1 = 10.
             mass2 = 5.
@@ -671,7 +671,7 @@ class TestConversions(object):
 class TestPrecessingSNR(object):
     """Test the precessing_snr conversion
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the testing class
         """
         np.random.seed(1234)
@@ -790,8 +790,8 @@ class TestPrecessingSNR(object):
 class TestMultipoleSNR(TestPrecessingSNR):
     """Test the multipole_snr conversion
     """
-    def setup(self):
-        super(TestMultipoleSNR, self).setup()
+    def setup_method(self):
+        super(TestMultipoleSNR, self).setup_method()
 
     @pytest.mark.skip(reason="Inherited test")
     def test_harmonic_overlap(self):
@@ -844,7 +844,7 @@ class TestMultipoleSNR(TestPrecessingSNR):
 
 class TestNRutils(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mass_1 = 100
         self.mass_2 = 5
         self.total_mass =  m_total_from_m1_m2(self.mass_1, self.mass_2)
@@ -932,7 +932,7 @@ class TestNRutils(object):
 class TestConvert(object):
     """Test the pesummary.gw.conversions._Conversion class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestConvert class
         """
         self.dirs = [tmpdir]
@@ -940,7 +940,7 @@ class TestConvert(object):
             if not os.path.isdir(dd):
                 os.mkdir(dd)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         for dd in self.dirs:

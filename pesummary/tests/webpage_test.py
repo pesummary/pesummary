@@ -22,7 +22,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 class TestWebpage(object):
 
-    def setup(self):
+    def setup_method(self):
         directory = tmpdir
         try:
             os.mkdir(directory)
@@ -30,7 +30,7 @@ class TestWebpage(object):
             shutil.rmtree(directory)
             os.mkdir(directory)
 
-    def teardown(self):
+    def teardown_method(self):
         directory = tmpdir
         try:
             shutil.rmtree(directory)
@@ -53,7 +53,7 @@ class TestWebpage(object):
 
 class TestPage(object):
 
-    def setup(self):
+    def setup_method(self):
         webdir = tmpdir 
         try:
             os.mkdir(webdir)
@@ -67,7 +67,7 @@ class TestPage(object):
         webpage.make_html(webdir, pages=["home"])
         self.html = webpage.open_html(webdir, baseurl, "home")
 
-    def teardown(self):
+    def teardown_method(self):
         directory = tmpdir
         try:
             shutil.rmtree(directory)
@@ -208,7 +208,7 @@ class TestPage(object):
 class TestWebpage(object):
     """
     """
-    def setup(self):
+    def setup_method(self):
         """
         """
         from pesummary.gw.webpage.main import _WebpageGeneration

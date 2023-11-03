@@ -115,14 +115,14 @@ class GWBase(Base):
 class TestCoreDat(Base):
     """Test the full workflow with a core dat file
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreDat class
         """
         self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
         if not os.path.isdir(self.tmpdir):
             os.mkdir(self.tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(self.tmpdir):
@@ -139,14 +139,14 @@ class TestCoreDat(Base):
 class TestCoreJson(Base):
     """Test the full workflow with a core json file
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreJson class
         """
         self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
         if not os.path.isdir(self.tmpdir):
             os.mkdir(self.tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(self.tmpdir):
@@ -163,14 +163,14 @@ class TestCoreJson(Base):
 class TestCoreHDF5(Base):
     """Test the full workflow with a core hdf5 file
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreHDF5 class
         """
         self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
         if not os.path.isdir(self.tmpdir):
             os.mkdir(self.tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(self.tmpdir):
@@ -187,14 +187,14 @@ class TestCoreHDF5(Base):
 class TestCoreBilbyJson(Base):
     """Test the full workflow with a core json bilby file
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreBilby class
         """
         self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
         if not os.path.isdir(self.tmpdir):
             os.mkdir(self.tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(self.tmpdir):
@@ -305,14 +305,14 @@ class TestCoreBilbyJson(Base):
 class TestCoreBilbyHDF5(Base):
     """Test the full workflow with a core hdf5 bilby file
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreBilby class
         """
         self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
         if not os.path.isdir(self.tmpdir):
             os.mkdir(self.tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(self.tmpdir):
@@ -329,14 +329,14 @@ class TestCoreBilbyHDF5(Base):
 class TestGWDat(GWBase):
     """Test the full workflow with a gw dat file
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreDat class
         """
         self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
         if not os.path.isdir(self.tmpdir):
             os.mkdir(self.tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(self.tmpdir):
@@ -353,14 +353,14 @@ class TestGWDat(GWBase):
 class TestGWJson(GWBase):
     """Test the full workflow with a json dat file
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestGWJson class
         """
         self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
         if not os.path.isdir(self.tmpdir):
             os.mkdir(self.tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(self.tmpdir):
@@ -377,14 +377,14 @@ class TestGWJson(GWBase):
 class TestGWBilbyJson(GWBase):
     """Test the full workflow with a gw bilby json file
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestGWJson class
         """
         self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
         if not os.path.isdir(self.tmpdir):
             os.mkdir(self.tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(self.tmpdir):
@@ -401,14 +401,14 @@ class TestGWBilbyJson(GWBase):
 class TestGWBilbyHDF5(GWBase):
     """Test the full workflow with a gw bilby HDF5 file
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestGWJson class
         """
         self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
         if not os.path.isdir(self.tmpdir):
             os.mkdir(self.tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(self.tmpdir):
@@ -425,14 +425,14 @@ class TestGWBilbyHDF5(GWBase):
 class TestGWLALInference(GWBase):
     """Test the full workflow with a lalinference file
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestGWJson class
         """
         self.tmpdir = tempfile.TemporaryDirectory(prefix=".", dir=".").name
         if not os.path.isdir(self.tmpdir):
             os.mkdir(self.tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(self.tmpdir):

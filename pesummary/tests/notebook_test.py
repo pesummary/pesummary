@@ -14,13 +14,13 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class TestPublicNoteBook(object):
     """Test the `make_public_notebook` function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreDat class
         """
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):

@@ -16,7 +16,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class TestFinishingTouches(object):
     """Class to test pesummary.core.finish.FinishingTouches
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the pesummary.core.finish.FinishingTouches class
         """
         if not os.path.isdir(tmpdir):
@@ -24,7 +24,7 @@ class TestFinishingTouches(object):
         opts, inputs = make_argparse(outdir=tmpdir)
         self.finish = FinishingTouches(inputs)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the any files generated
         """
         if os.path.isdir(tmpdir):
