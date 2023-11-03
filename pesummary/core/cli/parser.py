@@ -589,7 +589,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
             action = _kwargs.get('action', None)
             action_class = self._registry_get('action', action, action)
-            arglist = inspect.getargspec(action_class).args
+            arglist = inspect.getfullargspec(action_class).args
             keys = _kwargs.copy().keys()
             for key in keys:
                 if (key not in arglist) and (key != "action"):
