@@ -23,7 +23,7 @@ rcParams["text.usetex"] = False
 
 class TestPlot(object):
 
-    def setup(self):
+    def setup_method(self):
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
         os.makedirs(tmpdir)

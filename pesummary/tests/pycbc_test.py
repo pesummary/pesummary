@@ -12,7 +12,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class TestPyCBCModule(object):
     """Class to test pesummary.gw.pycbc module
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the testing class
         """
         self.n_samples = 20

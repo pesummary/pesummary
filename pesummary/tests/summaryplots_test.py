@@ -18,7 +18,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 class TestPlotGeneration(object):
 
-    def setup(self):
+    def setup_method(self):
         directories = ["./.outdir_bilby", "./.outdir_lalinference",
                        "./.outdir_comparison", "./.outdir_add_to_existing2",
                        ".outdir_comparison_no_comparison",

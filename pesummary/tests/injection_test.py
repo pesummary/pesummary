@@ -15,13 +15,13 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class TestInjection(object):
     """Class to test the Injection class for both the core and gw package
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestInjection class
         """
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):

@@ -14,7 +14,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class TestPSDDict(object):
     """Test that the PSDDict works as expected
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the testing class
         """
         self.psd_data = {
@@ -28,7 +28,7 @@ class TestPSDDict(object):
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove all files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -92,14 +92,14 @@ class TestPSDDict(object):
 class TestPSD(object):
     """Test the PSD class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the testing class
         """
         self.obj = PSD([[10, 20], [10, 20]])
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove all files and directories created from this class
         """
         if os.path.isdir(tmpdir):

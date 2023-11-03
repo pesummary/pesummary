@@ -15,7 +15,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class _Base(object):
     """Base testing class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the class
         """
         if not os.path.isdir(".outdir"):
@@ -37,7 +37,7 @@ class _Base(object):
             outdir=".outdir", overwrite=True
         )
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(".outdir"):
@@ -154,7 +154,7 @@ class TestPAstro(_Base):
             if len(_reweighted_samples["m1_source"]) != 1:
                 rerun = False
             else:
-                self.setup()
+                self.setup_method()
         _reweighted_samples.to_csv(
             ".outdir/test_reweighted.dat", sep=" ", index=False
         )

@@ -230,7 +230,7 @@ def test_softlinks():
 class TestMetaFile(object):
     """Class the test the pesummary.gw.file.meta_file._GWMetaFile class
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the Test class
         """
         if not os.path.isdir("{}/samples".format(tmpdir_main)):
@@ -281,7 +281,7 @@ class TestMetaFile(object):
             "{}/samples/posterior_samples.h5".format(tmpdir_main), "r"
         )
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove all files and directories created from this class
         """
         self.hdf5_file.close()

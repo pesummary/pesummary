@@ -13,7 +13,7 @@ np.random.seed(1234)
 class TestWaveformModule():
     """Class to test pesummary.gw.waveform module
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the testing class
         """
         self.n_samples = 20

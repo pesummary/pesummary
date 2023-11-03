@@ -232,7 +232,7 @@ class GWBaseRead(BaseRead):
 class TestCoreJsonFile(BaseRead):
     """Class to test loading in a JSON file with the core Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreJsonFile class
         """
         if not os.path.isdir(tmpdir):
@@ -243,7 +243,7 @@ class TestCoreJsonFile(BaseRead):
         self.path = os.path.join(tmpdir, "test.json")
         self.result = Read(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove all files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -309,7 +309,7 @@ class TestCoreJsonFile(BaseRead):
 class TestCoreHDF5File(BaseRead):
     """Class to test loading in an HDF5 file with the core Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreHDF5File class
         """
         if not os.path.isdir(tmpdir):
@@ -320,7 +320,7 @@ class TestCoreHDF5File(BaseRead):
         self.path = os.path.join(tmpdir, "test.h5")
         self.result = Read(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -386,7 +386,7 @@ class TestCoreHDF5File(BaseRead):
 class TestCoreCSVFile(BaseRead):
     """Class to test loading in a csv file with the core Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreCSVFile class
         """
         if not os.path.isdir(tmpdir):
@@ -397,7 +397,7 @@ class TestCoreCSVFile(BaseRead):
         self.path = os.path.join(tmpdir, "test.csv")
         self.result = Read(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -463,7 +463,7 @@ class TestCoreCSVFile(BaseRead):
 class TestCoreNumpyFile(BaseRead):
     """Class to test loading in a numpy file with the core Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreNumpyFile class
         """
         if not os.path.isdir(tmpdir):
@@ -474,7 +474,7 @@ class TestCoreNumpyFile(BaseRead):
         self.path = os.path.join(tmpdir, "test.npy")
         self.result = Read(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -540,7 +540,7 @@ class TestCoreNumpyFile(BaseRead):
 class TestCoreDatFile(BaseRead):
     """Class to test loading in an dat file with the core Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreDatFile class
         """
         if not os.path.isdir(tmpdir):
@@ -551,7 +551,7 @@ class TestCoreDatFile(BaseRead):
         self.path = os.path.join(tmpdir, "test.dat")
         self.result = Read(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -686,7 +686,7 @@ class BilbyFile(BaseRead):
 class TestCoreJsonBilbyFile(BilbyFile):
     """Class to test loading in a bilby json file with the core Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreBilbyFile class
         """
         if not os.path.isdir(tmpdir):
@@ -697,7 +697,7 @@ class TestCoreJsonBilbyFile(BilbyFile):
         self.path = os.path.join(tmpdir, "test.json")
         self.result = Read(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -765,7 +765,7 @@ class TestCoreJsonBilbyFile(BilbyFile):
 class TestCoreHDF5BilbyFile(BilbyFile):
     """Class to test loading in a bilby hdf5 file with the core Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreBilbyFile class
         """
         if not os.path.isdir(tmpdir):
@@ -776,7 +776,7 @@ class TestCoreHDF5BilbyFile(BilbyFile):
         self.path = os.path.join(tmpdir, "test.h5")
         self.result = Read(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -934,7 +934,7 @@ class TestCoreJsonPESummaryFile(PESummaryFile):
     """Class to test loading in a PESummary json file with the core Read
     function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCorePESummaryFile class
         """
         if not os.path.isdir(tmpdir):
@@ -944,7 +944,7 @@ class TestCoreJsonPESummaryFile(PESummaryFile):
         )
         self.result = Read(os.path.join(tmpdir, "test.json"))
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1012,7 +1012,7 @@ class TestCoreHDF5PESummaryFile(PESummaryFile):
     """Class to test loading in a PESummary hdf5 file with the core Read
     function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCorePESummaryFile class
         """
         if not os.path.isdir(tmpdir):
@@ -1022,7 +1022,7 @@ class TestCoreHDF5PESummaryFile(PESummaryFile):
         )
         self.result = Read(os.path.join(tmpdir, "test.h5"))
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1089,7 +1089,7 @@ class TestCoreHDF5PESummaryFile(PESummaryFile):
 class TestGWCSVFile(GWBaseRead):
     """Class to test loading in a csv file with the core Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestGWCSVFile class
         """
         if not os.path.isdir(tmpdir):
@@ -1100,7 +1100,7 @@ class TestGWCSVFile(GWBaseRead):
         self.path = os.path.join(tmpdir, "test.csv")
         self.result = GWRead(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1168,7 +1168,7 @@ class TestGWCSVFile(GWBaseRead):
 class TestGWNumpyFile(GWBaseRead):
     """Class to test loading in a npy file with the core Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestGWNumpyFile class
         """
         if not os.path.isdir(tmpdir):
@@ -1179,7 +1179,7 @@ class TestGWNumpyFile(GWBaseRead):
         self.path = os.path.join(tmpdir, "test.npy")
         self.result = GWRead(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1247,7 +1247,7 @@ class TestGWNumpyFile(GWBaseRead):
 class TestGWDatFile(GWBaseRead):
     """Class to test loading in an dat file with the core Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestGWDatFile class
         """
         if not os.path.isdir(tmpdir):
@@ -1258,7 +1258,7 @@ class TestGWDatFile(GWBaseRead):
         self.path = os.path.join(tmpdir, "test.dat")
         self.result = GWRead(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1331,7 +1331,7 @@ class TestGWDatFile(GWBaseRead):
 class TestGWHDF5File(GWBaseRead):
     """Class to test loading in an HDF5 file with the gw Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreHDF5File class
         """
         if not os.path.isdir(tmpdir):
@@ -1342,7 +1342,7 @@ class TestGWHDF5File(GWBaseRead):
         self.path = os.path.join(tmpdir, "test.h5")
         self.result = GWRead(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1415,7 +1415,7 @@ class TestGWHDF5File(GWBaseRead):
 class TestGWJsonFile(GWBaseRead):
     """Class to test loading in an json file with the gw Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestGWDatFile class
         """
         if not os.path.isdir(tmpdir):
@@ -1426,7 +1426,7 @@ class TestGWJsonFile(GWBaseRead):
         self.path = os.path.join(tmpdir, "test.json")
         self.result = GWRead(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1499,7 +1499,7 @@ class TestGWJsonFile(GWBaseRead):
 class TestGWJsonBilbyFile(GWBaseRead):
     """Class to test loading in a bilby json file with the gw Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreBilbyFile class
         """
         if not os.path.isdir(tmpdir):
@@ -1510,7 +1510,7 @@ class TestGWJsonBilbyFile(GWBaseRead):
         self.path = os.path.join(tmpdir, "test.json")
         self.result = GWRead(self.path, disable_prior=True)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1605,7 +1605,7 @@ class TestGWJsonBilbyFile(GWBaseRead):
 class TestGWLALInferenceFile(GWBaseRead):
     """Class to test loading in a LALInference file with the gw Read function
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreBilbyFile class
         """
         if not os.path.isdir(tmpdir):
@@ -1616,7 +1616,7 @@ class TestGWLALInferenceFile(GWBaseRead):
         self.path = os.path.join(tmpdir, "test.hdf5")
         self.result = GWRead(self.path)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1704,13 +1704,13 @@ class TestPublicPycbc(object):
     """Test that data files produced by Nitz et al.
     (https://github.com/gwastro/2-ogc) can be read in correctly.
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreBilbyFile class
         """
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1762,7 +1762,7 @@ class TestPublicPrincetonO1O2(object):
     """Test that data files produced by Venumadhav et al.
     (https://github.com/jroulet/O2_samples) can be read in correctly
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestCoreBilbyFile class
         """
         from pesummary.core.fetch import download_and_read_file
@@ -1774,7 +1774,7 @@ class TestPublicPrincetonO1O2(object):
         )
         self.result = GWRead(self.file, file_format="princeton")
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove the files and directories created from this class
         """
         if os.path.isdir(".outdir"):
@@ -1803,7 +1803,7 @@ class TestMultiAnalysis(object):
     """Class to test that a file which contains multiple analyses can be read
     in appropiately
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestMultiAnalysis class
         """
         from pesummary.utils.samples_dict import MultiAnalysisSamplesDict
@@ -1830,7 +1830,7 @@ class TestMultiAnalysis(object):
         )
         self.samples_dict = self.result.samples_dict
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove all files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1863,7 +1863,7 @@ class TestSingleAnalysisChangeFormat(object):
     """Test that when changing file format through the 'write' method, the
     samples are conserved
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestChangeFormat class
         """
         if not os.path.isdir(tmpdir):
@@ -1881,7 +1881,7 @@ class TestSingleAnalysisChangeFormat(object):
         )
         self.result = read(os.path.join(tmpdir, "test.dat"))
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove all files and directories created from this class
         """
         if os.path.isdir(tmpdir):
@@ -1945,7 +1945,7 @@ class TestMultipleAnalysisChangeFormat(object):
     """Test that when changing file format through the 'write' method, the
     samples are conserved
     """
-    def setup(self):
+    def setup_method(self):
         """Setup the TestMultiplAnalysisChangeFormat class
         """
         if not os.path.isdir(tmpdir):
@@ -1975,7 +1975,7 @@ class TestMultipleAnalysisChangeFormat(object):
         )
         self.result = read(os.path.join(tmpdir, "test.db"))
 
-    def teardown(self):
+    def teardown_method(self):
         """Remove all files and directories created from this class
         """
         if os.path.isdir(tmpdir):
