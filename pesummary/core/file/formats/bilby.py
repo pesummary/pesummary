@@ -34,17 +34,17 @@ def bilby_version(path=None, data=None):
         except Exception:
             with open(path, "r") as f:
                 data = json.load(f)
-    try:
-        return data["version"][()]
-    except Exception:
-        pass
-    try:
-        version = data["version"]
-        if isinstance(version, list):
-            return version[0]
-        return version
-    except Exception:
-        raise ValueError("Unable to extract version from bilby result file")
+    option1 = lambda data: data["version"][()]
+    option2 = lambda data: data["version"]
+    for opt in [option1, option2]:
+        try:
+            version = opt(data)
+            if isinstance(version, (list, np.ndarray)):
+                return version[0]
+            return version
+        except Exception:
+            pass
+    raise ValueError("Unable to extract version from bilby result file")
 
 
 def _load_bilby(path):
