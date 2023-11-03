@@ -535,9 +535,9 @@ class TestSummaryPages(Base):
         the command line
         """
         import importlib
-        import pkg_resources
+        from bilby import gw
 
-        path = pkg_resources.resource_filename("bilby", "gw")
+        path = gw.__path__[0]
         bilby_prior_file = os.path.join(
             path, "prior_files", "GW150914.prior"
         )

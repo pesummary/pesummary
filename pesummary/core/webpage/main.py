@@ -228,10 +228,10 @@ class _WebpageGeneration(object):
     def copy_css_and_js_scripts(self):
         """Copy css and js scripts from the package to the web directory
         """
-        import pkg_resources
         import shutil
+        from pesummary import core
         files_to_copy = []
-        path = pkg_resources.resource_filename("pesummary", "core")
+        path = core.__path__[0]
         scripts = glob(os.path.join(path, "js", "*.js"))
         for i in scripts:
             files_to_copy.append(

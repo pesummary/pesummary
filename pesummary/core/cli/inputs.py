@@ -3,7 +3,6 @@
 import os
 import socket
 from glob import glob
-import pkg_resources
 from pathlib import Path
 from getpass import getuser
 
@@ -2085,8 +2084,9 @@ class WebpageInput(SamplesInput):
 
     @property
     def default_files_to_copy(self):
+        from pesummary import core
         files_to_copy = super(WebpageInput, self).default_files_to_copy
-        path = pkg_resources.resource_filename("pesummary", "core")
+        path = core.__path__[0]
         scripts = glob(os.path.join(path, "js", "*.js"))
         for i in scripts:
             files_to_copy.append(
