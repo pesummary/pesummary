@@ -54,6 +54,7 @@ def get_list_of_files(
 ):
     """Return a list of files that should be generated from a typical workflow
     """
+    from pesummary.conf import gw_2d_plots
     if not gw and not len(parameters):
         import string
         parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
@@ -94,6 +95,18 @@ def get_list_of_files(
         if gw:
             # 2d histogram pages
             for section in ["location", "masses", "spins"]:
+                if section == "location":
+                    pairs = [p for p in gw_2d_plots if "luminosity_distance" in p]
+                    if not any(all(p in parameters for p in _) for _ in pairs):
+                        continue
+                elif section == "masses":
+                    pairs = [p for p in gw_2d_plots if "mass_1" in p]
+                    if not any(all(p in parameters for p in _) for _ in pairs):
+                        continue
+                elif section == "spins":
+                    pairs = [p for p in gw_2d_plots if "chi_p" in p]
+                    if not any(all(p in parameters for p in _) for _ in pairs):
+                        continue
                 html.append("%s/html/%s%s_%s%s_%s.html" % (outdir, label, num, label, num, section))
         if existing_plot:
             html.append("%s/html/%s%s_%s%s_Additional.html" % (outdir, label, num, label, num))

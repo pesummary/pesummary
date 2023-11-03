@@ -818,6 +818,8 @@ class TestSummaryPagesLW(Base):
         assert all(
             i in files for i in glob.glob("{}/html/*.html".format(outdir))
         )
+        for i in files:
+            print(i, i in glob.glob("{}/html/*.html".format(outdir)))
         assert all(
             i in glob.glob("{}/html/*.html".format(outdir)) for i in files
         )
