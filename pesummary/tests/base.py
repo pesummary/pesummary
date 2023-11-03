@@ -91,6 +91,10 @@ def get_list_of_files(
             html.append("%s/html/%s%s_%s%s_%s_all.html" % (outdir, label, num, label, num, section))
         for j in parameters:
             html.append("%s/html/%s%s_%s%s_%s.html" % (outdir, label, num, label, num, j))
+        if gw:
+            # 2d histogram pages
+            for section in ["location", "masses", "spins"]:
+                html.append("%s/html/%s%s_%s%s_%s.html" % (outdir, label, num, label, num, section))
         if existing_plot:
             html.append("%s/html/%s%s_%s%s_Additional.html" % (outdir, label, num, label, num))
 
@@ -114,6 +118,7 @@ def get_list_of_plots(
 ):
     """Return a list of plots that should be generated from a typical workflow
     """
+    from pesummary.conf import gw_2d_plots
     if not gw and not len(parameters):
         import string
 
@@ -133,6 +138,13 @@ def get_list_of_plots(
         if mcmc:
             for j in parameters:
                 plots.append("%s/plots/%s%s_1d_posterior_%s_combined.png" % (outdir, label, num, j))
+        if gw:
+            for pair in gw_2d_plots:
+                if not all(p in parameters for p in pair):
+                    continue
+                plots.append("%s/plots/%s%s_2d_posterior_%s_%s.png" % (
+                    outdir, label, num, pair[0], pair[1]
+                ))
         if psd:
             plots.append("%s/plots/%s%s_psd_plot.png" % (outdir, label, num))
         if calibration:
@@ -149,7 +161,6 @@ def get_list_of_plots(
         for i in ["1d_posterior", "boxplot", "cdf"]:
             for j in parameters:
                 plots.append("%s/plots/combined_%s_%s.png" % (outdir, i, j))
-
     if gw and extra_gw_plots:
         for num in range(number):
             plots.append("%s/plots/%s%s_skymap.png" % (outdir, label, num))
