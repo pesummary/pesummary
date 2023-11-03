@@ -147,7 +147,7 @@ def bin_series_and_calc_cdf(x, y, bins=100):
         # Make cumulative
         for ser in [xhist, yhist]:
             ttl = 0
-            for idx, val in ser.iteritems():
+            for idx, val in ser.items():
                 ttl += val
                 ser.loc[idx] = ttl
     except ValueError:
