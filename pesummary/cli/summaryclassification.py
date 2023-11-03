@@ -140,9 +140,12 @@ def make_plots(
             f.generate_all_posterior_samples()
         if plot_type == "bar":
             from pesummary.gw.plots.plot import _classification_plot
-
+            if prior == "both":
+                probs_func = lambda probs, prior: probs[prior]
+            else:
+                probs_func = lambda probs, prior: probs
             if prior == "default" or prior == "both":
-                fig = _classification_plot(probs[num]["default"])
+                fig = _classification_plot(probs_func(probs[num], "default"))
                 fig.savefig(
                     os.path.join(
                         webdir,
@@ -150,7 +153,7 @@ def make_plots(
                     )
                 )
             if prior == "population" or prior == "both":
-                fig = _classification_plot(probs[num]["population"])
+                fig = _classification_plot(probs_func(probs[num], "population"))
                 fig.savefig(
                     os.path.join(
                         webdir,
@@ -203,7 +206,11 @@ def main(args=None):
             else:
                 raise InputError("Please provide a label for each result file")
     if opts.webdir:
-        save_classifications(opts.webdir, classifications, opts.labels)
+        if opts.prior != "both":
+            _classifications = [{opts.prior: c} for c in classifications]
+        else:
+            _classifications = classifications
+        save_classifications(opts.webdir, _classifications, opts.labels)
     else:
         print(classifications)
         return
