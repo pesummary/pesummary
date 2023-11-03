@@ -14,7 +14,6 @@ import sys
 import shutil
 import os
 from glob import glob
-import pkg_resources
 from getpass import getuser
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -289,15 +288,16 @@ def _launch_spin_disk_script():
     script = """
     import h5py
     from pesummary.gw.fetch import fetch
+    from pesummary import cli
 
     base = "https://ldas-jobs.ligo.caltech.edu/~charlie.hoy/projects/GWTC1/"
     f = fetch(
         base + "plot_spin_disks.py", read_file=False, delete_on_exit=True,
-        outdir=pkg_resources.resource_filename("pesummary", "cli")
+        outdir=cli.__path__[0]
     )
     f = fetch(
         base + "bounded_2d_kde.py", read_file=False, delete_on_exit=True,
-        outdir=pkg_resources.resource_filename("pesummary", "cli")
+        outdir=cli.__path__[0]
     )
     from .plot_spin_disks import plot_spindisk_with_colorbar
     path_to_pesummary_file = os.path.join(
@@ -427,8 +427,9 @@ class WebpageGeneration(_WebpageGeneration):
     def copy_css_and_js_scripts(self):
         """Copy css and js scripts from the package to the web directory
         """
+        from pesummary import core
         files_to_copy = []
-        path = pkg_resources.resource_filename("pesummary", "core")
+        path = core.__path__[0]
         scripts = glob(os.path.join(path, "js", "*.js"))
         for i in scripts:
             files_to_copy.append(

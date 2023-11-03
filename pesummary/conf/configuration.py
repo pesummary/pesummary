@@ -1,9 +1,9 @@
 import numpy as np
-import pkg_resources
 import os
+from pesummary import conf
 
 # matplotlib style file
-_path = pkg_resources.resource_filename("pesummary", "conf")
+_path = conf.__path__[0]
 style_file = os.path.join(_path, "matplotlib_rcparams.sty")
 
 # checkpoint file
