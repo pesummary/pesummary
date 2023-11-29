@@ -277,6 +277,7 @@ def setup_logger():
     FORMATTER = LogFormatter(_logger_format(), datefmt='%Y-%m-%d  %H:%M:%S')
     LOG_FILE = '%s/pesummary.log' % (dirpath)
     logger = logging.getLogger('PESummary')
+    logger.propagate = False
     logger.setLevel(level=logging.DEBUG)
     logger.addHandler(get_console_handler(stream_level=stream_level))
     logger.addHandler(get_file_handler(LOG_FILE))

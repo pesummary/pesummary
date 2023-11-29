@@ -2,9 +2,99 @@
 
 import numpy as np
 import lalsimulation as lalsim
+from lalsimulation import (
+    SimInspiralGetSpinFreqFromApproximant, SIM_INSPIRAL_SPINS_CASEBYCASE,
+    SIM_INSPIRAL_SPINS_FLOW
+)
 from pesummary.utils.utils import iterator, logger
+from pesummary.utils.exceptions import EvolveSpinError
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+
+
+def _get_spin_freq_from_approximant(approximant):
+    """Determine whether the reference frequency is the starting frequency
+    for a given approximant string.
+
+    Parameters
+    ----------
+    approximant: str
+        Name of the approximant you wish to check
+    """
+    try:
+        # default to using LAL code
+        approx = getattr(lalsim, approximant)
+        return SimInspiralGetSpinFreqFromApproximant(approx)
+    except AttributeError:
+        from lalsimulation import (
+            SIM_INSPIRAL_SPINS_NONPRECESSING, SIM_INSPIRAL_SPINS_F_REF
+        )
+        # check to see if approximant is in gwsignal
+        from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
+        approx = gwsignal_get_waveform_generator(approximant)
+        meta = approx.metadata
+        if meta["type"] == "aligned_spin":
+            return SIM_INSPIRAL_SPINS_NONPRECESSING
+        elif meta["type"] == "precessing_spin":
+            if meta["f_ref_spin"]:
+                return SIM_INSPIRAL_SPINS_F_REF
+            return SIM_INSPIRAL_SPINS_FLOW
+        raise EvolveSpinError(
+            "Unable to evolve spins as '{}' does not have a set frequency "
+            "at which the spins are defined".format(approximant)
+        )
+
+
+def _get_start_freq_from_approximant(approximant, f_low, f_ref):
+    """Determine the starting frequency to use when evolving the spins for
+    a given approximant string.
+
+    Parameters
+    ----------
+    approximant: str
+        Name of the approximant you wish to check
+    f_low: float
+        Low frequency used when generating the posterior samples
+    f_ref: float
+        Reference frequency used when generating the posterior samples
+    """
+    try:
+        spinfreq_enum = _get_spin_freq_from_approximant(approximant)
+    except ValueError:  # raised when approximant is not in gwsignal
+        raise EvolveSpinError(
+            "Unable to evolve spins as '{}' is unknown to lalsimulation "
+            "and gwsignal".format(approximant)
+        )
+    if spinfreq_enum == SIM_INSPIRAL_SPINS_CASEBYCASE:
+        _msg = (
+            "Unable to evolve spins as '{}' does not have a set frequency "
+            "at which the spins are defined".format(approximant)
+        )
+        logger.warning(_msg)
+        raise EvolveSpinError(_msg)
+    return float(np.where(
+        np.array(spinfreq_enum == SIM_INSPIRAL_SPINS_FLOW), f_low, f_ref
+    ))
+
+
+def _check_approximant_from_string(approximant):
+    """Check to see if the approximant is known to lalsimulation and/or
+    gwsignal
+
+    Parameters
+    ----------
+    approximant: str
+        approximant you wish to check
+    """
+    if hasattr(lalsim, approximant):
+        return True
+    else:
+        from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
+        try:
+            _ = gwsignal_get_waveform_generator(approximant)
+        except (ValueError, NameError):
+            return False
+        return True
 
 
 def _lal_approximant_from_string(approximant):

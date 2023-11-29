@@ -6,8 +6,8 @@ import multiprocessing
 from pesummary.gw.conversions import (
     tilt_angles_and_phi_12_from_spin_vectors_and_L
 )
+from pesummary.gw.waveform import _get_start_freq_from_approximant
 from pesummary.utils.utils import iterator, logger
-from pesummary.utils.exceptions import EvolveSpinError
 from pesummary.utils.decorators import array_input
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -15,10 +15,7 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 try:
     from lal import MTSUN_SI, MSUN_SI
     import lalsimulation
-    from lalsimulation import (
-        SimInspiralGetSpinFreqFromApproximant, SIM_INSPIRAL_SPINS_CASEBYCASE,
-        SIM_INSPIRAL_SPINS_FLOW, SimInspiralSpinTaylorPNEvolveOrbit
-    )
+    from lalsimulation import SimInspiralSpinTaylorPNEvolveOrbit
 except ImportError:
     pass
 
@@ -105,19 +102,7 @@ def evolve_angles_forwards(
     else:
         final_velocity = float(final_velocity)
 
-    spinfreq_enum = SimInspiralGetSpinFreqFromApproximant(
-        getattr(lalsimulation, approximant)
-    )
-    if spinfreq_enum == SIM_INSPIRAL_SPINS_CASEBYCASE:
-        _msg = (
-            "Unable to evolve spins as '{}' does not have a set frequency "
-            "at which the spins are defined".format(approximant)
-        )
-        logger.warning(_msg)
-        raise EvolveSpinError(_msg)
-    f_start = float(np.where(
-        np.array(spinfreq_enum == SIM_INSPIRAL_SPINS_FLOW), f_low, f_ref
-    ))
+    f_start = _get_start_freq_from_approximant(approximant, f_low, f_ref)
     with multiprocessing.Pool(multi_process) as pool:
         args = np.array([
             mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12,
@@ -260,9 +245,10 @@ def _wrapper_for_evolve_angles_backwards(args):
     ], force_return_array=True
 )
 def evolve_angles_backwards(
-    mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, f_ref,
-    method="precession_averaged", multi_process=1, return_fits_used=False,
-    version="v2", approx="SpinTaylorT5", **kwargs
+    mass_1, mass_2, a_1, a_2, tilt_1, tilt_2, phi_12, f_low, f_ref,
+    approximant, method="precession_averaged", multi_process=1,
+    return_fits_used=False, version="v2", evolution_approximant="SpinTaylorT5",
+    **kwargs
 ):
     """Evolve BBH tilt angles backwards to infinite separation
 
@@ -285,6 +271,8 @@ def evolve_angles_backwards(
         components
     f_ref: float
         reference frequency where spins are defined
+    approximant: str
+        Approximant used to generate the posterior samples
     method: str
         Method to use when evolving tilts to infinity. Possible options are
         'precession_averaged' and 'hybrid_orbit_averaged'. 'precession_averaged'
@@ -303,7 +291,7 @@ def evolve_angles_backwards(
         function to use within the lalsimulation library. Default 'v2'. If
         an old version of lalsimulation is installed where 'v2' is not
         available, fall back to 'v1'.
-    approx: str, optional
+    evolution_approximant: str, optional
         the approximant to use when evolving the spins. For allowed
         approximants see
         tilts_at_infinity.hybrid_spin_evolution.calc_tilts_at_infty_hybrid_evolve
@@ -314,6 +302,7 @@ def evolve_angles_backwards(
         function in the lalsimulation library
     """
     from lalsimulation.tilts_at_infinity import hybrid_spin_evolution
+    import warnings
     _mds = ["precession_averaged", "hybrid_orbit_averaged"]
     if method.lower() not in _mds:
         raise ValueError(
@@ -322,9 +311,11 @@ def evolve_angles_backwards(
     # check to see if the provided version is available in lalsimulation. If not
     # fall back to 'v1'
     try:
-        _ = hybrid_spin_evolution.calc_tilts_at_infty_hybrid_evolve(
-            2., 1., 1., 1., 1., 1., 1., 1., version=version
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            _ = hybrid_spin_evolution.calc_tilts_at_infty_hybrid_evolve(
+                2., 1., 1., 1., 1., 1., 1., 1., version=version
+            )
     except ValueError as e:
         if "Only version" not in str(e):
             raise
@@ -336,16 +327,16 @@ def evolve_angles_backwards(
     kwargs.update(
         {
             "prec_only": method.lower() == "precession_averaged",
-            "version": version, "approx": approx
+            "version": version, "approx": evolution_approximant
         }
     )
-
+    f_start = _get_start_freq_from_approximant(approximant, f_low, f_ref)
     with multiprocessing.Pool(multi_process) as pool:
         args = np.array(
             [
                 [hybrid_spin_evolution.calc_tilts_at_infty_hybrid_evolve] * len(mass_1),
                 mass_1 * MSUN_SI, mass_2 * MSUN_SI, a_1, a_2, tilt_1, tilt_2, phi_12,
-                [f_ref] * len(mass_1), [kwargs] * len(mass_1)
+                [f_start] * len(mass_1), [kwargs] * len(mass_1)
             ], dtype=object
         ).T
         data = np.array(
@@ -367,6 +358,6 @@ def evolve_angles_backwards(
             )
         ]
         if method.lower() == "hybrid_orbit_averaged":
-            fits_used.append("approx={}".format(approx))
+            fits_used.append("approx={}".format(evolution_approximant))
         return [tilt_1_inf, tilt_2_inf, phi_12], fits_used
     return tilt_1_inf, tilt_2_inf, phi_12
