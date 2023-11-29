@@ -1247,18 +1247,28 @@ class _Conversion(object):
 
     def _evolve_spins(self, final_velocity="ISCO", forward=True):
         from .evolve import evolve_spins
+        from ..waveform import _check_approximant_from_string
 
-        parameters = ["tilt_1", "tilt_2", "phi_12", "spin_1z", "spin_2z"]
         samples = self.specific_parameter_samples(
             ["mass_1", "mass_2", "a_1", "a_2", "tilt_1", "tilt_2",
              "phi_12", "reference_frequency"]
         )
+        approximant = self._retrieve_approximant()
+        if not _check_approximant_from_string(approximant):
+            _msg = (
+                'Not evolving spins: approximant {0} unknown to '
+                'lalsimulation and gwsignal'.format(approximant)
+            )
+            logger.warning(_msg)
+            raise EvolveSpinError(_msg)
+        f_low = self._retrieve_f_low()
         if not forward:
             [tilt_1_evolved, tilt_2_evolved, phi_12_evolved], fits_used = evolve_spins(
                 samples[0], samples[1], samples[2], samples[3], samples[4],
-                samples[5], samples[6], samples[7][0],
-                evolve_limit="infinite_separation", multi_process=self.multi_process,
-                return_fits_used=True, method=self.evolve_spins_backwards
+                samples[5], samples[6], f_low, samples[7][0],
+                approximant, evolve_limit="infinite_separation",
+                multi_process=self.multi_process, return_fits_used=True,
+                method=self.evolve_spins_backwards
             )
             suffix = ""
             if self.evolve_spins_backwards.lower() == "precession_averaged":
@@ -1268,15 +1278,6 @@ class _Conversion(object):
             self.extra_kwargs["meta_data"]["backward_spin_evolution"] = fits_used
             return
         else:
-            f_low = self._retrieve_f_low()
-            approximant = self._retrieve_approximant()
-            if not hasattr(lalsimulation, approximant):
-                _msg = (
-                    'Not evolving spins: approximant {0} unknown to '
-                    'lalsimulation'.format(approximant)
-                )
-                logger.warning(_msg)
-                raise EvolveSpinError(_msg)
             tilt_1_evolved, tilt_2_evolved, phi_12_evolved = evolve_spins(
                 samples[0], samples[1], samples[2], samples[3], samples[4],
                 samples[5], samples[6], f_low, samples[7][0],
@@ -1757,7 +1758,13 @@ class _Conversion(object):
             evolve_spins_params = ["tilt_1", "tilt_2", "phi_12"]
             if self.evolve_spins_backwards:
                 if all(i in self.parameters for i in evolve_spins_params):
-                    self._evolve_spins(forward=False)
+                    try:
+                        self._evolve_spins(forward=False)
+                    except EvolveSpinError:
+                        # Raised when approximant is unknown to lalsimulation or
+                        # lalsimulation.SimInspiralGetSpinFreqFromApproximant is
+                        # equal to lalsimulation.SIM_INSPIRAL_SPINS_CASEBYCASE
+                        pass
             for suffix in ["_infinity", "_infinity_only_prec_avg", ""]:
                 if "spin_1z{}".format(suffix) not in self.parameters:
                     _params = ["a_1", "tilt_1{}".format(suffix)]

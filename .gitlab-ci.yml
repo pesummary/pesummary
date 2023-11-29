@@ -16,16 +16,28 @@ stages:
   - deploy
 
 
+default:
+  retry:
+    # retry all jobs at most twice if the runner failed to start the job
+    max: 2
+    when:
+      - runner_system_failure
+
+
 .parallel_python: &parallel_python
   parallel:
     matrix:
       - PY_VERSION: ["3.9", "3.10"]
+  tags:
+    - executor-docker
 
 
 .parallel_gwtc: &parallel_gwtc
   parallel:
     matrix:
       - CATALOG: ["1", "2", "3"]
+  tags:
+    - executor-docker
 
 
 variables:
@@ -65,6 +77,8 @@ tarball:
     - .python:build
   stage: build
   needs: []
+  tags:
+    - executor-docker
 
 
 conda:
@@ -86,6 +100,8 @@ conda:
     - conda activate py${PYTHON_VERSION}
   script:
     - python -m pip install .
+  tags:
+    - executor-docker
 
 
 docker:
@@ -104,6 +120,8 @@ docker:
   artifacts:
     paths:
       - "containers/Dockerfile-pesummary-python*"
+  tags:
+    - executor-docker
 
 
 executables:
@@ -115,6 +133,8 @@ executables:
     - *prepare_testing
     - summarytest --type executables
     - *finalise_testing
+  tags:
+    - executor-docker
 
 
 imports:
@@ -126,6 +146,8 @@ imports:
     - *prepare_testing
     - summarytest --type imports
     - *finalise_testing
+  tags:
+    - executor-docker
 
 
 style:
@@ -139,6 +161,8 @@ style:
     # these are presented in the code-quality box in the
     # merge_request UI
     FLAKE8_OPTIONS: "--exit-zero"
+  tags:
+    - executor-docker
 
 
 examples:
@@ -151,6 +175,8 @@ examples:
     - summarytest --type examples --repository ${PESUMMARY_REPO_DIR}
     - *finalise_testing
   allow_failure: true
+  tags:
+    - executor-docker
 
 
 authors:
@@ -163,6 +189,8 @@ authors:
   only:
     refs:
       - master@lscsoft/pesummary
+  tags:
+    - executor-docker
 
 
 .python-3.9-testing:
@@ -246,6 +274,8 @@ ligo_skymap:
   only:
     - schedule
     - pushes
+  tags:
+    - executor-docker
 
 
 lalinference_pipe:
@@ -264,6 +294,8 @@ lalinference_pipe:
   only:
     - schedule
     - pushes
+  tags:
+    - executor-docker
 
 
 bilby:
@@ -281,6 +313,8 @@ bilby:
   only:
     - schedule
     - pushes
+  tags:
+    - executor-docker
 
 
 bilby_pipe:
@@ -298,6 +332,8 @@ bilby_pipe:
   only:
     - schedule
     - pushes
+  tags:
+    - executor-docker
 
 
 pycbc_inference:
@@ -315,6 +351,8 @@ pycbc_inference:
   only:
     - schedule
     - pushes
+  tags:
+    - executor-docker
 
 
 GWTC:
@@ -365,6 +403,8 @@ coverage:
     - !reference [".debian:base", "before_script"]
     - apt-get -y install pandoc
     - !reference [".python:sphinx", "before_script"]
+  tags:
+    - executor-docker
 
 documentation:
   extends: .docs
