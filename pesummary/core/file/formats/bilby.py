@@ -117,6 +117,10 @@ def read_bilby(
         for i in parameters:
             if i not in injection.keys():
                 injection[i] = float("nan")
+    _injection = injection.copy()
+    for key, item in _injection.items():
+        if isinstance(item, (str, np.str_)):
+            injection.pop(key)
 
     if all(i for i in (
            bilby_object.constraint_parameter_keys,
