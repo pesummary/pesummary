@@ -108,9 +108,6 @@ class _Input(object):
                 except (AttributeError, KeyError, NameError):
                     pass
 
-        if nsamples is not None:
-            f.downsample(nsamples)
-
         if not f.mcmc_samples:
             labels = f.labels
         else:
@@ -128,6 +125,8 @@ class _Input(object):
                 indicies.append(labels.index(i))
             labels = compare
 
+        if nsamples is not None:
+            f.downsample(nsamples, labels=labels)
         if not f.mcmc_samples:
             f.generate_all_posterior_samples(labels=labels, **kwargs)
         if reweight_samples:
