@@ -949,10 +949,12 @@ class MultiAnalysisRead(Read):
             )
         return string[:-2]
 
-    def downsample(self, number):
+    def downsample(self, number, labels=None):
         """Downsample the posterior samples stored in the result file
         """
         for num, ss in enumerate(self.samples):
+            if labels is not None and self.labels[num] not in labels:
+                continue
             self.samples[num], self.extra_kwargs[num] = _downsample(
                 ss, number, extra_kwargs=self.extra_kwargs[num]
             )
