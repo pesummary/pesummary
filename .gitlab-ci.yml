@@ -403,6 +403,7 @@ coverage:
     - !reference [".debian:base", "before_script"]
     - apt-get -y install pandoc
     - !reference [".python:sphinx", "before_script"]
+    - pip install --upgrade sphinx
   tags:
     - executor-docker
 
