@@ -93,7 +93,7 @@ corner_kwargs = dict(
 # Parameters to use for GW corner plot
 gw_corner_parameters = [
     "luminosity_distance", "dec", "a_2", "a_1", "geocent_time", "phi_jl",
-    "psi", "ra", "phase", "mass_2", "mass_1", "phi_12", "tilt_2", "iota",
+    "psi", "ra", "phase", "mass_2", "mass_1", "phi_12", "tilt_2", "theta_jn",
     "tilt_1", "chi_p", "chirp_mass", "mass_ratio", "symmetric_mass_ratio",
     "total_mass", "chi_eff", "redshift", "mass_1_source", "mass_2_source",
     "total_mass_source", "chirp_mass_source", "lambda_1", "lambda_2",

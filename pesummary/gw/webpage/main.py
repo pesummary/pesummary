@@ -903,8 +903,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         """Return a list of popular options
         """
         popular_options = [
-            "mass_1, mass_2", "luminosity_distance, iota, ra, dec",
-            "iota, phi_12, phi_jl, tilt_1, tilt_2"
+            "mass_1, mass_2", "luminosity_distance, theta_jn, ra, dec",
+            "theta_jn, phi_12, phi_jl, tilt_1, tilt_2"
         ]
         return popular_options
 
