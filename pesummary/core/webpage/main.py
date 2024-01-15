@@ -1088,9 +1088,9 @@ class _WebpageGeneration(object):
                     "all": ", ".join(included_parameters)
                 }]
             else:
-                included_params = self.samples[i].keys()
+                included_parameters = list(self.samples[i].keys())
             html_file.make_search_bar(
-                sidebar=self.samples[i].keys(),
+                sidebar=included_parameters,
                 popular_options=popular_options, label=i
             )
             html_file.make_footer(user=self.user, rundir=self.webdir)

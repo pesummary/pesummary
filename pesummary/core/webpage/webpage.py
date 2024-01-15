@@ -911,13 +911,16 @@ class page(Base):
         popular_options: list, optional
             a list of popular options for your search bar
         """
+        import copy
         ids = "canvas" if code == "combine" else code
         self.add_content("<link rel='stylesheet' href='../css/side_bar.css'>\n")
         self.add_content("<div class='w3-sidebar w3-bar-block w3-border-right sidenav' "
                          "style='display:none' id='mySidebar'>\n")
         self.add_content("<button onclick='side_bar_close()' class='close'>&times;</button>\n", indent=2)
-        if sidebar:
-            for i in sidebar:
+        if sidebar is not None:
+            _sidebar = copy.deepcopy(sidebar)
+            _sidebar.sort()
+            for i in _sidebar:
                 self.add_content("<input type='checkbox' name='type' "
                                  "value='{}' id='{}' style='text-align: center; margin: 0 5px 0;'"
                                  ">{}<br>\n".format(i, i, i), indent=2)
