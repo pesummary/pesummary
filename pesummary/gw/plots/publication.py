@@ -4,7 +4,7 @@ from pesummary.utils.utils import logger, number_of_columns_for_legend
 import seaborn
 from pesummary.core.plots.figure import figure
 from pesummary.core.plots.seaborn import violin
-from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
+from pesummary.utils.bounded_2d_kde import Bounded_2d_kde
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.gw.plots.cmap import colormap_with_fixed_hue
 from pesummary.gw.conversions import mchirp_from_m1_m2, q_from_m1_m2
@@ -146,7 +146,7 @@ def _setup_triangle_plot(parameters, kwargs):
         kwargs to be passed to pesummary.gw.plots.publication.triangle_plot
         or pesummary.gw.plots.publication.reverse_triangle_plot
     """
-    from pesummary.core.plots.bounded_1d_kde import bounded_1d_kde
+    from pesummary.utils.bounded_1d_kde import bounded_1d_kde
 
     if not len(parameters):
         raise ValueError("Please provide a list of parameters")

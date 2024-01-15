@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 from pesummary.io import read
 from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
-from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
+from pesummary.utils.bounded_1d_kde import ReflectionBoundedKDE
 from pesummary.core.plots.figure import figure
 from pesummary.gw.plots.bounds import default_bounds
 from pesummary.gw.plots.latex_labels import GWlatex_labels

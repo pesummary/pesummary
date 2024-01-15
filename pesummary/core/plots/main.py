@@ -68,7 +68,7 @@ class _PlotGeneration(object):
         add_to_existing=False, priors={}, include_prior=False, weights=None,
         disable_comparison=False, linestyles=None, disable_interactive=False,
         multi_process=1, mcmc_samples=False, disable_corner=False,
-        corner_params=None, expert_plots=True, checkpoint=False
+        corner_params=None, expert_plots=True, checkpoint=False, key_data=None
     ):
         self.package = "core"
         self.webdir = webdir
@@ -99,6 +99,7 @@ class _PlotGeneration(object):
             logger.warning("Unable to generate expert plots for mcmc samples")
             self.expert_plots = False
         self.checkpoint = checkpoint
+        self.key_data = key_data
         self.multi_process = multi_process
         self.pool = self.setup_pool()
         self.preliminary_pages = {label: False for label in self.labels}
@@ -242,6 +243,24 @@ class _PlotGeneration(object):
         if self.make_comparison:
             logger.debug("Starting to generate comparison plots")
             self._generate_comparison_plots()
+
+    def check_key_data_in_dict(self, label, param):
+        """Check to see if there is key data for a given param
+
+        Parameters
+        ----------
+        label: str
+            the label used to distinguish a given run
+        param: str
+            name of the parameter you wish to return prior samples for
+        """
+        if self.key_data is None:
+            return None
+        elif label not in self.key_data.keys():
+            return None
+        elif param not in self.key_data[label].keys():
+            return None
+        return self.key_data[label][param]
 
     def check_prior_samples_in_dict(self, label, param):
         """Check to see if there are prior samples for a given param
@@ -467,6 +486,7 @@ class _PlotGeneration(object):
         prior = lambda param: self.check_prior_samples_in_dict(
             label, param
         ) if self.include_prior else None
+        key_data = lambda label, param: self.check_key_data_in_dict(label, param)
 
         arguments = [
             (
@@ -475,7 +495,7 @@ class _PlotGeneration(object):
                     latex_labels[param], self.injection_data[label][param],
                     self.kde_plot, prior(param), self.weights[label],
                     self.package, self.preliminary_pages[label],
-                    self.checkpoint
+                    self.checkpoint, key_data(label, param)
                 ], function, error_message % (param)
             ) for param in iterator
         ]
@@ -569,7 +589,7 @@ class _PlotGeneration(object):
     def _oned_histogram_plot(
         savedir, label, parameter, samples, latex_label, injection, kde=False,
         prior=None, weights=None, package="core", preliminary=False,
-        checkpoint=False
+        checkpoint=False, key_data=None
     ):
         """Generate a oned histogram plot for a given set of samples
 
@@ -612,7 +632,7 @@ class _PlotGeneration(object):
             return
         fig = module._1d_histogram_plot(
             parameter, samples, latex_label, inj_value=injection, kde=kde,
-            hist=hist, prior=prior, weights=weights
+            hist=hist, prior=prior, weights=weights, key_data=key_data
         )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
@@ -622,7 +642,7 @@ class _PlotGeneration(object):
     def _oned_histogram_plot_mcmc(
         savedir, label, parameter, samples, latex_label, injection, kde=False,
         prior=None, weights=None, package="core", preliminary=False,
-        checkpoint=False
+        checkpoint=False, key_data=None
     ):
         """Generate a oned histogram plot for a given set of samples for
         multiple mcmc chains

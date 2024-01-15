@@ -1860,6 +1860,23 @@ class _Input(object):
             "manager": _package.package_manager
         }
 
+    def grab_key_data_from_result_files(self):
+        """Grab the mean, median, maxL and standard deviation for all
+        parameters for all each result file
+        """
+        key_data = {
+            key: samples.key_data for key, samples in self.samples.items()
+        }
+        for key, val in self.samples.items():
+            for j in val.keys():
+                _inj = self.injection_data[key][j]
+                key_data[key][j]["injected"] = (
+                    _inj[0] if not math.isnan(_inj) and isinstance(
+                        _inj, (list, np.ndarray)
+                    ) else _inj
+                )
+        return key_data
+
 
 class BaseInput(_Input):
     """Class to handle and store base command line arguments
@@ -2011,23 +2028,6 @@ class SamplesInput(BaseInput):
         ]
         params = list(set.intersection(*[set(l) for l in parameters]))
         return params
-
-    def grab_key_data_from_result_files(self):
-        """Grab the mean, median, maxL and standard deviation for all
-        parameters for all each result file
-        """
-        key_data = {
-            key: samples.key_data for key, samples in self.samples.items()
-        }
-        for key, val in self.samples.items():
-            for j in val.keys():
-                _inj = self.injection_data[key][j]
-                key_data[key][j]["injected"] = (
-                    _inj[0] if not math.isnan(_inj) and isinstance(
-                        _inj, (list, np.ndarray)
-                    ) else _inj
-                )
-        return key_data
 
 
 class PlottingInput(SamplesInput):

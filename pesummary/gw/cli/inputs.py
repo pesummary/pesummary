@@ -893,6 +893,55 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             priors, read_func=read_func, read_kwargs=self.grab_data_kwargs
         )
 
+    def grab_key_data_from_result_files(self):
+        """Grab the mean, median, maxL and standard deviation for all
+        parameters for all each result file
+        """
+        from pesummary.utils.kde_list import KDEList
+        from pesummary.gw.plots.plot import _return_bounds
+        from pesummary.utils.credible_interval import (
+            hpd_two_sided_credible_interval
+        )
+        from pesummary.utils.bounded_1d_kde import bounded_1d_kde
+        key_data = super(_GWInput, self).grab_key_data_from_result_files()
+        bounded_parameters = ["mass_ratio", "a_1", "a_2", "lambda_tilde"]
+        for param in bounded_parameters:
+            xlow, xhigh = _return_bounds(param, [])
+            _samples = {
+                key: val[param] for key, val in self.samples.items()
+                if param in val.keys()
+            }
+            _min = [np.min(_) for _ in _samples.values() if len(_samples)]
+            _max = [np.max(_) for _ in _samples.values() if len(_samples)]
+            if not len(_min):
+                continue
+            _min = np.min(_min)
+            _max = np.max(_max)
+            x = np.linspace(_min, _max, 1000)
+            try:
+                kdes = KDEList(
+                    list(_samples.values()), kde=bounded_1d_kde,
+                    kde_kwargs={"xlow": xlow, "xhigh": xhigh}
+                )
+            except Exception as e:
+                logger.warning(
+                    "Unable to compute the HPD interval for {} because {}".format(
+                        param, e
+                    )
+                )
+                continue
+            pdfs = kdes(x)
+            for num, key in enumerate(_samples.keys()):
+                [xlow, xhigh], _ = hpd_two_sided_credible_interval(
+                    [], 90, x=x, pdf=pdfs[num]
+                )
+                key_data[key][param]["90% HPD"] = [xlow, xhigh]
+                for _param in self.samples[key].keys():
+                    if _param in bounded_parameters:
+                        continue
+                    key_data[key][_param]["90% HPD"] = float("nan")
+        return key_data
+
 
 class SamplesInput(_GWInput, pesummary.core.cli.inputs.SamplesInput):
     """Class to handle and store sample specific command line arguments

@@ -7,7 +7,7 @@ import os
 from pesummary.core.plots.main import _PlotGeneration as _BasePlotGeneration
 from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.core.plots import interactive
-from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
+from pesummary.utils.bounded_1d_kde import ReflectionBoundedKDE
 from pesummary.gw.plots.latex_labels import GWlatex_labels
 from pesummary.utils.utils import logger, resample_posterior_distribution
 from pesummary.utils.decorators import no_latex_plot
@@ -38,7 +38,8 @@ class _PlotGeneration(_BasePlotGeneration):
         linestyles=None, disable_interactive=False, disable_corner=False,
         publication_kwargs={}, multi_process=1, mcmc_samples=False,
         skymap=None, existing_skymap=None, corner_params=None,
-        preliminary_pages=False, expert_plots=True, checkpoint=False
+        preliminary_pages=False, expert_plots=True, checkpoint=False,
+        key_data=None
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -54,7 +55,7 @@ class _PlotGeneration(_BasePlotGeneration):
             disable_comparison=disable_comparison, linestyles=linestyles,
             disable_interactive=disable_interactive, disable_corner=disable_corner,
             multi_process=multi_process, corner_params=corner_params,
-            expert_plots=expert_plots, checkpoint=checkpoint
+            expert_plots=expert_plots, checkpoint=checkpoint, key_data=key_data
         )
         self.preliminary_pages = preliminary_pages
         if not isinstance(self.preliminary_pages, dict):

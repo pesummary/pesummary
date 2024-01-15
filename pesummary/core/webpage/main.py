@@ -157,7 +157,7 @@ class _WebpageGeneration(object):
             self.key_data_table = {
                 label: {
                     param: [
-                        safe_round(self.key_data[label][param][key], 3) for key
+                        safe_round(self.key_data[label][param].get(key, None), 3) for key
                         in self.key_data_headings
                     ] for param in self.samples[label].keys()
                 } for label in self.labels

@@ -957,7 +957,7 @@ def test_jensen_shannon_divergence():
     _pesummary = utils.jensen_shannon_divergence(samples, decimal=9)
     np.testing.assert_almost_equal(_scipy, _pesummary)
 
-    from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
+    from pesummary.utils.bounded_1d_kde import ReflectionBoundedKDE
 
     _pesummary = utils.jensen_shannon_divergence(
         samples, decimal=9, kde=ReflectionBoundedKDE, xlow=4.5, xhigh=5.5
@@ -1255,6 +1255,58 @@ class TestDiscretePDF2Dplus1D(object):
         assert isinstance(obj.probs[0], DiscretePDF)
         assert isinstance(obj.probs[2], DiscretePDF2D)
         assert isinstance(obj.probs[1], DiscretePDF)
+
+
+class TestKDEList(object):
+    """Test the KDEList class
+    """
+    def setup_method(self):
+        """Setup the KDEList class
+        """
+        from scipy.stats import gaussian_kde
+        means = np.random.uniform(0, 5, size=10)
+        stds = np.random.uniform(0, 2, size=10)
+        self.inputs = np.array(
+            [
+                np.random.normal(mean, std, size=10000) for mean, std
+                in zip(means, stds)
+            ]
+        )
+        self.pts = np.linspace(-10, 10, 100)
+        self.true_kdes = [gaussian_kde(_)(self.pts) for _ in self.inputs]
+
+    def test_call(self):
+        """Test the KDEList call method
+        """
+        from pesummary.utils.kde_list import KDEList
+        from scipy.stats import gaussian_kde
+        new = KDEList(self.inputs, kde=gaussian_kde, pts=self.pts)
+        # test on a single CPU
+        new_single = new(multi_process=1)
+        for num in range(len(self.inputs)):
+            np.testing.assert_almost_equal(self.true_kdes[num], new_single[num])
+        # test on multiple CPUs
+        new_multiple = new(multi_process=2)
+        for num in range(len(self.inputs)):
+            np.testing.assert_almost_equal(self.true_kdes[num], new_single[num])
+        # test the `idx` kwarg
+        for num in range(len(self.inputs)):
+            np.testing.assert_almost_equal(self.true_kdes[num], new(idx=num))
+        # split the calculation into 2 chunks and 2 CPUs
+        new_chunk1 = new(
+            idx=np.arange(0, len(self.inputs) // 2, 1), multi_process=2
+        ).tolist()
+        new_chunk2 = new(
+            idx=np.arange(len(self.inputs) // 2, len(self.inputs), 1), multi_process=2
+        ).tolist()
+        new_combined = new_chunk1 + new_chunk2
+        for num in range(len(self.inputs)):
+            np.testing.assert_almost_equal(self.true_kdes[num], new_combined[num])
+        # assert that different KDEs are produced for different pts
+        with pytest.raises(AssertionError):
+            new_diff = new(pts=np.linspace(-5, 5, 100), multi_process=1)
+            for num in range(len(self.inputs)):
+                np.testing.assert_almost_equal(self.true_kdes[num], new_diff[num])
 
 
 def make_cache_style_file(style_file):

@@ -257,40 +257,6 @@ class Array(np.ndarray):
             mydict[key] = _value
         return mydict
 
-    @staticmethod
-    def percentile(array, weights=None, percentile=None):
-        """Compute the Nth percentile of a set of weighted samples
-
-        Parameters
-        ----------
-        array: np.ndarray
-            input array
-        weights: np.ndarray, optional
-            list of weights associated with each sample
-        percentile: float, list
-            list of percentiles to compute
-        """
-        if weights is None:
-            return np.percentile(array, percentile)
-
-        array, weights = np.array(array), np.array(weights)
-        _type = percentile
-        if not isinstance(percentile, (list, np.ndarray)):
-            percentile = np.array([float(percentile)])
-        percentile = np.array([float(i) for i in percentile])
-        ind_sorted = np.argsort(array)
-        sorted_data = array[ind_sorted]
-        sorted_weights = weights[ind_sorted]
-        Sn = 100 * sorted_weights.cumsum() / sorted_weights.sum()
-        data = np.zeros_like(percentile)
-        for num, p in enumerate(percentile):
-            inds = np.argwhere(Sn >= p)[0]
-            data[num] = np.interp(percentile, Sn[inds], sorted_data[inds])[0]
-
-        if isinstance(_type, (int, float, np.float64, np.float32)):
-            return float(data[0])
-        return data
-
     def confidence_interval(self, percentile=None):
         """Return the confidence interval of the array
 
@@ -300,15 +266,10 @@ class Array(np.ndarray):
             Percentile or sequence of percentiles to compute, which must be
             between 0 and 100 inclusive
         """
-        if percentile is not None:
-            if isinstance(percentile, int):
-                return self.percentile(self, self.weights, percentile)
-            return np.array(
-                [self.percentile(self, self.weights, i) for i in percentile]
-            )
-        return np.array(
-            [self.percentile(self, self.weights, i) for i in [5, 95]]
-        )
+        from pesummary.utils.credible_interval import two_sided_credible_interval
+        if percentile is None:
+            percentile = [5, 95]
+        return two_sided_credible_interval(self, percentile, weights=self.weights)
 
     def __array_finalize__(self, obj):
         if obj is None:
