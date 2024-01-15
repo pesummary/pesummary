@@ -232,7 +232,7 @@ class TestWebpage(object):
         """
         from scipy.spatial.distance import jensenshannon
         from pesummary.utils.utils import jensen_shannon_divergence
-        from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
+        from pesummary.utils.bounded_1d_kde import ReflectionBoundedKDE
 
         comparison_stats = self.webpage.comparison_stats
         for param in ['chirp_mass', 'mass_ratio']:

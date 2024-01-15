@@ -1,7 +1,7 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE, bounded_1d_kde
-from pesummary.core.plots.bounded_2d_kde import Bounded_2d_kde
+from pesummary.utils.bounded_1d_kde import ReflectionBoundedKDE, bounded_1d_kde
+from pesummary.utils.bounded_2d_kde import Bounded_2d_kde
 from scipy.stats import gaussian_kde
 import numpy as np
 import pytest

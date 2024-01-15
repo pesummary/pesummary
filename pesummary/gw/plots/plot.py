@@ -70,7 +70,7 @@ def _add_default_bounds_to_kde_kwargs_dict(
     samples: list
         list of samples for param
     """
-    from pesummary.core.plots.bounded_1d_kde import bounded_1d_kde
+    from pesummary.utils.bounded_1d_kde import bounded_1d_kde
 
     xlow, xhigh = _return_bounds(param, samples, comparison=comparison)
     kde_kwargs["xlow"] = xlow

@@ -215,7 +215,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         samples: list
             list of samples for each result file
         """
-        from pesummary.core.plots.bounded_1d_kde import ReflectionBoundedKDE
+        from pesummary.utils.bounded_1d_kde import ReflectionBoundedKDE
         from pesummary.gw.plots.plot import _return_bounds
 
         xlow, xhigh = _return_bounds(param, samples, comparison=True)

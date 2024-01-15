@@ -420,11 +420,12 @@ def _1d_histogram_plot(
     param, samples, latex_label, inj_value=None, kde=False, hist=True,
     prior=None, weights=None, fig=None, ax=None, title=True, color=conf.color,
     autoscale=True, grid=True, kde_kwargs={}, hist_kwargs={}, set_labels=True,
-    plot_percentile=True, xlims=None, max_vline=1, label=None, linestyle="-",
-    injection_color=conf.injection_color, _default_hist_kwargs={
+    plot_percentile=True, plot_hdp=True, xlims=None, max_vline=1, label=None,
+    linestyle="-", injection_color=conf.injection_color, _default_hist_kwargs={
         "density": True, "bins": 50, "histtype": "step", "linewidth": 1.75
     }, _default_kde_kwargs={"shade": True, "alpha_shade": 0.1},
-    _default_inj_kwargs={"linewidth": 2.5, "linestyle": "-"}, **plot_kwargs
+    _default_inj_kwargs={"linewidth": 2.5, "linestyle": "-"},
+    key_data=None, **plot_kwargs
 ):
     """Generate the 1d histogram plot for a given parameter for a given
     approximant.
@@ -540,19 +541,42 @@ def _1d_histogram_plot(
         ax.axvline(
             inj_value, color=injection_color, **_default_inj_kwargs
         )
-    percentile = samples.confidence_interval([5, 95])
-    median = samples.average("median")
+    hdp = float("nan")
+    if key_data is not None:
+        percentile = [key_data["5th percentile"], key_data["95th percentile"]]
+        median = key_data["median"]
+        if "90% HPD" in key_data.keys():
+           hdp = key_data["90% HPD"]
+    else:
+        percentile = samples.confidence_interval([5, 95])
+        median = samples.average("median")
     if plot_percentile:
         for pp in percentile:
             ax.axvline(
                 pp, color=color, linestyle="--",
                 linewidth=hist_kwargs.get("linewidth", 1.75)
             )
+    if plot_hdp and isinstance(hdp, (list, np.ndarray)):
+        for pp in hdp:
+            ax.axvline(
+                pp, color=color, linestyle=":",
+                linewidth=hist_kwargs.get("linewidth", 1.75)
+            )
     if title:
         upper = np.round(percentile[1] - median, 2)
         lower = np.abs(np.round(median - percentile[0], 2))
         median = np.round(median, 2)
-        ax.set_title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
+        _base = r"$%s^{+%s}_{-%s}" % (median, upper, lower)
+        if not isinstance(hdp, (list, np.ndarray)) and np.isnan(hdp):
+            _base += r"$"
+            ax.set_title(_base)
+        else:
+            upper = np.round(hdp[1] - median, 2)
+            lower = np.abs(np.round(median - hdp[0], 2))
+            _base += r"\, (\mathrm{CI}) / %s^{+%s}_{-%s}\, (\mathrm{HPD})$" % (
+                median, upper, lower
+            )
+            ax.set_title(_base)
     ax.grid(visible=grid)
     ax.set_xlim(xlims)
     if autoscale:
