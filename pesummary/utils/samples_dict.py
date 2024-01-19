@@ -990,13 +990,25 @@ class _MultiDimensionalSamplesDict(Dict):
                 self.labels = _labels
             for num, dataset in enumerate(outer_iterator):
                 if isinstance(inner_iterator, dict):
-                    samples = np.array(
-                        [args[0][dataset][param] for param in inner_iterator[dataset]]
-                    )
+                    try:
+                        samples = np.array(
+                            [args[0][dataset][param] for param in inner_iterator[dataset]]
+                        )
+                    except ValueError: # numpy deprecation error
+                        samples = np.array(
+                            [args[0][dataset][param] for param in inner_iterator[dataset]],
+                            dtype=object
+                        )
                 else:
-                    samples = np.array(
-                        [args[0][dataset][param] for param in inner_iterator]
-                    )
+                    try:
+                        samples = np.array(
+                            [args[0][dataset][param] for param in inner_iterator]
+                        )
+                    except ValueError: # numpy deprecation error
+                        samples = np.array(
+                            [args[0][dataset][param] for param in inner_iterator],
+                            dtype=object
+                        )
                 if transpose:
                     desc = parameters[num]
                     self[desc] = SamplesDict(
@@ -1047,7 +1059,12 @@ class _MultiDimensionalSamplesDict(Dict):
         try:
             if key not in self.labels:
                 parameters = list(value.keys())
-                samples = np.array([value[param] for param in parameters])
+                try:
+                    samples = np.array([value[param] for param in parameters])
+                except ValueError: # numpy deprecation error
+                    samples = np.array(
+                        [value[param] for param in parameters], dtype=object
+                    )
                 self.parameters[key] = parameters
                 self.labels.append(key)
                 self.latex_labels = self._latex_labels()
