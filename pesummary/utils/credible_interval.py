@@ -52,7 +52,7 @@ def two_sided_credible_interval(samples, percentile, weights=None):
         raise ValueError(
             "Please provide only an upper and lower credible interval"
         )
-    if not weights:
+    if weights is None:
         return np.percentile(samples, percentile)
     return weighted_credible_interval(samples, percentile, weights)
 
