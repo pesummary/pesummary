@@ -146,11 +146,13 @@ def tests(*args, output="./", multi_process=1, **kwargs):
     )
     # launch pytest job
     command_line = (
-        "{} -m pytest --full-trace -n {} --verbose --max-worker-restart=2 "
-        "--dist=loadfile --reruns 2 --pyargs pesummary.tests ".format(
-            sys.executable, multi_process
+        "{} -m pytest --full-trace --verbose "
+        "--reruns 2 --pyargs pesummary.tests ".format(
+            sys.executable,
         )
     )
+    if multi_process > 1:
+        command_line += f"-n {multi_process} --max-worker-restart=2 "
     if kwargs.get("pytest_config", None) is not None:
         command_line += "-c {} ".format(kwargs.get("pytest_config"))
     if kwargs.get("coverage", False):
