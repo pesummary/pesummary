@@ -419,6 +419,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--multi_process": {
                 "dest": "multi_process",
                 "default": 1,
+                "type": int,
                 "help": "The number of cores to use when generating plots",
                 "key": "performance",
             },
