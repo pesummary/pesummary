@@ -168,8 +168,8 @@ class DiscretePDF(rv_sample):
         p: float, list
             percentile/list of percentiles to calculate
         """
-        from pesummary.utils.array import Array
-        return Array.percentile(self.x, weights=self.probs, percentile=p)
+        from pesummary.utils.credible_interval import credible_interval
+        return credible_interval(self.x, p, weights=self.probs)
 
     def write(self, *args, **kwargs):
         """Write the discrete PDF to file using the pesummary.io.write module

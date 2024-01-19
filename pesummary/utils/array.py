@@ -1,6 +1,7 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 import numpy as np
+from pesummary.utils.decorators import deprecation
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -157,9 +158,10 @@ class Array(np.ndarray):
         weights: np.ndarray, optional
             list of weights associated with each sample
         """
+        from pesummary.utils.credible_interval import credible_interval
         if weights is None:
             return np.median(array)
-        return Array.percentile(array, weights=weights, percentile=50)
+        return credible_interval(array, 50, weights=weights)
 
     @staticmethod
     def _maxL(array, likelihood=None):
@@ -239,11 +241,11 @@ class Array(np.ndarray):
                 except AttributeError:
                     if key == "5th percentile":
                         _value = safe_dtype_change(
-                            array.confidence_interval(percentile=5), float
+                            array.credible_interval(percentile=5), float
                         )
                     elif key == "95th percentile":
                         _value = safe_dtype_change(
-                            array.confidence_interval(percentile=95), float
+                            array.credible_interval(percentile=95), float
                         )
                     else:
                         _value = safe_dtype_change(
@@ -257,8 +259,24 @@ class Array(np.ndarray):
             mydict[key] = _value
         return mydict
 
+    @staticmethod
+    @deprecation(
+        "The Array.percentile method will be deprecated in future releases. Please "
+        "use pesummary.utils.credible_interval.credible_interval instead"
+    )
+    def percentile(array, weights=None, percentile=None):
+        from pesummary.utils.credible_interval import credible_interval
+        return credible_interval(array, percentile, weights=weights)
+
+    @deprecation(
+        "The Array.confidence_interval method will be deprecated in future releases. "
+        "Please use Array.credible_interval instead"
+    )
     def confidence_interval(self, percentile=None):
-        """Return the confidence interval of the array
+        return self.credible_interval(percentile=percentile)
+
+    def credible_interval(self, percentile=None):
+        """Return the credible interval of the array
 
         Parameters
         ----------
@@ -266,9 +284,26 @@ class Array(np.ndarray):
             Percentile or sequence of percentiles to compute, which must be
             between 0 and 100 inclusive
         """
+        from pesummary.utils.credible_interval import credible_interval
+        if percentile is not None:
+            if isinstance(percentile, int):
+                return credible_interval(self, percentile, weights=self.weights)
+            return np.array(
+                [credible_interval(self, i, weights=self.weights) for i in percentile]
+            )
+        return np.array(
+            [credible_interval(self, i, weights=self.weights) for i in [5, 95]]
+        )
+
+    def two_sided_credible_interval(self, percentile=90):
+        """Return the two-sided credible interval of the array
+
+        Parameters
+        ----------
+        percentile: float, optional
+            Percentile to compute. Must be between 0 and 100 inclusive. Default 90
+        """
         from pesummary.utils.credible_interval import two_sided_credible_interval
-        if percentile is None:
-            percentile = [5, 95]
         return two_sided_credible_interval(self, percentile, weights=self.weights)
 
     def __array_finalize__(self, obj):

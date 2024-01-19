@@ -19,6 +19,7 @@ def weighted_credible_interval(samples, percentile, weights):
         array of weights of length samples
     """
     percentile = np.array(percentile).astype(float)
+    weights = np.asarray(weights)
     if percentile.ndim < 1:
         percentile = np.array([percentile])
     ind_sorted = np.argsort(samples)
@@ -34,6 +35,21 @@ def weighted_credible_interval(samples, percentile, weights):
         return float(data[0])
     return data
 
+def credible_interval(samples, percentile, weights=None):
+    """Compute the credible interval for a set of samples.
+
+    Parameters
+    ----------
+    samples: np.ndarray
+        array of samples you wish to calculate the credible interval for
+    percentile: float, list
+        percentile(s) you wish to compute.
+    weights: np.ndarray, optional
+        array of weights of length samples
+    """
+    if weights is None:
+        return np.percentile(samples, percentile)
+    return weighted_credible_interval(samples, percentile, weights)
 
 def two_sided_credible_interval(samples, percentile, weights=None):
     """Compute the 2-sided credible interval from a set of samples.
@@ -42,20 +58,23 @@ def two_sided_credible_interval(samples, percentile, weights=None):
     ----------
     samples: np.ndarray
         array of samples you wish to calculate the credible interval for
-    percentile: list
-        list of floats, giving the upper and lower percentile you wish to use
+    percentile: float, list
+        percentile(s) you wish to compute. If a single value if provided,
+        the upper bound is defined as 50 + percentile / 2 and the lower
+        bound is defined as 50 - percentile / 2. If a list of 2 values
+        if provided, the first is assumed to be the lower bound and
+        the second is assumed to be the upper bound
     weights: np.ndarray, optional
         array of weights of length samples
     """
     percentile = np.array(percentile).astype(float)
     if percentile.ndim and len(percentile) > 2:
-        raise ValueError(
-            "Please provide only an upper and lower credible interval"
-        )
-    if weights is None:
-        return np.percentile(samples, percentile)
-    return weighted_credible_interval(samples, percentile, weights)
-
+        raise ValueError("Please provide a single percentile to compute")
+    elif percentile.ndim and len(percentile) == 1:
+        percentile = np.array(percentile[0]).astype(float)
+    if not percentile.ndim:
+        percentile = [50 - percentile / 2, 50 + percentile / 2]
+    return credible_interval(samples, _percentile, weights=weights)
 
 def hpd_two_sided_credible_interval(
     samples, percentile, weights=None, xlow=None, xhigh=None, xN=1000,
