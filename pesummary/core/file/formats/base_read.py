@@ -491,7 +491,7 @@ class Read(object):
             table += "{}".format(desc)
             for samples_dict in samples:
                 median = samples_dict[param].average(type="median")
-                confidence = samples_dict[param].confidence_interval()
+                confidence = samples_dict[param].credible_interval()
                 table += (
                     " & $%s^{+%s}_{-%s}$" % (
                         np.round(median, 2),
@@ -545,7 +545,7 @@ class Read(object):
                     description = desc
 
                 median = samples_dict[param].average(type="median")
-                confidence = samples_dict[param].confidence_interval()
+                confidence = samples_dict[param].credible_interval()
                 if rounding == "smart":
                     from pesummary.utils.utils import smart_round
 

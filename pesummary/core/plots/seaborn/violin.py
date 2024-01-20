@@ -652,7 +652,7 @@ class ViolinPlotter(_ViolinPlotter):
                     from pesummary.utils.array import Array
 
                     _data = Array(data, weights=weights)
-                    lower, upper = _data.confidence_interval(
+                    lower, upper = _data.credible_interval(
                         [100 - percent, percent]
                     )
                 h1 = np.min(data[data >= (upper)])
@@ -688,7 +688,7 @@ class ViolinPlotter(_ViolinPlotter):
                     from pesummary.utils.array import Array
 
                     _data = Array(data, weights=weights)
-                    lower, upper = _data.confidence_interval(
+                    lower, upper = _data.credible_interval(
                         [100 - percent, percent]
                     )
                 h1 = np.min(data[data >= (upper)])

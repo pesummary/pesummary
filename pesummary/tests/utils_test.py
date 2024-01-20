@@ -876,7 +876,7 @@ class TestArray(object):
         assert array.average(type="median") == np.median(samples)
         assert array.standard_deviation == np.std(samples)
         np.testing.assert_almost_equal(
-            array.confidence_interval(percentile=[5, 95]),
+            array.credible_interval(percentile=[5, 95]),
             [np.percentile(array, 5), np.percentile(array, 95)]
         )
 
@@ -885,7 +885,7 @@ class TestArray(object):
         weights = np.array([np.random.randint(100) for _ in range(10000)])
         array = Array(x, weights=weights)
         numpy = np.percentile(np.repeat(x, weights), 90)
-        pesummary = array.confidence_interval(percentile=90)
+        pesummary = array.credible_interval(percentile=90)
         np.testing.assert_almost_equal(numpy, pesummary, 6)
 
     def test_key_data(self):
