@@ -7,11 +7,13 @@ from pathlib import Path
 from astropy.utils.console import ProgressBarOrSpinner
 from astropy.utils.data import download_file, conf, _tempfilestodel
 from pesummary.io import read
+from pesummary.utils.utils import CACHE_DIR
 from tempfile import NamedTemporaryFile
 import tarfile
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
-download_dir = os.path.expanduser(os.path.join("~", ".cache", "data"))
+
+download_dir = os.path.join(CACHE_DIR, "data")
 
 try:
     import ciecplib
