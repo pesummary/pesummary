@@ -386,7 +386,7 @@ def _1d_analytic_plot(
 
     ax.plot(pdf, pdf.weights, color=color, linestyle=linestyle, label=label)
     _xlims = ax.get_xlim()
-    percentile = pdf.confidence_interval([5, 95])
+    percentile = pdf.credible_interval([5, 95])
     median = pdf.average("median")
     if title:
         upper = np.round(percentile[1] - median, 2)
@@ -548,7 +548,7 @@ def _1d_histogram_plot(
         if "90% HPD" in key_data.keys():
            hdp = key_data["90% HPD"]
     else:
-        percentile = samples.confidence_interval([5, 95])
+        percentile = samples.credible_interval([5, 95])
         median = samples.average("median")
     if plot_percentile:
         for pp in percentile:

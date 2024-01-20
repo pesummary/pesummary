@@ -286,14 +286,8 @@ class Array(np.ndarray):
         """
         from pesummary.utils.credible_interval import credible_interval
         if percentile is not None:
-            if isinstance(percentile, int):
-                return credible_interval(self, percentile, weights=self.weights)
-            return np.array(
-                [credible_interval(self, i, weights=self.weights) for i in percentile]
-            )
-        return np.array(
-            [credible_interval(self, i, weights=self.weights) for i in [5, 95]]
-        )
+            return credible_interval(self, percentile, weights=self.weights)
+        return self.credible_interval(percentile=[5, 95])
 
     def two_sided_credible_interval(self, percentile=90):
         """Return the two-sided credible interval of the array

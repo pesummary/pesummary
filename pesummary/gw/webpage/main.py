@@ -76,7 +76,7 @@ class CommandLineCaption(object):
                 " The median of the distribution is {} with 90% confidence "
                 "interval {}".format(
                     np.round(self.samples.average(type="median"), 3),
-                    [np.round(i, 3) for i in self.samples.confidence_interval()]
+                    [np.round(i, 3) for i in self.samples.credible_interval()]
                 )
             )
         return general_cli

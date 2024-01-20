@@ -18,6 +18,7 @@ def weighted_credible_interval(samples, percentile, weights):
     weights: np.ndarray
         array of weights of length samples
     """
+    float_type = isinstance(percentile, (float, int, np.number))
     percentile = np.array(percentile).astype(float)
     weights = np.asarray(weights)
     if percentile.ndim < 1:
@@ -31,7 +32,8 @@ def weighted_credible_interval(samples, percentile, weights):
         inds = np.argwhere(Sn >= p)[0]
         data[num] = np.interp(percentile, Sn[inds], sorted_data[inds])[0]
 
-    if len(percentile) == 1:
+    # conserve input type
+    if float_type:
         return float(data[0])
     return data
 
@@ -50,6 +52,7 @@ def credible_interval(samples, percentile, weights=None):
     if weights is None:
         return np.percentile(samples, percentile)
     return weighted_credible_interval(samples, percentile, weights)
+
 
 def two_sided_credible_interval(samples, percentile, weights=None):
     """Compute the 2-sided credible interval from a set of samples.
@@ -74,7 +77,7 @@ def two_sided_credible_interval(samples, percentile, weights=None):
         percentile = np.array(percentile[0]).astype(float)
     if not percentile.ndim:
         percentile = [50 - percentile / 2, 50 + percentile / 2]
-    return credible_interval(samples, _percentile, weights=weights)
+    return credible_interval(samples, percentile, weights=weights)
 
 def hpd_two_sided_credible_interval(
     samples, percentile, weights=None, xlow=None, xhigh=None, xN=1000,
