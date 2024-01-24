@@ -1,5 +1,7 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+from pathlib import Path
+
 from pesummary.core.fetch import (
     download_and_read_file, _download_authenticated_file
 )
@@ -154,7 +156,22 @@ def fetch_open_samples(event, **kwargs):
     **kwargs: dict, optional
         all additional kwargs passed to _fetch_open_data
     """
-    return _fetch_open_data(event, type="posterior", **kwargs)
+    # fetch posterior data
+    out = _fetch_open_data(event, type="posterior", **kwargs)
+
+    # if asked to read the data, or unpack a tarball, just return it now
+    if (
+        kwargs.get("read_file", True)
+        or kwargs.get("unpack", False)
+    ):
+        return out
+
+    # otherwise, if Zenodo returned a file without a suffix, we need to add one
+    # see https://git.ligo.org/gwosc/client/-/issues/95
+    out = Path(out)
+    if not out.suffix:
+        out = out.rename(out.with_suffix(".h5"))
+    return str(out)
 
 
 def fetch_open_strain(event, format="gwf", **kwargs):
