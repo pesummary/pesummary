@@ -41,8 +41,22 @@ default:
 
 
 variables:
+  # caching
   PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pip"
   XDG_CACHE_HOME: "${CI_PROJECT_DIR}/.cache"
+  # force individual tests to only use one core
+  # (list taken from
+  #  https://github.com/htcondor/htcondor/blob/v23.0.0/src/condor_utils/param_info.in#L2693)
+  CUBACORES: 1
+  GOMAXPROCS: 1
+  JULIA_NUM_THREADS: 1
+  MKL_NUM_THREADS: 1
+  NUMEXPR_NUM_THREADS: 1
+  OMP_NUM_THREADS: 1
+  OMP_THREAD_LIMIT: 1
+  OPENBLAS_NUM_THREADS: 1
+  TF_LOOP_PARALLEL_ITERATIONS: 1
+  TF_NUM_THREADS: 1
 
 
 cache:
