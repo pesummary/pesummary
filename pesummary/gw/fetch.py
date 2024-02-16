@@ -33,7 +33,7 @@ def fetch(url, download_kwargs={}, **kwargs):
 
 def _DCC_url(
     event, type="posterior", catalog=None, sampling_rate=16384, format="gwf",
-    duration=32, IFO="L1"
+    duration=32, IFO="L1", version=None,
 ):
     """Return the url for posterior samples stored on the DCC for a given event
 
@@ -57,13 +57,17 @@ def _DCC_url(
     IFO: str, optional
         detector strain data you wish to download. Only used when type="strain".
         Default 'L1'
+    version: str, optional
+        version of the file to download. Default None
     """
     if type not in ["posterior", "strain"]:
         raise ValueError(
             "Unknown data type: '{}'. Must be either 'posterior' or "
             "'strain'.".format(type)
         )
-    data, = fetch_event_json(event, catalog=catalog)["events"].values()
+    data, = fetch_event_json(
+        event, catalog=catalog, version=version
+    )["events"].values()
     url = None
     if type == "posterior":
         for key, item in data["parameters"].items():
@@ -104,8 +108,8 @@ def fetch_open_data(event, **kwargs):
 
 
 def _fetch_open_data(
-    event, type="posterior", catalog=None, sampling_rate=16384, format="gwf",
-    duration=32, IFO="L1", **kwargs
+    event, type="posterior", catalog=None, version=None, sampling_rate=16384,
+    format="gwf", duration=32, IFO="L1", **kwargs
 ):
     """Download and read publcally available gravitational wave data
 
@@ -117,6 +121,8 @@ def _fetch_open_data(
         type of data you wish to download. Default "posterior"
     catalog: str, optional
         Name of catalog that hosts the event. Default None
+    version: str, optional
+        Version of the file to download. Default None
     sampling_rate: int, optional
         sampling rate of strain data you wish to download. Only used when
         type="strain". Default 16384
@@ -133,7 +139,7 @@ def _fetch_open_data(
     try:
         url = _DCC_url(
             event, type=type, catalog=catalog, sampling_rate=sampling_rate,
-            format=format, duration=duration, IFO=IFO
+            format=format, duration=duration, IFO=IFO, version=version
         )
     except RuntimeError:
         raise ValueError(

@@ -166,8 +166,7 @@ def get_list_of_plots(
             plots.append("%s/plots/test.png" % (outdir))
         if expert:
             for j in parameters:
-                if j != "log_likelihood":
-                    plots.append("%s/plots/%s%s_2d_contour_%s_log_likelihood.png" % (outdir, label, num, j))
+                plots.append("%s/plots/%s%s_2d_contour_%s_log_likelihood.png" % (outdir, label, num, j))
                 plots.append("%s/plots/%s%s_1d_posterior_%s_bootstrap.png" % (outdir, label, num, j))
                 plots.append("%s/plots/%s%s_sample_evolution_%s_log_likelihood_colored.png" % (outdir, label, num, j))
     if number > 1 and comparison:

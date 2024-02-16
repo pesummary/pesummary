@@ -59,14 +59,14 @@ class TestSummaryGracedb(Base):
     def setup_method(self):
         """Setup the SummaryPublication class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
 
     def teardown_method(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_fake_event(self):
@@ -83,19 +83,19 @@ class TestSummaryGracedb(Base):
         """
         import json
         command_line = (
-            "summarygracedb --id S190412m --output .outdir/output.json"
+            f"summarygracedb --id S190412m --output {tmpdir}/output.json"
         )
         self.launch(command_line)
-        with open(".outdir/output.json", "r") as f:
+        with open(f"{tmpdir}/output.json", "r") as f:
             data = json.load(f)
         assert data["superevent_id"] == "S190412m"
         assert "em_type" in data.keys()
         command_line = (
-            "summarygracedb --id S190412m --output .outdir/output2.json "
+            f"summarygracedb --id S190412m --output {tmpdir}/output2.json "
             "--info superevent_id far created"
         )
         self.launch(command_line)
-        with open(".outdir/output2.json", "r") as f:
+        with open(f"{tmpdir}/output2.json", "r") as f:
             data2 = json.load(f)
         assert len(data2) == 3
         assert all(
@@ -113,23 +113,23 @@ class TestSummaryDetchar(Base):
         """Setup the SummaryDetchar class
         """
         from gwpy.timeseries import TimeSeries
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
 
         H1_series = TimeSeries(
             np.random.uniform(-1, 1, 1000), t0=101, dt=0.1, name="H1:test"
         )
-        H1_series.write(".outdir/H1.gwf", format="gwf")
+        H1_series.write(f"{tmpdir}/H1.gwf", format="gwf")
         L1_series = TimeSeries(
             np.random.uniform(-1, 1, 1000), t0=101, dt=0.1, name="L1:test"
         )
-        L1_series.write(".outdir/L1.hdf", format="hdf5")
+        L1_series.write(f"{tmpdir}/L1.hdf", format="hdf5")
 
     def teardown_method(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_spectrogram(self):
@@ -141,12 +141,12 @@ class TestSummaryDetchar(Base):
 
         rcParams["text.usetex"] = False
         command_line = (
-            "summarydetchar --gwdata H1:test:.outdir/H1.gwf L1:test:.outdir/L1.hdf "
-            "--webdir .outdir --plot spectrogram"
+            f"summarydetchar --gwdata H1:test:{tmpdir}/H1.gwf L1:test:{tmpdir}/L1.hdf "
+            f"--webdir {tmpdir} --plot spectrogram"
         )
         self.launch(command_line)
-        assert os.path.isfile(".outdir/spectrogram_H1.png")
-        assert os.path.isfile(".outdir/spectrogram_L1.png")
+        assert os.path.isfile(f"{tmpdir}/spectrogram_H1.png")
+        assert os.path.isfile(f"{tmpdir}/spectrogram_L1.png")
 
     @pytest.mark.executabletest
     def test_omegascan(self):
@@ -155,12 +155,12 @@ class TestSummaryDetchar(Base):
         """
         from gwpy.timeseries import TimeSeries
         command_line = (
-            "summarydetchar --gwdata H1:test:.outdir/H1.gwf L1:test:.outdir/L1.hdf "
-            "--webdir .outdir --plot omegascan --gps 150 --window 0.1"
+            f"summarydetchar --gwdata H1:test:{tmpdir}/H1.gwf L1:test:{tmpdir}/L1.hdf "
+            f"--webdir {tmpdir} --plot omegascan --gps 150 --window 0.1"
         )
         self.launch(command_line)
-        assert os.path.isfile(".outdir/omegascan_H1.png")
-        assert os.path.isfile(".outdir/omegascan_L1.png")
+        assert os.path.isfile(f"{tmpdir}/omegascan_H1.png")
+        assert os.path.isfile(f"{tmpdir}/omegascan_L1.png")
 
 
 class TestSummaryPublication(Base):
@@ -169,29 +169,29 @@ class TestSummaryPublication(Base):
     def setup_method(self):
         """Setup the SummaryPublication class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(bilby=True, gw=True)
-        os.rename(".outdir/test.json", ".outdir/bilby.json")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(bilby=True, gw=True, outdir=tmpdir)
+        os.rename(f"{tmpdir}/test.json", f"{tmpdir}/bilby.json")
 
     def teardown_method(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_2d_contour(self):
         """Test the 2d contour plot generation
         """
         command_line = (
-            "summarypublication --webdir .outdir --samples .outdir/bilby.json "
+            f"summarypublication --webdir {tmpdir} --samples {tmpdir}/bilby.json "
             "--labels test --parameters mass_1 mass_2 --levels 0.9 0.5 "
             "--plot 2d_contour --palette colorblind"
         )
         self.launch(command_line)
         assert os.path.isfile(
-            os.path.join(".outdir", "2d_contour_plot_mass_1_and_mass_2.png")
+            os.path.join(tmpdir, "2d_contour_plot_mass_1_and_mass_2.png")
         )
 
     @pytest.mark.executabletest
@@ -199,13 +199,13 @@ class TestSummaryPublication(Base):
         """Test the violin plot generation
         """
         command_line = (
-            "summarypublication --webdir .outdir --samples .outdir/bilby.json "
+            f"summarypublication --webdir {tmpdir} --samples {tmpdir}/bilby.json "
             "--labels test --parameters mass_1 --plot violin "
             "--palette colorblind"
         )
         self.launch(command_line)
         assert os.path.isfile(
-            os.path.join(".outdir", "violin_plot_mass_1.png")
+            os.path.join(tmpdir, "violin_plot_mass_1.png")
         )
 
     @pytest.mark.executabletest
@@ -213,13 +213,13 @@ class TestSummaryPublication(Base):
         """Test the spin disk generation
         """
         command_line = (
-            "summarypublication --webdir .outdir --samples .outdir/bilby.json "
+            f"summarypublication --webdir {tmpdir} --samples {tmpdir}/bilby.json "
             "--labels test --parameters mass_1 --plot spin_disk "
             "--palette colorblind"
         )
         self.launch(command_line)
         assert os.path.isfile(
-            os.path.join(".outdir", "spin_disk_plot_test.png")
+            os.path.join(tmpdir, "spin_disk_plot_test.png")
         )
 
 
@@ -989,26 +989,28 @@ class TestSummaryTGR(Base):
     def setup_method(self):
         """Setup the SummaryTGR class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(pesummary=True, gw=True, pesummary_label="test")
-        os.rename(".outdir/test.json", ".outdir/pesummary.json")
-        make_result_file(bilby=True, gw=True)
-        os.rename(".outdir/test.json", ".outdir/bilby.json")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(
+            outdir=tmpdir, pesummary=True, gw=True, pesummary_label="test"
+        )
+        os.rename(f"{tmpdir}/test.json", f"{tmpdir}/pesummary.json")
+        make_result_file(outdir=tmpdir, bilby=True, gw=True)
+        os.rename(f"{tmpdir}/test.json", f"{tmpdir}/bilby.json")
 
     def teardown_method(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def check_output(self, diagnostic=True):
         """Check the output from the `summarytgr` executable
         """
         import glob
 
-        image_files = glob.glob(".outdir/plots/*")
-        image_base_string = ".outdir/plots/primary_imrct_{}.png"
+        image_files = glob.glob(f"{tmpdir}/plots/*")
+        image_base_string = tmpdir + "/plots/primary_imrct_{}.png"
         file_strings = ["deviations_triangle_plot"]
         if diagnostic:
             file_strings += [
@@ -1023,8 +1025,8 @@ class TestSummaryTGR(Base):
         """Test the `summarytgr` executable for a random result file
         """
         command_line = (
-            "summarytgr --webdir .outdir "
-            "--samples .outdir/bilby.json .outdir/bilby.json "
+            f"summarytgr --webdir {tmpdir} "
+            f"--samples {tmpdir}/bilby.json {tmpdir}/bilby.json "
             "--test imrct "
             "--labels inspiral postinspiral "
             "--imrct_kwargs N_bins:11 "
@@ -1039,8 +1041,8 @@ class TestSummaryTGR(Base):
         """Test the `summarytgr` executable for a pesummary metafile
         """
         command_line = (
-            "summarytgr --webdir .outdir --samples "
-            ".outdir/pesummary.json .outdir/pesummary.json --labels "
+            f"summarytgr --webdir {tmpdir} --samples "
+            f"{tmpdir}/pesummary.json {tmpdir}/pesummary.json --labels "
             "test:inspiral test:postinspiral --test imrct --imrct_kwargs "
             "N_bins:11 --disable_pe_page_generation"
         )
@@ -1056,19 +1058,19 @@ class TestSummaryTGR(Base):
         from pesummary.io import read
 
         make_result_file(outdir="./", extension="dat", gw=True, random_seed=123456789)
-        os.rename("./test.dat", ".outdir/inspiral.dat")
+        os.rename("./test.dat", f"{tmpdir}/inspiral.dat")
         make_result_file(outdir="./", extension="dat", gw=True, random_seed=987654321)
-        os.rename("./test.dat", ".outdir/postinspiral.dat")
+        os.rename("./test.dat", f"{tmpdir}/postinspiral.dat")
         command_line = (
-                "summarytgr --webdir .outdir "
-                "--samples .outdir/inspiral.dat .outdir/postinspiral.dat "
+                f"summarytgr --webdir {tmpdir} "
+                f"--samples {tmpdir}/inspiral.dat {tmpdir}/postinspiral.dat "
                 "--test imrct "
                 "--labels inspiral postinspiral "
                 "--imrct_kwargs N_bins:201 final_mass_deviation_lim:3 final_spin_deviation_lim:3 "
                 "--disable_pe_page_generation"
         )
         self.launch(command_line)
-        f = read(".outdir/samples/tgr_samples.h5")
+        f = read(f"{tmpdir}/samples/tgr_samples.h5")
         pesummary_quantile = f.extra_kwargs["primary"]["GR Quantile (%)"]
         probdict = f.imrct_deviation["final_mass_final_spin_deviations"]
         lal_pdf = np.loadtxt(os.path.join(data_dir, "lal_pdf_for_summarytgr.dat.gz"))
@@ -1451,16 +1453,16 @@ class TestSummarySplit(Base):
     def setup_method(self):
         """Setup the SummarySplit class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(gw=False, extension="json")
-        make_result_file(gw=False, extension="hdf5", n_samples=500)
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(outdir=tmpdir, gw=False, extension="json")
+        make_result_file(outdir=tmpdir, gw=False, extension="hdf5", n_samples=500)
 
     def teardown_method(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_split_single_analysis(self):
@@ -1469,12 +1471,12 @@ class TestSummarySplit(Base):
         """
         from pesummary.io import read
         command_line = (
-            "summarysplit --samples .outdir/test.json --file_format json "
-            "--outdir .outdir/split"
+            f"summarysplit --samples {tmpdir}/test.json --file_format json "
+            f"--outdir {tmpdir}/split"
         )
         self.launch(command_line)
-        original = read(".outdir/test.json").samples_dict
-        files = glob.glob(".outdir/split/*.json")
+        original = read(f"{tmpdir}/test.json").samples_dict
+        files = glob.glob(f"{tmpdir}/split/*.json")
         assert len(files) == original.number_of_samples
         for num, f in enumerate(files):
             g = read(f).samples_dict
@@ -1484,7 +1486,7 @@ class TestSummarySplit(Base):
                 assert g[param] == original[param][idx]
         command_line = (
             "summarycombine_posteriors --use_all --samples {} "
-            "--outdir .outdir --filename combined_split.dat "
+            f"--outdir {tmpdir} --filename combined_split.dat "
             "--file_format dat --labels {}"
         ).format(
             " ".join(files), " ".join(
@@ -1492,7 +1494,7 @@ class TestSummarySplit(Base):
             )
         )
         self.launch(command_line)
-        combined = read(".outdir/combined_split.dat").samples_dict
+        combined = read(f"{tmpdir}/combined_split.dat").samples_dict
         assert all(param in original.keys() for param in combined.keys())
         for param in original.keys():
             assert all(sample in combined[param] for sample in original[param])
@@ -1505,12 +1507,12 @@ class TestSummarySplit(Base):
         """
         from pesummary.io import read
         command_line = (
-            "summarysplit --samples .outdir/test.json --file_format json "
-            "--outdir .outdir/split --N_files 10"
+            f"summarysplit --samples {tmpdir}/test.json --file_format json "
+            f"--outdir {tmpdir}/split --N_files 10"
         )
         self.launch(command_line)
-        original = read(".outdir/test.json").samples_dict
-        files = glob.glob(".outdir/split/*.json")
+        original = read(f"{tmpdir}/test.json").samples_dict
+        files = glob.glob(f"{tmpdir}/split/*.json")
         assert len(files) == 10
         for num, f in enumerate(files):
             g = read(f).samples_dict
@@ -1524,21 +1526,21 @@ class TestSummarySplit(Base):
         """
         from pesummary.io import read
         command_line = (
-            "summarycombine --webdir .outdir --samples .outdir/test.json "
-            ".outdir/test.h5 --labels one two"
+            f"summarycombine --webdir {tmpdir} --samples {tmpdir}/test.json "
+            f"{tmpdir}/test.h5 --labels one two"
         )
         self.launch(command_line)
         command_line = (
-            "summarysplit --samples .outdir/samples/posterior_samples.h5 "
-            "--file_format hdf5 --outdir .outdir/split"
+            f"summarysplit --samples {tmpdir}/samples/posterior_samples.h5 "
+            f"--file_format hdf5 --outdir {tmpdir}/split"
         )
         self.launch(command_line)
-        assert os.path.isdir(".outdir/split/one")
-        assert os.path.isdir(".outdir/split/two")
-        zipped = zip(["one", "two"], [".outdir/test.json", ".outdir/test.h5"])
+        assert os.path.isdir(f"{tmpdir}/split/one")
+        assert os.path.isdir(f"{tmpdir}/split/two")
+        zipped = zip(["one", "two"], [f"{tmpdir}/test.json", f"{tmpdir}/test.h5"])
         for analysis, f in zipped:
             original = read(f).samples_dict
-            files = glob.glob(".outdir/split/{}/*.hdf5".format(analysis))
+            files = glob.glob(f"{tmpdir}/split/{analysis}/*.hdf5")
             assert len(files) == original.number_of_samples
             for num, g in enumerate(files):
                 h = read(g).samples_dict
@@ -1553,18 +1555,18 @@ class TestSummaryExtract(Base):
     def setup_method(self):
         """Setup the SummaryExtract class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(gw=False, extension="json")
-        os.rename(".outdir/test.json", ".outdir/example.json")
-        make_result_file(gw=False, extension="hdf5")
-        os.rename(".outdir/test.h5", ".outdir/example2.h5")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(outdir=tmpdir, gw=False, extension="json")
+        os.rename(f"{tmpdir}/test.json", f"{tmpdir}/example.json")
+        make_result_file(outdir=tmpdir, gw=False, extension="hdf5")
+        os.rename(f"{tmpdir}/test.h5", f"{tmpdir}/example2.h5")
 
     def teardown_method(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_extract(self):
@@ -1572,28 +1574,28 @@ class TestSummaryExtract(Base):
         """
         from pesummary.io import read
         command_line = (
-            "summarycombine --samples .outdir/example.json .outdir/example2.h5 "
-            "--labels one two --webdir .outdir"
+            f"summarycombine --samples {tmpdir}/example.json {tmpdir}/example2.h5 "
+            f"--labels one two --webdir {tmpdir}"
         )
         self.launch(command_line)
         command_line = (
-            "summaryextract --outdir .outdir --filename one.dat --file_format dat "
-            "--samples .outdir/samples/posterior_samples.h5 --label one"
+            f"summaryextract --outdir {tmpdir} --filename one.dat --file_format dat "
+            f"--samples {tmpdir}/samples/posterior_samples.h5 --label one"
         )
         self.launch(command_line)
-        assert os.path.isfile(".outdir/one.dat")
-        extracted = read(".outdir/one.dat").samples_dict
-        original = read(".outdir/example.json").samples_dict
+        assert os.path.isfile(f"{tmpdir}/one.dat")
+        extracted = read(f"{tmpdir}/one.dat").samples_dict
+        original = read(f"{tmpdir}/example.json").samples_dict
         assert all(param in extracted.keys() for param in original.keys())
         np.testing.assert_almost_equal(extracted.samples, original.samples)
         command_line = (
-            "summaryextract --outdir .outdir --filename one.h5 --label one "
+            f"summaryextract --outdir {tmpdir} --filename one.h5 --label one "
             "--file_format pesummary "
-            "--samples .outdir/samples/posterior_samples.h5 "
+            f"--samples {tmpdir}/samples/posterior_samples.h5 "
         )
         self.launch(command_line)
-        assert os.path.isfile(".outdir/one.h5")
-        extracted = read(".outdir/one.h5").samples_dict
+        assert os.path.isfile(f"{tmpdir}/one.h5")
+        extracted = read(f"{tmpdir}/one.h5").samples_dict
         assert "dataset" in extracted.keys()
         assert all(param in extracted["dataset"].keys() for param in original.keys())
         np.testing.assert_almost_equal(extracted["dataset"].samples, original.samples)
@@ -1605,20 +1607,20 @@ class TestSummaryCombine_Posteriors(Base):
     def setup_method(self):
         """Setup the SummaryCombine_Posteriors class
         """
-        if not os.path.isdir(".outdir"):
-            os.mkdir(".outdir")
-        make_result_file(gw=True, extension="json")
-        os.rename(".outdir/test.json", ".outdir/example.json")
-        make_result_file(gw=True, extension="hdf5")
-        os.rename(".outdir/test.h5", ".outdir/example2.h5")
-        make_result_file(gw=True, extension="dat")
-        os.rename(".outdir/test.dat", ".outdir/example3.dat")
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        make_result_file(outdir=tmpdir, gw=True, extension="json")
+        os.rename(f"{tmpdir}/test.json", f"{tmpdir}/example.json")
+        make_result_file(outdir=tmpdir, gw=True, extension="hdf5")
+        os.rename(f"{tmpdir}/test.h5", f"{tmpdir}/example2.h5")
+        make_result_file(outdir=tmpdir, gw=True, extension="dat")
+        os.rename(f"{tmpdir}/test.dat", f"{tmpdir}/example3.dat")
 
     def teardown_method(self):
         """Remove the files and directories created from this class
         """
-        if os.path.isdir(".outdir"):
-            shutil.rmtree(".outdir")
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
     def test_combine(self):
@@ -1626,15 +1628,15 @@ class TestSummaryCombine_Posteriors(Base):
         """
         from pesummary.io import read
         command_line = (
-            "summarycombine_posteriors --outdir .outdir --filename test.dat "
-            "--file_format dat --samples .outdir/example.json .outdir/example2.h5 "
+            f"summarycombine_posteriors --outdir {tmpdir} --filename test.dat "
+            f"--file_format dat --samples {tmpdir}/example.json {tmpdir}/example2.h5 "
             "--labels one two --weights 0.5 0.5 --seed 12345"
         )
         self.launch(command_line)
-        assert os.path.isfile(".outdir/test.dat")
-        combined = read(".outdir/test.dat").samples_dict
-        one = read(".outdir/example.json").samples_dict
-        two = read(".outdir/example2.h5").samples_dict
+        assert os.path.isfile(f"{tmpdir}/test.dat")
+        combined = read(f"{tmpdir}/test.dat").samples_dict
+        one = read(f"{tmpdir}/example.json").samples_dict
+        two = read(f"{tmpdir}/example2.h5").samples_dict
         nsamples = combined.number_of_samples
         half = int(nsamples / 2.)
         for param in combined.keys():
@@ -1648,31 +1650,31 @@ class TestSummaryCombine_Posteriors(Base):
         to combine posteriors from multiple metafiles
         """
         command_line = (
-            "summarycombine --samples .outdir/example.json .outdir/example2.h5 "
-            ".outdir/example3.dat --labels one two three --webdir .outdir "
+            f"summarycombine --samples {tmpdir}/example.json {tmpdir}/example2.h5 "
+            f"{tmpdir}/example3.dat --labels one two three --webdir {tmpdir} "
             "--no_conversion"
         )
         self.launch(command_line)
         with pytest.raises(Exception):
             command_line = (
-                "summarycombine_posteriors --outdir .outdir --filename test.dat "
-                "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
+                f"summarycombine_posteriors --outdir {tmpdir} --filename test.dat "
+                f"--file_format dat --samples {tmpdir}/samples/posterior_samples.h5 "
                 "--labels one four --weights 0.5 0.5 --seed 12345"
             )
             self.launch(command_line)
         with pytest.raises(Exception):
             command_line = (
-                "summarycombine_posteriors --outdir .outdir --filename test.dat "
-                "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
-                ".outdir/samples/posterior_samples.h5 --labels one two "
+                f"summarycombine_posteriors --outdir {tmpdir} --filename test.dat "
+                f"--file_format dat --samples {tmpdir}/samples/posterior_samples.h5 "
+                f"{tmpdir}/samples/posterior_samples.h5 --labels one two "
                 "--weights 0.5 0.5 --seed 12345"
             )
             self.launch(command_line)
         with pytest.raises(Exception):
             command_line = (
-                "summarycombine_posteriors --outdir .outdir --filename test.dat "
-                "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
-                ".outdir/example3.dat --labels one two --weights 0.5 0.5 --seed 12345"
+                f"summarycombine_posteriors --outdir {tmpdir} --filename test.dat "
+                f"--file_format dat --samples {tmpdir}/samples/posterior_samples.h5 "
+                f"{tmpdir}/example3.dat --labels one two --weights 0.5 0.5 --seed 12345"
             )
             self.launch(command_line)
 
@@ -1683,21 +1685,21 @@ class TestSummaryCombine_Posteriors(Base):
         """
         from pesummary.io import read
         command_line = (
-            "summarycombine --samples .outdir/example.json .outdir/example2.h5 "
-            ".outdir/example3.dat --labels one two three --webdir .outdir "
+            f"summarycombine --samples {tmpdir}/example.json {tmpdir}/example2.h5 "
+            f"{tmpdir}/example3.dat --labels one two three --webdir {tmpdir} "
             "--no_conversion"
         )
         self.launch(command_line)
         command_line = (
-            "summarycombine_posteriors --outdir .outdir --filename test.dat "
-            "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
+            f"summarycombine_posteriors --outdir {tmpdir} --filename test.dat "
+            f"--file_format dat --samples {tmpdir}/samples/posterior_samples.h5 "
             "--labels one two --weights 0.5 0.5 --seed 12345"
         )
         self.launch(command_line)
-        assert os.path.isfile(".outdir/test.dat")
-        combined = read(".outdir/test.dat").samples_dict
-        one = read(".outdir/example.json").samples_dict
-        two = read(".outdir/example2.h5").samples_dict
+        assert os.path.isfile(f"{tmpdir}/test.dat")
+        combined = read(f"{tmpdir}/test.dat").samples_dict
+        one = read(f"{tmpdir}/example.json").samples_dict
+        two = read(f"{tmpdir}/example2.h5").samples_dict
         nsamples = combined.number_of_samples
         half = int(nsamples / 2.)
         for param in combined.keys():
@@ -1706,13 +1708,13 @@ class TestSummaryCombine_Posteriors(Base):
 
         # test that you add the samples to the original file
         command_line = (
-            "summarycombine_posteriors --outdir .outdir --filename test.h5 "
-            "--file_format dat --samples .outdir/samples/posterior_samples.h5 "
+            f"summarycombine_posteriors --outdir {tmpdir} --filename test.h5 "
+            f"--file_format dat --samples {tmpdir}/samples/posterior_samples.h5 "
             "--labels one two --weights 0.5 0.5 --seed 12345 --add_to_existing"
         )
         self.launch(command_line)
-        assert os.path.isfile(".outdir/test.h5")
-        combined = read(".outdir/test.h5")
+        assert os.path.isfile(f"{tmpdir}/test.h5")
+        combined = read(f"{tmpdir}/test.h5")
         combined_samples = combined.samples_dict
         assert "one_two_combined" in combined.labels
         assert "one_two_combined" in combined_samples.keys()
@@ -1722,13 +1724,13 @@ class TestSummaryCombine_Posteriors(Base):
             assert all(ss in two[param] for ss in combined_samples[param][half:])
         # check that summarypages works fine on output
         command_line = (
-            "summarypages --webdir .outdir/combined  "
-            " --no_conversion --samples .outdir/test.h5 "
+            f"summarypages --webdir {tmpdir}/combined  "
+            f" --no_conversion --samples {tmpdir}/test.h5 "
             "--disable_corner --disable_interactive --gw"
         )
         self.launch(command_line)
-        assert os.path.isfile(".outdir/combined/samples/posterior_samples.h5")
-        output = read(".outdir/combined/samples/posterior_samples.h5")
+        assert os.path.isfile(f"{tmpdir}/combined/samples/posterior_samples.h5")
+        output = read(f"{tmpdir}/combined/samples/posterior_samples.h5")
         assert "one_two_combined" in output.labels
 
 
@@ -2258,7 +2260,7 @@ class TestSummaryCompare(Base):
         command_line = (
             "summarycompare --samples {0}/example1.dat "
             "{0}/example2.json --properties_to_compare posterior_samples "
-            "-v --generate_comparison_page --webdir .outdir".format(
+            "-v --generate_comparison_page --webdir {0}".format(
                 tmpdir
             )
         )

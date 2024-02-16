@@ -981,10 +981,11 @@ def test_make_cache_style_file():
 
 def test_logger():
     with LogCapture() as l:
+        utils.logger.propagate = True
         utils.logger.info("info")
         utils.logger.warning("warning")
     l.check(("PESummary", "INFO", "info"),
-            ("PESummary", "WARNING", "warning"),)
+           ("PESummary", "WARNING", "warning"),)
 
 
 def test_string_match():

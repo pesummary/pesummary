@@ -12,6 +12,8 @@ from pesummary.cli.summarypages import _GWWebpageGeneration as GWWebpageGenerati
 from .base import make_result_file, get_list_of_plots, data_dir
 
 import pytest
+import tempfile
+from pathlib import Path
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -19,46 +21,47 @@ __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 class TestPlotGeneration(object):
 
     def setup_method(self):
-        directories = ["./.outdir_bilby", "./.outdir_lalinference",
-                       "./.outdir_comparison", "./.outdir_add_to_existing2",
-                       ".outdir_comparison_no_comparison",
-                       ".outdir_add_to_existing_no_comparison"]
-        for i in directories:
-            if os.path.isdir(i):
-                shutil.rmtree(i)
-            os.makedirs(i)
+        tmpdir = Path(tempfile.TemporaryDirectory(prefix=".", dir=".").name).name
+        os.makedirs(tmpdir)
+        self.dir = tmpdir
+
+    def teardown_method(self):
+        """Remove the files created from this class
+        """
+        if os.path.isdir(self.dir):
+            shutil.rmtree(self.dir)
 
     def test_plot_generation_for_bilby_structure(self):
-        with open("./.outdir_bilby/psd.dat", "w") as f:
+        with open(f"{self.dir}/psd.dat", "w") as f:
             f.writelines(["1.00 3.44\n"])
             f.writelines(["100.00 4.00\n"])
             f.writelines(["1000.00 5.00\n"])
             f.writelines(["2000.00 6.00\n"])
-        with open("./.outdir_bilby/calibration.dat", "w") as f:
+        with open(f"{self.dir}/calibration.dat", "w") as f:
             f.writelines(["1.0 2.0 3.0 4.0 5.0 6.0 7.0\n"])
             f.writelines(["2000.0 2.0 3.0 4.0 5.0 6.0 7.0"])
         parser = ArgumentParser()
         parser.add_all_known_options_to_parser()
         make_result_file(
-            gw=True, extension="hdf5", bilby=True, outdir="./.outdir_bilby/",
+            gw=True, extension="hdf5", bilby=True, outdir=self.dir,
             n_samples=10
         )
-        os.rename("./.outdir_bilby/test.h5", "./.outdir_bilby/bilby_example.h5")
+        os.rename(f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5")
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
-            "--webdir", "./.outdir_bilby",
-            "--samples", "./.outdir_bilby/bilby_example.h5",
+            "--webdir", self.dir,
+            "--samples", f"{self.dir}/bilby_example.h5",
             "--config", data_dir + "/config_bilby.ini",
-            "--psd", "./.outdir_bilby/psd.dat",
-            "--calibration", "./.outdir_bilby/calibration.dat",
+            "--psd", f"{self.dir}/psd.dat",
+            "--calibration", f"{self.dir}/calibration.dat",
             "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
-        plots = sorted(glob("./.outdir_bilby/plots/*.png"))
+        plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", outdir="./.outdir_bilby", psd=True,
+            gw=True, label="H1", outdir=self.dir, psd=True,
             calibration=False
         )
         for i, j in zip(expected_plots, plots):
@@ -70,25 +73,24 @@ class TestPlotGeneration(object):
         parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
-            outdir="./.outdir_lalinference/", n_samples=10
+            outdir=self.dir, n_samples=10
         )
         os.rename(
-            "./.outdir_lalinference/test.hdf5",
-            "./.outdir_lalinference/lalinference_example.h5"
+            f"{self.dir}/test.hdf5", f"{self.dir}/lalinference_example.h5"
         )
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
-            "--webdir", "./.outdir_lalinference",
-            "--samples", "./.outdir_lalinference/lalinference_example.h5",
+            "--webdir", self.dir,
+            "--samples", f"{self.dir}/lalinference_example.h5",
             "--config", data_dir + "/config_lalinference.ini",
             "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
-        plots = sorted(glob("./.outdir_lalinference/plots/*.png"))
+        plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", outdir="./.outdir_lalinference"
+            gw=True, label="H1", outdir=self.dir,
         )
         assert all(i == j for i,j in zip(sorted(expected_plots), sorted(plots)))
 
@@ -97,33 +99,31 @@ class TestPlotGeneration(object):
         parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
-            outdir="./.outdir_comparison/", n_samples=10
+            outdir=self.dir, n_samples=10
         )
         os.rename(
-            "./.outdir_comparison/test.hdf5",
-            "./.outdir_comparison/lalinference_example.h5"
+            f"{self.dir}/test.hdf5", f"{self.dir}/lalinference_example.h5"
         )
         make_result_file(
-            gw=True, extension="hdf5", bilby=True, outdir="./.outdir_comparison/",
+            gw=True, extension="hdf5", bilby=True, outdir=self.dir,
             n_samples=10
         )
         os.rename(
-            "./.outdir_comparison/test.h5",
-            "./.outdir_comparison/bilby_example.h5"
+            f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5"
         )
         default_arguments = [
             "--approximant", "IMRPhenomPv2", "IMRPhenomP",
-            "--webdir", "./.outdir_comparison",
-            "--samples", "./.outdir_comparison/bilby_example.h5",
-            "./.outdir_comparison/lalinference_example.h5",
+            "--webdir", self.dir,
+            "--samples", f"{self.dir}/bilby_example.h5",
+            f"{self.dir}/lalinference_example.h5",
             "--labels", "H10", "H11", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
-        plots = sorted(glob("./.outdir_comparison/plots/*.png"))
+        plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", number=2, outdir="./.outdir_comparison"
+            gw=True, label="H1", number=2, outdir=self.dir
         )
         for i,j in zip(sorted(plots), sorted(expected_plots)):
             print(i, j)
@@ -134,24 +134,22 @@ class TestPlotGeneration(object):
         parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
-            outdir="./.outdir_add_to_existing2/", n_samples=10
+            outdir=self.dir, n_samples=10
         )
         os.rename(
-            "./.outdir_add_to_existing2/test.hdf5",
-            "./.outdir_add_to_existing2/lalinference_example.h5"
+            f"{self.dir}/test.hdf5", f"{self.dir}/lalinference_example.h5"
         )
         make_result_file(
             gw=True, extension="hdf5", bilby=True,
-            outdir="./.outdir_add_to_existing2/", n_samples=10
+            outdir=self.dir, n_samples=10
         )
         os.rename(
-            "./.outdir_add_to_existing2/test.h5",
-            "./.outdir_add_to_existing2/bilby_example.h5"
+            f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5"
         )
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
-            "--webdir", "./.outdir_add_to_existing2",
-            "--samples", "./.outdir_add_to_existing2/bilby_example.h5",
+            "--webdir", self.dir,
+            "--samples", f"{self.dir}/bilby_example.h5",
             "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
@@ -164,16 +162,16 @@ class TestPlotGeneration(object):
         parser.add_all_known_options_to_parser()
         default_arguments = [
             "--approximant", "IMRPhenomP",
-            "--existing_webdir", "./.outdir_add_to_existing2",
-            "--samples", "./.outdir_add_to_existing2/lalinference_example.h5",
+            "--existing_webdir", self.dir,
+            "--samples", f"{self.dir}/lalinference_example.h5",
             "--labels", "H11", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs) 
         webpage.generate_plots()
-        plots = sorted(glob("./.outdir_add_to_existing2/plots/*.png"))
+        plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", number=2, outdir="./.outdir_add_to_existing2"
+            gw=True, label="H1", number=2, outdir=self.dir
         )
         assert all(i == j for i, j in zip(sorted(plots), sorted(expected_plots)))
 
@@ -182,25 +180,23 @@ class TestPlotGeneration(object):
         parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
-            outdir="./.outdir_comparison_no_comparison/", n_samples=10
+            outdir=self.dir, n_samples=10
         )
         os.rename(
-            "./.outdir_comparison_no_comparison/test.hdf5",
-            "./.outdir_comparison_no_comparison/lalinference_example.h5"
+            f"{self.dir}/test.hdf5", f"{self.dir}/lalinference_example.h5"
         )
         make_result_file(
             gw=True, extension="hdf5", bilby=True,
-            outdir="./.outdir_comparison_no_comparison/", n_samples=10
+            outdir=self.dir, n_samples=10
         )
         os.rename(
-            "./.outdir_comparison_no_comparison/test.h5",
-            "./.outdir_comparison_no_comparison/bilby_example.h5"
+            f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5"
         )
         default_arguments = [
             "--approximant", "IMRPhenomPv2", "IMRPhenomP",
-            "--webdir", "./.outdir_comparison_no_comparison",
-            "--samples", "./.outdir_comparison_no_comparison/bilby_example.h5",
-            "./.outdir_comparison_no_comparison/lalinference_example.h5",
+            "--webdir", self.dir,
+            "--samples", f"{self.dir}/bilby_example.h5",
+            f"{self.dir}/lalinference_example.h5",
             "--labels", "H10", "H11", "--no_ligo_skymap",
             "--disable_comparison", "--disable_expert"
         ]
@@ -208,9 +204,9 @@ class TestPlotGeneration(object):
         inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
-        plots = sorted(glob("./.outdir_comparison/plots/*.png"))
+        plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", number=2, outdir=".outdir_comparison_no_comparison",
+            gw=True, label="H1", number=2, outdir=self.dir,
             comparison=False
         )
         for i,j in zip(sorted(plots), sorted(expected_plots)):
@@ -222,24 +218,22 @@ class TestPlotGeneration(object):
         parser.add_all_known_options_to_parser()
         make_result_file(
             gw=True, extension="hdf5", lalinference=True,
-            outdir="./.outdir_add_to_existing_no_comparison/", n_samples=10
+            outdir=self.dir, n_samples=10
         )
         os.rename(
-            "./.outdir_add_to_existing_no_comparison/test.hdf5",
-            "./.outdir_add_to_existing_no_comparison/lalinference_example.h5"
+            f"{self.dir}/test.hdf5", f"{self.dir}/lalinference_example.h5"
         )
         make_result_file(
             gw=True, extension="hdf5", bilby=True,
-            outdir="./.outdir_add_to_existing_no_comparison/", n_samples=10
+            outdir=self.dir, n_samples=10
         )
         os.rename(
-            "./.outdir_add_to_existing_no_comparison/test.h5",
-            "./.outdir_add_to_existing_no_comparison/bilby_example.h5"
+            f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5"
         )
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
-            "--webdir", "./.outdir_add_to_existing_no_comparison",
-            "--samples", "./.outdir_add_to_existing_no_comparison/bilby_example.h5",
+            "--webdir", self.dir,
+            "--samples", f"{self.dir}/bilby_example.h5",
             "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
         opts = parser.parse_args(default_arguments)
         inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
@@ -252,8 +246,8 @@ class TestPlotGeneration(object):
         parser.add_all_known_options_to_parser()
         default_arguments = [
             "--approximant", "IMRPhenomP",
-            "--existing_webdir", "./.outdir_add_to_existing_no_comparison",
-            "--samples", "./.outdir_add_to_existing_no_comparison/lalinference_example.h5",
+            "--existing_webdir", self.dir,
+            "--samples", f"{self.dir}/lalinference_example.h5",
             "--labels", "H11", "--no_ligo_skymap",
             "--disable_comparison", "--disable_expert"
         ]
@@ -261,9 +255,9 @@ class TestPlotGeneration(object):
         inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
         webpage.generate_plots()
-        plots = sorted(glob("./.outdir_add_to_existing_no_comparison/plots/*.png"))
+        plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", number=2, outdir="./.outdir_add_to_existing_no_comparison",
+            gw=True, label="H1", number=2, outdir=self.dir,
             comparison=False
         )
         assert all(i == j for i, j in zip(sorted(plots), sorted(expected_plots)))
