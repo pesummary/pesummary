@@ -438,13 +438,13 @@ reference-docs:
     # configure Sphinx
     - !reference [".python:sphinx", before_script]
     # FIXME: misc fixes for old docs
-    # FIXME: can be removed once pesummary >=0.13.10 is approved by SCCB
+    # FIXME: can be removed once pesummary >=1.2.0 is approved by SCCB
     - python -m pip install
           "GitPython"
           "ipykernel"
           "nbsphinx"
-          "seaborn<0.12.0"
-          "Sphinx>=1.2.2"
+          "seaborn>=0.12.2,<0.13.0"
+          "Sphinx >=4.0.0,!=5.0.0"
           "sphinx-argparse"
           "sphinx-panels"
           "sphinx_rtd_theme"
@@ -478,6 +478,8 @@ stable-docs:
     # FIXME: can be removed once pesummary-0.13.10 is released
     - python -m pip install
           "GitPython"
+    # FIXME: can be removed on pesummary-1.2.0 is released
+    - python -m pip install 'Sphinx >=4.0.0,!=5.0.0'
   after_script:
     - echo ${STABLE_TAG} > html/.version
     - mv html stable

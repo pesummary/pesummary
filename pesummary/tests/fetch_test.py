@@ -1,10 +1,9 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.io import read
-from pesummary.core.fetch import download_and_read_file
+from pesummary.core.fetch import download_dir, download_and_read_file
 from pesummary.gw.fetch import fetch_open_samples
 import numpy as np
-import requests
 import os
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -14,18 +13,30 @@ def test_download_and_read_file():
     """Test that the `pesummary.core.fetch.download_and_read_file` function
     works as expected
     """
+    import requests
+    import tempfile
+    from pathlib import Path
+    import shutil
+
+    tmp1 = Path(tempfile.TemporaryDirectory(prefix=".", dir=".").name).name
+    tmp2 = Path(tempfile.TemporaryDirectory(prefix=".", dir=".").name).name
+    os.mkdir(tmp1)
+    os.mkdir(tmp2)
     data = download_and_read_file(
-        "https://dcc.ligo.org/public/0157/P1800370/005/GW170608_GWTC-1.hdf5"
+        "https://dcc.ligo.org/public/0157/P1800370/005/GW170608_GWTC-1.hdf5",
+        outdir=tmp1
     )
     _data = requests.get(
         "https://dcc.ligo.org/public/0157/P1800370/005/GW170608_GWTC-1.hdf5"
     )
-    with open("GW170608_posterior_samples.h5", "wb") as f:
+    with open(f"{tmp2}/GW170608_posterior_samples.h5", "wb") as f:
         f.write(_data.content)
-    data2 = read("GW170608_posterior_samples.h5")
+    data2 = read(f"{tmp2}/GW170608_posterior_samples.h5")
     np.testing.assert_almost_equal(
         np.array(data.samples), np.array(data2.samples)
     )
+    shutil.rmtree(tmp1)
+    shutil.rmtree(tmp2)
 
 
 def test_download_and_keep_file():
@@ -82,14 +93,20 @@ def test_fetch_open_samples():
     """Test that the `pesummary.gw.fetch.fetch_open_samples` function works as
     expected
     """
-    data = fetch_open_samples("GW150914", download_kwargs={"timeout": 60})
-    _data = requests.get(
-        "https://zenodo.org/api/files/ecf41927-9275-47da-8b37-e299693fe5cb/" +
-        "IGWN-GWTC2p1-v2-GW150914_095045_PEDataRelease_mixed_cosmo.h5"
+    data = fetch_open_samples(
+        "GW190412", catalog="GWTC-2.1-confident",
+        download_kwargs={"timeout": 60}
     )
-    with open("GW150914_posterior_samples.h5", "wb") as f:
-        f.write(_data.content)
-    data2 = read("GW150914_posterior_samples.h5")
+    data2 = download_and_read_file(
+        "https://zenodo.org/api/records/6513631/files/" +
+        "IGWN-GWTC2p1-v2-GW190412_053044_PEDataRelease_mixed_cosmo.h5/content",
+        outdir=download_dir,
+        read_file=True,
+        download_kwargs=dict(
+            cache=True,
+            pkgname="pesummary",
+        )
+    )
     for num in range(len(data.labels)):
         np.testing.assert_almost_equal(
             np.array(data.samples[num]), np.array(data2.samples[num])
@@ -106,15 +123,18 @@ def test_fetch_open_strain():
         "GW190412", IFO="H1", channel="H1:GWOSC-4KHZ_R1_STRAIN",
         sampling_rate=4096
     )
-    _data = requests.get(
-        "https://www.gw-openscience.org/eventapi/html/GWTC-2/GW190412/v3/"
-        "H-H1_GWOSC_4KHZ_R1-1239082247-32.gwf"
-    )
-    with open("H-H1_GWOSC_4KHZ_R1-1239082247-32.gwf", "wb") as f:
-        f.write(_data.content)
-    data2 = TimeSeries.read(
+    path = download_and_read_file(
+        "https://www.gw-openscience.org/eventapi/html/GWTC-2/GW190412/v3/" +
         "H-H1_GWOSC_4KHZ_R1-1239082247-32.gwf",
-        channel="H1:GWOSC-4KHZ_R1_STRAIN"
+        outdir=download_dir,
+        read_file=False,
+        download_kwargs=dict(
+            cache=True,
+            pkgname="pesummary",
+        )
+    )
+    data2 = TimeSeries.read(
+        path, channel="H1:GWOSC-4KHZ_R1_STRAIN"
     )
     np.testing.assert_almost_equal(data.value, data2.value)
     np.testing.assert_almost_equal(data.times.value, data2.times.value)

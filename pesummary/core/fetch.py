@@ -7,13 +7,14 @@ from pathlib import Path
 from astropy.utils.console import ProgressBarOrSpinner
 from astropy.utils.data import download_file, conf, _tempfilestodel
 from pesummary.io import read
-from pesummary.utils.utils import CACHE_DIR
+from pesummary.utils.utils import make_dir, CACHE_DIR
 from tempfile import NamedTemporaryFile
 import tarfile
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 download_dir = os.path.join(CACHE_DIR, "data")
+make_dir(download_dir)
 
 try:
     import ciecplib
@@ -143,6 +144,10 @@ def download_and_read_file(
     """
     conf.delete_temporary_downloads_at_exit = delete_on_exit
     local = _function(url, **download_kwargs)
+    # zenodo adds /content to the end of the filename. This causes problems
+    # later down the line
+    if "zenodo" in url and Path(url).name == "content":
+        url = Path(url).parent
     filename = Path(url).name
     if unpack:
         local = _unpack_and_extract(local, path=path, filename=filename)

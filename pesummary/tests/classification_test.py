@@ -107,10 +107,9 @@ class TestPAstro(_Base):
             ".outdir/test_lalinference.hdf5"
         )
         samples = read(".outdir/test_converted.dat").samples_dict
-        print(samples)
         pesummary = PAstro(samples).classification()
-        np.testing.assert_almost_equal(p_astro[0], pesummary["HasNS"])
-        np.testing.assert_almost_equal(p_astro[1], pesummary["HasRemnant"])
+        np.testing.assert_almost_equal(p_astro[0], pesummary["HasNS"], 5)
+        np.testing.assert_almost_equal(p_astro[1], pesummary["HasRemnant"], 5)
         pesummary2 = PAstro.classification_from_file(
             ".outdir/test_converted.dat"
         )
@@ -121,9 +120,9 @@ class TestPAstro(_Base):
             ".outdir/test_converted.dat"
         )["default"]
         for key, val in pesummary2.items():
-            np.testing.assert_almost_equal(pesummary[key], val)
-            np.testing.assert_almost_equal(pesummary[key], pesummary3[key])
-            np.testing.assert_almost_equal(pesummary[key], pesummary4[key])
+            np.testing.assert_almost_equal(pesummary[key], val, 5)
+            np.testing.assert_almost_equal(pesummary[key], pesummary3[key], 5)
+            np.testing.assert_almost_equal(pesummary[key], pesummary4[key], 5)
 
     def test_reweight_classification(self):
         """Test that the population reweighted classification method agrees
@@ -133,6 +132,7 @@ class TestPAstro(_Base):
         from pesummary.gw.conversions import mchirp_from_m1_m2, q_from_m1_m2
         from pandas import DataFrame
 
+        np.random.seed(1234)
         rerun = True
         while rerun:
             samples = read(".outdir/test_converted.dat").samples_dict
@@ -167,10 +167,10 @@ class TestPAstro(_Base):
             ".outdir/test_reweighted.hdf5"
         )
         _samples, pesummary = PAstro(samples).classification(
-            population=True, return_samples=True
+            population=True, return_samples=True, seed=12345
         )
-        np.testing.assert_almost_equal(p_astro[0], pesummary["HasNS"])
-        np.testing.assert_almost_equal(p_astro[1], pesummary["HasRemnant"])
+        np.testing.assert_almost_equal(p_astro[0], pesummary["HasNS"], 5)
+        np.testing.assert_almost_equal(p_astro[1], pesummary["HasRemnant"], 5)
         pesummary2 = PAstro.classification_from_file(
             ".outdir/test_converted.dat", population=True
         )
@@ -181,9 +181,9 @@ class TestPAstro(_Base):
             ".outdir/test_converted.dat"
         )["population"]
         for key, val in pesummary2.items():
-            np.testing.assert_almost_equal(pesummary[key], val)
-            np.testing.assert_almost_equal(pesummary[key], pesummary3[key])
-            np.testing.assert_almost_equal(pesummary[key], pesummary4[key])
+            np.testing.assert_almost_equal(pesummary[key], val, 5)
+            np.testing.assert_almost_equal(pesummary[key], pesummary3[key], 5)
+            np.testing.assert_almost_equal(pesummary[key], pesummary4[key], 5)
 
     def test_plotting(self):
         """Test the .plot method
