@@ -127,8 +127,7 @@ docker:
 executables:
   stage: basic
   image: python:3.9
-  needs:
-    - tarball
+  needs: []
   script:
     - *prepare_testing
     - summarytest --type executables
@@ -140,8 +139,7 @@ executables:
 imports:
   stage: basic
   image: python:3.9
-  needs:
-    - tarball
+  needs: []
   script:
     - *prepare_testing
     - summarytest --type imports
@@ -168,8 +166,7 @@ style:
 examples:
   stage: basic
   image: python:3.9
-  needs:
-    - tarball
+  needs: []
   script:
     - *prepare_testing
     - summarytest --type examples --repository ${PESUMMARY_REPO_DIR}
@@ -182,8 +179,7 @@ examples:
 authors:
   stage: basic
   image: python:3.9
-  needs:
-    - tarball
+  needs: []
   script:
     - curl --request POST --form "token=$CI_EXAMPLES_TRIGGER_TOKEN" --form "variables[TYPE]=authors" --form ref=master https://git.ligo.org/api/v4/projects/3386/trigger/pipeline
   only:
@@ -194,11 +190,7 @@ authors:
 
 
 .python-3.9-testing:
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
+  needs: []
   image: python:3.9
   artifacts:
     paths:
@@ -211,11 +203,7 @@ test:base:
   <<: *parallel_python
   stage: test
   image: python:$PY_VERSION
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
+  needs: []
   script:
     - *prepare_testing
     - summarytest --multi_process ${NCPU} -m "not executabletest and not ligoskymaptest and not workflowtest" --type tests --coverage --output ${BASE} --pytest_config ${BASE}/pyproject.toml
@@ -243,11 +231,7 @@ end-to-end:core:
   <<: *parallel_python
   stage: test
   image: python:$PY_VERSION
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
+  needs: []
   script:
     - *prepare_testing
     - summarytest --multi_process ${NCPU} --type workflow -k "Core or core" --pytest_config ${BASE}/pyproject.toml
@@ -281,11 +265,7 @@ ligo_skymap:
 lalinference_pipe:
   stage: compatibility
   image: python:3.9-buster
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
+  needs: []
   script:
     - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
     - *prepare_testing
@@ -301,11 +281,7 @@ lalinference_pipe:
 bilby:
   stage: compatibility
   image: python:3.9
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
+  needs: []
   script:
     - *prepare_testing
     - summarytest --type bilby
@@ -320,11 +296,7 @@ bilby:
 bilby_pipe:
   stage: compatibility
   image: python:3.9
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
+  needs: []
   script:
     - *prepare_testing
     - summarytest --type bilby_pipe
@@ -339,11 +311,7 @@ bilby_pipe:
 pycbc_inference:
   stage: compatibility
   image: python:3.9
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
+  needs: []
   script:
     - *prepare_testing
     - summarytest --type pycbc
@@ -359,11 +327,7 @@ GWTC:
   <<: *parallel_gwtc
   stage: compatibility
   image: python:3.9
-  needs:
-    - tarball
-    - executables
-    - imports
-    - style
+  needs: []
   script:
     - *prepare_testing
     - summarytest --type GWTC$CATALOG
@@ -374,7 +338,6 @@ coverage:
   extends: .python-3.9-testing
   stage: coverage
   needs:
-    - tarball
     - test:base
     - test:executables
     - ligo_skymap
