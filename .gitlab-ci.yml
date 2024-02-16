@@ -58,14 +58,15 @@ variables:
   TF_LOOP_PARALLEL_ITERATIONS: 1
   TF_NUM_THREADS: 1
 
-
 cache:
   key: "${CI_JOB_NAME}"
   paths:
     - .cache/pip
+    - .cache/pesummary/download
 
 
 before_script:
+  - mkdir -p "${CI_PROJECT_DIR}/.cache/pesummary"
   - python -m pip install .[test,extras]
   - cat pesummary/.version
   - 'apt-get update -y && bash && apt-get -y install pandoc'
