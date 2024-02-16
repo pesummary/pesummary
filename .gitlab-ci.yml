@@ -538,7 +538,7 @@ pages:
           -e "s/REFERENCE_VERSION/"${REFERENCE_VERSION/v/}"/g"
           -e "s/STABLE_VERSION/"${STABLE_VERSION/v/}"/g"
           docs/front.html.in
-          > html/index.html
+          > public/index.html
   artifacts:
     paths:
       - public
