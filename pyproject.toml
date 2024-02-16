@@ -24,7 +24,7 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-	"astropy>=3.2.3",
+	"astropy>=4.0",
 	"corner",
 	"deepdish",
 	"gwpy >=2.1.2",
@@ -62,7 +62,7 @@ lint = [
 	"flake8-bandit",
 ]
 test = [
-	"astropy >=3.2.3,!=4.3.0",
+	"astropy >=4.0,!=4.3.0",
 	"beautifulsoup4",
 	"bilby_pipe",
 	"coverage",

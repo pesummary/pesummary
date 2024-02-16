@@ -160,7 +160,11 @@ def download_and_read_file(
             new_name = Path(outdir) / (
                 Path(NamedTemporaryFile().name).name + "_" + filename
             )
-    shutil.move(local, new_name)
+    if download_kwargs.get("cache", None):
+        # user asked for cache, so copy it from there
+        shutil.copyfile(local, new_name)
+    else:  # otherwise move it from wherever it is
+        shutil.move(local, new_name)
     if not read_file:
         if conf.delete_temporary_downloads_at_exit:
             _tempfilestodel.append(new_name)
