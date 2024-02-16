@@ -539,6 +539,7 @@ pages:
           -e "s/STABLE_VERSION/"${STABLE_VERSION/v/}"/g"
           docs/front.html.in
           > html/index.html
+    - cp pesummary/core/webpage/copyright.txt public
   artifacts:
     paths:
       - public
