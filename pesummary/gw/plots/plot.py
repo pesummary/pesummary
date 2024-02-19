@@ -1171,7 +1171,7 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
     return fig
 
 
-def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
+def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None, fmax=None):
     """Superimpose all PSD plots onto a single figure.
 
     Parameters
@@ -1186,6 +1186,8 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
         list of lavels for each PSD
     fmin: optional, float
         starting frequency of the plot
+    fmax: optional, float
+        maximum frequency of the plot
     """
     from gwpy.plot.colors import GW_OBSERVATORY_COLORS
     fig, ax = figure(gca=True)
@@ -1196,12 +1198,15 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None):
         while len(colors) <= len(labels):
             colors += colors
     for num, i in enumerate(frequencies):
+        ff = np.array(i)
+        ss = np.array(strains[num])
+        cond = np.ones_like(strains[num], dtype=bool)
         if fmin is not None:
-            ff = np.array(i)
-            ss = np.array(strains[num])
-            ind = np.argwhere(ff >= fmin)
-            i = ff[ind]
-            strains[num] = ss[ind]
+            cond *= ff >= fmin
+        if fmax is not None:
+            cond *= ff <= fmax
+        i = ff[cond]
+        strains[num] = ss[cond]
         ax.loglog(i, strains[num], color=colors[num], label=labels[num])
     ax.tick_params(which="both", bottom=True, length=3, width=1)
     ax.set_xlabel(r"Frequency $[\mathrm{Hz}]$")

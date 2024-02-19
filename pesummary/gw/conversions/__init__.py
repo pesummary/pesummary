@@ -241,6 +241,12 @@ class _Conversion(object):
                 extra_kwargs["meta_data"][param] = value
             elif value is not None:
                 extra_kwargs["meta_data"][param] = value
+            elif value is None and param in extra_kwargs["meta_data"].keys():
+                logger.debug(
+                    "Found {} in input file. Using {}Hz".format(
+                        param, extra_kwargs["meta_data"][param]
+                    )
+                )
             else:
                 logger.warning(
                     "Could not find {} in input file and one was not passed "
@@ -351,6 +357,12 @@ class _Conversion(object):
             extra_kwargs["meta_data"]["f_low"] = f_low
         elif f_low is not None:
             extra_kwargs["meta_data"]["f_low"] = f_low
+        elif f_low is None and "f_low" in extra_kwargs["meta_data"].keys():
+            logger.debug(
+                "Found f_low in input file. Using {}Hz".format(
+                    extra_kwargs["meta_data"][param]
+                )
+            )
         else:
             logger.warning(
                 "Could not find minimum frequency in input file and "
