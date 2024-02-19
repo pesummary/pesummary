@@ -481,13 +481,14 @@ class _PlotGeneration(_BasePlotGeneration):
             return
         self._waveform_fd_plot(
             self.savedir, self.detectors[label], self.maxL_samples[label], label,
-            self.preliminary_pages[label], self.checkpoint
+            preliminary=self.preliminary_pages[label], checkpoint=self.checkpoint,
+            **self.file_kwargs[label]["meta_data"]
         )
 
     @staticmethod
     def _waveform_fd_plot(
         savedir, detectors, maxL_samples, label, preliminary=False,
-        checkpoint=False
+        checkpoint=False, **kwargs
     ):
         """Generate a frequency domain waveform plot for a given detector
         network and set of samples
@@ -513,7 +514,11 @@ class _PlotGeneration(_BasePlotGeneration):
         else:
             detectors = detectors.split("_")
 
-        fig = gw._waveform_plot(detectors, maxL_samples)
+        fig = gw._waveform_plot(
+            detectors, maxL_samples, f_min=kwargs.get("f_low", 20.0),
+            f_max=kwargs.get("f_final", 1024.),
+            f_ref=kwargs.get("f_ref", 20.)
+        )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
         )
@@ -530,13 +535,14 @@ class _PlotGeneration(_BasePlotGeneration):
             return
         self._waveform_td_plot(
             self.savedir, self.detectors[label], self.maxL_samples[label], label,
-            self.preliminary_pages[label], self.checkpoint
+            preliminary=self.preliminary_pages[label], checkpoint=self.checkpoint,
+            **self.file_kwargs[label]["meta_data"]
         )
 
     @staticmethod
     def _waveform_td_plot(
         savedir, detectors, maxL_samples, label, preliminary=False,
-        checkpoint=False
+        checkpoint=False, **kwargs
     ):
         """Generate a time domain waveform plot for a given detector network
         and set of samples
@@ -564,7 +570,11 @@ class _PlotGeneration(_BasePlotGeneration):
         else:
             detectors = detectors.split("_")
 
-        fig = gw._time_domain_waveform(detectors, maxL_samples)
+        fig = gw._time_domain_waveform(
+            detectors, maxL_samples, f_min=kwargs.get("f_low", 20.0),
+            f_max=kwargs.get("f_final", 1024.),
+            f_ref=kwargs.get("f_ref", 20.)
+        )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
         )
@@ -751,13 +761,14 @@ class _PlotGeneration(_BasePlotGeneration):
 
         self._waveform_comparison_fd_plot(
             self.savedir, self.maxL_samples, self.labels, self.colors,
-            self.preliminary_comparison_pages, self.checkpoint
+            preliminary=self.preliminary_comparison_pages, checkpoint=self.checkpoint,
+            **self.file_kwargs
         )
 
     @staticmethod
     def _waveform_comparison_fd_plot(
         savedir, maxL_samples, labels, colors, preliminary=False,
-        checkpoint=False
+        checkpoint=False, **kwargs
     ):
         """Generate a plot to compare the frequency domain waveforms
 
@@ -778,7 +789,17 @@ class _PlotGeneration(_BasePlotGeneration):
         if os.path.isfile(filename) and checkpoint:
             return
         samples = [maxL_samples[i] for i in labels]
-        fig = gw._waveform_comparison_plot(samples, colors, labels)
+        f_min = np.max(
+            [kwargs[label]["meta_data"].get("f_low", 20.) for label in labels]
+        )
+        f_max = np.min(
+            [kwargs[label]["meta_data"].get("f_final", 1024.) for label in labels]
+        )
+        f_ref = kwargs[labels[0]]["meta_data"].get("f_ref", 20.)
+        fig = gw._waveform_comparison_plot(
+            samples, colors, labels, f_min=f_min, f_max=f_max,
+            f_ref=f_ref
+        )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
         )
@@ -1151,8 +1172,8 @@ class _PlotGeneration(_BasePlotGeneration):
                 return
             if list(self.psd[label].keys()) == []:
                 return
-            if "f_low" in list(self.file_kwargs[label]["sampler"].keys()):
-                fmin = self.file_kwargs[label]["sampler"]["f_low"]
+            if "f_low" in list(self.file_kwargs[label]["meta_data"].keys()):
+                fmin = self.file_kwargs[label]["meta_data"]["f_low"]
             labels = list(self.psd[label].keys())
             frequencies = [np.array(self.psd[label][i]).T[0] for i in labels]
             strains = [np.array(self.psd[label][i]).T[1] for i in labels]
