@@ -19,8 +19,8 @@
 </div>
 <div class="button-box col-lg-12">
     <div class="row justify-content-center">
-    <a class="btn btn-info" href="reference/" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Version available in the igwn conda environment">igwn: vREFERENCE_VERSION</a>
-    <a class="btn btn-info" href="stable/" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Latest released version on pypi">STABLE_VERSION</a>
+    <a class="btn btn-info" href="reference/" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Version available in the igwn conda environment">igwn: REFERENCE_VERSION</a>
+    <a class="btn btn-info" href="stable/" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Latest released version on pypi">stable: STABLE_VERSION</a>
     <a class="btn btn-danger" href="latest/" style="font-size: 32px; width: 300px; margin-right: 0.5em" role="button" data-toggle="tooltip" title="Latest development build">Latest</a>
     </div>
 </div>
