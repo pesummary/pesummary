@@ -21,7 +21,14 @@ default:
     # retry all jobs at most twice if the runner failed to start the job
     max: 2
     when:
+      - api_failure
       - runner_system_failure
+      - stale_schedule
+      - archived_failure
+      - scheduler_failure
+      - data_integrity_failure
+  # cancel jobs when a newer pipeline starts
+  interruptible: true
 
 
 .parallel_python: &parallel_python
