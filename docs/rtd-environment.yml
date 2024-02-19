@@ -9,3 +9,6 @@ dependencies:
   - setuptools-scm>=3.4.3
   # docs
   - pandoc
+  # pin to sphinx<5 here to avoid pip issues with dependency resolution
+  # (sphinx<5 is needed by sphinx-panels)
+  - sphinx<5
