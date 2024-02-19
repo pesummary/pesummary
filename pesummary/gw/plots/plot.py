@@ -410,10 +410,15 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
         iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params["iota"], 0., 0., 0., \
             0., 0., 0.
     phase = maxL_params["phase"] if "phase" in maxL_params.keys() else 0.0
-    h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(
-        mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance, iota,
-        phase, 0.0, 0.0, 0.0, delta_frequency, minimum_frequency,
-        maximum_frequency, kwargs.get("f_ref", 10.), None, approx)
+    for func in [lalsim.SimInspiralChooseFDWaveform, lalsim.SimInspiralFD]:
+        try:
+            h_plus, h_cross = func(
+                mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance, iota,
+                phase, 0.0, 0.0, 0.0, delta_frequency, minimum_frequency,
+                maximum_frequency, kwargs.get("f_ref", 10.), None, approx)
+        except Exception:
+            continue
+        break
     h_plus = h_plus.data.data
     h_cross = h_cross.data.data
     h_plus = h_plus[:len(frequency_array)]
@@ -483,10 +488,15 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
             iota, S1x, S1y, S1z, S2x, S2y, S2z = i["iota"], 0., 0., 0., \
                 0., 0., 0.
         phase = i["phase"] if "phase" in i.keys() else 0.0
-        h_plus, h_cross = lalsim.SimInspiralChooseFDWaveform(
-            mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance,
-            iota, phase, 0.0, 0.0, 0.0, delta_frequency, minimum_frequency,
-            maximum_frequency, kwargs.get("f_ref", 10.), None, approx)
+        for func in [lalsim.SimInspiralChooseFDWaveform, lalsim.SimInspiralFD]:
+            try:
+                h_plus, h_cross = func(
+                    mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance,
+                    iota, phase, 0.0, 0.0, 0.0, delta_frequency, minimum_frequency,
+                    maximum_frequency, kwargs.get("f_ref", 10.), None, approx)
+            except Exception:
+                continue
+            break
         h_plus = h_plus.data.data
         h_cross = h_cross.data.data
         h_plus = h_plus[:len(frequency_array)]
@@ -1061,6 +1071,10 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
         iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params["iota"], 0., 0., 0., \
             0., 0., 0.
     phase = maxL_params["phase"] if "phase" in maxL_params.keys() else 0.0
+    chirptime = lalsim.SimIMRPhenomXASDuration(
+        mass_1, mass_2, S1z, S2z, minimum_frequency
+    )
+    duration = np.max([2**np.ceil(np.log2(chirptime)), 1.0])
     h_plus, h_cross = lalsim.SimInspiralChooseTDWaveform(
         mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance, iota,
         phase, 0.0, 0.0, 0.0, delta_t, minimum_frequency,
@@ -1076,7 +1090,7 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
         h_t.times = [float(np.array(i)) + t_start for i in h_t.times]
         ax.plot(h_t.times, h_t,
                 color=colors[num], linewidth=1.0, label=i)
-        ax.set_xlim([t_start - 3, t_start + 0.5])
+        ax.set_xlim([t_start - 0.75 * duration, t_start + duration / 4])
     ax.set_xlabel(r"Time $[s]$")
     ax.set_ylabel(r"Strain")
     ax.grid(visible=True)
