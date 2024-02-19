@@ -449,7 +449,9 @@ reference-docs:
           "sphinx-panels"
           "sphinx_rtd_theme"
           "sphinxcontrib-programoutput"
-  after_script:
+  script:
+    - !reference [".python:sphinx", script]
+    # insert the reference version into the output
     - echo ${REFERENCE_VERSION} > html/.version
     - mv html reference
   artifacts:
@@ -480,7 +482,9 @@ stable-docs:
           "GitPython"
     # FIXME: can be removed on pesummary-1.2.0 is released
     - python -m pip install 'Sphinx >=4.0.0,!=5.0.0'
-  after_script:
+  script:
+    - !reference [".python:sphinx", script]
+    # insert the reference version into the output
     - echo ${STABLE_TAG} > html/.version
     - mv html stable
   artifacts:
