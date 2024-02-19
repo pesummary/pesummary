@@ -1166,6 +1166,7 @@ class _PlotGeneration(_BasePlotGeneration):
         )
 
         fmin = None
+        fmax = None
 
         for num, label in enumerate(self.labels):
             if list(self.psd[label].keys()) == [None]:
@@ -1174,11 +1175,13 @@ class _PlotGeneration(_BasePlotGeneration):
                 return
             if "f_low" in list(self.file_kwargs[label]["meta_data"].keys()):
                 fmin = self.file_kwargs[label]["meta_data"]["f_low"]
+            if "f_final" in list(self.file_kwargs[label]["meta_data"].keys()):
+                fmax = self.file_kwargs[label]["meta_data"]["f_final"]
             labels = list(self.psd[label].keys())
             frequencies = [np.array(self.psd[label][i]).T[0] for i in labels]
             strains = [np.array(self.psd[label][i]).T[1] for i in labels]
             arguments = [
-                self.savedir, frequencies, strains, fmin, labels, label,
+                self.savedir, frequencies, strains, fmin, fmax, labels, label,
                 self.checkpoint
             ]
 
@@ -1188,7 +1191,7 @@ class _PlotGeneration(_BasePlotGeneration):
 
     @staticmethod
     def _psd_plot(
-        savedir, frequencies, strains, fmin, psd_labels, label, checkpoint=False
+        savedir, frequencies, strains, fmin, fmax, psd_labels, label, checkpoint=False
     ):
         """Generate a psd plot for a given set of samples
 
@@ -1202,6 +1205,8 @@ class _PlotGeneration(_BasePlotGeneration):
             list of psd strains for each IFO
         fmin: float
             frequency to start the psd plotting
+        fmax: float
+            frequency to end the psd plotting
         psd_labels: list
             list of IFOs used
         label: str
@@ -1211,7 +1216,7 @@ class _PlotGeneration(_BasePlotGeneration):
         if os.path.isfile(filename) and checkpoint:
             return
         fig = gw._psd_plot(
-            frequencies, strains, labels=psd_labels, fmin=fmin
+            frequencies, strains, labels=psd_labels, fmin=fmin, fmax=fmax
         )
         _PlotGeneration.save(fig, filename)
 

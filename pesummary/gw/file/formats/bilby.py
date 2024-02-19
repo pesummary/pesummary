@@ -142,6 +142,7 @@ class Bilby(GWSingleAnalysisRead):
         """Grab any additional information stored in the bilby file
         """
         from pesummary.core.file.formats.bilby import config_from_object
+        import ast
 
         f = bilby_object
         kwargs = CoreBilby.grab_extra_kwargs(bilby_object)
@@ -175,18 +176,27 @@ class Bilby(GWSingleAnalysisRead):
                 _config = _config["config"]
             options = [
                 "minimum_frequency", "reference_frequency",
-                "waveform_approximant"
+                "waveform_approximant", "maximum_frequency"
             ]
-            pesummary_names = ["f_low", "f_ref", "approximant"]
+            pesummary_names = ["f_low", "f_ref", "approximant", "f_final"]
             for opt, name in zip(options, pesummary_names):
                 if opt in _config.keys():
                     try:
-                        import ast
                         _option = ast.literal_eval(_config[opt])
                     except ValueError:
-                        _option = _config[opt]
+                        try:
+                            import re
+                            _config[opt] = re.sub(
+                                r'([A-Za-z/\.0-9\-\+][^\[\],:"}]*)', r'"\g<1>"', _config[opt]
+                            )
+                            _option = ast.literal_eval(_config[opt])
+                        except Exception:
+                            _option = _config[opt]
                     if isinstance(_option, dict):
-                        _value = np.min(list(_option.values()))
+                        _value = np.min([
+                            ast.literal_eval(value) for key, value in _option.items() if
+                            key != "waveform"
+                        ])
                     else:
                         _value = _option
                     kwargs["meta_data"][name] = _value
