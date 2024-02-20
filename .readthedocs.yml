@@ -9,7 +9,7 @@ build:
   apt_packages:
     - git-lfs
   tools:
-    python: 3.11
+    python: "3.11"
   jobs:
     post_checkout:
       # download LFS data
