@@ -11,7 +11,7 @@ build:
   tools:
     python: "3.11"
   jobs:
-    post_checkout:
+    post_install:
       # download LFS data
       - git lfs install --local
       - git lfs fetch
