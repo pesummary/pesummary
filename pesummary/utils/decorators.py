@@ -3,6 +3,7 @@
 import functools
 import copy
 import numpy as np
+import os
 from pesummary.utils.utils import logger
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -31,6 +32,14 @@ def open_config(index=0):
     import configparser
 
     def _safe_read(config, config_file):
+        setattr(config, "error", False)
+        if not os.path.isfile(config_file):
+            try:
+                return config.read_string(config_file)
+            except Exception as e:
+                setattr(config, "error", "No such file or directory")
+                return None
+
         setattr(config, "path_to_file", config_file)
         try:
             setattr(config, "error", False)
