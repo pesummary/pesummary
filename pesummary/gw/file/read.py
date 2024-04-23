@@ -6,6 +6,7 @@ from pesummary.gw.file.formats.default import Default
 from pesummary.gw.file.formats.pesummary import (
     TGRPESummary, PESummary, PESummaryDeprecated
 )
+from pesummary.gw.file.formats.pycbc import PyCBC
 from pesummary.gw.file.formats.GWTC1 import GWTC1
 from pesummary.core.file.read import (
     is_bilby_hdf5_file, is_bilby_json_file, is_pesummary_hdf5_file,
@@ -100,13 +101,29 @@ def _check_tgr_pesummary_file(f):
         return False
 
 
+def is_pycbc_file(path):
+    """Determine if the results file is a pycbc hdf5 file
+
+    Parameters
+    ----------
+    path: str
+        path to results file
+    """
+    import h5py
+    f = h5py.File(path, 'r')
+    if all(_ in f.attrs for _ in ["sampling_params", "variable_params", "model"]):
+        return True
+    return False
+
+
 GW_HDF5_LOAD = {
     is_lalinference_file: LALInference.load_file,
     is_bilby_hdf5_file: Bilby.load_file,
     is_tgr_pesummary_hdf5_file: TGRPESummary.load_file,
     is_pesummary_hdf5_file: PESummary.load_file,
     is_pesummary_hdf5_file_deprecated: PESummaryDeprecated.load_file,
-    is_GWTC1_file: GWTC1.load_file
+    is_GWTC1_file: GWTC1.load_file,
+    is_pycbc_file: PyCBC.load_file,
 }
 
 GW_JSON_LOAD = {

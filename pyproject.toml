@@ -49,6 +49,7 @@ dynamic = ['version']
 docs = [
 	"ipykernel",
 	"nbsphinx",
+	"pycbc",
 	"requests",
 	"Sphinx >=4.0.0,!=5.0.0",
 	"sphinx-argparse",
