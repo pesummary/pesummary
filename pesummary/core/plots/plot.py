@@ -4,11 +4,11 @@ from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, _check_latex_install, gelman_rubin,
 )
 from pesummary.core.plots.seaborn.kde import kdeplot
+from pesummary.core.plots.corner import corner
 from pesummary.core.plots.figure import figure, ExistingFigure
 from pesummary import conf
 
 import matplotlib.lines as mlines
-import corner
 import copy
 from itertools import cycle
 
@@ -836,7 +836,7 @@ def _make_corner_plot(
     default_kwargs["range"] = [1.0] * len(included_parameters)
     default_kwargs["labels"] = [latex_labels[i] for i in included_parameters]
 
-    _figure = ExistingFigure(corner.corner(xs.T, **default_kwargs))
+    _figure = ExistingFigure(corner(xs.T, included_parameters, **default_kwargs))
     # grab the axes of the subplots
     axes = _figure.get_axes()
     axes_of_interest = axes[:2]

@@ -95,6 +95,7 @@ Plotting
     ../core/seaborn
     ../core/bounded_kdes
     violin
+    corner
     tutorials/comparing_public_data_files
     tutorials/plotting_from_metafile
     tutorials/population_scatter_plot_GWTC-1
