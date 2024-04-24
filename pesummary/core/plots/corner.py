@@ -231,3 +231,124 @@ def hist2d(
 
     _set_xlim(new_fig, ax, range[0])
     _set_ylim(new_fig, ax, range[1])
+
+
+def corner(
+    samples, parameters, bins=20, *,
+    # Original corner parameters
+    range=None, axes_scale="linear", weights=None, color='k',
+    hist_bin_factor=1, smooth=None, smooth1d=None, labels=None,
+    label_kwargs=None, titles=None, show_titles=False,
+    title_quantiles=None, title_fmt=".2f", title_kwargs=None,
+    truths=None, truth_color="#4682b4", scale_hist=False,
+    quantiles=None, verbose=False, fig=None, max_n_ticks=5,
+    top_ticks=False, use_math_text=False, reverse=False,
+    labelpad=0.0, hist_kwargs={},
+    # Arviz parameters
+    group="posterior", var_names=None, filter_vars=None,
+    coords=None, divergences=False, divergences_kwargs=None,
+    labeller=None,
+    # New parameters
+    kde=None, kde_kwargs={}, kde_2d=None, kde_2d_kwargs={},
+    N=100, **hist2d_kwargs,
+):
+    """Wrapper for corner.corner which adds additional functionality
+    to plot custom KDEs along the leading diagonal and custom 2D
+    KDEs in the 2D panels
+    """
+    from corner import corner
+    if kde is not None:
+        hist_kwargs["linewidth"] = 0.
+    if kde_2d is not None:
+        linewidths = [1.]
+        hist2d_kwargs = hist2d_kwargs.copy()
+        if hist2d_kwargs.get("plot_contours", False):
+            if "contour_kwargs" not in hist2d_kwargs.keys():
+                hist2d_kwargs["contour_kwargs"] = {}
+            linewidths = hist2d_kwargs["contour_kwargs"].get("linewidths", None)
+            hist2d_kwargs["contour_kwargs"]["linewidths"] = 0.
+        plot_density = hist2d_kwargs.get("plot_density", True)
+        fill_contours = hist2d_kwargs.get("fill_contours", False)
+        plot_contours = hist2d_kwargs.get("plot_contours", True)
+        if plot_density:
+            hist2d_kwargs["plot_density"] = False
+        if fill_contours:
+            hist2d_kwargs["fill_contours"] = False
+        hist2d_kwargs["plot_contours"] = False
+
+    fig = corner(
+        samples, range=range, axes_scale=axes_scale, weights=weights,
+        color=color, hist_bin_factor=hist_bin_factor, smooth=smooth,
+        smooth1d=smooth1d, labels=labels, label_kwargs=label_kwargs,
+        titles=titles, show_titles=show_titles, title_quantiles=title_quantiles,
+        title_fmt=title_fmt, title_kwargs=title_kwargs, truths=truths,
+        truth_color=truth_color, scale_hist=scale_hist,
+        quantiles=quantiles, verbose=verbose, fig=fig,
+        max_n_ticks=max_n_ticks, top_ticks=top_ticks,
+        use_math_text=use_math_text, reverse=reverse,
+        labelpad=labelpad, hist_kwargs=hist_kwargs,
+        # Arviz parameters
+        group=group, var_names=var_names, filter_vars=filter_vars,
+        coords=coords, divergences=divergences,
+        divergences_kwargs=divergences_kwargs, labeller=labeller,
+        **hist2d_kwargs
+    )
+    if kde is None and kde_2d is None:
+        return fig
+    axs = np.array(fig.get_axes(), dtype=object).reshape(
+        len(parameters), len(parameters)
+    )
+    if kde is not None:
+        for num, param in enumerate(parameters):
+            if param in kde_kwargs.keys():
+                _kwargs = kde_kwargs[param]
+            else:
+                _kwargs = {}
+            for key, item in kde_kwargs.items():
+                if key not in parameters:
+                    _kwargs[key] = item
+            _kde = kde(samples[:,num], **_kwargs)
+            xs = np.linspace(np.min(samples[:,num]), np.max(samples[:,num]), N)
+            axs[num, num].plot(
+                xs, _kde(xs), color=color
+            )
+    if kde_2d is not None:
+        _hist2d_kwargs = hist2d_kwargs.copy()
+        _contour_kwargs = hist2d_kwargs.pop("contour_kwargs", {})
+        _contour_kwargs["linewidths"] = linewidths
+        _hist2d_kwargs.update(
+            {
+                "plot_contours": plot_contours,
+                "plot_density": plot_density,
+                "fill_contours": fill_contours,
+                "levels": hist2d_kwargs.pop("levels")[::-1],
+                "contour_kwargs": _contour_kwargs
+            }
+        )
+        for i, x in enumerate(parameters):
+            for j, y in enumerate(parameters):
+                if j >= i:
+                    continue
+                _kde_2d_kwargs = {}
+                _xkwargs = kde_2d_kwargs.get(x, kde_2d_kwargs)
+                if "low" in _xkwargs.keys():
+                    _xkwargs["ylow"] = _xkwargs.pop("low")
+                if "high" in _xkwargs.keys():
+                     _xkwargs["yhigh"] = _xkwargs.pop("high")
+                _kde_2d_kwargs.update(_xkwargs)
+                _ykwargs = kde_2d_kwargs.get(y, kde_2d_kwargs)
+                if "low" in _ykwargs.keys():
+                    _ykwargs["xlow"] = _ykwargs.pop("low")
+                if "high" in _ykwargs.keys():
+                     _ykwargs["xhigh"] = _ykwargs.pop("high")
+                _kde_2d_kwargs.update(_ykwargs)
+                for key, item in kde_2d_kwargs.items():
+                    if key not in parameters:
+                        _kde_2d_kwargs[key] = item
+                hist2d(
+                    samples[:,j], samples[:,i],
+                    ax=axs[i, j], color=color,
+                    kde=kde_2d, kde_kwargs=_kde_2d_kwargs,
+                    bins=bins, **_hist2d_kwargs
+                )
+    return fig

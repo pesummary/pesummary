@@ -65,7 +65,7 @@ test = [
 	"astropy >=4.0,!=4.3.0",
 	"beautifulsoup4",
 	"bilby_pipe",
-	"coverage",
+	"coverage <=7.4.4", # v7.5.0 incompatible with coverage-badge <=1.1.0
 	"coverage-badge",
 	"cython >=0.28.5",
 	"markupsafe ==2.0.1",
