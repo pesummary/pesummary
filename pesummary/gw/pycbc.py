@@ -130,3 +130,20 @@ def pycbc_default_psd(
     _psd = psd(flen, df, f_low)
     setattr(_psd, "__name__", psd.__name__)
     return {ifo: _psd for ifo in detectors}
+
+
+def interpolate_psd(psd, low_freq_cutoff, delta_f):
+    """Interpolate PSD to a new delta_f
+
+    Parameters
+    ----------
+    low_freq_cutoff: float
+        Frequencies below this value are set to zero.
+    delta_f : float, optional
+        Frequency resolution of the frequency series in Hertz.
+    """
+    from pesummary.gw.file.psd import PSD
+    from pycbc.psd import estimate
+    if isinstance(psd, PSD):
+        psd = psd.to_pycbc(low_freq_cutoff)
+    return estimate.interpolate(psd, delta_f)
