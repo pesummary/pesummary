@@ -87,6 +87,16 @@ class TestPSDDict(object):
             np.testing.assert_almost_equal(psd.frequencies, f[ifo].frequencies)
             np.testing.assert_almost_equal(psd.strains, f[ifo].strains)
 
+    def test_interpolate(self):
+        """Test the interpolate method
+        """
+        f = PSDDict(self.psd_data)
+        g = f.interpolate(
+            f["H1"].low_frequency, f["H1"].delta_f / 2
+        )
+        for ifo, psd in f.items():
+            np.testing.assert_almost_equal(g[ifo].delta_f, psd.delta_f / 2)
+            np.testing.assert_almost_equal(g[ifo].low_frequency, psd.low_frequency)
 
 
 class TestPSD(object):
@@ -95,7 +105,7 @@ class TestPSD(object):
     def setup_method(self):
         """Setup the testing class
         """
-        self.obj = PSD([[10, 20], [10, 20]])
+        self.obj = PSD([[10, 20], [10.25, 20], [10.5, 20]])
         if not os.path.isdir(tmpdir):
             os.mkdir(tmpdir)
 
@@ -110,8 +120,8 @@ class TestPSD(object):
         """
         self.obj.save_to_file("{}/test.dat".format(tmpdir))
         data = np.genfromtxt("{}/test.dat".format(tmpdir))
-        np.testing.assert_almost_equal(data.T[0], [10, 10])
-        np.testing.assert_almost_equal(data.T[1], [20, 20])
+        np.testing.assert_almost_equal(data.T[0], [10, 10.25, 10.5])
+        np.testing.assert_almost_equal(data.T[1], [20, 20, 20])
 
     def test_invalid_input(self):
         """Test that the appropiate error is raised if the input is wrong
@@ -120,3 +130,13 @@ class TestPSD(object):
 
         with pytest.raises(IndexError):
             obj = PSD([10, 10])
+
+    def test_interpolate(self):
+        """Test the interpolate method
+        """
+        g = self.obj.interpolate(
+            self.obj.low_frequency,
+            self.obj.delta_f / 2
+        )
+        np.testing.assert_almost_equal(g.delta_f, self.obj.delta_f / 2)
+        np.testing.assert_almost_equal(g.low_frequency, self.obj.low_frequency)

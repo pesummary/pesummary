@@ -167,14 +167,19 @@ def _setup_psd(psd, psd_default, df=1. / 256, **psd_default_kwargs):
 
     detectors = list(psd.keys())
     if df != psd[detectors[0]].delta_f:
-        from pycbc.psd import estimate
+        from pesummary.gw.file.psd import PSDDict
         logger.warning(
             "Provided PSD has df={} and {} has been specified. Interpolation "
             "will be used".format(psd[detectors[0]].delta_f, df)
         )
-        psd = {
-            ifo: estimate.interpolate(psd[ifo], df) for ifo in psd.keys()
-        }
+        if isinstance(psd, PSDDict):
+            psd = psd.interpolate(f_low, df)
+        else:
+            from pesummary.gw.pycbc import interpolate_psd
+            psd = {
+                ifo: interpolate_psd(psd[ifo], f_low, df) for ifo in
+                psd.keys()
+            }
     return psd, ANALYTIC
 
 

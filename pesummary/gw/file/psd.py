@@ -141,6 +141,21 @@ class PSDDict(Dict):
             psd[key] = item.to_pycbc(*args, **kwargs)
         return PSDDict(psd)
 
+    def interpolate(self, low_freq_cutoff, delta_f):
+        """Interpolate a dictionary of PSDs to a new delta_f
+
+        Parameters
+        ----------
+        low_freq_cutoff: float
+            Frequencies below this value are set to zero.
+        delta_f : float, optional
+            Frequency resolution of the frequency series in Hertz.
+        """
+        psd = {}
+        for key, item in self.items():
+            psd[key] = item.interpolate(low_freq_cutoff, delta_f)
+        return PSDDict(psd)
+
 
 class PSD(np.ndarray):
     """Class to handle PSD data
@@ -153,7 +168,12 @@ class PSD(np.ndarray):
             )
         obj.delta_f = cls.delta_f(obj)
         obj.f_high = cls.f_high(obj)
+        obj.frequencies = cls.frequencies(obj)
         return obj
+
+    @property
+    def low_frequency(self):
+        return self.frequencies[0]
 
     @staticmethod
     def delta_f(array):
@@ -162,6 +182,10 @@ class PSD(np.ndarray):
     @staticmethod
     def f_high(array):
         return array.T[0][-1]
+
+    @staticmethod
+    def frequencies(array):
+        return array.T[0]
 
     @classmethod
     def read(cls, path_to_file, **kwargs):
@@ -259,6 +283,7 @@ class PSD(np.ndarray):
             return
         self.delta_f = getattr(obj, "delta_f", None)
         self.f_high = getattr(obj, "f_high", None)
+        self.frequencies = getattr(obj, "frequencies", None)
 
     def to_pycbc(
         self, low_freq_cutoff, f_high=None, length=None, delta_f=None,
@@ -305,3 +330,19 @@ class PSD(np.ndarray):
             self.T[0], self.T[1], length, delta_f, low_freq_cutoff
         )
         return pycbc_psd
+
+    def interpolate(self, low_freq_cutoff, delta_f):
+        """Interpolate PSD to a new delta_f
+
+        Parameters
+        ----------
+        low_freq_cutoff: float
+            Frequencies below this value are set to zero.
+        delta_f : float, optional
+            Frequency resolution of the frequency series in Hertz.
+        """
+        from pesummary.gw.pycbc import interpolate_psd
+        psd = interpolate_psd(self.copy(), low_freq_cutoff, delta_f)
+        frequencies, strains = psd.sample_frequencies, psd
+        inds = np.where(frequencies >= low_freq_cutoff)
+        return PSD(np.vstack([frequencies[inds], strains[inds]]).T)
