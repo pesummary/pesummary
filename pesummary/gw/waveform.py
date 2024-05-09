@@ -10,7 +10,9 @@ from pesummary.utils.utils import iterator, logger
 from pesummary.utils.exceptions import EvolveSpinError
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
-
+_python_module_from_approximant_name = {
+    "SEOBNRv5": "lalsimulation.gwsignal.models.pyseobnr_model"
+}
 
 def _get_spin_freq_from_approximant(approximant):
     """Determine whether the reference frequency is the starting frequency
@@ -30,8 +32,7 @@ def _get_spin_freq_from_approximant(approximant):
             SIM_INSPIRAL_SPINS_NONPRECESSING, SIM_INSPIRAL_SPINS_F_REF
         )
         # check to see if approximant is in gwsignal
-        from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
-        approx = gwsignal_get_waveform_generator(approximant)
+        approx = _gwsignal_generator_from_string(approximant)
         meta = approx.metadata
         if meta["type"] == "aligned_spin":
             return SIM_INSPIRAL_SPINS_NONPRECESSING
@@ -89,9 +90,8 @@ def _check_approximant_from_string(approximant):
     if hasattr(lalsim, approximant):
         return True
     else:
-        from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
         try:
-            _ = gwsignal_get_waveform_generator(approximant)
+            _ = _gwsignal_generator_from_string(approximant)
         except (ValueError, NameError):
             return False
         return True
@@ -106,6 +106,50 @@ def _lal_approximant_from_string(approximant):
         approximant you wish to convert
     """
     return lalsim.GetApproximantFromString(approximant)
+
+
+def _gwsignal_generator_from_string(approximant, version="v1", **kwargs):
+    """Return the GW signal generator given an approximant string
+
+    Parameters
+    ----------
+    approximant: str
+        approximant you wish to convert
+    version: str, optional
+        version of gwsignal_get_waveform_generator to use. 'v1' ignores
+        all kwargs and simply passes the approximant name to
+        gwsignal_get_waveform_generator. 'v2' passes the approximant name
+        and python_module to gwsignal_get_waveform_generator. The python_module
+        can either be provided to _gwsignal_generator_from_string directly or if
+        not provided, PESummary will use the stored default values. Default 'v1'
+    kwargs: dict, optional
+        optional kwargs to pass to gwsignal_get_waveform_generator
+    """
+    from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
+    if version == "v1":
+        return gwsignal_get_waveform_generator(approximant)
+    elif version == "v2":
+        fallback = [
+            value for key, value in _python_module_from_approximant_name.items()
+            if key in approximant
+        ]
+        if len(fallback):
+            fallback = fallback[0]
+        else:
+            fallback = None
+        module = kwargs.get("python_module", fallback)
+        if module is None:
+            raise ValueError(
+                "Please provide a python_module defining the gwsignal "
+                "generator as pesummary does not have a default value"
+            )
+        return gwsignal_get_waveform_generator(
+            approximant, python_module=module
+        )
+    else:
+        raise ValueError(
+            "Unknown version {}. Please use either v1 or v2".format(version)
+        )
 
 
 def _insert_mode_array(modes, LAL_parameters=None):
@@ -252,7 +296,7 @@ def _project_waveform(ifo, hp, hc, ra, dec, psi, time):
 def fd_waveform(
     samples, approximant, delta_f, f_low, f_high, f_ref=20., project=None,
     ind=0, longAscNodes=0., eccentricity=0., LAL_parameters=None,
-    mode_array=None, pycbc=False, flen=None
+    mode_array=None, pycbc=False, flen=None, **kwargs
 ):
     """Generate a gravitational wave in the frequency domain
 
@@ -289,6 +333,8 @@ def fd_waveform(
     flen: int
         Length of the frequency series in samples. Default is None. Only used
         when pycbc=True
+    **kwargs: dict, optional
+        all kwargs passed to _calculate_hp_hc_fd
     """
     from gwpy.frequencyseries import FrequencySeries
 
@@ -296,13 +342,13 @@ def fd_waveform(
         samples, f_ref=f_ref, ind=ind, longAscNodes=longAscNodes,
         eccentricity=eccentricity
     )
-    approx = _lal_approximant_from_string(approximant)
     if mode_array is not None:
         LAL_parameters = _insert_mode_array(
             mode_array, LAL_parameters=LAL_parameters
         )
-    hp, hc = lalsim.SimInspiralChooseFDWaveform(
-        *waveform_args, delta_f, f_low, f_high, f_ref, LAL_parameters, approx
+    hp, hc = _calculate_hp_hc_fd(
+        waveform_args, delta_f, f_low, f_high, f_ref, LAL_parameters,
+        approximant, **kwargs
     )
     hp = FrequencySeries(hp.data.data, df=hp.deltaF, f0=0.)
     hc = FrequencySeries(hc.data.data, df=hc.deltaF, f0=0.)
@@ -328,13 +374,13 @@ def _wrapper_for_td_waveform(args):
     args: tuple
         All args passed to td_waveform
     """
-    return td_waveform(*args)
+    return td_waveform(*args[:-1], **args[-1])
 
 
 def td_waveform(
     samples, approximant, delta_t, f_low, f_ref=20., project=None, ind=0,
     longAscNodes=0., eccentricity=0., LAL_parameters=None, mode_array=None,
-    pycbc=False, level=None, multi_process=1
+    pycbc=False, level=None, multi_process=1, **kwargs
 ):
     """Generate a gravitational wave in the time domain
 
@@ -370,9 +416,10 @@ def td_waveform(
         must be greater than 0 and less than 1
     multi_process: int, optional
         number of cores to run on when generating waveforms. Only used when
-        level is not None
+        level is not None,
+    kwargs: dict, optional
+        all kwargs passed to _td_waveform
     """
-    approx = _lal_approximant_from_string(approximant)
     if mode_array is not None:
         LAL_parameters = _insert_mode_array(
             mode_array, LAL_parameters=LAL_parameters
@@ -388,7 +435,7 @@ def td_waveform(
                 [samples] * N, [approximant] * N, [delta_t] * N, [f_low] * N,
                 [f_ref] * N, [project] * N, np.arange(N), [longAscNodes] * N,
                 [eccentricity] * N, [LAL_parameters] * N, [mode_array] * N,
-                [pycbc] * N, [None] * N
+                [pycbc] * N, [None] * N, [kwargs] * N
             ], dtype="object").T
             td_waveform_list = list(
                 iterator(
@@ -455,8 +502,8 @@ def td_waveform(
         f_ref=f_ref
     )
     waveform = _td_waveform(
-        waveform_args, approx, delta_t, f_low, f_ref, LAL_parameters, _samples,
-        pycbc=pycbc, project=project
+        waveform_args, approximant, delta_t, f_low, f_ref, LAL_parameters,
+        _samples, pycbc=pycbc, project=project, **kwargs
     )
     if level is not None:
         return waveform, upper, lower, new_t
@@ -465,7 +512,7 @@ def td_waveform(
 
 def _td_waveform(
     waveform_args, approximant, delta_t, f_low, f_ref, LAL_parameters, samples,
-    pycbc=False, project=None
+    pycbc=False, project=None, **kwargs
 ):
     """Generate a gravitational wave in the time domain
 
@@ -491,12 +538,15 @@ def _td_waveform(
     project: str, optional
         name of the detector to project the waveform onto. If None,
         the plus and cross polarizations are returned. Default None
+    kwargs: dict, optional
+        all kwargs passed to _calculate_hp_hc_td
     """
     from gwpy.timeseries import TimeSeries
     from astropy.units import Quantity
 
-    hp, hc = lalsim.SimInspiralChooseTDWaveform(
-        *waveform_args, delta_t, f_low, f_ref, LAL_parameters, approximant
+    hp, hc = _calculate_hp_hc_td(
+        waveform_args, delta_t, f_low, f_ref, LAL_parameters, approximant,
+        **kwargs
     )
     hp = TimeSeries(hp.data.data, dt=hp.deltaT, t0=hp.epoch)
     hc = TimeSeries(hc.data.data, dt=hc.deltaT, t0=hc.epoch)
@@ -527,3 +577,136 @@ def _td_waveform(
         Quantity(ht.times, unit="s") + Quantity(_detector_time, unit="s")
     )
     return ht
+
+
+def _calculate_hp_hc_td(
+    waveform_args, delta_t, f_low, f_ref, LAL_parameters, approximant,
+    **kwargs
+):
+    """Calculate the plus and cross polarizations in the time domain.
+    If the approximant is in LALSimulation, the
+    SimInspiralChooseTDWaveform function is used. If the approximant is
+    not in LALSimulation, gwsignal is used
+
+    Parameters
+    ----------
+    waveform_args: tuple
+        args to pass to lalsimulation.SimInspiralChooseTDWaveform
+    delta_t: float
+        spacing between time samples
+    f_low: float
+        frequency to start evaluating the waveform
+    f_ref: float, optional
+        reference frequency
+    LAL_parameters: LALDict
+        LAL dictionary containing accessory parameters. Default None
+    approximant: str
+        lalsimulation approximant number to use when generating a waveform
+    **kwargs: dict, optional
+        all kwargs passed to _setup_gwsignal
+    """
+    if hasattr(lalsim, approximant):
+        approx = _lal_approximant_from_string(approximant)
+        return lalsim.SimInspiralChooseTDWaveform(
+            *waveform_args, delta_t, f_low, f_ref, LAL_parameters, approx
+        )
+    wfm_gen = _setup_gwsignal(
+        waveform_args, f_low, f_ref, approximant, delta_t=delta_t, **kwargs
+    )
+    return wfm_gen.generate_td_polarizations()
+
+
+def _calculate_hp_hc_fd(
+    waveform_args, delta_f, f_low, f_high, f_ref, LAL_parameters, approximant,
+    **kwargs
+):
+    """Calculate the plus and cross polarizations in the frequency domain.
+    If the approximant is in LALSimulation, the
+    SimInspiralChooseFDWaveform function is used. If the approximant is
+    not in LALSimulation, gwsignal is used
+
+    Parameters
+    ----------
+    waveform_args: tuple
+        args to pass to lalsimulation.SimInspiralChooseFDWaveform
+    delta_f: float
+        spacing between frequency samples
+    f_low: float
+        frequency to start evaluating the waveform
+    f_high: float, optional
+        frequency to stop evaluating the waveform
+    f_ref: float, optional
+        reference frequency
+    LAL_parameters: LALDict
+        LAL dictionary containing accessory parameters. Default None
+    approximant: str
+        lalsimulation approximant number to use when generating a waveform
+    **kwargs: dict, optional
+        all kwargs passed to _setup_gwsignal
+    """
+    if hasattr(lalsim, approximant):
+        approx = _lal_approximant_from_string(approximant)
+        return lalsim.SimInspiralChooseFDWaveform(
+            *waveform_args, delta_f, f_low, f_high, f_ref, LAL_parameters,
+            approx
+        )
+    wfm_gen = _setup_gwsignal(
+        waveform_args, f_low, f_ref, approximant, delta_f=delta_f,
+        f_high=f_high, **kwargs
+    )
+    return wfm_gen.generate_fd_polarizations()
+
+
+def _setup_gwsignal(
+    waveform_args, f_low, f_ref, approximant, delta_t=None, delta_f=None,
+    f_high=None, **kwargs
+):
+    """Setup a waveform generator with gwsignal
+
+    Parameters
+    ----------
+    waveform_args: tuple
+        args to pass to lalsimulation.SimInspiralChoose*DWaveform
+    f_low: float
+        frequency to start evaluating the waveform
+    f_ref: float, optional
+        reference frequency
+    approximant: str
+        lalsimulation approximant number to use when generating a waveform
+    delta_t: float, optional
+        spacing between frequency samples
+    delta_f: float, optional
+        spacing between frequency samples
+    f_high: float, optional
+        frequency to stop evaluating the waveform
+    kwargs: dict, optional
+        all kwargs passed to _gwsignal_generator_from_string
+    """
+    from lalsimulation.gwsignal.core.parameter_conventions import (
+        common_units_dictionary
+    )
+    from astropy import units
+    names = [
+        "mass1", "mass2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y",
+        "spin2z", "distance", "inclination", "phi_ref", "longAscNodes",
+        "eccentricity", "meanPerAno"
+    ]
+    params_dict = {name: waveform_args[ii] for ii, name in enumerate(names)}
+    if delta_t is not None:
+        params_dict["deltaT"] = delta_t
+    if delta_f is not None:
+        params_dict["deltaF"] = delta_f
+    params_dict["f22_start"] = f_low
+    params_dict["f22_ref"] = f_ref
+    if f_high is None:
+        params_dict["f_max"] = 0.5 / params_dict["deltaT"]
+    else:
+        params_dict["f_max"] = f_high
+    wf_gen = _gwsignal_generator_from_string(approximant, **kwargs)
+    for key, item in params_dict.items():
+        params_dict[key] = item * common_units_dictionary.get(key, 1)
+    params_dict["mass1"] *= units.kg
+    params_dict["mass2"] *= units.kg
+    params_dict["distance"] *= units.m
+    wfm_gen = wf_gen._generate_waveform_class(**params_dict)
+    return wfm_gen
