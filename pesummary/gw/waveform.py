@@ -646,10 +646,15 @@ def _calculate_hp_hc_fd(
     """
     if hasattr(lalsim, approximant):
         approx = _lal_approximant_from_string(approximant)
-        return lalsim.SimInspiralChooseFDWaveform(
-            *waveform_args, delta_f, f_low, f_high, f_ref, LAL_parameters,
-            approx
-        )
+        for func in [lalsim.SimInspiralChooseFDWaveform, lalsim.SimInspiralFD]:
+            try:
+                return func(
+                    *waveform_args, delta_f, f_low, f_high, f_ref,
+                    LAL_parameters, approx
+                )
+            except Exception:
+                continue
+            break
     wfm_gen = _setup_gwsignal(
         waveform_args, f_low, f_ref, approximant, delta_f=delta_f,
         f_high=f_high, **kwargs

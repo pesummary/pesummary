@@ -815,15 +815,16 @@ class _PlotGeneration(_BasePlotGeneration):
         if any(self.approximant[i] == {} for i in self.labels):
             return
 
-        self._waveform_comparison_fd_plot(
+        self._waveform_comparison_td_plot(
             self.savedir, self.maxL_samples, self.labels, self.colors,
-            self.preliminary_comparison_pages, self.checkpoint
+            self.preliminary_comparison_pages, self.checkpoint,
+            **self.file_kwargs
         )
 
     @staticmethod
     def _waveform_comparison_td_plot(
         savedir, maxL_samples, labels, colors, preliminary=False,
-        checkpoint=False
+        checkpoint=False, **kwargs
     ):
         """Generate a plot to compare the time domain waveforms
 
@@ -844,7 +845,13 @@ class _PlotGeneration(_BasePlotGeneration):
         if os.path.isfile(filename) and checkpoint:
             return
         samples = [maxL_samples[i] for i in labels]
-        fig = gw._time_domainwaveform_comparison_plot(samples, colors, labels)
+        f_min = np.max(
+            [kwargs[label]["meta_data"].get("f_low", 20.) for label in labels]
+        )
+        f_ref = kwargs[labels[0]]["meta_data"].get("f_ref", 20.)
+        fig = gw._time_domain_waveform_comparison_plot(
+            samples, colors, labels, f_min=f_min, f_ref=f_ref
+        )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
         )

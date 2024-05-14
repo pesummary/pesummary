@@ -914,7 +914,11 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         path = self.image_path["other"]
         base = os.path.join(path, "{}.png")
         contents = [
-            [base.format("combined_skymap"), base.format("compare_waveforms")]
+            [
+                base.format("combined_skymap"),
+                base.format("compare_time_domain_waveforms"),
+                base.format("compare_waveforms")
+            ]
         ]
         return contents
 

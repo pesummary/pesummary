@@ -62,7 +62,7 @@ class TestPlotGeneration(object):
         plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
             gw=True, label="H1", outdir=self.dir, psd=True,
-            calibration=False
+            calibration=False, waveform=True
         )
         for i, j in zip(expected_plots, plots):
             print(i, j)
@@ -90,7 +90,7 @@ class TestPlotGeneration(object):
         webpage.generate_plots()
         plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", outdir=self.dir,
+            gw=True, label="H1", outdir=self.dir, waveform=True
         )
         assert all(i == j for i,j in zip(sorted(expected_plots), sorted(plots)))
 
@@ -112,7 +112,7 @@ class TestPlotGeneration(object):
             f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5"
         )
         default_arguments = [
-            "--approximant", "IMRPhenomPv2", "IMRPhenomP",
+            "--approximant", "IMRPhenomPv2", "IMRPhenomPv3",
             "--webdir", self.dir,
             "--samples", f"{self.dir}/bilby_example.h5",
             f"{self.dir}/lalinference_example.h5",
@@ -123,7 +123,8 @@ class TestPlotGeneration(object):
         webpage.generate_plots()
         plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", number=2, outdir=self.dir
+            gw=True, label="H1", number=2, outdir=self.dir,
+            waveform=True
         )
         for i,j in zip(sorted(plots), sorted(expected_plots)):
             print(i, j)
@@ -161,7 +162,7 @@ class TestPlotGeneration(object):
         parser = ArgumentParser()
         parser.add_all_known_options_to_parser()
         default_arguments = [
-            "--approximant", "IMRPhenomP",
+            "--approximant", "IMRPhenomPv3",
             "--existing_webdir", self.dir,
             "--samples", f"{self.dir}/lalinference_example.h5",
             "--labels", "H11", "--no_ligo_skymap", "--disable_expert"]
@@ -171,7 +172,8 @@ class TestPlotGeneration(object):
         webpage.generate_plots()
         plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
-            gw=True, label="H1", number=2, outdir=self.dir
+            gw=True, label="H1", number=2, outdir=self.dir,
+            waveform=True
         )
         assert all(i == j for i, j in zip(sorted(plots), sorted(expected_plots)))
 
@@ -193,7 +195,7 @@ class TestPlotGeneration(object):
             f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5"
         )
         default_arguments = [
-            "--approximant", "IMRPhenomPv2", "IMRPhenomP",
+            "--approximant", "IMRPhenomPv2", "IMRPhenomPv3",
             "--webdir", self.dir,
             "--samples", f"{self.dir}/bilby_example.h5",
             f"{self.dir}/lalinference_example.h5",
@@ -207,10 +209,8 @@ class TestPlotGeneration(object):
         plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
             gw=True, label="H1", number=2, outdir=self.dir,
-            comparison=False
+            comparison=False, waveform=True
         )
-        for i,j in zip(sorted(plots), sorted(expected_plots)):
-            print(i, j)
         assert all(i == j for i,j in zip(sorted(plots), sorted(expected_plots)))
 
     def test_plot_generation_for_add_to_existing_without_comparison(self):
@@ -245,7 +245,7 @@ class TestPlotGeneration(object):
         parser = ArgumentParser()
         parser.add_all_known_options_to_parser()
         default_arguments = [
-            "--approximant", "IMRPhenomP",
+            "--approximant", "IMRPhenomPv3",
             "--existing_webdir", self.dir,
             "--samples", f"{self.dir}/lalinference_example.h5",
             "--labels", "H11", "--no_ligo_skymap",
@@ -258,6 +258,6 @@ class TestPlotGeneration(object):
         plots = sorted(glob(f"{self.dir}/plots/*.png"))
         expected_plots = get_list_of_plots(
             gw=True, label="H1", number=2, outdir=self.dir,
-            comparison=False
+            comparison=False, waveform=True
         )
         assert all(i == j for i, j in zip(sorted(plots), sorted(expected_plots)))

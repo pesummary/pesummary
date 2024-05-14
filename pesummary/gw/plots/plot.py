@@ -370,7 +370,10 @@ def __antenna_response(name, ra, dec, psi, time_gps):
 
 
 @no_latex_plot
-def _waveform_plot(detectors, maxL_params, **kwargs):
+def _waveform_plot(
+    detectors, maxL_params, color=None, label=None, fig=None, ax=None,
+    **kwargs
+):
     """Plot the maximum likelihood waveform for a given approximant.
 
     Parameters
@@ -383,53 +386,49 @@ def _waveform_plot(detectors, maxL_params, **kwargs):
         dictionary of optional keyword arguments
     """
     from gwpy.plot.colors import GW_OBSERVATORY_COLORS
+    from pesummary.gw.waveform import fd_waveform
     if math.isnan(maxL_params["mass_1"]):
         return
     logger.debug("Generating the maximum likelihood waveform plot")
     if not LALSIMULATION:
         raise Exception("lalsimulation could not be imported. please install "
                         "lalsuite to be able to use all features")
-    delta_frequency = kwargs.get("delta_f", 1. / 256)
+
+    if (fig is None) and (ax is None):
+        fig, ax = figure(gca=True)
+    elif ax is None:
+        ax = fig.gca()
+    elif fig is None:
+        raise ValueError("Please provide a figure for plotting")
+    if color is None:
+        color = [GW_OBSERVATORY_COLORS[i] for i in detectors]
+    elif len(color) != len(detectors):
+        raise ValueError(
+            "Please provide a list of colors for each detector"
+        )
+    if label is None:
+        label = detectors
+    elif len(label) != len(detectors):
+        raise ValueError(
+            "Please provide a list of labels for each detector"
+        )
     minimum_frequency = kwargs.get("f_min", 5.)
     maximum_frequency = kwargs.get("f_max", 1000.)
-    frequency_array = np.arange(minimum_frequency, maximum_frequency,
-                                delta_frequency)
-
-    approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
-    mass_1 = maxL_params["mass_1"] * MSUN_SI
-    mass_2 = maxL_params["mass_2"] * MSUN_SI
-    luminosity_distance = maxL_params["luminosity_distance"] * PC_SI * 10**6
-    if "phi_jl" in maxL_params.keys():
-        iota, S1x, S1y, S1z, S2x, S2y, S2z = \
-            lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                maxL_params["theta_jn"], maxL_params["phi_jl"], maxL_params["tilt_1"],
-                maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
-                maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-                maxL_params["phase"])
-    else:
-        iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params["iota"], 0., 0., 0., \
-            0., 0., 0.
-    phase = maxL_params["phase"] if "phase" in maxL_params.keys() else 0.0
-    for func in [lalsim.SimInspiralChooseFDWaveform, lalsim.SimInspiralFD]:
-        try:
-            h_plus, h_cross = func(
-                mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance, iota,
-                phase, 0.0, 0.0, 0.0, delta_frequency, minimum_frequency,
-                maximum_frequency, kwargs.get("f_ref", 10.), None, approx)
-        except Exception:
-            continue
-        break
-    h_plus = h_plus.data.data
-    h_cross = h_cross.data.data
-    h_plus = h_plus[:len(frequency_array)]
-    h_cross = h_cross[:len(frequency_array)]
-    fig, ax = figure(gca=True)
-    colors = [GW_OBSERVATORY_COLORS[i] for i in detectors]
     for num, i in enumerate(detectors):
-        ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
-                                maxL_params["psi"], maxL_params["geocent_time"])
-        ax.plot(frequency_array, abs(h_plus * ar[0] + h_cross * ar[1]),
-                color=colors[num], linewidth=1.0, label=i)
+        ht = fd_waveform(
+            maxL_params, maxL_params["approximant"],
+            kwargs.get("delta_f", 1. / 256), minimum_frequency,
+            maximum_frequency, f_ref=kwargs.get("f_ref", 10.),
+            project=i
+        )
+        mask = (
+            (ht.frequencies.value > minimum_frequency) *
+            (ht.frequencies.value < maximum_frequency)
+        )
+        ax.plot(
+            ht.frequencies.value[mask], np.abs(ht)[mask], color=color[num],
+            linewidth=1.0, label=label[num]
+        )
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"Frequency $[Hz]$")
@@ -471,40 +470,10 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
 
     fig, ax = figure(gca=True)
     for num, i in enumerate(maxL_params_list):
-        if math.isnan(i["mass_1"]):
-            continue
-        approx = lalsim.GetApproximantFromString(i["approximant"])
-        mass_1 = i["mass_1"] * MSUN_SI
-        mass_2 = i["mass_2"] * MSUN_SI
-        luminosity_distance = i["luminosity_distance"] * PC_SI * 10**6
-        if "phi_jl" in i.keys():
-            iota, S1x, S1y, S1z, S2x, S2y, S2z = \
-                lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                    i["theta_jn"], i["phi_jl"], i["tilt_1"],
-                    i["tilt_2"], i["phi_12"], i["a_1"],
-                    i["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-                    i["phase"])
-        else:
-            iota, S1x, S1y, S1z, S2x, S2y, S2z = i["iota"], 0., 0., 0., \
-                0., 0., 0.
-        phase = i["phase"] if "phase" in i.keys() else 0.0
-        for func in [lalsim.SimInspiralChooseFDWaveform, lalsim.SimInspiralFD]:
-            try:
-                h_plus, h_cross = func(
-                    mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance,
-                    iota, phase, 0.0, 0.0, 0.0, delta_frequency, minimum_frequency,
-                    maximum_frequency, kwargs.get("f_ref", 10.), None, approx)
-            except Exception:
-                continue
-            break
-        h_plus = h_plus.data.data
-        h_cross = h_cross.data.data
-        h_plus = h_plus[:len(frequency_array)]
-        h_cross = h_cross[:len(frequency_array)]
-        ar = __antenna_response("H1", i["ra"], i["dec"], i["psi"],
-                                i["geocent_time"])
-        ax.plot(frequency_array, abs(h_plus * ar[0] + h_cross * ar[1]),
-                color=colors[num], label=labels[num], linewidth=2.0)
+        _ = _waveform_plot(
+            ["H1"], i, fig=fig, ax=ax, color=[colors[num]],
+            label=[labels[num]], **kwargs
+        )
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.grid(visible=True)
@@ -1028,7 +997,10 @@ def _sky_sensitivity(network, resolution, maxL_params, **kwargs):
 
 
 @no_latex_plot
-def _time_domain_waveform(detectors, maxL_params, **kwargs):
+def _time_domain_waveform(
+    detectors, maxL_params, color=None, label=None, fig=None, ax=None,
+    **kwargs
+):
     """
     Plot the maximum likelihood waveform for a given approximant
     in the time domain.
@@ -1044,53 +1016,65 @@ def _time_domain_waveform(detectors, maxL_params, **kwargs):
     """
     from gwpy.timeseries import TimeSeries
     from gwpy.plot.colors import GW_OBSERVATORY_COLORS
+    from pesummary.gw.waveform import td_waveform
+    from pesummary.utils.samples_dict import SamplesDict
     if math.isnan(maxL_params["mass_1"]):
         return
     logger.debug("Generating the maximum likelihood waveform time domain plot")
     if not LALSIMULATION:
         raise Exception("lalsimulation could not be imported. please install "
                         "lalsuite to be able to use all features")
-    delta_t = 1. / 4096.
-    minimum_frequency = kwargs.get("f_min", 5.)
-    t_start = maxL_params['geocent_time']
-    t_finish = maxL_params['geocent_time'] + 4.
-    time_array = np.arange(t_start, t_finish, delta_t)
 
-    approx = lalsim.GetApproximantFromString(maxL_params["approximant"])
-    mass_1 = maxL_params["mass_1"] * MSUN_SI
-    mass_2 = maxL_params["mass_2"] * MSUN_SI
-    luminosity_distance = maxL_params["luminosity_distance"] * PC_SI * 10**6
-    if "phi_jl" in maxL_params.keys():
-        iota, S1x, S1y, S1z, S2x, S2y, S2z = \
-            lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                maxL_params["theta_jn"], maxL_params["phi_jl"], maxL_params["tilt_1"],
-                maxL_params["tilt_2"], maxL_params["phi_12"], maxL_params["a_1"],
-                maxL_params["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-                maxL_params["phase"])
-    else:
-        iota, S1x, S1y, S1z, S2x, S2y, S2z = maxL_params["iota"], 0., 0., 0., \
-            0., 0., 0.
-    phase = maxL_params["phase"] if "phase" in maxL_params.keys() else 0.0
+    approximant = maxL_params["approximant"]
+    minimum_frequency = kwargs.get("f_min", 5.)
+    _samples = SamplesDict(
+        {
+            key: [item] for key, item in maxL_params.items() if
+            key != "approximant"
+        }
+    )
+    _samples.generate_all_posterior_samples(disable_remnant=True)
+    _samples = {key: item[0] for key, item in _samples.items()}
     chirptime = lalsim.SimIMRPhenomXASDuration(
-        mass_1, mass_2, S1z, S2z, minimum_frequency
+        _samples["mass_1"] * MSUN_SI, _samples["mass_2"] * MSUN_SI,
+        _samples.get("spin_1z", 0), _samples.get("spin_2z", 0),
+        minimum_frequency
     )
     duration = np.max([2**np.ceil(np.log2(chirptime)), 1.0])
-    h_plus, h_cross = lalsim.SimInspiralChooseTDWaveform(
-        mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance, iota,
-        phase, 0.0, 0.0, 0.0, delta_t, minimum_frequency,
-        kwargs.get("f_ref", 10.), None, approx)
-
-    fig, ax = figure(gca=True)
-    colors = [GW_OBSERVATORY_COLORS[i] for i in detectors]
+    if (fig is None) and (ax is None):
+        fig, ax = figure(gca=True)
+    elif ax is None:
+        ax = fig.gca()
+    elif fig is None:
+        raise ValueError("Please provide a figure for plotting")
+    if color is None:
+        color = [GW_OBSERVATORY_COLORS[i] for i in detectors]
+    elif len(color) != len(detectors):
+        raise ValueError(
+            "Please provide a list of colors for each detector"
+        )
+    if label is None:
+        label = detectors
+    elif len(label) != len(detectors):
+        raise ValueError(
+            "Please provide a list of labels for each detector"
+        )
+    minimum_frequency = kwargs.get("f_min", 5.)
     for num, i in enumerate(detectors):
-        ar = __antenna_response(i, maxL_params["ra"], maxL_params["dec"],
-                                maxL_params["psi"], maxL_params["geocent_time"])
-        h_t = h_plus.data.data * ar[0] + h_cross.data.data * ar[1]
-        h_t = TimeSeries(h_t[:], dt=h_plus.deltaT, t0=h_plus.epoch)
-        h_t.times = [float(np.array(i)) + t_start for i in h_t.times]
-        ax.plot(h_t.times, h_t,
-                color=colors[num], linewidth=1.0, label=i)
-        ax.set_xlim([t_start - 0.75 * duration, t_start + duration / 4])
+        ht = td_waveform(
+            maxL_params, approximant, kwargs.get("delta_t", 1. / 4096.),
+            minimum_frequency, f_ref=kwargs.get("f_ref", 10.), project=i
+        )
+        ax.plot(
+            ht.times.value, ht, color=color[num], linewidth=1.0,
+            label=label[num]
+        )
+        ax.set_xlim(
+            [
+                maxL_params["geocent_time"] - 0.75 * duration,
+                maxL_params["geocent_time"] + duration / 4
+            ]
+        )
     ax.set_xlabel(r"Time $[s]$")
     ax.set_ylabel(r"Strain")
     ax.grid(visible=True)
@@ -1123,48 +1107,14 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
     if not LALSIMULATION:
         raise Exception("LALSimulation could not be imported. Please install "
                         "LALSuite to be able to use all features")
-    delta_t = 1. / 4096.
-    minimum_frequency = kwargs.get("f_min", 5.)
-
     fig, ax = figure(gca=True)
     for num, i in enumerate(maxL_params_list):
-        if math.isnan(i["mass_1"]):
-            continue
-        t_start = i['geocent_time']
-        t_finish = i['geocent_time'] + 4.
-        time_array = np.arange(t_start, t_finish, delta_t)
-
-        approx = lalsim.GetApproximantFromString(i["approximant"])
-        mass_1 = i["mass_1"] * MSUN_SI
-        mass_2 = i["mass_2"] * MSUN_SI
-        luminosity_distance = i["luminosity_distance"] * PC_SI * 10**6
-        if "phi_jl" in i.keys():
-            iota, S1x, S1y, S1z, S2x, S2y, S2z = \
-                lalsim.SimInspiralTransformPrecessingNewInitialConditions(
-                    i["theta_jn"], i["phi_jl"], i["tilt_1"],
-                    i["tilt_2"], i["phi_12"], i["a_1"],
-                    i["a_2"], mass_1, mass_2, kwargs.get("f_ref", 10.),
-                    i["phase"])
-        else:
-            iota, S1x, S1y, S1z, S2x, S2y, S2z = i["iota"], 0., 0., 0., \
-                0., 0., 0.
-        phase = i["phase"] if "phase" in i.keys() else 0.0
-        h_plus, h_cross = lalsim.SimInspiralChooseTDWaveform(
-            mass_1, mass_2, S1x, S1y, S1z, S2x, S2y, S2z, luminosity_distance,
-            iota, phase, 0.0, 0.0, 0.0, delta_t, minimum_frequency,
-            kwargs.get("f_ref", 10.), None, approx)
-
-        ar = __antenna_response("H1", i["ra"], i["dec"], i["psi"],
-                                i["geocent_time"])
-        h_t = h_plus.data.data * ar[0] + h_cross.data.data * ar[1]
-        h_t = TimeSeries(h_t[:], dt=h_plus.deltaT, t0=h_plus.epoch)
-        h_t.times = [float(np.array(i)) + t_start for i in h_t.times]
-
-        ax.plot(h_t.times, h_t,
-                color=colors[num], label=labels[num], linewidth=2.0)
+        _ = _time_domain_waveform(
+            ["H1"], i, fig=fig, ax=ax, color=[colors[num]],
+            label=[labels[num]], **kwargs
+        )
     ax.set_xlabel(r"Time $[s]$")
     ax.set_ylabel(r"Strain")
-    ax.set_xlim([t_start - 3, t_start + 0.5])
     ax.grid(visible=True)
     ax.legend(loc="best")
     fig.tight_layout()
