@@ -127,7 +127,7 @@ def get_list_of_files(
 def get_list_of_plots(
     gw=False, number=1, mcmc=False, label=None, outdir=".outdir",
     comparison=True, psd=False, calibration=False, existing_plot=False,
-    expert=False, parameters=[], extra_gw_plots=True
+    expert=False, waveform=False, parameters=[], extra_gw_plots=True
 ):
     """Return a list of plots that should be generated from a typical workflow
     """
@@ -162,6 +162,9 @@ def get_list_of_plots(
             plots.append("%s/plots/%s%s_psd_plot.png" % (outdir, label, num))
         if calibration:
             plots.append("%s/plots/%s%s_calibration_plot.png" % (outdir, label, num))
+        if waveform:
+            plots.append("%s/plots/%s%s_waveform.png" % (outdir, label, num))
+            plots.append("%s/plots/%s%s_waveform_time_domain.png" % (outdir, label, num))
         if existing_plot:
             plots.append("%s/plots/test.png" % (outdir))
         if expert:
