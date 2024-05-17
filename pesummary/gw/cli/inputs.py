@@ -1511,44 +1511,29 @@ class IMRCTInput(pesummary.core.cli.inputs._Input):
                 else:
                     try:
                         if name == "cutoff_frequency":
-                            cond = (
-                                "inspiral" in self._cutoff_frequency_dict.keys()
-                                and "postinspiral" not in
-                                self._cutoff_frequency_dict.keys()
-                            )
-                            if cond:
+                            if "inspiral" in self._cutoff_frequency_dict.keys():
                                 _dict["inspiral"] = self._cutoff_frequency_dict[
                                     "inspiral"
                                 ]
-                            elif "postinspiral" in self._cutoff_frequency_dict.keys():
+                            if "postinspiral" in self._cutoff_frequency_dict.keys():
                                 _dict["postinspiral"] = self._cutoff_frequency_dict[
                                     "postinspiral"
                                 ]
                         elif name == "approximant":
-                            cond = (
-                                "inspiral" in self._approximant_dict.keys()
-                                and "postinspiral" not in
-                                self._approximant_dict.keys()
-                            )
-                            if cond:
+                            if "inspiral" in self._approximant_dict.keys():
                                 _dict["inspiral"] = self._approximant_dict[
                                     "inspiral"
                                 ]
-                            elif "postinspiral" in self._approximant_dict.keys():
+                            if "postinspiral" in self._approximant_dict.keys():
                                 _dict["postinspiral"] = self._approximant_dict[
                                     "postinspiral"
                                 ]
                         elif name == "remnant_fits":
-                            cond = (
-                                "inspiral" in self._remnant_fits_dict.keys()
-                                and "postinspiral" not in
-                                self._remnant_fits_dict.keys()
-                            )
-                            if cond:
+                            if "inspiral" in self._remnant_fits_dict.keys():
                                 _dict["inspiral"] = self._remnant_fits_dict[
                                     "inspiral"
                                 ]
-                            elif "postinspiral" in self._remnant_fits_dict.keys():
+                            if "postinspiral" in self._remnant_fits_dict.keys():
                                 _dict["postinspiral"] = self._remnant_fits_dict[
                                     "postinspiral"
                                 ]
