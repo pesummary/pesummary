@@ -517,7 +517,8 @@ class _PlotGeneration(_BasePlotGeneration):
         fig = gw._waveform_plot(
             detectors, maxL_samples, f_min=kwargs.get("f_low", 20.0),
             f_max=kwargs.get("f_final", 1024.),
-            f_ref=kwargs.get("f_ref", 20.)
+            f_ref=kwargs.get("f_ref", 20.),
+            approximant_flags=kwargs.get("approximant_flags", {})
         )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
@@ -573,7 +574,8 @@ class _PlotGeneration(_BasePlotGeneration):
         fig = gw._time_domain_waveform(
             detectors, maxL_samples, f_min=kwargs.get("f_low", 20.0),
             f_max=kwargs.get("f_final", 1024.),
-            f_ref=kwargs.get("f_ref", 20.)
+            f_ref=kwargs.get("f_ref", 20.),
+            approximant_flags=kwargs.get("approximant_flags", {})
         )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
@@ -789,6 +791,10 @@ class _PlotGeneration(_BasePlotGeneration):
         if os.path.isfile(filename) and checkpoint:
             return
         samples = [maxL_samples[i] for i in labels]
+        for num, i in enumerate(labels):
+            samples[num]["approximant_flags"] = kwargs[i]["meta_data"].get(
+                "approximant_flags", {}
+            )
         f_min = np.max(
             [kwargs[label]["meta_data"].get("f_low", 20.) for label in labels]
         )
@@ -845,6 +851,10 @@ class _PlotGeneration(_BasePlotGeneration):
         if os.path.isfile(filename) and checkpoint:
             return
         samples = [maxL_samples[i] for i in labels]
+        for num, i in enumerate(labels):
+            samples[num]["approximant_flags"] = kwargs[i]["meta_data"].get(
+                "approximant_flags", {}
+            )
         f_min = np.max(
             [kwargs[label]["meta_data"].get("f_low", 20.) for label in labels]
         )

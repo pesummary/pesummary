@@ -97,6 +97,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             approx = [None] * len(self.labels)
         else:
             approx = self.opts.approximant
+        self.approximant_flags = self.opts.approximant_flags
         resume_file = [
             os.path.join(
                 self.webdir, "checkpoint",
@@ -114,6 +115,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                     evolve_spins_forwards=self.evolve_spins_forwards,
                     evolve_spins_backwards=self.evolve_spins_backwards,
                     f_low=self.f_low[num],
+                    approximant_flags=self.approximant_flags.get(label, {}),
                     approximant=approx[num], f_ref=self.f_ref[num],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
                     multipole_snr=self.calculate_multipole_snr,
@@ -192,6 +194,26 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             read_function=GWRead, file_format=file_format, nsamples=nsamples,
             disable_prior_sampling=disable_prior_sampling, **kwargs
         )
+        try:
+            for _kwgs in data["file_kwargs"][label]:
+                if "approximant_flags" in _kwgs["meta_data"]:
+                    for key, item in _kwargs["meta_data"]["approximant_flags"].items():
+                        warning_cond = (
+                            key in self.approximant_flags[label] and
+                            self.approximant_flags[label][key] != item
+                        )
+                        if warning_cond:
+                            logger.warning(
+                                "Approximant flag {}={} found in result file for {}. "
+                                "Ignoring and using the provided values {}={}".format(
+                                    key, self.approximant_flags[label][key], label,
+                                    key, item
+                                )
+                            )
+                        else:
+                            self.approximant_flags[label][key] = item
+        except Exception:
+            pass
         return data
 
     @property
@@ -284,6 +306,28 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                         )
                     self._approximant[i] = None
                     break
+
+    @property
+    def approximant_flags(self):
+        return self._approximant_flags
+
+    @approximant_flags.setter
+    def approximant_flags(self, approximant_flags):
+        if hasattr(self, "_approximant_flags"):
+            return
+        _approximant_flags = {key: {} for key in self.labels}
+        for key, item in approximant_flags.items():
+            _label, key = key.split(":")
+            if _label not in self.labels:
+                raise ValueError(
+                    "Unable to assign waveform flags for label:{} because "
+                    "it does not exist. Available labels are: {}. Approximant "
+                    "flags must be provided in the form LABEL:FLAG:VALUE".format(
+                        _label, ", ".join(self.labels)
+                    )
+                )
+            _approximant_flags[_label][key] = item
+        self._approximant_flags = _approximant_flags
 
     @property
     def gracedb_server(self):
@@ -987,6 +1031,7 @@ class SamplesInput(_GWInput, pesummary.core.cli.inputs.SamplesInput):
             self.existing_calibration = None
             self.existing_skymap = None
         self.approximant = self.opts.approximant
+        self.approximant_flags = self.opts.approximant_flags
         self.detectors = None
         self.skymap = None
         self.calibration = self.opts.calibration

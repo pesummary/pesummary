@@ -152,6 +152,33 @@ def _gwsignal_generator_from_string(approximant, version="v1", **kwargs):
         )
 
 
+def _insert_flags(flags, LAL_parameters=None):
+    """Insert waveform specific flags to a LAL dictionary
+
+    Parameters
+    ----------
+    flags: dict
+        dictionary of flags you wish to add to a LAL dictionary
+    LAL_parameters: LALDict, optional
+        An existing LAL dictionary to add mode array to. If not provided, a new
+        LAL dictionary is created. Default None.
+    """
+    if LAL_parameters is None:
+        import lal
+        LAL_parameters = lal.CreateDict()
+    for key, item in flags.items():
+        func = getattr(lalsim, "SimInspiralWaveformParamsInsert" + key, None)
+        if func is not None:
+            func(LAL_parameters, int(item))
+        else:
+            logger.warning(
+                "Unable to add flag {} to LAL dictionary as no function "
+                "SimInspiralWaveformParamsInsert{key} found in "
+                "LALSimulation.".format(key, key)
+            )
+    return LAL_parameters
+
+
 def _insert_mode_array(modes, LAL_parameters=None):
     """Add a mode array to a LAL dictionary
 
@@ -296,7 +323,7 @@ def _project_waveform(ifo, hp, hc, ra, dec, psi, time):
 def fd_waveform(
     samples, approximant, delta_f, f_low, f_high, f_ref=20., project=None,
     ind=0, longAscNodes=0., eccentricity=0., LAL_parameters=None,
-    mode_array=None, pycbc=False, flen=None, **kwargs
+    mode_array=None, pycbc=False, flen=None, flags={}, **kwargs
 ):
     """Generate a gravitational wave in the frequency domain
 
@@ -333,6 +360,8 @@ def fd_waveform(
     flen: int
         Length of the frequency series in samples. Default is None. Only used
         when pycbc=True
+    flags: dict, optional
+        waveform specific flags to add to LAL dictionary
     **kwargs: dict, optional
         all kwargs passed to _calculate_hp_hc_fd
     """
@@ -342,6 +371,10 @@ def fd_waveform(
         samples, f_ref=f_ref, ind=ind, longAscNodes=longAscNodes,
         eccentricity=eccentricity
     )
+    if len(flags):
+        LAL_parameters = _insert_flags(
+            flags, LAL_parameters=LAL_parameters
+        )
     if mode_array is not None:
         LAL_parameters = _insert_mode_array(
             mode_array, LAL_parameters=LAL_parameters
@@ -380,7 +413,7 @@ def _wrapper_for_td_waveform(args):
 def td_waveform(
     samples, approximant, delta_t, f_low, f_ref=20., project=None, ind=0,
     longAscNodes=0., eccentricity=0., LAL_parameters=None, mode_array=None,
-    pycbc=False, level=None, multi_process=1, **kwargs
+    pycbc=False, level=None, multi_process=1, flags={}, **kwargs
 ):
     """Generate a gravitational wave in the time domain
 
@@ -417,9 +450,15 @@ def td_waveform(
     multi_process: int, optional
         number of cores to run on when generating waveforms. Only used when
         level is not None,
+    flags: dict, optional
+        waveform specific flags to add to LAL dictionary. Default {}
     kwargs: dict, optional
         all kwargs passed to _td_waveform
     """
+    if len(flags):
+        LAL_parameters = _insert_flags(
+            flags, LAL_parameters=LAL_parameters
+        )
     if mode_array is not None:
         LAL_parameters = _insert_mode_array(
             mode_array, LAL_parameters=LAL_parameters

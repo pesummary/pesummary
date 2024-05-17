@@ -161,8 +161,10 @@ class Bilby(GWSingleAnalysisRead):
                 except Exception:
                     pass
         try:
+            kwargs["meta_data"]["approximant_flags"] = \
+                f.meta_data["likelihood"]["waveform_arguments"]
             kwargs["meta_data"]["approximant"] = \
-                f.meta_data["likelihood"]["waveform_arguments"]["waveform_approximant"]
+                kwargs["meta_data"]["approximant_flags"].pop("waveform_approximant")
         except Exception:
             pass
         try:
@@ -176,9 +178,13 @@ class Bilby(GWSingleAnalysisRead):
                 _config = _config["config"]
             options = [
                 "minimum_frequency", "reference_frequency",
-                "waveform_approximant", "maximum_frequency"
+                "waveform_approximant", "maximum_frequency",
+                "waveform_arguments_dict"
             ]
-            pesummary_names = ["f_low", "f_ref", "approximant", "f_final"]
+            pesummary_names = [
+                "f_low", "f_ref", "approximant", "f_final",
+                "approximant_flags"
+            ]
             for opt, name in zip(options, pesummary_names):
                 if opt in _config.keys():
                     try:
@@ -186,19 +192,21 @@ class Bilby(GWSingleAnalysisRead):
                     except ValueError:
                         try:
                             import re
-                            _config[opt] = re.sub(
+                            _option = re.sub(
                                 r'([A-Za-z/\.0-9\-\+][^\[\],:"}]*)', r'"\g<1>"', _config[opt]
                             )
-                            _option = ast.literal_eval(_config[opt])
+                            _option = ast.literal_eval(_option)
                         except Exception:
                             _option = _config[opt]
-                    if isinstance(_option, dict):
+                    if isinstance(_option, dict) and name != "approximant_flags":
                         _value = np.min([
-                            ast.literal_eval(value) for key, value in _option.items() if
-                            key != "waveform"
+                            ast.literal_eval(value) if not isinstance(value, (float, int)) else value
+                            for key, value in _option.items() if key != "waveform"
                         ])
                     else:
                         _value = _option
+                    if _value is None and name == "approximant_flags":
+                        _value = {}
                     kwargs["meta_data"][name] = _value
         return kwargs
 
