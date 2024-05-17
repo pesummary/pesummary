@@ -18,7 +18,7 @@ from astropy.time import Time
 
 _check_latex_install()
 
-from lal import MSUN_SI, PC_SI
+from lal import MSUN_SI, PC_SI, CreateDict
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 try:
@@ -414,12 +414,13 @@ def _waveform_plot(
         )
     minimum_frequency = kwargs.get("f_min", 5.)
     maximum_frequency = kwargs.get("f_max", 1000.)
+    approximant_flags = kwargs.get("approximant_flags", {})
     for num, i in enumerate(detectors):
         ht = fd_waveform(
             maxL_params, maxL_params["approximant"],
             kwargs.get("delta_f", 1. / 256), minimum_frequency,
             maximum_frequency, f_ref=kwargs.get("f_ref", 10.),
-            project=i
+            project=i, flags=approximant_flags
         )
         mask = (
             (ht.frequencies.value > minimum_frequency) *
@@ -470,9 +471,11 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
 
     fig, ax = figure(gca=True)
     for num, i in enumerate(maxL_params_list):
+        approximant_flags = i.get("approximant_flags", {})
         _ = _waveform_plot(
             ["H1"], i, fig=fig, ax=ax, color=[colors[num]],
-            label=[labels[num]], **kwargs
+            label=[labels[num]], approximant_flags=approximant_flags,
+            **kwargs
         )
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -1027,6 +1030,7 @@ def _time_domain_waveform(
 
     approximant = maxL_params["approximant"]
     minimum_frequency = kwargs.get("f_min", 5.)
+    approximant_flags = kwargs.get("approximant_flags", {})
     _samples = SamplesDict(
         {
             key: [item] for key, item in maxL_params.items() if
@@ -1063,7 +1067,8 @@ def _time_domain_waveform(
     for num, i in enumerate(detectors):
         ht = td_waveform(
             maxL_params, approximant, kwargs.get("delta_t", 1. / 4096.),
-            minimum_frequency, f_ref=kwargs.get("f_ref", 10.), project=i
+            minimum_frequency, f_ref=kwargs.get("f_ref", 10.), project=i,
+            flags=approximant_flags
         )
         ax.plot(
             ht.times.value, ht, color=color[num], linewidth=1.0,
@@ -1109,9 +1114,11 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
                         "LALSuite to be able to use all features")
     fig, ax = figure(gca=True)
     for num, i in enumerate(maxL_params_list):
+        approximant_flags = i.get("approximant_flags", {})
         _ = _time_domain_waveform(
             ["H1"], i, fig=fig, ax=ax, color=[colors[num]],
-            label=[labels[num]], **kwargs
+            label=[labels[num]], approximant_flags=approximant_flags,
+            **kwargs
         )
     ax.set_xlabel(r"Time $[s]$")
     ax.set_ylabel(r"Strain")

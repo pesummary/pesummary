@@ -132,6 +132,18 @@ class ArgumentParser(_ArgumentParser):
                 "short": "-a",
                 "key": "gw",
             },
+            "--approximant_flags": {
+                "dest": "approximant_flags",
+                "help": (
+                    "flags used to control variant of waveform approximant used. Must "
+                    "be in the form LABEL:FLAG:VALUE where LABEL is the analysis label "
+                    "that you wish to assign FLAG:VALUE to"
+                ),
+                "nargs": "+",
+                "action": DictionaryAction,
+                "default": {},
+                "key": "gw",
+            },
             "--sensitivity": {
                 "action": "store_true",
                 "default": False,

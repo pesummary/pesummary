@@ -54,6 +54,8 @@ _conversion_doc = """
         the final frequency to use when integrating over frequencies
     approximant: str, optional
         the approximant to use when evolving the spins
+    approximant_flags: dict, optional
+        dictionary of flags to control the variant of waveform model used
     evolve_spins_forwards: float/str, optional
         the final velocity to evolve the spins up to.
     evolve_spins_backwards: str, optional
@@ -259,6 +261,7 @@ class _Conversion(object):
                 )
 
         approximant = kwargs.get("approximant", None)
+        approximant_flags = kwargs.get("approximant_flags", {})
         NRSurrogate = kwargs.get("NRSur_fits", False)
         redshift_method = kwargs.get("redshift_method", "approx")
         cosmology = kwargs.get("cosmology", "Planck15")
@@ -370,6 +373,16 @@ class _Conversion(object):
                 "as default".format(conf.default_flow)
             )
             extra_kwargs["meta_data"]["f_low"] = conf.default_flow
+        if len(approximant_flags) and "approximant_flags" in extra_kwargs["meta_data"].keys():
+            logger.warning(
+                base_replace.format(
+                    "approximant_flags", extra_kwargs["meta_data"]["approximant_flags"],
+                    approximant_flags
+                )
+            )
+            extra_kwargs["meta_data"]["approximant_flags"] = approximant_flags
+        elif len(approximant_flags):
+            extra_kwargs["meta_data"]["approximant_flags"] = approximant_flags
         if approximant is not None and "approximant" in extra_kwargs["meta_data"].keys():
             logger.warning(
                 base_replace.format(
@@ -1504,8 +1517,9 @@ class _Conversion(object):
         _data, fits = _final_from_initial_BBH(
             *samples[:8], iota=samples[8], luminosity_distance=samples[9],
             f_ref=[f_low] * len(samples[0]), phi_ref=samples[10],
-            delta_t=1. / 4096, approximant=approximant, return_fits_used=True,
-            multi_process=self.multi_process
+            delta_t=1. / 4096, approximant=approximant,
+            xphm_flags=self.extra_kwargs["meta_data"].get("approximant_flags", {}),
+            return_fits_used=True, multi_process=self.multi_process
         )
         data = {"final_mass": _data[0], "final_spin": _data[1]}
         for param in parameters:
@@ -1528,7 +1542,7 @@ class _Conversion(object):
             "mass_1", "mass_2", spin_1z_param, spin_2z_param
         ])
         final_mass, fits = final_mass_of_merger(
-            *samples, return_fits_used=True
+            *samples, return_fits_used=True,
         )
         self.append_data(param, final_mass)
         self.extra_kwargs["meta_data"]["final_mass_NR_fits"] = fits
@@ -1551,7 +1565,7 @@ class _Conversion(object):
             non_precessing=non_precessing, evolved=evolved
         )
         final_spin, fits = final_spin_of_merger(
-            *samples, return_fits_used=True
+            *samples, return_fits_used=True,
         )
         self.append_data(param, final_spin)
         self.extra_kwargs["meta_data"]["final_spin_NR_fits"] = fits

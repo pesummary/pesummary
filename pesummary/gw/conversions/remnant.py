@@ -5,6 +5,7 @@ import numpy as np
 from pesummary.utils.utils import logger, iterator
 from pesummary.utils.decorators import array_input
 from .spins import chi_p
+from .mass import eta_from_m1_m2
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -169,12 +170,112 @@ def _setup_SEOBNRv4P_args(mode=[2, 2], seob_flags=DEFAULT_SEOBFLAGS):
     return mode_array, _seob_flags
 
 
+def _SimIMRPhenomXFinalMass2017Wrapper(eta, spin_1z, spin_2z, mass_1, mass2):
+    """Wrapper for SimIMRPhenomXFinalMass2017 which takes
+    2 additional arguments: mass_1 and mass_2. This is needed
+    for the downstream `_return_final_mass_and_final_spin_from_waveform`
+    function
+
+    Parameters
+    ----------
+    eta: np.ndarray
+        symmetric mass ratio of the binary
+    spin_1z: np.ndarray
+        component of the primary spin aligned with the orbital angular momentum
+    spin_1z: np.ndarray
+        component of the secondary spin aligned with the orbital angular momentum
+    mass_1: np.ndarray
+        primary mass of the binary
+    mass_2: np.ndarray
+        secondary mass of the binary
+    """
+    from lalsimulation import SimIMRPhenomXFinalMass2017
+    return SimIMRPhenomXFinalMass2017(eta, spin_1z, spin_2z)
+
+
+def _SimIMRPhenomXFinalSpinWrapper(
+    eta, spin_1z, spin_2z, flags={}, chi_perp_mag=None, chi_p=None, spin_1x=None
+):
+    """Wrapper for SimIMRPhenomXFinalSpin2017 and SimIMRPhenomXPrecessingFinalSpin2017
+    which accounts for the different variants of PhenomX.
+
+    Parameters
+    ----------
+    eta: np.ndarray
+        symmetric mass ratio of the binary
+    spin_1z: np.ndarray
+        component of the primary spin aligned with the orbital angular momentum
+    spin_2z: np.ndarray
+        component of the secondary spin aligned with the orbital angular momentum
+    flags: dict, optional
+        dictionary containing flags to specify the different variants of PhenomX
+    chi_perp_mag: np.ndarray, optional
+        perpendicular magnitude of the binaries spin angular momentum. Must be
+        provided for precessing systems
+    chi_p: np.ndarray, optional
+        precessing spin of the binary. Must be provided for precessing systems
+    spin_1x: np.ndarray, optional
+        component of the primary spin which is perpendicular to the orbital
+        angular momentum, in the x-plane. Must be provided for precessing
+        systems
+    """
+    from lalsimulation import (
+        SimIMRPhenomXPrecessingFinalSpin2017, SimIMRPhenomXFinalSpin2017
+    )
+
+    _spinflag = int(flags.get("PhenomXPFinalSpinMod", 4))
+    _precflag = int(flags.get("PhenomXPrecVersion", 300))
+    final_spin_parallel = SimIMRPhenomXFinalSpin2017(eta, spin_1z, spin_2z)
+    if chi_perp_mag is None:
+        return final_spin_parallel
+    if _spinflag == 0:
+        if chi_p is None:
+            raise ValueError("Please provide samples for chi_p")
+        final_spin_perp = SimIMRPhenomXPrecessingFinalSpin2017(
+            eta, spin_1z, spin_2z, chi_p
+        )
+    elif _spinflag == 1:
+        if spin_1x is None:
+            raise ValueError("Please provide samples for spin_1x")
+        final_spin_perp = SimIMRPhenomXPrecessingFinalSpin2017(
+            eta, spin_1z, spin_2z, spin_1x
+        )
+    elif _spinflag == 3:
+        if _precflag in [220, 221, 222, 223, 224]:
+            logger.warning(
+                "Computing the remnant properties for PhenomX with "
+                "precession version: {} requires variables that are "
+                "not accessible with pesummary. Defaulting to final "
+                "spin version 0 ".format(_precflag)
+            )
+        if chi_p is None:
+            raise ValueError("Please provide samples for chi_p")
+        final_spin_perp = SimIMRPhenomXPrecessingFinalSpin2017(
+            eta, spin_1z, spin_2z, chi_p
+        )
+    elif _spinflag == 4:
+        final_spin_perp = SimIMRPhenomXPrecessingFinalSpin2017(
+            eta, spin_1z, spin_2z, chi_perp_mag
+        )
+    else:
+        raise ValueError(
+            "Unable to calculate remnant properties for specified PhenomX "
+            "variant."
+        )
+    if isinstance(final_spin_perp, (list, np.ndarray)):
+        final_spin_perp[final_spin_perp > 1.] = 1.
+    else:
+        if final_spin_perp > 1.:
+            final_spin_perp = 1.
+    return final_spin_perp
+
+
 @array_input()
 def _final_from_initial_BBH(
     mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
     approximant="SEOBNRv4", iota=None, luminosity_distance=None, f_ref=None,
     phi_ref=None, mode=[2, 2], delta_t=1. / 4096, seob_flags=DEFAULT_SEOBFLAGS,
-    return_fits_used=False, multi_process=None
+    xphm_flags={}, return_fits_used=False, multi_process=None
 ):
     """Calculate the final mass and final spin given the initial parameters
     of the binary using the approximant directly
@@ -222,6 +323,9 @@ def _final_from_initial_BBH(
     seob_flags: dict, optional
         dictionary containing the SEOB flags. Used when calculating the remnant
         fits for SEOBNRv4PHM
+    xphm_flags: dict, optional
+        dictionary containing the XPHM flags used during the sampling. Used when
+        calculating the remnant fits for IMRPhenomXPHM
     return_fits_used: Bool, optional
         if True, return the approximant that was used.
     multi_process: int, optional
@@ -230,7 +334,7 @@ def _final_from_initial_BBH(
     from lalsimulation import (
         SimIMREOBFinalMassSpin, SimInspiralGetSpinSupportFromApproximant,
         SimIMRSpinPrecEOBWaveformAll, SimPhenomUtilsIMRPhenomDFinalMass,
-        SimPhenomUtilsPhenomPv2FinalSpin
+        SimPhenomUtilsPhenomPv2FinalSpin,
     )
     import multiprocessing
 
@@ -320,6 +424,37 @@ def _final_from_initial_BBH(
             kwargs["spin_function_args"].append(_chi_p)
         else:
             kwargs["spin_function_args"].append(np.zeros_like(mass_1))
+    elif "phenomx" in approximant.lower():
+        _eta = eta_from_m1_m2(m1, m2)
+        kwargs.update(
+            {
+                "mass_function": _SimIMRPhenomXFinalMass2017Wrapper,
+                "spin_function": _SimIMRPhenomXFinalSpinWrapper,
+                "mass_function_args": [_eta, spin_1z, spin_2z, m1, m2],
+                "mass_1_index": 3,
+                "mass_2_index": 4,
+            }
+        )
+        if SimInspiralGetSpinSupportFromApproximant(approx) > 2:
+            chi1_perp = np.array([spin_1x, spin_1y])
+            chi2_perp = np.array([spin_2x, spin_2y])
+            _chi_p = chi_p(mass_1, mass_1, spin_1x, spin_1y, spin_2x, spin_2y)
+            chi_perp = np.sum([chi1_perp, chi2_perp], axis=0)
+            chi_perp_mag = np.linalg.norm(chi_perp, axis=0)
+            kwargs.update(
+                {
+                    "spin_function_args": [
+                        _eta, spin_1z, spin_2z, [xphm_flags] * len(_eta), chi_perp_mag,
+                        _chi_p, spin_1x
+                    ]
+                }
+            )
+        else:
+            kwargs.update(
+                {
+                    "spin_function_args": [_eta, spin_1z, spin_2z]
+                }
+            )
     else:
         raise ValueError(
             "The waveform '{}' is not support by this function.".format(
@@ -550,7 +685,8 @@ def final_kick_of_merger_from_NRSurrogate(
 
 def final_mass_of_merger(
     *args, method="NR", approximant="SEOBNRv4", NRfit="average",
-    final_spin=None, return_fits_used=False, model="NRSur7dq4Remnant"
+    final_spin=None, return_fits_used=False, model="NRSur7dq4Remnant",
+    xphm_flags={}
 ):
     """Return the final mass resulting from a BBH merger
 
@@ -577,6 +713,9 @@ def final_mass_of_merger(
         NRFit='average' or when method='NRSurrogate'
     model: str, optional
         The NRSurrogate model to use when evaluating the fits
+    xphm_flags: dict, optional
+        List of flags used to control the variant of PhenomX during the sampling.
+        Default {}
     """
     if method.lower() == "nr":
         mass_func = final_mass_of_merger_from_NR
@@ -592,14 +731,15 @@ def final_mass_of_merger(
         }
     else:
         mass_func = final_mass_of_merger_from_waveform
-        kwargs = {"approximant": approximant}
+        kwargs = {"approximant": approximant, "xphm_flags": xphm_flags}
 
     return mass_func(*args, **kwargs)
 
 
 def final_spin_of_merger(
     *args, method="NR", approximant="SEOBNRv4", NRfit="average",
-    return_fits_used=False, model="NRSur7dq4Remnant"
+    return_fits_used=False, model="NRSur7dq4Remnant",
+    xphm_flags={}
 ):
     """Return the final mass resulting from a BBH merger
 
@@ -634,6 +774,9 @@ def final_spin_of_merger(
         NRFit='average' or when method='NRSurrogate'
     model: str, optional
         The NRSurrogate model to use when evaluating the fits
+    xphm_flags: dict, optional
+        List of flags used to control the variant of PhenomX during the sampling.
+        Default {}
     """
     if method.lower() == "nr":
         spin_func = final_spin_of_merger_from_NR
@@ -646,7 +789,7 @@ def final_spin_of_merger(
         }
     else:
         spin_func = final_spin_of_merger_from_waveform
-        kwargs = {"approximant": approximant}
+        kwargs = {"approximant": approximant, "xphm_flags": xphm_flags}
 
     return spin_func(*args, **kwargs)
 
