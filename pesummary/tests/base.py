@@ -94,7 +94,7 @@ def get_list_of_files(
             html.append("%s/html/%s%s_%s%s_%s.html" % (outdir, label, num, label, num, j))
         if gw:
             # 2d histogram pages
-            for section in ["location", "masses", "spins"]:
+            for section in ["location", "masses", "spins", "timings"]:
                 if section == "location":
                     pairs = [p for p in gw_2d_plots if "luminosity_distance" in p]
                     if not any(all(p in parameters for p in _) for _ in pairs):
@@ -105,6 +105,10 @@ def get_list_of_files(
                         continue
                 elif section == "spins":
                     pairs = [p for p in gw_2d_plots if "chi_p" in p]
+                    if not any(all(p in parameters for p in _) for _ in pairs):
+                        continue
+                elif section == "timings":
+                    pairs = [p for p in gw_2d_plots if "geocent_time" in p]
                     if not any(all(p in parameters for p in _) for _ in pairs):
                         continue
                 html.append("%s/html/%s%s_%s%s_%s.html" % (outdir, label, num, label, num, section))

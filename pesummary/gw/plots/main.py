@@ -294,7 +294,7 @@ class _PlotGeneration(_BasePlotGeneration):
             ylabel=latex_labels[1], plot_datapoints=True, plot_density=False,
             levels=[1e-8], fill=False, grid=True, linewidths=[1.75],
             percentiles=[5, 95], percentile_plot=[label], labels=[label],
-            truth=truth
+            truth=truth, data_kwargs={"alpha": 0.3}
         )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary

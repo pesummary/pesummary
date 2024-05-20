@@ -1020,7 +1020,7 @@ class _Conversion(object):
         psi = psi_J(samples[0], samples[1], samples[2], samples[3])
         self.append_data("psi_J", psi)
 
-    def _time_in_each_ifo(self):
+    def _retrieve_detectors(self):
         detectors = []
         if "IFOs" in list(self.extra_kwargs["meta_data"].keys()):
             detectors = self.extra_kwargs["meta_data"]["IFOs"].split(" ")
@@ -1029,11 +1029,26 @@ class _Conversion(object):
                 if "optimal_snr" in i and i != "network_optimal_snr":
                     det = i.split("_optimal_snr")[0]
                     detectors.append(det)
+        return detectors
 
+    def _time_in_each_ifo(self):
+        detectors = self._retrieve_detectors()
         samples = self.specific_parameter_samples(["ra", "dec", "geocent_time"])
         for i in detectors:
             time = time_in_each_ifo(i, samples[0], samples[1], samples[2])
             self.append_data("%s_time" % (i), time)
+
+    def _time_delay_between_ifos(self):
+        from itertools import combinations
+        detectors = sorted(self._retrieve_detectors())
+        for ifos in combinations(detectors, 2):
+            samples = self.specific_parameter_samples(
+                ["{}_time".format(_ifo) for _ifo in ifos]
+            )
+            self.append_data(
+                "%s_%s_time_delay" % (ifos[0], ifos[1]),
+                samples[1] - samples[0]
+            )
 
     def _lambda1_from_lambda_tilde(self):
         samples = self.specific_parameter_samples([
@@ -2004,6 +2019,7 @@ class _Conversion(object):
         if all(i in self.parameters for i in location):
             try:
                 self._time_in_each_ifo()
+                self._time_delay_between_ifos()
             except Exception as e:
                 logger.warning(
                     "Failed to generate posterior samples for the time in each "

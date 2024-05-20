@@ -1,7 +1,10 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+from itertools import combinations
+
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
-_IFOS = ["H1", "L1", "V1", "K1", "E1"]
+_IFOS = sorted(["H1", "L1", "V1", "K1", "E1"])
+_IFO_combinations = list(combinations(_IFOS, 2))
 tidal_params = ["lambda_1", "lambda_2", "delta_lambda", "lambda_tilde"]
 
 
@@ -26,6 +29,9 @@ lalinference_map = {
     "h1_end_time": "H1_time",
     "l1_end_time": "L1_time",
     "v1_end_time": "V1_time",
+    "h1l1_delay": "H1_L1_time_delay",
+    "l1v1_delay": "L1_V1_time_delay",
+    "h1v1_delay": "H1_V1_time_delay",
     "a1z": "spin_1z",
     "a2z": "spin_2z",
     "m1_source": "mass_1_source",
@@ -736,4 +742,12 @@ for detector in _IFOS:
     )
     descriptive_names["{}_time".format(detector)] = (
         "the GPS merger time at the %s gravitational wave detector" % (detector)
+    )
+
+for detector_combination in _IFO_combinations:
+    descriptive_names["{}_{}_time_delay".format(*detector_combination)] = (
+        "the difference in GPS merger time between the %s and %s "
+        "gravitational wave detectors" % (
+            detector_combination[0], detector_combination[1]
+        )
     )
