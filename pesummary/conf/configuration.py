@@ -118,9 +118,14 @@ gw_extrinsic_corner_parameters = ["luminosity_distance", "psi", "ra", "dec"]
 # List of 2d plots to generate for GW analyses
 gw_2d_plots = [
     ["mass_1", "mass_2"], ["mass_1_source", "mass_2_source"], ["a_1", "a_2"],
-    ["mass_ratio", "chi_eff"], ["chi_p", "chi_eff"], ["cos_theta_jn", "chi_p"],
-    ["cos_theta_jn", "luminosity_distance"], ["chirp_mass", "luminosity_distance"],
-    ["lambda_1", "lambda_2"], ["mass_ratio", "lambda_tilde"]
+    ["total_mass", "chi_eff"], ["mass_ratio", "chi_eff"],
+    ["mass_ratio", "chi_p"], ["chi_p", "chi_eff"], ["cos_theta_jn", "chi_p"],
+    ["ra", "dec"], ["cos_theta_jn", "luminosity_distance"],
+    ["chirp_mass", "luminosity_distance"],
+    ["mass_ratio", "luminosity_distance"], ["lambda_1", "lambda_2"],
+    ["mass_ratio", "lambda_tilde"], ["ra", "geocent_time"],
+    ["dec", "geocent_time"], ["H1_L1_time_delay", "H1_V1_time_delay"],
+    ["H1_V1_time_delay", "L1_V1_time_delay"],
 ]
 
 # Cosmology to use when calculating redshift

@@ -200,6 +200,9 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 if len(hh[1]) and hh[0] not in ["others"]:
                     heading = hh[0]
                     break
+                elif len(hh[1]) and "geocent_time" in params:
+                    heading = "timings"
+                    break
             if heading not in sort.keys():
                 sort[heading] = []
             sort[heading] += params
@@ -238,7 +241,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         for num, label in enumerate(self.labels):
             links[label].append(
                 ["2d Histograms", [
-                    {"masses": label}, {"spins": label}, {"location": label}
+                    {"masses": label}, {"spins": label},
+                    {"location": label}, {"timings": label}
                 ]]
             )
             if self.pepredicates_probs[label] is not None:
@@ -876,10 +880,10 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     "ra", "dec", "psi", "luminosity_distance", "redshift",
                     "comoving_distance"
                 ],
-                "reject": ["mass_ratio", "radiated", "ram", "ran", "rat"]
+                "reject": ["mass_ratio", "radiated", "ram", "ran", "rat", "time", "delay"]
             },
             "timings": {
-                "accept": ["time"], "reject": []
+                "accept": ["time", "delay"], "reject": []
             },
             "SNR": {
                 "accept": ["snr", "subdominant_multipoles"], "reject": []
