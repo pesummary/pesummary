@@ -412,24 +412,27 @@ def _waveform_plot(
         raise ValueError(
             "Please provide a list of labels for each detector"
         )
-    minimum_frequency = kwargs.get("f_min", 5.)
+    minimum_frequency = kwargs.get("f_low", 5.)
+    starting_frequency = kwargs.get("f_start", 5.)
     maximum_frequency = kwargs.get("f_max", 1000.)
     approximant_flags = kwargs.get("approximant_flags", {})
     for num, i in enumerate(detectors):
         ht = fd_waveform(
             maxL_params, maxL_params["approximant"],
-            kwargs.get("delta_f", 1. / 256), minimum_frequency,
-            maximum_frequency, f_ref=kwargs.get("f_ref", 10.),
+            kwargs.get("delta_f", 1. / 256), starting_frequency,
+            maximum_frequency, f_ref=kwargs.get("f_ref", starting_frequency),
             project=i, flags=approximant_flags
         )
         mask = (
-            (ht.frequencies.value > minimum_frequency) *
+            (ht.frequencies.value > starting_frequency) *
             (ht.frequencies.value < maximum_frequency)
         )
         ax.plot(
             ht.frequencies.value[mask], np.abs(ht)[mask], color=color[num],
             linewidth=1.0, label=label[num]
         )
+    if starting_frequency < minimum_frequency:
+        ax.axvspan(starting_frequency, minimum_frequency, alpha=0.1, color='grey')
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"Frequency $[Hz]$")
@@ -463,19 +466,19 @@ def _waveform_comparison_plot(maxL_params_list, colors, labels,
     if not LALSIMULATION:
         raise Exception("LALSimulation could not be imported. Please install "
                         "LALSuite to be able to use all features")
-    delta_frequency = kwargs.get("delta_f", 1. / 256)
-    minimum_frequency = kwargs.get("f_min", 5.)
-    maximum_frequency = kwargs.get("f_max", 1000.)
-    frequency_array = np.arange(minimum_frequency, maximum_frequency,
-                                delta_frequency)
 
     fig, ax = figure(gca=True)
     for num, i in enumerate(maxL_params_list):
-        approximant_flags = i.get("approximant_flags", {})
+        _kwargs = {
+            "f_start": i.get("f_start", 20.),
+            "f_low": i.get("f_low", 20.),
+            "f_max": i.get("f_final", 1024.),
+            "f_ref": i.get("f_ref", 20.),
+            "approximant_flags": i.get("approximant_flags", {})
+        }
         _ = _waveform_plot(
             ["H1"], i, fig=fig, ax=ax, color=[colors[num]],
-            label=[labels[num]], approximant_flags=approximant_flags,
-            **kwargs
+            label=[labels[num]], **_kwargs
         )
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -1029,7 +1032,8 @@ def _time_domain_waveform(
                         "lalsuite to be able to use all features")
 
     approximant = maxL_params["approximant"]
-    minimum_frequency = kwargs.get("f_min", 5.)
+    minimum_frequency = kwargs.get("f_low", 5.)
+    starting_frequency = kwargs.get("f_start", 5.)
     approximant_flags = kwargs.get("approximant_flags", {})
     _samples = SamplesDict(
         {
@@ -1063,11 +1067,10 @@ def _time_domain_waveform(
         raise ValueError(
             "Please provide a list of labels for each detector"
         )
-    minimum_frequency = kwargs.get("f_min", 5.)
     for num, i in enumerate(detectors):
         ht = td_waveform(
             maxL_params, approximant, kwargs.get("delta_t", 1. / 4096.),
-            minimum_frequency, f_ref=kwargs.get("f_ref", 10.), project=i,
+            starting_frequency, f_ref=kwargs.get("f_ref", 10.), project=i,
             flags=approximant_flags
         )
         ax.plot(
@@ -1114,11 +1117,16 @@ def _time_domain_waveform_comparison_plot(maxL_params_list, colors, labels,
                         "LALSuite to be able to use all features")
     fig, ax = figure(gca=True)
     for num, i in enumerate(maxL_params_list):
-        approximant_flags = i.get("approximant_flags", {})
+        _kwargs = {
+            "f_start": i.get("f_start", 20.),
+            "f_low": i.get("f_low", 20.),
+            "f_max": i.get("f_final", 1024.),
+            "f_ref": i.get("f_ref", 20.),
+            "approximant_flags": i.get("approximant_flags", {})
+        }
         _ = _time_domain_waveform(
             ["H1"], i, fig=fig, ax=ax, color=[colors[num]],
-            label=[labels[num]], approximant_flags=approximant_flags,
-            **kwargs
+            label=[labels[num]], **_kwargs
         )
     ax.set_xlabel(r"Time $[s]$")
     ax.set_ylabel(r"Strain")

@@ -85,7 +85,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
     @property
     def grab_data_kwargs(self):
         kwargs = super(_GWInput, self).grab_data_kwargs
-        for _property in ["f_low", "f_ref", "f_final", "delta_f"]:
+        for _property in ["f_start", "f_low", "f_ref", "f_final", "delta_f"]:
             if getattr(self, _property) is None:
                 setattr(self, "_{}".format(_property), [None] * len(self.labels))
             elif len(getattr(self, _property)) == 1 and len(self.labels) != 1:
@@ -114,7 +114,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                 kwargs[label].update(dict(
                     evolve_spins_forwards=self.evolve_spins_forwards,
                     evolve_spins_backwards=self.evolve_spins_backwards,
-                    f_low=self.f_low[num],
+                    f_start=self.f_start[num], f_low=self.f_low[num],
                     approximant_flags=self.approximant_flags.get(label, {}),
                     approximant=approx[num], f_ref=self.f_ref[num],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
@@ -147,7 +147,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                 kwargs[label].update(dict(
                     evolve_spins_forwards=self.evolve_spins_forwards,
                     evolve_spins_backwards=self.evolve_spins_backwards,
-                    f_low=self.f_low[0],
+                    f_start=self.f_start[0], f_low=self.f_low[0],
                     approximant=approx[0], f_ref=self.f_ref[0],
                     NRSur_fits=self.NRSur_fits, return_kwargs=True,
                     multipole_snr=self.calculate_multipole_snr,
@@ -630,6 +630,16 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             self._f_low = [float(i) for i in f_low]
 
     @property
+    def f_start(self):
+        return self._f_start
+
+    @f_start.setter
+    def f_start(self, f_start):
+        self._f_start = f_start
+        if f_start is not None:
+            self._f_start = [float(i) for i in f_start]
+
+    @property
     def f_ref(self):
         return self._f_ref
 
@@ -999,6 +1009,7 @@ class SamplesInput(_GWInput, pesummary.core.cli.inputs.SamplesInput):
                 "NRSur_fits",
                 "calculate_multipole_snr",
                 "calculate_precessing_snr",
+                "f_start",
                 "f_low",
                 "f_ref",
                 "f_final",

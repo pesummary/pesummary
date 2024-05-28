@@ -48,6 +48,8 @@ _conversion_doc = """
         dictionary of kwargs associated with this set of posterior samples.
     f_low: float, optional
         the low frequency cut-off to use when evolving the spins
+    f_start: float, optional
+        the starting frequency of the waveform
     f_ref: float, optional
         the reference frequency when spins are defined
     f_final: float, optional
@@ -229,6 +231,7 @@ class _Conversion(object):
             samples = np.atleast_2d(samples).tolist()
         extra_kwargs = kwargs.get("extra_kwargs", {"sampler": {}, "meta_data": {}})
         f_low = kwargs.get("f_low", None)
+        f_start = kwargs.get("f_start", None)
         f_ref = kwargs.get("f_ref", None)
         f_final = kwargs.get("f_final", None)
         delta_f = kwargs.get("delta_f", None)
@@ -351,28 +354,31 @@ class _Conversion(object):
 
         multipole_snr = kwargs.get("multipole_snr", False)
         precessing_snr = kwargs.get("precessing_snr", False)
-        if f_low is not None and "f_low" in extra_kwargs["meta_data"].keys():
-            logger.warning(
-                base_replace.format(
-                    "f_low", extra_kwargs["meta_data"]["f_low"], f_low
+
+        for freq, name in zip([f_start, f_low], ["f_start", "f_low"]):
+            if freq is not None and name in extra_kwargs["meta_data"].keys():
+                logger.warning(
+                    base_replace.format(
+                        name, extra_kwargs["meta_data"][name], freq
+                    )
                 )
-            )
-            extra_kwargs["meta_data"]["f_low"] = f_low
-        elif f_low is not None:
-            extra_kwargs["meta_data"]["f_low"] = f_low
-        elif f_low is None and "f_low" in extra_kwargs["meta_data"].keys():
-            logger.debug(
-                "Found f_low in input file. Using {}Hz".format(
-                    extra_kwargs["meta_data"][param]
+                extra_kwargs["meta_data"][name] = freq
+            elif freq is not None:
+                extra_kwargs["meta_data"][name] = freq
+            elif freq is None and name in extra_kwargs["meta_data"].keys():
+                logger.debug(
+                    "Found {} in input file. Using {}Hz".format(
+                        name, extra_kwargs["meta_data"][name]
+                    )
                 )
-            )
-        else:
-            logger.warning(
-                "Could not find minimum frequency in input file and "
-                "one was not passed from the command line. Using {}Hz "
-                "as default".format(conf.default_flow)
-            )
-            extra_kwargs["meta_data"]["f_low"] = conf.default_flow
+            else:
+                logger.warning(
+                    "Could not find {} in input file and one was not passed from "
+                    "the command line. Using {}Hz as default".format(
+                        name, conf.default_flow
+                    )
+                )
+                extra_kwargs["meta_data"][name] = conf.default_flow
         if len(approximant_flags) and "approximant_flags" in extra_kwargs["meta_data"].keys():
             logger.warning(
                 base_replace.format(
@@ -1193,7 +1199,7 @@ class _Conversion(object):
             "reference_frequency"
         ]
         samples = self.specific_parameter_samples(required)
-        _f_low = self._retrieve_f_low()
+        _f_low = self._retrieve_stored_frequency("f_low")
         if isinstance(_f_low, (np.ndarray)):
             f_low = _f_low() * len(samples[0])
         else:
@@ -1221,7 +1227,7 @@ class _Conversion(object):
             spins = self.specific_parameter_samples(["spin_1z", "spin_2z"])
         except ValueError:
             spins = [None, None]
-        _f_low = self._retrieve_f_low()
+        _f_low = self._retrieve_stored_frequency("f_low")
         if isinstance(_f_low, (np.ndarray)):
             f_low = _f_low() * len(samples[0])
         else:
@@ -1263,16 +1269,16 @@ class _Conversion(object):
             pass
         self.extra_kwargs["meta_data"]["precessing_snr"] = data_used
 
-    def _retrieve_f_low(self):
+    def _retrieve_stored_frequency(self, name):
         extra_kwargs = self.extra_kwargs["meta_data"]
-        if extra_kwargs != {} and "f_low" in list(extra_kwargs.keys()):
-            f_low = extra_kwargs["f_low"]
+        if extra_kwargs != {} and name in list(extra_kwargs.keys()):
+            freq = extra_kwargs[name]
         else:
             raise ValueError(
                 "Could not find f_low in input file. Please either modify the "
                 "input file or pass it from the command line"
             )
-        return f_low
+        return freq
 
     def _retrieve_approximant(self):
         extra_kwargs = self.extra_kwargs["meta_data"]
@@ -1301,7 +1307,7 @@ class _Conversion(object):
             )
             logger.warning(_msg)
             raise EvolveSpinError(_msg)
-        f_low = self._retrieve_f_low()
+        f_low = self._retrieve_stored_frequency("f_low")
         if not forward:
             [tilt_1_evolved, tilt_2_evolved, phi_12_evolved], fits_used = evolve_spins(
                 samples[0], samples[1], samples[2], samples[3], samples[4],
@@ -1424,7 +1430,7 @@ class _Conversion(object):
         self, non_precessing=False,
         parameters=["final_mass", "final_spin", "final_kick"]
     ):
-        f_low = self._retrieve_f_low()
+        f_low = self._retrieve_stored_frequency("f_start")
         approximant = self._retrieve_approximant()
         samples = self._precessing_vs_non_precessing_parameters(
             non_precessing=non_precessing, evolved=False
@@ -1504,7 +1510,7 @@ class _Conversion(object):
     def _final_remnant_properties_from_waveform(
         self, non_precessing=False, parameters=["final_mass", "final_spin"],
     ):
-        f_low = self._retrieve_f_low()
+        f_low = self._retrieve_stored_frequency("f_start")
         approximant = self._retrieve_approximant()
         if "delta_t" in self.extra_kwargs["meta_data"].keys():
             delta_t = self.extra_kwargs["meta_data"]["delta_t"]
