@@ -515,7 +515,8 @@ class _PlotGeneration(_BasePlotGeneration):
             detectors = detectors.split("_")
 
         fig = gw._waveform_plot(
-            detectors, maxL_samples, f_min=kwargs.get("f_low", 20.0),
+            detectors, maxL_samples, f_start=kwargs.get("f_start", 20.),
+            f_low=kwargs.get("f_low", 20.0),
             f_max=kwargs.get("f_final", 1024.),
             f_ref=kwargs.get("f_ref", 20.),
             approximant_flags=kwargs.get("approximant_flags", {})
@@ -572,7 +573,8 @@ class _PlotGeneration(_BasePlotGeneration):
             detectors = detectors.split("_")
 
         fig = gw._time_domain_waveform(
-            detectors, maxL_samples, f_min=kwargs.get("f_low", 20.0),
+            detectors, maxL_samples, f_start=kwargs.get("f_start", 20.),
+            f_low=kwargs.get("f_low", 20.0),
             f_max=kwargs.get("f_final", 1024.),
             f_ref=kwargs.get("f_ref", 20.),
             approximant_flags=kwargs.get("approximant_flags", {})
@@ -795,17 +797,11 @@ class _PlotGeneration(_BasePlotGeneration):
             samples[num]["approximant_flags"] = kwargs[i]["meta_data"].get(
                 "approximant_flags", {}
             )
-        f_min = np.max(
-            [kwargs[label]["meta_data"].get("f_low", 20.) for label in labels]
-        )
-        f_max = np.min(
-            [kwargs[label]["meta_data"].get("f_final", 1024.) for label in labels]
-        )
-        f_ref = kwargs[labels[0]]["meta_data"].get("f_ref", 20.)
-        fig = gw._waveform_comparison_plot(
-            samples, colors, labels, f_min=f_min, f_max=f_max,
-            f_ref=f_ref
-        )
+            _defaults = [20., 20., 1024., 20.]
+            for freq, default in zip(["f_start", "f_low", "f_final", "f_ref"], _defaults):
+                samples[num][freq] = kwargs[i]["meta_data"].get(freq, default)
+
+        fig = gw._waveform_comparison_plot(samples, colors, labels)
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
         )
@@ -855,13 +851,11 @@ class _PlotGeneration(_BasePlotGeneration):
             samples[num]["approximant_flags"] = kwargs[i]["meta_data"].get(
                 "approximant_flags", {}
             )
-        f_min = np.max(
-            [kwargs[label]["meta_data"].get("f_low", 20.) for label in labels]
-        )
-        f_ref = kwargs[labels[0]]["meta_data"].get("f_ref", 20.)
-        fig = gw._time_domain_waveform_comparison_plot(
-            samples, colors, labels, f_min=f_min, f_ref=f_ref
-        )
+            _defaults = [20., 20., 20.]
+            for freq, default in zip(["f_start", "f_low", "f_ref"], _defaults):
+                samples[num][freq] = kwargs[i]["meta_data"].get(freq, default)
+
+        fig = gw._time_domain_waveform_comparison_plot(samples, colors, labels)
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
         )

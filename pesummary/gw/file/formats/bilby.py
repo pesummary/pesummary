@@ -203,6 +203,12 @@ class Bilby(GWSingleAnalysisRead):
                             ast.literal_eval(value) if not isinstance(value, (float, int)) else value
                             for key, value in _option.items() if key != "waveform"
                         ])
+                        _f_start = [
+                            ast.literal_eval(value) if not isinstance(value, (float, int)) else value
+                            for key, value in _option.items() if key == "waveform"
+                        ]
+                        if len(_f_start):
+                            kwargs["meta_data"]["f_start"] = _f_start[0]
                     else:
                         _value = _option
                     if _value is None and name == "approximant_flags":

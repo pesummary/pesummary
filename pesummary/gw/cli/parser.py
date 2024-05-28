@@ -265,15 +265,26 @@ class ArgumentParser(_ArgumentParser):
                 ),
                 "key": "gw",
             },
+            "--f_start": {
+                "dest": "f_start",
+                "nargs": "+",
+                "help": "Starting frequency of the supplied waveform",
+                "key": "gw",
+            },
             "--f_low": {
                 "dest": "f_low",
                 "nargs": "+",
-                "help": "Low frequency cutoff used to generate the samples",
+                "help": (
+                    "Low frequency cutoff for likelihood integration used to generate "
+                    "the samples"
+                ),
                 "key": "gw",
             },
             "--f_ref": {
                 "dest": "f_ref",
-                "help": "Reference frequency used to generate the samples",
+                "help": (
+                    "Reference frequency of the waveform used to generate the samples"
+                ),
                 "nargs": "+",
                 "key": "gw",
             },
@@ -282,7 +293,7 @@ class ArgumentParser(_ArgumentParser):
                 "nargs": "+",
                 "type": float,
                 "help": (
-                    "Final frequency to use when calculating the precessing snr"
+                    "Final frequency of the waveform. Used when calculating the precessing snr"
                 ),
                 "key": "gw"
             },
