@@ -173,7 +173,7 @@ def _insert_flags(flags, LAL_parameters=None):
         else:
             logger.warning(
                 "Unable to add flag {} to LAL dictionary as no function "
-                "SimInspiralWaveformParamsInsert{key} found in "
+                "SimInspiralWaveformParamsInsert{} found in "
                 "LALSimulation.".format(key, key)
             )
     return LAL_parameters
@@ -323,7 +323,8 @@ def _project_waveform(ifo, hp, hc, ra, dec, psi, time):
 def fd_waveform(
     samples, approximant, delta_f, f_low, f_high, f_ref=20., project=None,
     ind=0, longAscNodes=0., eccentricity=0., LAL_parameters=None,
-    mode_array=None, pycbc=False, flen=None, flags={}, **kwargs
+    mode_array=None, pycbc=False, flen=None, flags={}, debug=False,
+    **kwargs
 ):
     """Generate a gravitational wave in the frequency domain
 
@@ -360,6 +361,9 @@ def fd_waveform(
     flen: int
         Length of the frequency series in samples. Default is None. Only used
         when pycbc=True
+    debug: bool, optional
+        if True, return the model object used to generate the waveform. Only
+        used when the waveform approximant is not in LALSimulation
     flags: dict, optional
         waveform specific flags to add to LAL dictionary
     **kwargs: dict, optional
@@ -379,9 +383,9 @@ def fd_waveform(
         LAL_parameters = _insert_mode_array(
             mode_array, LAL_parameters=LAL_parameters
         )
-    hp, hc = _calculate_hp_hc_fd(
-        waveform_args, delta_f, f_low, f_high, f_ref, LAL_parameters,
-        approximant, **kwargs
+    (hp, hc), model = _calculate_hp_hc_fd(
+        waveform_args, delta_f, f_low, f_high, f_ref, LAL_parameters, approximant,
+        debug=True, **kwargs
     )
     hp = FrequencySeries(hp.data.data, df=hp.deltaF, f0=0.)
     hc = FrequencySeries(hc.data.data, df=hc.deltaF, f0=0.)
@@ -390,12 +394,16 @@ def fd_waveform(
         if flen is not None:
             hp.resize(flen)
             hc.resize(flen)
-    if project is None:
+    if project is None and debug:
+        return {"h_plus": hp, "h_cross": hc}, model
+    elif project is None:
         return {"h_plus": hp, "h_cross": hc}
     ht = _project_waveform(
         project, hp, hc, _samples["ra"], _samples["dec"], _samples["psi"],
         _samples["geocent_time"]
     )
+    if debug:
+        return ht, model
     return ht
 
 
@@ -413,7 +421,8 @@ def _wrapper_for_td_waveform(args):
 def td_waveform(
     samples, approximant, delta_t, f_low, f_ref=20., project=None, ind=0,
     longAscNodes=0., eccentricity=0., LAL_parameters=None, mode_array=None,
-    pycbc=False, level=None, multi_process=1, flags={}, **kwargs
+    pycbc=False, level=None, multi_process=1, flags={}, debug=False,
+    **kwargs
 ):
     """Generate a gravitational wave in the time domain
 
@@ -540,18 +549,22 @@ def td_waveform(
         samples, ind=ind, longAscNodes=longAscNodes, eccentricity=eccentricity,
         f_ref=f_ref
     )
-    waveform = _td_waveform(
+    waveform, model = _td_waveform(
         waveform_args, approximant, delta_t, f_low, f_ref, LAL_parameters,
-        _samples, pycbc=pycbc, project=project, **kwargs
+        _samples, pycbc=pycbc, project=project, debug=True, **kwargs
     )
-    if level is not None:
+    if level is not None and debug:
+        return waveform, upper, lower, new_t, model
+    elif level is not None:
         return waveform, upper, lower, new_t
+    elif debug:
+        return waveform, model
     return waveform
 
 
 def _td_waveform(
     waveform_args, approximant, delta_t, f_low, f_ref, LAL_parameters, samples,
-    pycbc=False, project=None, **kwargs
+    pycbc=False, project=None, debug=False, **kwargs
 ):
     """Generate a gravitational wave in the time domain
 
@@ -577,21 +590,26 @@ def _td_waveform(
     project: str, optional
         name of the detector to project the waveform onto. If None,
         the plus and cross polarizations are returned. Default None
+    debug: bool, optional
+        if True, return the model object used to generate the waveform. Only
+        used when the waveform approximant is not in LALSimulation
     kwargs: dict, optional
         all kwargs passed to _calculate_hp_hc_td
     """
     from gwpy.timeseries import TimeSeries
     from astropy.units import Quantity
 
-    hp, hc = _calculate_hp_hc_td(
+    (hp, hc), model = _calculate_hp_hc_td(
         waveform_args, delta_t, f_low, f_ref, LAL_parameters, approximant,
-        **kwargs
+        debug=True, **kwargs
     )
     hp = TimeSeries(hp.data.data, dt=hp.deltaT, t0=hp.epoch)
     hc = TimeSeries(hc.data.data, dt=hc.deltaT, t0=hc.epoch)
     if pycbc:
         hp, hc = hp.to_pycbc(), hc.to_pycbc()
-    if project is None:
+    if project is None and debug:
+        return {"h_plus": hp, "h_cross": hc}, model
+    elif project is None:
         return {"h_plus": hp, "h_cross": hc}
     ht = _project_waveform(
         project, hp, hc, samples["ra"], samples["dec"], samples["psi"],
@@ -609,18 +627,22 @@ def _td_waveform(
                 "posterior samples. Unable to shift merger to merger time in "
                 "the detector".format(project)
             )
+            if debug:
+                return ht, model
             return ht
     else:
         _detector_time = samples["{}_time".format(project)]
     ht.times = (
         Quantity(ht.times, unit="s") + Quantity(_detector_time, unit="s")
     )
+    if debug:
+        return ht, model
     return ht
 
 
 def _calculate_hp_hc_td(
     waveform_args, delta_t, f_low, f_ref, LAL_parameters, approximant,
-    **kwargs
+    debug=False, **kwargs
 ):
     """Calculate the plus and cross polarizations in the time domain.
     If the approximant is in LALSimulation, the
@@ -641,23 +663,32 @@ def _calculate_hp_hc_td(
         LAL dictionary containing accessory parameters. Default None
     approximant: str
         lalsimulation approximant number to use when generating a waveform
+    debug: bool, optional
+        if True, return the model object used to generate the waveform. Only
+        used when the waveform approximant is not in LALSimulation
     **kwargs: dict, optional
         all kwargs passed to _setup_gwsignal
     """
     if hasattr(lalsim, approximant):
         approx = _lal_approximant_from_string(approximant)
-        return lalsim.SimInspiralChooseTDWaveform(
+        result = lalsim.SimInspiralChooseTDWaveform(
             *waveform_args, delta_t, f_low, f_ref, LAL_parameters, approx
         )
+        if debug:
+            return result, None
+        return result
     wfm_gen = _setup_gwsignal(
         waveform_args, f_low, f_ref, approximant, delta_t=delta_t, **kwargs
     )
-    return wfm_gen.generate_td_polarizations()
+    hpc = wfm_gen.generate_td_polarizations()
+    if debug:
+        return hpc, wfm_gen
+    return hpc
 
 
 def _calculate_hp_hc_fd(
     waveform_args, delta_f, f_low, f_high, f_ref, LAL_parameters, approximant,
-    **kwargs
+    debug=False, **kwargs
 ):
     """Calculate the plus and cross polarizations in the frequency domain.
     If the approximant is in LALSimulation, the
@@ -680,17 +711,21 @@ def _calculate_hp_hc_fd(
         LAL dictionary containing accessory parameters. Default None
     approximant: str
         lalsimulation approximant number to use when generating a waveform
-    **kwargs: dict, optional
-        all kwargs passed to _setup_gwsignal
+    debug: bool, optional
+        if True, return the model object used to generate the waveform. Only
+        used when the waveform approximant is not in LALSimulation
     """
     if hasattr(lalsim, approximant):
         approx = _lal_approximant_from_string(approximant)
         for func in [lalsim.SimInspiralChooseFDWaveform, lalsim.SimInspiralFD]:
             try:
-                return func(
+                result = func(
                     *waveform_args, delta_f, f_low, f_high, f_ref,
                     LAL_parameters, approx
                 )
+                if debug:
+                    return result, None
+                return result
             except Exception:
                 continue
             break
@@ -698,7 +733,10 @@ def _calculate_hp_hc_fd(
         waveform_args, f_low, f_ref, approximant, delta_f=delta_f,
         f_high=f_high, **kwargs
     )
-    return wfm_gen.generate_fd_polarizations()
+    hpc = wfm_gen.generate_fd_polarizations()
+    if debug:
+        return hpc, wfm_gen
+    return hpc
 
 
 def _setup_gwsignal(

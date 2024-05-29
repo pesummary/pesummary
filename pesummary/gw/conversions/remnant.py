@@ -90,7 +90,8 @@ def _return_final_mass_and_final_spin_from_waveform(
     spin_function_args=[], mass_function_return_function=None,
     mass_function_return_index=None, spin_function_return_function=None,
     spin_function_return_index=None, mass_1_index=0, mass_2_index=1,
-    nsamples=0, approximant=None, default_SEOBNRv4P_kwargs=False
+    nsamples=0, approximant=None, default_SEOBNRv4P_kwargs=False,
+    mass_1=None, mass_2=None
 ):
     """Return the final mass and final spin given functions to use
 
@@ -132,6 +133,12 @@ def _return_final_mass_and_final_spin_from_waveform(
         the approximant used
     default_SEOBNRv4P_kwargs: Bool, optional
         if True, use the default SEOBNRv4P flags
+    mass_1: str, optional
+        function used to give samples for the primary mass. If provided,
+        mass_1_index is ignored
+    mass_2: str, optional
+        function used to give samples for the secondary mass. If provided,
+        mass_2_index is ignored
     """
     if default_SEOBNRv4P_kwargs:
         mode_array, seob_flags = _setup_SEOBNRv4P_args()
@@ -147,9 +154,15 @@ def _return_final_mass_and_final_spin_from_waveform(
         fs = eval("fs{}".format(spin_function_return_function))
     elif spin_function_return_index is not None:
         fs = fs[spin_function_return_index]
-    final_mass = fm * (
-        mass_function_args[mass_1_index] + mass_function_args[mass_2_index]
-    ) / MSUN_SI
+    if mass_1 is None:
+        mass1 = mass_function_args[mass_1_index]
+    else:
+        mass1 = eval(mass_1)
+    if mass_2 is None:
+        mass_function_args[mass_2_index]
+    else:
+        mass2 = eval(mass_2)
+    final_mass = fm * (mass1 + mass2) / MSUN_SI
     final_spin = fs
     return final_mass, final_spin
 
@@ -273,9 +286,10 @@ def _SimIMRPhenomXFinalSpinWrapper(
 @array_input()
 def _final_from_initial_BBH(
     mass_1, mass_2, spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
-    approximant="SEOBNRv4", iota=None, luminosity_distance=None, f_ref=None,
-    phi_ref=None, mode=[2, 2], delta_t=1. / 4096, seob_flags=DEFAULT_SEOBFLAGS,
-    xphm_flags={}, return_fits_used=False, multi_process=None
+    approximant="SEOBNRv4", iota=None, luminosity_distance=None, f_low=20.,
+    f_ref=None, phi_ref=None, mode=[2, 2], delta_t=1. / 4096,
+    seob_flags=DEFAULT_SEOBFLAGS, xphm_flags={}, return_fits_used=False,
+    multi_process=None
 ):
     """Calculate the final mass and final spin given the initial parameters
     of the binary using the approximant directly
@@ -309,6 +323,9 @@ def _final_from_initial_BBH(
         the luminosity distance of the source. Used when calculating the
         remnant fits for SEOBNRv4PHM. Since we only need the EOB dynamics here
         it does not matter what we pass.
+    f_low: float/np.ndarray, optional
+        the low frequency to evaluate the waveform model. Only used if
+        approximant=SEOBNRv5PHM
     f_ref: float/np.ndarray, optional
         the reference frequency at which the spins are defined
     phi_ref: float/np.ndarray, optional
@@ -350,17 +367,12 @@ def _final_from_initial_BBH(
             args.append(_args)
         return args
 
-    try:
-        approx = getattr(lalsimulation, approximant)
-    except AttributeError:
-        raise ValueError(
-            "The waveform '{}' is not supported by lalsimulation"
-        )
-
     m1 = mass_1 * MSUN_SI
     m2 = mass_2 * MSUN_SI
     kwargs = {"nsamples": len(mass_1), "approximant": approximant}
-    if approximant.lower() in ["seobnrv4p", "seobnrv4phm"]:
+    cond1 = approximant.lower() in ["seobnrv4p", "seobnrv4phm"]
+    cond2 = "seobnrv5" in approximant.lower()
+    if cond1 or cond2:
         if any(i is None for i in [iota, luminosity_distance, f_ref, phi_ref]):
             raise ValueError(
                 "The approximant '{}' requires samples for iota, f_ref, "
@@ -374,26 +386,59 @@ def _final_from_initial_BBH(
                 "Please provide either a single 'delta_t' that is is used for "
                 "all samples, or a single 'delta_t' for each sample"
             )
-        mode_array, _seob_flags = _setup_SEOBNRv4P_args(
-            mode=mode, seob_flags=seob_flags
-        )
-        args = np.array([
-            phi_ref, delta_t, m1, m2, f_ref, luminosity_distance, iota,
-            spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
-            [mode_array] * len(mass_1), [_seob_flags] * len(mass_1)
-        ])
-        kwargs.update(
-            {
-                "mass_function": SimIMRSpinPrecEOBWaveformAll,
-                "spin_function": SimIMRSpinPrecEOBWaveformAll,
-                "mass_function_args": args,
-                "spin_function_args": args,
-                "mass_function_return_function": "[21].data[6]",
-                "spin_function_return_function": "[21].data[7]",
-                "mass_1_index": 2,
-                "mass_2_index": 3,
-            }
-        )
+        if approximant.lower() in ["seobnrv4p", "seobnrv4phm"]:
+            mode_array, _seob_flags = _setup_SEOBNRv4P_args(
+                mode=mode, seob_flags=seob_flags
+            )
+            args = np.array([
+                phi_ref, delta_t, m1, m2, f_ref, luminosity_distance, iota,
+                spin_1x, spin_1y, spin_1z, spin_2x, spin_2y, spin_2z,
+                [mode_array] * len(mass_1), [_seob_flags] * len(mass_1)
+            ])
+            kwargs.update(
+                {
+                    "mass_function": SimIMRSpinPrecEOBWaveformAll,
+                    "spin_function": SimIMRSpinPrecEOBWaveformAll,
+                    "mass_function_args": args,
+                    "spin_function_args": args,
+                    "mass_function_return_function": "[21].data[6]",
+                    "spin_function_return_function": "[21].data[7]",
+                    "mass_1_index": 2,
+                    "mass_2_index": 3,
+                }
+            )
+        else:
+            from pesummary.gw.waveform import td_waveform
+            _samples = [
+                {
+                    "mass_1": mass_1[ind], "mass_2": mass_2[ind],
+                    "spin_1x": spin_1x[ind], "spin_1y": spin_1y[ind],
+                    "spin_1z": spin_1z[ind], "spin_2x": spin_2x[ind],
+                    "spin_2y": spin_2y[ind], "spin_2z": spin_2z[ind],
+                    "iota": iota[ind],
+                    "luminosity_distance": luminosity_distance[ind],
+                    "phase": phi_ref[ind]
+                } for ind in np.arange(len(mass_1))
+            ]
+            args = np.array([
+                _samples, [approximant] * len(mass_1), delta_t, f_low,
+                f_ref, [None] * len(mass_1), [0] * len(mass_1), [0] * len(mass_1),
+                [0] * len(mass_1), [None] * len(mass_1), [None] * len(mass_1),
+                [False] * len(mass_1), [None] * len(mass_1), [1] * len(mass_1),
+                [{}] * len(mass_1), [True] * len(mass_1)
+            ], dtype=object)
+            kwargs.update(
+                {
+                    "mass_function": td_waveform,
+                    "spin_function": td_waveform,
+                    "mass_function_args": args,
+                    "spin_function_args": args,
+                    "mass_function_return_function": "[1].model.final_mass",
+                    "spin_function_return_function": "[1].model.final_spin",
+                    "mass_1": "mass_function_args[0]['mass_1'] * MSUN_SI",
+                    "mass_2": "mass_function_args[0]['mass_2'] * MSUN_SI",
+                }
+            )
     elif approximant.lower() in ["seobnrv4"]:
         spin1 = np.array([spin_1x, spin_1y, spin_1z]).T
         spin2 = np.array([spin_2x, spin_2y, spin_2z]).T

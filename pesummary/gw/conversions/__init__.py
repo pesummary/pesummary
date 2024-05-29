@@ -1531,14 +1531,14 @@ class _Conversion(object):
             sample_params = [
                 "mass_1", "mass_2", "spin_1x", "spin_1y", "spin_1z",
                 "spin_2x", "spin_2y", "spin_2z", "iota", "luminosity_distance",
-                "phase"
+                "phase", "reference_frequency"
             ]
         samples = self.specific_parameter_samples(sample_params)
         ind = self.parameters.index("spin_1x")
         _data, fits = _final_from_initial_BBH(
             *samples[:8], iota=samples[8], luminosity_distance=samples[9],
-            f_ref=[f_low] * len(samples[0]), phi_ref=samples[10],
-            delta_t=1. / 4096, approximant=approximant,
+            f_low=[f_low] * len(samples[0]), f_ref=samples[-1],
+            phi_ref=samples[10], delta_t=1. / 4096, approximant=approximant,
             xphm_flags=self.extra_kwargs["meta_data"].get("approximant_flags", {}),
             return_fits_used=True, multi_process=self.multi_process
         )
