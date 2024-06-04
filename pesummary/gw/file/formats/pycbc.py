@@ -1,10 +1,18 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+error_msg = (
+    "Unable to install '{}'. You will not be able to use some of the inbuilt "
+    "functions."
+)
 import numpy as np
 from pesummary.gw.file.formats.base_read import GWSingleAnalysisRead
 from pesummary import conf
 from pesummary.core.file.formats.ini import read_ini
-from pycbc.inference.io import loadfile
+from pesummary.utils.utils import logger
+try:
+    from pycbc.inference.io import loadfile
+except ImportError:
+    logger.warning(error_msg.format("pycbc"))
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
