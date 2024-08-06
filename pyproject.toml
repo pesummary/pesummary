@@ -39,7 +39,7 @@ dependencies = [
 	"pillow",
 	"seaborn>=0.12.2,<0.13.0",
 	"statsmodels",
-	"scipy >=1.8.0",
+	"scipy >=1.8.0,<1.14.0",
 	"tables",
 	"tqdm >=4.44.0",
 ]
