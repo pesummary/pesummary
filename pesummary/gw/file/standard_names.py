@@ -147,6 +147,7 @@ for detector in _IFOS:
 
 pycbc_map = {
     "mchirp": "chirp_mass",
+    "srcmchirp": "chirp_mass_source",
     "coa_phase": "phase",
     "loglikelihood": "log_likelihood",
 }
