@@ -103,6 +103,7 @@ GWlatex_labels = {
     ),
     "redshift": r"$z$",
     "comoving_distance": r"$d_{com} [\mathrm{Mpc}]$",
+    "comoving_volume": r"$V_{com} [\mathrm{Mpc}**3]$",
     "mass_1_source": r"$m_{1}^{\mathrm{source}} [M_{\odot}]$",
     "mass_2_source": r"$m_{2}^{\mathrm{source}} [M_{\odot}]$",
     "chirp_mass_source": r"$\mathcal{M}^{\mathrm{source}} [M_{\odot}]$",
