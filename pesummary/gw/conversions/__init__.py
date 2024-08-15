@@ -960,7 +960,16 @@ class _Conversion(object):
 
     def _z_from_dL(self):
         samples = self.specific_parameter_samples("luminosity_distance")
-        func = getattr(Redshift, self.redshift_method)
+        func = getattr(Redshift.Distance, self.redshift_method)
+        redshift = func(
+            samples, cosmology=self.cosmology, multi_process=self.multi_process
+        )
+        self.extra_kwargs["meta_data"]["cosmology"] = self.cosmology
+        self.append_data("redshift", redshift)
+
+    def _z_from_comoving_volume(self):
+        samples = self.specific_parameter_samples("comoving_volume")
+        func = getattr(Redshift.ComovingVolume, self.redshift_method)
         redshift = func(
             samples, cosmology=self.cosmology, multi_process=self.multi_process
         )
@@ -972,6 +981,12 @@ class _Conversion(object):
         distance = comoving_distance_from_z(samples, cosmology=self.cosmology)
         self.extra_kwargs["meta_data"]["cosmology"] = self.cosmology
         self.append_data("comoving_distance", distance)
+
+    def _comoving_volume_from_z(self):
+        samples = self.specific_parameter_samples("redshift")
+        volume = comoving_volume_from_z(samples, cosmology=self.cosmology)
+        self.extra_kwargs["meta_data"]["cosmology"] = self.cosmology
+        self.append_data("comoving_volume", volume)
 
     def _m1_source_from_m1_z(self):
         samples = self.specific_parameter_samples(["mass_1", "redshift"])
@@ -1704,9 +1719,14 @@ class _Conversion(object):
         if "redshift" not in self.parameters:
             if "luminosity_distance" in self.parameters:
                 self._z_from_dL()
+            if "comoving_volume" in self.parameters:
+                self._z_from_comoving_volume()
         if "comoving_distance" not in self.parameters:
             if "redshift" in self.parameters:
                 self._comoving_distance_from_z()
+        if "comoving_volume" not in self.parameters:
+            if "redshift" in self.parameters:
+                self._comoving_volume_from_z()
 
         if "mass_ratio" not in self.parameters and "symmetric_mass_ratio" in \
                 self.parameters:

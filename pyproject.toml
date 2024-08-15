@@ -24,7 +24,7 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-	"astropy>=4.0",
+	"astropy>=5.0",
 	"corner",
 	"deepdish",
 	"gwpy >=2.1.2",

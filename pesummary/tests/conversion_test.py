@@ -94,16 +94,41 @@ class TestConversions(object):
         )
         np.testing.assert_almost_equal(lal_redshift, redshift, 8)
 
+    def test_z_from_comoving_volume(self):
+        from pycbc.cosmology import redshift_from_comoving_volume
+
+        volume = np.random.randint(100**3, 5000**3, 20)
+        pycbc_function = redshift_from_comoving_volume
+        pesummary_function = z_from_comoving_volume_exact
+        conversion_check(
+            pesummary_function, [volume], pycbc_function, [volume, False]
+        )
+        pesummary_function = z_from_comoving_volume_approx
+        conversion_check(
+            pesummary_function, [volume], pycbc_function, [volume, False],
+            dp=4
+        )
+
     def test_dL_from_z(self):
         from bilby.gw.conversion import redshift_to_luminosity_distance
 
-        redshift = np.random.randint(1, 5, 100)
+        redshift = np.random.uniform(1, 5, 100)
         bilby_function = redshift_to_luminosity_distance
         pesummary_function = dL_from_z
         conversion_check(
             pesummary_function, [redshift], bilby_function, [redshift]
         )
 
+    def test_comoving_volume_from_z(self):
+        from pycbc.cosmology import cosmological_quantity_from_redshift
+
+        redshift = np.random.uniform(1, 5, 100)
+        pycbc_function = cosmological_quantity_from_redshift
+        pesummary_function = comoving_volume_from_z
+        conversion_check(
+            pesummary_function, [redshift], pycbc_function,
+            [redshift, "comoving_volume"]
+        )
     def test_comoving_distance_from_z(self):
         from bilby.gw.conversion import redshift_to_comoving_distance
 

@@ -44,7 +44,7 @@ def uniform_in_comoving_volume_from_uniform_in_volume(
             "the 'luminosity_distance' posterior distribution"
         )
         luminosity_distance = samples["luminosity_distance"]
-        redshift = getattr(Redshift, redshift_method)(
+        redshift = getattr(Redshift.Distance, redshift_method)(
             luminosity_distance, cosmology=cosmology, **convert_kwargs
         )
     elif "redshift" not in parameters:
