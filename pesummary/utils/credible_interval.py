@@ -155,5 +155,5 @@ def hpd_two_sided_credible_interval(
             ihigh -= 1
         else:
             ilow += 1
-        area = integrate.simps(pdf_interval, x_interval)
+        area = integrate.simpson(pdf_interval, x=x_interval)
     return np.array([xlow, xhigh]), area

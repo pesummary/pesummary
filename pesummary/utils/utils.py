@@ -9,7 +9,7 @@ import copy
 import shutil
 
 import numpy as np
-from scipy.integrate import cumtrapz
+from scipy.integrate import cumulative_trapezoid as cumtrapz
 from scipy.interpolate import interp1d
 from scipy import stats
 import h5py
