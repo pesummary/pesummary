@@ -9,8 +9,6 @@ from pathlib import Path
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
-CONDA_EXE = os.getenv("CONDA_EXE", shutil.which("conda")) or "conda"
-
 
 class GitDummy(object):
     def __getattr__(self, attr):
@@ -108,13 +106,19 @@ class PackageInformation(GitInformation):
         self.package_info = self.get_package_info()
         self.package_dir = self.get_package_dir()
 
+    @staticmethod
+    def _find_conda():
+        """Return the path of the ``conda`` executable, or `None`.
+        """
+        return os.getenv("CONDA_EXE", shutil.which("conda"))
+
     def get_package_info(self):
         """Return the package information
         """
-        if (Path(sys.prefix) / "conda-meta").is_dir():
+        if (conda := self._find_conda()) and (Path(sys.prefix) / "conda-meta").is_dir():
             self.package_manager = "conda"
             raw = self.call([
-                CONDA_EXE,
+                conda,
                 "list",
                 "--json",
                 "--prefix", sys.prefix,
