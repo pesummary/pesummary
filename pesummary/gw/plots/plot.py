@@ -1411,15 +1411,15 @@ def _classification_plot(classification):
     classification: dict
         dictionary of source classifications
     """
-    from matplotlib import rcParams
-
-    original_fontsize = rcParams["font.size"]
-    original_ylabel = rcParams["ytick.labelsize"]
-    rcParams["font.size"] = 12
-    rcParams["ytick.labelsize"] = 12
     probs, names = zip(
         *sorted(zip(classification.values(), classification.keys())))
-    with matplotlib.style.context('seaborn-white'):
+    with matplotlib.style.context([
+        "seaborn-v0_8-white",
+        {
+            "font.size": 12,
+            "ytick.labelsize": 12,
+        },
+    ]):
         fig, ax = figure(figsize=(2.5, 2), gca=True)
         ax.barh(names, probs)
         for i, prob in enumerate(probs):
@@ -1431,6 +1431,4 @@ def _classification_plot(classification):
         for side in ['top', 'bottom', 'right']:
             ax.spines[side].set_visible(False)
         fig.tight_layout()
-    rcParams["font.size"] = original_fontsize
-    rcParams["ytick.labelsize"] = original_ylabel
     return fig
