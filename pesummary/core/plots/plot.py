@@ -24,6 +24,18 @@ _default_legend_kwargs = dict(
 )
 
 
+def _update_1d_comparison_legend(legend, linestyles, linewidth=1.75):
+    """Update the width and style of lines in the legend for a 1d comparison plot.
+    """
+    try:
+        handles = legend.legend_handles
+    except AttributeError:  # matplotlib < 3.7.0
+        handles = legend.legendHandles
+    for handle, style in zip(handles, linestyles):
+        handle.set_linewidth(linewidth)
+        handle.set_linestyle(style)
+
+
 def _autocorrelation_plot(
     param, samples, fig=None, color=conf.color, markersize=0.5, grid=True
 ):
@@ -313,9 +325,7 @@ def _1d_cdf_comparison_plot(
         handles.append(mlines.Line2D([], [], color=colors[num], label=labels[num]))
     ncols = number_of_columns_for_legend(labels)
     legend = ax.legend(handles=handles, ncol=ncols, **legend_kwargs)
-    for num, legobj in enumerate(legend.legendHandles):
-        legobj.set_linewidth(1.75)
-        legobj.set_linestyle(linestyles[num])
+    _update_1d_comparison_legend(legend, linestyles)
     ax.set_xlabel(latex_label)
     ax.set_ylabel("Cumulative Density Function")
     ax.grid(visible=grid)
@@ -756,9 +766,7 @@ def _1d_comparison_histogram_plot(
     ax = fig.gca()
     ncols = number_of_columns_for_legend(labels)
     legend = ax.legend(handles=handles, ncol=ncols, **legend_kwargs)
-    for num, legobj in enumerate(legend.legendHandles):
-        legobj.set_linewidth(1.75)
-        legobj.set_linestyle(linestyles[num])
+    _update_1d_comparison_legend(legend, linestyles)
     ax.set_xlabel(latex_label)
     ax.set_ylabel("Probability Density")
     ax.autoscale(axis='x')

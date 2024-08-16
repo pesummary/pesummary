@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from matplotlib import cm
+from matplotlib import colormaps
 from matplotlib import colors
 import numpy as np
 import pesummary
@@ -30,16 +30,16 @@ def register_cylon():
     # Assign in module.
     locals().update({"cylon": cmap})
     # Register with Matplotlib.
-    cm.register_cmap(cmap=cmap)
+    colormaps.register(cmap=cmap)
     # Create inverse color map
     cmap_r = colors.LinearSegmentedColormap.from_list("cylon_r", data[::-1])
     locals().update({"cylon_r": cmap_r})
-    cm.register_cmap(cmap=cmap_r)
+    colormaps.register(cmap=cmap_r)
 
 
 def unregister_cylon():
-    cm.unregister_cmap("cylon")
-    cm.unregister_cmap("cylon_r")
+    colormaps.unregister("cylon")
+    colormaps.unregister("cylon_r")
 
 
 def colormap_with_fixed_hue(color, N=10):
