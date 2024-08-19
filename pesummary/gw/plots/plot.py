@@ -560,7 +560,7 @@ def _ligo_skymap_plot(ra, dec, dist=None, savedir="./", nprocess=1,
 
 def _ligo_skymap_plot_from_array(
     skymap, nsamples=None, downsampled=False, contour=[50, 90],
-    annotate=True, ax=None, colors="k", injection=None
+    annotate=True, fig=None, ax=None, colors="k", injection=None
 ):
     """Generate a skymap with `ligo.skymap` based on an array of probabilities
 
@@ -587,11 +587,13 @@ def _ligo_skymap_plot_from_array(
     import healpy as hp
     from ligo.skymap import plot
 
-    if ax is None:
+    if fig is None and ax is None:
         fig = figure(gca=False)
         ax = fig.add_subplot(111, projection='astro hours mollweide')
-        ax.grid(visible=True)
+    elif ax is None:
+        ax = fig.gca()
 
+    ax.grid(visible=True)
     nside = hp.npix2nside(len(skymap))
     deg2perpix = hp.nside2pixarea(nside, degrees=True)
     probperdeg2 = skymap / deg2perpix
@@ -623,11 +625,14 @@ def _ligo_skymap_plot_from_array(
             edgecolors='k', linewidth=1.75, s=100, zorder=100,
             transform=ax.get_transform('world')
         )
+
+    if fig is None:
+        return fig, ax
     return ExistingFigure(fig), ax
 
 
 def _ligo_skymap_comparion_plot_from_array(
-    skymaps, colors, labels, contour=[50, 90], show_probability_map=False,
+    skymaps, colors, labels, contour=[50, 90], show_probability_map=None,
     injection=None
 ):
     """Generate a skymap with `ligo.skymap` based which compares arrays of
@@ -645,14 +650,17 @@ def _ligo_skymap_comparion_plot_from_array(
         contours you wish to display on the comparison plot
     show_probability_map: int, optional
         the index of the skymap you wish to show the probability
-        map for. Default False
+        map for. Default None
     injection: list, optional
         List containing RA and DEC of the injection. Both must be in radians
     """
+    from ligo.skymap import plot
+    import matplotlib.lines as mlines
     ncols = number_of_columns_for_legend(labels)
     fig = figure(gca=False)
     ax = fig.add_subplot(111, projection='astro hours mollweide')
     ax.grid(visible=True)
+    lines = []
     for num, skymap in enumerate(skymaps):
         if isinstance(show_probability_map, int) and show_probability_map == num:
             _, ax = _ligo_skymap_plot_from_array(
@@ -660,11 +668,11 @@ def _ligo_skymap_comparion_plot_from_array(
                 annotate=False, ax=ax, colors=colors[num], injection=injection,
             )
         cls, cs = _ligo_skymap_contours(
-            ax, skymap, contour=contour, colors=colors[num]
+            ax, skymap, contour=contour, colors=colors[num],
         )
-        cs.collections[0].set_label(labels[num])
+        lines.append(mlines.Line2D([], [], color=colors[num], label=labels[num]))
     ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
-              mode="expand", ncol=ncols)
+              mode="expand", ncol=ncols, handles=lines)
     return fig
 
 
