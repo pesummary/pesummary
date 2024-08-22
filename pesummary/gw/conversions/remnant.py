@@ -159,7 +159,7 @@ def _return_final_mass_and_final_spin_from_waveform(
     else:
         mass1 = eval(mass_1)
     if mass_2 is None:
-        mass_function_args[mass_2_index]
+        mass2 = mass_function_args[mass_2_index]
     else:
         mass2 = eval(mass_2)
     final_mass = fm * (mass1 + mass2) / MSUN_SI
@@ -440,9 +440,10 @@ def _final_from_initial_BBH(
                 }
             )
     elif approximant.lower() in ["seobnrv4"]:
+        lal_approx = getattr(lalsimulation, approximant)
         spin1 = np.array([spin_1x, spin_1y, spin_1z]).T
         spin2 = np.array([spin_2x, spin_2y, spin_2z]).T
-        app = np.array([approx] * len(mass_1))
+        app = np.array([lal_approx] * len(mass_1))
         kwargs.update(
             {
                 "mass_function": SimIMREOBFinalMassSpin,
@@ -454,6 +455,7 @@ def _final_from_initial_BBH(
             }
         )
     elif "phenompv3" in approximant.lower():
+        lal_approx = getattr(lalsimulation, approximant)
         kwargs.update(
             {
                 "mass_function": SimPhenomUtilsIMRPhenomDFinalMass,
@@ -462,7 +464,7 @@ def _final_from_initial_BBH(
                 "spin_function_args": [m1, m2, spin_1z, spin_2z]
             }
         )
-        if SimInspiralGetSpinSupportFromApproximant(approx) > 2:
+        if SimInspiralGetSpinSupportFromApproximant(lal_approx) > 2:
             # matches the waveform's internal usage as corrected in
             # https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/1270
             _chi_p = chi_p(mass_1, mass_2, spin_1x, spin_1y, spin_2x, spin_2y)
@@ -470,6 +472,7 @@ def _final_from_initial_BBH(
         else:
             kwargs["spin_function_args"].append(np.zeros_like(mass_1))
     elif "phenomx" in approximant.lower():
+        lal_approx = getattr(lalsimulation, approximant)
         _eta = eta_from_m1_m2(m1, m2)
         kwargs.update(
             {
@@ -480,7 +483,7 @@ def _final_from_initial_BBH(
                 "mass_2_index": 4,
             }
         )
-        if SimInspiralGetSpinSupportFromApproximant(approx) > 2:
+        if SimInspiralGetSpinSupportFromApproximant(lal_approx) > 2:
             chi1_perp = np.array([spin_1x, spin_1y])
             chi2_perp = np.array([spin_2x, spin_2y])
             _chi_p = chi_p(mass_1, mass_1, spin_1x, spin_1y, spin_2x, spin_2y)
