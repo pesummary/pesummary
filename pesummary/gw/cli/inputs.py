@@ -420,6 +420,36 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             self._skymap = {i: None for i in self.labels}
 
     @property
+    def calibration_definition(self):
+        return self._calibration_definition
+
+    @calibration_definition.setter
+    def calibration_definition(self, calibration_definition):
+        if not len(self.opts.calibration):
+            self._calibration_definition = None
+            return
+        if len(calibration_definition) == 1:
+            logger.info(
+                f"Assuming that the calibration correction was applied to "
+                f"'{calibration_definition[0]}' for all analyses"
+            )
+            calibration_definition *= len(self.labels)
+        elif len(calibration_definition) != len(self.labels):
+            raise ValueError(
+                f"Please provide a calibration definition for each analysis "
+                f"({len(self.labels)}) or a single definition to use for all "
+                f"analyses"
+            )
+        if any(_ not in ["data", "template"] for _ in calibration_definition):
+            raise ValueError(
+                "Calibration definitions must be either 'data' or 'template'"
+            )
+        self._calibration_definition = {
+            label: calibration_definition[num] for num, label in
+            enumerate(self.labels)
+        }
+
+    @property
     def calibration(self):
         return self._calibration
 
@@ -429,7 +459,8 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             data = {i: {} for i in self.labels}
             if calibration != {}:
                 prior_data = self.get_psd_or_calibration_data(
-                    calibration, self.extract_calibration_data_from_file
+                    calibration, self.extract_calibration_data_from_file,
+                    type=self.calibration_definition[self.labels[0]]
                 )
                 self.add_to_prior_dict("calibration", prior_data)
             else:
@@ -440,7 +471,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                         if cal_data != {} and cal_data is not None:
                             prior_data[label] = {
                                 ifo: self.extract_calibration_data_from_file(
-                                    cal_data[ifo]
+                                    cal_data[ifo], type=self.calibration_definition[label]
                                 ) for ifo in cal_data.keys()
                             }
                 if not all(prior_data[i] == {} for i in self.labels):
@@ -815,7 +846,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             logger.warning(msg)
 
     @staticmethod
-    def _extract_IFO_data_from_file(file, cls, desc, IFO=None):
+    def _extract_IFO_data_from_file(file, cls, desc, IFO=None, **kwargs):
         """Return IFO data stored in a file
 
         Parameters
@@ -835,7 +866,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             "generated and the %s data will not be added to the metafile."
         ) % (desc, desc, desc)
         try:
-            return cls.read(file, IFO=IFO)
+            return cls.read(file, IFO=IFO, **kwargs)
         except FileNotFoundError:
             logger.warning(
                 general.format("the file {} does not exist".format(file))
@@ -858,7 +889,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
         return _GWInput._extract_IFO_data_from_file(file, PSD, "PSD", IFO=IFO)
 
     @staticmethod
-    def extract_calibration_data_from_file(file, **kwargs):
+    def extract_calibration_data_from_file(file, type="data", **kwargs):
         """Return the data stored in a calibration file
 
         Parameters
@@ -868,7 +899,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
         """
         from pesummary.gw.file.calibration import Calibration
         return _GWInput._extract_IFO_data_from_file(
-            file, Calibration, "calibration", **kwargs
+            file, Calibration, "calibration", type=type, **kwargs
         )
 
     @staticmethod
@@ -891,7 +922,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             ifo = file_name
         return ifo
 
-    def get_psd_or_calibration_data(self, input, executable):
+    def get_psd_or_calibration_data(self, input, executable, **kwargs):
         """Return a dictionary containing the psd or calibration data
 
         Parameters
@@ -915,18 +946,18 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                 )
             for idx in range(len(input[keys[0]])):
                 data[self.labels[idx]] = {
-                    i: executable(input[i][idx], IFO=i) for i in list(keys)
+                    i: executable(input[i][idx], IFO=i, **kwargs) for i in list(keys)
                 }
         elif isinstance(input, dict):
             for i in self.labels:
                 data[i] = {
-                    j: executable(input[j], IFO=j) for j in list(input.keys())
+                    j: executable(input[j], IFO=j, **kwargs) for j in list(input.keys())
                 }
         elif isinstance(input, list):
             for i in self.labels:
                 data[i] = {
                     self.get_ifo_from_file_name(j): executable(
-                        j, IFO=self.get_ifo_from_file_name(j)
+                        j, IFO=self.get_ifo_from_file_name(j), **kwargs
                     ) for j in input
                 }
         else:
@@ -1045,6 +1076,7 @@ class SamplesInput(_GWInput, pesummary.core.cli.inputs.SamplesInput):
         self.approximant_flags = self.opts.approximant_flags
         self.detectors = None
         self.skymap = None
+        self.calibration_definition = self.opts.calibration_definition
         self.calibration = self.opts.calibration
         self.gwdata = self.opts.gwdata
         self.maxL_samples = []

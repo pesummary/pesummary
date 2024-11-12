@@ -188,6 +188,13 @@ class ArgumentParser(_ArgumentParser):
                 ),
                 "key": "gw",
             },
+            "--calibration_definition": {
+                "dest": "calibration_definition",
+                "help": "Definition for each calibration envelope",
+                "nargs": "+",
+                "default": ["data"],
+                "key": "gw",
+            },
             "--calibration": {
                 "dest": "calibration",
                 "help": "files for the calibration envelope",

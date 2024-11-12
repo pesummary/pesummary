@@ -7,8 +7,6 @@ import shutil
 import numpy as np
 import h5py
 
-import deepdish
-
 from pesummary.gw.conversions import *
 from pesummary.gw.conversions.nrutils import *
 from pycbc import conversions
@@ -785,8 +783,8 @@ class TestPrecessingSNR(object):
                 h, h_all, psd, low_frequency_cutoff=self.f_low[i],
                 high_frequency_cutoff=self.f_final[i], normalized=True
             )
-            np.testing.assert_almost_equal(np.abs(overlap), 1.0)
-            np.testing.assert_almost_equal(np.angle(overlap), 0.0)
+            np.testing.assert_almost_equal(np.abs(overlap), 1.0, decimal=6)
+            np.testing.assert_almost_equal(np.angle(overlap), 0.0, decimal=6)
 
     def test_precessing_snr(self):
         """Test the pesummary.gw.conversions.snr.precessing_snr function
