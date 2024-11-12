@@ -126,6 +126,7 @@ class _GWPlotGeneration(object):
             existing_psd=inputs.existing_psd,
             existing_calibration=inputs.existing_calibration, weights=inputs.weights,
             linestyles=inputs.linestyles,
+            calibration_definition=inputs.calibration_definition,
             disable_comparison=inputs.disable_comparison,
             disable_interactive=inputs.disable_interactive,
             disable_corner=inputs.disable_corner,

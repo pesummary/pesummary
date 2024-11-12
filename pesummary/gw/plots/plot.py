@@ -1191,7 +1191,7 @@ def _psd_plot(frequencies, strains, colors=None, labels=None, fmin=None, fmax=No
 
 @no_latex_plot
 def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
-                               colors=None, prior=[]):
+                               colors=None, prior=[], definition="data"):
     """Generate a plot showing the calibration envelope
 
     Parameters
@@ -1207,6 +1207,8 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         envelopes
     prior: list, optional
         list containing the prior calibration envelope data for different IFOs
+    definition: str, optional
+        definition used for the prior calibration envelope data
     """
     from gwpy.plot.colors import GW_OBSERVATORY_COLORS
 
@@ -1286,6 +1288,7 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
                 prior_data["phase"]["lower"], color=colors[num], alpha=0.2
             )
 
+    ax1.set_title(f"Calibration correction applied to {definition}")
     ax1.set_xscale('log')
     ax2.set_xscale('log')
     ax2.set_xlabel(r"Frequency $[Hz]$")

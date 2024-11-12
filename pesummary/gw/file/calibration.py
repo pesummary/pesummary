@@ -3,10 +3,55 @@
 import numpy as np
 from scipy.interpolate import interp1d
 from pesummary import conf
-from pesummary.utils.utils import check_file_exists_and_rename
+from pesummary.utils.utils import check_file_exists_and_rename, logger
 from pesummary.utils.dict import Dict
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+
+
+def _apply_calibration_correction(array=None, amplitude=None, phase=None, type="data"):
+    """Apply the calibration correction based on the calibration type. If
+    type='data', the amplitude is inverted and phase multiplied by -1. If
+    type='template', the amplitude and phase is left unchanged.
+
+    Parameters
+    ----------
+    array: np.ndarray, optional
+        an opened calibration envelope file (with e.g. np.genfromtxt). Columns must
+        be "Frequency", "Median Mag", "Phase (Rad)", "-1 Sigma Mag", "-1 Sigma Phase",
+        "+1 Sigma Mag", "+1 Sigma Phase"
+    amplitude: np.ndarray, optional
+        array of only calibration amplitudes
+    phase: np.ndarray, optional
+        array of only calibration phases
+    type: str, optional
+        type of calibration data. Must be either 'data' or 'template'
+    """
+    if type not in ["data", "template"]:
+        raise ValueError(f"Unknown calibration type: {type}")
+    if all(_ is None for _ in [array, amplitude, phase]):
+        raise ValueError(
+            "Please provide either an opened calibration file, or amplitude and phase "
+            "corrections"
+        )
+    elif array is None and any(_ is None for _ in [amplitude, phase]):
+        raise ValueError(
+            "Please provide data for both the amplitude and phase corrections"
+        )
+    elif array is not None and any(_ is not None for _ in [amplitude, phase]):
+        logger.warning(
+            "An opened calibration file and amplitude/phase corrections are provided. "
+            "Using opened calibration file"
+        )
+    if array is not None:
+        amplitude = np.array([array.T[1], array.T[3], array.T[5]])
+        phase = np.array([array.T[2], array.T[4], array.T[6]])
+    if type == "data":
+        if amplitude is not None:
+            amplitude = 1. / amplitude
+        if phase is not None:
+            phase *= -1
+    return amplitude, phase
 
 
 def _spline_angle_xform(delta_psi):
@@ -156,7 +201,7 @@ class Calibration(np.ndarray):
         return obj
 
     @classmethod
-    def read(cls, path_to_file, IFO=None, **kwargs):
+    def read(cls, path_to_file, IFO=None, type="data", **kwargs):
         """Read in a file and initialize the Calibration class
 
         Parameters
@@ -165,12 +210,21 @@ class Calibration(np.ndarray):
             the path to the file you wish to load
         IFO: str, optional
             name of the IFO which relates to the input file
+        type: str, optional
+            the calibration definition. This can either be 'data' or 'template'
+            and determines whether the calibration is applied to the data
+            or the template. Default: 'data'
         **kwargs: dict
             all kwargs are passed to the np.genfromtxt method
         """
         try:
             f = np.genfromtxt(path_to_file, **kwargs)
-            return cls(f)
+            amplitudes, phases = _apply_calibration_correction(array=f, type=type)
+            data = np.array([
+                f.T[0], amplitudes[0], phases[0], amplitudes[1], phases[1],
+                amplitudes[2], phases[2]
+            ]).T
+            return cls(data)
         except Exception:
             raise
 

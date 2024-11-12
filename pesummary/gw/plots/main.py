@@ -30,7 +30,7 @@ class _PlotGeneration(_BasePlotGeneration):
         result_files=None, file_kwargs=None, colors=None, custom_plotting=None,
         add_to_existing=False, priors={}, no_ligo_skymap=False,
         nsamples_for_skymap=None, detectors=None, maxL_samples=None,
-        gwdata=None, calibration=None, psd=None,
+        gwdata=None, calibration_definition=None, calibration=None, psd=None,
         multi_threading_for_skymap=None, approximant=None,
         pepredicates_probs=None, include_prior=False, publication=False,
         existing_approximant=None, existing_psd=None, existing_calibration=None,
@@ -82,6 +82,7 @@ class _PlotGeneration(_BasePlotGeneration):
             skymap = {label: None for label in self.labels}
         self.skymap = skymap
         self.existing_skymap = skymap
+        self.calibration_definition = calibration_definition
         self.calibration = calibration
         self.existing_calibration = existing_calibration
         self.psd = psd
@@ -1262,7 +1263,7 @@ class _PlotGeneration(_BasePlotGeneration):
                 prior = None
             arguments = [
                 self.savedir, frequencies, calibration_data, ifos, prior,
-                label, self.checkpoint
+                label, self.calibration_definition[label], self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._calibration_plot, error_message % (label)
@@ -1271,7 +1272,7 @@ class _PlotGeneration(_BasePlotGeneration):
     @staticmethod
     def _calibration_plot(
         savedir, frequencies, calibration_data, calibration_labels, prior, label,
-        checkpoint=False
+        calibration_definition="data", checkpoint=False
     ):
         """Generate a calibration plot for a given set of samples
 
@@ -1289,6 +1290,8 @@ class _PlotGeneration(_BasePlotGeneration):
             list containing the priors used for each IFO
         label: str
             the label used to distinguish the result file
+        calibration_definition: str
+            the definition of the calibration prior used (either 'data' or 'template')
         """
         filename = os.path.join(
             savedir, "{}_calibration_plot.png".format(label)
@@ -1296,7 +1299,8 @@ class _PlotGeneration(_BasePlotGeneration):
         if os.path.isfile(filename) and checkpoint:
             return
         fig = gw._calibration_envelope_plot(
-            frequencies, calibration_data, calibration_labels, prior=prior
+            frequencies, calibration_data, calibration_labels, prior=prior,
+            definition=calibration_definition
         )
         _PlotGeneration.save(fig, filename)
 

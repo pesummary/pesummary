@@ -592,7 +592,8 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir {0} --samples {0}/example.json "
             "--psd H1:{0}/psd.dat --calibration L1:{0}/calibration.dat "
-            "--labels test --posterior_samples_filename example.h5 ".format(tmpdir)
+            "--labels test --posterior_samples_filename example.h5 "
+            "--calibration_definition template".format(tmpdir)
         )
         self.launch(command_line)
         f = read("{}/samples/example.h5".format(tmpdir))
