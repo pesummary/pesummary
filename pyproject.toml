@@ -29,7 +29,7 @@ dependencies = [
 	"deepdish",
 	"gwpy >=3.0.6",
 	"h5py",
-	"lalsuite >7.11,!=7.23",
+	"lalsuite >7.11,!=7.23,!=7.24",
 	"ligo-gracedb",
 	"matplotlib >= 3.6.0",
 	"numpy >=1.15.4,<2.0.0",
@@ -78,7 +78,7 @@ test = [
 	"testfixtures",
 ]
 extras = [
-	"bilby>=1.1.1",
+	"bilby>=1.1.1,<2.4.0",
 	"coloredlogs",
 	"GitPython",
 	"gwosc",
