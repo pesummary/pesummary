@@ -1,5 +1,6 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
+import copy
 import numpy as np
 from scipy.stats import gaussian_kde
 from matplotlib.colors import LinearSegmentedColormap, colorConverter
@@ -130,7 +131,7 @@ def hist2d(
         )
 
     values = np.vstack([x.flatten(), y.flatten()])
-    kernel = kde(values, **kde_kwargs)
+    kernel = kde(values, weights=weights, **kde_kwargs)
     xmin, xmax = np.min(x.flatten()), np.max(x.flatten())
     ymin, ymax = np.min(y.flatten()), np.max(y.flatten())
     X, Y = np.meshgrid(X, Y)
@@ -165,7 +166,16 @@ def hist2d(
         data_kwargs["ms"] = data_kwargs.get("ms", 2.0)
         data_kwargs["mec"] = data_kwargs.get("mec", "none")
         data_kwargs["alpha"] = data_kwargs.get("alpha", 0.1)
-        ax.plot(x, y, "o", zorder=-1, rasterized=True, **data_kwargs)
+        if weights is None:
+            ax.plot(x, y, "o", zorder=-1, rasterized=True, **data_kwargs)
+        else:
+            _weights = copy.deepcopy(weights)
+            _weights /= np.max(_weights)
+            idxs = np.argsort(_weights)
+            for num, (xx, yy) in enumerate(zip(x[idxs], y[idxs])):
+                _data_kwargs = data_kwargs.copy()
+                _data_kwargs["alpha"] *= _weights[num]
+                ax.plot(xx, yy, "o", zorder=-1, rasterized=True, **_data_kwargs)
 
     # Plot the base fill to hide the densest data points.
     cs = ax.contour(

@@ -16,7 +16,7 @@ DEFAULT_LEGEND_KWARGS = {"loc": "best", "frameon": False}
 def pcolormesh(
     x, y, density, ax=None, levels=None, smooth=None, bins=None, label=None,
     level_kwargs={}, range=None, grid=True, legend=False, legend_kwargs={},
-    **kwargs
+    weights=None, **kwargs
 ):
     """Generate a colormesh plot on a given axis
 
@@ -42,6 +42,10 @@ def pcolormesh(
     if smooth is not None:
         import scipy.ndimage.filters as filter
         density = filter.gaussian_filter(density, sigma=smooth)
+    if weights is not None:
+        raise ValueError(
+            "This function does not currently support weighted data"
+        )
     _cmap = kwargs.get("cmap", None)
     _off = False
     if _cmap is not None and isinstance(_cmap, str) and _cmap.lower() == "off":
@@ -83,7 +87,7 @@ def twod_contour_plot(
     x, y, *args, rangex=None, rangey=None, fig=None, ax=None, return_ax=False,
     levels=[0.9], bins=300, smooth=7, xlabel=None, ylabel=None,
     fontsize={"label": 12}, grid=True, label=None, truth=None,
-    _function=hist2d, truth_lines=True, truth_kwargs={},
+    _function=hist2d, truth_lines=True, truth_kwargs={}, weights=None,
     _default_truth_kwargs={
         "marker": 'o', "markeredgewidth": 2, "markersize": 6, "color": 'k'
     }, **kwargs
@@ -154,7 +158,7 @@ def twod_contour_plot(
 
     _function(
         x, y, *args, ax=ax, levels=levels, bins=bins, smooth=smooth,
-        label=label, grid=grid, **kwargs
+        label=label, grid=grid, weights=weights, **kwargs
     )
     if truth is not None:
         _default_truth_kwargs.update(truth_kwargs)
@@ -490,7 +494,7 @@ def _triangle_plot(
     rangex=None, rangey=None, grid=False, latex_friendly=False, kde_2d=None,
     kde_2d_kwargs={}, legend_kwargs={"loc": "best", "frameon": False},
     truth=None, hist_kwargs={"density": True, "bins": 50},
-    _contour_function=twod_contour_plot, **kwargs
+    _contour_function=twod_contour_plot, weights=None, **kwargs
 ):
     """Base function to generate a triangular plot
 
@@ -598,9 +602,9 @@ def _triangle_plot(
         )
         if kde:
             if "x_axis" in kde_kwargs.keys():
-                _kde = kde(x[num], **kde_kwargs["x_axis"])
+                _kde = kde(x[num], weights=weights, **kde_kwargs["x_axis"])
             else:
-                _kde = kde(x[num], **kde_kwargs)
+                _kde = kde(x[num], weights=weights, **kde_kwargs)
             _x = np.linspace(xlow, xhigh, npoints)
             _y = _kde(_x)
             ax1.plot(_x, _y, **plot_kwargs)
@@ -608,9 +612,9 @@ def _triangle_plot(
                 ax1.fill_between(_x, 0, _y, alpha=fill_alpha, **plot_kwargs)
             _y = np.linspace(ylow, yhigh, npoints)
             if "y_axis" in kde_kwargs.keys():
-                _kde = kde(y[num], **kde_kwargs["y_axis"])
+                _kde = kde(y[num], weights=weights, **kde_kwargs["y_axis"])
             else:
-                _kde = kde(y[num], **kde_kwargs)
+                _kde = kde(y[num], weights=weights, **kde_kwargs)
             _x = _kde(_y)
             if latex_friendly:
                 labels = copy.deepcopy(labels)
@@ -623,9 +627,12 @@ def _triangle_plot(
                 histtype = "stepfilled"
             else:
                 histtype = "step"
-            ax1.hist(x[num], histtype=histtype, **hist_kwargs, **plot_kwargs)
+            ax1.hist(
+                x[num], histtype=histtype, weights=weights, **hist_kwargs,
+                **plot_kwargs
+            )
             ax4.hist(
-                y[num], histtype=histtype, orientation="horizontal",
+                y[num], histtype=histtype, weights=weights, orientation="horizontal",
                 **hist_kwargs, **plot_kwargs
             )
         if percentiles is not None:
@@ -655,7 +662,7 @@ def _triangle_plot(
         _contour_function(
             x[num], y[num], ax=ax3, levels=levels, smooth=_smooth,
             rangex=[xlow, xhigh], rangey=[ylow, yhigh], color=colors[num],
-            linestyles=linestyles[num],
+            linestyles=linestyles[num], weights=weights,
             plot_density=plot_density, contour_kwargs=dict(
                 linestyles=[linestyles[num]], linewidths=linewidths[num]
             ), plot_datapoints=plot_datapoints, kde=kde_2d,

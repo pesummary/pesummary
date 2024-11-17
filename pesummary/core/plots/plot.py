@@ -192,7 +192,7 @@ def _sample_evolution_plot_mcmc(
 
 def _1d_cdf_plot(
     param, samples, latex_label, fig=None, color=conf.color, title=True,
-    grid=True, linestyle="-", **kwargs
+    grid=True, linestyle="-", weights=None, **kwargs
 ):
     """Generate the cumulative distribution function for a given parameter for
     a given approximant.
@@ -216,6 +216,8 @@ def _1d_cdf_plot(
         if True, plot a grid
     linestyle: str, optional
         linestyle to use for plotting the CDF. Default "-"
+    weights: list, optional
+        list of weights for samples. Default None
     **kwargs: dict, optional
         all additional kwargs passed to ax.plot
     """
@@ -224,8 +226,22 @@ def _1d_cdf_plot(
         fig, ax = figure(gca=True)
     else:
         ax = fig.gca()
-    sorted_samples = copy.deepcopy(samples)
-    sorted_samples.sort()
+    if weights is None:
+        sorted_samples = copy.deepcopy(samples)
+        sorted_samples.sort()
+        ax.plot(
+            sorted_samples, np.linspace(0, 1, len(sorted_samples)), color=color,
+            linestyle=linestyle, **kwargs
+        )
+    else:
+        hist, bin_edges = np.histogram(samples, bins=50, density=True, weights=weights)
+        total = np.cumsum(hist)
+        total /= total[-1]
+        ax.plot(
+            0.5 * (bin_edges[:-1] + bin_edges[1:]),
+            total, color=color, linestyle=linestyle,
+            **kwargs
+        )
     ax.set_xlabel(latex_label)
     ax.set_ylabel("Cumulative Density Function")
     upper_percentile = np.percentile(samples, 95)
@@ -236,10 +252,6 @@ def _1d_cdf_plot(
     median = np.round(median, 2)
     if title:
         ax.set_title(r"$%s^{+%s}_{-%s}$" % (median, upper, lower))
-    ax.plot(
-        sorted_samples, np.linspace(0, 1, len(sorted_samples)), color=color,
-        linestyle=linestyle, **kwargs
-    )
     ax.grid(visible=grid)
     ax.set_ylim([0, 1.05])
     fig.tight_layout()
@@ -281,7 +293,8 @@ def _1d_cdf_plot_mcmc(
 
 def _1d_cdf_comparison_plot(
     param, samples, colors, latex_label, labels, linestyles=None, grid=True,
-    legend_kwargs=_default_legend_kwargs, latex_friendly=False, **kwargs
+    legend_kwargs=_default_legend_kwargs, latex_friendly=False, weights=None,
+    **kwargs
 ):
     """Generate a plot to compare the cdfs for a given parameter for different
     approximants.
@@ -306,18 +319,26 @@ def _1d_cdf_comparison_plot(
         optional kwargs to pass to ax.legend()
     latex_friendly: Bool, optional
         if True, make the label latex friendly. Default False
+    weights: list, optional
+        list of weights to use for each analysis. Default None
     **kwargs: dict, optional
         all additional kwargs passed to _1d_cdf_plot
     """
     logger.debug("Generating the 1d comparison CDF for %s" % (param))
     if linestyles is None:
         linestyles = ["-"] * len(samples)
+    if weights is None:
+        weights = [None] * len(samples)
+    if len(weights) != len(samples):
+        raise ValueError(
+            "Please provide a set of weights for each analysis"
+        )
     fig, ax = figure(figsize=(8, 6), gca=True)
     handles = []
     for num, i in enumerate(samples):
         fig = _1d_cdf_plot(
             param, i, latex_label, fig=fig, color=colors[num], title=False,
-            grid=grid, linestyle=linestyles[num], **kwargs
+            grid=grid, linestyle=linestyles[num], weights=weights[num], **kwargs
         )
         if latex_friendly:
             labels = copy.deepcopy(labels)
@@ -675,7 +696,8 @@ def _1d_comparison_histogram_plot(
     param, samples, colors, latex_label, labels, inj_value=None, kde=False,
     hist=True, linestyles=None, kde_kwargs={}, hist_kwargs={}, max_vline=1,
     figsize=(8, 6), grid=True, legend_kwargs=_default_legend_kwargs,
-    latex_friendly=False, max_inj_line=1, injection_color="k", **kwargs
+    latex_friendly=False, max_inj_line=1, injection_color="k",
+    weights=None, **kwargs
 ):
     """Generate the a plot to compare the 1d_histogram plots for a given
     parameter for different approximants.
@@ -710,6 +732,8 @@ def _1d_comparison_histogram_plot(
     injection_color: str/list, optional
         either a single color which will be used for all vertical line showing
         the injected value or a list of colors, one for each injection
+    weights: list, optional
+        list of weights to use for each analysis. Default None
     **kwargs: dict, optional
         all additional kwargs passed to _1d_histogram_plot
     """
@@ -718,6 +742,12 @@ def _1d_comparison_histogram_plot(
         linestyles = ["-"] * len(samples)
     if inj_value is None:
         inj_value = [None] * len(samples)
+    if weights is None:
+        weights = [None] * len(samples)
+    if len(weights) != len(samples):
+        raise ValueError(
+            "Please provide a set of weights for each analysis"
+        )
     elif isinstance(inj_value, (list, np.ndarray)) and len(inj_value) != len(samples):
         raise ValueError(
             "Please provide an injection for each analysis or a single "
@@ -758,7 +788,7 @@ def _1d_comparison_histogram_plot(
             max_vline=max_vline, grid=grid, title=False, autoscale=False,
             label=labels[num], color=colors[num], fig=fig, hist_kwargs=hist_kwargs,
             inj_value=inj_value[num], injection_color=injection_color[num],
-            linestyle=linestyles[num], _default_inj_kwargs={
+            weights=weights[num], linestyle=linestyles[num], _default_inj_kwargs={
                 "linewidth": 4., "linestyle": "-", "alpha": 0.4
             }, **kwargs
         )

@@ -517,10 +517,18 @@ class _PlotGeneration(object):
             injection = [
                 value[param] for value in self.injection_data.values()
             ]
+            if self.weights is not None:
+                weights = [
+                    self.weights.get(key, None) for key in
+                    self.same_samples[param].keys()
+                ]
+            else:
+                weights = None
+
             arguments = [
                 self.savedir, param, self.same_samples[param],
-                latex_labels[param], self.colors, injection, self.kde_plot,
-                self.linestyles, self.package,
+                latex_labels[param], self.colors, injection, weights,
+                self.kde_plot, self.linestyles, self.package,
                 self.preliminary_comparison_pages, self.checkpoint, None
             ]
             self._try_to_make_a_plot(
@@ -531,9 +539,9 @@ class _PlotGeneration(object):
 
     @staticmethod
     def _oned_histogram_comparison_plot(
-        savedir, parameter, samples, latex_label, colors, injection, kde=False,
-        linestyles=None, package="core", preliminary=False, checkpoint=False,
-        filename=None
+        savedir, parameter, samples, latex_label, colors, injection, weights,
+        kde=False, linestyles=None, package="core", preliminary=False,
+        checkpoint=False, filename=None,
     ):
         """Generate a oned comparison histogram plot for a given parameter
 
@@ -579,7 +587,7 @@ class _PlotGeneration(object):
         fig = module._1d_comparison_histogram_plot(
             parameter, same_samples, colors, latex_label,
             list(samples.keys()), inj_value=injection, kde=kde,
-            linestyles=linestyles, hist=hist
+            linestyles=linestyles, hist=hist, weights=weights
         )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
@@ -1305,10 +1313,17 @@ class _PlotGeneration(object):
             "Failed to generate a comparison CDF plot for %s because {}"
         )
         for param in self.same_parameters:
+            if self.weights is not None:
+                weights = [
+                    self.weights.get(key, None) for key in
+                    self.same_samples[param].keys()
+                ]
+            else:
+                weights = None
             arguments = [
                 self.savedir, param, self.same_samples[param],
                 latex_labels[param], self.colors, self.linestyles,
-                self.preliminary_comparison_pages, self.checkpoint
+                weights, self.preliminary_comparison_pages, self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._oned_cdf_comparison_plot,
@@ -1319,7 +1334,7 @@ class _PlotGeneration(object):
     @staticmethod
     def _oned_cdf_comparison_plot(
         savedir, parameter, samples, latex_label, colors, linestyles=None,
-        preliminary=False, checkpoint=False
+        weights=None, preliminary=False, checkpoint=False
     ):
         """Generate a oned comparison CDF plot for a given parameter
 
@@ -1351,7 +1366,8 @@ class _PlotGeneration(object):
         keys = list(samples.keys())
         same_samples = [samples[key] for key in keys]
         fig = core._1d_cdf_comparison_plot(
-            parameter, same_samples, colors, latex_label, keys, linestyles
+            parameter, same_samples, colors, latex_label, keys, linestyles,
+            weights=weights
         )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary

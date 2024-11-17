@@ -255,6 +255,10 @@ class _PlotGeneration(_BasePlotGeneration):
             params for params in conf.gw_2d_plots if
             all(p in self.samples[label] for p in params)
         ]
+        if self.weights is not None:
+            weights = self.weights.get(label, None)
+        else:
+            weights = None
         arguments = [
             (
                 [
@@ -262,7 +266,7 @@ class _PlotGeneration(_BasePlotGeneration):
                     [self.samples[label][p] for p in params],
                     [latex_labels[p] for p in params],
                     [self.injection_data[label][p] for p in params],
-                    self.preliminary_pages[label], self.checkpoint
+                    weights, self.preliminary_pages[label], self.checkpoint
                 ], self._triangle_plot, error_message % (params[0], params[1])
             ) for params in paramset
         ]
@@ -270,8 +274,8 @@ class _PlotGeneration(_BasePlotGeneration):
 
     @staticmethod
     def _triangle_plot(
-        savedir, label, params, samples, latex_labels, injection, preliminary=False,
-        checkpoint=False
+        savedir, label, params, samples, latex_labels, injection, weights,
+        preliminary=False, checkpoint=False
     ):
         from pesummary.core.plots.publication import triangle_plot
         import math
@@ -295,7 +299,7 @@ class _PlotGeneration(_BasePlotGeneration):
             ylabel=latex_labels[1], plot_datapoints=True, plot_density=False,
             levels=[1e-8], fill=False, grid=True, linewidths=[1.75],
             percentiles=[5, 95], percentile_plot=[label], labels=[label],
-            truth=truth, data_kwargs={"alpha": 0.3}
+            truth=truth, weights=weights, data_kwargs={"alpha": 0.3}
         )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary

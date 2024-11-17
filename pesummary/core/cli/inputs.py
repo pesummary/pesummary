@@ -795,8 +795,8 @@ class _Input(object):
                 stored_labels = data["labels"]
             else:
                 stored_labels = [self.labels[num]]
-            if "weights" in data.items():
-                weights_dict = data["weights"]
+            if "weights" in data.keys():
+                weights_dict.update(data["weights"])
             if "prior" in data.keys():
                 for label in stored_labels:
                     pp = data["prior"]
