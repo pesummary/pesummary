@@ -78,7 +78,7 @@ test = [
 	"testfixtures",
 ]
 extras = [
-	"bilby>=1.1.1,<2.4.0",
+	"bilby>=1.1.1",
 	"coloredlogs",
 	"GitPython",
 	"gwosc",

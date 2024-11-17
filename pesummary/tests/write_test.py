@@ -81,8 +81,8 @@ class TestWrite(Base):
         """
         parameters, samples = self.write("bilby", "bilby.json")
         self.check_samples("{}/bilby.json".format(tmpdir), parameters, samples.T)
-        parameters, samples = self.write("bilby", "bilby.h5", extension="hdf5")
-        self.check_samples("{}/bilby.h5".format(tmpdir), parameters, samples.T)
+        parameters, samples = self.write("bilby", "bilby.hdf5", extension="hdf5")
+        self.check_samples("{}/bilby.hdf5".format(tmpdir), parameters, samples.T)
 
     def test_lalinference(self):
         """Test that the user can write to a lalinference file
