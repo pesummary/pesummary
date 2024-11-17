@@ -253,6 +253,65 @@ class ReflectionBoundedKDE(BoundedKDE):
         return results
 
 
+class PeriodicBoundedKDE(ReflectionBoundedKDE):
+    """Represents a one-dimensional Gaussian kernel density estimator
+    for a probability distribution function that exists on a bounded
+    domain. The bounds are treated as periodic
+
+    Parameters
+    ----------
+    pts: np.ndarray
+        The datapoints to estimate a bounded kde from
+    xlow: float
+        The lower bound of the distribution
+    xhigh: float
+        The upper bound of the distribution
+    smooth: float, optional
+        level of smoothing you wish to apply. Default 3
+    apply_smoothing: Bool, optional
+        Whether or not to apply smoothing. Default False
+    """
+    def __init__(
+        self, pts, xlow=None, xhigh=None, apply_smoothing=False, smooth=3,
+        *args, **kwargs
+    ):
+        if all(_ is None for _ in [xlow, xhigh]):
+            raise ValueError(
+                "xlow and xhigh must both be provided if using the "
+                "periodic KDE"
+            )
+        self.shift = (xlow + xhigh) / 2
+        shifted_pts = self._shift(pts)
+        super(PeriodicBoundedKDE, self).__init__(
+            shifted_pts, xlow=xlow, xhigh=xhigh, *args, **kwargs
+        )
+        self.apply_smoothing = apply_smoothing
+        self.smooth = smooth
+
+    def _shift(self, pts):
+        return np.append(
+            pts[pts > self.shift] - self.shift,
+            pts[pts < self.shift] + self.shift
+        )
+
+    def __call__(self, pts):
+        pts = np.atleast_1d(pts)
+        shifted_pts = self._shift(pts)
+        results = self.evaluate(shifted_pts)
+        unshifted = np.zeros_like(pts)
+        unshifted[pts < self.shift] = results[pts > self.shift]
+        unshifted[pts > self.shift] = results[pts < self.shift]
+        if self.apply_smoothing:
+            unshifted = gaussian_filter1d(unshifted, sigma=self.smooth)
+        out_of_bounds = np.zeros(pts.shape[0], dtype='bool')
+        if self.xlow is not None:
+            out_of_bounds[pts < self.xlow] = True
+        if self.xhigh is not None:
+            out_of_bounds[pts > self.xhigh] = True
+        unshifted[out_of_bounds] = 0.
+        return unshifted
+
+
 class Bounded_1d_kde(ReflectionBoundedKDE):
     @deprecation(
         "The Bounded_1d_kde class has changed its name to ReflectionBoundedKDE. "
@@ -265,6 +324,7 @@ class Bounded_1d_kde(ReflectionBoundedKDE):
 _kdes = {
     "TransformBoundedKDE": TransformBoundedKDE,
     "ReflectionBoundedKDE": ReflectionBoundedKDE,
+    "PeriodicBoundedKDE": PeriodicBoundedKDE,
     "Bounded_1d_kde": Bounded_1d_kde
 }
 
