@@ -773,7 +773,7 @@ class TestCoreHDF5BilbyFile(BilbyFile):
         self.parameters, self.samples = make_result_file(
             outdir=tmpdir, extension="hdf5", gw=False, bilby=True
         )
-        self.path = os.path.join(tmpdir, "test.h5")
+        self.path = os.path.join(tmpdir, "test.hdf5")
         self.result = Read(self.path)
 
     def teardown_method(self):

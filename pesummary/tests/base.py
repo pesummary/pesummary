@@ -254,7 +254,7 @@ def read_result_file(outdir="./.outdir", extension="json", bilby=False,
         if extension == "json":
             f = read_in_result(outdir + "/test.json")
         elif extension == "h5" or extension == "hdf5":
-            f = read_in_result(outdir + "/test.h5")
+            f = read_in_result(outdir + "/test.hdf5")
         posterior = f.posterior
         posterior = posterior.select_dtypes(include=[float, int])
         samples = {key: val for key, val in posterior.items()}
@@ -426,7 +426,7 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
                 filename=outdir + "test.json", extension="json")
         elif extension == "hdf5" or extension == "h5":
             bilby_object.save_to_file(
-                filename=outdir + "test.h5", extension="hdf5")
+                filename=outdir + "test.hdf5", extension="hdf5")
     elif lalinference and not bilby and not pesummary:
         import h5py
 

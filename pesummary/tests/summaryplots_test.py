@@ -46,7 +46,7 @@ class TestPlotGeneration(object):
             gw=True, extension="hdf5", bilby=True, outdir=self.dir,
             n_samples=10
         )
-        os.rename(f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5")
+        os.rename(f"{self.dir}/test.hdf5", f"{self.dir}/bilby_example.h5")
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
             "--webdir", self.dir,
@@ -109,7 +109,7 @@ class TestPlotGeneration(object):
             n_samples=10
         )
         os.rename(
-            f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5"
+            f"{self.dir}/test.hdf5", f"{self.dir}/bilby_example.h5"
         )
         default_arguments = [
             "--approximant", "IMRPhenomPv2", "IMRPhenomPv3",
@@ -145,7 +145,7 @@ class TestPlotGeneration(object):
             outdir=self.dir, n_samples=10
         )
         os.rename(
-            f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5"
+            f"{self.dir}/test.hdf5", f"{self.dir}/bilby_example.h5"
         )
         default_arguments = [
             "--approximant", "IMRPhenomPv2",
@@ -192,7 +192,7 @@ class TestPlotGeneration(object):
             outdir=self.dir, n_samples=10
         )
         os.rename(
-            f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5"
+            f"{self.dir}/test.hdf5", f"{self.dir}/bilby_example.h5"
         )
         default_arguments = [
             "--approximant", "IMRPhenomPv2", "IMRPhenomPv3",
@@ -228,7 +228,7 @@ class TestPlotGeneration(object):
             outdir=self.dir, n_samples=10
         )
         os.rename(
-            f"{self.dir}/test.h5", f"{self.dir}/bilby_example.h5"
+            f"{self.dir}/test.hdf5", f"{self.dir}/bilby_example.h5"
         )
         default_arguments = [
             "--approximant", "IMRPhenomPv2",

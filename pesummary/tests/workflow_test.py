@@ -322,7 +322,7 @@ class TestCoreBilbyHDF5(Base):
     def test_single_run(self):
         """Test the full workflow with a core bilby result file
         """
-        extension = "h5"
+        extension = "hdf5"
         super(TestCoreBilbyHDF5, self).test_single_run(extension, bilby=True)
 
 
@@ -418,7 +418,7 @@ class TestGWBilbyHDF5(GWBase):
     def test_single_run(self):
         """Test the full workflow with a gw bilby HDF5 result file
         """
-        extension = "h5"
+        extension = "hdf5"
         super(TestGWBilbyHDF5, self).test_single_run(extension, bilby=True)
 
 

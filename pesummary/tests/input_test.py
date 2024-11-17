@@ -37,7 +37,7 @@ class TestCommandLine(object):
         )
         make_result_file(gw=True, bilby=True, outdir=tmpdir, extension="hdf5")
         os.rename(
-            "{}/test.h5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
+            "{}/test.hdf5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
         )
 
     def teardown_method(self):
@@ -139,7 +139,7 @@ class TestInputExceptions(object):
         )
         make_result_file(gw=True, bilby=True, outdir=tmpdir, extension="hdf5")
         os.rename(
-            "{}/test.h5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
+            "{}/test.hdf5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
         )
 
     def test_no_webdir(self):
@@ -223,7 +223,7 @@ class TestInput(object):
         data = make_result_file(gw=True, bilby=True, outdir=tmpdir, extension="hdf5")
         self.parameters, self.samples = data
         os.rename(
-            "{}/test.h5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
+            "{}/test.hdf5".format(tmpdir), "{}/bilby_example.h5".format(tmpdir)
         )
         self.default_arguments = [
             "--approximant", "IMRPhenomPv2",
