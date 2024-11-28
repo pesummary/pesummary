@@ -671,7 +671,17 @@ def _calculate_hp_hc_td(
     """
     if hasattr(lalsim, approximant):
         approx = _lal_approximant_from_string(approximant)
-        result = lalsim.SimInspiralChooseTDWaveform(
+        if lalsim.SimInspiralImplementedFDApproximants(approx):
+            # if the waveform is defined in the frequency domain, use
+            # SimInspiralTD as it appropiately conditions the waveform so it
+            # is correct at f_low in the time domain
+            _func = lalsim.SimInspiralTD
+        else:
+            # if the waveform is defined in the time domain, use
+            # SimInspiralChooseTDWaveform as it doesnt taper the start of the
+            # waveform
+            _func = lalsim.SimInspiralChooseTDWaveform
+        result = _func(
             *waveform_args, delta_t, f_low, f_ref, LAL_parameters, approx
         )
         if debug:
