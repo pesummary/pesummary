@@ -3,9 +3,9 @@
 from pesummary.utils.utils import logger
 import numpy as np
 from scipy.stats import gaussian_kde
-from scipy.interpolate import interp2d
 import multiprocessing
 from pesummary.utils.probability_dict import ProbabilityDict2D
+from pesummary.utils.bounded_interp import RectBivariateSpline
 
 __author__ = [
     "Aditya Vijaykumar <aditya.vijaykumar@ligo.org>",
@@ -39,7 +39,7 @@ def _wrapper_for_multiprocessing_interp(interp, *args):
     *args: tuple
         all args are passed to the interpolant
     """
-    return interp(*args)
+    return interp(*args).T
 
 
 def _imrct_deviation_parameters_integrand_vectorized(
@@ -289,8 +289,8 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
     use_kde=False,
     kde=gaussian_kde,
     kde_kwargs=dict(),
-    interp_method=interp2d,
-    interp_kwargs=dict(fill_value=0.0, bounds_error=False),
+    interp_method=RectBivariateSpline,
+    interp_kwargs=dict(fill_value=0.0, bounds_error=False, kx=1, ky=1),
     vectorize=False,
 ):
     """Compute the IMR Consistency Test deviation parameters.
@@ -382,13 +382,6 @@ def imrct_deviation_parameters_from_final_mass_final_spin(
             bins=(final_mass_bins, final_spin_bins),
             density=True,
         )
-        # transpose density to go from (X,Y) indexing returned by
-        # np.histogram2d() to array (i,j) indexing for further computations.
-        # From now onwards, different rows (i) correspond to different values
-        # of final mass and different columns (j) correspond to different
-        # values of final_spin
-        _inspiral_2d_histogram = _inspiral_2d_histogram.T
-        _postinspiral_2d_histogram = _postinspiral_2d_histogram.T
         inspiral_interp = interp_method(
             final_mass_intp, final_spin_intp, _inspiral_2d_histogram, **interp_kwargs
         )
