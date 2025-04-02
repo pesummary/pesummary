@@ -7,7 +7,7 @@ import pytest
 import numpy as np
 
 from .base import make_argparse, get_list_of_plots, get_list_of_files
-from .base import read_result_file
+from .base import read_result_file, testing_dir
 from pesummary.utils.utils import functions
 from pesummary.cli.summarypages import WebpageGeneration
 from pesummary.cli.summaryplots import PlotGeneration
@@ -84,6 +84,8 @@ class GWBase(Base):
 
         plots = sorted(glob.glob("{}/plots/*.png".format(self.tmpdir)))
         files = sorted(glob.glob("{}/html/*.html".format(self.tmpdir)))
+        for i, j in zip(plots, get_list_of_plots(outdir=self.tmpdir, gw=True)):
+            print(i, j)
         assert all(i == j for i, j in zip(plots, get_list_of_plots(outdir=self.tmpdir, gw=True)))
         assert all(i in plots for i in get_list_of_plots(outdir=self.tmpdir, gw=True))
         assert all(i in get_list_of_plots(outdir=self.tmpdir, gw=True) for i in plots)
@@ -525,7 +527,9 @@ class TestGWLALInference(GWBase):
         parser.add_all_known_options_to_parser()
         default_args = ["--webdir", "{}_pesummary".format(self.tmpdir),
                         "--samples", "{}/samples/posterior_samples.h5".format(self.tmpdir),
-                        "--gw", "--disable_expert"]
+                        "--gw", "--disable_expert", "--pastro_category_file",
+                        "{}/rates.yml".format(testing_dir),
+                        "--catch_terrestrial_probability_error"]
         from pesummary.gw.file.read import read
         f = read("{}/samples/posterior_samples.h5".format(self.tmpdir))
         opts = parser.parse_args(default_args)

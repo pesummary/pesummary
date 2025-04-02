@@ -174,6 +174,8 @@ class _WebpageGeneration(object):
         )
         self.preliminary_pages = {label: False for label in self.labels}
         self.all_pages_preliminary = False
+        if self.add_to_existing:
+            self.add_existing_data()
         self._additional_1d_pages = {label: [] for label in self.labels}
         if self.additional_1d_pages is not None:
             for j, _parameters in self.additional_1d_pages.items():
@@ -516,8 +518,6 @@ class _WebpageGeneration(object):
     def generate_webpages(self):
         """Generate all webpages for all result files passed
         """
-        if self.add_to_existing:
-            self.add_existing_data()
         self.make_home_pages()
         self.make_1d_histogram_pages()
         self.make_corner_pages()

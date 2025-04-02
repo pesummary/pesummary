@@ -148,11 +148,9 @@ def _write_json(
         overwrite=overwrite
     )
     _samples = np.array(samples).T
-    data = {
-        dataset_name: {
-            param: _samples[num] for num, param in enumerate(parameters)
-        }
-    }
+    data = {param: _samples[num] for num, param in enumerate(parameters)}
+    if dataset_name is not None:
+        data = {dataset_name: data}
     with open(filename, "w") as f:
         json.dump(data, f, indent=indent, sort_keys=sort_keys, cls=cls)
 

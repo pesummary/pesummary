@@ -9,7 +9,7 @@ from pesummary.gw.cli.inputs import PlottingInput, WebpagePlusPlottingPlusMetaFi
 from pesummary.cli.summaryplots import _GWPlotGeneration as GWPlotGeneration
 from pesummary.gw.file.meta_file import GWMetaFile
 from pesummary.cli.summarypages import _GWWebpageGeneration as GWWebpageGeneration
-from .base import make_result_file, get_list_of_plots, data_dir
+from .base import make_result_file, get_list_of_plots, data_dir, testing_dir
 
 import pytest
 import tempfile
@@ -54,7 +54,10 @@ class TestPlotGeneration(object):
             "--config", data_dir + "/config_bilby.ini",
             "--psd", f"{self.dir}/psd.dat",
             "--calibration", f"{self.dir}/calibration.dat",
-            "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
+            "--labels", "H10", "--no_ligo_skymap", "--disable_expert",
+            "--pastro_category_file", f"{testing_dir}/rates.yml",
+            "--catch_terrestrial_probability_error"
+        ]
         opts = parser.parse_args(default_arguments)
         inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
@@ -83,7 +86,10 @@ class TestPlotGeneration(object):
             "--webdir", self.dir,
             "--samples", f"{self.dir}/lalinference_example.h5",
             "--config", data_dir + "/config_lalinference.ini",
-            "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
+            "--labels", "H10", "--no_ligo_skymap", "--disable_expert",
+            "--pastro_category_file", f"{testing_dir}/rates.yml",
+            "--catch_terrestrial_probability_error"
+        ]
         opts = parser.parse_args(default_arguments)
         inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
@@ -116,7 +122,10 @@ class TestPlotGeneration(object):
             "--webdir", self.dir,
             "--samples", f"{self.dir}/bilby_example.h5",
             f"{self.dir}/lalinference_example.h5",
-            "--labels", "H10", "H11", "--no_ligo_skymap", "--disable_expert"]
+            "--labels", "H10", "H11", "--no_ligo_skymap", "--disable_expert",
+            "--pastro_category_file", f"{testing_dir}/rates.yml",
+            "--catch_terrestrial_probability_error"
+        ]
         opts = parser.parse_args(default_arguments)
         inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs)
@@ -151,7 +160,10 @@ class TestPlotGeneration(object):
             "--approximant", "IMRPhenomPv2",
             "--webdir", self.dir,
             "--samples", f"{self.dir}/bilby_example.h5",
-            "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
+            "--labels", "H10", "--no_ligo_skymap", "--disable_expert",
+            "--pastro_category_file", f"{testing_dir}/rates.yml",
+            "--catch_terrestrial_probability_error"
+        ]
         opts = parser.parse_args(default_arguments)
         inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         webpage = GWPlotGeneration(inputs)
@@ -165,7 +177,10 @@ class TestPlotGeneration(object):
             "--approximant", "IMRPhenomPv3",
             "--existing_webdir", self.dir,
             "--samples", f"{self.dir}/lalinference_example.h5",
-            "--labels", "H11", "--no_ligo_skymap", "--disable_expert"]
+            "--labels", "H11", "--no_ligo_skymap", "--disable_expert",
+            "--pastro_category_file", f"{testing_dir}/rates.yml",
+            "--catch_terrestrial_probability_error"
+        ]
         opts = parser.parse_args(default_arguments)
         inputs = PlottingInput(opts)
         webpage = GWPlotGeneration(inputs) 
@@ -200,7 +215,9 @@ class TestPlotGeneration(object):
             "--samples", f"{self.dir}/bilby_example.h5",
             f"{self.dir}/lalinference_example.h5",
             "--labels", "H10", "H11", "--no_ligo_skymap",
-            "--disable_comparison", "--disable_expert"
+            "--disable_comparison", "--disable_expert",
+            "--pastro_category_file", f"{testing_dir}/rates.yml",
+            "--catch_terrestrial_probability_error"
         ]
         opts = parser.parse_args(default_arguments)
         inputs = PlottingInput(opts)
@@ -234,7 +251,10 @@ class TestPlotGeneration(object):
             "--approximant", "IMRPhenomPv2",
             "--webdir", self.dir,
             "--samples", f"{self.dir}/bilby_example.h5",
-            "--labels", "H10", "--no_ligo_skymap", "--disable_expert"]
+            "--labels", "H10", "--no_ligo_skymap", "--disable_expert",
+            "--pastro_category_file", f"{testing_dir}/rates.yml",
+            "--catch_terrestrial_probability_error"
+        ]
         opts = parser.parse_args(default_arguments)
         inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         webpage = GWPlotGeneration(inputs)
@@ -249,7 +269,9 @@ class TestPlotGeneration(object):
             "--existing_webdir", self.dir,
             "--samples", f"{self.dir}/lalinference_example.h5",
             "--labels", "H11", "--no_ligo_skymap",
-            "--disable_comparison", "--disable_expert"
+            "--disable_comparison", "--disable_expert",
+            "--pastro_category_file", f"{testing_dir}/rates.yml",
+            "--catch_terrestrial_probability_error"
         ]
         opts = parser.parse_args(default_arguments)
         inputs = PlottingInput(opts)

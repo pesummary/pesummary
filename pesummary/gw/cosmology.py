@@ -58,3 +58,18 @@ def Riess2019_H0_cosmology(base_cosmology):
     return cosmo.LambdaCDM(
         H0=74.03, Om0=_base_cosmology.Om0, Ode0=_base_cosmology.Ode0
     )
+
+
+def hubble_distance(cosmology):
+    """
+    """
+    from astropy.units import cds, Mpc
+    cosmo = get_cosmology(cosmology)
+    return (cds.c / cosmo.H0).to_value(unit=Mpc)
+
+
+def hubble_parameter(cosmology, redshift):
+    """
+    """
+    cosmo = get_cosmology(cosmology)
+    return cosmo.efunc(redshift)

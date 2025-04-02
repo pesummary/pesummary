@@ -2056,7 +2056,7 @@ class PlottingInput(SamplesInput):
     @property
     def default_directories(self):
         dirs = super(PlottingInput, self).default_directories
-        dirs += ["plots", "plots/corner", "plots/publication"]
+        dirs += ["plots", "plots/corner", "plots/publication", "samples"]
         return dirs
 
 

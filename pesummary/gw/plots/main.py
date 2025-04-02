@@ -32,7 +32,7 @@ class _PlotGeneration(_BasePlotGeneration):
         nsamples_for_skymap=None, detectors=None, maxL_samples=None,
         gwdata=None, calibration_definition=None, calibration=None, psd=None,
         multi_threading_for_skymap=None, approximant=None,
-        pepredicates_probs=None, include_prior=False, publication=False,
+        classification_probs=None, include_prior=False, publication=False,
         existing_approximant=None, existing_psd=None, existing_calibration=None,
         existing_weights=None, weights=None, disable_comparison=False,
         linestyles=None, disable_interactive=False, disable_corner=False,
@@ -90,7 +90,7 @@ class _PlotGeneration(_BasePlotGeneration):
         self.multi_threading_for_skymap = multi_threading_for_skymap
         self.approximant = approximant
         self.existing_approximant = existing_approximant
-        self.pepredicates_probs = pepredicates_probs
+        self.classification_probs = classification_probs
         self.publication = publication
         self.publication_kwargs = publication_kwargs
         self._ligo_skymap_PID = {}
@@ -105,7 +105,7 @@ class _PlotGeneration(_BasePlotGeneration):
             "data": self.gwdata_plots,
             "violin": self.violin_plot,
             "spin_disk": self.spin_dist_plot,
-            "pepredicates": self.pepredicates_plot
+            "classification": self.classification_plot
         })
         if self.make_comparison:
             self.plot_type_dictionary.update({
@@ -136,8 +136,8 @@ class _PlotGeneration(_BasePlotGeneration):
         self.try_to_make_a_plot("skymap", label=label)
         self.try_to_make_a_plot("waveform_td", label=label)
         self.try_to_make_a_plot("waveform_fd", label=label)
-        if self.pepredicates_probs[label] is not None:
-            self.try_to_make_a_plot("pepredicates", label=label)
+        if self.classification_probs[label] is not None:
+            self.try_to_make_a_plot("classification", label=label)
         if self.gwdata:
             self.try_to_make_a_plot("data", label=label)
 
@@ -1079,8 +1079,8 @@ class _PlotGeneration(_BasePlotGeneration):
             fig, filename, preliminary=preliminary
         )
 
-    def pepredicates_plot(self, label):
-        """Generate plots with the PEPredicates package
+    def classification_plot(self, label):
+        """Generate plots showing source classification probabilities
 
         Parameters
         ----------
@@ -1091,22 +1091,17 @@ class _PlotGeneration(_BasePlotGeneration):
             samples = self.samples[label].combine
         else:
             samples = self.samples[label]
-        self._pepredicates_plot(
+        self._classification_plot(
             self.savedir, samples, label,
-            self.pepredicates_probs[label]["default"], population_prior=False,
-            preliminary=self.preliminary_pages[label], checkpoint=self.checkpoint
-        )
-        self._pepredicates_plot(
-            self.savedir, samples, label,
-            self.pepredicates_probs[label]["population"], population_prior=True,
+            self.classification_probs[label]["default"],
             preliminary=self.preliminary_pages[label], checkpoint=self.checkpoint
         )
 
     @staticmethod
     @no_latex_plot
-    def _pepredicates_plot(
-        savedir, samples, label, probabilities, population_prior=False,
-        preliminary=False, checkpoint=False
+    def _classification_plot(
+        savedir, samples, label, probabilities, preliminary=False,
+        checkpoint=False
     ):
         """Generate a plot with the PEPredicates package for a given set of
         samples
@@ -1121,49 +1116,40 @@ class _PlotGeneration(_BasePlotGeneration):
             the label corresponding to the result file
         probabilities: dict
             dictionary of classification probabilities
-        population_prior: Bool, optional
-            if True, the samples will be reweighted according to a population
-            prior
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
-        from pesummary.gw.classification import PEPredicates
+        from pesummary.gw.classification import PAstro, EMBright
 
-        if not population_prior:
-            filename = os.path.join(
-                savedir, "{}_default_pepredicates.png".format(label)
-            )
-        else:
-            filename = os.path.join(
-                savedir, "{}_population_pepredicates.png".format(label)
-            )
-
-        _pepredicates = PEPredicates(samples)
+        _pastro = PAstro(samples)
+        filename = os.path.join(
+            savedir, "{}.pesummary.p_astro.png".format(label)
+        )
         if os.path.isfile(filename) and checkpoint:
             pass
         else:
-            fig = _pepredicates.plot(
-                type="pepredicates", population=population_prior,
-                probabilities=probabilities
+            fig = _pastro.plot(
+                type="bar", probabilities={
+                    key: value for key, value in probabilities.items() if
+                    key in ["BBH", "BNS", "NSBH", "Terrestrial"]
+                }
             )
             _PlotGeneration.save(
                 fig, filename, preliminary=preliminary
             )
 
-        if not population_prior:
-            filename = os.path.join(
-                savedir, "{}_default_pepredicates_bar.png".format(label)
-            )
-        else:
-            filename = os.path.join(
-                savedir, "{}_population_pepredicates_bar.png".format(label)
-            )
+        _embright = EMBright(samples)
+        filename = os.path.join(
+            savedir, "{}.pesummary.em_bright.png".format(label)
+        )
         if os.path.isfile(filename) and checkpoint:
             pass
         else:
-            fig = _pepredicates.plot(
-                type="bar", probabilities=probabilities,
-                population=population_prior
+            fig = _embright.plot(
+                type="bar", probabilities={
+                    key: value for key, value in probabilities.items() if
+                    key in ["HasNS", "HasRemnant", "HasMassGap"]
+                }
             )
             _PlotGeneration.save(
                 fig, filename, preliminary=preliminary

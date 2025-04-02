@@ -8,6 +8,36 @@ from pesummary import conf
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
+def _get_gracedb_client(service_url=conf.gracedb_server):
+    """Return a ligo.gracedb.rest.GraceDb object
+
+    Parameters
+    ----------
+    service_url: str, optional
+        service url you wish to use when accessing data from GraceDB
+    """
+    return GraceDb(service_url=service_url)
+
+
+def get_gracedb_file(
+    gracedb_id, filename, service_url=conf.gracedb_server
+):
+    """Grab a file from GraceDB for a specific event
+
+    Parameters
+    ----------
+    gracedb_id: str
+        the GraceDB id of the event you wish to retrieve the data for
+    filename: str
+        the name of the file you wish to retrieve from GraceDB
+    service_url: str, optional
+        service url you wish to use when accessing data from GraceDB
+    """
+    client = _get_gracedb_client(service_url=service_url)
+    response = client.files(gracedb_id, filename)
+    return response.json()
+
+
 def get_gracedb_data(
     gracedb_id, superevent=False, info=None, json=None,
     service_url=conf.gracedb_server
@@ -28,7 +58,7 @@ def get_gracedb_data(
     service_url: str, optional
         service url you wish to use when accessing data from GraceDB
     """
-    client = GraceDb(service_url=service_url)
+    client = _get_gracedb_client(service_url=service_url)
     if json is None and superevent:
         json = client.superevent(gracedb_id).json()
     elif json is None:

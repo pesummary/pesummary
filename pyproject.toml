@@ -63,7 +63,7 @@ lint = [
 ]
 test = [
 	"astropy >=4.0,!=4.3.0",
-	"beautifulsoup4",
+	"beautifulsoup4 >=4.13.3",
 	"bilby_pipe",
 	"coverage <=7.4.4", # v7.5.0 incompatible with coverage-badge <=1.1.0
 	"coverage-badge",
@@ -87,7 +87,6 @@ extras = [
 	"ligo-em-bright >=1.1.5",
 	"ligo.skymap",
 	"nbformat",
-	"pepredicates >=0.0.3",
 ]
 
 [project.scripts]

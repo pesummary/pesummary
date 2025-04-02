@@ -385,6 +385,86 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                 self.file_kwargs[label]["meta_data"]["gracedb"] = json
 
     @property
+    def terrestrial_probability(self):
+        return self._terrestrial_probability
+
+    @terrestrial_probability.setter
+    def terrestrial_probability(self, terrestrial_probability):
+        if terrestrial_probability is None and self.gracedb is not None:
+            logger.info(
+                "No terrestrial probability provided. Trying to download "
+                "from gracedb"
+            )
+            from pesummary.core.fetch import download_and_read_file
+            from urllib.error import HTTPError
+            from json.decoder import JSONDecodeError
+            import json
+            try:
+                ff = download_and_read_file(
+                    f"{self.gracedb_server}/superevents/{self.gracedb}/"
+                    f"files/p_astro.json", read_file=False,
+                    outdir=f"{self.webdir}/samples", delete_on_exit=False
+                )
+                with open(ff, "r") as f:
+                    data = json.load(f)
+                    self._terrestrial_probability = [float(data["Terrestrial"])]
+            except (RuntimeError, JSONDecodeError) as e:
+                logger.warning(
+                    "Unable to grab terrestrial probability from gracedb "
+                    "because {}".format(e)
+                )
+                self._terrestrial_probability = [None]
+            except HTTPError as e:
+                from pesummary.gw.gracedb import get_gracedb_data, get_gracedb_file
+                try:
+                    preferred = get_gracedb_data(
+                        self.gracedb, info=["preferred_event_data"],
+                        service_url=self.gracedb_server
+                    )["preferred_event_data"]["submitter"]
+                    _pipelines = [
+                        "pycbc", "gstlal", "mbta", "spiir"
+                    ]
+                    _filename = None
+                    for _pipe in _pipelines:
+                        if _pipe in preferred:
+                            _filename = f"{_pipe}.p_astro.json"
+                    if _filename is None:
+                        raise e
+                    data = get_gracedb_file(
+                        self.gracedb, _filename, service_url=self.gracedb_server
+                    )
+                    with open(f"{self.webdir}/samples/{_filename}", "w") as json_file:
+                        json.dump(data, json_file)
+                    self._terrestrial_probability = [float(data["Terrestrial"])]
+                except Exception as e:
+                    logger.warning(
+                        "Unable to grab terrestrial probability from gracedb "
+                        "because {}".format(e)
+                    )
+                    self._terrestrial_probability = [None]
+            self._terrestrial_probability *= len(self.labels)
+        elif terrestrial_probability is None:
+            self._terrestrial_probability = [None] * len(self.labels)
+        else:
+            if len(terrestrial_probability) == 1 and len(self.labels) > 1:
+                logger.debug(
+                    f"Assuming a terrestrial probability: "
+                    f"{terrestrial_probability} for all analyses"
+                )
+                self._terrestrial_probability = [
+                    float(terrestrial_probability[0])
+                ] * len(self.labels)
+            elif len(terrestrial_probability) == len(self.labels):
+                self._terrestrial_probability = [
+                    float(_) for _ in terrestrial_probability
+                ]
+            else:
+                raise ValueError(
+                    "Please provide a terrestrial probability for each "
+                    "analysis, or a single value to be used for all analyses"
+                )
+
+    @property
     def detectors(self):
         return self._detectors
 
@@ -731,25 +811,65 @@ class _GWInput(pesummary.core.cli.inputs._Input):
         self._psd_default = psd_default
 
     @property
-    def pepredicates_probs(self):
-        return self._pepredicates_probs
+    def pastro_probs(self):
+        return self._pastro_probs
 
-    @pepredicates_probs.setter
-    def pepredicates_probs(self, pepredicates_probs):
-        from pesummary.gw.classification import PEPredicates
+    @pastro_probs.setter
+    def pastro_probs(self, pastro_probs):
+        from pesummary.gw.classification import PAstro
 
         classifications = {}
         for num, i in enumerate(list(self.samples.keys())):
             try:
-                classifications[i] = PEPredicates(
-                    self.samples[i]
-                ).dual_classification()
+                import importlib
+                distance_prior = self.priors["analytic"]["luminosity_distance"]
+                cls = distance_prior.split("(")[0]
+                module = ".".join(cls.split(".")[:-1])
+                cls = cls.split(".")[-1]
+                cls = getattr(importlib.import_module(module), cls, cls)
+                args = "(".join(distance_prior.split("(")[1:])[:-1]
+                distance_prior = cls.from_repr(args)
+            except KeyError:
+                logger.debug(
+                    f"Unable to find a distance prior. Defaulting to stored "
+                    f"prior in pesummary.gw.classification.PAstro for "
+                    f"source classification probabilities"
+                )
+                distance_prior = None
+            except AttributeError:
+                logger.debug(
+                    f"Unable to load distance prior: {distance_prior}. "
+                    f"Defaulting to stored prior in "
+                    f"pesummary.gw.classification.PAstro for source "
+                    f"classification probabilities"
+                )
+                distance_prior = None
+            try:
+                _cls = PAstro(
+                    self.samples[i], category_data=self.pastro_category_file,
+                    terrestrial_probability=self.terrestrial_probability[num],
+                    distance_prior=distance_prior,
+                    catch_terrestrial_probability_error=self.catch_terrestrial_probability_error
+                )
+                classifications[i] = {"default": _cls.classification()}
+                try:
+                    _cls.save_to_file(
+                        f"{i}.pesummary.p_astro.json",
+                        classifications[i]["default"],
+                        outdir=f"{self.webdir}/samples",
+                        overwrite=True
+                    )
+                except FileNotFoundError as e:
+                    logger.warning(
+                        f"Failed to write PAstro probabilities to file "
+                        f"because {e}"
+                    )
             except Exception as e:
                 logger.warning(
                     "Failed to generate source classification probabilities "
                     "because {}".format(e)
                 )
-                classifications[i] = None
+                classifications[i] = {"default": PAstro.defaults}
         if self.mcmc_samples:
             if any(_probs is None for _probs in classifications.values()):
                 classifications[self.labels[0]] = None
@@ -770,26 +890,39 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                     } for prior, _probs in
                     list(classifications.values())[0].items()
                 }
-        self._pepredicates_probs = classifications
+        self._pastro_probs = classifications
 
     @property
-    def pastro_probs(self):
-        return self._pastro_probs
+    def embright_probs(self):
+        return self._embright_probs
 
-    @pastro_probs.setter
-    def pastro_probs(self, pastro_probs):
-        from pesummary.gw.classification import PAstro
+    @embright_probs.setter
+    def embright_probs(self, embright_probs):
+        from pesummary.gw.classification import EMBright
 
         probabilities = {}
         for num, i in enumerate(list(self.samples.keys())):
             try:
-                probabilities[i] = PAstro(self.samples[i]).dual_classification()
+                _cls = EMBright(self.samples[i])
+                probabilities[i] = {"default": _cls.classification()}
+                try:
+                    _cls.save_to_file(
+                        f"{i}.pesummary.em_bright.json",
+                        probabilities[i]["default"],
+                        outdir=f"{self.webdir}/samples",
+                        overwrite=True
+                    )
+                except FileNotFoundError as e:
+                    logger.warning(
+                        f"Failed to write EM bright probabilities to file "
+                        f"because {e}"
+                    )
             except Exception as e:
                 logger.warning(
                     "Failed to generate em_bright probabilities because "
                     "{}".format(e)
                 )
-                probabilities[i] = None
+                probabilities[i] = {"default": EMBright.defaults}
         if self.mcmc_samples:
             if any(_probs is None for _probs in probabilities.values()):
                 probabilities[self.labels[0]] = None
@@ -809,7 +942,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                         ), 3) for key in _probs.keys()
                     } for prior, _probs in list(probabilities.values())[0].items()
                 }
-        self._pastro_probs = probabilities
+        self._embright_probs = probabilities
 
     @property
     def preliminary_pages(self):
@@ -1073,6 +1206,12 @@ class SamplesInput(_GWInput, pesummary.core.cli.inputs.SamplesInput):
             self.existing_calibration = None
             self.existing_skymap = None
         self.approximant = self.opts.approximant
+        self.gracedb_server = self.opts.gracedb_server
+        self.gracedb_data = self.opts.gracedb_data
+        self.gracedb = self.opts.gracedb
+        self.pastro_category_file = self.opts.pastro_category_file
+        self.terrestrial_probability = self.opts.terrestrial_probability
+        self.catch_terrestrial_probability_error = self.opts.catch_terrestrial_probability_error
         self.approximant_flags = self.opts.approximant_flags
         self.detectors = None
         self.skymap = None
@@ -1121,8 +1260,17 @@ class PlottingInput(SamplesInput, pesummary.core.cli.inputs.PlottingInput):
                 )
             )
         self.preliminary_pages = None
-        self.pepredicates_probs = []
         self.pastro_probs = []
+        self.embright_probs = []
+        self.classification_probs = {}
+        for key in self.pastro_probs.keys():
+            self.classification_probs[key] = {"default": {}}
+            self.classification_probs[key]["default"].update(
+                self.pastro_probs[key]["default"]
+            )
+            self.classification_probs[key]["default"].update(
+                self.embright_probs[key]["default"]
+            )
 
 
 class WebpageInput(SamplesInput, pesummary.core.cli.inputs.WebpageInput):
@@ -1130,16 +1278,22 @@ class WebpageInput(SamplesInput, pesummary.core.cli.inputs.WebpageInput):
     """
     def __init__(self, *args, **kwargs):
         super(WebpageInput, self).__init__(*args, **kwargs)
-        self.gracedb_server = self.opts.gracedb_server
-        self.gracedb_data = self.opts.gracedb_data
-        self.gracedb = self.opts.gracedb
         self.public = self.opts.public
         if not hasattr(self, "preliminary_pages"):
             self.preliminary_pages = None
-        if not hasattr(self, "pepredicates_probs"):
-            self.pepredicates_probs = []
         if not hasattr(self, "pastro_probs"):
             self.pastro_probs = []
+        if not hasattr(self, "embright_probs"):
+            self.embright_probs = []
+        self.classification_probs = {}
+        for key in self.pastro_probs.keys():
+            self.classification_probs[key] = {"default": {}}
+            self.classification_probs[key]["default"].update(
+                self.pastro_probs[key]["default"]
+            )
+            self.classification_probs[key]["default"].update(
+                self.embright_probs[key]["default"]
+            )
 
 
 class WebpagePlusPlottingInput(PlottingInput, WebpageInput):
