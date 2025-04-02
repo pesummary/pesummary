@@ -5,7 +5,7 @@ import numpy as np
 from scipy.stats import gaussian_kde
 import multiprocessing
 from pesummary.utils.probability_dict import ProbabilityDict2D
-from pesummary.utils.bounded_interp import RectBivariateSpline
+from pesummary.utils.interpolate import RectBivariateSpline
 
 __author__ = [
     "Aditya Vijaykumar <aditya.vijaykumar@ligo.org>",

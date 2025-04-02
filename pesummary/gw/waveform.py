@@ -474,7 +474,7 @@ def td_waveform(
         )
     if level is not None:
         import multiprocessing
-        from pesummary.core.plots.interpolate import Bounded_interp1d
+        from pesummary.utils.interpolate import BoundedInterp1d
         td_waveform_list = []
         _key = list(samples.keys())[0]
         N = len(samples[_key])
@@ -511,7 +511,7 @@ def td_waveform(
             td_waveform_array = {
                 polarization: np.array(
                     [
-                        Bounded_interp1d(
+                        BoundedInterp1d(
                             np.array(waveform[polarization].times, dtype=np.float64),
                             waveform[polarization], xlow=mint, xhigh=maxt
                         )(new_t) for waveform in td_waveform_array
@@ -524,7 +524,7 @@ def td_waveform(
             new_t = np.arange(mint, maxt, delta_t)
             td_waveform_array = {
                 "h_t": [
-                    Bounded_interp1d(
+                    BoundedInterp1d(
                         np.array(waveform.times, dtype=np.float64), waveform,
                         xlow=mint, xhigh=maxt
                     )(new_t) for waveform in td_waveform_array
