@@ -8,7 +8,8 @@ from getpass import getuser
 import numpy as np
 
 from .base import (
-    make_result_file, get_list_of_plots, get_list_of_files, data_dir
+    make_result_file, get_list_of_plots, get_list_of_files, data_dir,
+    testing_dir
 )
 import pytest
 from pesummary.utils.exceptions import InputError
@@ -465,7 +466,9 @@ class TestSummaryPages(Base):
         command_line = (
             "summarypages --webdir {0} --samples {0}/test.json --gw "
             "--labels gw0 --nsamples 100 --disable_corner "
-            "--reweight_samples uniform_in_comoving_volume ".format(tmpdir)
+            "--reweight_samples uniform_in_comoving_volume "
+            "--pastro_category_file {1}/rates.yml "
+            "--catch_terrestrial_probability_error".format(tmpdir, testing_dir)
         )
         self.launch(command_line)
         self.check_output(number=1, expert=False, gw=True)
@@ -804,7 +807,8 @@ class TestSummaryPagesLW(Base):
         plots = get_list_of_plots(
             gw=gw, number=number, mcmc=False, existing_plot=False,
             expert=False, parameters=parameters, outdir=outdir,
-            extra_gw_plots=extra_gw_plots
+            extra_gw_plots=extra_gw_plots,
+            remove_gw_plots=["classification"]
         )
         assert all(
             i in plots for i in glob.glob("{}/plots/*.png".format(outdir))
@@ -814,7 +818,8 @@ class TestSummaryPagesLW(Base):
         )
         files = get_list_of_files(
             gw=gw, number=number, existing_plot=False, parameters=parameters,
-            sections=sections, outdir=outdir, extra_gw_pages=extra_gw_plots
+            sections=sections, outdir=outdir, extra_gw_pages=extra_gw_plots,
+            remove_gw_pages=["classification"]
         )
         assert all(
             i in files for i in glob.glob("{}/html/*.html".format(outdir))
@@ -951,13 +956,14 @@ class TestSummaryClassification(Base):
         import json
 
         files = glob.glob("{}/*".format(tmpdir))
-        assert "{}/test_default_prior_pe_classification.json".format(tmpdir) in files
-        assert "{}/test_default_pepredicates_bar.png".format(tmpdir) in files
-        with open("{}/test_default_prior_pe_classification.json".format(tmpdir), "r") as f:
+        assert "{}/test_pe_classification.json".format(tmpdir) in files
+        assert "{}/test_pastro_bar.png".format(tmpdir) in files
+        with open("{}/test_pe_classification.json".format(tmpdir), "r") as f:
             data = json.load(f)
         assert all(
             i in data.keys() for i in [
-                "BNS", "NSBH", "BBH", "MassGap", "HasNS", "HasRemnant"
+                "Terrestrial", "BNS", "NSBH", "BBH", "HasMassGap", "HasNS",
+                "HasRemnant"
             ]
         )
 
@@ -967,7 +973,9 @@ class TestSummaryClassification(Base):
         """
         command_line = (
             "summaryclassification --webdir {0} --samples "
-            "{0}/bilby.json --prior default --label test".format(tmpdir)
+            "{0}/bilby.json --prior default --label test "
+            "--pastro_category_file {1}/rates.yml "
+            "--catch_terrestrial_probability_error".format(tmpdir, testing_dir)
         )
         self.launch(command_line)
         self.check_output()
@@ -978,7 +986,9 @@ class TestSummaryClassification(Base):
         """
         command_line = (
             "summaryclassification --webdir {0} --samples "
-            "{0}/pesummary.json --prior default".format(tmpdir)
+            "{0}/pesummary.json --prior default "
+            "--pastro_category_file {1}/rates.yml "
+            "--catch_terrestrial_probability_error".format(tmpdir, testing_dir)
         )
         self.launch(command_line)
         self.check_output()

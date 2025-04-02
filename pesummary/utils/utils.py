@@ -362,24 +362,24 @@ def _add_existing_data(namespace):
                 namespace.maxL_samples[i] = {
                     key: val.maxL for key, val in namespace.samples[i].items()
                 }
-        if hasattr(namespace, "pepredicates_probs"):
-            if i not in list(namespace.pepredicates_probs.keys()):
-                from pesummary.gw.classification import PEPredicates
-                try:
-                    namespace.pepredicates_probs[i] = PEPredicates(
-                        namespace.existing_samples[i]
-                    ).dual_classification()
-                except Exception:
-                    namespace.pepredicates_probs[i] = None
         if hasattr(namespace, "pastro_probs"):
             if i not in list(namespace.pastro_probs.keys()):
                 from pesummary.gw.classification import PAstro
                 try:
-                    namespace.pastro_probs[i] = PAstro(
-                        namespace.existing_samples[i]
-                    ).dual_classification()
+                    namespace.pastro_probs[i] = {"default": PAstro(
+                        namespace.existing_samples[i],
+                    ).classification()}
                 except Exception:
-                    namespace.pastro_probs[i] = None
+                    namespace.pastro_probs[i] = {"default": PAstro.defaults}
+        if hasattr(namespace, "embright_probs"):
+            if i not in list(namespace.embright_probs.keys()):
+                from pesummary.gw.classification import EMBright
+                try:
+                    namespace.embright_probs[i] = {"default": EMBright(
+                        namespace.existing_samples[i]
+                    ).classification()}
+                except Exception:
+                    namespace.embright_probs[i] = {"default": EMBright.defaults}
     if hasattr(namespace, "result_files"):
         number = len(namespace.labels)
         while len(namespace.result_files) < number:

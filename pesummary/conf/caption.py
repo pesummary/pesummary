@@ -95,24 +95,16 @@ caption_default_classification_mass_1_mass_2 = (
     "red MassGap."
 )
 
-# Caption for population mass1 mass2 classification plot
-caption_population_classification_mass_1_mass_2 = (
-    "Scatter plot showing the individual samples with their classifications "
-    "over the mass_1 and mass_2 parameter space. The samples have been "
-    "reweighted to a population prior. Green regions correspond to BBHs, blue "
-    "BNS, orange NSBH and red MassGap."
+# Caption for default pastro classification bar plot
+caption_pastro_classification_bar = (
+    "Bar plot showing the most likely classification of the binary (BBH, NSBH, "
+    "BNS, Terrestrial) based on the samples."
 )
 
-# Caption for default classification bar plot
-caption_default_classification_bar = (
-    "Bar plot showing the most likely classification of the binary based on "
-    "the samples."
-)
-
-# Caption for population classification bar plot
-caption_population_classification_bar = (
-    "Bar plot showing the most likely classification of the binary based on "
-    "the samples which have been reweighted to a population prior."
+# Caption for default embright classification bar plot
+caption_embright_classification_bar = (
+    "Bar plot showing the embright probability for the binary (HasNS, "
+    "HasRemnant, HasMassGap) based on the samples."
 )
 
 # Caption for 2d contour plots

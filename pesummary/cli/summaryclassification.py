@@ -6,7 +6,7 @@ import os
 import pesummary
 from pesummary.core.cli.inputs import _Input
 from pesummary.gw.file.read import read as GWRead
-from pesummary.gw.classification import PEPredicates, PAstro
+from pesummary.gw.classification import EMBright, PAstro
 from pesummary.utils.utils import make_dir, logger
 from pesummary.utils.exceptions import InputError
 from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
@@ -21,65 +21,82 @@ class ArgumentParser(_ArgumentParser):
         options = super(ArgumentParser, self)._pesummary_options()
         options.update(
             {
-                "--prior": {
-                    "choices": ["population", "default", "both"],
-                    "default": "both",
-                    "help": (
-                        "Prior to use when calculating source classification "
-                        "probabilities"
-                    )
-                },
                 "--plot": {
-                    "choices": ["bar", "mass_1_mass_2"],
+                    "choices": ["bar"],
                     "default": "bar",
                     "help": "Name of the plot you wish to make",
                 },
-            }
+                "--pastro_category_file": {
+                    "default": None,
+                    "help": (
+                        "path to yml file containing summary data for each "
+                        "category (BBH, BNS, NSBH). This includes e.g. rates, "
+                        "mass bounds etc. This is used when computing PAstro"
+                    )
+                },
+                "--terrestrial_probability": {
+                    "default": None,
+                    "help": (
+                        "Terrestrial probability for the candidate you are "
+                        "analysing. This is used when computing PAstro"
+                    ),
+                },
+                "--catch_terrestrial_probability_error": {
+                    "default": False,
+                    "action": "store_true",
+                    "help": (
+                        "Catch the ValueError raised when no terrestrial "
+                        "probability is provided when computing PAstro"
+                    ),
+                    "key": "gw",
+                },
+            },
         )
         return options
 
 
-def generate_probabilities(result_files, prior="both", seed=123456789):
+def generate_probabilities(
+    result_files, classification_file, terrestrial_probability,
+    catch_terrestrial_probability_error
+):
     """Generate the classification probabilities
 
     Parameters
     ----------
     result_files: list
         list of result files
-    prior: str
-        prior you wish to reweight your samples too
     """
     classifications = []
-    if prior == "both":
-        _func = "dual_classification"
-        _kwargs = {}
-    else:
-        _func = "classification"
-        _kwargs = {"population": True if prior == "population" else False}
+    _func = "classification"
+    _kwargs = {}
 
     for num, i in enumerate(result_files):
         mydict = {}
         if not _Input.is_pesummary_metafile(i):
             mydict = getattr(
-                PEPredicates, "{}_from_file".format(_func)
-            )(i, seed=seed, **_kwargs)
-            em_bright = getattr(
-                PAstro, "{}_from_file".format(_func)
-            )(i, seed=seed, **_kwargs)
+                EMBright, "{}_from_file".format(_func)
+            )(i, **_kwargs)
+            em_bright = getattr(PAstro, "{}_from_file".format(_func))(
+                i, category_data=classification_file,
+                terrestrial_probability=terrestrial_probability,
+                catch_terrestrial_probability_error=catch_terrestrial_probability_error,
+                **_kwargs
+            )
         else:
             f = GWRead(i)
             label = f.labels[0]
             mydict = getattr(
-                 PEPredicates(f.samples_dict[label]), _func
-            )(seed=seed, **_kwargs)
+                 EMBright(f.samples_dict[label]), _func
+            )(**_kwargs)
             em_bright = getattr(
-                PAstro(f.samples_dict[label]), _func
-            )(seed=seed, **_kwargs)
-        if prior == "both":
-            mydict["default"].update(em_bright["default"])
-            mydict["population"].update(em_bright["population"])
-        else:
-            mydict.update(em_bright)
+                PAstro(
+                    f.samples_dict[label],
+                    category_data=classification_file,
+                    terrestrial_probability=terrestrial_probability,
+                    catch_terrestrial_probability_error=catch_terrestrial_probability_error
+                ), _func
+            )(**_kwargs)
+        mydict.update(em_bright)
         classifications.append(mydict)
     return classifications
 
@@ -98,18 +115,18 @@ def save_classifications(savedir, classifications, labels):
     import os
     import json
 
-    base_path = os.path.join(savedir, "{}_{}_prior_pe_classification.json")
+    base_path = os.path.join(savedir, "{}_pe_classification.json")
     for num, i in enumerate(classifications):
         for prior in i.keys():
-            with open(base_path.format(labels[num], prior), "w") as f:
-                json.dump(i[prior], f)
+            with open(base_path.format(labels[num]), "w") as f:
+                json.dump(i, f)
 
 
 def make_plots(
-    result_files, webdir=None, labels=None, prior=None, plot_type="bar",
+    result_files, webdir=None, labels=None, plot_type="bar",
     probs=None
 ):
-    """Save the plots generated by PEPredicates
+    """Save the plots generated by EMBright
 
     Parameters
     ----------
@@ -119,9 +136,6 @@ def make_plots(
         path to save the files
     labels: list
         lisy of strings to identify each result file
-    prior: str
-        Either 'default' or 'population'. If 'population' the samples are reweighted
-        to a population prior
     plot_type: str
         The plot type that you wish to make
     probs: dict
@@ -140,43 +154,15 @@ def make_plots(
             f.generate_all_posterior_samples()
         if plot_type == "bar":
             from pesummary.gw.plots.plot import _classification_plot
-            if prior == "both":
-                probs_func = lambda probs, prior: probs[prior]
-            else:
-                probs_func = lambda probs, prior: probs
-            if prior == "default" or prior == "both":
-                fig = _classification_plot(probs_func(probs[num], "default"))
-                fig.savefig(
-                    os.path.join(
-                        webdir,
-                        "{}_default_pepredicates_bar.png".format(label)
-                    )
+            fig = _classification_plot(probs[num])
+            fig.savefig(
+                os.path.join(
+                    webdir,
+                    "{}_pastro_bar.png".format(label)
                 )
-            if prior == "population" or prior == "both":
-                fig = _classification_plot(probs_func(probs[num], "population"))
-                fig.savefig(
-                    os.path.join(
-                        webdir,
-                        "{}_population_pepredicates_bar.png".format(label)
-                    )
-                )
-        elif plot_type == "mass_1_mass_2":
-            if prior == "default" or prior == "both":
-                fig = PEPredicates.plot(
-                    f.samples, f.parameters, population_prior=False
-                )
-                fig.savefig(
-                    os.path.join(
-                        webdir, "{}_default_pepredicates.png".format(label)
-                    )
-                )
-            if prior == "population" or prior == "both":
-                fig = PEPredicates.plot(f.samples, f.parameters)
-                fig.savefig(
-                    os.path.join(
-                        webdir, "{}_population_pepredicates.png".format(label)
-                    )
-                )
+            )
+        else:
+            raise ValueError(f"Unknown plot type: {plot_type}")
 
 
 def main(args=None):
@@ -184,7 +170,11 @@ def main(args=None):
     """
     parser = ArgumentParser(description=__doc__)
     parser.add_known_options_to_parser(
-        ["--webdir", "--samples", "--labels", "--prior", "--plot", "--seed"]
+        [
+            "--webdir", "--samples", "--labels", "--plot",
+            "--pastro_category_file", "--terrestrial_probability",
+            "--catch_terrestrial_probability_error"
+        ]
     )
     opts, _ = parser.parse_known_args(args=args)
     if opts.webdir:
@@ -195,7 +185,8 @@ def main(args=None):
             "classifications will be shown in stdout rather than saved to file"
         )
     classifications = generate_probabilities(
-        opts.samples, prior=opts.prior, seed=opts.seed
+        opts.samples, opts.pastro_category_file, opts.terrestrial_probability,
+        opts.catch_terrestrial_probability_error
     )
     if opts.labels is None:
         opts.labels = []
@@ -206,11 +197,7 @@ def main(args=None):
             else:
                 raise InputError("Please provide a label for each result file")
     if opts.webdir:
-        if opts.prior != "both":
-            _classifications = [{opts.prior: c} for c in classifications]
-        else:
-            _classifications = classifications
-        save_classifications(opts.webdir, _classifications, opts.labels)
+        save_classifications(opts.webdir, classifications, opts.labels)
     else:
         print(classifications)
         return
@@ -219,8 +206,8 @@ def main(args=None):
     else:
         probs = None
     make_plots(
-        opts.samples, webdir=opts.webdir, labels=opts.labels, prior=opts.prior,
-        plot_type=opts.plot, probs=probs
+        opts.samples, webdir=opts.webdir, labels=opts.labels,
+        probs=probs
     )
 
 

@@ -97,19 +97,23 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         self, webdir=None, samples=None, labels=None, publication=None,
         user=None, config=None, same_parameters=None, base_url=None,
         file_versions=None, hdf5=None, colors=None, custom_plotting=None,
-        pepredicates_probs=None, gracedb=None, approximant=None, key_data=None,
+        pastro_probs=None, gracedb=None, approximant=None, key_data=None,
         file_kwargs=None, existing_labels=None, existing_config=None,
         existing_file_version=None, existing_injection_data=None,
         existing_samples=None, existing_metafile=None, add_to_existing=False,
         existing_file_kwargs=None, existing_weights=None, result_files=None,
-        notes=None, disable_comparison=False, pastro_probs=None, gwdata=None,
+        notes=None, disable_comparison=False, embright_probs=None, gwdata=None,
         disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False,
         psd=None, priors=None, package_information={"packages": []},
         mcmc_samples=False, external_hdf5_links=False, preliminary_pages=False,
         existing_plot=None, disable_expert=False, analytic_priors=None
     ):
-        self.pepredicates_probs = pepredicates_probs
         self.pastro_probs = pastro_probs
+        self.embright_probs = embright_probs
+        if self.embright_probs is None:
+            self.embright_probs = {
+                label: None for label in self.pastro_probs.keys()
+            }
         self.gracedb = gracedb
         self.approximant = approximant
         self.file_kwargs = file_kwargs
@@ -229,6 +233,17 @@ class _WebpageGeneration(_CoreWebpageGeneration):
     def make_navbar_for_homepage(self):
         """Make a navbar for the homepage
         """
+        if not hasattr(self, "make_pastro"):
+            if self.pastro_probs is not None:
+                self.make_pastro = {
+                    label: self.pastro_probs[label] is not None and not any(
+                        _ is None for _ in self.pastro_probs[label]["default"].values()
+                    ) for label in self.pastro_probs.keys()
+                }
+            else:
+                self.make_pastro = {
+                    label: False for label in self.pastro_probs.keys()
+                }
         links = super(_WebpageGeneration, self).make_navbar_for_homepage()
         if self.gwdata is not None:
             links.append(["Detchar", [i for i in self.gwdata.keys()]])
@@ -245,7 +260,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     {"location": label}, {"timings": label}
                 ]]
             )
-            if self.pepredicates_probs[label] is not None:
+            if self.make_pastro[label]:
                 links[label].append({"Classification": label})
         return links
 
@@ -258,8 +273,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             self.make_publication_pages()
         if self.gwdata is not None:
             self.make_detector_pages()
-        if all(val is not None for key, val in self.pepredicates_probs.items()):
-            self.make_classification_pages()
+        self.make_classification_pages()
 
     def _make_home_pages(self, pages):
         """Make the home pages
@@ -619,9 +633,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
     def make_classification_pages(self):
         """Wrapper function for _make_publication_pages()
         """
-        pages = ["{}_{}_Classification".format(i, i) for i in self.labels]
-        self.create_blank_html_pages(pages)
-        self._make_classification_pages(pages)
+        self._make_classification_pages([])
 
     def _make_classification_pages(self, pages):
         """Make the classification pages
@@ -634,6 +646,13 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         executable = self.get_executable("summaryclassification")
         general_cli = "%s --samples {}" % (executable)
         for num, label in enumerate(self.labels):
+            make_embright = self.embright_probs[label] is None or not any(
+                _ is None for _ in self.embright_probs[label]["default"].values()
+            )
+            if not self.make_pastro[label]:
+                continue
+            page = "{}_{}_Classification".format(label, label)
+            self.create_blank_html_pages([page])
             html_file = self.setup_page(
                 "{}_Classification".format(label),
                 self.navbar["result_page"][label], label,
@@ -641,38 +660,29 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 background_colour=self.colors[num], approximant=label
             )
             html_file.make_banner(approximant=label, key="classification")
-
-            if self.pepredicates_probs[label] is not None:
+            if self.make_pastro[label]:
                 html_file.make_container()
                 _class = "row justify-content-center"
                 html_file.make_div(4, _class=_class, _style=None)
-                keys = list(self.pepredicates_probs[label]["default"].keys())
+                keys = list(self.pastro_probs[label]["default"].keys())
                 table_contents = [
                     ["{} prior".format(i)] + [
-                        self.pepredicates_probs[label][i][j] for j in keys
-                    ] for i in ["default", "population"]
+                        self.pastro_probs[label][i][j] for j in keys
+                    ] for i in ["default"]
                 ]
-                if self.pastro_probs[label] is not None:
+                if self.embright_probs[label] is not None and make_embright:
                     keys += ["HasNS"]
                     keys += ["HasRemnant"]
-                    table_contents[0].append(self.pastro_probs[label]["default"]["HasNS"])
+                    keys += ["HasMassGap"]
                     table_contents[0].append(
-                        self.pastro_probs[label]["default"]["HasRemnant"]
+                        self.embright_probs[label]["default"]["HasNS"]
                     )
-                    try:
-                        table_contents[1].append(
-                            self.pastro_probs[label]["population"]["HasNS"]
-                        )
-                        table_contents[1].append(
-                            self.pastro_probs[label]["population"]["HasRemnant"]
-                        )
-                    except KeyError:
-                        table_contents[1].append("-")
-                        table_contents[1].append("-")
-                        logger.warning(
-                            "Failed to add 'em_bright' probabilities for population "
-                            "reweighted prior"
-                        )
+                    table_contents[0].append(
+                        self.embright_probs[label]["default"]["HasRemnant"]
+                    )
+                    table_contents[0].append(
+                        self.embright_probs[label]["default"]["HasMassGap"]
+                    )
                 html_file.make_table(
                     headings=[" "] + keys, contents=table_contents,
                     heading_span=1, accordian=False
@@ -687,14 +697,22 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 html_file.end_div(4)
                 html_file.end_container()
             path = self.image_path["other"]
-            base = os.path.join(path, "%s_{}_pepredicates{}.png" % (label))
             image_contents = [
                 [
-                    base.format("default", ""), base.format("default", "_bar"),
-                    base.format("population", ""),
-                    base.format("population", "_bar")
+                    os.path.join(path, "%s.pesummary.p_astro.png" % (label)),
+                    os.path.join(path, "%s.pesummary.em_bright.png" % (label))
                 ]
             ]
+            mass_plot = os.path.join(
+                self.webdir, "plots",
+                f"{label}_2d_posterior_mass_1_source_mass_2_source.png"
+            )
+            if os.path.isfile(mass_plot):
+                mass_plot = os.path.join(
+                    path,
+                    f"{label}_2d_posterior_mass_1_source_mass_2_source.png"
+                )
+                image_contents[0].append(mass_plot)
             base = (
                 "%s --webdir %s --labels %s --plot {} --prior {}" % (
                     general_cli.format(self.result_files[num]),
@@ -703,22 +721,20 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             )
             command_lines = [
                 [
-                    base.format("mass_1_mass_2", "default"),
                     base.format("bar", "default"),
-                    base.format("mass_1_mass_2", "population"),
-                    base.format("bar", "population")
+                    base.format("bar", "population"),
+                    None
                 ]
             ]
             captions = [
                 [
-                    PlotCaption("default_classification_mass_1_mass_2"),
-                    PlotCaption("default_classification_bar"),
-                    PlotCaption("population_classification_mass_1_mass_2"),
-                    PlotCaption("population_classification_bar")
+                    PlotCaption("pastro_classification_bar"),
+                    PlotCaption("embright_classification_bar"),
+                    None
                 ]
             ]
             html_file = self.make_modal_carousel(
-                html_file, image_contents, cli=command_lines, autoscale=True,
+                html_file, image_contents, cli=command_lines, autoscale=False,
                 captions=captions
             )
             html_file.make_footer(user=self.user, rundir=self.webdir)
@@ -743,6 +759,25 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                     base_string.format(
                         "Fits file containing skymap for this analysis",
                         self.results_path["other"] + "%s_skymap.fits" % (label)
+                    )
+                ]
+            )
+        if self.make_pastro[label]:
+            table.append(
+                [
+                    base_string.format(
+                        "PAstro json file containing source classification "
+                        "probabilities",
+                        self.results_path["other"] + label + ".pesummary.p_astro.json"
+                    )
+                ]
+            )
+            table.append(
+                [
+                    base_string.format(
+                        "PAstro bar plot showing source classification "
+                        "probabilities",
+                        self.image_path["other"] + label + ".pesummary.p_astro.png"
                     )
                 ]
             )

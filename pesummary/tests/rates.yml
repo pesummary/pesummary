@@ -1,0 +1,25 @@
+pop_prior:
+    BBH:
+        m1_bounds: [3.0,200.0]
+        m2_bounds: [3.0,200.0]
+        alpha: -2.35
+        zmax: 2.0
+        beta: 0
+    BNS:
+        m1_bounds: [1.0,3.0]
+        m2_bounds: [1.0,3.0]
+        alpha: -2.35
+        zmax: 0.5
+        beta: 0
+    NSBH:
+        m1_bounds: [3.0,200.0]
+        m2_bounds: [1.0,3.0]
+        alpha: -2.35
+        zmax: 0.5
+        beta: 0
+        
+        
+Rates:
+    BNS: 1e-3
+    NSBH: 2e-3
+    BBH: 1e-2

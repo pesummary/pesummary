@@ -150,6 +150,36 @@ class ArgumentParser(_ArgumentParser):
                 "help": "generate sky sensitivities for HL, HLV",
                 "key": "gw",
             },
+            "--terrestrial_probability": {
+                "dest": "terrestrial_probability",
+                "default": None,
+                "nargs": "+",
+                "help": (
+                    "Terrestrial probability for the candidate you are "
+                    "analysing. This is used when computing PAstro"
+                ),
+                "key": "gw",
+            },
+            "--catch_terrestrial_probability_error": {
+                "dest": "catch_terrestrial_probability_error",
+                "default": False,
+                "action": "store_true",
+                "help": (
+                    "Catch the ValueError raised when no terrestrial probability "
+                    "is provided when computing PAstro"
+                ),
+                "key": "gw",
+            },
+            "--pastro_category_file": {
+                "dest": "pastro_category_file",
+                "default": None,
+                "help": (
+                    "path to yml file containing summary data for each "
+                    "category (BBH, BNS, NSBH). This includes e.g. rates, "
+                    "mass bounds etc. This is used when computing PAstro"
+                ),
+                "key": "gw",
+            }, 
             "--gracedb": {
                 "dest": "gracedb",
                 "help": "gracedb of the event",

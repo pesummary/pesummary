@@ -1410,7 +1410,10 @@ def _format_prob(prob):
     elif prob < 0.01:
         return '<1%'
     else:
-        return '{}%'.format(int(np.round(100 * prob)))
+        try:
+            return '{}%'.format(int(np.round(100 * prob)))
+        except ValueError:
+            return '{}%'.format(np.round(100 * prob))
 
 
 @no_latex_plot

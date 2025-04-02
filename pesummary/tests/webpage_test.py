@@ -189,7 +189,7 @@ class TestPage(object):
         self.html.close()
         with open("{}/home.html".format(tmpdir)) as fp:
             soup = BeautifulSoup(fp, features="html.parser")
-        assert soup.find_all("button", class_="")[0].text == "Submit"
+        assert soup.find_all("button")[1].text == "Submit"
 
     def test_modal_carousel(self):
         images = ["./path/to/image.png"]
@@ -222,7 +222,7 @@ class TestWebpage(object):
         })
         self.webpage = _WebpageGeneration(
             webdir=tmpdir, labels=self.labels, samples=self.samples,
-            pepredicates_probs={label: None for label in self.labels},
+            pastro_probs={label: None for label in self.labels},
             same_parameters=["chirp_mass", "mass_ratio"]
         )
         self.webpage.generate_webpages()

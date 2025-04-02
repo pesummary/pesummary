@@ -5,4 +5,4 @@ include pesummary/conf/matplotlib_rcparams.sty
 include pesummary/core/js/*.js
 include pesummary/core/css/*.css
 include pesummary/_version.py
-recursive-include pesummary/tests *ini *txt *xml *.sh *gz
+recursive-include pesummary/tests *ini *txt *xml *.sh *gz *yml

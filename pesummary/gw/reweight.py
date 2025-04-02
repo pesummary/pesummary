@@ -2,7 +2,7 @@
 
 from ..utils.utils import logger
 from ..core.reweight import rejection_sampling, options
-from .cosmology import get_cosmology
+from .cosmology import hubble_distance, hubble_parameter
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -65,14 +65,12 @@ def uniform_in_comoving_volume_from_uniform_in_volume(
     else:
         redshift = samples["redshift"]
         luminosity_distance = samples["luminosity_distance"]
-    cosmology = get_cosmology(cosmology)
-    hubble_distance = (u.cds.c / cosmology.H0).to_value(unit=u.Mpc)
-    hubble_parameter = cosmology.efunc(redshift)
+    hd = hubble_distance(cosmology)
+    hp = hubble_parameter(cosmology, redshift)
     weights = 1.0 / (
         (1 + redshift)**(2. - star_formation_rate_power) * (
-            hubble_parameter * (luminosity_distance / hubble_distance)
-            + (1. + redshift)**2.
-        )
+            hp * (luminosity_distance / hd)
+        ) + (1. + redshift)**2.
     )
     return rejection_sampling(samples, weights)
 

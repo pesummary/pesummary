@@ -50,7 +50,7 @@ def gw_parameters():
 
 def get_list_of_files(
     gw=False, number=1, existing_plot=False, parameters=[], sections=[],
-    outdir=".outdir", extra_gw_pages=True
+    outdir=".outdir", extra_gw_pages=True, remove_gw_pages=[]
 ):
     """Return a list of files that should be generated from a typical workflow
     """
@@ -79,7 +79,7 @@ def get_list_of_files(
         sections = ["A-D", "E-F", "I-L", "M-P", "Q-T"]
     for num in range(number):
         html.append("%s/html/%s%s_%s%s.html" % (outdir, label, num, label, num))
-        if gw and extra_gw_pages:
+        if gw and "classification" not in remove_gw_pages:
             html.append("%s/html/%s%s_%s%s_Classification.html" % (outdir, label, num, label, num))
         html.append("%s/html/%s%s_%s%s_Corner.html" % (outdir, label, num, label, num))
         html.append("%s/html/%s%s_%s%s_Config.html" % (outdir, label, num, label, num))
@@ -131,7 +131,8 @@ def get_list_of_files(
 def get_list_of_plots(
     gw=False, number=1, mcmc=False, label=None, outdir=".outdir",
     comparison=True, psd=False, calibration=False, existing_plot=False,
-    expert=False, waveform=False, parameters=[], extra_gw_plots=True
+    expert=False, waveform=False, parameters=[], extra_gw_plots=True,
+    remove_gw_plots=[]
 ):
     """Return a list of plots that should be generated from a typical workflow
     """
@@ -183,10 +184,9 @@ def get_list_of_plots(
     if gw and extra_gw_plots:
         for num in range(number):
             plots.append("%s/plots/%s%s_skymap.png" % (outdir, label, num))
-            plots.append("%s/plots/%s%s_default_pepredicates.png" % (outdir, label, num))
-            plots.append("%s/plots/%s%s_default_pepredicates_bar.png" % (outdir, label, num))
-            plots.append("%s/plots/%s%s_population_pepredicates.png" % (outdir, label, num))
-            plots.append("%s/plots/%s%s_population_pepredicates_bar.png" % (outdir, label, num))
+            if "classification" not in remove_gw_plots:
+                plots.append("%s/plots/%s%s.pesummary.em_bright.png" % (outdir, label, num))
+                plots.append("%s/plots/%s%s.pesummary.p_astro.png" % (outdir, label, num))
         if number > 1 and comparison:
             plots.append("%s/plots/combined_skymap.png" % (outdir))
         
@@ -203,6 +203,9 @@ def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
         default_args.append("--gw")
         default_args.append("--nsamples_for_skymap")
         default_args.append("10")
+        default_args.append("--pastro_category_file")
+        default_args.append(testing_dir + "/rates.yml")
+        default_args.append("--catch_terrestrial_probability_error")
     else:
         from pesummary.core.cli.parser import ArgumentParser
     parser = ArgumentParser()
@@ -372,6 +375,8 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
             data[num][1] = mass_1[num] * q[num]
             data[num][2] = a_1[num]
             data[num][3] = a_2[num]
+            data[num][15] = mass_1[num] / (1 + data[num][14])
+            data[num][16] = (mass_1[num] * q[num]) / (1 + data[num][15])
     else:
         import string
 
