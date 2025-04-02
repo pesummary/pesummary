@@ -230,7 +230,7 @@ class ConfigAction(argparse.Action):
 class DictionaryAction(argparse.Action):
     """Class to extend the argparse.Action to handle dictionaries as input
     """
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None, dtype=str):
         bool = [True if ':' in value else False for value in values]
         if all(i is True for i in bool):
             setattr(namespace, self.dest, {})
@@ -244,16 +244,16 @@ class DictionaryAction(argparse.Action):
         for value in values:
             value = value.split(':')
             if len(value) > 2:
-                value = [":".join(value[:-1]), value[-1]]
+                value = [":".join(value[:-1]), dtype(value[-1])]
             if len(value) == 2:
                 if value[0] in items.keys():
                     if not isinstance(items[value[0]], list):
-                        items[value[0]] = [items[value[0]]]
-                    items[value[0]].append(value[1])
+                        items[value[0]] = [dtype(items[value[0]])]
+                    items[value[0]].append(dtype(value[1]))
                 else:
-                    items[value[0]] = value[1]
+                    items[value[0]] = dtype(value[1])
             elif len(value) == 1:
-                items.append(value[0])
+                items.append(dtype(value[0]))
             else:
                 raise ValueError("Did not understand input")
         setattr(namespace, self.dest, items)
