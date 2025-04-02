@@ -146,6 +146,12 @@ def create_hdf5_dataset(
     elif isinstance(value, complex):
         key += "_amp"
         data = np.array(np.abs(value))
+    elif isinstance(value, np.random.Generator):
+        state = value.bit_generator.state
+        data = np.array([
+            f"state:{str(state['state']['state'])}",
+            f"inc:{str(state['state']['inc'])}"
+        ], dtype="S")
     elif value == {}:
         data = np.array(np.array("NaN"))
     elif inspect.isclass(value) or inspect.isfunction(value):
