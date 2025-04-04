@@ -765,8 +765,12 @@ def split_dataframe(
     nviolin = len(left)
     if len(left) != len(right) != len(labels):
         raise ValueError("Please ensure that 'left' == 'right' == 'labels'")
-    _left_label = np.array([[left_label] * len(sample) for sample in left])
-    _right_label = np.array([[right_label] * len(sample) for sample in right])
+    _left_label = np.array(
+        [[left_label] * len(sample) for sample in left], dtype="object"
+    )
+    _right_label = np.array(
+        [[right_label] * len(sample) for sample in right], dtype="object"
+    )
     _labels = [
         [label] * (len(left[num]) + len(right[num])) for num, label in
         enumerate(labels)
