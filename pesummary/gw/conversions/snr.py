@@ -172,7 +172,7 @@ def _setup_psd(psd, psd_default, df=1. / 256, **psd_default_kwargs):
             "Provided PSD has df={} and {} has been specified. Interpolation "
             "will be used".format(psd[detectors[0]].delta_f, df)
         )
-        if isinstance(psd, PSDDict):
+        if isinstance(psd, PSDDict) and all(isinstance(_, PSD) for _ in psd.values()):
             psd = psd.interpolate(f_low, df)
         else:
             from pesummary.gw.pycbc import interpolate_psd
