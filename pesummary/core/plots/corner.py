@@ -296,7 +296,7 @@ def corner(
         quantiles=quantiles, verbose=verbose, fig=fig,
         max_n_ticks=max_n_ticks, top_ticks=top_ticks,
         use_math_text=use_math_text, reverse=reverse,
-        labelpad=labelpad, hist_kwargs=hist_kwargs,
+        labelpad=labelpad, hist_kwargs=hist_kwargs, bins=bins,
         # Arviz parameters
         group=group, var_names=var_names, filter_vars=filter_vars,
         coords=coords, divergences=divergences,
