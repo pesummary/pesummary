@@ -122,14 +122,17 @@ def read_bilby(
         if isinstance(item, (str, np.str_)):
             injection.pop(key)
 
+    _fixed_keys = bilby_object.fixed_parameter_keys
+    if (_fixed_keys is None) or (not len(_fixed_keys)):
+        _fixed_keys = []
     if all(i for i in (
            bilby_object.constraint_parameter_keys,
            bilby_object.search_parameter_keys,
-           bilby_object.fixed_parameter_keys)):
+           _fixed_keys)):
         for key in (
                 bilby_object.constraint_parameter_keys
                 + bilby_object.search_parameter_keys
-                + bilby_object.fixed_parameter_keys):
+                + _fixed_keys):
             if key not in latex_dict:
                 label = bilby_object.get_latex_labels_from_parameter_keys(
                     [key])[0]

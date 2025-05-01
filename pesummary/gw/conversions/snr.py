@@ -584,7 +584,7 @@ def multipole_snr(
                 )
             ), dtype=object
         )
-        rho_hm = np.asarray(np.nan_to_num(rho_hm, 0).T, dtype=np.float64)
+        rho_hm = np.asarray(np.nan_to_num(rho_hm, nan=0).T, dtype=np.float64)
     rho_hm = np.sqrt(rho_hm)
     if return_data_used:
         psd_used = "stored" if not ANALYTIC else list(psd.values())[0].__name__
@@ -724,7 +724,7 @@ def precessing_snr(
         for num, _dict in enumerate([rho_ps, b_bars, overlaps, snrs]):
             for key in rho_p[0][0]:
                 _dict[key] = np.nan_to_num(
-                    [dictionary[num][key] for dictionary in rho_p], 0
+                    [dictionary[num][key] for dictionary in rho_p], nan=0,
                 )
         _return = [
             np.sqrt(np.sum([_dict[i] for i in detectors], axis=0)) if num == 0
@@ -733,8 +733,9 @@ def precessing_snr(
         ]
     else:
         rho_p = {
-            key: np.nan_to_num([dictionary[key] for dictionary in rho_p], 0) for
-            key in rho_p[0]
+            key: np.nan_to_num(
+                [dictionary[key] for dictionary in rho_p], nan=0
+            ) for key in rho_p[0]
         }
         _return = np.sqrt(np.sum([rho_p[i] for i in detectors], axis=0))
     if return_data_used:

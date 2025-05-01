@@ -114,7 +114,10 @@ def js_bootstrap(key, resultA, resultB, nsamples, ntests):
         bootA = np.random.choice(samplesA, size=nsamples, replace=False)
         bootB = np.random.choice(samplesB, size=nsamples, replace=False)
         js_array[j] = np.nan_to_num(
-            jensen_shannon_divergence([bootA, bootB], kde=ReflectionBoundedKDE, xlow=xlow, xhigh=xhigh)
+            jensen_shannon_divergence(
+                [bootA, bootB],
+                kde=ReflectionBoundedKDE, xlow=xlow, xhigh=xhigh
+            ), nan=0.0
         )
     return js_array
 
