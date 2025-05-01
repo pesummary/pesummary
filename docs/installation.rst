@@ -5,8 +5,8 @@ Installation
 Install PESummary
 -----------------
 
-:code:`PESummary` is developed and tested for python 3.8+.
-We recommend that this code is installed inside a virtual environment using :code:`virtualenv`. This environment can be installed with python 3.8+ using `pyenv`_.
+:code:`PESummary` is developed and tested for python 3.10+.
+We recommend that this code is installed inside a virtual environment using :code:`virtualenv`. This environment can be installed with python 3.10+ using `pyenv`_.
 
 .. _pyenv: https://github.com/pyenv/pyenv
 
@@ -20,7 +20,7 @@ If you choose to install :code:`PESummary` using :code:`pip`, then simply run:
 
 .. code-block:: console
 
-   $ source ~/virtualenvs/pesummary_py3.8/bin/activate
+   $ source ~/virtualenvs/pesummary_py3.10/bin/activate
    $ python -m sip install pesummary
 
 
@@ -52,7 +52,7 @@ First clone the repository, then install all requirements, then install the soft
 
 .. code-block:: console
 
-   $ source ~/virtualenvs/pesummary_pyenv3.8/bin/activate
+   $ source ~/virtualenvs/pesummary_pyenv3.10/bin/activate
    $ git clone git@git.ligo.org:lscsoft/pesummary.git
    $ cd pesummary/
    $ python -m pip install .
@@ -64,7 +64,7 @@ The :code:`requirements.txt` file contains all the necessary packages for runnin
 
 .. code:: console
 
-   $ source ~/virtualenvs/pesummary_pyenv3.8/bin/activate
+   $ source ~/virtualenvs/pesummary_pyenv3.10/bin/activate
    $ python -m pip install .[docs,lint,test,extras]
 
 Identifying the version number of your installation

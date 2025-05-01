@@ -34,7 +34,7 @@ default:
 .parallel_python: &parallel_python
   parallel:
     matrix:
-      - PY_VERSION: ["3.9", "3.10"]
+      - PY_VERSION: ["3.10", "3.11"]
   tags:
     - executor-docker
 
@@ -130,7 +130,7 @@ docker:
   stage: build
   image: docker:19.03.10
   variables:
-    PYTHON_VERSION: "3.9"
+    PYTHON_VERSION: "3.10"
   before_script:
     - apk update
     - apk add py3-pip
@@ -148,7 +148,7 @@ docker:
 
 executables:
   stage: basic
-  image: python:3.9
+  image: python:3.10
   needs: []
   script:
     - *prepare_testing
@@ -160,7 +160,7 @@ executables:
 
 imports:
   stage: basic
-  image: python:3.9
+  image: python:3.10
   needs: []
   script:
     - *prepare_testing
@@ -187,7 +187,7 @@ style:
 
 examples:
   stage: basic
-  image: python:3.9
+  image: python:3.10
   needs: []
   script:
     - *prepare_testing
@@ -200,7 +200,7 @@ examples:
 
 authors:
   stage: basic
-  image: python:3.9
+  image: python:3.10
   needs: []
   script:
     - curl --request POST --form "token=$CI_EXAMPLES_TRIGGER_TOKEN" --form "variables[TYPE]=authors" --form ref=master https://git.ligo.org/api/v4/projects/3386/trigger/pipeline
@@ -211,9 +211,9 @@ authors:
     - executor-docker
 
 
-.python-3.9-testing:
+.python-3.10-testing:
   needs: []
-  image: python:3.9
+  image: python:3.10
   artifacts:
     paths:
       - .coverage*
@@ -269,7 +269,7 @@ end-to-end:gw:
 
 
 ligo_skymap:
-  extends: .python-3.9-testing
+  extends: .python-3.10-testing
   stage: compatibility
   script:
     - *prepare_testing
@@ -284,25 +284,9 @@ ligo_skymap:
     - executor-docker
 
 
-lalinference_pipe:
-  stage: compatibility
-  image: python:3.9-buster
-  needs: []
-  script:
-    - 'git lfs version || ( apt-get update -y && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs && git lfs install)'
-    - *prepare_testing
-    - summarytest --type lalinference
-    - *finalise_testing
-  only:
-    - schedule
-    - pushes
-  tags:
-    - executor-docker
-
-
 bilby:
   stage: compatibility
-  image: python:3.9
+  image: python:3.10
   needs: []
   script:
     - *prepare_testing
@@ -317,7 +301,7 @@ bilby:
 
 bilby_pipe:
   stage: compatibility
-  image: python:3.9
+  image: python:3.10
   needs: []
   script:
     - *prepare_testing
@@ -332,7 +316,7 @@ bilby_pipe:
 
 pycbc_inference:
   stage: compatibility
-  image: python:3.9
+  image: python:3.10
   needs: []
   script:
     - *prepare_testing
@@ -348,7 +332,7 @@ pycbc_inference:
 GWTC:
   <<: *parallel_gwtc
   stage: compatibility
-  image: python:3.9
+  image: python:3.10
   needs: []
   script:
     - *prepare_testing
@@ -357,7 +341,7 @@ GWTC:
 
 
 coverage:
-  extends: .python-3.9-testing
+  extends: .python-3.10-testing
   stage: coverage
   needs:
     - test:base
@@ -376,7 +360,7 @@ coverage:
 .docs:
   # https://computing.docs.ligo.org/gitlab-ci-templates/python/#.python:sphinx
   extends: .python:sphinx
-  image: python:3.9
+  image: python:3.10
   stage: docs
   needs: []
   variables:
@@ -411,6 +395,7 @@ documentation:
 
 reference-docs:
   extends: .old-docs
+  image: python:3.9
   variables:
     CONDA_YAML: "https://computing.docs.ligo.org/conda/environments/linux-64/igwn-py310.yaml"
   before_script:
@@ -504,7 +489,7 @@ stable-docs:
 
 build_examples:
   stage: deploy
-  image: python:3.9
+  image: python:3.10
   script:
     - curl --request POST --form "token=$CI_EXAMPLES_TRIGGER_TOKEN" --form ref=master https://git.ligo.org/api/v4/projects/3386/trigger/pipeline
   only:
@@ -513,7 +498,7 @@ build_examples:
 
 pages:
   stage: deploy
-  image: python:3.9
+  image: python:3.10
   dependencies:
     - tarball
     - executables
@@ -526,7 +511,6 @@ pages:
     - end-to-end:gw
     - bilby
     - bilby_pipe
-    - lalinference_pipe
     - GWTC
     - coverage
     - documentation

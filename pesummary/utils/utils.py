@@ -1105,5 +1105,8 @@ def unmute_logger():
     return
 
 
+# silence matplotlib warnings
+logging.getLogger('matplotlib.font_manager').setLevel(logging.CRITICAL + 10)
+# setup pesummary logger
 _, LOG_FILE = setup_logger()
 logger = logging.getLogger('PESummary')

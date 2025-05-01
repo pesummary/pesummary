@@ -30,11 +30,19 @@ def register_cylon():
     # Assign in module.
     locals().update({"cylon": cmap})
     # Register with Matplotlib.
-    colormaps.register(cmap=cmap)
+    try:
+        colormaps.register(cmap=cmap)
+    except ValueError:
+        # colormap already registered
+        pass
     # Create inverse color map
     cmap_r = colors.LinearSegmentedColormap.from_list("cylon_r", data[::-1])
     locals().update({"cylon_r": cmap_r})
-    colormaps.register(cmap=cmap_r)
+    try:
+        colormaps.register(cmap=cmap_r)
+    except ValueError:
+        # colormap already registered
+        pass
 
 
 def unregister_cylon():
