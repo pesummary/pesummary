@@ -65,9 +65,14 @@ def _DCC_url(
             "Unknown data type: '{}'. Must be either 'posterior' or "
             "'strain'.".format(type)
         )
-    data, = fetch_event_json(
-        event, catalog=catalog, version=version
-    )["events"].values()
+    try:
+        data, = fetch_event_json(
+            event, catalog=catalog, version=version
+        )["events"].values()
+    except TypeError:
+        data = fetch_event_json(
+            event, catalog=catalog, version=version
+        )["events"].values()
     url = None
     if type == "posterior":
         for key, item in data["parameters"].items():
