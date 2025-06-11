@@ -121,11 +121,11 @@ def test_fetch_open_strain():
     from gwpy.timeseries import TimeSeries
     data = fetch_open_strain(
         "GW190412", IFO="H1", channel="H1:GWOSC-4KHZ_R1_STRAIN",
-        sampling_rate=4096
+        sampling_rate=4096, duration=4096
     )
     path = download_and_read_file(
-        "https://www.gw-openscience.org/eventapi/html/GWTC-2/GW190412/v3/" +
-        "H-H1_GWOSC_4KHZ_R1-1239082247-32.gwf",
+        "https://gwosc.org/archive/data/O3a_4KHZ_R1/1238368256/" +
+        "H-H1_GWOSC_O3a_4KHZ_R1-1239080960-4096.gwf",
         outdir=download_dir,
         read_file=False,
         download_kwargs=dict(
