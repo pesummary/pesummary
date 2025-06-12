@@ -70,6 +70,24 @@ def _load_bilby(path):
     return read_in_result(filename=path)
 
 
+def _check_bilby_attributes(result, attribute):
+    """Check the bilby attributes are the same format across different versions.
+    Currently this checks that an empty list is returned if the attribute is
+    None or if the length is 0. This can be deprecated after a few bilby releases.
+
+    Parameters
+    ----------
+    result: bilby.core.result.Result
+        bilby result file to check
+    attribute: str
+        attribute you wish to check
+    """
+    _attr = getattr(result, attribute)
+    if (_attr is None) or (not len(_attr)):
+        _attr = []
+    return _attr
+
+
 def read_bilby(
     path, disable_prior=False, complex_params=[], latex_dict=latex_labels,
     nsamples_for_prior=None, _bilby_class=None, **kwargs
@@ -122,17 +140,17 @@ def read_bilby(
         if isinstance(item, (str, np.str_)):
             injection.pop(key)
 
-    _fixed_keys = bilby_object.fixed_parameter_keys
-    if (_fixed_keys is None) or (not len(_fixed_keys)):
-        _fixed_keys = []
-    if all(i for i in (
-           bilby_object.constraint_parameter_keys,
-           bilby_object.search_parameter_keys,
-           _fixed_keys)):
-        for key in (
-                bilby_object.constraint_parameter_keys
-                + bilby_object.search_parameter_keys
-                + _fixed_keys):
+    _fixed_keys = _check_bilby_attributes(
+        bilby_object, "fixed_parameter_keys"
+    )
+    _constraint_keys = _check_bilby_attributes(
+        bilby_object, "constraint_parameter_keys"
+    )
+    _search_keys = _check_bilby_attributes(
+        bilby_object, "search_parameter_keys"
+    )
+    if all(i for i in (_constraint_keys, _search_keys, _fixed_keys)):
+        for key in (_constraint_keys + _search_keys + _fixed_keys):
             if key not in latex_dict:
                 label = bilby_object.get_latex_labels_from_parameter_keys(
                     [key])[0]
