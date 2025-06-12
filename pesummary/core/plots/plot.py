@@ -864,7 +864,22 @@ def _make_corner_plot(
     if parameters is None:
         parameters = list(samples.keys())
     if corner_parameters is not None:
-        included_parameters = [i for i in parameters if i in corner_parameters]
+        included_parameters = [i for i in corner_parameters if i in parameters]
+        excluded_parameters = [i for i in corner_parameters if i not in parameters]
+        if len(excluded_parameters):
+            plural = len(excluded_parameters) > 1
+            logger.warning(
+                f"Removing the parameter{'s' if plural else ''}: "
+                f"{', '.join(excluded_parameters)} from the corner plot as "
+                f"{'they are' if plural else 'it is'} not available in the "
+                f"posterior table. This may affect the truth lines if "
+                f"provided."
+            )
+        if not len(included_parameters):
+            raise ValueError(
+                "None of the chosen parameters are in the posterior "
+                "samples table. Please choose other parameters to plot"
+            )
     else:
         included_parameters = parameters
     xs = np.zeros([len(included_parameters), len(samples[parameters[0]])])

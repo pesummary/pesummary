@@ -567,16 +567,8 @@ class SamplesDict(Dict):
         module = importlib.import_module(
             "pesummary.{}.plots.plot".format(module)
         )
-        _parameters = None
-        if parameters is not None:
-            _parameters = [param for param in parameters if param in self.keys()]
-            if not len(_parameters):
-                raise ValueError(
-                    "None of the chosen parameters are in the posterior "
-                    "samples table. Please choose other parameters to plot"
-                )
         return getattr(module, "_make_corner_plot")(
-            self, self.latex_labels, corner_parameters=_parameters, **kwargs
+            self, self.latex_labels, corner_parameters=parameters, **kwargs
         )[0]
 
     def _2d_kde(self, parameters, module="core", **kwargs):
