@@ -30,6 +30,7 @@ dependencies = [
 	"gwpy >=3.0.11",
 	"h5py",
 	"lalsuite >7.11",
+        "python-ligo-lw <2.0.0",
 	"ligo-gracedb",
 	"matplotlib >= 3.6.0,<3.10.0",
 	"numpy >=1.15.4",
