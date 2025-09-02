@@ -16,55 +16,9 @@ def read_hdf5(path, **kwargs):
     path: str
         path to the result file you wish to read in
     kwargs: dict
-        all kwargs passed to _read_hdf5_with_deepdish or _read_hdf5_with_h5py functions
+        all kwargs passed to _read_hdf5_with_h5py functions
     """
-    try:
-        return _read_hdf5_with_deepdish(path, **kwargs)
-    except Exception:
-        return _read_hdf5_with_h5py(path, **kwargs)
-
-
-def _read_hdf5_with_deepdish(path, remove_params=None, path_to_samples=None):
-    """Grab the parameters and samples in a .hdf5 file with deepdish
-
-    Parameters
-    ----------
-    path: str
-        path to the result file you wish to read in
-    remove_params: list, optional
-        parameters you wish to remove from the posterior table
-    """
-    import deepdish
-
-    f = deepdish.io.load(path)
-    if path_to_samples is None:
-        try:
-            path_to_samples, = paths_to_key("posterior", f)
-            path_to_samples = path_to_samples[0]
-        except ValueError:
-            try:
-                path_to_samples, = paths_to_key("posterior_samples", f)
-                path_to_samples = path_to_samples[0]
-            except ValueError:
-                raise ValueError(
-                    "Unable to find a 'posterior' or 'posterior_samples' group "
-                    "in the file '{}'".format(path)
-                )
-    reduced_f, = load_recursively(path_to_samples, f)
-    parameters = [i for i in reduced_f.keys()]
-    if remove_params is not None:
-        for param in remove_params:
-            if param in parameters:
-                parameters.remove(param)
-    data = np.zeros([len(reduced_f[parameters[0]]), len(parameters)])
-    for num, par in enumerate(parameters):
-        for key, i in enumerate(reduced_f[par]):
-            data[key][num] = float(np.real(i))
-    data = data.tolist()
-    for num, par in enumerate(parameters):
-        if par == "logL":
-            parameters[num] = "log_likelihood"
-    return parameters, data
+    return _read_hdf5_with_h5py(path, **kwargs)
 
 
 def _read_hdf5_with_h5py(
@@ -127,6 +81,9 @@ def _read_hdf5_with_h5py(
     elif isinstance(f[path_to_samples], h5py._hl.dataset.Dataset):
         parameters = list(f[path_to_samples].dtype.names)
         samples = np.array(f[path_to_samples]).view((float, len(parameters))).tolist()
+    for num, par in enumerate(parameters):
+        if par == "logL":
+            parameters[num] = "log_likelihood"
     if return_posterior_dataset:
         return parameters, samples, f[path_to_samples]
     f.close()
