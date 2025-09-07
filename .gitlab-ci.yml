@@ -1,9 +1,12 @@
 include:
   - project: computing/gitlab-ci-templates
     file:
-      - conda.yml
       - debian.yml
       - python.yml
+
+  # -- conda ------------------------
+  # https://computing.docs.ligo.org/guide/gitlab/components/conda/base/
+  - component: $CI_SERVER_FQDN/computing/gitlab/components/conda/base@main
 
 
 stages:
@@ -105,14 +108,14 @@ tarball:
 
 conda:
   extends:
-    # https://computing.docs.ligo.org/gitlab-ci-templates/conda/#.conda:base
-    - .conda:base
+    # https://computing.docs.ligo.org/guide/gitlab/components/conda/base/
+    - .conda_base
   stage: build
   needs: []
   variables:
     PYTHON_VERSION: "3.10"
   before_script:
-    - !reference [".conda:base", before_script]
+    - !reference [".conda_base", before_script]
     - conda install --name base pip2conda
     - python -m pip2conda --all --output environment.yml --python ${PYTHON_VERSION} -vv
     - echo "-----------------"
