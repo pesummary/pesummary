@@ -327,22 +327,32 @@ class Read(object):
         def _find_name(name, item):
             c1 = "posterior_samples" in name or "posterior" in name
             c2 = isinstance(item, (h5py._hl.dataset.Dataset, np.ndarray))
-            try:
-                c3 = isinstance(item, h5py._hl.group.Group) and isinstance(
-                    item[0], (float, int, np.number)
-                )
-            except (TypeError, AttributeError):
-                c3 = False
-            c4 = (
-                isinstance(item, h5py._hl.group.Group) and "parameter_names" in
-                item.keys() and "samples" in item.keys()
+            _group = isinstance(item, h5py._hl.group.Group)
+            c3, c4 = False, False
+            if _group:
+                try:
+                    if isinstance(item[0], (float, int, np.number)):
+                        c3 = True
+                except (TypeError, AttributeError):
+                    c3 = False
+                try:
+                    keys = list(item.keys())
+                    if isinstance(item[keys[0]], (h5py._hl.dataset.Dataset, np.ndarray)):
+                        c4 = True
+                except (TypeError, IndexError, AttributeError):
+                    c4 = False
+            c5 = (
+                _group and "parameter_names" in item.keys() and "samples" in item.keys()
             )
-            if c1 and c3:
+            if c1 and c4:
                 paths.append(name)
-            elif c1 and c4:
-                return paths.append(name)
+            elif c1 and c3:
+                paths.append(name)
+            elif c1 and c5:
+                paths.append(name)
             elif c1 and c2:
-                return paths.append(name)
+                if "/".join(name.split("/")[:-1]) not in paths:
+                    paths.append(name)
 
         f = h5py.File(path, 'r')
         paths = []
