@@ -1619,6 +1619,13 @@ class _Conversion(object):
         radiated_energy = samples[0] - samples[1]
         self.append_data(param, radiated_energy)
 
+    def _exp(self, parameter_to_add):
+        samples = self.specific_parameter_samples(
+            ["log_" + parameter_to_add]
+        )
+        exp_samples = np.exp(samples[0])
+        self.append_data(parameter_to_add, exp_samples)
+
     def _cos_angle(self, parameter_to_add, reverse=False):
         if reverse:
             samples = self.specific_parameter_samples(
@@ -1667,6 +1674,8 @@ class _Conversion(object):
         evolve_condition = (
             True if self.evolve_spins_forwards and self.compute_remnant else False
         )
+        if "log_luminosity_distance" in self.parameters and "luminosity_distance" not in self.parameters:
+            self._exp("luminosity_distance")
         if "cos_theta_jn" in self.parameters and "theta_jn" not in self.parameters:
             self._cos_angle("theta_jn", reverse=True)
         if "cos_iota" in self.parameters and "iota" not in self.parameters:

@@ -16,6 +16,7 @@ lalinference_map = {
     "phi12": "phi_12",
     "q": "mass_ratio",
     "time": "geocent_time",
+    "logdistance": "log_luminosity_distance",
     "dist": "luminosity_distance",
     "mc": "chirp_mass",
     "a1": "a_1",
