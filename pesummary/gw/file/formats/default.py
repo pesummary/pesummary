@@ -192,13 +192,6 @@ class Default(CoreDefault):
         data = CoreDefault._grab_data_from_dat_file(path)
         parameters, samples = data["parameters"], data["samples"]
         parameters = GWRead._check_definition_of_inclination(parameters)
-        condition1 = "luminosity_distance" not in parameters
-        condition2 = "logdistance" in parameters
-        if condition1 and condition2:
-            parameters.append("luminosity_distance")
-            for num, i in enumerate(samples):
-                samples[num].append(
-                    np.exp(i[parameters.index("logdistance")]))
         try:
             extra_kwargs = Default.grab_extra_kwargs(parameters, samples)
         except Exception:
