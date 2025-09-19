@@ -58,7 +58,8 @@ class PSDDict(Dict):
     """
     def __init__(self, *args):
         super(PSDDict, self).__init__(
-            *args, value_class=PSD, value_columns=["frequencies", "strains"]
+            *args, value_class=PSD, value_columns=["frequencies", "strains"],
+            deconstruct_complex_columns=False
         )
 
     @property

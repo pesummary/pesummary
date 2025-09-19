@@ -126,6 +126,10 @@ class Dict(dict):
         Class you wish to use for the nested dictionary
     value_columns: list, optional
         Names for each column in value_class to be stored as properties
+    deconstruct_complex_columns: bool, optional
+        if True, any columns containing complex values will be deconstructed
+        into their real (np.real), amplitude (np.abs) and angle (np.angle) components.
+        Default True
     **kwargs: dict
         All other kwargs are turned into properties of the class. Key
         is the name of the property
@@ -133,9 +137,10 @@ class Dict(dict):
     def __init__(
         self, *args, value_class=np.array, value_columns=None, _init=True,
         make_dict_kwargs={}, logger_warn="warn", latex_labels={},
-        extra_kwargs={}, **kwargs
+        extra_kwargs={}, deconstruct_complex_columns=True, **kwargs
     ):
         from .parameters import Parameters
+        from .utils import logger
         super(Dict, self).__init__()
         if not _init:
             return
@@ -149,13 +154,43 @@ class Dict(dict):
                 self.parameters = list(args[0].keys())
                 _iterator = args[0].items()
             _samples = [args[0][param] for param in self.parameters]
-            try:
-                self.samples = np.array(_samples)
-            except ValueError:
-                self.samples = _samples
+            self.samples = _samples
         else:
             self.parameters, self.samples = args
             _iterator = zip(self.parameters, self.samples)
+        try:
+            _samples = copy.deepcopy(self.samples)
+            _complex = np.iscomplex(_samples)
+            if deconstruct_complex_columns:
+                # if a fraction are complex and others are not convert
+                # the complex parameters
+                _original_samples = copy.deepcopy(_samples)
+                for num, ss in enumerate(_original_samples):
+                    if np.iscomplex(ss).any():
+                        getattr(logger, self.logger_warn)(
+                            f"Deconstructing {self.parameters[num]} as it contains "
+                            f"complex numbers. To disable this pass "
+                            f"deconstruct_complex_columns=False."
+                        )
+                        _param = self.parameters[num] + "_amp"
+                        _ss = np.abs(ss)
+                        _samples.append(_ss)
+                        self.parameters.append(_param)
+
+                        _param = self.parameters[num] + "_angle"
+                        _ss = np.angle(ss)
+                        _samples.append(_ss)
+                        self.parameters.append(_param)
+
+                        _ss = np.real(ss)
+                        _samples[num] = _ss
+                self.samples = np.array(_samples)
+                _iterator = zip(self.parameters, self.samples)
+            else:
+                self.samples = np.array(_samples)
+        except Exception:
+            pass
+
         try:
             self.make_dictionary(**make_dict_kwargs)
         except (TypeError, IndexError):
