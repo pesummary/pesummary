@@ -103,10 +103,10 @@ class SamplesDict(Dict):
     >>> fig = dataset.plot("a", type="hist", bins=30)
     >>> fig.show()
     """
-    def __init__(self, *args, logger_warn="warn", autoscale=True):
+    def __init__(self, *args, logger_warn="warn", autoscale=True,**kwargs):
         super(SamplesDict, self).__init__(
             *args, value_class=Array, make_dict_kwargs={"autoscale": autoscale},
-            logger_warn=logger_warn, latex_labels=latex_labels
+            logger_warn=logger_warn, latex_labels=latex_labels, **kwargs
         )
 
     def __getitem__(self, key):

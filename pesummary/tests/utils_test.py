@@ -311,6 +311,50 @@ class TestSamplesDict(object):
         )
         np.testing.assert_almost_equal(class_method.samples, self.samples)
 
+    def test_complex_columns(self):
+        """Test that complex columns are desconstructed correctly
+        """
+        parameters = ["a", "b", "a_j", "b_j"]
+        samples = [
+            np.random.uniform(10, 0.5, 100), np.random.uniform(200, 10, 100),
+            np.random.uniform(10, 0.5, 100) + 10j,
+            np.random.uniform(200, 10, 100) + 2j
+        ]
+        dataset1 = SamplesDict(
+            parameters, samples, deconstruct_complex_columns=True
+        )
+        dataset2 = SamplesDict(
+            {p: s for p, s in zip(parameters, samples)},
+            deconstruct_complex_columns=True
+        )
+        for dd in [dataset1, dataset2]:
+            for num, param in enumerate(["a_j", "b_j"]):
+                assert f"{param}_amp" in dd.parameters
+                assert f"{param}_angle" in dd.parameters
+                np.testing.assert_almost_equal(
+                    dd[f"{param}_amp"], np.abs(samples[2 + num])
+                )
+                np.testing.assert_almost_equal(
+                    dd[f"{param}_angle"], np.angle(samples[2 + num])
+                )
+                np.testing.assert_almost_equal(
+                    dd[f"{param}"], np.real(samples[2 + num])
+                )
+            np.testing.assert_almost_equal(dd["a"], samples[0])
+            np.testing.assert_almost_equal(dd["b"], samples[1])
+        dataset1 = SamplesDict(
+            parameters, samples, deconstruct_complex_columns=False
+        )
+        dataset2 = SamplesDict(
+            {p: s for p, s in zip(parameters, samples)},
+            deconstruct_complex_columns=False
+        )
+        for dd in [dataset1, dataset2]:
+            for param, ss in zip(parameters, samples):
+                np.testing.assert_almost_equal(
+                    dd[param], ss
+                )
+
     def test_properties(self):
         """Test that the properties of the SamplesDict class are correct
         """

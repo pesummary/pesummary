@@ -43,7 +43,10 @@ class SkyMapDict(Dict):
     ... )
     """
     def __init__(self, *args, **kwargs):
-        super(SkyMapDict, self).__init__(*args, value_class=Empty, **kwargs)
+        super(SkyMapDict, self).__init__(
+            *args, value_class=Empty, deconstruct_complex_columns=False,
+            **kwargs
+        )
 
     @property
     def labels(self):

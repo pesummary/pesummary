@@ -181,7 +181,8 @@ class CalibrationDict(Dict):
             "phase_lower", "magnitude_upper", "phase_upper"
         ]
         super(CalibrationDict, self).__init__(
-            *args, value_class=Calibration, value_columns=_columns
+            *args, value_class=Calibration, value_columns=_columns,
+            deconstruct_complex_columns=False
         )
 
     @property

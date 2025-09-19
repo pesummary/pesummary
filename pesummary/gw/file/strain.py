@@ -28,7 +28,9 @@ class StrainDataDict(Dict):
     >>> strain = StrainDataDict.read(data, channels=channels)
     """
     def __init__(self, *args):
-        super(StrainDataDict, self).__init__(*args, value_class=StrainData)
+        super(StrainDataDict, self).__init__(
+            *args, value_class=StrainData, deconstruct_complex_columns=False
+        )
 
     @classmethod
     def read(cls, data, channels={}):
