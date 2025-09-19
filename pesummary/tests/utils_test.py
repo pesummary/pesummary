@@ -329,10 +329,10 @@ class TestSamplesDict(object):
         )
         for dd in [dataset1, dataset2]:
             for num, param in enumerate(["a_j", "b_j"]):
-                assert f"{param}_amp" in dd.parameters
+                assert f"{param}_abs" in dd.parameters
                 assert f"{param}_angle" in dd.parameters
                 np.testing.assert_almost_equal(
-                    dd[f"{param}_amp"], np.abs(samples[2 + num])
+                    dd[f"{param}_abs"], np.abs(samples[2 + num])
                 )
                 np.testing.assert_almost_equal(
                     dd[f"{param}_angle"], np.angle(samples[2 + num])

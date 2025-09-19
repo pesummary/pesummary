@@ -172,7 +172,7 @@ class Dict(dict):
                             f"complex numbers. To disable this pass "
                             f"deconstruct_complex_columns=False."
                         )
-                        _param = self.parameters[num] + "_amp"
+                        _param = self.parameters[num] + "_abs"
                         _ss = np.abs(ss)
                         _samples.append(_ss)
                         self.parameters.append(_param)

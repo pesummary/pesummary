@@ -118,7 +118,7 @@ def read_bilby(
     for key in _original_keys:
         for param in complex_params:
             if param in key and any(np.iscomplex(posterior[key])):
-                posterior[key + "_amp"] = abs(posterior[key])
+                posterior[key + "_abs"] = abs(posterior[key])
                 posterior[key + "_angle"] = np.angle(posterior[key])
                 posterior[key] = np.real(posterior[key])
             elif param in key:
