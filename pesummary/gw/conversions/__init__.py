@@ -7,7 +7,7 @@ from pathlib import Path
 from pesummary import conf
 from pesummary.utils.decorators import set_docstring
 from pesummary.utils.exceptions import EvolveSpinError
-from pesummary.utils.utils import logger, import_error_message
+from pesummary.utils.utils import logger, import_error_msg
 
 try:
     import lalsimulation
