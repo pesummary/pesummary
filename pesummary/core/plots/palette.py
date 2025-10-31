@@ -7,6 +7,8 @@ from matplotlib import colors as mcolors
 import numpy as np
 from itertools import cycle
 
+__author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+
 
 class ColorList(list):
     """Class inherited from list to add extra functionality to convert
