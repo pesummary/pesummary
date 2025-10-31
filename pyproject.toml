@@ -37,7 +37,6 @@ dependencies = [
 	"pygments",
 	"plotly",
 	"pillow",
-	"seaborn>=0.12.2,<0.13.0",
 	"statsmodels",
 	"scipy >=1.8.0",
 	"tables",
@@ -87,6 +86,7 @@ extras = [
 	"ligo-em-bright >=1.1.5",
 	"ligo.skymap",
 	"nbformat",
+        "seaborn>=0.12.2,<0.13.0",
 ]
 
 [project.scripts]

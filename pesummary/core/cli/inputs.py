@@ -1371,10 +1371,10 @@ class _Input(object):
     def palette(self, palette):
         self._palette = palette
         if palette is not conf.palette:
-            import seaborn
+        from pesummary.core.plots.palette import color_palette, AVAILABLE_PALETTES
 
             try:
-                seaborn.color_palette(palette, n_colors=1)
+                color_palette(palette, n_colors=1)
                 logger.info(
                     conf.overwrite.format("palette", conf.palette, palette)
                 )
@@ -1383,7 +1383,7 @@ class _Input(object):
                 raise InputError(
                     "Unrecognised palette. Please choose from one of the "
                     "following {}".format(
-                        ", ".join(seaborn.palettes.SEABORN_PALETTES.keys())
+                        ", ".join(AVAILABLE_PALETTES)
                     )
                 )
 
@@ -1422,12 +1422,11 @@ class _Input(object):
                     "Number of colors does not match the number of labels. "
                     "Using default colors"
                 )
-        import seaborn
-
+        from pesummary.core.plots.palette import color_palette
         number = len(self.labels)
         if self.existing:
             number += len(self.existing_labels)
-        colors = seaborn.color_palette(
+        colors = color_palette(
             palette=conf.palette, n_colors=number
         ).as_hex()
         self._colors = colors

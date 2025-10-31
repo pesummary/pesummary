@@ -151,9 +151,9 @@ def ridgeline(
     """
     fig = go.Figure()
     if colors is None:
-        import seaborn
+        from pesummary.core.plots.palette import color_palette
 
-        colors = seaborn.color_palette(
+        colors = color_palette(
             palette=palette, n_colors=len(data)
         ).as_hex()
 

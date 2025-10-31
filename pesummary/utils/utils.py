@@ -1104,6 +1104,12 @@ def unmute_logger():
     _logger.setLevel(logging.INFO)
     return
 
+# import error message
+import_error_msg = (
+    "Unable to install '{}'. You will not be able to use some of the inbuilt "
+    "functions."
+)
+
 
 # silence matplotlib warnings
 logging.getLogger('matplotlib.font_manager').setLevel(logging.CRITICAL + 10)

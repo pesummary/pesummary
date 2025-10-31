@@ -1,9 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-error_msg = (
-    "Unable to install '{}'. You will not be able to use some of the inbuilt "
-    "functions."
-)
 import copy
 import numpy as np
 from pathlib import Path
@@ -11,16 +7,16 @@ from pathlib import Path
 from pesummary import conf
 from pesummary.utils.decorators import set_docstring
 from pesummary.utils.exceptions import EvolveSpinError
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, import_error_message
 
 try:
     import lalsimulation
 except ImportError:
-    logger.warning(error_msg.format("lalsimulation"))
+    logger.warning(import_error_msg.format("lalsimulation"))
 try:
     import astropy
 except ImportError:
-    logger.warning(error_msg.format("astropy"))
+    logger.warning(import_error_msg.format("astropy"))
 
 from .angles import *
 from .cosmology import *

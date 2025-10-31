@@ -11,7 +11,7 @@ from pesummary.core.plots.latex_labels import latex_labels
 from pesummary.utils.utils import make_dir, logger, _check_latex_install
 from pesummary.core.cli.parser import ArgumentParser as _ArgumentParser
 from pesummary.core.cli.actions import DictionaryAction
-import seaborn
+from pesummary.core.plots.palette import color_palette
 import numpy as np
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -123,7 +123,7 @@ def get_colors_and_linestyles(opts):
     if opts.colors is not None:
         colors = opts.colors
     else:
-        colors = seaborn.color_palette(
+        colors = color_palette(
             palette=opts.palette, n_colors=len(opts.samples)
         ).as_hex()
     if opts.linestyles is not None:
