@@ -5,8 +5,10 @@ from pathlib import Path
 from pesummary.core.fetch import (
     download_and_read_file, _download_authenticated_file
 )
+from pesummary.utils.utils import logger
 from pesummary.utils.decorators import deprecation
 from gwosc.api import fetch_event_json
+import numpy as np
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -33,7 +35,7 @@ def fetch(url, download_kwargs={}, **kwargs):
 
 def _DCC_url(
     event, type="posterior", catalog=None, sampling_rate=16384, format="gwf",
-    duration=32, IFO="L1", version=None,
+    duration=32, IFO="L1", version=None, download_latest_file=True
 ):
     """Return the url for posterior samples stored on the DCC for a given event
 
@@ -59,6 +61,9 @@ def _DCC_url(
         Default 'L1'
     version: str, optional
         version of the file to download. Default None
+    download_latest_file: bool, optional
+        if True, download the latest file if multiple are available. If False
+        a ValueError is raised as no unique file can be found
     """
     if type not in ["posterior", "strain"]:
         raise ValueError(
@@ -69,16 +74,20 @@ def _DCC_url(
         data, = fetch_event_json(
             event, catalog=catalog, version=version
         )["events"].values()
+        data = list(data)[0]
+        if isinstance(data, str):
+            raise TypeError
     except TypeError:
-        data = fetch_event_json(
-            event, catalog=catalog, version=version
-        )["events"].values()
-    url = None
+        data = list(
+            fetch_event_json(
+                event, catalog=catalog, version=version
+            )["events"].values()
+        )[0]
+    url = []
     if type == "posterior":
         for key, item in data["parameters"].items():
-            if "_pe_" in key:
-                url = item["data_url"]
-                break
+            if ("_pe_" in key) or "_pe" in key.lower():
+                url.append(item["data_url"])
     elif type == "strain":
         strain = data["strain"]
         for _strain in strain:
@@ -89,9 +98,30 @@ def _DCC_url(
                 and _strain["detector"] == IFO
             )
             if cond:
-                url = _strain["url"]
+                url.append(_strain["url"])
+
+    if not len(url):
+        url = None
+    else:
+        url = np.unique(url)
+        if len(url) == 1:
+            url = url[0]
     if url is None:
         raise RuntimeError("Failed to find data URL for {}".format(event))
+    elif isinstance(url, np.ndarray):
+        msg = "Multiple URLs found for {}: {}".format(event, ", ".join(url))
+        if download_latest_file:
+            msg += ". Fetching most recent based on Unique IDs"
+            ids = [
+                int(_.split("/")[5]) if "zenodo" in _ else
+                int(_.split("/")[6]) for _ in url
+            ]
+            ind = np.argmax(ids)
+            url = url[ind]
+            msg += ": {}".format(url)
+            logger.warning(msg)
+        else:
+            raise ValueError(msg)
     return url
 
 
