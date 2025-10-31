@@ -67,6 +67,7 @@ test = [
 	"coverage <=7.4.4", # v7.5.0 incompatible with coverage-badge <=1.1.0
 	"coverage-badge",
 	"cython >=0.28.5",
+        "dynesty <3.0", # required for the pycbc test
         "lalsuite !=7.23,!=7.24", # lalinference_pipe is broken for 7.23 and 7.24 
 	"markupsafe ==2.0.1",
 	"pycbc >=2.0.3",

@@ -15,7 +15,8 @@ from pathlib import Path
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 ALLOWED = [
     "executables", "imports", "tests", "workflow", "skymap", "bilby",
-    "bilby_pipe", "pycbc", "lalinference", "GWTC1", "GWTC2", "GWTC3", "examples"
+    "bilby_pipe", "pycbc", "lalinference", "GWTC1", "GWTC2", "GWTC3", "GWTC4",
+    "examples"
 ]
 
 PESUMMARY_DIR = Path(pesummary.__file__).parent.parent
@@ -276,10 +277,16 @@ def _public_pesummary_result_file(event, catalog=None, unpack=True, **kwargs):
         event, catalog=catalog, read_file=False, delete_on_exit=False,
         outdir="./", unpack=unpack, download_kwargs={"timeout": 120}
     )
-    command_line = "{} {} -f {}.h5".format(
+    if not unpack:
+        ext = str(download).split(".")[-1]
+    else:
+        ext = "h5"
+    command_line = "{} {} -f {}.{}".format(
         sys.executable,
         os.path.join(PESUMMARY_DIR, "pesummary", "tests", "existing_file.py"),
-        os.path.join(download, download) if unpack else str(download).split(".h5")[0]
+        os.path.join(download, download) if unpack else str(download).split(
+            f".{ext}"
+        )[0], ext
     )
     return launch(command_line)
 
@@ -297,10 +304,16 @@ def _grab_event_names_from_gwosc(webpage):
     page = requests.get(webpage)
     soup = BeautifulSoup(page.content, 'html.parser')
     entries = soup.find_all("td")
-    events = [
-        e.text.strip().replace(" ", "") for e in entries if "GW" in e.text
-        and "GWTC" not in e.text
-    ]
+    _events = {
+        num: e.text.strip().replace(" ", "") for num, e in enumerate(entries) if
+        "GW" in e.text and "GWTC" not in e.text
+    }
+    # check that there are posterior samples available
+    events = []
+    for num, event in _events.items():
+        # check for entry in inferred primary mass column
+        if "--" not in entries[num + 4].text:
+            events.append(event)
     return events
 
 
@@ -355,9 +368,27 @@ def GWTC2(*args, **kwargs):
     """
     return GWTCN(
         *args, catalog="GWTC-2", unpack=True,
-        include_exceptional=["GW190412", "GW190425", "GW190521", "GW190814"],
+        include_exceptional=["GW190425", "GW190521"],
         **kwargs
     )
+
+
+@tmp_directory
+def GWTC4(*args, **kwargs):
+    """Test that pesummary can load a random selection of samples from the
+    GWTC-4 data release
+
+    Parameters
+    ----------
+    size: int, optional
+        number of events to randomly draw. Default 5
+    include_exceptional: list, optional
+        List of exceptional event candidates to include in the random selection
+        of events. This means that the total number of events could be as
+        large as size + N where N is the length of include_exceptional. Default
+        []
+    """
+    return GWTCN(*args, catalog="GWTC-4.0", unpack=False, **kwargs)
 
 
 @tmp_directory
