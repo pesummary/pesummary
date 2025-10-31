@@ -901,12 +901,17 @@ def _make_corner_plot(
     width *= _figure.dpi
     height *= _figure.dpi
     try:
-        seperation = abs(location[0][0] - location[1][0]) - width
+        seperation = float(abs(location[0][0] - location[1][0]) - width)
     except IndexError:
         seperation = None
+    # explicitly cast to float to ensure correct rendering in JS
+    # https://git.ligo.org/lscsoft/pesummary/-/issues/332
     data = {
-        "width": width, "height": height, "seperation": seperation,
-        "x0": location[0][0], "y0": location[0][0]
+        "width": float(width),
+        "height": float(height),
+        "seperation": seperation,
+        "x0": float(location[0][0]),
+        "y0": float(location[0][0]),
     }
     return _figure, included_parameters, data
 
