@@ -1,7 +1,11 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-import plotly.graph_objects as go
-import plotly
+from pesummary.utils.utils import logger, import_error_msg
+try:
+    import plotly.graph_objects as go
+    import plotly
+except ImportError:
+    logger.warning(import_error_msg.format("plotly"))
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 

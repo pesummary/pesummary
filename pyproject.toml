@@ -35,11 +35,7 @@ dependencies = [
 	"numpy >=1.15.4",
 	"pandas",
 	"pygments",
-	"plotly",
-	"pillow",
-	"statsmodels",
 	"scipy >=1.8.0",
-	"tables",
 	"tqdm >=4.44.0",
 ]
 dynamic = ['version']
@@ -87,6 +83,7 @@ extras = [
 	"ligo-em-bright >=1.1.5",
 	"ligo.skymap",
 	"nbformat",
+        "plotly",
         "seaborn>=0.12.2,<0.13.0",
 ]
 
