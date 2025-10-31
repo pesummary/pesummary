@@ -368,7 +368,7 @@ coverage:
   needs: []
   variables:
     # install this package and it's [docs] extra
-    REQUIREMENTS: ".[docs]"
+    REQUIREMENTS: ".[docs,extras]"
     # options to pass to sphinx
     SPHINXOPTS: "-j 4"
   before_script:

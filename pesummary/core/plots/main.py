@@ -15,6 +15,7 @@ from pesummary.core.plots import plot as core
 from pesummary.core.plots import interactive
 
 import matplotlib
+import matplotlib.style
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 matplotlib.use(get_matplotlib_backend(parallel=True))

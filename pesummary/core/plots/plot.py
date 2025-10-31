@@ -3,7 +3,6 @@
 from pesummary.utils.utils import (
     logger, number_of_columns_for_legend, _check_latex_install, gelman_rubin,
 )
-from pesummary.core.plots.seaborn.kde import kdeplot
 from pesummary.core.plots.corner import corner
 from pesummary.core.plots.figure import figure, ExistingFigure
 from pesummary import conf
@@ -545,6 +544,7 @@ def _1d_histogram_plot(
                     linestyle=linestyle, **_prior_hist_kwargs, **plot_kwargs
                 )
         if kde:
+            from pesummary.core.plots.seaborn.kde import kdeplot
             _kde_kwargs = kde_kwargs.copy()
             kwargs = _default_kde_kwargs
             kwargs.update({

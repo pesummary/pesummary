@@ -60,12 +60,12 @@ def colormap_with_fixed_hue(color, N=10):
     N: int, optional
         number of colors used in the palette
     """
-    import seaborn
+    from pesummary.core.plots.palette import color_palette
     from matplotlib.colors import LinearSegmentedColormap
     from matplotlib.colors import rgb_to_hsv, hsv_to_rgb, hex2color
 
     color_hsv = rgb_to_hsv(hex2color(color))
-    base = seaborn.color_palette("Blues", 10)
+    base = color_palette("Blues", 10)
     base_hsv = np.array(list(map(rgb_to_hsv, base)))
     h, s, v = base_hsv.T
 

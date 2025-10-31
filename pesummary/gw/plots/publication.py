@@ -1,7 +1,7 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.utils.utils import logger, number_of_columns_for_legend
-import seaborn
+from pesummary.core.plots.palette import color_palette
 from pesummary.core.plots.figure import figure
 from pesummary.core.plots.seaborn import violin
 from pesummary.utils.bounded_2d_kde import Bounded_2d_kde
@@ -99,7 +99,7 @@ def twod_contour_plots(
 
     logger.debug("Generating 2d contour plots for %s" % ("_and_".join(parameters)))
     if colors is None:
-        palette = seaborn.color_palette(palette="pastel", n_colors=len(samples))
+        palette = color_palette(palette="pastel", n_colors=len(samples))
     else:
         palette = colors
     if linestyles is None:

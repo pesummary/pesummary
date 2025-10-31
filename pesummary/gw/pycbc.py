@@ -1,17 +1,13 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-error_msg = (
-    "Unable to install '{}'. You will not be able to use some of the inbuilt "
-    "functions."
-)
-from pesummary.utils.utils import logger
+from pesummary.utils.utils import logger, import_error_msg
 import numpy as np
 try:
     import pycbc.psd
     from pycbc.filter import sigma, overlap_cplx
     from pycbc import pnutils
 except ImportError:
-    logger.warning(error_msg.format("pycbc"))
+    logger.warning(import_error_msg.format("pycbc"))
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
