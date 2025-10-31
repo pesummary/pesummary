@@ -1371,8 +1371,9 @@ class _Input(object):
     def palette(self, palette):
         self._palette = palette
         if palette is not conf.palette:
-        from pesummary.core.plots.palette import color_palette, AVAILABLE_PALETTES
-
+            from pesummary.core.plots.palette import (
+                color_palette, AVAILABLE_PALETTES
+            )
             try:
                 color_palette(palette, n_colors=1)
                 logger.info(
