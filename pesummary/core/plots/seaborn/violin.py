@@ -1,17 +1,24 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
-from seaborn.categorical import _ViolinPlotter
+from scipy.stats import gaussian_kde
 import matplotlib as mpl
 import colorsys
 import numpy as np
 import math
 import pandas as pd
 import matplotlib.pyplot as plt
-
-from seaborn import utils
-from seaborn.utils import remove_na
-from seaborn.palettes import color_palette, husl_palette, light_palette, dark_palette
-from scipy.stats import gaussian_kde
+from pesummary.core.plots.seaborn import SEABORN
+if SEABORN:
+    from seaborn import utils
+    from seaborn.utils import remove_na
+    from seaborn.palettes import (
+        color_palette, husl_palette, light_palette, dark_palette
+    )
+    from seaborn.categorical import _ViolinPlotter
+else:
+    class _ViolinPlotter(object):
+        """Dummy class for the ViolinPlotter class
+        """
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>", "Seaborn authors"]
 

@@ -3,12 +3,22 @@
 import numpy as np
 import warnings
 from scipy import stats
-from seaborn.distributions import (
-    _DistributionPlotter as SeabornDistributionPlotter, KDE as SeabornKDE,
-)
-from seaborn.utils import _normalize_kwargs, _check_argument
-
 import pandas as pd
+from pesummary.core.plots.seaborn import SEABORN
+if SEABORN:
+    from seaborn.distributions import (
+        _DistributionPlotter as SeabornDistributionPlotter, KDE as SeabornKDE,
+    )
+    from seaborn.utils import _normalize_kwargs, _check_argument
+else:
+    class SeabornKDE(object):
+        """Dummy class for the KDE class
+        """
+
+    class SeabornDistributionPlotter(object):
+        """Dummy class for the _DistributionPlotter class
+        """
+
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>", "Seaborn authors"]
 
