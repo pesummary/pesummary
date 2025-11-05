@@ -84,7 +84,7 @@ extras = [
 	"ligo.skymap",
 	"nbformat",
         "plotly",
-        "seaborn>=0.12.2,<0.13.0",
+        "seaborn>=0.13.0",
 ]
 
 [project.scripts]

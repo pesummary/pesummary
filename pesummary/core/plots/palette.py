@@ -1,7 +1,7 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 from pesummary.core.plots.seaborn import SEABORN
-from ._seaborn_palette import SEABORN_PALETTES
+from pesummary.core.plots.seaborn._seaborn_palette import SEABORN_PALETTES
 from matplotlib import colormaps
 from matplotlib import colors as mcolors
 import numpy as np
