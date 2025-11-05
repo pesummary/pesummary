@@ -32,6 +32,8 @@ CACHE_DIR = os.path.join(
 STYLE_CACHE = os.path.join(CACHE_DIR, "style")
 LOG_CACHE = os.path.join(CACHE_DIR, "log")
 
+LATEX = shutil.which("latex")
+
 
 def resample_posterior_distribution(posterior, nsamples):
     """Randomly draw nsamples from the posterior distribution
@@ -633,22 +635,27 @@ def iterator(
 
 def _check_latex_install(force_tex=False):
     from matplotlib import rcParams
-    from distutils.spawn import find_executable
+    from matplotlib.texmanager import TexManager
 
-    original = rcParams['text.usetex']
-    if find_executable("latex") is not None:
-        try:
-            from matplotlib.texmanager import TexManager
-
-            texmanager = TexManager()
-            texmanager.make_dvi(r"$mass_{1}$", 12)
-            if force_tex:
-                original = True
-            rcParams["text.usetex"] = original
-        except RuntimeError:
-            rcParams["text.usetex"] = False
-    else:
+    # If LaTeX executable is not found, disable usetex quickly
+    if LATEX is None:
         rcParams["text.usetex"] = False
+        return False
+
+    # Otherwise, try and render something
+    texmanager = TexManager()
+    try:
+        texmanager.make_dvi(r"$mass_{1}$", 12)
+    except RuntimeError:
+        # It failed, disable usetex
+        rcParams["text.usetex"] = False
+        return False
+
+    # It works! enable usetex if forced
+    if force_tex:
+        rcParams["text.usetex"] = True
+
+    return True
 
 
 def smart_round(parameters, return_latex=False, return_latex_row=False):
