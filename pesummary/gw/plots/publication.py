@@ -210,7 +210,7 @@ def reverse_triangle_plot(*args, parameters=[], **kwargs):
 
 def violin_plots(
     parameter, samples, labels, latex_labels, inj_values=None, cut=0,
-    _default_kwargs={"palette": "pastel", "inner": "line", "outer": "percent: 90"},
+    _default_kwargs={"palette": "pastel", "inner": None, "legend": False}, #"outer": "percent: 90"},
     latex_friendly=True, **kwargs
 ):
     """Generate violin plots for a set of parameters and samples
@@ -232,7 +232,7 @@ def violin_plots(
     fig, ax1 = figure(gca=True)
     _default_kwargs.update(kwargs)
     ax1 = violin.violinplot(
-        data=samples, cut=cut, ax=ax1, scale="width", inj=inj_values, **_default_kwargs
+        data=samples, cut=cut, ax=ax1, scale="width", inj=None, **_default_kwargs
     )
     if latex_friendly:
         labels = copy.deepcopy(labels)

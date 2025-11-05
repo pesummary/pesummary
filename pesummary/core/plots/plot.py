@@ -453,7 +453,7 @@ def _1d_histogram_plot(
     plot_percentile=True, plot_hdp=True, xlims=None, max_vline=1, label=None,
     linestyle="-", injection_color=conf.injection_color, _default_hist_kwargs={
         "density": True, "bins": 50, "histtype": "step", "linewidth": 1.75
-    }, _default_kde_kwargs={"shade": True, "alpha_shade": 0.1},
+    }, _default_kde_kwargs={"fill": True, "alpha": 0.1},
     _default_inj_kwargs={"linewidth": 2.5, "linestyle": "-"},
     key_data=None, **plot_kwargs
 ):
@@ -550,7 +550,6 @@ def _1d_histogram_plot(
             kwargs.update({
                 "kde_kwargs": _kde_kwargs,
                 "kde_kernel": _kde_kwargs.pop("kde_kernel", None),
-                "variance_atol": _kde_kwargs.pop("variance_atol", 1e-8),
                 "weights": weights
             })
             kwargs.update(plot_kwargs)

@@ -38,7 +38,7 @@ Alternatively, we know that `lambda_2` is only defined between
 
     >>> from pesummary.core.plots.bounded_1d_kde import bounded_1d_kde
     >>> fig = violin_plots(
-    ...     parameter, samples, labels, GWlatex_labels, kde=bounded_1d_kde,
+    ...     parameter, samples, labels, GWlatex_labels, kde_kernel=bounded_1d_kde,
     ...     kde_kwargs={"method": "Reflection", "xlow": 0.0, "xhigh": 3000.0},
     ...     cut=0
     ... )
@@ -68,7 +68,7 @@ is achieved. We choose to color all the left hand distributions according to the
     ... ]
     >>> samples = split_dataframe(left, right, labels)
     >>> fig = violin_plots(
-    ...     parameter, samples, labels, GWlatex_labels, kde=bounded_1d_kde,
+    ...     parameter, samples, labels, GWlatex_labels, kde_kernel=bounded_1d_kde,
     ...     kde_kwargs={"method": "Reflection", "xlow": 0.0, "xhigh": 3000.0},
     ...     cut=0, x="label", y="data", hue="side", split=True,
     ...     palette={"right": "pastel", "left": "color: white"}
@@ -98,7 +98,7 @@ and the `fetch module <fetch.html>`_ both implemented in `pesummary`),
     >>> right = [prior[parameter] for _ in range(len(interested))]
     >>> samples = split_dataframe(left, right, interested)
     >>> fig = violin_plots(
-    ...     parameter, samples, interested, GWlatex_labels, kde=bounded_1d_kde,
+    ...     parameter, samples, interested, GWlatex_labels, kde_kernel=bounded_1d_kde,
     ...     kde_kwargs={"method": "Transform", "xlow": 0.01, "xhigh": 0.99, "apply_smoothing": True},
     ...     cut=0, x="label", y="data", hue="side", split=True,
     ...     palette={"right": "pastel", "left": "color: white"}
@@ -114,5 +114,5 @@ using the `.plot() method <./tutorials/plotting_from_metafile.html>`_.
 
     >>> posterior = f.samples_dict
     >>> parameter = "chi_p"
-    >>> fig = posterior.plot(parameter, type="violin", kde=bounded_1d_kde, kde_kwargs={"method": "Transform", "xlow": 0.01, "xhigh": 0.99, "apply_smoothing": True}, labels=["SEOBNRv4PHM", "IMRPhenomPv3HM", "combined"], priors=f.priors["samples"])
+    >>> fig = posterior.plot(parameter, type="violin", kde_kernel=bounded_1d_kde, kde_kwargs={"method": "Transform", "xlow": 0.01, "xhigh": 0.99, "apply_smoothing": True}, labels=["SEOBNRv4PHM", "IMRPhenomPv3HM", "combined"], priors=f.priors["samples"])
     >>> plt.show()
