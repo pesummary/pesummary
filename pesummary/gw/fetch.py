@@ -112,11 +112,21 @@ def _DCC_url(
         msg = "Multiple URLs found for {}: {}".format(event, ", ".join(url))
         if download_latest_file:
             msg += ". Fetching most recent based on Unique IDs"
-            ids = [
-                int(_.split("/")[5]) if "zenodo" in _ else
-                int(_.split("/")[6]) for _ in url
-            ]
-            ind = np.argmax(ids)
+            if all("zenodo" in _ for _ in url) or all("dcc" in _ for _ in url):
+                ids = [
+                    int(_.split("/")[5]) if "zenodo" in _ else
+                    int(_.split("/")[6]) for _ in url
+                ]
+                ind = np.argmax(ids)
+            else:
+                for num, _ in enumerate(url):
+                    # if zenodo entry available, default to that version
+                    if "zenodo" in _:
+                        ind = num
+                        break
+                    else:
+                        # otherwise default to the first in the list
+                        ind = 0
             url = url[ind]
             msg += ": {}".format(url)
             logger.warning(msg)
@@ -144,7 +154,7 @@ def fetch_open_data(event, **kwargs):
 
 def _fetch_open_data(
     event, type="posterior", catalog=None, version=None, sampling_rate=16384,
-    format="gwf", duration=32, IFO="L1", **kwargs
+    format="gwf", duration=32, IFO="L1", download_latest_file=True, **kwargs
 ):
     """Download and read publcally available gravitational wave data
 
@@ -170,11 +180,15 @@ def _fetch_open_data(
     IFO: str, optional
         detector strain data you wish to download. Only used when type="strain".
         Default 'L1'
+    download_latest_file: bool, optional
+        if True, download the latest file if multiple are available. If False
+        a ValueError is raised as no unique file can be found
     """
     try:
         url = _DCC_url(
             event, type=type, catalog=catalog, sampling_rate=sampling_rate,
-            format=format, duration=duration, IFO=IFO, version=version
+            format=format, duration=duration, IFO=IFO, version=version,
+            download_latest_file=download_latest_file
         )
     except RuntimeError:
         raise ValueError(
