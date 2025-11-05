@@ -400,7 +400,7 @@ reference-docs:
   extends: .old-docs
   image: python:3.9
   variables:
-    CONDA_YAML: "https://computing.docs.ligo.org/conda/environments/linux-64/igwn-py310.yaml"
+    CONDA_YAML: "https://computing.docs.ligo.org/conda/environments/linux-64/igwn-py311.yaml"
   before_script:
     - !reference [".debian:base", "before_script"]
     - apt-get -y install git-lfs pandoc
