@@ -37,9 +37,11 @@ class GWFinishingTouches(FinishingTouches):
         for label in self.inputs.labels:
             _path = os.path.join(samples_dir, "{}_skymap.fits".format(label))
             while not os.path.isfile(_path):
+                # fits file has not been created. Check if the process is still
+                # running
                 try:
                     output = subprocess.check_output(
-                        ["ps -p {}".format(self.ligo_skymap_PID[label])],
+                        ["ps -p {}".format(self.ligo_skymap_PID[label].process)],
                         shell=True
                     )
                     cond1 = "summarypages" not in str(output)
@@ -51,7 +53,8 @@ class GWFinishingTouches(FinishingTouches):
                 except (subprocess.CalledProcessError, KeyError):
                     FAILURE = True
                     break
-                time.sleep(60)
+                # join the process and wait
+                self.ligo_skymap_PID[label].wait()
             if FAILURE:
                 continue
             ess = subprocess.Popen(
