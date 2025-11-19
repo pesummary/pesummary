@@ -360,8 +360,8 @@ class _PlotGeneration(_BasePlotGeneration):
                     ]
                 )
                 process.start()
-                PID = process.pid
-            self._ligo_skymap_PID[label] = PID
+                #PID = process.pid
+            self._ligo_skymap_PID[label] = process
         elif SKYMAP and not self.no_ligo_skymap:
             self._ligo_skymap_array_plot(
                 self.savedir, self.skymap[label], label,

@@ -5,6 +5,7 @@
 import numpy as np
 import os
 import importlib
+from contextlib import contextmanager
 from multiprocessing import Pool
 
 from pesummary.core.plots.latex_labels import latex_labels
@@ -102,7 +103,7 @@ class _PlotGeneration(object):
         self.checkpoint = checkpoint
         self.key_data = key_data
         self.multi_process = multi_process
-        self.pool = self.setup_pool()
+        self.pool = None
         self.preliminary_pages = {label: False for label in self.labels}
         self.preliminary_comparison_pages = False
         self.make_comparison = (
@@ -222,18 +223,21 @@ class _PlotGeneration(object):
         if savedir is None:
             self._savedir = self.webdir + "/plots/"
 
+    @contextmanager
     def setup_pool(self):
         """Setup a pool of processes to speed up plot generation
         """
-        pool = Pool(processes=self.multi_process)
-        return pool
+        with Pool(processes=self.multi_process) as pool:
+            yield pool
+        self.pool = None
 
     def generate_plots(self):
         """Generate all plots for all result files
         """
         for i in self.labels:
-            logger.debug("Starting to generate plots for {}".format(i))
-            self._generate_plots(i)
+            with self.setup_pool() as self.pool:
+                logger.debug("Starting to generate plots for {}".format(i))
+                self._generate_plots(i)
             if self.make_interactive:
                 logger.debug(
                     "Starting to generate interactive plots for {}".format(i)
