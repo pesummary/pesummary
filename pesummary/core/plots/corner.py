@@ -182,10 +182,9 @@ def hist2d(
         X, Y, H, levels=(1 - np.array(levels)) * np.max(H), alpha=0.
     )
     contour_set = []
-    for _contour in cs.collections:
+    for _path in cs.get_paths():
         _contour_set = []
-        for _path in _contour.get_paths():
-            data = _path.vertices
+        for data in _path.to_polygons():
             transpose = data.T
             for idx, axis in enumerate(["x", "y"]):
                 limits = [
