@@ -718,7 +718,13 @@ def _default_skymap_plot(ra, dec, weights=None, injection=None, **kwargs):
     register_cylon()
     ra = [-i + np.pi for i in ra]
     logger.debug("Generating the sky map plot")
-    fig, ax = figure(gca=True)
+    fig, orig_ax = figure(gca=True)
+    orig_ax.spines['left'].set_visible(False)
+    orig_ax.spines['right'].set_visible(False)
+    orig_ax.spines['top'].set_visible(False)
+    orig_ax.spines['bottom'].set_visible(False)
+    orig_ax.set_yticks([])
+    orig_ax.set_xticks([])
     ax = fig.add_subplot(
         111, projection="mollweide",
         facecolor=(1.0, 0.939165516411, 0.880255669068)
@@ -783,16 +789,15 @@ def _default_skymap_plot(ra, dec, weights=None, injection=None, **kwargs):
     fmt = {l: s for l, s in zip(cs.levels, [r"$90\%$", r"$50\%$"])}
     ax.clabel(cs, fmt=fmt, fontsize=8, inline=True)
     text = []
-    for i, j in zip(cs.collections, [90, 50]):
+    for path, j in zip(cs.get_paths(), [90, 50]):
         area = 0.
-        for k in i.get_paths():
-            x = k.vertices[:, 0]
-            y = k.vertices[:, 1]
+        for poly in path.to_polygons():
+            x = poly[:, 0]
+            y = poly[:, 1]
             area += 0.5 * np.sum(y[:-1] * np.diff(x) - x[:-1] * np.diff(y))
         area = int(np.abs(area) * (180 / np.pi) * (180 / np.pi))
-        text.append(u'{:d}% area: {:d} deg²'.format(
-            int(j), area, grouping=True))
-    ax.text(1, 1.05, '\n'.join(text[::-1]), transform=ax.transAxes, ha='right',
+        text.append(u'{:d}\% area: {:d} deg²'.format(int(j), area, grouping=True))
+    orig_ax.text(1.0, 1.05, '\n'.join(text[::-1]), transform=ax.transAxes, ha='right',
             fontsize=10)
     xticks = np.arange(-np.pi, np.pi + np.pi / 6, np.pi / 4)
     ax.set_xticks(xticks)
@@ -830,9 +835,9 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
     fig = figure(gca=False)
     ax = fig.add_subplot(
         111, projection="mollweide",
-        facecolor=(1.0, 0.939165516411, 0.880255669068)
     )
     ax.cla()
+    ax.set_title("Preliminary", fontdict={'fontsize': 11})
     ax.grid(visible=True)
     ax.set_xticklabels([
         r"$2^{h}$", r"$4^{h}$", r"$6^{h}$", r"$8^{h}$", r"$10^{h}$",
@@ -878,7 +883,7 @@ def _sky_map_comparison_plot(ra_list, dec_list, labels, colors, **kwargs):
         Y2 = np.concatenate([Y1[0] + np.array([-2, -1]) * np.diff(Y1[:2]), Y1,
                              Y1[-1] + np.array([1, 2]) * np.diff(Y1[-2:]), ])
         CS = ax.contour(X2, Y2, H2.T, V, colors=colors[num], linewidths=2.0)
-        CS.collections[0].set_label(labels[num])
+        ax.plot([], [], color=colors[num], linewidth=2.0, label=labels[num])
     ncols = number_of_columns_for_legend(labels)
     ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, borderaxespad=0.,
               mode="expand", ncol=ncols)

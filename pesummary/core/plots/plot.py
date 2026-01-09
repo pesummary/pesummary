@@ -829,7 +829,7 @@ def _comparison_box_plot(param, samples, colors, latex_label, labels, grid=True)
     maximum = np.max([np.max(i) for i in samples])
     minimum = np.min([np.min(i) for i in samples])
     middle = (maximum + minimum) * 0.5
-    ax.boxplot(samples, widths=0.2, vert=False, whis=np.inf, labels=labels)
+    ax.boxplot(samples, widths=0.2, orientation="horizontal", whis=np.inf, tick_labels=labels)
     for num, i in enumerate(labels):
         ax.annotate(i, xy=(middle, 1), xytext=(middle, num + 1.0 + 0.2), ha="center")
     ax.set_yticks([])

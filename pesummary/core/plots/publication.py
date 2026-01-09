@@ -61,7 +61,7 @@ def pcolormesh(
         if legend:
             _legend_kwargs = DEFAULT_LEGEND_KWARGS.copy()
             _legend_kwargs.update(legend_kwargs)
-            CS.collections[0].set_label(label)
+            CS.set_label(label)
             ax.legend(**_legend_kwargs)
     return ax
 

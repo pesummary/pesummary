@@ -31,8 +31,8 @@ dependencies = [
 	"lalsuite >7.11",
         "python-ligo-lw <2.0.0",
 	"ligo-gracedb",
-	"matplotlib >= 3.6.0,<3.10.0",
-	"numpy >=1.15.4",
+	"matplotlib >= 3.10.0",
+	"numpy >=1.15.4,<2.4.0", # 2.4.0 incompatible with astropy
 	"pandas",
 	"pygments",
 	"scipy >=1.8.0",
