@@ -720,11 +720,36 @@ class _PlotGeneration(_BasePlotGeneration):
         label: str
             the label for the results file that you wish to plot
         """
+        from pesummary.utils.utils import RedirectLogger
         self._skymap_comparison_plot(
             self.savedir, self.same_samples["ra"], self.same_samples["dec"],
             self.labels, self.colors, self.preliminary_comparison_pages,
             self.checkpoint
         )
+
+        try:
+            import ligo.skymap # noqa: F401
+        except ImportError:
+            return
+
+        if self.no_ligo_skymap:
+            return
+
+        logger.info("Launching subprocess to generate comparison skymap plot with "
+                    "ligo.skymap")
+        fits_files = [
+            os.path.join(self.webdir, "samples", "{}_skymap.fits".format(label))
+            for label in self.labels
+        ]
+        with RedirectLogger("ligo.skymap", level="DEBUG") as redirector:
+            process = mp.Process(
+                target=self._ligo_skymap_comparison_plot_from_fits,
+                args=[
+                    self.savedir, fits_files, self.colors, self.labels,
+                    self.preliminary_comparison_pages, self._ligo_skymap_PID
+                ]
+            )
+            process.start()
 
     @staticmethod
     def _skymap_comparison_plot(
@@ -755,6 +780,77 @@ class _PlotGeneration(_BasePlotGeneration):
         fig = gw._sky_map_comparison_plot(ra_list, dec_list, labels, colors)
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
+        )
+
+    @staticmethod
+    @no_latex_plot
+    def _ligo_skymap_comparison_plot_from_fits(
+        savedir, fits_files, colors, labels, preliminary=False, ligo_skymap_PID=None
+    ):
+        """Generate a comparison skymap based on fits files already generated
+        with `ligo.skymap`
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        fits_files: list
+            list of paths to the fits files
+        colors: list
+            list of colors to use for each skymap
+        labels: list
+            list of labels corresponding to each fits file
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
+        ligo_skymap_PID: dict, optional
+            dictionary of process IDs for the ligo.skymap subprocesses
+        """
+        import ligo.skymap.io
+        import subprocess
+        import time
+
+        if ligo_skymap_PID:
+            for label, fits_file in zip(labels, fits_files):
+                if label not in ligo_skymap_PID.keys():
+                    continue
+                while not os.path.isfile(fits_file):
+                    try:
+                        output = subprocess.check_output(
+                            ["ps -p {}".format(ligo_skymap_PID[label].pid)],
+                            shell=True
+                        )
+                        cond1 = "summarypages" not in str(output)
+                        cond2 = "defunct" in str(output)
+                        if cond1 or cond2:
+                            if not os.path.isfile(_path):
+                                FAILURE = True
+                            break
+                    except subprocess.CalledProcessError:
+                        FAILURE = True
+                        break
+                    # wait for the process to finish
+                    time.sleep(60)
+
+        skymaps = []
+        for fits_file in fits_files:
+            try:
+                skymap, _ = ligo.skymap.io.read_sky_map(
+                    fits_file, nest=None
+                )
+                skymaps.append(skymap)
+            except FileNotFoundError:
+                logger.warning(
+                    "Failed to find {}. Unable to generate comparison skymap "
+                    "plot.".format(fits_file)
+                )
+                return
+
+        fig = gw._ligo_skymap_comparion_plot_from_array(
+            skymaps, colors, labels
+        )
+        _PlotGeneration.save(
+            fig, os.path.join(savedir, "combined_skymap.png"),
+            preliminary=preliminary
         )
 
     def waveform_comparison_fd_plot(self, label):
