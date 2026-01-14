@@ -184,8 +184,8 @@ def twod_contour_plot(
 
 def comparison_twod_contour_plot(
     x, y, labels=None, plot_density=None, rangex=None, rangey=None,
-    legend_kwargs={"loc": "best", "frameon": False},
-    colors=list(conf.colorcycle), linestyles=None, **kwargs
+    legend_kwargs={"loc": "best", "frameon": False}, fig=None, ax=None,
+    colors=list(conf.colorcycle), linestyles=None, add_legend=True, **kwargs
 ):
     """Generate a comparison 2d contour contour plot for 2 marginalized
     posterior distributions from multiple analyses
@@ -217,6 +217,7 @@ def comparison_twod_contour_plot(
         all additional kwargs are passed to the
         `pesummary.core.plots.publication.twod_contour_plot` function
     """
+    _ax = ax
     if labels is None and plot_density is not None:
         plot_density = None
     if labels is None:
@@ -231,7 +232,6 @@ def comparison_twod_contour_plot(
     if rangey is None:
         rangey = [ylow, yhigh]
 
-    fig = None
     for num, (_x, _y) in enumerate(zip(x, y)):
         if plot_density is not None and plot_density == labels[num]:
             plot_density = True
@@ -253,12 +253,14 @@ def comparison_twod_contour_plot(
         if linestyles is not None:
             _linestyle = linestyles[num]
         fig = twod_contour_plot(
-            _x, _y, plot_density=plot_density, label=_label, fig=fig,
+            _x, _y, plot_density=plot_density, label=_label, fig=fig, ax=_ax,
             rangex=rangex, rangey=rangey, color=_color, linestyles=_linestyle,
             **kwargs
         )
-    ax = fig.gca()
-    legend = ax.legend(**legend_kwargs)
+    if ax is None:
+        _ax = fig.gca()
+    if add_legend:
+        legend = _ax.legend(**legend_kwargs)
     return fig
 
 
