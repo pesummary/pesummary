@@ -41,7 +41,7 @@ class GWFinishingTouches(FinishingTouches):
                 # running
                 try:
                     output = subprocess.check_output(
-                        ["ps -p {}".format(self.ligo_skymap_PID[label].process)],
+                        ["ps -p {}".format(self.ligo_skymap_PID[label].pid)],
                         shell=True
                     )
                     cond1 = "summarypages" not in str(output)
