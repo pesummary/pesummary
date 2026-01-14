@@ -53,8 +53,8 @@ class GWFinishingTouches(FinishingTouches):
                 except (subprocess.CalledProcessError, KeyError):
                     FAILURE = True
                     break
-                # join the process and wait
-                self.ligo_skymap_PID[label].wait()
+                # wait for the process to finish
+                time.sleep(60)
             if FAILURE:
                 continue
             ess = subprocess.Popen(
