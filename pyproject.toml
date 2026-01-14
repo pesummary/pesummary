@@ -35,7 +35,7 @@ dependencies = [
 	"numpy >=1.15.4,<2.4.0", # 2.4.0 incompatible with astropy
 	"pandas",
 	"pygments",
-	"scipy >=1.8.0",
+	"scipy >=1.8.0,<1.17.0", # 1.17.0 incompatible with gwpy
 	"tqdm >=4.44.0",
 ]
 dynamic = ['version']
