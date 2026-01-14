@@ -74,3 +74,10 @@ def psi_J(psi_L, theta_jn, phi_jl, beta):
         dpsi.append(_dpsi(theta_jn[i], phi_jl[i], beta[i]))
     psi = psi_L + np.array(dpsi)
     return psi
+
+
+@array_input()
+def psi_mod_pi(psi):
+    """Return the polarisation in the interval [0, pi)
+    """
+    return np.mod(psi, np.pi)

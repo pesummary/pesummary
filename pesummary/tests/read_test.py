@@ -1731,7 +1731,7 @@ class TestPublicPycbc(object):
         self.file = download_and_read_file(
             filename, read_file=False, outdir=tmpdir
         )
-        self.result = GWRead(self.file, path_to_samples="samples")
+        self.result = GWRead(self.file, path_to_samples="samples", psi_mod_pi=False)
         samples = self.result.samples_dict
         fp = h5py.File(self.file, 'r')
         fp_samples = fp["samples"]
