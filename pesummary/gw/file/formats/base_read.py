@@ -139,6 +139,9 @@ class GWRead(Read):
                 "every sample to have log_likelihood 0"
             )
             parameters, samples = self.add_log_likelihood(parameters, samples)
+        _mod_psi = kwargs.get("psi_mod_pi", True)
+        if _mod_psi and "psi" in parameters:
+            parameters, samples = self.psi_mod_pi(parameters, samples)
         data.update(
             {
                 "parameters": parameters, "samples": samples,
@@ -436,6 +439,32 @@ class GWSingleAnalysisRead(GWRead, SingleAnalysisRead):
             parameter
         """
         return _add_log_likelihood(parameters, samples)
+
+    def psi_mod_pi(self, parameters, samples):
+        """Fold the polarisation (psi) between the interval [0, pi). This is
+        only performed if there are polarisation samples > pi in the dataset.
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters stored in the table
+        samples: 2d list
+            list of samples for each parameter. Columns correspond to a given
+            parameter
+        """
+        from pesummary.gw.conversions.angles import psi_mod_pi
+        ind = parameters.index("psi")
+        _psi = np.array(samples)[:,ind]
+        if not np.any(_psi > np.pi):
+            return parameters, samples
+        logger.warning(
+            "Folding the polarisation (psi) between the interval [0, pi). "
+            "If this is not desired, pass 'psi_mod_pi=False'."
+        )
+        _psi_mod = psi_mod_pi(_psi)
+        for row in np.arange(len(samples)):
+            samples[row][ind] = _psi_mod[row]
+        return parameters, samples
 
     def generate_all_posterior_samples(self, **kwargs):
         """Generate all posterior samples via the conversion module
