@@ -193,7 +193,7 @@ def get_list_of_plots(
     return sorted(plots)
 
 
-def make_argparse(gw=True, extension="json", bilby=False, lalinference=False,
+def make_argparse(gw=True, extension="json", bilby=False, lalinference=False, dingo=False,
                   number=1, existing=False, disable_expert=True, outdir="./.outdir"):
     """
     """
@@ -338,7 +338,7 @@ def make_injection_file(
     return args
 
 
-def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False,
+def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False, dingo=False,
                      lalinference=False, pesummary=False, pesummary_label="label",
                      config=None, psd=None, calibration=None, random_seed=None,
                      n_samples=1000):
@@ -355,7 +355,6 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
     """
     if random_seed is not None:
         np.random.seed(random_seed)
-    print(extension, gw, bilby, lalinference, pesummary)
     if outdir[-1] != "/":
         outdir += "/"
     data = np.array([np.random.random(18) for i in range(n_samples)])
@@ -381,34 +380,63 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
         import string
 
         parameters = list(string.ascii_lowercase)[:17] + ["log_likelihood"]
+
     if extension == "dat":
-        np.savetxt(outdir + "test.dat", data, delimiter=" ",
-                   header=" ".join(parameters), comments="")
+        np.savetxt(
+            outdir + "test.dat",
+            data,
+            delimiter=" ",
+            header=" ".join(parameters),
+            comments="",
+        )
     elif extension == "csv":
-        np.savetxt(outdir + "test.csv", data, delimiter=",",
-                   header=",".join(parameters), comments="")
+        np.savetxt(
+            outdir + "test.csv",
+            data,
+            delimiter=",",
+            header=",".join(parameters),
+            comments="",
+        )
     elif extension == "npy":
         from pesummary.utils.samples_dict import SamplesDict
+
         samples = SamplesDict(parameters, np.array(data).T).to_structured_array()
         np.save(outdir + "test.npy", samples)
-    elif extension == "json" and not bilby and not pesummary and not lalinference:
+    elif (
+        extension == "json"
+        and not bilby
+        and not pesummary
+        and not lalinference
+        and not dingo
+    ):
         import json
 
-        dictionary = {"NameOfCode": {"posterior_samples": {key:
-                      [i[num] for i in data] for num, key in
-                      enumerate(parameters)}}}
+        dictionary = {
+            "NameOfCode": {
+                "posterior_samples": {
+                    key: [i[num] for i in data] for num, key in enumerate(parameters)
+                }
+            }
+        }
         with open(outdir + "test.json", "w") as f:
             json.dump(dictionary, f, indent=4, sort_keys=True)
-    elif (extension == "hdf5" or extension == "h5") and not bilby and not pesummary and not lalinference:
-            import h5py
+    elif (
+        (extension == "hdf5" or extension == "h5")
+        and not bilby
+        and not pesummary
+        and not lalinference
+        and not dingo
+    ):
+        import h5py
 
-            h5py_data = np.array(
-                [tuple(i) for i in data], dtype=[tuple([i, 'float64']) for i in parameters])
-            f = h5py.File(outdir + "test.h5", "w")
-            name = f.create_group("NameOfCode")
-            samples = f.create_dataset("posterior_samples", data=h5py_data)
-            f.close()
-    elif bilby and not pesummary and not lalinference:
+        h5py_data = np.array(
+            [tuple(i) for i in data], dtype=[tuple([i, "float64"]) for i in parameters]
+        )
+        f = h5py.File(outdir + "test.h5", "w")
+        name = f.create_group("NameOfCode")
+        samples = f.create_dataset("posterior_samples", data=h5py_data)
+        f.close()
+    elif bilby and not pesummary and not lalinference and not dingo:
         import bilby
         from bilby.core.result import Result
         from bilby.core.prior import PriorDict
@@ -432,35 +460,105 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
         elif extension == "hdf5" or extension == "h5":
             bilby_object.save_to_file(
                 filename=outdir + "test.hdf5", extension="hdf5")
-    elif lalinference and not bilby and not pesummary:
+    elif dingo and not pesummary and not lalinference and not bilby:
+        import bilby
+        import dingo
+        from pandas import DataFrame
+        from dingo.gw.result import Result
+
+        intrinsic_parameters = [
+            "mass_1",
+            "mass_2",
+            "a_1",
+            "a_2",
+            "tilt_1",
+            "tilt_2",
+            "phi_jl",
+            "phi_12",
+            "log_likelihood",
+            "redshift",
+            "mass_1_source",
+            "mass_2_source",
+        ]
+        extrinsic_parameters = [
+            "psi",
+            "theta_jn",
+            "ra",
+            "dec",
+            "luminosity_distance",
+            "geocent_time",
+        ]
+        assert set(parameters) == set(intrinsic_parameters + extrinsic_parameters)
+        settings = {
+            "train_settings": {
+                "data": {
+                    "unconditional": False,
+                    "extrinsic_prior": {
+                        "%s" % (i): "bilby.core.prior.Uniform(0.1, 0.5, 0)"
+                        for i in extrinsic_parameters
+                    },
+                    "window": {"type": "tukey", "f_s": 4096, "T": 8.0, "roll_off": 0.4},
+                    "ref_time": 1126259462.0,
+                },
+            },
+            "dataset_settings": {
+                "intrinsic_prior": {
+                    "%s" % (i): "bilby.core.prior.Uniform(0.1, 0.5, 0)"
+                    for i in intrinsic_parameters
+                },
+                "domain": {
+                    "type": "FrequencyDomain",
+                    "f_min": 20.0,
+                    "f_max": 1024.0,
+                    "delta_f": 0.125,
+                },
+                "waveform_generator": {"spin_conversion_phase": None, "f_ref": 20.0},
+            },
+        }
+
+        weights = np.random.random(n_samples)
+        tmp_parameters = parameters + ["weights"]
+        tmp_data = np.c_[data, weights]
+        posterior_data_frame = DataFrame(tmp_data, columns=tmp_parameters)
+
+        dictionary = {
+            "samples": posterior_data_frame,
+            "context": None,
+            "event_metadata": None,
+            "importance_sampling_metadata": None,
+            "log_evidence": None,
+            "log_noise_evidence": None,
+            "settings": settings,
+        }
+        dingo_object = Result(file_name=None, dictionary=dictionary)
+        if extension == "hdf5" or extension == "h5":
+            dingo_object.to_file(file_name=outdir + f"test.{extension}")
+
+    elif lalinference and not bilby and not pesummary and not dingo:
         import h5py
 
         h5py_data = np.array(
-            [tuple(i) for i in data], dtype=[tuple([i, 'float64']) for i in parameters])
+            [tuple(i) for i in data], dtype=[tuple([i, "float64"]) for i in parameters]
+        )
         f = h5py.File(outdir + "test.hdf5", "w")
         lalinference = f.create_group("lalinference")
         nest = lalinference.create_group("lalinference_nest")
         samples = nest.create_dataset("posterior_samples", data=h5py_data)
         f.close()
-    elif pesummary and not lalinference and not bilby:
+    elif pesummary and not lalinference and not bilby and not dingo:
         dictionary = {
             pesummary_label: {
                 "posterior_samples": {
                     "parameter_names": parameters,
-                    "samples": [list(i) for i in data]
+                    "samples": [list(i) for i in data],
                 },
                 "injection_data": {
                     "injection_values": [float("nan") for i in range(len(parameters))]
                 },
                 "version": ["No version information found"],
-                "meta_data": {
-                    "sampler": {"log_evidence": 0.5},
-                    "meta_data": {}
-                }
+                "meta_data": {"sampler": {"log_evidence": 0.5}, "meta_data": {}},
             },
-            "version": {
-                "pesummary": ["v0.1.7"]
-            }
+            "version": {"pesummary": ["v0.1.7"]},
         }
         if config is not None:
             dictionary[pesummary_label]["config_file"] = config

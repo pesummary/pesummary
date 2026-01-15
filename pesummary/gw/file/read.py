@@ -1,5 +1,5 @@
 # Licensed under an MIT style license -- see LICENSE.md
-
+from pesummary.gw.file.formats.dingo import Dingo
 from pesummary.gw.file.formats.lalinference import LALInference
 from pesummary.gw.file.formats.bilby import Bilby
 from pesummary.gw.file.formats.default import Default
@@ -12,7 +12,7 @@ from pesummary.core.file.read import (
     is_bilby_hdf5_file, is_bilby_json_file, is_pesummary_hdf5_file,
     is_pesummary_json_file, is_pesummary_hdf5_file_deprecated,
     is_pesummary_json_file_deprecated, _is_pesummary_hdf5_file,
-    _is_pesummary_json_file
+    _is_pesummary_json_file, is_dingo_hdf5_file
 )
 from pesummary.core.file.read import read as CoreRead
 
@@ -117,6 +117,7 @@ def is_pycbc_file(path):
 
 
 GW_HDF5_LOAD = {
+    is_dingo_hdf5_file: Dingo.load_file,
     is_lalinference_file: LALInference.load_file,
     is_bilby_hdf5_file: Bilby.load_file,
     is_tgr_pesummary_hdf5_file: TGRPESummary.load_file,

@@ -20,8 +20,7 @@ DEFAULT_HDF5_KEYS = ["version", "history"]
 
 
 def recursively_save_dictionary_to_hdf5_file(
-    f, dictionary, current_path=None, extra_keys=DEFAULT_HDF5_KEYS,
-    compression=None
+    f, dictionary, current_path=None, extra_keys=DEFAULT_HDF5_KEYS, compression=None
 ):
     """Recursively save a dictionary to a hdf5 file
 
@@ -37,9 +36,11 @@ def recursively_save_dictionary_to_hdf5_file(
         optional filter to apply for compression. If you do not want to
         apply compression, compression = None. Default None.
     """
+
     def _safe_create_hdf5_group(hdf5_file, key):
         if key not in hdf5_file.keys():
             hdf5_file.create_group(key)
+
     for key in extra_keys:
         if key in dictionary:
             _safe_create_hdf5_group(hdf5_file=f, key=key)
@@ -62,14 +63,16 @@ def recursively_save_dictionary_to_hdf5_file(
             else:
                 attrs = {}
             create_hdf5_dataset(
-                key=k, value=v, hdf5_file=f, current_path=current_path,
-                compression=compression, attrs=attrs
+                key=k,
+                value=v,
+                hdf5_file=f,
+                current_path=current_path,
+                compression=compression,
+                attrs=attrs,
             )
 
 
-def create_hdf5_dataset(
-    key, value, hdf5_file, current_path, compression=None, attrs={}
-):
+def create_hdf5_dataset(key, value, hdf5_file, current_path, compression=None, attrs={}):
     """
     Create a hdf5 dataset in place
 
@@ -93,7 +96,7 @@ def create_hdf5_dataset(
         optional list of attributes to store alongside the dataset
     """
     error_message = "Cannot process {}={} from list with type {} for hdf5"
-    array_types = (list, pesummary.utils.samples_dict.Array, np.ndarray)
+    array_types = (list, pesummary.utils.samples_dict.Array, np.ndarray, tuple)
     numeric_types = (float, int, np.number)
     string_types = (str, bytes)
     SOFTLINK = False
@@ -134,9 +137,7 @@ def create_hdf5_dataset(
         SOFTLINK = True
         substring = value.split("external:")[1]
         _file, _path = substring.split("|")
-        hdf5_file["/".join(current_path + [key])] = h5py.ExternalLink(
-            _file, _path
-        )
+        hdf5_file["/".join(current_path + [key])] = h5py.ExternalLink(_file, _path)
     elif isinstance(value, string_types):
         data = np.array([value], dtype="S")
     elif isinstance(value, numeric_types):
@@ -178,8 +179,8 @@ def create_hdf5_dataset(
 
 
 class PESummaryJsonEncoder(json.JSONEncoder):
-    """Personalised JSON encoder for PESummary
-    """
+    """Personalised JSON encoder for PESummary"""
+
     def default(self, obj):
         """Return a json serializable object for 'obj'
 
@@ -206,17 +207,37 @@ class PESummaryJsonEncoder(json.JSONEncoder):
 
 
 class _MetaFile(object):
-    """This is a base class to handle the functions to generate a meta file
-    """
+    """This is a base class to handle the functions to generate a meta file"""
+
     def __init__(
-        self, samples, labels, config, injection_data, file_versions,
-        file_kwargs, webdir=None, result_files=None, hdf5=False, priors={},
-        existing_version=None, existing_label=None, existing_samples=None,
-        existing_injection=None, existing_metadata=None, existing_config=None,
-        existing_priors={}, existing_metafile=None, outdir=None, existing=None,
-        package_information={}, mcmc_samples=False, filename=None,
-        external_hdf5_links=False, hdf5_compression=None, history=None,
-        descriptions=None
+        self,
+        samples,
+        labels,
+        config,
+        injection_data,
+        file_versions,
+        file_kwargs,
+        webdir=None,
+        result_files=None,
+        hdf5=False,
+        priors={},
+        existing_version=None,
+        existing_label=None,
+        existing_samples=None,
+        existing_injection=None,
+        existing_metadata=None,
+        existing_config=None,
+        existing_priors={},
+        existing_metafile=None,
+        outdir=None,
+        existing=None,
+        package_information={},
+        mcmc_samples=False,
+        filename=None,
+        external_hdf5_links=False,
+        hdf5_compression=None,
+        history=None,
+        descriptions=None,
     ):
         self.data = {}
         self.webdir = webdir
@@ -239,12 +260,10 @@ class _MetaFile(object):
             try:
                 _user = getuser()
             except (ImportError, KeyError):
-                _user = ''
+                _user = ""
             self.history = history_dictionary(creator=_user)
         if self.descriptions is None:
-            self.descriptions = {
-                label: "No description found" for label in self.labels
-            }
+            self.descriptions = {label: "No description found" for label in self.labels}
         elif not all(label in self.descriptions.keys() for label in self.labels):
             for label in self.labels:
                 if label not in self.descriptions.keys():
@@ -263,6 +282,7 @@ class _MetaFile(object):
         self.package_information = package_information
         if not len(package_information):
             from pesummary.core.cli.inputs import _Input
+
             self.package_information = _Input.get_package_information()
         self.mcmc_samples = mcmc_samples
 
@@ -304,8 +324,7 @@ class _MetaFile(object):
         return os.path.join(os.path.abspath(self.outdir), self.file_name)
 
     def make_dictionary(self):
-        """Wrapper function for _make_dictionary
-        """
+        """Wrapper function for _make_dictionary"""
         self._make_dictionary()
 
     @property
@@ -316,9 +335,14 @@ class _MetaFile(object):
             posterior = "posterior_samples"
         dictionary = {
             label: {
-                posterior: {}, "injection_data": {}, "version": {},
-                "meta_data": {}, "priors": {}, "config_file": {}
-            } for label in self.labels
+                posterior: {},
+                "injection_data": {},
+                "version": {},
+                "meta_data": {},
+                "priors": {},
+                "config_file": {},
+            }
+            for label in self.labels
         }
         dictionary["version"] = self.package_information
         dictionary["version"]["pesummary"] = [__version__]
@@ -326,8 +350,7 @@ class _MetaFile(object):
         return dictionary
 
     def _make_dictionary(self):
-        """Generate a single dictionary which stores all information
-        """
+        """Generate a single dictionary which stores all information"""
         if self.mcmc_samples:
             posterior = "mcmc_chains"
         else:
@@ -342,19 +365,21 @@ class _MetaFile(object):
             parameters = self.samples[label].keys()
             samples = np.array([self.samples[label][i] for i in parameters]).T
             dictionary[label][posterior] = {
-                "parameter_names": list(parameters), "samples": samples.tolist()
+                "parameter_names": list(parameters),
+                "samples": samples.tolist(),
             }
             dictionary[label]["injection_data"] = {
                 "parameters": list(parameters),
-                "samples": [
-                    self.injection_data[label][i] for i in parameters
-                ]
+                "samples": [self.injection_data[label][i] for i in parameters],
             }
             dictionary[label]["version"] = [self.file_versions[label]]
             dictionary[label]["description"] = [self.descriptions[label]]
             dictionary[label]["meta_data"] = self.file_kwargs[label]
-            if self.config != {} and self.config[num] is not None and \
-                    not isinstance(self.config[num], dict):
+            if (
+                self.config != {}
+                and self.config[num] is not None
+                and not isinstance(self.config[num], dict)
+            ):
                 config = self._grab_config_data_from_data_file(self.config[num])
                 dictionary[label]["config_file"] = config
             elif self.config[num] is not None:
@@ -380,9 +405,7 @@ class _MetaFile(object):
         if config.error:
             logger.info(
                 "Unable to open %s with configparser because %s. The data will "
-                "not be stored in the meta file" % (
-                    config.path_to_file, config.error
-                )
+                "not be stored in the meta file" % (config.path_to_file, config.error)
             )
         if sections != []:
             for i in sections:
@@ -405,14 +428,15 @@ class _MetaFile(object):
             List of strings to write at the beginning of the file
         """
         np.savetxt(
-            file_name, samples, delimiter=conf.delimiter,
-            header=conf.delimiter.join(header), comments=""
+            file_name,
+            samples,
+            delimiter=conf.delimiter,
+            header=conf.delimiter.join(header),
+            comments="",
         )
 
     @staticmethod
-    def _convert_posterior_samples_to_numpy(
-        dictionary, mcmc_samples=False, index=None
-    ):
+    def _convert_posterior_samples_to_numpy(dictionary, mcmc_samples=False, index=None):
         """Convert the posterior samples from a column-major dictionary
         to a row-major numpy array
 
@@ -438,13 +462,10 @@ class _MetaFile(object):
             parameters = list(samples.keys())
             chains = samples[parameters[0]].keys()
             data = {
-                key: SamplesDict({
-                    param: samples[param][key] for param in parameters
-                }) for key in chains
+                key: SamplesDict({param: samples[param][key] for param in parameters})
+                for key in chains
             }
-            return {
-                key: item.to_structured_array() for key, item in data.items()
-            }
+            return {key: item.to_structured_array() for key, item in data.items()}
         return samples.to_structured_array(index=index)
 
     @staticmethod
@@ -464,8 +485,7 @@ class _MetaFile(object):
             from pandas.io.json.normalize import nested_to_record
 
         def modify_dict(key, dictionary, replace):
-            """
-            """
+            """ """
             from functools import reduce
             from operator import getitem
 
@@ -475,7 +495,7 @@ class _MetaFile(object):
             return mod
 
         data = copy.deepcopy(dictionary)
-        flat_dictionary = nested_to_record(data, sep='/')
+        flat_dictionary = nested_to_record(data, sep="/")
         rev_dictionary = {}
         for key, value in flat_dictionary.items():
             try:
@@ -491,8 +511,7 @@ class _MetaFile(object):
         return data
 
     def write_marginalized_posterior_to_dat(self):
-        """Write the marginalized posterior for each parameter to a .dat file
-        """
+        """Write the marginalized posterior for each parameter to a .dat file"""
         if self.mcmc_samples:
             return
         for label in self.labels:
@@ -500,37 +519,32 @@ class _MetaFile(object):
                 make_dir(os.path.join(self.outdir, label))
             for param, samples in self.samples[label].items():
                 self.write_to_dat(
-                    os.path.join(
-                        self.outdir, label, "{}_{}.dat".format(label, param)
-                    ), samples, header=[param]
+                    os.path.join(self.outdir, label, "{}_{}.dat".format(label, param)),
+                    samples,
+                    header=[param],
                 )
 
     @staticmethod
     def save_to_json(data, meta_file):
-        """Save the metafile as a json file
-        """
+        """Save the metafile as a json file"""
         with open(meta_file, "w") as f:
-            json.dump(
-                data, f, indent=4, sort_keys=True,
-                cls=PESummaryJsonEncoder
-            )
+            json.dump(data, f, indent=4, sort_keys=True, cls=PESummaryJsonEncoder)
 
     @staticmethod
     def _seperate_dictionary_for_external_links(
-            data, labels, sub_file_name="_{label}.h5"
+        data, labels, sub_file_name="_{label}.h5"
     ):
-        """
-        """
+        """ """
         _data = copy.deepcopy(data)
         sub_file_data = {
             label: {
-                label: _data[label], "version": _data["version"],
-                "history": _data["history"]
-            } for label in labels
+                label: _data[label],
+                "version": _data["version"],
+                "history": _data["history"],
+            }
+            for label in labels
         }
-        meta_file_data = {
-            key: item for key, item in _data.items() if key not in labels
-        }
+        meta_file_data = {key: item for key, item in _data.items() if key not in labels}
         for label in labels:
             meta_file_data[label] = "external:{}|{}".format(
                 sub_file_name.format(label=label), label
@@ -567,18 +581,25 @@ class _MetaFile(object):
         converted_samples = {
             label: _MetaFile._convert_posterior_samples_to_numpy(
                 samples[label], mcmc_samples=mcmc_samples
-            ) for label in labels
+            )
+            for label in labels
         }
         return converted_samples
 
     @staticmethod
     def save_to_hdf5(
-        data, labels, samples, meta_file, no_convert=False,
-        extra_keys=DEFAULT_HDF5_KEYS, mcmc_samples=False,
-        external_hdf5_links=False, compression=None, _class=None
+        data,
+        labels,
+        samples,
+        meta_file,
+        no_convert=False,
+        extra_keys=DEFAULT_HDF5_KEYS,
+        mcmc_samples=False,
+        external_hdf5_links=False,
+        compression=None,
+        _class=None,
     ):
-        """Save the metafile as a hdf5 file
-        """
+        """Save the metafile as a hdf5 file"""
         import h5py
 
         if _class is None:
@@ -594,14 +615,19 @@ class _MetaFile(object):
             for label in labels:
                 data[label][key] = _samples[label]
                 if "injection_data" in data[label].keys():
-                    data[label]["injection_data"] = \
+                    data[label]["injection_data"] = (
                         _class._convert_posterior_samples_to_numpy(
-                            SamplesDict({
-                                param: samp for param, samp in zip(
-                                    data[label]["injection_data"]["parameters"],
-                                    data[label]["injection_data"]["samples"]
-                                )
-                            }), index=[0]
+                            SamplesDict(
+                                {
+                                    param: samp
+                                    for param, samp in zip(
+                                        data[label]["injection_data"]["parameters"],
+                                        data[label]["injection_data"]["samples"],
+                                    )
+                                }
+                            ),
+                            index=[0],
+                        )
                     )
         if external_hdf5_links:
             from pathlib import Path
@@ -617,30 +643,30 @@ class _MetaFile(object):
             for label in labels:
                 with h5py.File(_subfile.format(label=label), "w") as f:
                     recursively_save_dictionary_to_hdf5_file(
-                        f, sub_file_data[label], extra_keys=extra_keys + [label],
-                        compression=compression
+                        f,
+                        sub_file_data[label],
+                        extra_keys=extra_keys + [label],
+                        compression=compression,
                     )
             with h5py.File(meta_file, "w") as f:
                 recursively_save_dictionary_to_hdf5_file(
-                    f, meta_file_data, extra_keys=extra_keys,
-                    compression=compression
+                    f, meta_file_data, extra_keys=extra_keys, compression=compression
                 )
         else:
             with h5py.File(meta_file, "w") as f:
                 recursively_save_dictionary_to_hdf5_file(
-                    f, data, extra_keys=extra_keys + labels,
-                    compression=compression
+                    f, data, extra_keys=extra_keys + labels, compression=compression
                 )
 
     def save_to_dat(self):
-        """Save the samples to a .dat file
-        """
+        """Save the samples to a .dat file"""
+
         def _save(parameters, samples, label):
-            """Helper function to save the parameters and samples to file
-            """
+            """Helper function to save the parameters and samples to file"""
             self.write_to_dat(
                 os.path.join(self.outdir, "{}_pesummary.dat".format(label)),
-                samples.T, header=parameters
+                samples.T,
+                header=parameters,
             )
 
         if self.mcmc_samples:
@@ -658,8 +684,7 @@ class _MetaFile(object):
             _save(parameters, samples, label)
 
     def add_existing_data(self):
-        """
-        """
+        """ """
         from pesummary.utils.utils import _add_existing_data
 
         self = _add_existing_data(self)
@@ -669,35 +694,51 @@ class MetaFile(object):
     """This class handles the creation of a metafile storing all information
     from the analysis
     """
+
     def __init__(self, inputs, history=None):
         from pesummary.utils.utils import logger
+
         logger.info("Starting to generate the meta file")
         meta_file = _MetaFile(
-            inputs.samples, inputs.labels, inputs.config,
-            inputs.injection_data, inputs.file_version, inputs.file_kwargs,
-            hdf5=inputs.hdf5, webdir=inputs.webdir, result_files=inputs.result_files,
-            existing_version=inputs.existing_file_version, existing_label=inputs.existing_labels,
-            priors=inputs.priors, existing_samples=inputs.existing_samples,
+            inputs.samples,
+            inputs.labels,
+            inputs.config,
+            inputs.injection_data,
+            inputs.file_version,
+            inputs.file_kwargs,
+            hdf5=inputs.hdf5,
+            webdir=inputs.webdir,
+            result_files=inputs.result_files,
+            existing_version=inputs.existing_file_version,
+            existing_label=inputs.existing_labels,
+            priors=inputs.priors,
+            existing_samples=inputs.existing_samples,
             existing_injection=inputs.existing_injection_data,
             existing_metadata=inputs.existing_file_kwargs,
-            existing_config=inputs.existing_config, existing=inputs.existing,
+            existing_config=inputs.existing_config,
+            existing=inputs.existing,
             existing_priors=inputs.existing_priors,
             existing_metafile=inputs.existing_metafile,
             package_information=inputs.package_information,
-            mcmc_samples=inputs.mcmc_samples, filename=inputs.filename,
+            mcmc_samples=inputs.mcmc_samples,
+            filename=inputs.filename,
             external_hdf5_links=inputs.external_hdf5_links,
-            hdf5_compression=inputs.hdf5_compression, history=history,
-            descriptions=inputs.descriptions
+            hdf5_compression=inputs.hdf5_compression,
+            history=history,
+            descriptions=inputs.descriptions,
         )
         meta_file.make_dictionary()
         if not inputs.hdf5:
             meta_file.save_to_json(meta_file.data, meta_file.meta_file)
         else:
             meta_file.save_to_hdf5(
-                meta_file.data, meta_file.labels, meta_file.samples,
-                meta_file.meta_file, mcmc_samples=meta_file.mcmc_samples,
+                meta_file.data,
+                meta_file.labels,
+                meta_file.samples,
+                meta_file.meta_file,
+                mcmc_samples=meta_file.mcmc_samples,
                 external_hdf5_links=meta_file.external_hdf5_links,
-                compression=meta_file.hdf5_compression
+                compression=meta_file.hdf5_compression,
             )
         meta_file.save_to_dat()
         meta_file.write_marginalized_posterior_to_dat()

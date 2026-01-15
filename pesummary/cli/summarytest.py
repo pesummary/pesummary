@@ -234,6 +234,15 @@ def lalinference(*args, **kwargs):
 
 
 @tmp_directory
+def dingo(*args, **kwargs):
+    """Test a dingo run"""
+    command_line = "bash {}".format(
+        os.path.join(PESUMMARY_DIR, "pesummary", "tests", "dingo.sh")
+    )
+    return launch(command_line)
+
+
+@tmp_directory
 def bilby(*args, **kwargs):
     """Test a bilby run
     """
