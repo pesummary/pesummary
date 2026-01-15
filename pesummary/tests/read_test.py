@@ -682,6 +682,79 @@ class BilbyFile(BaseRead):
         assert len(f.priors["samples"][params[0]]) == 200
         
 
+class DingoFile(BaseRead):
+    """Base class to test loading in a bilby file with the core Read function"""
+
+    def test_class_name(self):
+        """Test the class used to load in this file"""
+        assert isinstance(self.result, pesummary.core.file.formats.dingo.Dingo)
+
+    def test_parameters(self):
+        """Test the parameter property of the dingo class"""
+        super(DingoFile, self).test_parameters(self.parameters)
+
+    def test_samples(self):
+        """
+        Test the samples property of the dingo class
+        The problem is, we want unweighted samples to pass to
+        pesummary. But this means we need to resample
+        according to the weights. This means that
+        the samples which were used to instantiate the
+        result object are not in the same order (or neccesarily
+        the same) as the pesummary samples. So we can't easily
+        compare that the unweighted pesummary samples are the same
+        as the samples used to instantiate the dingo result
+        """
+        assert len(self.result.samples) == 1000
+        assert len(self.result.samples[0]) == 18
+
+    def test_samples_dict(self):
+        """
+        See test_samples documentation
+        """
+        pass
+
+    def test_version(self):
+        """Test the version property of the dingo class"""
+        import dingo
+        true = f"dingo={dingo.__version__}"
+        super(DingoFile, self).test_version(true)
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class"""
+        # extra kwargs may contain a huge amount of information regarding
+        # the training_settings or dataset_settings. It is unrealistic
+        # to have a true value for this test. So instead just test a
+        # few properties
+        assert self.result.extra_kwargs["sampler"] in (
+            {"pe_algorithm": "dingo-is", "nsamples": 1000},
+            {"pe_algorithm": "dingo", "nsamples": 1000},
+        )
+
+    def test_injection_parameters(self, true=None, pesummary=False):
+        # not testing injections as this is not implemented in the
+        # current conda version of dingo (0.8.4)
+        self.result.injection_parameters = None
+        return super().test_injection_parameters(true, pesummary)
+
+    def test_file_format_read(self, path, file_format):
+        """Test that when the file_format is specified, that correct class is used"""
+        from pesummary.core.file.formats.dingo import Dingo
+
+        super(DingoFile, self).test_file_format_read(path, file_format, Dingo)
+
+    def test_priors(self, read_function=Read):
+        """Test that the priors are correctly extracted from the dingo result
+        file
+        """
+        for param, prior in self.result.priors["samples"].items():
+            assert isinstance(prior, np.ndarray)
+        f = read_function(self.path, disable_prior=True)
+        assert not len(f.priors["samples"])
+        f = read_function(self.path, nsamples_for_prior=200)
+        params = list(f.priors["samples"].keys())
+        assert len(f.priors["samples"][params[0]]) == 200
+
 
 class TestCoreJsonBilbyFile(BilbyFile):
     """Class to test loading in a bilby json file with the core Read function
@@ -840,30 +913,83 @@ class TestCoreHDF5BilbyFile(BilbyFile):
         super(TestCoreHDF5BilbyFile, self).test_priors(read_function=Read)
 
 
-class PESummaryFile(BaseRead):
-    """Base class to test loading in a PESummary file with the core Read function
-    """
+class TestCoreHDF5DingoFile(DingoFile):
+    """Class to test loading in a bilby hdf5 file with the core Read function"""
+
+    def setup_method(self):
+        """Setup the TestCoreBilbyFile class"""
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+        self.parameters, self.samples = make_result_file(
+            outdir=tmpdir, extension="hdf5", gw=True, dingo=True
+        )
+        self.path = os.path.join(tmpdir, "test.hdf5")
+        self.result = Read(self.path)
+
+    def teardown_method(self):
+        """Remove the files and directories created from this class"""
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
     def test_class_name(self):
-        """Test the class used to load in this file
+        """Test the class used to load in this file"""
+        super(TestCoreHDF5DingoFile, self).test_class_name()
+
+    def test_parameters(self):
+        """Test the parameter property of the dingo class"""
+        super(TestCoreHDF5DingoFile, self).test_parameters()
+
+    def test_samples(self):
+        """Test the samples property of the bilby class"""
+        super(TestCoreHDF5DingoFile, self).test_samples()
+
+    def test_samples_dict(self):
+        """Test the samples_dict property of the dingo class"""
+        super(TestCoreHDF5DingoFile, self).test_samples_dict()
+
+    def test_version(self):
+        """Test the version property of the default class"""
+        super(TestCoreHDF5DingoFile, self).test_version()
+
+    def test_extra_kwargs(self):
+        """Test the extra_kwargs property of the default class"""
+        super(TestCoreHDF5DingoFile, self).test_extra_kwargs()
+
+    # not testing injections as this is not implemented in the
+    # current conda version of dingo (0.5.11)
+
+    def test_to_dat(self):
+        """Test the to_dat method"""
+        super(TestCoreHDF5DingoFile, self).test_to_dat()
+
+    def test_file_format_read(self):
+        """Test that when the file_format is specified, that correct class is used"""
+        super(TestCoreHDF5DingoFile, self).test_file_format_read(self.path, "dingo")
+
+    def test_priors(self):
+        """Test that the priors are correctly extracted from the bilby result
+        file
         """
+        super(TestCoreHDF5DingoFile, self).test_priors(read_function=Read)
+
+
+class PESummaryFile(BaseRead):
+    """Base class to test loading in a PESummary file with the core Read function"""
+
+    def test_class_name(self):
+        """Test the class used to load in this file"""
         assert isinstance(self.result, pesummary.core.file.formats.pesummary.PESummary)
 
     def test_parameters(self):
-        """Test the parameter property of the PESummary class
-        """
-        super(PESummaryFile, self).test_parameters(
-            self.parameters, pesummary=True)
+        """Test the parameter property of the PESummary class"""
+        super(PESummaryFile, self).test_parameters(self.parameters, pesummary=True)
 
     def test_samples(self):
-        """Test the samples property of the PESummary class
-        """
-        super(PESummaryFile, self).test_samples(
-            self.samples, pesummary=True)
+        """Test the samples property of the PESummary class"""
+        super(PESummaryFile, self).test_samples(self.samples, pesummary=True)
 
     def test_version(self):
-        """Test the version property of the default class
-        """
+        """Test the version property of the default class"""
         true = ["No version information found"]
         super(PESummaryFile, self).test_version(true)
 

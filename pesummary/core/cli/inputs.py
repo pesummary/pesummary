@@ -227,7 +227,7 @@ class _Input(object):
         file_format=None, nsamples=None, disable_prior_sampling=False,
         nsamples_for_prior=None, path_to_samples=None,
         keep_nan_likelihood_samples=False, reweight_samples=False,
-        **kwargs
+        multi_process=None, **kwargs
     ):
         """Grab data from a result file containing posterior samples
 
@@ -253,7 +253,7 @@ class _Input(object):
         f = read_function(
             file, file_format=file_format, disable_prior=disable_prior_sampling,
             nsamples_for_prior=nsamples_for_prior, path_to_samples=path_to_samples,
-            remove_nan_likelihood_samples=not keep_nan_likelihood_samples
+            remove_nan_likelihood_samples=not keep_nan_likelihood_samples, multi_process=multi_process, **kwargs
         )
         if config is not None:
             f.add_fixed_parameters_from_config_file(config)
@@ -1340,6 +1340,7 @@ class _Input(object):
                 path_to_samples=self.path_to_samples[label],
                 reweight_samples=self.reweight_samples,
                 keep_nan_likelihood_samples=self.keep_nan_likelihood_samples,
+                num_processes=self.multi_process,
                 **grab_data_kwargs
             )
         self._open_result_files.update({file: data["open_file"]})

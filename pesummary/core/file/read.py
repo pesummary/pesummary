@@ -3,12 +3,33 @@
 from pesummary.core.file.formats.base_read import Read
 from pesummary.core.file.formats.bilby import Bilby, bilby_version
 from pesummary.core.file.formats.default import Default
+from pesummary.core.file.formats.dingo import Dingo
 from pesummary.core.file.formats.pesummary import PESummary, PESummaryDeprecated
 from pesummary.utils.utils import logger
 import os
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
-    
+
+
+def is_dingo_hdf5_file(path):
+    """Determine if the results file is a dingo hdf5 results file
+
+    Parameters
+    ----------
+    path: str
+        path to the results file
+    """
+    import h5py
+
+    try:
+        with h5py.File(path, "r") as f:
+            if "version" in f and "dingo" in str(f["version"][()]):
+                return True
+            else:
+                return False
+    except:
+        return False
+
 
 def is_bilby_hdf5_file(path):
     """Determine if the results file is a bilby hdf5 results file
@@ -19,6 +40,7 @@ def is_bilby_hdf5_file(path):
         path to the results file
     """
     import h5py
+
     f = h5py.File(path, "r")
     cond = _check_bilby_version(f)
     f.close()
@@ -34,6 +56,7 @@ def is_bilby_json_file(path):
         path to the results file
     """
     import json
+
     with open(path, "r") as f:
         data = json.load(f)
     return _check_bilby_version(data)
@@ -70,7 +93,8 @@ def _is_pesummary_hdf5_file(path, check_function):
         function used to check the result file
     """
     import h5py
-    f = h5py.File(path, 'r')
+
+    f = h5py.File(path, "r")
     outcome = check_function(f)
     f.close()
     return outcome
@@ -109,6 +133,7 @@ def _is_pesummary_json_file(path, check_function):
         function used to check the result file
     """
     import json
+
     with open(path, "r") as f:
         data = json.load(f)
     return check_function(data)
@@ -179,13 +204,15 @@ def _check_pesummary_file(f):
         return False
     try:
         if all(
-                "posterior_samples" in f[label].keys() for label in labels if
-                label != "version" and label != "history" and label != "strain"
+            "posterior_samples" in f[label].keys()
+            for label in labels
+            if label != "version" and label != "history" and label != "strain"
         ):
             return True
         elif all(
-                "mcmc_chains" in f[label].keys() for label in labels if
-                label != "version" and label != "history" and label != "strain"
+            "mcmc_chains" in f[label].keys()
+            for label in labels
+            if label != "version" and label != "history" and label != "strain"
         ):
             return True
         else:
@@ -195,20 +222,19 @@ def _check_pesummary_file(f):
 
 
 CORE_HDF5_LOAD = {
+    is_dingo_hdf5_file: Dingo.load_file,
     is_bilby_hdf5_file: Bilby.load_file,
     is_pesummary_hdf5_file: PESummary.load_file,
-    is_pesummary_hdf5_file_deprecated: PESummaryDeprecated.load_file
+    is_pesummary_hdf5_file_deprecated: PESummaryDeprecated.load_file,
 }
 
 CORE_JSON_LOAD = {
     is_bilby_json_file: Bilby.load_file,
     is_pesummary_json_file: PESummary.load_file,
-    is_pesummary_json_file_deprecated: PESummaryDeprecated.load_file
+    is_pesummary_json_file_deprecated: PESummaryDeprecated.load_file,
 }
 
-CORE_DEFAULT_LOAD = {
-    "default": Default.load_file
-}
+CORE_DEFAULT_LOAD = {"default": Default.load_file}
 
 DEFAULT_FORMATS = ["default", "dat", "json", "hdf5", "h5", "txt"]
 
@@ -229,9 +255,7 @@ def _read(path, load_options, default=CORE_DEFAULT_LOAD, **load_kwargs):
                 return load(path, **load_kwargs)
             except ImportError as e:
                 logger.warning(
-                    "Failed due to import error: {}. Using default load".format(
-                        e
-                    )
+                    "Failed due to import error: {}. Using default load".format(e)
                 )
                 return default["default"](path, **load_kwargs)
             except Exception as e:
@@ -283,8 +307,12 @@ def _file_format(file_format, options):
 
 
 def read(
-    path, HDF5_LOAD=CORE_HDF5_LOAD, JSON_LOAD=CORE_JSON_LOAD,
-    DEFAULT=CORE_DEFAULT_LOAD, file_format=None, **kwargs
+    path,
+    HDF5_LOAD=CORE_HDF5_LOAD,
+    JSON_LOAD=CORE_JSON_LOAD,
+    DEFAULT=CORE_DEFAULT_LOAD,
+    file_format=None,
+    **kwargs,
 ):
     """Read in a results file.
 
@@ -303,6 +331,7 @@ def read(
 
     if extension in ["gz"]:
         from pesummary.utils.utils import unzip
+
         path = unzip(path)
     if extension in ["hdf5", "h5", "hdf"]:
         options = _file_format(file_format, HDF5_LOAD)
