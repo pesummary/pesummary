@@ -41,11 +41,33 @@ object. For details about these objects see the
 `<Strain Data in PESummary <./strain.html>`_ tutorial.
 
 Loading the calibration envelope for a specific run
----------------------------------------------------
+---------------------------------------------------------
 
-If passed from the command line, the calibration envelope that was used during
-the analysis is also stored in the PESummary metafile. You can extract it for
-a specific run by running:
+If passed from the command line, the physical calibration response curves used
+as a prior during the analysis are also stored in the PESummary metafile. You can
+extract them for a specific run by running:
+
+.. code-block:: python
+
+    >>> calibration_data = data.priors["calibration_raw"]["EXP1"]
+    >>> IFOs = calibration_data.detectors
+    >>> IFO = IFOs[0]
+    >>> frequency = calibration_data[IFO].frequencies
+    >>> median_mag = calibration_data[IFO].magnitude
+    >>> mag_lower = calibration_data[IFO].magnitude_lower
+
+
+For more details see the `Calibration class <calibration.html>`_ tutorial. These
+calibration curves are the same as those provided to the sampler. It is possible
+that for some detectors, this assumes the calibration correction maps calibrated
+data to theoretical strain and for others it assumes the calibration correction
+maps theoretical strain to calibration data.
+
+If passed from the command line, the physical calibration response curves that
+have been modified to consistently assume that the calibration correction maps
+theoretical strain to calibrated data (applying an appropiate conversion, see
+`this paper <https://dcc.ligo.org/public/0202/T2500295/006/paper.pdf>`_) can be
+extracted for a specific run by running:
 
 .. code-block:: python
 
@@ -56,8 +78,17 @@ a specific run by running:
     >>> median_mag = calibration_data[IFO].magnitude
     >>> mag_lower = calibration_data[IFO].magnitude_lower
 
+Finally, the inferred posterior distribution for the calibration of the detectors
+can be extracted for a specific analysis with:
 
-For more details see the `Calibration class <calibration.html>`_ tutorial.
+.. code-block:: python
+
+    >>> calibration_data = data.calibration["EXP1"]
+    >>> IFOs = calibration_data.detectors
+    >>> IFO = IFOs[0]
+    >>> frequency = calibration_data[IFO].frequencies
+    >>> median_mag = calibration_data[IFO].magnitude
+    >>> mag_lower = calibration_data[IFO].magnitude_lower
 
 Loading the psd for a specific run
 ----------------------------------

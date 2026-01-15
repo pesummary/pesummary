@@ -233,6 +233,10 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             self.priors["calibration"] = {
                 label: {} for label in self.labels
             }
+        if "calibration_raw" not in self.priors:
+            self.priors["calibration_raw"] = {
+                label: {} for label in self.labels
+            }
 
     def _set_corner_params(self, corner_params):
         corner_params = super(_GWInput, self)._set_corner_params(corner_params)
@@ -538,6 +542,11 @@ class _GWInput(pesummary.core.cli.inputs._Input):
         if not hasattr(self, "_calibration"):
             data = {i: {} for i in self.labels}
             if calibration != {}:
+                prior_data_raw = self.get_psd_or_calibration_data(
+                    calibration, self.extract_calibration_data_from_file,
+                    type="template" # do not do any modification
+                )
+                self.add_to_prior_dict("calibration_raw", prior_data_raw)
                 prior_data = self.get_psd_or_calibration_data(
                     calibration, self.extract_calibration_data_from_file,
                     type=self.calibration_definition[self.labels[0]]
@@ -545,6 +554,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                 self.add_to_prior_dict("calibration", prior_data)
             else:
                 prior_data = {i: {} for i in self.labels}
+                prior_data_raw = {i: {} for i in self.labels}
                 for label in self.labels:
                     if hasattr(self.opts, "{}_calibration".format(label)):
                         cal_data = getattr(self.opts, "{}_calibration".format(label))
@@ -554,10 +564,17 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                                     cal_data[ifo], type=self.calibration_definition[label]
                                 ) for ifo in cal_data.keys()
                             }
+                            prior_data_raw[label] = {
+                                ifo: self.extract_calibration_data_from_file(
+                                    cal_data[ifo], type="template" # do not do any modification
+                                ) for ifo in cal_data.keys()
+                            }
                 if not all(prior_data[i] == {} for i in self.labels):
+                    self.add_to_prior_dict("calibration_raw", prior_data_raw)
                     self.add_to_prior_dict("calibration", prior_data)
                 else:
-                    self.add_to_prior_dict("calibration", {})
+                    self.add_to_prior_dict("calibration_raw", prior_data_raw)
+                    self.add_to_prior_dict("calibration", prior_data)
             for num, i in enumerate(self.result_files):
                 _opened = self._open_result_files
                 if i in _opened.keys() and _opened[i] is not None:
@@ -1334,11 +1351,11 @@ class MetaFileInput(SamplesInput, pesummary.core.cli.inputs.MetaFileInput):
                             label, ifo
                         ))
                     )
-            if label in self.priors["calibration"].keys():
-                if self.priors["calibration"][label] != {}:
-                    for ifo in self.priors["calibration"][label].keys():
+            if label in self.priors["calibration_raw"].keys():
+                if self.priors["calibration_raw"][label] != {}:
+                    for ifo in self.priors["calibration_raw"][label].keys():
                         _instance = isinstance(
-                            self.priors["calibration"][label][ifo], Calibration
+                            self.priors["calibration_raw"][label][ifo], Calibration
                         )
                         if not _instance:
                             logger.warning(
@@ -1349,7 +1366,7 @@ class MetaFileInput(SamplesInput, pesummary.core.cli.inputs.MetaFileInput):
                                 )
                             )
                             continue
-                        self.priors["calibration"][label][ifo].save_to_file(
+                        self.priors["calibration_raw"][label][ifo].save_to_file(
                             os.path.join(self.webdir, "calibration", "{}_{}_cal.txt".format(
                                 label, ifo
                             ))
