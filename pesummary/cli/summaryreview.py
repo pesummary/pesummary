@@ -705,7 +705,7 @@ class WebpageGeneration(_WebpageGeneration):
         contents = []
         for key in keys:
             row = [key, lal_stats[key], pes_stats[key]]
-            row += [np.abs(lal_stats[key] - pes_stats[key]) * 100]
+            row += [(np.abs(lal_stats[key] - pes_stats[key]) / pes_stats[key]) * 100]
             contents.append(row)
         html_file.make_table(
             headings=headings, contents=contents, heading_span=1,
