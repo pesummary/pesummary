@@ -1,0 +1,46 @@
+spec:
+  inputs:
+    python_version:
+      default: "3.10"
+      description: "The Python version to use for the Docker image (e.g., 3.10)"
+      type: string
+
+---
+
+include:
+  - component: git.ligo.org/computing/gitlab/components/docker/all@2
+    inputs:
+      job_name_prefix: docker
+      dockerfile: "containers/Dockerfile-pesummary-python$[[ inputs.python_version ]]"
+      upstream_project_path: "lscsoft/pesummary"
+      test_script:
+        - summarytest --type imports
+
+# Customise before_script to generate the Dockerfile dynamically
+docker_build:
+  variables:
+    PYTHON_VERSION: "$[[ inputs.python_version ]]"
+  before_script:
+    - apk add git python3
+    - python3 containers/write_dockerfile.py --python ${PYTHON_VERSION}
+  artifacts:
+    paths:
+      - "containers/Dockerfile-pesummary-python*"
+
+# Run tests immediately after building the Docker image
+docker_test:
+  stage: basic
+  needs: [docker_build]
+
+docker_container_scanning:
+  stage: basic
+
+# Customise before_script to strip a leading 'v' from the git tag for the image tag
+docker_push:
+  before_script:
+    - !reference [.docker_push_base, before_script]
+    # Strip leading v from the tag if it exists, and use it as the image tag
+    - if [[ "$CI_COMMIT_TAG" == "v"* ]]; then
+      PUSH_IMAGE_TAG="${CI_COMMIT_TAG:1}";
+      PUSH_IMAGE="${CI_REGISTRY_IMAGE}:${PUSH_IMAGE_TAG}";
+      fi

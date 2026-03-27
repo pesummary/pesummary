@@ -8,6 +8,7 @@
 build/
 dist/
 docs/_*
+containers/Dockerfile-pesummary-*
 
 ## ignore files used for testing
 tests/files/*
