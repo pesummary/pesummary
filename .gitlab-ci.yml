@@ -8,6 +8,11 @@ include:
   # https://computing.docs.ligo.org/guide/gitlab/components/conda/base/
   - component: $CI_SERVER_FQDN/computing/gitlab/components/conda/base@main
 
+  # -- docker -----------------------
+  - local: .gitlab/ci/docker.yml
+    inputs:
+      python_version: "3.11"
+
 
 stages:
   - build
@@ -125,26 +130,6 @@ conda:
     - conda activate py${PYTHON_VERSION}
   script:
     - python -m pip install .
-  tags:
-    - executor-docker
-
-
-docker:
-  stage: build
-  image: docker:19.03.10
-  variables:
-    PYTHON_VERSION: "3.10"
-  before_script:
-    - apk update
-    - apk add py3-pip
-    - apk add python3
-  script:
-    - python3 containers/write_dockerfile.py --python ${PYTHON_VERSION}
-    - docker build -f containers/Dockerfile-pesummary-python${PYTHON_VERSION/./} -t pesummary-dev/latest . --build-arg installation=./
-    - docker run pesummary-dev/latest summarytest --type imports
-  artifacts:
-    paths:
-      - "containers/Dockerfile-pesummary-python*"
   tags:
     - executor-docker
 
