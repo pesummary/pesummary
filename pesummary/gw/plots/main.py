@@ -317,6 +317,11 @@ class _PlotGeneration(_BasePlotGeneration):
         try:
             import ligo.skymap  # noqa: F401
         except ImportError:
+            if not self.no_ligo_skymap:
+                logger.warning(
+                    "Unable to import ligo.skymap. Only generating "
+                    "'preliminary' skymap using the histogram method."
+                )
             SKYMAP = False
         else:
             SKYMAP = True
