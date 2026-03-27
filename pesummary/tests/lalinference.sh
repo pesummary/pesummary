@@ -17,11 +17,11 @@ set -e
 git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
 mkdir -p lalinference/test/
 mkdir -p lalinference/lib
-curl https://git.ligo.org/lscsoft/lalsuite/raw/master/lalinference/lib/lalinference_pipe_example.ini -o lalinference_pipe_example.ini
+curl -sSL https://git.ligo.org/lscsoft/lalsuite/raw/master/lalinference/lib/lalinference_pipe_example.ini -o lalinference_pipe_example.ini
 mv lalinference_pipe_example.ini lalinference/lib
-curl https://git.ligo.org/lscsoft/lalsuite/raw/master/lalinference/test/lalinference_nestedSampling_integration_test.sh -o fast_tutorial.sh
+curl -sSL https://git.ligo.org/lscsoft/lalsuite/raw/master/lalinference/test/lalinference_nestedSampling_integration_test.sh -o fast_tutorial.sh
 mv fast_tutorial.sh lalinference/test
-curl https://git.ligo.org/lscsoft/lalsuite/raw/master/lalinference/test/injection_standard.xml -o injection_standard.xml
+curl -sSL https://git.ligo.org/lscsoft/lalsuite/raw/master/lalinference/test/injection_standard.xml -o injection_standard.xml
 mv injection_standard.xml lalinference/test
 path=`which lalinference_pipe`
 base=`python -c "print('/'.join('${path}'.split('/')[:-2]))"`
