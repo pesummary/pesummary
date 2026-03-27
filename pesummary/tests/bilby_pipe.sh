@@ -2,7 +2,7 @@
 
 set -e
 
-curl https://git.ligo.org/lscsoft/bilby_pipe/-/raw/master/examples/event/GW150914.ini -o GW150914.ini
+curl -sSL https://git.ligo.org/lscsoft/bilby_pipe/-/raw/master/examples/event/GW150914.ini -o GW150914.ini
 sed -i 's/coherence-test = True/coherence-test = False/' ./GW150914.ini
 sed -i 's/sampler-kwargs = /sampler-kwargs = {"nlive": 1000, "dlogz": 1000} #/' ./GW150914.ini
 sed -i 's/channel-dict = {H1:DCS-CALIB_STRAIN_C02, L1:DCS-CALIB_STRAIN_C02}/channel-dict = {H1:GWOSC, L1:GWOSC}/' ./GW150914.ini
