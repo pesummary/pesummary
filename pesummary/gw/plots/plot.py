@@ -787,7 +787,11 @@ def _default_skymap_plot(ra, dec, weights=None, injection=None, **kwargs):
             color=conf.injection_color, edgecolors='k', linewidth=1.75, s=100
         )
     fmt = {l: s for l, s in zip(cs.levels, [r"$90\%$", r"$50\%$"])}
-    ax.clabel(cs, fmt=fmt, fontsize=8, inline=True)
+    try:
+        ax.clabel(cs, fmt=fmt, fontsize=8, inline=True)
+    except IndexError:
+        # Failed to place clabels. Try reducing the inline spacing
+        ax.clabel(cs, fmt=fmt, fontsize=8, inline_spacing=0, inline=True)
     text = []
     for path, j in zip(cs.get_paths(), [90, 50]):
         area = 0.
