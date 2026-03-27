@@ -473,7 +473,7 @@ class _PlotGeneration(_BasePlotGeneration):
         preliminary: Bool, optional
             if True, add a preliminary watermark to the plot
         """
-        fig = gw._ligo_skymap_plot_from_array(skymap)
+        fig = gw._ligo_skymap_plot_from_array(skymap)[0]
         _PlotGeneration.save(
             fig, os.path.join(savedir, "{}_skymap".format(label)),
             preliminary=preliminary
@@ -740,21 +740,32 @@ class _PlotGeneration(_BasePlotGeneration):
         if self.no_ligo_skymap:
             return
 
-        logger.info("Launching subprocess to generate comparison skymap plot with "
-                    "ligo.skymap")
-        fits_files = [
-            os.path.join(self.webdir, "samples", "{}_skymap.fits".format(label))
-            for label in self.labels
-        ]
-        with RedirectLogger("ligo.skymap", level="DEBUG") as redirector:
-            process = mp.Process(
-                target=self._ligo_skymap_comparison_plot_from_fits,
-                args=[
-                    self.savedir, fits_files, self.colors, self.labels,
-                    self.preliminary_comparison_pages, self._ligo_skymap_PID
-                ]
+        # see if we have the skymap data stored. If we do, then we will not have
+        # a fits file
+        if self.skymap[self.labels[0]] is None:
+            logger.info(
+                "Launching subprocess to generate comparison skymap plot with "
+                "ligo.skymap"
             )
-            process.start()
+            fits_files = [
+                os.path.join(self.webdir, "samples", "{}_skymap.fits".format(label))
+                for label in self.labels
+            ]
+            with RedirectLogger("ligo.skymap", level="DEBUG") as redirector:
+                process = mp.Process(
+                    target=self._ligo_skymap_comparison_plot_from_fits,
+                    args=[
+                        self.savedir, fits_files, self.colors, self.labels,
+                        self.preliminary_comparison_pages, self._ligo_skymap_PID
+                    ]
+                )
+                process.start()
+        else:
+            skymaps = [self.skymap[label] for label in self.labels]
+            self._ligo_skymap_comparison_plot_from_array(
+                self.savedir, skymaps, self.colors,
+                self.labels, preliminary=self.preliminary_comparison_pages
+            )
 
     @staticmethod
     def _skymap_comparison_plot(
@@ -850,6 +861,29 @@ class _PlotGeneration(_BasePlotGeneration):
                 )
                 return
 
+        _PlotGeneration._ligo_skymap_comparison_plot_from_array(
+            savedir, skymaps, colors, labels, preliminary=preliminary
+        )
+
+    @staticmethod
+    @no_latex_plot
+    def _ligo_skymap_comparison_plot_from_array(
+        savedir, skymaps, colors, labels, preliminary=False
+    ):
+        """Generate a skymap based on skymap probability array already generated with
+        `ligo.skymap`
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        skymap: np.ndarray
+            array of skymap probabilities
+        label: str
+            the label corresponding to the results file
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
+        """
         fig = gw._ligo_skymap_comparion_plot_from_array(
             skymaps, colors, labels
         )
