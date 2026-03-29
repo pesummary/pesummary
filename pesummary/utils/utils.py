@@ -14,6 +14,7 @@ from scipy.interpolate import interp1d
 from scipy import stats
 import h5py
 from pesummary import conf
+from pesummary.utils.decorators import deprecation
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -789,18 +790,18 @@ def kolmogorov_smirnov_test(samples, decimal=5):
     return np.round(stats.ks_2samp(*samples)[1], decimal)
 
 
+@deprecation(
+    "The jensen_shannon_divergence function has changed its name to "
+    "jensen_shannon_divergence_from_samples. jensen_shannon_divergence "
+    "may not be supported in future releases. Please update"
+)
 def jensen_shannon_divergence(*args, **kwargs):
-    import warnings
-    warnings.warn(
-        "The jensen_shannon_divergence function has changed its name to "
-        "jensen_shannon_divergence_from_samples. jensen_shannon_divergence "
-        "may not be supported in future releases. Please update"
-    )
     return jensen_shannon_divergence_from_samples(*args, **kwargs)
 
 
 def jensen_shannon_divergence_from_samples(
-    samples, kde=stats.gaussian_kde, decimal=5, base=np.e, **kwargs
+    samples, kde=stats.gaussian_kde, decimal=5, base=np.e,
+    method="kde", bins=50, **kwargs
 ):
     """Calculate the JS divergence between two sets of samples
 
@@ -809,20 +810,71 @@ def jensen_shannon_divergence_from_samples(
     samples: list
         2d list containing the samples drawn from two pdfs
     kde: func
-        function to use when calculating the kde of the samples
+        function to use when calculating the kde of the samples. Only used
+        when method='kde'
     decimal: int, float
         number of decimal places to round the JS divergence to
     base: float, optional
         optional base to use for the scipy.stats.entropy function. Default
         np.e
+    method: str, optional
+        optional method to use when calculating the JS divergence. Options
+        include histogramming the samples, 'hist', or constructing a KDE
+        of the samples, 'kde'
+    bins: int, optional
+        number of bins to use when histogramming the samples. Only used when
+        methos='hist'
     kwargs: dict
-        all kwargs are passed to the kde function
+        all kwargs are passed to the kde function. Only used when method='kde'
     """
-    pdfs = samples_to_kde(samples, kde=kde, **kwargs)
-    return jensen_shannon_divergence_from_pdfs(pdfs, decimal=decimal, base=base)
+    if method not in ["kde", "hist"]:
+        raise ValueError(
+            f"Unknown method {method}. Allowed options are 'kde' and 'hist'"
+        )
+    if method == "kde":
+        pdfs = samples_to_kde(samples, kde=kde, **kwargs)
+        return jensen_shannon_divergence_from_kdes(
+            pdfs, decimal=decimal, base=base
+        )
+    return jensen_shannon_divergence_from_histograms(
+        samples, decimal=decimal, base=base, bins=bins
+    )
 
 
-def jensen_shannon_divergence_from_pdfs(pdfs, decimal=5, base=np.e):
+def jensen_shannon_divergence_from_histograms(
+    samples, decimal=5, base=np.e, bins=50
+):
+    """Construct and calculate the JS divergence between two histograms
+
+    Parameters
+    ----------
+    samples: list
+        2d list containing the samples drawn from two pdfs
+    decimal: int, float
+        number of decimal places to round the JS divergence to
+    base: float, optional
+        optional base to use for the scipy.stats.entropy function. Default
+        np.e
+    bins: int, optional
+        number of bins to use when histogramming the samples.
+    """
+    bounds = [np.min(samples), np.max(samples)]
+    hist_x, bin_edges = np.histogram(
+        samples[0], bins=bins, range=bounds, density=True
+    )
+    hist_y, _ = np.histogram(samples[1], bins=bin_edges, density=True)
+    bin_widths = np.diff(bin_edges)
+    a = hist_x * bin_widths
+    b = hist_y * bin_widths
+    return _jensen_shannon_divergence(a, b, decimal=decimal, base=base)
+
+
+@deprecation(
+    "The jensen_shannon_divergence_from_pdfs function has changed its name to "
+    "jensen_shannon_divergence_from_kdes. jensen_shannon_divergence_from_pdfs "
+    "may not be supported in future releases. Please update"
+)
+def jensen_shannon_divergence_from_pdfs(*args, **kwargs):
     """Calculate the JS divergence between two distributions
 
     Parameters
@@ -835,11 +887,47 @@ def jensen_shannon_divergence_from_pdfs(pdfs, decimal=5, base=np.e):
         optional base to use for the scipy.stats.entropy function. Default
         np.e
     """
-    if any(np.isnan(_).any() for _ in pdfs):
+    return jensen_shannon_divergence_from_kdes(*args, **kwargs)
+
+
+def jensen_shannon_divergence_from_kdes(kdes, decimal=5, base=np.e):
+    """Calculate the JS divergence between two KDE distributions
+
+    Parameters
+    ----------
+    kdes: list
+        list of length 2 containing the distributions you wish to compare
+    decimal: int, float
+        number of decimal places to round the JS divergence to
+    base: float, optional
+        optional base to use for the scipy.stats.entropy function. Default
+        np.e
+    """
+    if any(np.isnan(_).any() for _ in kdes):
         return float("nan")
-    a, b = pdfs
+    a, b = kdes
     a = np.asarray(a)
     b = np.asarray(b)
+    return _jensen_shannon_divergence(a, b, decimal=decimal, base=base)
+
+
+def _jensen_shannon_divergence(a, b, decimal=5, base=np.e):
+    """Calculate the Jensen-Shannon divergence between two distributions
+
+    Parameters
+    ----------
+    a: np.ndarray
+        the first distribution you wish to calculate the Jensen-Shannon
+        divergence for
+    b: np.ndarray
+        the second distribution you wish to calculate the Jensen-Shannon
+        divergence for
+    decimal: int, float
+        number of decimal places to round the JS divergence to
+    base: float, optional
+        optional base to use for the scipy.stats.entropy function. Default
+        np.e
+    """
     a /= a.sum()
     b /= b.sum()
     m = 1. / 2 * (a + b)
