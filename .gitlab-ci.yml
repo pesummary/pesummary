@@ -383,7 +383,7 @@ documentation:
 
 reference-docs:
   extends: .old-docs
-  image: python:3.9
+  image: python:3.10
   variables:
     CONDA_YAML: "https://computing.docs.ligo.org/conda/environments/linux-64/igwn-py311.yaml"
   before_script:
@@ -423,7 +423,7 @@ reference-docs:
           "GitPython"
           "ipykernel"
           "nbsphinx"
-          "seaborn>=0.12.2,<0.13.0"
+          "seaborn>=0.13.0"
           "Sphinx >=4.0.0,!=5.0.0"
           "sphinx-argparse"
           "sphinx-panels"
