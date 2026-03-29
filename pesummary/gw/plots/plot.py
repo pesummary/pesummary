@@ -1453,3 +1453,72 @@ def _classification_plot(classification):
             ax.spines[side].set_visible(False)
         fig.tight_layout()
     return fig
+
+
+def _comparison_jsd_plot(
+    same_samples, latex_labels={}, jsds=None, parameters=None, _jsd_parameters=None,
+    **kwargs
+):
+    """Generate a colour map showing the difference in JSD for different
+    parameters and analyses.
+
+    Parameters
+    ----------
+    same_samples: dict
+        nested dictionary containing posterior samples for different analyses.
+        The key must be the parameter, and the value must be a dictionary with
+        analysis label as key and posterior samples for that parameter as the
+        value
+    latex_labels: dict, optional
+        dictionary mapping each parameter name to a latex label for plotting.
+        If the parameter does not exist, the parameter name is used. Default
+        pesummary.gw.plots.latex_labels.GWlatex_labels
+    jsds: np.ndarray, optional
+        2D array of jensen-shannon divergences between analyses. Rows should be
+        the JSDs between analyses and rows should be the JSDs for a specific
+        parameter. For example a single row may be analysis 1 vs analysis 2
+        and the columns may be parameters a, b, c, d etc. If not provided, the
+        JSDs are calculated based on the provided samples
+    parameters: list, optional
+        List of parameters you wish to consider. Default: ["chirp_mass",
+        "mass_ratio", "a_1", "a_2", "tilt_1", "tilt_2", "phi_12", "phi_jl",
+        "theta_jn", "luminosity_distance", "ra", "dec", "phase", "psi",
+        "geocent_time"]
+    cmap: str, optional
+        colour map you wish to use for the plot. Default 'RdYlGn_r'
+    vmax: float, optional
+        maximum value for the color axis. Default 0.1
+    show_values: bool, optional
+        If True, add the JSD values to the center of each square
+    """
+    from pesummary.core.plots.plot import _comparison_jsd_plot as base
+    from .latex_labels import GWlatex_labels
+    import copy
+
+    if not len(latex_labels):
+        latex_labels = GWlatex_labels
+    if parameters is None:
+        _parameters = [
+            "chirp_mass", "mass_ratio", "a_1", "a_2", "tilt_1", "tilt_2",
+            "phi_12", "phi_jl", "theta_jn", "luminosity_distance", "ra", "dec",
+            "phase", "psi", "geocent_time"
+        ]
+        parameters = [
+            param for param in _parameters if param in same_samples.keys()
+        ]
+    _jsds = copy.deepcopy(jsds)
+    if jsds is not None and _jsd_parameters is not None:
+        if jsds.shape[1] != len(_jsd_parameters):
+            return ValueError(
+                "JSD shape does not match provided list of JSD parameters. "
+                "Please provide the exact list of parameters used to populate "
+                "the JSD array."
+            )
+        inds = np.array(
+            [_jsd_parameters.index(param) for param in parameters]
+        )
+        _jsds = _jsds[:,inds]
+    return base(
+        same_samples, latex_labels=latex_labels, jsds=_jsds, parameters=parameters,
+        **kwargs
+    )

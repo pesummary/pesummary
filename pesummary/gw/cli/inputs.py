@@ -1177,6 +1177,24 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                     key_data[key][_param]["90% HPD"] = float("nan")
         return key_data
 
+    def _kde_from_same_samples(self, param, samples):
+        """Generate KDEs for a set of samples
+
+        Parameters
+        ----------
+        param: str
+            The parameter that the samples belong to
+        samples: list
+            list of samples for each result file
+        """
+        from pesummary.utils.bounded_1d_kde import ReflectionBoundedKDE
+        from pesummary.gw.plots.plot import _return_bounds
+
+        xlow, xhigh = _return_bounds(param, samples, comparison=True)
+        return super(_GWInput, self)._kde_from_same_samples(
+            param, samples, kde=ReflectionBoundedKDE, xlow=xlow, xhigh=xhigh
+        )
+
 
 class SamplesInput(_GWInput, pesummary.core.cli.inputs.SamplesInput):
     """Class to handle and store sample specific command line arguments

@@ -106,7 +106,8 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         disable_interactive=False, publication_kwargs={}, no_ligo_skymap=False,
         psd=None, priors=None, package_information={"packages": []},
         mcmc_samples=False, external_hdf5_links=False, preliminary_pages=False,
-        existing_plot=None, disable_expert=False, analytic_priors=None
+        existing_plot=None, disable_expert=False, analytic_priors=None,
+        comparison_stats=None
     ):
         self.pastro_probs = pastro_probs
         self.embright_probs = embright_probs
@@ -144,7 +145,7 @@ class _WebpageGeneration(_CoreWebpageGeneration):
             package_information=package_information, mcmc_samples=mcmc_samples,
             external_hdf5_links=external_hdf5_links, key_data=key_data,
             existing_plot=existing_plot, disable_expert=disable_expert,
-            analytic_priors=analytic_priors
+            analytic_priors=analytic_priors, comparison_stats=comparison_stats
         )
         if self.file_kwargs is None:
             self.file_kwargs = {
@@ -211,24 +212,6 @@ class _WebpageGeneration(_CoreWebpageGeneration):
                 sort[heading] = []
             sort[heading] += params
         return sort
-
-    def _kde_from_same_samples(self, param, samples):
-        """Generate KDEs for a set of samples
-
-        Parameters
-        ----------
-        param: str
-            The parameter that the samples belong to
-        samples: list
-            list of samples for each result file
-        """
-        from pesummary.utils.bounded_1d_kde import ReflectionBoundedKDE
-        from pesummary.gw.plots.plot import _return_bounds
-
-        xlow, xhigh = _return_bounds(param, samples, comparison=True)
-        return super(_WebpageGeneration, self)._kde_from_same_samples(
-            param, samples, kde=ReflectionBoundedKDE, xlow=xlow, xhigh=xhigh
-        )
 
     def make_navbar_for_homepage(self):
         """Make a navbar for the homepage
@@ -952,14 +935,19 @@ class _WebpageGeneration(_CoreWebpageGeneration):
         """
         path = self.image_path["other"]
         base = os.path.join(path, "{}.png")
-        contents = [
-            [
-                base.format("combined_skymap"),
-                base.format("compare_time_domain_waveforms"),
-                base.format("compare_waveforms")
-            ]
+        base_cwd = os.path.join(
+            self.webdir, self.image_path["home"], "{}.png"
+        )
+        include = [
+            "combined_skymap", "compare_time_domain_waveforms",
+            "compare_waveforms"
         ]
-        return contents
+        contents = []
+        for ii in include:
+            _plot = base.format(ii)
+            if os.path.isfile(base_cwd.format(ii)):
+                contents.append(_plot)
+        return [contents]
 
     def default_corner_params(self):
         """Return a list of default corner parameters used by the corner

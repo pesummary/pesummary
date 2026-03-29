@@ -52,6 +52,7 @@ class _CoreWebpageGeneration(object):
     def __init__(self, inputs, colors="default"):
         from pesummary.core.webpage.main import _WebpageGeneration
         key_data = inputs.grab_key_data_from_result_files()
+        comparison_stats = inputs.grab_comparison_statistics_from_result_files()
         self.webpage_object = _WebpageGeneration(
             webdir=inputs.webdir, samples=inputs.samples, labels=inputs.labels,
             publication=inputs.publication, user=inputs.user, config=inputs.config,
@@ -73,7 +74,8 @@ class _CoreWebpageGeneration(object):
             mcmc_samples=inputs.mcmc_samples,
             external_hdf5_links=inputs.external_hdf5_links, key_data=key_data,
             existing_plot=inputs.existing_plot, disable_expert=inputs.disable_expert,
-            analytic_priors=inputs.analytic_prior_dict
+            analytic_priors=inputs.analytic_prior_dict,
+            comparison_stats=comparison_stats
         )
 
     def generate_webpages(self):
@@ -95,6 +97,7 @@ class _GWWebpageGeneration(object):
     def __init__(self, inputs, colors="default"):
         from pesummary.gw.webpage.main import _WebpageGeneration
         key_data = inputs.grab_key_data_from_result_files()
+        comparison_stats = inputs.grab_comparison_statistics_from_result_files()
         self.webpage_object = _WebpageGeneration(
             webdir=inputs.webdir, samples=inputs.samples, labels=inputs.labels,
             publication=inputs.publication, user=inputs.user, config=inputs.config,
@@ -124,7 +127,8 @@ class _GWWebpageGeneration(object):
             external_hdf5_links=inputs.external_hdf5_links,
             preliminary_pages=inputs.preliminary_pages,
             disable_expert=inputs.disable_expert,
-            analytic_priors=inputs.analytic_prior_dict
+            analytic_priors=inputs.analytic_prior_dict,
+            comparison_stats=comparison_stats
         )
 
     def generate_webpages(self):
@@ -146,6 +150,7 @@ class _PublicGWWebpageGeneration(object):
     def __init__(self, inputs, colors="default"):
         from pesummary.gw.webpage.public import _PublicWebpageGeneration
         key_data = inputs.grab_key_data_from_result_files()
+        comparison_stats = inputs.grab_comparison_statistics_from_result_files()
         self.webpage_object = _PublicWebpageGeneration(
             webdir=inputs.webdir, samples=inputs.samples, labels=inputs.labels,
             publication=inputs.publication, user=inputs.user, config=inputs.config,

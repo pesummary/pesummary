@@ -181,6 +181,8 @@ def get_list_of_plots(
         for i in ["1d_posterior", "boxplot", "cdf"]:
             for j in parameters:
                 plots.append("%s/plots/combined_%s_%s.png" % (outdir, i, j))
+        for num in range(number):
+            plots.append("%s/plots/combined_jsd_plot_%s%s.png" % (outdir, label, num))
     if gw and extra_gw_plots:
         for num in range(number):
             plots.append("%s/plots/%s%s_skymap.png" % (outdir, label, num))
