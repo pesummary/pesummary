@@ -1878,6 +1878,67 @@ class _Input(object):
                 )
         return key_data
 
+    def grab_comparison_statistics_from_result_files(self):
+        """Generate comparison statistics for all parameters that are common to
+        all result files
+        """
+        if hasattr(self, "_comparison_stats"):
+            return self._comparison_stats
+        if len(self.labels) < 2:
+            # only one analysis so we do not calculate comparison statistics
+            self._comparison_stats = None
+            return self._comparison_stats
+        try:
+            self._comparison_stats = self._generate_comparison_statistics()
+        except Exception as e:
+            logger.info(
+                "Failed to generate comparison statistics because {}. As a "
+                "result they will not be added to the webpages or plots".format(e)
+            )
+            self._comparison_stats = None
+        return self._comparison_stats
+
+    def _generate_comparison_statistics(self):
+        """Generate comparison statistics for all parameters that are common to
+        all result files
+        """
+        from pesummary.utils.utils import (
+            kolmogorov_smirnov_test, jensen_shannon_divergence_from_pdfs
+        )
+
+        ks = np.zeros(
+            (len(self.same_parameters), len(self.samples), len(self.samples))
+        )
+        js = np.zeros_like(ks)
+        # both JS and KS are symmetric so we need to loop over one
+        # triangle
+        for _, param in enumerate(self.same_parameters):
+            _samples = [self.samples[j][param] for j in self.samples.keys()]
+            pdfs = self._kde_from_same_samples(param, _samples)
+            for i in range(1, len(self.samples)):
+                for j in range(0, i):
+                    ks[_, j, i] = kolmogorov_smirnov_test(
+                        [_samples[i], _samples[j]]
+                    )
+                    js[_, j, i] = jensen_shannon_divergence_from_pdfs(
+                        [pdfs[i], pdfs[j]], base=2
+                    )
+            js[_] += js[_].T
+        return [js, ks]
+
+    def _kde_from_same_samples(self, param, samples, **kwargs):
+        """Generate KDEs for a set of samples
+
+        Parameters
+        ----------
+        param: str
+            The parameter that the samples belong to
+        samples: list
+            list of samples for each result file
+        """
+        from pesummary.utils.utils import samples_to_kde
+        return samples_to_kde(samples, **kwargs)
+
 
 class BaseInput(_Input):
     """Class to handle and store base command line arguments
@@ -1999,6 +2060,7 @@ class SamplesInput(BaseInput):
         self.burnin_method = self.opts.burnin_method
         self.burnin = self.opts.burnin
         self.same_parameters = []
+        self.grab_comparison_statistics_from_result_files()
         if self.mcmc_samples:
             self._samples = {label: self.samples.T for label in self.labels}
         self.write_current_state()

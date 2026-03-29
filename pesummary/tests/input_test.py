@@ -682,3 +682,39 @@ class TestInput(object):
         inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
         assert sorted(list(inputs.psd["example"].keys())) == ["L1"]
         assert sorted(list(inputs.psd["example2"].keys())) == ["L1"]
+
+    def test_comparison_stats(self):
+        """
+        """
+        from scipy.spatial.distance import jensenshannon
+        from pesummary.utils.utils import jensen_shannon_divergence
+        from pesummary.utils.bounded_1d_kde import ReflectionBoundedKDE
+
+        parser = ArgumentParser()
+        parser.add_all_known_options_to_parser()
+        opts = parser.parse_args(["--approximant", "IMRPhenomPv2",
+            "IMRPhenomPv2", "--webdir", tmpdir, "--samples",
+            "{}/bilby_example.h5".format(tmpdir),
+            "{}/lalinference_example.h5".format(tmpdir)])
+        inputs = WebpagePlusPlottingPlusMetaFileInput(opts)
+
+        comparison_stats = inputs._comparison_stats
+        for param in ['chirp_mass', 'mass_ratio']:
+            if param == "chirp_mass":
+                xlow = 0.
+                xhigh = None
+            else:
+                xlow = 0.
+                xhigh = 1.
+            ind = inputs.same_parameters.index(param)
+            js = comparison_stats[0][ind][0][1]
+            samples = [
+                inputs.samples[label][param] for label in inputs.labels
+            ]
+            x = np.linspace(np.min(samples), np.max(samples), 100)
+            _js = jensenshannon(
+                ReflectionBoundedKDE(samples[0], xlow=xlow, xhigh=xhigh)(x),
+                ReflectionBoundedKDE(samples[1], xlow=xlow, xhigh=xhigh)(x),
+                base=2
+            )**2
+            np.testing.assert_almost_equal(js, _js, 5)

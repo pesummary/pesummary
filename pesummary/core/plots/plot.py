@@ -839,6 +839,95 @@ def _comparison_box_plot(param, samples, colors, latex_label, labels, grid=True)
     return fig
 
 
+def _comparison_jsd_plot(
+    same_samples, latex_labels={}, jsds=None, parameters=None,
+    cmap="RdYlGn_r", vmax=100, show_values=True, base_label=None, **kwargs
+):
+    """Generate a colour map showing the difference in JSD for different
+    parameters and analyses.
+
+    Parameters
+    ----------
+    same_samples: dict
+        nested dictionary containing posterior samples for different analyses.
+        The key must be the parameter, and the value must be a dictionary with
+        analysis label as key and posterior samples for that parameter as the
+        value
+    latex_labels: dict, optional
+        dictionary mapping each parameter name to a latex label for plotting.
+        If the parameter does not exist, the parameter name is used. Default {}
+    jsds: np.ndarray, optional
+        2D array of jensen-shannon divergences between analyses. Rows should be
+        the JSDs between analyses and rows should be the JSDs for a specific
+        parameter. For example a single row may be analysis 1 vs analysis 2
+        and the columns may be parameters a, b, c, d etc. If not provided, the
+        JSDs are calculated based on the provided samples. JSD values should be
+        provided in millibits (base 2)
+    parameters: list, optional
+        List of parameters you wish to consider. Default to use all common
+        parameters in provided samples
+    cmap: str, optional
+        colour map you wish to use for the plot. Default 'RdYlGn_r'
+    vmax: float, optional
+        maximum value for the color axis. Default 0.1
+    show_values: bool, optional
+        If True, add the JSD values to the center of each square
+    """
+    analyses = list(list(same_samples.values())[0].keys())
+    if base_label is None:
+        base_ind = 0
+        base_label = analyses[base_ind]
+    else:
+        if base_label not in analyses:
+            raise ValueError("Base label not in provided samples dictionary")
+        base_ind = analyses.index(base_label)
+    analyses = list(list(same_samples.values())[0].keys())
+    if parameters is None:
+        parameters = list(same_samples.keys())
+
+    if jsds is None:
+        from pesummary.utils.utils import jensen_shannon_divergence_from_samples
+        jsds = np.zeros((len(analyses), len(parameters)))
+        for i, param in enumerate(parameters):
+            for num, analysis in enumerate(analyses):
+                jsds[num, i] = jensen_shannon_divergence_from_samples(
+                    [
+                        same_samples[param][analyses[base_ind]],
+                        same_samples[param][analysis]
+                    ], base=2
+                ) * 1e3
+    else:
+        if jsds.shape != (len(analyses), len(parameters)):
+            raise ValueError(
+                f"Array is in the incorrect format. It should be shape: "
+                f"({len(analyses)}, {len(parameters)})"
+            )
+                
+    fig, ax = figure(gca=True, figsize=(len(parameters) + 4, len(analyses)))
+    cax = ax.imshow(jsds, cmap="RdYlGn_r", vmin=0, vmax=vmax, aspect='auto')
+    if show_values:
+        for i in range(len(analyses)):
+            for j in range(len(parameters)):
+                # Dynamically change text color so it remains visible against
+                # the background color
+                text_color = "white" if jsds[i, j] > 0.7 * vmax else "black"
+                
+                ax.text(
+                    j, i, f"{jsds[i, j]:.2f}", ha="center", va="center",
+                    color=text_color
+                )
+    ax.set_xticks(np.arange(len(parameters)))
+    ax.set_xticklabels([latex_labels.get(param, param) for param in parameters])
+    ax.set_yticks(np.arange(len(analyses)))
+    ax.set_yticklabels(analyses)
+    ax.set_title(f"{analyses[base_ind]} vs")
+    cbar = fig.colorbar(cax, ax=ax, extend="max")
+    cbar.set_label('Jensen-Shannon\nDivergence [mbits]')
+    ax.grid(visible=False)
+    fig.tight_layout()
+    return fig
+    
+
 def _make_corner_plot(
     samples, latex_labels, corner_parameters=None, parameters=None, **kwargs
 ):

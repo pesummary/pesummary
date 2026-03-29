@@ -59,6 +59,7 @@ class _CorePlotGeneration(object):
     def __init__(self, inputs, colors="default"):
         from pesummary.core.plots.main import _PlotGeneration
         key_data = inputs.grab_key_data_from_result_files()
+        comparison_stats = inputs.grab_comparison_statistics_from_result_files()
         expert_plots = not inputs.disable_expert
         self.plotting_object = _PlotGeneration(
             webdir=inputs.webdir, labels=inputs.labels,
@@ -77,7 +78,8 @@ class _CorePlotGeneration(object):
             disable_corner=inputs.disable_corner,
             multi_process=inputs.multi_process, mcmc_samples=inputs.mcmc_samples,
             corner_params=inputs.corner_params, expert_plots=expert_plots,
-            checkpoint=inputs.restart_from_checkpoint, key_data=key_data
+            checkpoint=inputs.restart_from_checkpoint, key_data=key_data,
+            comparison_stats=comparison_stats
         )
 
     def generate_plots(self):
@@ -99,6 +101,7 @@ class _GWPlotGeneration(object):
     def __init__(self, inputs, colors="default"):
         from pesummary.gw.plots.main import _PlotGeneration
         key_data = inputs.grab_key_data_from_result_files()
+        comparison_stats = inputs.grab_comparison_statistics_from_result_files()
         expert_plots = not inputs.disable_expert
         self.plotting_object = _PlotGeneration(
             webdir=inputs.webdir, labels=inputs.labels,
@@ -135,7 +138,8 @@ class _GWPlotGeneration(object):
             skymap=inputs.skymap, existing_skymap=inputs.existing_skymap,
             corner_params=inputs.corner_params,
             preliminary_pages=inputs.preliminary_pages, expert_plots=expert_plots,
-            checkpoint=inputs.restart_from_checkpoint, key_data=key_data
+            checkpoint=inputs.restart_from_checkpoint, key_data=key_data,
+            comparison_stats=comparison_stats
         )
         self.ligo_skymap_PID = self.plotting_object.ligo_skymap_PID
 

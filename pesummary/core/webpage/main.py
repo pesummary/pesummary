@@ -12,9 +12,7 @@ import math
 
 import pesummary
 from pesummary import conf, __version_string__
-from pesummary.utils.utils import (
-    logger, LOG_FILE, jensen_shannon_divergence_from_pdfs, safe_round, make_dir
-)
+from pesummary.utils.utils import logger, LOG_FILE, safe_round, make_dir
 from pesummary.core.webpage import webpage
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
@@ -111,6 +109,7 @@ class _WebpageGeneration(object):
         package_information={"packages": [], "manager": "pypi"},
         mcmc_samples=False, external_hdf5_links=False, key_data=None,
         existing_plot=None, disable_expert=False, analytic_priors=None,
+        comparison_stats=None,
     ):
         self.webdir = webdir
         make_dir(self.webdir)
@@ -144,6 +143,7 @@ class _WebpageGeneration(object):
         if self.analytic_priors is None:
             self.analytic_priors = {label: None for label in self.samples.keys()}
         self.key_data = key_data
+        self.comparison_stats = comparison_stats
         _label = self.labels[0]
         if self.samples is not None:
             if key_data is None:
@@ -202,15 +202,6 @@ class _WebpageGeneration(object):
         self.config_path = {
             "home": "./config/", "other": "../config/"
         }
-        if self.make_comparison:
-            try:
-                self.comparison_stats = self.generate_comparison_statistics()
-            except Exception as e:
-                self.comparison_stats = None
-                logger.info(
-                    "Failed to generate comparison statistics because {}. As a "
-                    "result they will not be added to the webpages".format(e)
-                )
 
     @property
     def _metafile(self):
@@ -252,6 +243,25 @@ class _WebpageGeneration(object):
         for ff in files_to_copy:
             shutil.copy(ff[0], ff[1])
 
+    def make_image_selector(self, html_file, image_contents, **kwargs):
+        """Make an image box with a selector to allow the user
+        to choose the displayed image
+
+        Parameters
+        ----------
+        html_file: pesummary.core.webpage.webpage.page
+            open html file
+        image_contents: list
+            list of images to place in a table
+        **kwargs: dict, optional
+            all additional kwargs passed to `make_table_of_images` function
+        """
+        html_file.make_table_of_images(
+            contents=image_contents, selector=True,
+            options=self.labels, **kwargs
+        )
+        return html_file
+
     def make_modal_carousel(
         self, html_file, image_contents, unique_id=False, **kwargs
     ):
@@ -278,60 +288,6 @@ class _WebpageGeneration(object):
         images = [y for x in image_contents for y in x]
         html_file.make_modal_carousel(images=images, unique_id=unique_id)
         return html_file
-
-    def generate_comparison_statistics(self):
-        """Generate comparison statistics for all parameters that are common to
-        all result files
-        """
-        data = {
-            i: self._generate_comparison_statistics(
-                i, [self.samples[j][i] for j in self.labels]
-            ) for i in self.same_parameters
-        }
-        return data
-
-    def _generate_comparison_statistics(self, param, samples):
-        """Generate comparison statistics for a set of samples
-
-        Parameters
-        ----------
-        samples: list
-            list of samples for each result file
-        """
-        from pesummary.utils.utils import kolmogorov_smirnov_test
-
-        rows = range(len(samples))
-        columns = range(len(samples))
-        ks = [
-            [
-                kolmogorov_smirnov_test([samples[i], samples[j]]) for i in
-                rows
-            ] for j in columns
-        ]
-        # JS divergence is symmetric and therefore we just need to loop over
-        # one triangle
-        js = np.zeros((len(samples), len(samples)))
-        pdfs = self._kde_from_same_samples(param, samples)
-        for num, i in enumerate(range(1, len(js))):
-            for idx, j in enumerate(range(0, i)):
-                js[i][idx] += jensen_shannon_divergence_from_pdfs(
-                    [pdfs[i], pdfs[j]]
-                )
-        js = js + js.T
-        return [ks, js.tolist()]
-
-    def _kde_from_same_samples(self, param, samples, **kwargs):
-        """Generate KDEs for a set of samples
-
-        Parameters
-        ----------
-        param: str
-            The parameter that the samples belong to
-        samples: list
-            list of samples for each result file
-        """
-        from pesummary.utils.utils import samples_to_kde
-        return samples_to_kde(samples, **kwargs)
 
     @staticmethod
     def get_executable(executable):
@@ -1211,7 +1167,7 @@ class _WebpageGeneration(object):
         path = self.image_path["other"]
 
         if self.comparison_stats is not None:
-            for _num, _key in enumerate(["KS_test", "JS_test"]):
+            for _num, _key in enumerate(["JS_test", "KS_test"]):
                 if _key == "KS_test":
                     html_file.make_banner(
                         approximant="KS test", key="ks_test",
@@ -1222,6 +1178,12 @@ class _WebpageGeneration(object):
                         approximant="JS test", key="js_test",
                         _style="font-size: 26px;"
                     )
+                    image_contents = [
+                        [path + f"combined_jsd_plot_{self.labels[0]}.png"]
+                    ]
+                    html_file = self.make_image_selector(
+                        html_file, image_contents, autoscale=True
+                    )
                 _style = "margin-top:3em; margin-bottom:5em; max-width:1400px"
                 _class = "row justify-content-center"
                 html_file.make_container(style=_style)
@@ -1229,10 +1191,10 @@ class _WebpageGeneration(object):
 
                 rows = range(len(self.labels))
                 table_contents = {
-                    i: [
-                        [self.labels[j]] + self.comparison_stats[i][_num][j] for
-                        j in rows
-                    ] for i in self.same_parameters
+                    self.same_parameters[i]: [
+                        [self.labels[j]] + self.comparison_stats[_num][i][j].tolist()
+                        for j in range(len(self.labels))
+                    ] for i in range(len(self.same_parameters))
                 }
                 _headings = [" "] + self.labels
                 html_file.make_table(
@@ -1304,8 +1266,8 @@ class _WebpageGeneration(object):
                     html_file.make_div(4, _class=_class, _style=None)
 
                     table_contents = [
-                        [self.labels[j]] + self.comparison_stats[i][_num][j]
-                        for j in rows
+                        [self.labels[j]] + self.comparison_stats[_num][j].tolist()
+                        for j in range(len(self.labels))
                     ]
                     _headings = [" "] + self.labels
                     html_file.make_table(
