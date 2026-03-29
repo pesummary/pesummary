@@ -1007,6 +1007,17 @@ def test_jensen_shannon_divergence():
         samples, decimal=9, kde=ReflectionBoundedKDE, xlow=4.5, xhigh=5.5
     )
 
+    bounds = [np.min(samples), np.max(samples)]
+    hist0, bin_edges = np.histogram(samples[0], bins=50, range=bounds, density=True)
+    hist1, _ = np.histogram(samples[1], bins=bin_edges, density=True)
+    pdf0 = hist0 * (bin_edges[1] - bin_edges[0])
+    pdf1 = hist1 * (bin_edges[1] - bin_edges[0])
+    _scipy = jensenshannon(*[pdf0, pdf1])**2
+    _pesummary = utils.jensen_shannon_divergence(
+        samples, decimal=9, method="hist"
+    )
+    np.testing.assert_almost_equal(_scipy, _pesummary)
+
 
 def test_make_cache_style_file():
     """Test that the `make_cache_style_file` works as expected
