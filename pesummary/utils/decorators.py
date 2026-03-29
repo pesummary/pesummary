@@ -4,7 +4,6 @@ import functools
 import copy
 import numpy as np
 import os
-from pesummary.utils.utils import logger
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
@@ -97,6 +96,7 @@ def bound_samples(minimum=-np.inf, maximum=np.inf, logger_level="debug"):
     range for the function random_samples (> 1.0). Truncating these samples to
     1.0.
     """
+    from pesummary.utils.utils import logger
     def decorator(func):
         @functools.wraps(func)
         def wrapper_function(*args, **kwargs):
@@ -141,6 +141,7 @@ def try_latex_plot(func):
     """Try to make a latex plot, if RuntimeError raised, turn latex off
     and try again
     """
+    from pesummary.utils.utils import logger
     @functools.wraps(func)
     def wrapper_function(*args, **kwargs):
         from matplotlib import rcParams
