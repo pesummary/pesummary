@@ -70,7 +70,8 @@ class _PlotGeneration(object):
         add_to_existing=False, priors={}, include_prior=False, weights=None,
         disable_comparison=False, linestyles=None, disable_interactive=False,
         multi_process=1, mcmc_samples=False, disable_corner=False,
-        corner_params=None, expert_plots=True, checkpoint=False, key_data=None
+        corner_params=None, expert_plots=True, checkpoint=False, key_data=None,
+        comparison_stats=None
     ):
         self.package = "core"
         self.webdir = webdir
@@ -102,6 +103,7 @@ class _PlotGeneration(object):
             self.expert_plots = False
         self.checkpoint = checkpoint
         self.key_data = key_data
+        self.comparison_stats = comparison_stats
         self.multi_process = multi_process
         self.pool = None
         self.preliminary_pages = {label: False for label in self.labels}
@@ -149,6 +151,7 @@ class _PlotGeneration(object):
                 oned_histogram_comparison=self.oned_histogram_comparison_plot,
                 oned_cdf_comparison=self.oned_cdf_comparison_plot,
                 box_plot_comparison=self.box_plot_comparison_plot,
+                jsd_comparison=self.jsd_comparison_plot,
             ))
         if self.make_interactive:
             self.plot_type_dictionary.update(
@@ -320,6 +323,7 @@ class _PlotGeneration(object):
         self.try_to_make_a_plot("oned_histogram_comparison")
         self.try_to_make_a_plot("oned_cdf_comparison")
         self.try_to_make_a_plot("box_plot_comparison")
+        self.try_to_make_a_plot("jsd_comparison")
 
     def try_to_make_a_plot(self, plot_type, label=None):
         """Wrapper function to _try_to_make_a_plot
@@ -1374,6 +1378,71 @@ class _PlotGeneration(object):
             parameter, same_samples, colors, latex_label, keys, linestyles,
             weights=weights
         )
+        _PlotGeneration.save(
+            fig, filename, preliminary=preliminary
+        )
+
+    def jsd_comparison_plot(self, label):
+        """Generate comparison JSD plot for all parameters that are
+        common to all result files
+
+        Parameters
+        ----------
+        label: str
+            the label for the results file that you wish to plot
+        """
+        error_message = (
+            "Failed to generate a comparison JSD plot because {}"
+        )
+        for num in range(len(self.labels)):
+            if self.comparison_stats is not None:
+                jsds = np.array([
+                    self.comparison_stats[0][i][:,num] for i in
+                    range(len(self.same_parameters))
+                ]).T * 1e3
+            else:
+                jsds = None
+            arguments = [
+                self.savedir, self.same_samples, latex_labels,
+                self.labels[num], self.preliminary_comparison_pages,
+                self.checkpoint, jsds, self.same_parameters,
+            ]
+            self._try_to_make_a_plot(
+                arguments, self._jsd_comparison_plot, error_message
+            )
+
+    @staticmethod
+    def _jsd_comparison_plot(
+        savedir, samples, latex_labels, base_label, preliminary=False,
+        checkpoint=False, jsds=None, jsd_parameters=None, package="core"
+    ):
+        """Generate a comparison JSD plot for all common parameters
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        samples: dict
+            dictionary of pesummary.utils.array.Array objects containing the
+            samples that correspond to parameter for each result file. The key
+            should be the corresponding label
+        latex_labels: dict
+            dictionary of latex labels for different parameters
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
+        """
+        filename = os.path.join(
+            savedir, f"combined_jsd_plot_{base_label}.png"
+        )
+        if os.path.isfile(filename) and checkpoint:
+            return
+        module = importlib.import_module(
+            "pesummary.{}.plots.plot".format(package)
+        )
+        fig = module._comparison_jsd_plot(
+            samples, latex_labels=latex_labels, jsds=jsds,
+            _jsd_parameters=jsd_parameters, base_label=base_label
+         )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
         )

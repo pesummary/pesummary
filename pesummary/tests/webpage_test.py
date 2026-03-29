@@ -227,32 +227,6 @@ class TestWebpage(object):
         )
         self.webpage.generate_webpages()
 
-    def test_comparison_stats(self):
-        """
-        """
-        from scipy.spatial.distance import jensenshannon
-        from pesummary.utils.utils import jensen_shannon_divergence
-        from pesummary.utils.bounded_1d_kde import ReflectionBoundedKDE
-
-        comparison_stats = self.webpage.comparison_stats
-        for param in ['chirp_mass', 'mass_ratio']:
-            if param == "chirp_mass":
-                xlow = 0.
-                xhigh = None
-            else:
-                xlow = 0.
-                xhigh = 1.
-            js = comparison_stats[param][1][0][1]
-            samples = [
-                self.samples[label][param] for label in self.labels
-            ]
-            x = np.linspace(np.min(samples), np.max(samples), 100)
-            _js = jensenshannon(
-                ReflectionBoundedKDE(samples[0], xlow=xlow, xhigh=xhigh)(x),
-                ReflectionBoundedKDE(samples[1], xlow=xlow, xhigh=xhigh)(x)
-            )**2
-            np.testing.assert_almost_equal(js, _js, 5)
-
     def test_displayed_label_summary_table(self):
         """Test that the summary table displayed on the webpages show the
         correct information

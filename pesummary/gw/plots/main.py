@@ -39,7 +39,7 @@ class _PlotGeneration(_BasePlotGeneration):
         publication_kwargs={}, multi_process=1, mcmc_samples=False,
         skymap=None, existing_skymap=None, corner_params=None,
         preliminary_pages=False, expert_plots=True, checkpoint=False,
-        key_data=None
+        key_data=None, comparison_stats=None
     ):
         super(_PlotGeneration, self).__init__(
             savedir=savedir, webdir=webdir, labels=labels,
@@ -55,7 +55,8 @@ class _PlotGeneration(_BasePlotGeneration):
             disable_comparison=disable_comparison, linestyles=linestyles,
             disable_interactive=disable_interactive, disable_corner=disable_corner,
             multi_process=multi_process, corner_params=corner_params,
-            expert_plots=expert_plots, checkpoint=checkpoint, key_data=key_data
+            expert_plots=expert_plots, checkpoint=checkpoint, key_data=key_data,
+            comparison_stats=comparison_stats
         )
         self.preliminary_pages = preliminary_pages
         if not isinstance(self.preliminary_pages, dict):
@@ -890,6 +891,27 @@ class _PlotGeneration(_BasePlotGeneration):
         _PlotGeneration.save(
             fig, os.path.join(savedir, "combined_skymap.png"),
             preliminary=preliminary
+        )
+
+    @staticmethod
+    def _jsd_comparison_plot(*args, **kwargs):
+        """Generate a comparison JSD plot for all common parameters
+
+        Parameters
+        ----------
+        savedir: str
+            the directory you wish to save the plot in
+        samples: dict
+            dictionary of pesummary.utils.array.Array objects containing the
+            samples that correspond to parameter for each result file. The key
+            should be the corresponding label
+        latex_labels: dict
+            dictionary of latex labels for different parameters
+        preliminary: Bool, optional
+            if True, add a preliminary watermark to the plot
+        """
+        return _BasePlotGeneration._jsd_comparison_plot(
+            *args, package="gw", **kwargs
         )
 
     def waveform_comparison_fd_plot(self, label):

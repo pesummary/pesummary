@@ -52,6 +52,7 @@ HOME_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery/
     <script src='./js/multi_dropbar.js'></script>
     <script src='./js/multiple_posteriors.js'></script>
     <script src='./js/search.js'></script>
+    <script src='./js/selector.js' defer></script>
     <script src='./js/side_bar.js'></script>
     <script src='./js/html_to_csv.js'></script>
     <script src='./js/html_to_json.js'></script>
@@ -75,6 +76,7 @@ OTHER_SCRIPTS = """    <script src='https://ajax.googleapis.com/ajax/libs/jquery
     <script src='../js/multi_dropbar.js'></script>
     <script src='../js/multiple_posteriors.js'></script>
     <script src='../js/search.js'></script>
+    <script src='../js/selector.js' defer></script>
     <script src='../js/side_bar.js'></script>
     <script src='../js/html_to_csv.js'></script>
     <script src='../js/html_to_json.js'></script>
@@ -355,9 +357,11 @@ class page(Base):
             )
         elif key == "js_test":
             self.add_content(
-                "Table summarising the Jensen-Shannon divergence for each "
-                "posterior distributions. 0 means the distributions are "
-                "identical and 1 means maximal divergence"
+                "Plot and Table summarising the Jensen-Shannon divergence for "
+                "each posterior distributions. 0 bits means the distributions "
+                "are identical and 1 bit means maximal divergence. Use the "
+                "selector to switch between which analysis is considered "
+                "the reference posterior."
             )
         elif key == "command_line":
             if link is not None:
@@ -809,7 +813,8 @@ class page(Base):
                              code="modal", cli=None, autoscale=False,
                              unique_id=None, captions=None, extra_div=False,
                              mcmc_samples=False, margin_left=None, display=None,
-                             container_id=None, **kwargs):
+                             container_id=None, selector=False, options=None,
+                             **kwargs):
         """Generate a table of images in bootstrap format.
 
         Parameters
@@ -832,7 +837,9 @@ class page(Base):
                                        extra_div=extra_div, display=display,
                                        mcmc_samples=mcmc_samples,
                                        margin_left=margin_left,
-                                       container_id=container_id, **kwargs)
+                                       container_id=container_id,
+                                       selector=selector, options=options,
+                                       **kwargs)
         table.make()
 
     def insert_image(self, path, justify="center", code=None):

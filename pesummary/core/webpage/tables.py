@@ -11,7 +11,8 @@ class table_of_images(Base):
                  autoscale=False, unique_id=None, captions=None, extra_div=False,
                  mcmc_samples=False, margin_left=None, display=None,
                  container_id=None, close_container=True,
-                 add_to_open_container=False):
+                 add_to_open_container=False, selector=False,
+                 options=None):
         """
 
         Parameters
@@ -36,12 +37,18 @@ class table_of_images(Base):
         self.container_id = container_id
         self.close_container = close_container
         self.add_to_open_container = add_to_open_container
+        self.selector = selector
+        self.options = options
         if self.unique_id is not None:
             self.modal_id = "Modal_{}".format(self.unique_id)
             self.demo_id = "demo_{}".format(self.unique_id)
         else:
             self.modal_id = "MyModal"
             self.demo_id = "demo"
+        if self.selector and self.options is None:
+            raise ValueError(
+                "A selector has been specified but no options provided"
+            )
         self._add_scripts()
 
     def _add_scripts(self):
@@ -88,7 +95,16 @@ class table_of_images(Base):
                 self.make_div(2, _class="row", _style=_style)
                 self.make_div(4, _class="column")
                 self.add_content("<a>", 6)
-                self._insert_image(i, 415, 8, _id, justify=None)
+                if self.selector:
+                    self._insert_selector()
+                    self.add_content("<div class='text-center'>")
+                    self.add_content(
+                        "<img id='plotDisplay' src='{}' class='img-fluid'>".format(i),
+                        indent=8
+                    )
+                    zelf.end_div(8)
+                else:
+                    self._insert_image(i, 415, 8, _id, justify=None)
                 self.add_content("</a>", 6)
                 if self.captions:
                     self.add_content("<div class='row justify-content-center'>", indent=6)
@@ -129,7 +145,16 @@ class table_of_images(Base):
                         "<a href='#%s' data-slide-to='%s'>\n" % (
                             self.demo_id, ind
                         ), indent=6)
-                    self._insert_image(j, width, 8, _id, justify=None)
+                    if self.selector:
+                        self._insert_selector()
+                        self.add_content("<div class='text-center'>")
+                        self.add_content(
+                            "<img id='plotDisplay' src='{}' class='img-fluid'>".format(j),
+                            indent=8
+                        )
+                        self.end_div(8)
+                    else:
+                        self._insert_image(j, width, 8, _id, justify=None)
                     self.add_content("</a>\n", indent=6)
                     if self.cli or self.captions:
                         self.add_content("<div class='row justify-content-center'>", indent=6)
@@ -174,3 +199,19 @@ class table_of_images(Base):
         self.end_div(2)
         if self.close_container:
             self.end_container()
+
+    def _insert_selector(self):
+        """Insert a selector for different options
+        """
+        self.add_content("<div class='row justify-content-center'>", indent=8)
+        self.add_content(
+            "<select id='plotSelector' class='form-select mb-4 mx-auto' aria-label='Select data plot'>",
+            indent=10
+        )
+        for option in self.options:
+            self.add_content(
+                "<option value='{}'>{}</option>".format(option, option),
+                indent=12
+            )
+        self.add_content("</select>", indent=10)
+        self.end_div(8)
