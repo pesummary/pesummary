@@ -178,7 +178,8 @@ def tests(*args, output="./", multi_process=1, **kwargs):
     if kwargs.get("coverage", False):
         command_line += (
             "--cov=pesummary --cov-report html:{}/htmlcov --cov-report "
-            "term:skip-covered --cov-append ".format(output)
+            "term:skip-covered --cov-report xml:{}/coverage.xml "
+            "--cov-append ".format(output, output)
         )
     for ignore in kwargs.get("ignore", []):
         command_line += "--ignore {} ".format(ignore)
@@ -188,8 +189,8 @@ def tests(*args, output="./", multi_process=1, **kwargs):
         command_line += "-k {} ".format(kwargs.get("expression"))
     launch(command_line)
     if kwargs.get("coverage", False):
-        command_line = "coverage-badge -o {} -f".format(
-            os.path.join(output, "coverage_badge.svg")
+        command_line = "genbadge coverage -i {}/coverage.xml -o {}".format(
+            output, os.path.join(output, "coverage_badge.svg")
         )
         launch(command_line)
 

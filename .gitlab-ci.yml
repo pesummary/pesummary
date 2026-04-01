@@ -42,7 +42,7 @@ default:
 .parallel_python: &parallel_python
   parallel:
     matrix:
-      - PY_VERSION: ["3.10", "3.11"]
+      - PY_VERSION: ["3.10", "3.11", "3.12"]
   tags:
     - executor-docker
 
@@ -341,7 +341,8 @@ coverage:
     - coverage combine .coverage_base .coverage_exe .coverage_sky
     - coverage report
     - coverage html --directory ./htmlcov/
-    - coverage-badge -o coverage_badge.svg -f
+    - coverage xml -o ./htmlcov/combined_coverage.xml
+    - genbadge coverage -o coverage_badge.svg -i ./htmlcov/combined_coverage.xml
 
 # -- docs
 

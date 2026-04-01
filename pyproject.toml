@@ -20,7 +20,8 @@ classifiers = [
 	"Programming Language :: Python",
 	"Programming Language :: Python :: 3",
 	"Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11"
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
 ]
 requires-python = ">=3.10"
 dependencies = [
@@ -58,9 +59,9 @@ lint = [
 test = [
 	"astropy >=4.0,!=4.3.0",
 	"beautifulsoup4 >=4.13.3",
-	"bilby_pipe",
-	"coverage <=7.4.4", # v7.5.0 incompatible with coverage-badge <=1.1.0
-	"coverage-badge",
+	"bilby_pipe ; python_version < '3.12'", # bilby_pipe incompatible with python3.12
+	"coverage <=7.4.4",
+	"genbadge[coverage]",
 	"cython >=0.28.5",
         "dynesty <3.0", # required for the pycbc test
         "lalsuite !=7.23,!=7.24", # lalinference_pipe is broken for 7.23 and 7.24 
@@ -76,7 +77,7 @@ test = [
 extras = [
 	"bilby>=1.1.1",
 	"coloredlogs",
-	"dingo-gw>=0.8.3",
+	"dingo-gw>=0.8.3 ; python_version < '3.12'", # dingo-gw incompatible with python3.12",
 	"GitPython",
 	"gwosc",
 	"jupyter_client",
