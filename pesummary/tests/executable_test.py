@@ -1,6 +1,7 @@
 # License under an MIT style license -- see LICENSE.md
 
 import os
+import sys
 import shutil
 import glob
 import subprocess
@@ -2181,6 +2182,10 @@ class TestSummaryRecreate(Base):
             shutil.rmtree(tmpdir)
 
     @pytest.mark.executabletest
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 12), 
+        reason="This test only runs on Python versions older than 3.12"
+    )
     def test_recreate(self):
         """Test the `summaryrecreate` script
         """

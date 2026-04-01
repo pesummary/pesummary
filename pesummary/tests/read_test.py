@@ -1,8 +1,10 @@
 # Licensed under an MIT style license -- see LICENSE.md
 
 import os
+import sys
 import shutil
 import numpy as np
+import pytest
 
 from .base import make_result_file, testing_dir
 import pesummary
@@ -682,6 +684,10 @@ class BilbyFile(BaseRead):
         assert len(f.priors["samples"][params[0]]) == 200
         
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 12),
+    reason="This test only runs on Python versions older than 3.12"
+)
 class DingoFile(BaseRead):
     """Base class to test loading in a bilby file with the core Read function"""
 
