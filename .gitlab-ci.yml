@@ -78,7 +78,8 @@ cache:
   paths:
     - .cache/pip
     - .cache/pesummary/download
-
+    - .cache/astropy
+    - .cache/ligo.em_bright
 
 before_script:
   - mkdir -p "${CI_PROJECT_DIR}/.cache/pesummary"

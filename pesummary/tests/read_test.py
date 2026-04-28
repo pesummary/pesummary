@@ -711,7 +711,7 @@ class DingoFile(BaseRead):
         compare that the unweighted pesummary samples are the same
         as the samples used to instantiate the dingo result
         """
-        assert len(self.result.samples) == 1000
+        assert 0 < len(self.result.samples) <= 1000
         assert len(self.result.samples[0]) == 18
 
     def test_samples_dict(self):
@@ -731,11 +731,9 @@ class DingoFile(BaseRead):
         # extra kwargs may contain a huge amount of information regarding
         # the training_settings or dataset_settings. It is unrealistic
         # to have a true value for this test. So instead just test a
-        # few properties
-        assert self.result.extra_kwargs["sampler"] in (
-            {"pe_algorithm": "dingo-is", "nsamples": 1000},
-            {"pe_algorithm": "dingo", "nsamples": 1000},
-        )
+        # few properties. The number of samples is also dynamic due to resampling
+        assert "pe_algorithm" in list(self.result.extra_kwargs["sampler"].keys())
+        assert "dingo" in self.result.extra_kwargs["sampler"]["pe_algorithm"]
 
     def test_injection_parameters(self, true=None, pesummary=False):
         # not testing injections as this is not implemented in the

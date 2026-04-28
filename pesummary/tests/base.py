@@ -2,13 +2,43 @@
 
 import os
 import numpy as np
+import importlib
 from pathlib import Path
 from pesummary.gw.cli.inputs import WebpagePlusPlottingPlusMetaFileInput
 from pesummary.core.cli.inputs import (
     WebpagePlusPlottingPlusMetaFileInput as Input
 )
+from functools import wraps
+from urllib.error import HTTPError
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
+
+
+def _try_function_for_429_error(func, *args, **kwargs):
+    """Try evaluating a function. If it fails due to a 429 HTTP error
+    return 1. If it fails due to another error, return 0. If it does not fail
+    return the output of the function
+    """
+    try:
+        return func(*args, **kwargs)
+    except HTTPError as e:
+        if e.code == 429:
+           return 1
+        return 0
+
+
+def skip_on_429(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        out = _try_function_for_429_error(func, *args, **kwargs)
+        if out == 1:
+            import pytest
+            pytest.skip(f"Skipped {func.__name__}: Rate limited by downstream API.")
+            return
+        elif out == 0:
+            raise
+        return out
+    return wrapper
 
 
 class Namespace(object):
@@ -187,7 +217,11 @@ def get_list_of_plots(
         for num in range(number):
             plots.append("%s/plots/%s%s_skymap.png" % (outdir, label, num))
             if "classification" not in remove_gw_plots:
-                plots.append("%s/plots/%s%s.pesummary.em_bright.png" % (outdir, label, num))
+                if _try_function_for_429_error(
+                    exec, "from ligo.em_bright.em_bright import source_classification_pe"
+                ) != 0:
+                    if "embright" not in remove_gw_plots:
+                        plots.append("%s/plots/%s%s.pesummary.em_bright.png" % (outdir, label, num))
                 plots.append("%s/plots/%s%s.pesummary.p_astro.png" % (outdir, label, num))
         if number > 1 and comparison:
             plots.append("%s/plots/combined_skymap.png" % (outdir))
