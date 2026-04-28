@@ -3,8 +3,7 @@
 import os
 import shutil
 import numpy as np
-from ligo.em_bright.em_bright import source_classification_pe
-from .base import make_result_file, testing_dir
+from .base import make_result_file, testing_dir, skip_on_429
 from pesummary.io import read
 from pesummary.utils.decorators import no_latex_plot
 from pesummary.gw.classification import Classify, EMBright, PAstro
@@ -44,6 +43,7 @@ class _Base(object):
             shutil.rmtree(".outdir")
 
     @no_latex_plot
+    @skip_on_429
     def test_plotting(self, cls=EMBright, **kwargs):
         """Test the .plot method
         """
@@ -66,6 +66,7 @@ class TestPAstro(_Base):
         """
         pass
 
+    @skip_on_429
     def test_plotting(self):
         """Test the .plot method
         """
@@ -85,10 +86,12 @@ class TestEMBright(_Base):
     """Test the pesummary.gw.classification.EMBright class and
     pesummary.gw.classification.Classify class
     """
+    @skip_on_429
     def test_classification(self):
         """Test the base classification method agrees with the
         ligo.em_bright.source_classification_pe function
         """
+        from ligo.em_bright.em_bright import source_classification_pe
         p_astro = source_classification_pe(
             ".outdir/test_lalinference.hdf5"
         )
@@ -108,6 +111,7 @@ class TestEMBright(_Base):
             np.testing.assert_almost_equal(pesummary[key], val, 5)
             np.testing.assert_almost_equal(pesummary[key], pesummary3[key], 5)
 
+    @skip_on_429
     def test_plotting(self):
         """Test the .plot method
         """

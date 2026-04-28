@@ -10,7 +10,7 @@ import numpy as np
 
 from .base import (
     make_result_file, get_list_of_plots, get_list_of_files, data_dir,
-    testing_dir
+    testing_dir, skip_on_429
 )
 import pytest
 from pesummary.utils.exceptions import InputError
@@ -969,6 +969,7 @@ class TestSummaryClassification(Base):
         )
 
     @pytest.mark.executabletest
+    @skip_on_429
     def test_result_file(self):
         """Test the `summaryclassification` executable for a random result file
         """
@@ -982,6 +983,7 @@ class TestSummaryClassification(Base):
         self.check_output()
 
     @pytest.mark.executabletest
+    @skip_on_429
     def test_pesummary_file(self):
         """Test the `summaryclassification` executable for a pesummary metafile
         """
