@@ -321,8 +321,13 @@ def _grab_event_names_from_gwosc(webpage):
     # check that there are posterior samples available
     events = []
     for num, event in _events.items():
-        # check for entry in inferred primary mass column
-        if "--" not in entries[num + 4].text:
+        # check for entry in inferred primary mass column and primary
+        # secondary mass
+        cond = (
+            "--" not in entries[num + 5].text and
+            "--" not in entries[num + 6].text
+        )
+        if cond:
             events.append(event)
     return events
 
