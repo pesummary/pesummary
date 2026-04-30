@@ -934,7 +934,7 @@ class _PlotGeneration(object):
         if os.path.isfile(filename) and checkpoint:
             return
         fig = twod_contour_plot(
-            samples_x, samples_y, levels=[0.9, 0.5], xlabel=latex_label_x,
+            samples_x, samples_y, levels=[0.5, 0.9], xlabel=latex_label_x,
             ylabel=latex_label_y, bins=50, truth=truth
         )
         _PlotGeneration.save(
