@@ -35,6 +35,112 @@ def _update_1d_comparison_legend(legend, linestyles, linewidth=1.75):
         handle.set_linestyle(style)
 
 
+def _get_contour_levels(H, levels, smooth=None):
+    """Calculate the values of the contour levels
+
+    Parameters
+    ----------
+    H: 2d ndarray
+        The 2d histogram of samples
+    levels: list
+        A list of fractional levels at which to draw contours.
+    smooth: float
+        A factor to smooth the histogram. Default is None
+    """
+    if smooth is not None:
+        from scipy.ndimage import gaussian_filter
+        H = gaussian_filter(H, smooth)
+
+    Hflat = H.flatten()
+    inds = np.argsort(Hflat)[::-1]
+    Hflat = Hflat[inds]
+    sm = np.cumsum(Hflat)
+    sm /= sm[-1]
+    V = np.empty(len(levels))
+    for i, v0 in enumerate(levels):
+        try:
+            V[i] = Hflat[sm <= v0][-1]
+        except IndexError:
+            V[i] = Hflat[0]
+    return np.sort(V)
+
+
+def _calculate_density_with_kde_for_contour(
+    x, y, kde=None, kde_kwargs={}, smooth=None, weights=None, gridsize=50,
+    cut=0
+):
+    """Calculate the density of a set of samples using a KDE. This density is
+    then evaluated on a meshgrid and returned.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        x-coordinates of the samples
+    y: np.ndarray
+        y-coordinates of the samples
+    kde: func, optional
+        KDE function to use. Default is scipy.stats.gaussian_kde
+    kde_kwargs: dict, optional
+        kwargs to pass to the KDE function
+    smooth: float, optional
+        standard deviation for Gaussian kernel smoothing. Default is None
+    gridsize: int, optional
+        The number of points to evaluate the KDE on for each axis
+    cut: float, optional
+        Factor, multiplied by the smoothing bandwidth, that extends the axis
+        limits. If 0, the density is evaluated on the range of the data
+    """
+    x = np.array(x).flatten()
+    y = np.array(y).flatten()
+    if kde is None:
+        from scipy.stats import gaussian_kde
+
+        kde = gaussian_kde
+
+    values = np.vstack([x, y])
+    kernel = kde(values, weights=weights, **kde_kwargs)
+
+    xmin, xmax = x.min(), x.max()
+    ymin, ymax = y.min(), y.max()
+
+    if cut > 0:
+        try:
+            x_bw = kernel.factor * np.std(x)
+            y_bw = kernel.factor * np.std(y)
+            xmin -= x_bw * cut
+            xmax += x_bw * cut
+            ymin -= y_bw * cut
+            ymax += y_bw * cut
+        except (AttributeError, TypeError):
+            x_bw = np.std(x)
+            y_bw = np.std(y)
+            xmin -= x_bw * cut
+            xmax += x_bw * cut
+            ymin -= y_bw * cut
+            ymax += y_bw * cut
+
+    X, Y = np.meshgrid(
+        np.linspace(xmin, xmax, gridsize), np.linspace(ymin, ymax, gridsize)
+    )
+    pts = np.vstack([X.ravel(), Y.ravel()])
+    z = kernel(pts)
+    H = z.reshape(X.shape)
+    if smooth is not None:
+        if kde_kwargs.get("transform", None) is not None:
+            from pesummary.utils.utils import logger
+            logger.warning(
+                "Smoothing PDF. This may give unwanted effects especially "
+                "near any boundaries"
+            )
+        try:
+            from scipy.ndimage import gaussian_filter
+        except ImportError:
+            raise ImportError("Please install scipy for smoothing")
+        H = gaussian_filter(H, smooth)
+
+    return X, Y, H
+
+
 def _autocorrelation_plot(
     param, samples, fig=None, color=conf.color, markersize=0.5, grid=True
 ):
