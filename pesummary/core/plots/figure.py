@@ -2,11 +2,22 @@
 
 from pesummary.utils.decorators import try_latex_plot
 from matplotlib.figure import Figure as MatplotlibFigure
+from matplotlib.axes import Axes as MatplotlibAxes
+from matplotlib.projections import register_projection
+import numpy as np
 
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
-def figure(*args, gca=True, **kwargs):
+def get_current_axis():
+    """Get the current matplotlib axis
+    """
+    from matplotlib.pyplot import gca
+
+    return gca()
+
+
+def figure(*args, gca=True, projection=None, **kwargs):
     """Extension of the matplotlib.pyplot.figure function
     """
     from matplotlib import pyplot
@@ -19,7 +30,7 @@ def figure(*args, gca=True, **kwargs):
     kwargs["FigureClass"] = Figure
     fig = pyplot.figure(*args, **kwargs)
     if gca:
-        return fig, fig.gca()
+        return fig, fig.gca(projection=projection)
     return fig
 
 
@@ -63,11 +74,25 @@ class ExistingFigure(object):
         return fig
 
 
+class Axes(MatplotlibAxes):
+    """Custom Axes class
+    """
+    pass
+
+
 class Figure(MatplotlibFigure):
     """An extension of the core matplotlib `~matplotlib.figure.Figure`
     """
     def __init__(self, *args, **kwargs):
         super(Figure, self).__init__(*args, **kwargs)
+
+    def gca(self, **kwargs):
+        """Get the current Axes.
+        """
+        if len(self.axes) > 0:
+            return super(Figure, self).gca()
+
+        return self.add_subplot(1, 1, 1, **kwargs)
 
     def close(self):
         """Close the plot

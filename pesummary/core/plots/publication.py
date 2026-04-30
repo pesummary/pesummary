@@ -57,7 +57,11 @@ def pcolormesh(
     if not _off:
         ax.pcolormesh(x, y, density, zorder=_zorder, **kwargs)
     if levels is not None:
-        CS = ax.contour(x, y, density, levels=levels, **level_kwargs)
+        _level_kwargs = level_kwargs.copy()
+        _level_kwargs["args"] = (x, y)
+        _level_kwargs["levels"] = levels
+        _level_kwargs.setdefault("zorder", _zorder + 1)
+        CS = ax.contour(x, y, density, **_level_kwargs)
         if legend:
             _legend_kwargs = DEFAULT_LEGEND_KWARGS.copy()
             _legend_kwargs.update(legend_kwargs)
@@ -157,8 +161,8 @@ def twod_contour_plot(
         kwargs["range"] = [[xlow, xhigh], [ylow, yhigh]]
 
     _function(
-        x, y, *args, ax=ax, levels=levels, bins=bins, smooth=smooth,
-        label=label, grid=grid, weights=weights, **kwargs
+        np.array(x), np.array(y), *args, ax=ax, levels=levels, bins=bins,
+        smooth=smooth, label=label, grid=grid, weights=weights, **kwargs
     )
     if truth is not None:
         _default_truth_kwargs.update(truth_kwargs)
@@ -233,17 +237,12 @@ def comparison_twod_contour_plot(
         rangey = [ylow, yhigh]
 
     for num, (_x, _y) in enumerate(zip(x, y)):
-        if plot_density is not None and plot_density == labels[num]:
-            plot_density = True
-        elif plot_density is not None and isinstance(plot_density, list):
-            if labels[num] in plot_density:
-                plot_density = True
-            else:
-                plot_density = False
-        elif plot_density is not None and plot_density == "both":
-            plot_density = True
-        else:
-            plot_density = False
+        _plot_density = False
+        if plot_density is not None:
+            if isinstance(plot_density, list) and labels[num] in plot_density:
+                _plot_density = True
+            elif plot_density == labels[num] or plot_density == "both":
+                _plot_density = True
 
         _label = _color = _linestyle = None
         if labels is not None:
@@ -252,15 +251,16 @@ def comparison_twod_contour_plot(
             _color = colors[num]
         if linestyles is not None:
             _linestyle = linestyles[num]
+
         fig = twod_contour_plot(
-            _x, _y, plot_density=plot_density, label=_label, fig=fig, ax=_ax,
+            _x, _y, plot_density=_plot_density, label=_label, fig=fig, ax=_ax,
             rangex=rangex, rangey=rangey, color=_color, linestyles=_linestyle,
             **kwargs
         )
     if ax is None:
         _ax = fig.gca()
     if add_legend:
-        legend = _ax.legend(**legend_kwargs)
+        _ax.legend(**legend_kwargs)
     return fig
 
 
@@ -496,7 +496,8 @@ def _triangle_plot(
     rangex=None, rangey=None, grid=False, latex_friendly=False, kde_2d=None,
     kde_2d_kwargs={}, legend_kwargs={"loc": "best", "frameon": False},
     truth=None, hist_kwargs={"density": True, "bins": 50},
-    _contour_function=twod_contour_plot, weights=None, **kwargs
+    _contour_function=twod_contour_plot, weights=None, contour_kwargs={},
+    **kwargs
 ):
     """Base function to generate a triangular plot
 
@@ -661,13 +662,15 @@ def _triangle_plot(
             _smooth = smooth[labels[num]]
         else:
             _smooth = smooth
+        contour_kwargs.update(
+            {"linestyles": [linestyles[num]], "linewidths": linewidths[num]}
+        )
         _contour_function(
             x[num], y[num], ax=ax3, levels=levels, smooth=_smooth,
             rangex=[xlow, xhigh], rangey=[ylow, yhigh], color=colors[num],
             linestyles=linestyles[num], weights=weights,
-            plot_density=plot_density, contour_kwargs=dict(
-                linestyles=[linestyles[num]], linewidths=linewidths[num]
-            ), plot_datapoints=plot_datapoints, kde=kde_2d,
+            plot_density=plot_density, contour_kwargs=contour_kwargs,
+            plot_datapoints=plot_datapoints, kde=kde_2d,
             kde_kwargs=kde_2d_kwargs, grid=False, truth=truth, **kwargs
         )
 
