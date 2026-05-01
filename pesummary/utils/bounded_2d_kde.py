@@ -1,3 +1,5 @@
+# Licensed under an MIT style license -- see LICENSE.md
+
 import numpy as np
 from scipy.stats import gaussian_kde as kde
 
@@ -54,36 +56,29 @@ class Bounded_2d_kde(kde):
             _pts = _pts.T
 
         x, y = _pts
-        pdf = super(Bounded_2d_kde, self).evaluate(_pts)
+        pts_list = [_pts]
+
         if self.xlow is not None:
-            pdf += super(Bounded_2d_kde, self).evaluate([2 * self.xlow - x, y])
-
+            pts_list.append(np.array([2 * self.xlow - x, y]))
         if self.xhigh is not None:
-            pdf += super(Bounded_2d_kde, self).evaluate([2 * self.xhigh - x, y])
-
+            pts_list.append(np.array([2 * self.xhigh - x, y]))
         if self.ylow is not None:
-            pdf += super(Bounded_2d_kde, self).evaluate([x, 2 * self.ylow - y])
-
+            pts_list.append(np.array([x, 2 * self.ylow - y]))
         if self.yhigh is not None:
-            pdf += super(Bounded_2d_kde, self).evaluate([x, 2 * self.yhigh - y])
+            pts_list.append(np.array([x, 2 * self.yhigh - y]))
 
-        if self.xlow is not None:
-            if self.ylow is not None:
-                pdf += super(Bounded_2d_kde, self).evaluate(
-                    [2 * self.xlow - x, 2 * self.ylow - y])
+        if self.xlow is not None and self.ylow is not None:
+            pts_list.append(np.array([2 * self.xlow - x, 2 * self.ylow - y]))
+        if self.xhigh is not None and self.ylow is not None:
+            pts_list.append(np.array([2 * self.xhigh - x, 2 * self.ylow - y]))
+        if self.xlow is not None and self.yhigh is not None:
+            pts_list.append(np.array([2 * self.xlow - x, 2 * self.yhigh - y]))
+        if self.xhigh is not None and self.yhigh is not None:
+            pts_list.append(np.array([2 * self.xhigh - x, 2 * self.yhigh - y]))
 
-            if self.yhigh is not None:
-                pdf += super(Bounded_2d_kde, self).evaluate(
-                    [2 * self.xlow - x, 2 * self.yhigh - y])
-
-        if self.xhigh is not None:
-            if self.ylow is not None:
-                pdf += super(Bounded_2d_kde, self).evaluate(
-                    [2 * self.xhigh - x, 2 * self.ylow - y])
-            if self.yhigh is not None:
-                pdf += super(Bounded_2d_kde, self).evaluate(
-                    [2 * self.xhigh - x, 2 * self.yhigh - y])
-        return pdf
+        all_pts = np.hstack(pts_list)
+        results = super(Bounded_2d_kde, self).evaluate(all_pts)
+        return results.reshape(len(pts_list), -1).sum(axis=0)
 
     def __call__(self, pts):
         _pts = np.atleast_2d(pts)
@@ -91,16 +86,19 @@ class Bounded_2d_kde(kde):
             _pts = _pts.T
         if self._transform is not None:
             _pts = self._transform(_pts)
-        transpose = _pts.T
-        out_of_bounds = np.zeros(transpose.shape[0], dtype='bool')
-        if self.xlow is not None:
-            out_of_bounds[transpose[:, 0] < self.xlow] = True
-        if self.xhigh is not None:
-            out_of_bounds[transpose[:, 0] > self.xhigh] = True
-        if self.ylow is not None:
-            out_of_bounds[transpose[:, 1] < self.ylow] = True
-        if self.yhigh is not None:
-            out_of_bounds[transpose[:, 1] > self.yhigh] = True
+
         results = self.evaluate(_pts)
+        x, y = _pts
+        out_of_bounds = np.zeros(x.shape, dtype=bool)
+
+        if self.xlow is not None:
+            out_of_bounds |= (x < self.xlow)
+        if self.xhigh is not None:
+            out_of_bounds |= (x > self.xhigh)
+        if self.ylow is not None:
+            out_of_bounds |= (y < self.ylow)
+        if self.yhigh is not None:
+            out_of_bounds |= (y > self.yhigh)
+
         results[out_of_bounds] = 0.
         return results
