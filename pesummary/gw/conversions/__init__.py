@@ -1688,12 +1688,14 @@ class _Conversion(object):
             self._component_spins_from_azimuthal_and_polar_angles()
         spin_magnitudes = ["a_1", "a_2"]
         angles = ["phi_jl", "tilt_1", "tilt_2", "phi_12"]
-        cartesian = ["spin_1x", "spin_1y", "spin_1z", "spin_2x", "spin_2y", "spin_2z"]
+        cartesian = ["spin_1x", "spin_1y", "spin_2x", "spin_2y"]
+        aligned = ["spin_1z", "spin_2z"]
         cond1 = all(i in self.parameters for i in spin_magnitudes)
         cond2 = all(i in self.parameters for i in angles)
         cond3 = all(i in self.parameters for i in cartesian)
+        cond4 = all(i in self.parameters for i in aligned)
         for _param in spin_magnitudes:
-            if _param in self.parameters and not cond2 and not cond3:
+            if _param in self.parameters and not cond2 and not cond3 and not cond4:
                 _index = _param.split("a_")[1]
                 _spin = self.specific_parameter_samples(_param)
                 _tilt = np.arccos(np.sign(_spin))
@@ -1702,7 +1704,14 @@ class _Conversion(object):
                 for num, i in enumerate(self.samples):
                     self.samples[num][_spin_ind] = abs(self.samples[num][_spin_ind])
 
-        if not cond2 and not cond3 and self.add_zero_spin:
+        if cond4 and not cond2 and not cond3 and not cond1:
+            for _index in [1, 2]:
+                _spin = self.specific_parameter_samples("spin_{}z".format(_index))
+                self.append_data("a_{}".format(_index), np.abs(_spin))
+                _tilt = np.arccos(np.sign(_spin))
+                self.append_data("tilt_{}".format(_index), _tilt)
+
+        if not cond2 and not cond3 and not cond4 and self.add_zero_spin:
             for _param in spin_magnitudes:
                 if _param not in self.parameters:
                     _spin = np.zeros(len(self.samples))
