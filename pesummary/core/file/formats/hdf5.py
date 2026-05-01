@@ -80,7 +80,8 @@ def _read_hdf5_with_h5py(
         samples = np.array(f[path_to_samples]["samples"])
     elif isinstance(f[path_to_samples], h5py._hl.dataset.Dataset):
         parameters = list(f[path_to_samples].dtype.names)
-        samples = np.array(f[path_to_samples]).view((float, len(parameters))).tolist()
+        _data = f[path_to_samples]
+        samples = np.column_stack([_data[name] for name in parameters]).tolist()
     for num, par in enumerate(parameters):
         if par == "logL":
             parameters[num] = "log_likelihood"

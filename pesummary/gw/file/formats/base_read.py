@@ -13,6 +13,64 @@ from pesummary.gw.conversions import convert
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
+def _chi_resolver(index):
+    """Determine if chi_{index} is the spin magnitude or zth component of the
+    spin
+    """
+    def _resolve_chi(parameters, samples):
+        if samples is None:
+            raise ValueError("Please provide a set of samples")
+
+        param_name = f"chi_{index}"
+        z_name = f"spin_{index}z"
+        a_name = f"a_{index}"
+        ind = parameters.index(param_name)
+        chi_samples = np.array([row[ind] for row in samples])
+
+        if z_name in parameters and a_name in parameters:
+            return None
+        elif z_name in parameters:
+            z_ind = parameters.index(z_name)
+            z_samples = [row[z_ind] for row in samples]
+            if np.allclose(chi_samples, z_samples, atol=1e-7, rtol=0):
+                return None
+            elif np.allclose(chi_samples, np.abs(z_samples), atol=1e-7, rtol=0):
+                return a_name
+        elif a_name in parameters:
+            a_ind = parameters.index(a_name)
+            a_samples = [row[a_ind] for row in samples]
+            if np.allclose(chi_samples, a_samples, atol=1e-7, rtol=0):
+                return None
+
+        if min(chi_samples) < 0:
+            return z_name
+
+        x_name = f"spin_{index}x"
+        y_name = f"spin_{index}y"
+        if x_name in parameters and y_name in parameters:
+            x_ind = parameters.index(x_name)
+            y_ind = parameters.index(y_name)
+            x_samples = np.array([row[x_ind] for row in samples])
+            y_samples = np.array([row[y_ind] for row in samples])
+            
+            # Spin magnitude must be >= the transverse magnitude.
+            # If chi_1 is smaller, it must be spin_1z.
+            if np.any(chi_samples < np.hypot(x_samples, y_samples)):
+                return z_name
+
+        precessing_indicators = {f"tilt_{index}", x_name, y_name}
+        if any(param in parameters for param in precessing_indicators):
+            return a_name
+        return z_name
+    return _resolve_chi
+
+
+AMBIGUOUS_TRANSLATIONS = {
+    "chi_1": _chi_resolver(1),
+    "chi_2": _chi_resolver(2),
+}
+
+
 def _translate_parameters(parameters, samples):
     """Translate parameters to a standard names
 
@@ -44,6 +102,17 @@ def _translate_parameters(parameters, samples):
         standard_names[i] if i in standard_params else i for i in
         parameters
     ]
+    for param, func in AMBIGUOUS_TRANSLATIONS.items():
+        if param in converted_params:
+            ind = converted_params.index(param)
+            new = func(converted_params, samples)
+            if new is None:
+                continue
+            logger.info(
+                f"Found a parameter called {param} which is ambiguous. "
+                f"Assuming it means {new}."
+            )
+            converted_params[ind] = new
     return converted_params, samples
 
 
