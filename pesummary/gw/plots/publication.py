@@ -136,7 +136,7 @@ def twod_contour_plots(
 
 
 def _setup_triangle_plot(parameters, kwargs):
-    """Modify a dictionary of kwargs for bounded KDEs
+    """Modify the default dictionary of kwargs for bounded KDEs.
 
     Parameters
     ----------
@@ -151,19 +151,39 @@ def _setup_triangle_plot(parameters, kwargs):
     if not len(parameters):
         raise ValueError("Please provide a list of parameters")
     transform, xlow, xhigh, ylow, yhigh = _return_bounds(parameters)
-    kwargs.update(
-        {
-            "kde_2d": Bounded_2d_kde, "kde_2d_kwargs": {
-                "transform": transform, "xlow": xlow, "xhigh": xhigh,
-                "ylow": ylow, "yhigh": yhigh
-            }, "kde": bounded_1d_kde
-        }
-    )
-    _, xlow, xhigh, ylow, yhigh = _return_bounds(parameters, T=False)
-    kwargs["kde_kwargs"] = {
-        "x_axis": {"xlow": xlow, "xhigh": xhigh},
-        "y_axis": {"xlow": ylow, "xhigh": yhigh}
+    kwargs.setdefault("kde_2d", Bounded_2d_kde)
+    kwargs.setdefault("kde", bounded_1d_kde)
+    kde_2d_kwargs = kwargs.setdefault("kde_2d_kwargs", {})
+    default_2d_kwargs = {
+        "transform": transform,
+        "xlow": xlow, "xhigh": xhigh,
+        "ylow": ylow, "yhigh": yhigh
     }
+    for key, val in default_2d_kwargs.items():
+        kde_2d_kwargs.setdefault(key, val)
+
+    _, xlow_1d, xhigh_1d, ylow_1d, yhigh_1d = _return_bounds(parameters, T=False)
+    kde_kwargs = kwargs.setdefault("kde_kwargs", {})
+    if "xlow" in kde_kwargs or "xhigh" in kde_kwargs:
+        x_axis = kde_kwargs.setdefault("x_axis", {})
+        if "xlow" in kde_kwargs:
+            x_axis.setdefault("xlow", kde_kwargs.pop("xlow"))
+        if "xhigh" in kde_kwargs:
+            x_axis.setdefault("xhigh", kde_kwargs.pop("xhigh"))
+    if "ylow" in kde_kwargs or "yhigh" in kde_kwargs:
+        y_axis = kde_kwargs.setdefault("y_axis", {})
+        if "ylow" in kde_kwargs:
+            y_axis.setdefault("xlow", kde_kwargs.pop("ylow"))
+        if "yhigh" in kde_kwargs:
+            y_axis.setdefault("xhigh", kde_kwargs.pop("yhigh"))
+
+    x_axis = kde_kwargs.setdefault("x_axis", {})
+    x_axis.setdefault("xlow", xlow_1d)
+    x_axis.setdefault("xhigh", xhigh_1d)
+
+    y_axis = kde_kwargs.setdefault("y_axis", {})
+    y_axis.setdefault("xlow", ylow_1d)
+    y_axis.setdefault("xhigh", yhigh_1d)
     return kwargs
 
 
