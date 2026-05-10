@@ -147,7 +147,7 @@ def corner(
             for key, item in kde_kwargs.items():
                 if key not in parameters:
                     _kwargs[key] = item
-            _kde = kde(samples[:,num], **_kwargs)
+            _kde = kde(samples[:,num], weights=weights, **_kwargs)
             xs = np.linspace(np.min(samples[:,num]), np.max(samples[:,num]), N)
             axs[num, num].plot(
                 xs, _kde(xs), color=color
