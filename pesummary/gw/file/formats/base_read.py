@@ -440,6 +440,32 @@ class GWSingleAnalysisRead(GWRead, SingleAnalysisRead):
         """
         return _add_log_likelihood(parameters, samples)
 
+    @staticmethod
+    def check_for_nan_likelihoods(parameters, samples, remove=False):
+        """Check to see if there are any samples with log_likelihood='nan' or
+        log_likelihood=inf in the posterior table and remove if requested. This
+        loops over all detector log likelihoods if available
+
+        Parameters
+        ----------
+        parameters: list
+            list of parameters stored in the result file
+        samples: np.ndarray
+            array of samples for each parameter
+        remove: Bool, optional
+            if True, remove samples with log_likelihood='nan' and
+            log_likelihood=inf' from samples
+        """
+        params = [
+            param for param in parameters if "log_likelihood" in param
+        ]
+        for param in params:
+            parameters, samples = GWRead.check_for_nan_likelihoods(
+                parameters, samples, remove=remove,
+                parameter=param
+            )
+        return parameters, samples
+
     def psi_mod_pi(self, parameters, samples):
         """Fold the polarisation (psi) between the interval [0, pi). This is
         only performed if there are polarisation samples > pi in the dataset.
@@ -581,6 +607,17 @@ class GWMultiAnalysisRead(GWRead, MultiAnalysisRead):
                 self.gwdata = StrainDataDict(mydict)
             except (KeyError, AttributeError):
                 pass
+
+    @staticmethod
+    def check_for_nan_likelihoods(parameters, samples, remove=False):
+        import copy
+        _parameters = copy.deepcopy(parameters)
+        _samples = copy.deepcopy(samples)
+        for num, (params, samps) in enumerate(zip(_parameters, _samples)):
+            _parameters[num], _samples[num] = GWSingleAnalysisRead.check_for_nan_likelihoods(
+                params, samps, remove=remove
+            )
+        return _parameters, _samples
 
     def convert_and_translate_prior_samples(self, priors, disable_convert=False):
         """
