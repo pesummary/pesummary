@@ -120,9 +120,11 @@ class Read(object):
         return function(path_to_file, **kwargs)
 
     @staticmethod
-    def check_for_nan_likelihoods(parameters, samples, remove=False):
-        """Check to see if there are any samples with log_likelihood='nan' in
-        the posterior table and remove if requested
+    def check_for_nan_likelihoods(
+        parameters, samples, remove=False, parameter="log_likelihood"
+    ):
+        """Check to see if there are any samples with log_likelihood='nan' or
+        log_likelihood=inf in the posterior table and remove if requested
 
         Parameters
         ----------
@@ -131,27 +133,28 @@ class Read(object):
         samples: np.ndarray
             array of samples for each parameter
         remove: Bool, optional
-            if True, remove samples with log_likelihood='nan' from samples
+            if True, remove samples with log_likelihood='nan' and
+            log_likelihood=inf' from samples
+        parameter: str, optional
+            name of the likelihood column to check
         """
         import math
-        if "log_likelihood" not in parameters:
+        if parameter not in parameters:
             return parameters, samples
-        ind = parameters.index("log_likelihood")
+        ind = parameters.index(parameter)
         likelihoods = np.array(samples).T[ind]
-        inds = np.array(
-            [math.isnan(_) for _ in likelihoods], dtype=bool
-        )
+        inds = np.isnan(likelihoods) | np.isinf(likelihoods)
         if not sum(inds):
             return parameters, samples
         msg = (
-            "Posterior table contains {} samples with 'nan' log likelihood. "
+            "Posterior table contains {} samples with 'nan' or inf for {}. "
         )
         if remove:
             msg += "Removing samples from posterior table."
             samples = np.array(samples)[~inds].tolist()
         else:
             msg += "This may cause problems when analysing posterior samples."
-        logger.warning(msg.format(sum(inds)))
+        logger.warning(msg.format(sum(inds), parameter))
         return parameters, samples
 
     @staticmethod
