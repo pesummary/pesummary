@@ -1408,9 +1408,15 @@ class _PlotGeneration(_BasePlotGeneration):
                 prior = [self.priors["calibration"][label][i] for i in ifos]
             else:
                 prior = None
+            _definition = {}
+            for ifo in ifos:
+                if isinstance(self.calibration_definition[ifo], list):
+                    _definition[ifo] = self.calibration_definition[ifo][num]
+                else:
+                    _definition[ifo] = self.calibration_definition[ifo]
             arguments = [
                 self.savedir, frequencies, calibration_data, ifos, prior,
-                label, self.calibration_definition[label], self.checkpoint
+                label, _definition, self.checkpoint
             ]
             self._try_to_make_a_plot(
                 arguments, self._calibration_plot, error_message % (label)
