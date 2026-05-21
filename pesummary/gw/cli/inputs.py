@@ -509,29 +509,109 @@ class _GWInput(pesummary.core.cli.inputs._Input):
 
     @calibration_definition.setter
     def calibration_definition(self, calibration_definition):
-        if not len(self.opts.calibration):
+        def _set_calibration_from_default(structure, default):
+            other = structure.copy()
+            for ifo, value in structure.items():
+                if isinstance(default, dict):
+                    _default = default.get(ifo, None)
+                    if _default is None:
+                        raise ValueError(
+                            f"No default calibration definition stored for "
+                            f"{ifo}. Please provide a value for this IFO."
+                        )
+                elif isinstance(default, list) and len(default) == 1:
+                    _default = default[0]
+                else:
+                    _default = default
+                if isinstance(value, list):
+                    other[ifo] = [_default] * len(value)
+                else:
+                    other[ifo] = _default
+            return other
+
+        if not self.opts.calibration:
             self._calibration_definition = None
             return
-        if len(calibration_definition) == 1:
-            logger.info(
-                f"Assuming that the calibration correction was applied to "
-                f"'{calibration_definition[0]}' for all analyses"
+
+        mydict = calibration_definition or None
+        if mydict is None and isinstance(self.opts.calibration, dict):
+            mydict = {
+                key: item for key, item in conf.calibration_definition.items()
+                if key in self.opts.calibration.keys()
+            }
+        elif mydict is None:
+            mydict = conf.calibration_definition
+        if isinstance(mydict, list):
+            if len(mydict) == 1:
+                global_val = mydict[0]
+                if isinstance(self.opts.calibration, dict):
+                    mydict = {ifo: global_val for ifo in self.opts.calibration}
+                else:
+                    mydict = conf.calibration_definition.copy()
+                    for key in mydict.keys():
+                        mydict[key] = global_val
+            if len(mydict) != len(self.opts.calibration):
+                raise ValueError(
+                    f"Provided calibration definition does not have the same "
+                    f"shape as provided calibration: "
+                    f"{len(mydict)}, {len(self.opts.calibration)}"
+                )
+        if len(mydict) == 1 and list(mydict.keys())[0] not in self.opts.calibration:
+            global_val = list(mydict.values())[0]
+            mydict = {ifo: global_val for ifo in self.opts.calibration}
+
+        if isinstance(self.opts.calibration, dict):
+            if mydict.keys() != self.opts.calibration.keys():
+                raise ValueError(
+                    f"Provided IFOs for calibration definition "
+                    f"({list(mydict.keys())}) do not match the IFOs for "
+                    f"calibration envelopes ({list(self.opts.calibration.keys())})."
+                )
+
+            final_definition = {}
+            for ifo, base_structure in self.opts.calibration.items():
+                user_value = mydict[ifo]
+                if isinstance(base_structure, list):
+                    if isinstance(user_value, list):
+                        if len(user_value) != len(base_structure):
+                            raise ValueError(
+                                f"Expected {len(base_structure)} entries for {ifo} "
+                                f"for the calibration definition. For "
+                                f"{len(user_value)}"
+                            )
+                        final_definition[ifo] = user_value
+                    else:
+                        final_definition[ifo] = [user_value] * len(base_structure)
+                else:
+                    if isinstance(user_value, list):
+                        raise ValueError(
+                            f"Expected a single string for {ifo} for the "
+                            f"calibration definition to match the calibration "
+                            f"envelopes, got a list."
+                        )
+                    final_definition[ifo] = user_value
+        else:
+            final_definition = mydict.copy()
+
+        allowed = ["data", "template"]
+        for ifo, values in final_definition.items():
+            check_list = values if isinstance(values, list) else [values]
+            if any(v not in allowed for v in check_list):
+                raise ValueError(
+                    f"Calibration definitions for {ifo} must be 'data' or "
+                    f"'template'. Got: {values}"
+                )
+        logger.debug(
+            "Assuming the following calibration definitions: {}".format(
+                ", ".join(
+                    [
+                        ":".join([key, str(item)]) for key, item in
+                        final_definition.items()
+                    ]
+                )
             )
-            calibration_definition *= len(self.labels)
-        elif len(calibration_definition) != len(self.labels):
-            raise ValueError(
-                f"Please provide a calibration definition for each analysis "
-                f"({len(self.labels)}) or a single definition to use for all "
-                f"analyses"
-            )
-        if any(_ not in ["data", "template"] for _ in calibration_definition):
-            raise ValueError(
-                "Calibration definitions must be either 'data' or 'template'"
-            )
-        self._calibration_definition = {
-            label: calibration_definition[num] for num, label in
-            enumerate(self.labels)
-        }
+        )
+        self._calibration_definition = final_definition
 
     @property
     def calibration(self):
@@ -549,7 +629,6 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                 self.add_to_prior_dict("calibration_raw", prior_data_raw)
                 prior_data = self.get_psd_or_calibration_data(
                     calibration, self.extract_calibration_data_from_file,
-                    type=self.calibration_definition[self.labels[0]]
                 )
                 self.add_to_prior_dict("calibration", prior_data)
             else:
@@ -561,7 +640,7 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                         if cal_data != {} and cal_data is not None:
                             prior_data[label] = {
                                 ifo: self.extract_calibration_data_from_file(
-                                    cal_data[ifo], type=self.calibration_definition[label]
+                                    cal_data[ifo],
                                 ) for ifo in cal_data.keys()
                             }
                             prior_data_raw[label] = {
@@ -1083,6 +1162,24 @@ class _GWInput(pesummary.core.cli.inputs._Input):
             executable that is used to extract the data from the calibration/psd
             files
         """
+        def get_exec_kwargs(ifo, idx=None):
+            exec_kwargs = kwargs.copy()
+            if "calibration" in executable.__name__:
+                if isinstance(self.calibration_definition, dict):
+                    ifo_def = self.calibration_definition.get(ifo)
+                    if isinstance(ifo_def, list) and idx is not None:
+                        cal_type = ifo_def[idx]
+                    elif isinstance(ifo_def, list):
+                        cal_type = ifo_def[0]
+                    else:
+                        cal_type = ifo_def
+                else:
+                    cal_type = self.calibration_definition
+
+                if "type" not in exec_kwargs.keys():
+                    exec_kwargs['type'] = cal_type
+            return exec_kwargs
+
         data = {}
         if input == {} or input == []:
             return data
@@ -1095,21 +1192,27 @@ class _GWInput(pesummary.core.cli.inputs._Input):
                     "the number of result files passed"
                 )
             for idx in range(len(input[keys[0]])):
-                data[self.labels[idx]] = {
-                    i: executable(input[i][idx], IFO=i, **kwargs) for i in list(keys)
+                label = self.labels[idx]
+                data[label] = {
+                    i: executable(input[i][idx], IFO=i, **get_exec_kwargs(ifo=i, idx=idx)) 
+                    for i in list(keys)
                 }
         elif isinstance(input, dict):
             for i in self.labels:
                 data[i] = {
-                    j: executable(input[j], IFO=j, **kwargs) for j in list(input.keys())
+                    j: executable(input[j], IFO=j, **get_exec_kwargs(ifo=j)) 
+                    for j in list(input.keys())
                 }
+
         elif isinstance(input, list):
             for i in self.labels:
-                data[i] = {
-                    self.get_ifo_from_file_name(j): executable(
-                        j, IFO=self.get_ifo_from_file_name(j), **kwargs
-                    ) for j in input
-                }
+                label_dict = {}
+                for j in input:
+                    ifo = self.get_ifo_from_file_name(j)
+                    label_dict[ifo] = executable(
+                        j, IFO=ifo, **get_exec_kwargs(ifo=ifo)
+                    )
+                data[i] = label_dict
         else:
             raise InputError(
                 "Did not understand the psd/calibration input. Please use the "

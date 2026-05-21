@@ -221,8 +221,9 @@ class ArgumentParser(_ArgumentParser):
             "--calibration_definition": {
                 "dest": "calibration_definition",
                 "help": "Definition for each calibration envelope",
+                "action": DictionaryAction,
                 "nargs": "+",
-                "default": ["data"],
+                "default": {},
                 "key": "gw",
             },
             "--calibration": {

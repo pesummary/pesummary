@@ -149,3 +149,11 @@ additional_1d_pages = {
         "network_33_multipole_snr", "network_44_multipole_snr"
     ]
 }
+
+# Calibration definition
+calibration_definition = {
+    "H1": "data",
+    "L1": "data",
+    "V1": "template",
+    "K1": "data"
+}

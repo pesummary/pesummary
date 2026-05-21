@@ -607,6 +607,20 @@ class TestSummaryPages(Base):
         np.testing.assert_almost_equal(
             f.priors["calibration"]["test"]["L1"], calibration
         )
+        command_line = (
+            "summarypages --webdir {0} --samples {0}/example.json "
+            "--psd H1:{0}/psd.dat --calibration L1:{0}/calibration.dat "
+            "--labels test --posterior_samples_filename example.h5 "
+            "--calibration_definition L1:template".format(tmpdir)
+        )
+        self.launch(command_line)
+        f = read("{}/samples/example.h5".format(tmpdir))
+        psd = np.genfromtxt("{}/psd.dat".format(tmpdir))
+        calibration = np.genfromtxt("{}/calibration.dat".format(tmpdir))
+        np.testing.assert_almost_equal(f.psd["test"]["H1"], psd)
+        np.testing.assert_almost_equal(
+            f.priors["calibration"]["test"]["L1"], calibration
+        )
 
     @pytest.mark.executabletest
     def test_strain_data(self):
