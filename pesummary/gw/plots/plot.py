@@ -1214,7 +1214,7 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         envelopes
     prior: list, optional
         list containing the prior calibration envelope data for different IFOs
-    definition: str, optional
+    definition: str/dict, optional
         definition used for the prior calibration envelope data
     """
     from gwpy.plot.colors import GW_OBSERVATORY_COLORS
@@ -1251,6 +1251,18 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
         }
         return data_dict
 
+    if isinstance(definition, dict):
+        labels = {
+            num: f"{ifos[num]} ({definition[ifos[num]]})" for
+            num in range(len(calibration_envelopes))
+        }
+    else:
+        labels = {
+            num: f"{ifos[num]} ({definition})" for num in
+            range(len(calibration_envelopes))
+        }
+
+
     fig, (ax1, ax2) = subplots(2, 1, sharex=True, gca=False)
     if not colors and all(i in GW_OBSERVATORY_COLORS.keys() for i in ifos):
         colors = [GW_OBSERVATORY_COLORS[i] for i in ifos]
@@ -1268,17 +1280,17 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
             prior_data = interpolate_calibration(prior[num])
         ax1.plot(
             frequency, calibration_data["amplitude"]["upper"], color=colors[num],
-            linestyle="-", label=ifos[num]
+            linestyle="-", label=labels[num]
         )
         ax1.plot(
             frequency, calibration_data["amplitude"]["lower"], color=colors[num],
             linestyle="-"
         )
         ax1.set_ylabel(r"Amplitude deviation $[\%]$", fontsize=10)
-        ax1.legend(loc="best")
+        ax1.legend(loc="best", ncols=min(3, len(labels)))
         ax2.plot(
             frequency, calibration_data["phase"]["upper"], color=colors[num],
-            linestyle="-", label=ifos[num]
+            linestyle="-", label=labels[num]
         )
         ax2.plot(
             frequency, calibration_data["phase"]["lower"], color=colors[num],
@@ -1295,7 +1307,7 @@ def _calibration_envelope_plot(frequency, calibration_envelopes, ifos,
                 prior_data["phase"]["lower"], color=colors[num], alpha=0.2
             )
 
-    ax1.set_title(f"Calibration correction applied to {definition}")
+    ax1.set_title(f"Calibration correction applied")
     ax1.set_xscale('log')
     ax2.set_xscale('log')
     ax2.set_xlabel(r"Frequency $[Hz]$")
