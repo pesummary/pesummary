@@ -142,3 +142,10 @@ Relativity
 
 .. automodule:: pesummary.gw.conversions.tgr
     :members:
+
+Names
++++++
+
+Below are functions that convert parameter names from one format to the other
+
+.. automodule:: pesummary.gw.conversions.names

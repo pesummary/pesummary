@@ -22,6 +22,7 @@ from .angles import *
 from .cosmology import *
 from .cosmology import _source_from_detector
 from .mass import *
+from .names import *
 from .remnant import *
 from .remnant import _final_from_initial_BBH
 from .snr import *
