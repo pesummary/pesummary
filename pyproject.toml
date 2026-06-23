@@ -31,7 +31,7 @@ dependencies = [
 	"h5py",
 	"lalsuite >7.11",
 	"ligo-gracedb",
-	"matplotlib >= 3.10.0",
+	"matplotlib >= 3.10.0,<3.11.0", # due to incompatibility
 	"numpy >=1.15.4,<2.4.0", # 2.4.0 incompatible with astropy
 	"pandas",
 	"pygments",
