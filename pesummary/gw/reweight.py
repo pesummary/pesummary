@@ -69,8 +69,8 @@ def uniform_in_comoving_volume_from_uniform_in_volume(
     hp = hubble_parameter(cosmology, redshift)
     weights = 1.0 / (
         (1 + redshift)**(2. - star_formation_rate_power) * (
-            hp * (luminosity_distance / hd)
-        ) + (1. + redshift)**2.
+            (hp * (luminosity_distance / hd)) + (1. + redshift)**2.
+        )
     )
     return rejection_sampling(samples, weights)
 
