@@ -1,3 +1,307 @@
+## 1.6.5 [06/07/2026]
+
+### Added
+
+- Uniform in comoving volume reweighting - add support for reweighting posterior samples from a uniform-in-volume prior to a uniform-in-comoving-volume prior.
+
+### Fixed
+
+- Uniform in volume reweighting - fix a bug in the transformation from a uniform-in-volume prior to a uniform-in-comoving-volume prior.
+
+## 1.6.4 [21/05/2026]
+
+### Added
+
+- Detector-specific calibration definitions - allow different calibration definitions to be specified for different detectors.
+- Infinite log likelihood samples - remove infinite log likelihood samples from result files.
+
+## 1.6.3 [30/04/2026]
+
+### Changed
+
+- Corner histogram plots - redesign `pesummary.core.plots.corner.hist2d`.
+
+## 1.6.2 [30/03/2026]
+
+### Added
+
+- Jensen-Shannon divergence - add functionality to calculate the Jensen-Shannon divergence (JSD) directly from histograms.
+- JSD comparison plots - add dedicated Jensen-Shannon divergence comparison plots.
+- Metafile skymap comparisons - allow comparison `ligo.skymap` skymaps to be generated when data are stored in a PESummary metafile.
+- ligo.skymap warnings - add a warning when `ligo.skymap` is not installed.
+
+### Changed
+
+- Dependencies - remove the `python-ligo-lw` requirement.
+
+### Fixed
+
+- Skymap contour labels - prevent failures caused by difficult-to-place contour labels in skymaps.
+
+## 1.6.1 [15/01/2026]
+
+### Added
+
+- Calibration prior datasets - add a new prior dataset for raw calibration files.
+- Custom comparison contour plots - allow custom figure and axes objects to be passed to `comparison_contour_plot`.
+
+### Changed
+
+- RIFT polarisation angles - fold the polarisation angle into the range `[0, pi)` for RIFT analyses.
+
+### Fixed
+
+- Summary review statistics - fix percentage difference calculations in `summaryreview`.
+
+## 1.6.0 [09/01/2026]
+
+### Added
+
+- Comparison skymaps - add comparison skymaps produced with `ligo.skymap`.
+
+### Changed
+
+- Plotting multiprocessing - tidy and improve multiprocessing behaviour in the plotting module.
+
+## 1.5.6 [05/11/2025]
+
+### Changed
+
+- Seaborn dependency - remove the seaborn version pin.
+- LaTeX checks - simplify the LaTeX installation checks.
+
+### Fixed
+
+- GW150914 fetching - fix an issue fetching GW150914 samples.
+
+## 1.5.5 [03/11/2025]
+
+### Fixed
+
+- Optional seaborn support - fix import errors when seaborn is not installed.
+
+## 1.5.4 [03/11/2025]
+
+### Added
+
+- Lazy HDF5 reading - add basic functionality to lazily read HDF5 files.
+- GWTC-4 fetching - add support for fetching GWTC-4 samples.
+- Optional seaborn dependency - make seaborn an optional dependency.
+
+### Fixed
+
+- NumPy 2 corner plots - ensure corner plot data are converted to floating-point values when using NumPy 2.
+
+## 1.5.3 [24/09/2025]
+
+### Added
+
+- Complex samples - add support for deconstructing complex-valued samples in `SamplesDict`.
+
+### Fixed
+
+- Amplitude handling - replace usage of `*amp` with `*abs` when processing complex samples.
+
+## 1.5.2 [09/09/2025]
+
+### Changed
+
+- Deepdish dependency - remove the `deepdish` dependency.
+- Sample discovery - improve detection of sample locations within HDF5 result files.
+- Conda packaging - update conda templates to use component-based packaging.
+
+### Fixed
+
+- Luminosity distance conversion - prevent errors when converting log distance to luminosity distance for NumPy arrays.
+
+## 1.5.1 [30/06/2025]
+
+### Changed
+
+- Installation requirements - pin `python-ligo-lw` to avoid installation issues.
+
+## 1.5.0 [12/06/2025]
+
+### Added
+
+- NumPy 2 support - add compatibility with NumPy 2.
+- Corner plot bin control - pass the `bins` argument through to the corner plotting functions.
+- PyCBC interpolation - add interpolation support for `pycbc` `FrequencySeries` objects.
+
+### Changed
+
+- Corner plot ordering - ensure corner plots respect the requested parameter ordering.
+- Fetch infrastructure - update the sample fetching framework.
+- Bilby validation - add additional checks for Bilby result file attributes.
+
+## 1.4.0 [04/04/2025]
+
+### Added
+
+- Source classification probabilities - update the source classification probability calculations.
+- Dictionary action dtypes - add `dtype` support to the dictionary action parser.
+
+### Changed
+
+- Interpolation utilities - move `pesummary.core.plots.interpolate` to the utilities module.
+- Bilby random generators - improve handling of random generators stored in Bilby result files.
+- NumPy compatibility - update code paths affected by NumPy deprecations.
+
+## 1.3.4 [14/01/2025]
+
+### Changed
+
+- Interpolation routines - replace the deprecated `interp2d` implementation with `RectBivariateSpline`.
+- Waveform plotting - use `SimInspiralTD` when plotting frequency-domain waveforms in the time domain.
+
+## 1.3.3 [22/11/2024]
+
+### Added
+
+- Periodic KDEs - add a KDE implementation capable of handling periodic boundary conditions.
+- Calibration definitions - add calibration definition support to PESummary.
+
+### Fixed
+
+- Weighted samples - fix a bug affecting weighted samples.
+- Testing infrastructure - fix package version compatibility issues in the testing suite.
+
+## 1.3.2 [27/09/2024]
+
+### Added
+
+- Comoving volume conversions - add functionality to calculate comoving volume from redshift and vice versa.
+- Source-frame chirp mass mapping - add parameter mapping for `srcmchirp`.
+
+### Changed
+
+- Conda detection - improve detection of conda executables when generating package information.
+- Dependency compatibility - update package requirements for newer versions of matplotlib and gwpy.
+
+### Fixed
+
+- IMRPhenomX remnants - fix issues in the IMRPhenomX remnant-property calculations.
+- Skymap legends - fix legend labels in `ligo.skymap`.
+- SciPy compatibility - fix compatibility issues introduced in SciPy 1.14.
+
+## 1.3.1 [04/06/2024]
+
+### Fixed
+
+- Optional PyCBC support - gracefully handle environments without PyCBC installed.
+
+## 1.3.0 [03/06/2024]
+
+### Added
+
+- SEOBNRv5 remnant fits - add remnant-property fits for SEOBNRv5 waveform models.
+- IMRPhenomX remnant fits - add remnant-property fits for IMRPhenomX waveform models.
+- Waveform start frequencies - add waveform starting-frequency information to generated outputs.
+- gwsignal waveform generation - add waveform generation using `gwsignal`.
+- Custom KDEs - add support for custom KDE implementations in corner plots.
+- PyCBC result files - add functionality to read `pycbc` result files.
+
+### Fixed
+
+- PSD interpolation - fix interpolation issues when plotting PSDs.
+- TGR analyses - fix extraction of cutoff frequencies and approximants for TGR analyses.
+
+## 1.2.0 [20/02/2024]
+
+### Added
+
+- Maximum frequency extraction - extract maximum frequency information from stored configuration files.
+- Waveform frequency limits - set `f_min` when generating gravitational-wave waveform plots.
+
+### Changed
+
+- Credible intervals - return a consistent output type from `credible_interval`.
+- Download caching - improve handling of cached downloads and downloaded resources.
+- NumPy compatibility - improve compatibility with newer NumPy releases.
+
+## 1.1.1 [19/01/2024]
+
+### Changed
+
+- Percentile calculations - wrap the legacy percentile function in a deprecation warning.
+- Credible intervals - improve handling of weighted samples when calculating credible intervals.
+
+## 1.1.0 [15/01/2024]
+
+### Added
+
+- Highest posterior density intervals - add functionality to calculate two-sided highest posterior density (HPD) credible intervals.
+- Corner plot parameters - add `theta_jn` to generated corner plots.
+- SEOBNRv5PHM evolution - add functionality to evolve SEOBNRv5PHM posterior samples to ISCO.
+
+### Changed
+
+- Sample downsampling - only downsample the labels requested by the user.
+- Injection parameters - remove `np.str_` injection parameters from generated outputs.
+
+## 1.0.2 [03/11/2023]
+
+### Added
+
+- Python 3.11 support - add compatibility with Python 3.11.
+
+### Changed
+
+- Package metadata - remove usage of `pkg_resources`.
+
+### Fixed
+
+- Summary classifications - fix issues in the summary classification pages.
+- JavaScript comparison pages - fix issues affecting summary JS comparison output.
+- File reading - fix problems identified in the read test suite and workflow tests.
+
+## 1.0.1 [23/10/2023]
+
+### Added
+
+- Default 2D histograms - add 2D histograms to summary pages by default.
+- Bilby version validation - add checks for Bilby versions when loading result files.
+
+### Changed
+
+- PAstro classifications - update PAstro classifications for newer `ligo-em-bright` releases.
+- Python support - remove support for Python 3.8.
+
+## 1.0.0 [24/04/2023]
+
+### Added
+
+- Unified classification module - combine `pesummary.gw.pepredicates` and `pesummary.gw.p_astro` into `pesummary.gw.classification`.
+- Logger controls - add functions to mute and unmute the PESummary logger.
+- PSD reading - add a `read` class method to `PSDDict`.
+- Parameter conversion - add parameter name conversion support to `SamplesDict`.
+- Prior plotting - add support for displaying priors on one-dimensional histogram plots.
+
+### Changed
+
+- Comparison statistics - improve the performance of comparison statistic calculations.
+- Classification performance - reduce runtime of source-classification calculations.
+- LALInference reading - improve performance when reading LALInference result files.
+- Bounded KDEs - update the bounded KDE implementation.
+- Injection handling - simplify and remove duplicated injection-file handling logic.
+- Input classes - split the `(GW)Input` classes and reduce duplicated executable options.
+- Evolution defaults - update the default `evolve_angles_backwards` version to `v2`.
+- Matplotlib compatibility - update PESummary to support `matplotlib>=3.6.0`.
+- Bilby compatibility - update PESummary to support `bilby==1.3.0`.
+- ligo.em_bright compatibility - update PESummary to support `ligo.em_bright==1.0.4`.
+- Astropy compatibility - update cosmology calculations for `astropy==5.1`.
+- Python support - add support for Python 3.10 and remove support for Python 3.7.
+- NaN log likelihoods - handle result files containing `nan` log likelihood samples.
+- NSBH classifications - ensure tidal parameters are considered when identifying NSBH systems.
+- Cosmological conversions - enforce physical bounds on `cos_d`.
+- GWTC-3 compatibility - fix compatibility issues with GWTC-3 result files and `bilby_pipe` outputs.
+
+## 0.13.10 [27/10/2022]
+
+### Changed
+
+- Maintenance release
+
 ## 0.13.9 [22/09/2022]
 
 ### Changed
