@@ -7,13 +7,12 @@ from .cosmology import hubble_distance, hubble_parameter
 __author__ = ["Charlie Hoy <charlie.hoy@ligo.org>"]
 
 
-def uniform_in_comoving_volume_from_uniform_in_volume(
+def _cosmological_distances_from_samples_dict(
     samples, redshift_method="exact", cosmology="Planck15", convert_kwargs={},
-    star_formation_rate_power=0, **kwargs
 ):
-    """Resample a table of posterior distributions from a uniform in volume
-    distance prior to a uniform in comoving volume distance prior. For details
-    see Appendix C of https://arxiv.org/abs/2010.14527
+    """Extract the redshift and luminosity distance from the samples dictionary.
+    If they are not available, calculate them based on the provided cosmology.
+    Also calculate the hubble parameter and hubble distance.
 
     Parameters
     ----------
@@ -31,9 +30,6 @@ def uniform_in_comoving_volume_from_uniform_in_volume(
         or kwargs to pass to pesummary.gw.conversions.z_from_dL* when
         calculating the 'redshift' posterior from the 'luminosity_distance'
         posterior
-    star_formation_rate_power: int, optional
-        power to use to include a star formation rate evolution. Default 0,
-        i.e. no evolution
     """
     import astropy.units as u
     parameters = samples.keys()
@@ -67,10 +63,152 @@ def uniform_in_comoving_volume_from_uniform_in_volume(
         luminosity_distance = samples["luminosity_distance"]
     hd = hubble_distance(cosmology)
     hp = hubble_parameter(cosmology, redshift)
+    return hd, hp, redshift, luminosity_distance
+
+
+def _weights_for_uniform_in_comoving_volume_from_uniform_in_volume(
+    samples, redshift_method="exact", cosmology="Planck15", convert_kwargs={},
+    star_formation_rate_power=0, **kwargs
+):
+    """Calculate weights for transforming a table of posterior distributions
+    from a uniform in comoving volume distance prior to a uniform in volume
+    distance prior. For details see Appendix C of
+    https://arxiv.org/abs/2010.14527
+
+    Parameters
+    ----------
+    samples: pesummary.utils.samples_dict.SamplesDict
+        table of posterior distributions you wish to resample
+    redshift_method: str, optional
+        method to use when generating a 'redshift' posterior distribution from
+        the 'luminosity_distance' posterior distribution. This is only used
+        when 'redshift' samples are not found in 'samples'. Default "exact"
+    cosmology: str, optional
+        cosmology you wish to use for reweighting. Default "Planck15"
+    convert_kwargs: dict, optional
+        kwargs to pass to pesummary.gw.conversions.dL_from_z when calculating
+        the 'luminosity_distance' posterior from the 'redshift' posterior
+        or kwargs to pass to pesummary.gw.conversions.z_from_dL* when
+        calculating the 'redshift' posterior from the 'luminosity_distance'
+        posterior
+    star_formation_rate_power: int, optional
+        power to use to include a star formation rate evolution. Default 0,
+        i.e. no evolution
+    """
+    hd, hp, redshift, luminosity_distance = _cosmological_distances_from_samples_dict(
+        samples, redshift_method=redshift_method, cosmology=cosmology,
+        convert_kwargs=convert_kwargs, **kwargs
+    )
     weights = 1.0 / (
         (1 + redshift)**(2. - star_formation_rate_power) * (
             (hp * (luminosity_distance / hd)) + (1. + redshift)**2.
         )
+    )
+    return weights
+
+
+def uniform_in_comoving_volume_from_uniform_in_volume(
+    samples, redshift_method="exact", cosmology="Planck15", convert_kwargs={},
+    star_formation_rate_power=0, **kwargs
+):
+    """Resample a table of posterior distributions from a uniform in volume
+    distance prior to a uniform in comoving volume distance prior. For details
+    see Appendix C of https://arxiv.org/abs/2010.14527
+
+    Parameters
+    ----------
+    samples: pesummary.utils.samples_dict.SamplesDict
+        table of posterior distributions you wish to resample
+    redshift_method: str, optional
+        method to use when generating a 'redshift' posterior distribution from
+        the 'luminosity_distance' posterior distribution. This is only used
+        when 'redshift' samples are not found in 'samples'. Default "exact"
+    cosmology: str, optional
+        cosmology you wish to use for reweighting. Default "Planck15"
+    covert_kwargs: dict, optional
+        kwargs to pass to pesummary.gw.conversions.dL_from_z when calculating
+        the 'luminosity_distance' posterior from the 'redshift' posterior
+        or kwargs to pass to pesummary.gw.conversions.z_from_dL* when
+        calculating the 'redshift' posterior from the 'luminosity_distance'
+        posterior
+    star_formation_rate_power: int, optional
+        power to use to include a star formation rate evolution. Default 0,
+        i.e. no evolution
+    """
+    weights = _weights_for_uniform_in_comoving_volume_from_uniform_in_volume(
+        samples, redshift_method=redshift_method, cosmology=cosmology,
+        convert_kwargs=convert_kwargs, **kwargs
+    )
+    return rejection_sampling(samples, weights)
+
+
+def _weights_for_uniform_in_volume_from_uniform_in_comoving_volume(
+    samples, redshift_method="exact", cosmology="Planck15", convert_kwargs={},
+    star_formation_rate_power=0, **kwargs
+):
+    """Calculate weights for transforming a table of posterior distributions
+    from a uniform in volume distance prior to a uniform in comoving volume
+    distance prior. For details see Appendix C of
+    https://arxiv.org/abs/2010.14527
+
+    Parameters
+    ----------
+    samples: pesummary.utils.samples_dict.SamplesDict
+        table of posterior distributions you wish to resample
+    redshift_method: str, optional
+        method to use when generating a 'redshift' posterior distribution from
+        the 'luminosity_distance' posterior distribution. This is only used
+        when 'redshift' samples are not found in 'samples'. Default "exact"
+    cosmology: str, optional
+        cosmology you wish to use for reweighting. Default "Planck15"
+    convert_kwargs: dict, optional
+        kwargs to pass to pesummary.gw.conversions.dL_from_z when calculating
+        the 'luminosity_distance' posterior from the 'redshift' posterior
+        or kwargs to pass to pesummary.gw.conversions.z_from_dL* when
+        calculating the 'redshift' posterior from the 'luminosity_distance'
+        posterior
+    star_formation_rate_power: int, optional
+        power to use to include a star formation rate evolution. Default 0,
+        i.e. no evolution
+    """
+    inv_weights = _weights_for_uniform_in_comoving_volume_from_uniform_in_volume(
+        samples, redshift_method=redshift_method, cosmology=cosmology,
+        convert_kwargs=convert_kwargs,
+    )
+    return 1. / inv_weights
+
+
+def uniform_in_volume_from_uniform_in_comoving_volume(
+    samples, redshift_method="exact", cosmology="Planck15", convert_kwargs={},
+    star_formation_rate_power=0, **kwargs
+):
+    """Resample a table of posterior distributions from a uniform in comoving
+    volume distance prior to a uniform in volume distance prior. For details
+    see Appendix C of https://arxiv.org/abs/2010.14527
+
+    Parameters
+    ----------
+    samples: pesummary.utils.samples_dict.SamplesDict
+        table of posterior distributions you wish to resample
+    redshift_method: str, optional
+        method to use when generating a 'redshift' posterior distribution from
+        the 'luminosity_distance' posterior distribution. This is only used
+        when 'redshift' samples are not found in 'samples'. Default "exact"
+    cosmology: str, optional
+        cosmology you wish to use for reweighting. Default "Planck15"
+    convert_kwargs: dict, optional
+        kwargs to pass to pesummary.gw.conversions.dL_from_z when calculating
+        the 'luminosity_distance' posterior from the 'redshift' posterior
+        or kwargs to pass to pesummary.gw.conversions.z_from_dL* when
+        calculating the 'redshift' posterior from the 'luminosity_distance'
+        posterior
+    star_formation_rate_power: int, optional
+        power to use to include a star formation rate evolution. Default 0,
+        i.e. no evolution
+    """
+    weights = _weights_for_uniform_in_volume_from_uniform_in_comoving_volume(
+        samples, redshift_method=redshift_method, cosmology=cosmology,
+        convert_kwargs=convert_kwargs, **kwargs
     )
     return rejection_sampling(samples, weights)
 
@@ -79,6 +217,9 @@ options.update(
     {
         "uniform_in_comoving_volume": (
             uniform_in_comoving_volume_from_uniform_in_volume
-        )
+        ),
+        "uniform_in_volume": (
+            uniform_in_volume_from_uniform_in_comoving_volume
+        ),
     }
 )
