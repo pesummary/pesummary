@@ -3,7 +3,12 @@
 import pytest
 import numpy as np
 from ..core.reweight import rejection_sampling
-from ..gw.reweight import uniform_in_comoving_volume_from_uniform_in_volume
+from ..gw.reweight import (
+    uniform_in_comoving_volume_from_uniform_in_volume,
+    uniform_in_volume_from_uniform_in_comoving_volume,
+    _weights_for_uniform_in_comoving_volume_from_uniform_in_volume,
+    _weights_for_uniform_in_volume_from_uniform_in_comoving_volume
+)
 from ..utils.samples_dict import SamplesDict
 from .base import gw_parameters
 
@@ -87,3 +92,73 @@ def test_uniform_in_comoving_volume_from_uniform_in_volume():
         new_samples = uniform_in_comoving_volume_from_uniform_in_volume(
             original_samples
         )
+
+
+def test_uniform_in_volume_from_uniform_in_comoving_volume():
+    """Test that the
+    pesummary.gw.reweight.uniform_in_volume_from_uniform_in_comoving_volume
+    function works as expected
+    """
+    original_samples = SamplesDict(
+        {param: np.random.uniform(0, 10, n_samples) for param in gw_parameters()}
+    )
+    new_samples = uniform_in_volume_from_uniform_in_comoving_volume(
+        original_samples
+    )
+    assert new_samples.number_of_samples <= original_samples.number_of_samples
+    assert all(
+        new_sample in original_samples.samples.T for new_sample in
+        new_samples.samples.T
+    )
+
+    # check that if there are no redshift samples it still reweights
+    original_samples.pop("redshift")
+    new_samples = uniform_in_volume_from_uniform_in_comoving_volume(
+        original_samples
+    )
+    assert new_samples.number_of_samples <= original_samples.number_of_samples
+    assert all(
+        new_sample in original_samples.samples.T for new_sample in
+        new_samples.samples.T
+    )
+
+    # check that if there are no distance samples it still reweights
+    original_samples = SamplesDict(
+        {param: np.random.uniform(0, 10, n_samples) for param in gw_parameters()}
+    )
+    original_samples.pop("luminosity_distance")
+    new_samples = uniform_in_volume_from_uniform_in_comoving_volume(
+        original_samples
+    )
+    assert new_samples.number_of_samples <= original_samples.number_of_samples
+    assert all(
+        new_sample in original_samples.samples.T for new_sample in
+        new_samples.samples.T
+    )
+
+    # check that if there are no redshift or distance samples it fails
+    original_samples.pop("redshift")
+    with pytest.raises(Exception):
+        new_samples = uniform_in_volume_from_uniform_in_comoving_volume(
+            original_samples
+        )
+
+def test_reweighting_weights_cancel():
+    """Test that applying a transformation weight, and then applying 
+    the reverse transformation weight gives exactly 1.
+    """
+    original_samples = SamplesDict(
+        {param: np.random.uniform(1, 10, n_samples) for param in gw_parameters()}
+    )
+    forward_weights = _weights_for_uniform_in_comoving_volume_from_uniform_in_volume(
+        original_samples
+    )
+    reverse_weights = _weights_for_uniform_in_volume_from_uniform_in_comoving_volume(
+        original_samples
+    )
+    combined_weights = forward_weights * reverse_weights
+    np.testing.assert_allclose(
+        combined_weights,
+        np.ones_like(combined_weights),
+        err_msg="The product of the forward and reverse weights must be exactly 1."
+    )
