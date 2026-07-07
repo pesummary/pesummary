@@ -1,3 +1,19 @@
+## 1.7.0 [07/07/2026]
+
+### Added
+
+- matplotlib < 3.11.0 - Added a temporary pin `matplotlib < 3.11.0`
+- KDE weights - Pass weights to KDE when plotting 1D marginals
+- ambiguous parameters - Added conversion for ambiguous parameter names, e.g. `chi_1`
+- python 3.12 - Ensure pesummary is compatible with python3.12
+- DINGO integration - Added module to load in DINGO result files
+
+### Changed
+
+- Bounded_2d_kde optimisation - Reduced the runtime of `Bounded_2d_kde`
+- GWOSC tables - Update webpage scraper to account for updated GWOSC tables
+- KDE kwargs - Pass user provided KDE kwargs to gw.triangle_plot` function
+
 ## 1.6.5 [06/07/2026]
 
 ### Added
