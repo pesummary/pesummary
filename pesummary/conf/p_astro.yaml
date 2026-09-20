@@ -1,0 +1,29 @@
+# Values are based on the GWTC-5 populations paper arXiv:2605.27226.
+# The rates are median values from the full spectrum pixelpop analysis.
+# We assume independent powerlaws for the NS mass model with powerlaw index
+# -7.7, see Sec. 5 in arXiv:2508.18083. For BBHs, we assume the secondary mass
+# is conditioned on the primary mass through a mass ratio powerlaw index beta.
+pop_prior:
+    BBH:
+        m1_bounds: [3.0,200.0]
+        m2_bounds: [3.0,200.0]
+        alpha: -2.35
+        zmax: 1.9
+        beta: 1.0
+    BNS:
+        m1_bounds: [1.0,3.0]
+        m2_bounds: [1.0,3.0]
+        alpha_1: -7.7
+        alpha_2: -7.7
+        zmax: 0.15
+    NSBH:
+        m1_bounds: [3.0,200.0]
+        m2_bounds: [1.0,3.0]
+        alpha_1: -2.35
+        alpha_2: -7.7
+        zmax: 0.25
+
+Rates:
+    BNS: 7.41e-07
+    NSBH: 5.03e-07
+    BBH: 1.1e-06

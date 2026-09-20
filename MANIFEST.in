@@ -2,6 +2,7 @@ include CONTRIBUTING.md LICENSE.md README.md
 include pesummary/.version
 include pesummary/gw/plots/cylon.csv
 include pesummary/conf/matplotlib_rcparams.sty
+include pesummary/conf/p_astro.yaml
 include pesummary/core/js/*.js
 include pesummary/core/css/*.css
 include pesummary/_version.py

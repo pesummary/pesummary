@@ -157,3 +157,6 @@ calibration_definition = {
     "V1": "template",
     "K1": "data"
 }
+
+# GWTC-5 p_astro classification file
+classification_data = os.path.join(_path, "p_astro.yaml")

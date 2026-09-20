@@ -278,7 +278,7 @@ class _PlotGeneration(_BasePlotGeneration):
         savedir, label, params, samples, latex_labels, injection, weights,
         preliminary=False, checkpoint=False
     ):
-        from pesummary.core.plots.publication import triangle_plot
+        from pesummary.gw.plots.publication import triangle_plot
         import math
         for num, ii in enumerate(injection):
             if math.isnan(ii):
@@ -298,9 +298,10 @@ class _PlotGeneration(_BasePlotGeneration):
         fig, _, _, _ = triangle_plot(
             *samples, kde=False, parameters=params, xlabel=latex_labels[0],
             ylabel=latex_labels[1], plot_datapoints=True, plot_density=False,
-            levels=None, fill=False, grid=True, linewidths=[1.75],
+            levels=[0.9], fill=False, grid=True, linewidths=[1.75],
             percentiles=[5, 95], percentile_plot=[label], labels=[label],
-            truth=truth, weights=weights, data_kwargs={"alpha": 0.3}
+            truth=truth, weights=weights, data_kwargs={"alpha": 0.3},
+            smooth=None,
         )
         _PlotGeneration.save(
             fig, filename, preliminary=preliminary
@@ -1405,7 +1406,13 @@ class _PlotGeneration(_BasePlotGeneration):
                 self.calibration[label][i] for i in ifos
             ]
             if "calibration" in self.priors.keys():
-                prior = [self.priors["calibration"][label][i] for i in ifos]
+                if all(_ in self.priors["calibration"][label].keys() for _ in ifos):
+                    prior = [self.priors["calibration"][label][i] for i in ifos]
+                else:
+                    raise ValueError(
+                        "Unable to generate calibration plot as priors are not "
+                        "provided for all IFOs."
+                    )
             else:
                 prior = None
             _definition = {}
