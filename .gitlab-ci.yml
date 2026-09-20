@@ -275,7 +275,7 @@ ligo_skymap:
 
 bilby:
   stage: compatibility
-  image: python:3.10
+  image: python:3.11
   needs: []
   script:
     - *prepare_testing
@@ -290,7 +290,7 @@ bilby:
 
 bilby_pipe:
   stage: compatibility
-  image: python:3.10
+  image: python:3.11
   needs: []
   script:
     - *prepare_testing
@@ -305,7 +305,7 @@ bilby_pipe:
 
 pycbc_inference:
   stage: compatibility
-  image: python:3.10
+  image: python:3.11
   needs: []
   script:
     - *prepare_testing
@@ -321,7 +321,7 @@ pycbc_inference:
 GWTC:
   <<: *parallel_gwtc
   stage: compatibility
-  image: python:3.10
+  image: python:3.11
   needs: []
   script:
     - *prepare_testing
