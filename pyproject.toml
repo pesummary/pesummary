@@ -77,7 +77,7 @@ test = [
 extras = [
 	"bilby>=1.1.1",
 	"coloredlogs",
-	"dingo-gw>=0.8.3 ; python_version < '3.12'", # dingo-gw incompatible with python3.12"
+	"dingo-gw>=0.8.3,<0.10.0 ; python_version < '3.12'", # dingo-gw incompatible with python3.12"
 	"GitPython",
 	"gwosc",
 	"jupyter_client",

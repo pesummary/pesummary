@@ -1,3 +1,13 @@
+## 1.8.0 [20/09/2026]
+
+### Added
+
+- p_astro file - Add a default p_astro file for calculating source classification probabilities
+
+### Changed
+
+- dingo-gw < 0.10.0 - pinned dingo-gw < 0.10.0 due to incompatibility
+
 ## 1.7.0 [07/07/2026]
 
 ### Added
