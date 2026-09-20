@@ -196,6 +196,18 @@ class PAstro(_Base):
         fraction = \frac{m_{1s}^{\alpha}m_{2s}^{\beta}}{\text{min}(m_{1s},m_{2s,max})^{\beta+1}-m_{2s,min}^{\beta+1}}
         p(m_{1s},m_{2s},z|\alpha)  \propto fraction \frac{dV_c}{dz}\frac{1}{1+z}
 
+    where the secondary mass is conditioned on the primary mass through a
+    powerlaw in the mass ratio with index :math:`\beta`. Alternatively, the
+    primary and secondary masses may each be described by their own independent
+    powerlaw, with indices :math:`\alpha_{1}` and :math:`\alpha_{2}`,
+
+    ..math ::
+        fraction = \frac{m_{1s}^{\alpha_{1}}m_{2s}^{\alpha_{2}}}{m_{2s,max}^{\alpha_{2}+1}-m_{2s,min}^{\alpha_{2}+1}}
+        p(m_{1s},m_{2s},z|\alpha_{1},\alpha_{2})  \propto fraction \frac{dV_c}{dz}\frac{1}{1+z}
+
+    Each category in `category_data` must therefore provide either `alpha` and
+    `beta`, or `alpha_1` and `alpha_2`.
+
     Parameters
     ----------
     samples: dict
@@ -249,6 +261,13 @@ class PAstro(_Base):
                 name="luminosity_distance", unit="Mpc",
                 cosmology=cosmology
             )
+        if category_data is None:
+            from pesummary import conf
+            logger.debug(
+                f"No category file provided. Assuming values based on the "
+                f"GWTC-5 populations paper (arXiv:2605.27226)."
+            )
+            category_data = conf.classification_data
         if category_data is not None and os.path.isfile(category_data):
             import yaml
             with open(category_data, "r") as f:
@@ -256,6 +275,8 @@ class PAstro(_Base):
             category_data = config["pop_prior"]
             for key, value in config["Rates"].items():
                 category_data[key]["rate"] = float(value)
+        if not isinstance(category_data, dict):
+            raise ValueError("Category data must be a dictionary.")
         self.category_data = category_data
         self.cosmology = cosmology
         self.terrestrial_probability = terrestrial_probability
@@ -267,51 +288,103 @@ class PAstro(_Base):
         params.extend(["luminosity_distance", "redshift"])
         return params
 
-    def _salpeter_prior(self, alpha, m1_bounds, m2_bounds, zmax, beta):
-        """Calculate and return the log probabilities assuming a Salpeter population
-        prior
+    @staticmethod
+    def _powerlaw_log_norm(index, minimum, maximum):
+        """Calculate and return the log normalisation of a powerlaw with a given
+        index, defined between a minimum and maximum value
 
         Parameters
         ----------
-        alpha: float
-            index of the powerlaw for the primary mass prior
+        index: float
+            index of the powerlaw
+        minimum: float
+            minimum value of the powerlaw
+        maximum: float/np.ndarray
+            maximum value of the powerlaw. This may be an array if the maximum
+            differs from sample to sample
+        """
+        if index != -1:
+            upper = maximum**(1. + index)
+            lower = minimum**(1. + index)
+            return np.log((1. + index) / (upper - lower))
+        return -np.log(np.log(maximum / minimum))
+
+    def _salpeter_prior(
+        self, m1_bounds, m2_bounds, zmax, alpha=None, beta=None, alpha_1=None,
+        alpha_2=None
+    ):
+        """Calculate and return the log probabilities assuming a Salpeter population
+        prior
+
+        The secondary mass distribution may either be specified as a powerlaw in
+        mass ratio (by providing alpha and beta), in which case the secondary
+        mass is conditioned on the primary mass, or as an independent powerlaw in
+        the secondary mass (by providing alpha_1 and alpha_2)
+
+        Parameters
+        ----------
         m1_bounds: list
-            list of length 2 which contains the minimum (index 0) and maximum (index 1)
-            primary mass
+            list of length 2 which contains the minimum (index 0) and maximum
+            (index 1) primary mass
         m2_bounds: list
-            list of length 2 which contains the minimum (index 0) and maximum (index 1)
-            secondary mass
+            list of length 2 which contains the minimum (index 0) and maximum
+            (index 1) secondary mass
         zmax: float
             maximum redshift
-        beta: float
-            index of the powerlaw for the secondary mass prior
+        alpha: float, optional
+            index of the powerlaw for the primary mass prior. Must be provided
+            alongside beta and cannot be used in combination with alpha_1/alpha_2
+        beta: float, optional
+            index of the powerlaw for the secondary mass prior, conditioned on the
+            primary mass. Must be provided alongside alpha
+        alpha_1: float, optional
+            index of the powerlaw for the primary mass prior. Must be provided
+            alongside alpha_2 and cannot be used in combination with alpha/beta
+        alpha_2: float, optional
+            index of the independent powerlaw for the secondary mass prior. Must
+            be provided alongside alpha_1
         """
-        if alpha != -1:
-            upper = m1_bounds[1]**(1. + alpha)
-            lower = m1_bounds[0]**(1. + alpha)
-            log_m1_norm = np.log((1. + alpha) / (upper - lower))
+        _two_powerlaws = any(_ is not None for _ in [alpha_1, alpha_2])
+        _powerlaw_and_massratio = any(_ is not None for _ in [alpha, beta])
+        if _two_powerlaws and _powerlaw_and_massratio:
+            raise ValueError(
+                "Unable to use both alpha/beta and alpha_1/alpha_2 at the same "
+                "time. Please either provide alpha and beta, for a powerlaw in "
+                "the primary mass and a powerlaw in the mass ratio, or alpha_1 "
+                "and alpha_2, for independent powerlaws in the primary and "
+                "secondary mass"
+            )
+        elif _two_powerlaws and any(_ is None for _ in [alpha_1, alpha_2]):
+            raise ValueError("Please provide both alpha_1 and alpha_2")
+        elif _powerlaw_and_massratio and any(_ is None for _ in [alpha, beta]):
+            raise ValueError("Please provide both alpha and beta")
+        elif not _two_powerlaws and not _powerlaw_and_massratio:
+            raise ValueError(
+                "Please provide either alpha and beta, or alpha_1 and alpha_2"
+            )
+        if _two_powerlaws:
+            m1_index, m2_index = alpha_1, alpha_2
+            m2_max = m2_bounds[1] * np.ones(len(self.samples["mass_1_source"]))
         else:
-            log_m1_norm = -np.log(np.log(m1_bounds[1] / m1_bounds[0]))
-        m2_max = np.min(
-            np.array(
-                [
-                    m2_bounds[1] * np.ones(len(self.samples["mass_1_source"])),
-                    self.samples["mass_1_source"]
-                ]
-            ), axis=0
+            m1_index, m2_index = alpha, beta
+            m2_max = np.min(
+                np.array(
+                    [
+                        m2_bounds[1] * np.ones(len(self.samples["mass_1_source"])),
+                        self.samples["mass_1_source"]
+                    ]
+                ), axis=0
+            )
+        log_m1_norm = self._powerlaw_log_norm(
+            m1_index, m1_bounds[0], m1_bounds[1]
         )
-        if beta != -1:
-            upper = m2_max**(1. + beta)
-            lower = m2_bounds[0]**(1. + beta)
-            log_m2_norm = np.log((1. + beta) / (upper - lower))
-        else:
-            log_m2_norm = -np.log(np.log(m2_max / m2_bounds[0]))
+        log_m2_norm = self._powerlaw_log_norm(m2_index, m2_bounds[0], m2_max)
         z_prior = self.module.UniformSourceFrame(
             name="redshift", minimum=0., maximum=zmax, unit=None
         )
         logprob = (
-            alpha * np.log(self.samples["mass_1_source"]) +
-            beta * np.log(self.samples["mass_2_source"]) +
+            m1_index * np.log(self.samples["mass_1_source"]) +
+            m2_index * np.log(self.samples["mass_2_source"]) +
             log_m1_norm + log_m2_norm +
             z_prior.ln_prob(self.samples["redshift"])
         )
@@ -333,9 +406,10 @@ class PAstro(_Base):
                 "No category data provided to estimate rate weighted evidence. "
                 "Unable to calculate source probabilities."
             )
-        required_data = [
-            "rate", "alpha", "m1_bounds", "m2_bounds", "zmax", "beta"
-        ]
+        required_data = ["rate", "m1_bounds", "m2_bounds", "zmax"]
+        # either a powerlaw in m1 and a powerlaw in the mass ratio, or
+        # independent powerlaws in m1 and m2
+        required_powerlaw_data = [["alpha", "beta"], ["alpha_1", "alpha_2"]]
         for value in self.category_data.values():
             if not all(_ in value.keys() for _ in required_data):
                 raise ValueError(
@@ -343,6 +417,18 @@ class PAstro(_Base):
                     ", ".join(required_data)
                 )
             )
+            if not any(
+                all(_ in value.keys() for _ in combination) for combination in
+                required_powerlaw_data
+            ):
+                raise ValueError(
+                    "Please provide either {} for each category".format(
+                        " or ".join(
+                            " and ".join(combination) for combination in
+                            required_powerlaw_data
+                        )
+                    )
+                )
         if self.terrestrial_probability is None:
             if self.catch_terrestrial_probability_error:
                 logger.debug(
@@ -364,8 +450,11 @@ class PAstro(_Base):
         # evaluate population prior
         pop_log_priors = {
             category: self._salpeter_prior(
-                config["alpha"], config["m1_bounds"], config["m2_bounds"],
-                config["zmax"], config["beta"]
+                config["m1_bounds"], config["m2_bounds"], config["zmax"],
+                **{
+                    key: config[key] for key in
+                    ["alpha", "beta", "alpha_1", "alpha_2"] if key in config
+                }
             ) for category, config in self.category_data.items()
         }
         # evaluate pe-prior
