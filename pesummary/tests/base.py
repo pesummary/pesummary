@@ -535,6 +535,7 @@ def make_result_file(outdir="./.outdir/", extension="json", gw=True, bilby=False
                     },
                     "window": {"type": "tukey", "f_s": 4096, "T": 8.0, "roll_off": 0.4},
                     "ref_time": 1126259462.0,
+                    "detectors": ["H1", "L1"],
                 },
             },
             "dataset_settings": {
