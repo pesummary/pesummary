@@ -1,3 +1,9 @@
+## 1.8.1 [21/09/2026]
+
+### Changed
+
+- dingo-gw < 0.10.0 - removed the dingo-gw < 0.10.0 pin
+
 ## 1.8.0 [20/09/2026]
 
 ### Added
